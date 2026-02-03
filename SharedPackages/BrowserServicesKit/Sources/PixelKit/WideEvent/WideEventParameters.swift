@@ -42,6 +42,7 @@ public enum WideEventParameter {
         static let platform = "global.platform"
         static let type = "global.type"
         static let sampleRate = "global.sample_rate"
+        static let isFirstDailyOccurrence = "global.is_first_daily_occurrence"
     }
 
     public enum App {
@@ -58,7 +59,7 @@ public enum WideEventParameter {
     public enum Feature {
         public static let name = "feature.name"
         public static let status = "feature.status"
-        public static let statusReason = "feature.status_reason"
+        public static let statusReason = "feature.data.ext.status_reason"
 
         public static let errorDomain = "feature.data.error.domain"
         public static let errorCode = "feature.data.error.code"

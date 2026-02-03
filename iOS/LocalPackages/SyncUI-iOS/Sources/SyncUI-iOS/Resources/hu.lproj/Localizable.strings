@@ -37,6 +37,9 @@
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Ez titkosított biztonsági mentést hoz létre a könyvjelzőidről és az űrlapokon automatikusan megadásra kerülő adataidról a DuckDuckGo biztonságos szerverén, amit szinkronizálhatsz a többi eszközöddel.";
 
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Ez egy titkosított biztonsági másolatot hoz létre a mentett könyvjelzőidről, a jelszavaidról, a hitelkártyáidról és a Duck.ai-csevegéseidről a DuckDuckGo biztonságos szerverén, amely szinkronizálható a többi eszközöddel. \n\n";
+
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "A titkosítási kulcsot csak az eszközöd tárolja, a DuckDuckGo nem fér hozzá.";
 
@@ -141,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Folyamatban van a könyvjelzőid és az űrlapokon automatikusan megadásra kerülő adataid előkészítése a szinkronizáláshoz. Ez csak néhány pillanatig tart.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Felkészülés a könyvjelzőid, jelszavaid és Duck.ai-csevegéseid szinkronizálására. Ez csak néhány pillanatig tart.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Csatlakozás…";
@@ -289,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Szinkronizáld biztonságosan a könyvjelzőket és jelszavakat az eszközök között.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Szinkronizáld biztonságosan a könyvjelzőket, az automatikus kitöltési adatokat és a Duck.ai-csevegéseket az eszközeid között.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Szinkronizálás megkezdése";
 
@@ -303,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Szinkronizálás és biztonsági mentés kikapcsolása…";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "A könyvjelzők, az automatikus kitöltési adatok és a Duck.ai-csevegések jelenleg szinkronizálva vannak az eszközeid között.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Szinkronizálás bekapcsolva";

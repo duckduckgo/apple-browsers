@@ -32,7 +32,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private lazy var borderView = StyledTopBottomBorderView()
 
-    private let newTabDialogFactory: any NewTabDaxDialogProvider
+    private let newTabDialogFactory: any NewTabDaxDialogProviding
     private let daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
 
     private let newTabPageViewModel: NewTabPageViewModel
@@ -53,7 +53,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          subscriptionDataReporting: SubscriptionDataReporting? = nil,
-         newTabDialogFactory: any NewTabDaxDialogProvider,
+         newTabDialogFactory: any NewTabDaxDialogProviding,
          daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
@@ -244,7 +244,7 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
 
 extension NewTabPageViewController {
 
-    func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProvider) {
+    func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
         dismissHostingController(didFinishNTPOnboarding: false)
 
         guard let spec = dialogProvider.nextHomeScreenMessageNew() else { return }

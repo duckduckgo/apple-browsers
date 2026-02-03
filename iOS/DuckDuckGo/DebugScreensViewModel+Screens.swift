@@ -25,6 +25,7 @@ import BareBonesBrowserKit
 import Core
 import DataBrokerProtection_iOS
 import AIChat
+import WebExtensions
 
 extension DebugScreensViewModel {
 
@@ -181,6 +182,7 @@ extension DebugScreensViewModel {
                                                             runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
                 }
             }) : nil,
+            webExtensionsDebugScreen,
             .controller(title: "File Size Inspector", { _ in
                 return self.debugStoryboard.instantiateViewController(identifier: "FileSizeDebug") { coder in
                     FileSizeDebugViewController(coder: coder)
@@ -225,10 +227,25 @@ extension DebugScreensViewModel {
                     }
                 }
 
+                let isOnboardingRebranding = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.onboardingRebranding)
+
                 weak var capturedController: OnboardingDebugViewController?
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView {
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(isRebrandingFlow: isOnboardingRebranding) {
                     guard let capturedController else { return }
-                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter(), systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager, daxDialogsManager: d.daxDialogManager)
+
+                    let controller: Onboarding = if isOnboardingRebranding {
+                        OnboardingIntroViewController.rebranded(
+                            onboardingPixelReporter: OnboardingPixelReporter(),
+                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                            daxDialogsManager: d.daxDialogManager
+                        )
+                    } else {
+                        OnboardingIntroViewController.legacy(
+                            onboardingPixelReporter: OnboardingPixelReporter(),
+                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                            daxDialogsManager: d.daxDialogManager
+                        )
+                    }
                     controller.delegate = capturedController
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)
@@ -269,6 +286,21 @@ extension DebugScreensViewModel {
         )
 
         store.lastPresentationTimestamp = nil
+    }
+
+    private var webExtensionsDebugScreen: DebugScreen? {
+        guard #available(iOS 18.4, *),
+              AppDependencyProvider.shared.featureFlagger.isFeatureOn(.webExtensions) else {
+            return nil
+        }
+
+        return .view(title: "Web Extensions") { d in
+            if let manager = d.webExtensionManager {
+                WebExtensionsDebugView(webExtensionManager: manager)
+            } else {
+                Text("Web Extensions not available")
+            }
+        }
     }
 
 }

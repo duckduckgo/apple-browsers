@@ -2932,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Vymazat karty a data stránek?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Vymazat karty, data stránek a chaty?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Smazat vše";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Vymazat tuto kartu";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "Možností „Vymazat tuto kartu“ smažeš tento chat Duck.ai i všechna data o stránkách navštívených v této kartě.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Tím se zruší probíhající stahování.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Nově vytvořené karty se dají mazat i jednotlivě.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Když vymažeš data stránek, může dojít ke tvému odhlášení z účtů.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Vyhledejte nebo zadejte adresu";
 
@@ -3124,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Pokud je zapnuté Touch ID nebo Face ID, případně nastavený přístupový kód k systému, zobrazí se při otevírání aplikace výzva k jejímu odemknutí.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Smazat";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatické mazání dat";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Automatické mazání dat";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Zpětná vazba k prohlížeči";
@@ -3154,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Správa vyskakovacích oken ohledně cookies";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Vymazat karty a data";
+
 /* Settings title for the customize section */
 "settings.customize" = "Přizpůsobit";
 
@@ -3171,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Výchozí prohlížeč";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Mazání chatů Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Mazání karet a dat";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Vypnout automatické vyplnění ve službě Email Protection";

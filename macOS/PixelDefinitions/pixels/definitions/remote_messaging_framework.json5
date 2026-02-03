@@ -11,7 +11,8 @@
                 "key": "message",
                 "description": "The identifier for the message, sourced from the remote message configuration",
                 "type": "string"
-            }
+            },
+            "pixelSource"
         ],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
     },
@@ -26,7 +27,8 @@
                 "key": "message",
                 "description": "The identifier for the message, sourced from the remote message configuration",
                 "type": "string"
-            }
+            },
+            "pixelSource"
         ],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
     },
@@ -41,7 +43,8 @@
                 "key": "message",
                 "description": "The identifier for the message, sourced from the remote message configuration",
                 "type": "string"
-            }
+            },
+            "pixelSource"
         ],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
     },
@@ -56,7 +59,8 @@
                 "key": "message",
                 "description": "The identifier for the message, sourced from the remote message configuration",
                 "type": "string"
-            }
+            },
+            "pixelSource"
         ],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
     },
@@ -71,7 +75,8 @@
                 "key": "message",
                 "description": "The identifier for the message, sourced from the remote message configuration",
                 "type": "string"
-            }
+            },
+            "pixelSource"
         ],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
     },
@@ -86,7 +91,8 @@
                 "key": "message",
                 "description": "The identifier for the message, sourced from the remote message configuration",
                 "type": "string"
-            }
+            },
+            "pixelSource"
         ],
         "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
     },

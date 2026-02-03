@@ -25,7 +25,6 @@ protocol DownloadsDirectoryHandling {
     func createDownloadsDirectoryIfNeeded()
     func downloadsDirectoryExists() -> Bool
     func createDownloadsDirectory()
-    func deleteDownloadsDirectoryIfEmpty()
 }
 
 struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
@@ -75,26 +74,5 @@ struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
     func createDownloadsDirectory() {
         try? FileManager.default.createDirectory(at: downloadsDirectory, withIntermediateDirectories: true, attributes: nil)
         Logger.general.debug("Downloads directory location \(downloadsDirectory.absoluteString)")
-    }
-
-    func deleteDownloadsDirectoryIfEmpty() {
-        guard downloadsDirectoryExists() else { return }
-        
-        let files: [URL]
-        do {
-            files = try downloadsDirectoryFiles
-        } catch {
-            // Don't delete if we couldn't enumerate - fail safe
-            Logger.general.error("Could not read downloads directory, not deleting: \(error.localizedDescription)")
-            return
-        }
-        
-        guard files.isEmpty else { return }
-        
-        do {
-            try FileManager.default.removeItem(at: downloadsDirectory)
-        } catch {
-            Logger.general.error("Could not delete downloads directory: \(error.localizedDescription)")
-        }
     }
 }

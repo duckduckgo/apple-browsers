@@ -2932,6 +2932,30 @@
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
 
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Ta bort flikar och webbplatsdata?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Vill du ta bort flikar, webbplatsdata och chattar?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Radera allt";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Ta bort denna flik";
+
+/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
+"scoped.fire.confirmation.delete.this.tab.description" = "”Ta bort denna flik” rensar den här Duck.ai-chatten och all webbplatsdata från webbplatser som besökts i den här fliken.";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Detta kommer att avbryta pågående nerladdningar.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Nya flikar du skapar kan också raderas individuellt.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Om du tar bort webbplatsdata kan du loggas ut från konton.";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Sök eller ange adress";
 
@@ -3124,8 +3148,14 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Om Touch ID, Face ID eller ett systemlösenord har aktiverats blir du ombedd att låsa upp appen när du öppnar den.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Ta bort";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatisk datarensning";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Radera data automatiskt";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Webbläsarfeedback";
@@ -3154,6 +3184,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Hantera popup-fönster för cookies";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Ta bort flikar och data";
+
 /* Settings title for the customize section */
 "settings.customize" = "Anpassa";
 
@@ -3171,6 +3204,12 @@
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardwebbläsare";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Ta bort Duck.ai-chattar";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Ta bort flikar och data";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Inaktivera automatisk ifyllning för Email Protection";

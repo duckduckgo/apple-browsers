@@ -243,6 +243,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let displaysTabsProgressIndicator: Bool
 
     let wideEvent: WideEventManaging
+    let freeTrialConversionService: FreeTrialConversionWideEventService
     let subscriptionManager: any SubscriptionManager
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
@@ -357,6 +358,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    private var webExtensionFeatureFlagHandler: AnyObject?
 
     private var didFinishLaunching = false
 
@@ -533,6 +535,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.featureFlagger = featureFlagger
 
         wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
+        freeTrialConversionService = DefaultFreeTrialConversionWideEventService(
+            wideEvent: wideEvent,
+            isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
+        )
+        freeTrialConversionService.startObservingSubscriptionChanges()
         displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
@@ -605,7 +612,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager, userDefaults: .subs) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                                  accessError: error,
-                                                                                 source: KeychainErrorSource.shared,
+                                                                                 source: KeychainErrorSource.browser,
                                                                                  authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
@@ -893,10 +900,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 themeManager: themeManager,
                 dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager }
             )
+            let subscriptionManagerForPIR = subscriptionManager
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
             }, navigateToFeedbackHandler: {
                 windowControllersManager.showFeedbackModal(preselectedFormOption: .feedback(feedbackCategory: .other))
+            }, navigateToPIRHandler: {
+                let hasEntitlement = (try? await subscriptionManagerForPIR.isFeatureEnabled(.dataBrokerProtection)) ?? false
+                await MainActor.run {
+                    if hasEntitlement {
+                        windowControllersManager.showTab(with: .dataBrokerProtection)
+                    } else {
+                        let url = subscriptionManagerForPIR.url(for: .purchase)
+                        windowControllersManager.showTab(with: .subscription(url))
+                    }
+                }
             })
         } else {
             // As long as remoteMessagingClient is private to App Delegate and activeRemoteMessageModel
@@ -907,7 +925,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 remoteMessagingStore: nil,
                 remoteMessagingAvailabilityProvider: nil,
                 openURLHandler: { _ in },
-                navigateToFeedbackHandler: { }
+                navigateToFeedbackHandler: { },
+                navigateToPIRHandler: { }
             )
         }
 
@@ -1543,6 +1562,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let webExtensionManager = WebExtensionManagerFactory.makeManager()
             self.webExtensionManager = webExtensionManager
 
+            let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+                .flagDidChangePublisher
+                .filter { $0.0 == .webExtensions }
+                .map { $0.1 }
+                .eraseToAnyPublisher()
+
+            webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+                webExtensionManager: webExtensionManager,
+                featureFlagPublisher: publisher) { [weak self] in
+                    self?.webExtensionManager = nil
+                }
+
             Task {
                 await webExtensionManager.loadInstalledExtensions()
             }
@@ -1554,11 +1585,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - PixelKit
 
     static func configurePixelKit() {
-#if DEBUG || REVIEW
-            Self.setUpPixelKit(dryRun: true)
-#else
-            Self.setUpPixelKit(dryRun: false)
-#endif
+        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild))
     }
 
     private static func setUpPixelKit(dryRun: Bool) {

@@ -34,6 +34,7 @@
             "wideEventType",
             "wideEventFormFactor",
             "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",
@@ -53,7 +54,7 @@
                 "enum": ["vpn-connection"]
             },
             {
-                "key": "feature.status_reason",
+                "key": "feature.data.ext.status_reason",
                 "type": "string",
                 "description": "Reason string for the current status",
                 "enum": ["partial_data", "timeout", "retried"]

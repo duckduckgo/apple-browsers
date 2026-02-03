@@ -104,6 +104,8 @@ class SettingsHostingController: UIHostingController<AnyView> {
         presenter.presentFireConfirmation(
             on: self,
             sourceRect: sourceRect,
+            tabViewModel: nil,
+            daxDialogsManager: viewProvider.daxDialogsManager,
             onConfirm: onConfirm,
             onCancel: onCancel
         )

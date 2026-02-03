@@ -50,9 +50,13 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestNewTab(_ tab: DuckDuckGo.TabViewController) {}
 
+    func tabDidRequestActivate(_ tab: TabViewController) {}
+
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) -> WKWebView? { nil }
 
-    func tabDidRequestClose(_ tab: DuckDuckGo.TabViewController, shouldCreateEmptyTabAtSamePosition: Bool) {}
+    func tabDidRequestClose(_ tab: DuckDuckGo.Tab,
+                            shouldCreateEmptyTabAtSamePosition: Bool,
+                            clearTabHistory: Bool) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 

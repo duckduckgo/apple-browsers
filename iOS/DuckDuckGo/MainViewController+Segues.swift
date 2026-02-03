@@ -53,10 +53,19 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller = OnboardingIntroViewController(
-            onboardingPixelReporter: contextualOnboardingPixelReporter,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-            daxDialogsManager: daxDialogsManager)
+        let controller: Onboarding = if featureFlagger.isFeatureOn(.onboardingRebranding) {
+            OnboardingIntroViewController.rebranded(
+                onboardingPixelReporter: contextualOnboardingPixelReporter,
+                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                daxDialogsManager: daxDialogsManager
+            )
+        } else {
+            OnboardingIntroViewController.legacy(
+                onboardingPixelReporter: contextualOnboardingPixelReporter,
+                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                daxDialogsManager: daxDialogsManager
+            )
+        }
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)
@@ -206,7 +215,8 @@ extension MainViewController {
                                       productSurfaceTelemetry: self.productSurfaceTelemetry,
                                       historyManager: self.historyManager,
                                       fireproofing: self.fireproofing,
-                                      keyValueStore: self.keyValueStore)
+                                      keyValueStore: self.keyValueStore,
+                                      daxDialogsManager: self.daxDialogsManager)
         }) else {
             assertionFailure()
             return
@@ -258,6 +268,26 @@ extension MainViewController {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .dbp)
         }, deepLinkTarget: .dbp)
+    }
+
+    func segueToPIRWithSubscriptionCheck() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+
+        Task { @MainActor in
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+            let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
+
+            if hasEntitlement {
+                launchSettings(completion: {
+                    $0.triggerDeepLinkNavigation(to: .dbp)
+                }, deepLinkTarget: .dbp)
+            } else {
+                launchSettings(completion: {
+                    $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
+                }, deepLinkTarget: .subscriptionFlow())
+            }
+        }
     }
 
     func segueToDebugSettings() {
@@ -356,7 +386,8 @@ extension MainViewController {
                                                             dbpIOSPublicInterface: dbpIOSPublicInterface,
                                                             subscriptionDataReporter: subscriptionDataReporter,
                                                             remoteMessagingDebugHandler: remoteMessagingDebugHandler,
-                                                            productSurfaceTelemetry: productSurfaceTelemetry)
+                                                            productSurfaceTelemetry: productSurfaceTelemetry,
+                                                            webExtensionManager: webExtensionManager)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
@@ -455,7 +486,8 @@ extension MainViewController {
             debuggingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
             subscriptionDataReporter: self.subscriptionDataReporter,
-            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler))
+            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
+            webExtensionManager: self.webExtensionManager))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

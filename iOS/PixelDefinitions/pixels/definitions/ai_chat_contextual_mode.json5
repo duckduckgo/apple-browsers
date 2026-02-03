@@ -1,0 +1,128 @@
+{
+    "m_aichat_settings_auto_context_enabled": {
+        "description": "Fired when the user enables automatic page context attachment in AI Chat settings",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_settings_auto_context_disabled": {
+        "description": "Fired when the user disables automatic page context attachment in AI Chat settings",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_sheet_opened": {
+        "description": "Fired when the AI Chat contextual sheet is presented to the user",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_sheet_dismissed": {
+        "description": "Fired when the user dismisses the AI Chat contextual sheet",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_expand_button_tapped": {
+        "description": "Fired when the user taps the expand button to open full AI Chat mode from the contextual sheet",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_new_chat_button_tapped": {
+        "description": "Fired when the user taps the new chat button in the contextual sheet",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_quick_action_summarize_selected": {
+        "description": "Fired when the user selects the summarize quick action chip in the contextual sheet",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_placeholder_shown": {
+        "description": "Fired when the placeholder context chip is shown to the user (auto-context setting disabled)",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_placeholder_tapped": {
+        "description": "Fired when the user taps the placeholder chip to attach page content",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_auto_attached": {
+        "description": "Fired when page context is automatically attached to an AI Chat prompt (auto-context setting enabled)",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_updated_on_navigation": {
+        "description": "Fired when page context is updated after navigating to a different page while contextual sheet is open",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_manually_attached_native": {
+        "description": "Fired when the user manually attaches page context via the native attach button",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_manually_attached_frontend": {
+        "description": "Fired when the user manually attaches page context via the frontend attach button",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_removed_native": {
+        "description": "Fired when the user removes page context via the native context chip remove button",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_removed_frontend": {
+        "description": "Fired when the user removes page context via the frontend UI",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_prompt_submitted_with_context_native": {
+        "description": "Fired when the user submits a prompt with page context attached via the native input",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_prompt_submitted_without_context_native": {
+        "description": "Fired when the user submits a prompt without page context via the native input",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_session_restored": {
+        "description": "Fired when an AI Chat contextual session is restored after a cold start",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

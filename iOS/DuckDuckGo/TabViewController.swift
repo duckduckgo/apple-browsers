@@ -706,7 +706,7 @@ class TabViewController: UIViewController {
             /// The container already follows the toolbar position
             webViewBottomAnchorConstraint?.constant = 0
         }
-        borderView.bottomAlpha = barsVisibilityPercent
+        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -3941,7 +3941,7 @@ extension WKWebView {
 extension TabViewController: SpecialErrorPageNavigationDelegate {
 
     func closeSpecialErrorPageTab(shouldCreateNewEmptyTab: Bool) {
-        delegate?.tabDidRequestClose(self, shouldCreateEmptyTabAtSamePosition: shouldCreateNewEmptyTab)
+        delegate?.tabDidRequestClose(tabModel, shouldCreateEmptyTabAtSamePosition: shouldCreateNewEmptyTab, clearTabHistory: true)
     }
 
 }

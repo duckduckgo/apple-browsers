@@ -24,6 +24,8 @@ import WKAbstractions
 
 class MockWebsiteDataManager: WebsiteDataManaging {
     private(set) var clearCallCount = 0
+    private(set) var clearWithDomainsCallCount = 0
+    private(set) var clearCalledWithDomains: [String]?
 
     func removeCookies(forDomains domains: [String], fromDataStore: any DDGWebsiteDataStore) async {}
     
@@ -31,6 +33,11 @@ class MockWebsiteDataManager: WebsiteDataManaging {
     
     func clear(dataStore: any DDGWebsiteDataStore) async {
         clearCallCount += 1
+    }
+    
+    func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async {
+        clearWithDomainsCallCount += 1
+        clearCalledWithDomains = domains
     }
 
 }

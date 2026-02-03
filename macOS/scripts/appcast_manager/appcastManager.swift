@@ -794,8 +794,8 @@ func writeAppcastContent(_ content: String, to filePath: URL) {
 // MARK: - Generating of New Appcast
 
 func runGenerateAppcast(with versionNumber: String, channel: String? = nil, rolloutInterval: String? = nil, keyFile: String? = nil) {
-    let maximumVersions = "10"
-    let maximumDeltas = "10"
+    let maximumVersions = "2"
+    let maximumDeltas = "2"
 
     var commandComponents: [String] = []
     commandComponents.append("generate_appcast")

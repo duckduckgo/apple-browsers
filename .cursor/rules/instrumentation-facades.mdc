@@ -27,181 +27,155 @@ We can improve this using the facade pattern, abstracting our instrumentation be
 2. **Instrumentation logic is centralized** - Easy to audit and modify
 3. **Easy to inject mocks for unit testing** - Test feature behavior without pixel dependencies
 
+## File Organization
+
+Instrumentation facades should be placed in the **same module as the feature** they instrument:
+
+| Component | Location |
+|-----------|----------|
+| Protocol | Feature module (e.g., `Subscription/SubscriptionPurchaseInstrumentation.swift`) |
+| Default Implementation | Same module as protocol |
+| Mock for Testing | Test target or same module |
+
+For features that span iOS and macOS, place the protocol and implementation in a shared package (e.g., `BrowserServicesKit`).
+
 ## Pattern Structure
 
 ### Step 1: Define the Protocol
 
-Create a protocol with methods for each instrumentation hook your feature needs:
+Create a protocol with methods for each instrumentation hook your feature needs. Name methods after domain events, not pixels:
 
 ```swift
 public protocol SubscriptionPurchaseInstrumentation: AnyObject {
-    // Purchase flow hooks
-    func purchaseAttemptStarted(selectionID: String, freeTrialEligible: Bool, purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform, origin: String?)
+    func purchaseAttemptStarted(selectionID: String, freeTrialEligible: Bool, ...)
     func purchaseCancelled()
-    func purchaseFailed(step: SubscriptionPurchaseWideEventData.FailingStep, error: Error)
-    func accountCreated(duration: WideEvent.MeasuredInterval?)
-    func activationStarted()
+    func purchaseFailed(step: FailingStep, error: Error)
     func activationSucceeded()
-    func stripePurchaseSucceeded()
-    func activationFailedWithMissingEntitlements()
-    func activeSubscriptionAlreadyPresent()
-
-    // UI interaction hooks
-    func monthlyPriceClicked()
-    func yearlyPriceClicked()
-    func addEmailSucceeded()
-    func welcomeFaqClicked()
+    // ... other domain events
 }
 ```
 
 ### Step 2: Implement the Default Class
 
-Create an implementation that translates domain events to pixels and wide events:
+Create an implementation that translates domain events to pixels and wide events. The implementation:
+- Fires appropriate pixels (standard, daily, or unique)
+- Manages wide event lifecycle (start, update, complete)
+- Tracks internal state like the current wide event data
 
 ```swift
 public final class DefaultSubscriptionPurchaseInstrumentation: SubscriptionPurchaseInstrumentation {
     private let wideEvent: WideEventManaging
     private var purchaseWideEventData: SubscriptionPurchaseWideEventData?
 
-    public init(wideEvent: WideEventManaging) {
-        self.wideEvent = wideEvent
-    }
-
-    public func purchaseAttemptStarted(selectionID: String, freeTrialEligible: Bool, purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform, origin: String?) {
-        DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseAttempt, pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-
-        let data = SubscriptionPurchaseWideEventData(
-            purchasePlatform: purchasePlatform,
-            subscriptionIdentifier: selectionID,
-            freeTrialEligible: freeTrialEligible,
-            contextData: WideEventContextData(name: origin)
-        )
-
-        purchaseWideEventData = data
-        wideEvent.startFlow(data)
-    }
-
-    public func purchaseCancelled() {
-        guard let data = purchaseWideEventData else { return }
-        wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
-        purchaseWideEventData = nil
-    }
-
-    public func purchaseFailed(step: SubscriptionPurchaseWideEventData.FailingStep, error: Error) {
-        guard let data = purchaseWideEventData else { return }
-        data.markAsFailed(at: step, error: error)
-        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-        purchaseWideEventData = nil
+    public func purchaseAttemptStarted(...) {
+        DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseAttempt, ...)
+        purchaseWideEventData = SubscriptionPurchaseWideEventData(...)
+        wideEvent.startFlow(purchaseWideEventData!)
     }
 
     public func activationSucceeded() {
-        DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseSuccess,
-                                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         UniquePixel.fire(pixel: .subscriptionActivated)
-
-        guard let data = purchaseWideEventData else { return }
-        data.activateAccountDuration?.complete()
-        wideEvent.updateFlow(data)
-        wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
-        purchaseWideEventData = nil
+        wideEvent.completeFlow(purchaseWideEventData!, status: .success, ...)
     }
-
-    public func monthlyPriceClicked() {
-        Pixel.fire(pixel: .subscriptionOfferMonthlyPriceClick)
-    }
-
-    // ... other methods
 }
 ```
 
 ### Step 3: Use in Feature Code
 
-Inject the instrumentation protocol and call it at appropriate points:
+Inject the instrumentation protocol and call it at appropriate points in your feature logic:
 
 ```swift
 final class SubscriptionPurchaseFeature {
     private let instrumentation: SubscriptionPurchaseInstrumentation
 
-    init(instrumentation: SubscriptionPurchaseInstrumentation) {
-        self.instrumentation = instrumentation
-    }
+    func subscriptionSelected(...) async {
+        instrumentation.purchaseAttemptStarted(...)
 
-    func subscriptionSelected(id: String, freeTrialEligible: Bool, purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform, origin: String?) async {
-        instrumentation.purchaseAttemptStarted(selectionID: id,
-                                                freeTrialEligible: freeTrialEligible,
-                                                purchasePlatform: purchasePlatform,
-                                                origin: origin)
-
-        switch await performPurchase(id: id) {
-        case .success(let result):
-            instrumentation.accountCreated(duration: result.accountCreationDuration)
-            instrumentation.activationStarted()
-
-            switch await activateAccount() {
-            case .success:
-                instrumentation.activationSucceeded()
-            case .failure(let error):
-                instrumentation.purchaseFailed(step: .accountActivation, error: error)
-            }
-
+        switch await performPurchase() {
+        case .success:
+            instrumentation.activationSucceeded()
         case .failure(let error):
-            if error == .cancelledByUser {
-                instrumentation.purchaseCancelled()
-            } else {
-                instrumentation.purchaseFailed(step: .accountPayment, error: error)
-            }
+            instrumentation.purchaseFailed(step: .accountPayment, error: error)
         }
     }
 }
 ```
 
-## Testing with Mocks
+## Dependency Injection
 
-Create a simple mock for unit tests:
+### Constructor Injection (Preferred)
+
+Pass the instrumentation as an init parameter:
 
 ```swift
-final class MockSubscriptionPurchaseInstrumentation: SubscriptionPurchaseInstrumentation {
-    private(set) var purchaseAttemptStartedCalls: [(selectionID: String, freeTrialEligible: Bool, purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform, origin: String?)] = []
-    private(set) var purchaseCancelledCallCount = 0
-    private(set) var purchaseFailedCalls: [(step: SubscriptionPurchaseWideEventData.FailingStep, error: Error)] = []
-    private(set) var activationSucceededCallCount = 0
+final class SubscriptionPurchaseFeature {
+    private let instrumentation: SubscriptionPurchaseInstrumentation
 
-    func purchaseAttemptStarted(selectionID: String, freeTrialEligible: Bool, purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform, origin: String?) {
-        purchaseAttemptStartedCalls.append((selectionID, freeTrialEligible, purchasePlatform, origin))
+    init(instrumentation: SubscriptionPurchaseInstrumentation = DefaultSubscriptionPurchaseInstrumentation()) {
+        self.instrumentation = instrumentation
     }
-
-    func purchaseCancelled() {
-        purchaseCancelledCallCount += 1
-    }
-
-    func purchaseFailed(step: SubscriptionPurchaseWideEventData.FailingStep, error: Error) {
-        purchaseFailedCalls.append((step, error))
-    }
-
-    func activationSucceeded() {
-        activationSucceededCallCount += 1
-    }
-
-    // ... other methods
 }
 ```
 
-Test the feature behavior:
+### Property Injection
+
+For cases where the instrumentation is set after initialization (e.g., UserScripts):
+
+```swift
+final class DebugUserScript {
+    weak var instrumentation: TabInstrumentationProtocol?
+}
+
+// In the parent object:
+private let instrumentation = TabInstrumentation()
+
+func configureUserScripts() {
+    userScripts.debugScript.instrumentation = instrumentation
+}
+```
+
+## Testing with Mocks
+
+Create a mock that records method calls for verification:
+
+```swift
+final class MockSubscriptionPurchaseInstrumentation: SubscriptionPurchaseInstrumentation {
+    private(set) var purchaseAttemptStartedCalls: [...] = []
+    private(set) var activationSucceededCallCount = 0
+
+    func purchaseAttemptStarted(...) {
+        purchaseAttemptStartedCalls.append(...)
+    }
+}
+```
+
+Then verify behavior in tests:
 
 ```swift
 func testPurchaseSuccess() async {
     let mock = MockSubscriptionPurchaseInstrumentation()
     let feature = SubscriptionPurchaseFeature(instrumentation: mock)
 
-    await feature.subscriptionSelected(id: "yearly", freeTrialEligible: true, purchasePlatform: .appStore, origin: "settings")
+    await feature.subscriptionSelected(...)
 
-    XCTAssertEqual(mock.purchaseAttemptStartedCalls.count, 1)
-    XCTAssertEqual(mock.purchaseAttemptStartedCalls[0].selectionID, "yearly")
-    XCTAssertEqual(mock.purchaseAttemptStartedCalls[0].purchasePlatform, .appStore)
     XCTAssertEqual(mock.activationSucceededCallCount, 1)
-    XCTAssertEqual(mock.purchaseCancelledCallCount, 0)
 }
 ```
+
+## Alternative: EventMapping for Shared Packages
+
+For features in shared Swift packages that can't directly import `Pixel` or `PixelKit`, use `EventMapping` instead of a full instrumentation facade. See `SharedPackages/BrowserServicesKit/Sources/Common/EventMapping.swift` for the base class.
+
+The pattern:
+1. **Define events in the shared package** as an enum (e.g., `MyFeatureEvent`)
+2. **Create an EventMapper in the app target** that switches on events and fires the appropriate pixels
+3. **Inject the EventMapping** into your shared package class
+
+See `MaliciousSiteProtectionEventMapper` in `iOS/DuckDuckGo/MaliciousSiteProtection/Events/` for a production example.
+
+**When to use EventMapping vs Instrumentation Facades:**
+- Use **EventMapping** when: Feature is in a shared package, events are simple fire-and-forget
+- Use **Instrumentation Facades** when: Feature needs wide event lifecycle management, complex state tracking, or many related instrumentation calls
 
 ## When to Use Instrumentation Facades
 

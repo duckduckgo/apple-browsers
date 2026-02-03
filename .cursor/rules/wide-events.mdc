@@ -97,9 +97,40 @@ The main interface for managing wide event flows is found in the `WideEvent.swif
 
 ### WideEventData Protocol
 
-Defines the structure for wide event data objects and need to be conformed to by any wide event data instance. There should be one WideEventData instance per wide event feature.
+Defines the structure for wide event data objects. Each wide event feature should have its own class conforming to this protocol.
 
-See `SharedPackages/BrowserServicesKit/Sources/PixelKit/WideEvent/WideEventData.swift` for the protocol implementation.
+```swift
+public protocol WideEventData: Codable, WideEventParameterProviding {
+    /// Metadata describing the wide event (pixel name, feature name, platform types)
+    static var metadata: WideEventMetadata { get }
+
+    /// Data about the context that triggered the event (e.g., "onboarding", "settings")
+    var contextData: WideEventContextData { get set }
+
+    /// Data sent with all wide events (sample rate, event type)
+    var globalData: WideEventGlobalData { get set }
+
+    /// Data about the current app install (version, form factor)
+    var appData: WideEventAppData { get set }
+
+    /// Optional error data - captures error chain when flow fails
+    var errorData: WideEventErrorData? { get set }
+
+    /// Returns completion decision for this event based on trigger (e.g., app launch)
+    func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision
+}
+```
+
+The `WideEventMetadata` defines how the event appears in telemetry. The initializer takes platform-specific type identifiers:
+
+```swift
+public init(pixelName: String,        // e.g., "subscription_purchase"
+            featureName: String,      // e.g., "subscription-purchase"
+            mobileMetaType: String,   // e.g., "ios-subscription-purchase"
+            desktopMetaType: String)  // e.g., "macos-subscription-purchase"
+```
+
+See `SharedPackages/BrowserServicesKit/Sources/PixelKit/WideEvent/WideEventData.swift` for the protocol and metadata implementation.
 
 ### WideEventStatus
 
@@ -170,9 +201,62 @@ public struct WideEventErrorData: Codable {
 }
 ```
 
+## Creating a New WideEventData Type
+
+To create a new wide event, follow these steps. See `SubscriptionPurchaseWideEventData` in `SharedPackages/BrowserServicesKit/Sources/Subscription/WideEvents/` for a complete production example.
+
+### Step 1: Define the Class
+
+Create a class conforming to `WideEventData`:
+
+1. Add static `metadata` with pixel name, feature name, and platform types
+2. Add the four required protocol properties (`globalData`, `contextData`, `appData`, `errorData`)
+3. Add your feature-specific properties (durations, states, etc.)
+4. Define `CodingKeys` to exclude any non-Codable properties like callbacks
+
+### Step 2: Define Failing Steps
+
+Define an enum for each step in your flow where failures can occur:
+
+```swift
+public enum FailingStep: String, Codable, CaseIterable {
+    case initialization = "INITIALIZATION"
+    case dataFetch = "DATA_FETCH"
+    case processing = "PROCESSING"
+}
+```
+
+Use UPPERCASE snake_case for the raw values.
+
+### Step 3: Add Helper Methods
+
+Add a `markAsFailed` method to capture the failing step and error:
+
+```swift
+public func markAsFailed(at step: FailingStep, error: Error) {
+    self.failingStep = step
+    self.errorData = WideEventErrorData(error: error)
+}
+```
+
+Implement `pixelParameters()` from the `WideEventParameterProviding` protocol to define which feature-specific properties are sent. All custom properties should use the `feature.data.ext.` prefix:
+
+```swift
+public func pixelParameters() -> [String: String] {
+    return Dictionary(compacting: [
+        ("feature.data.ext.operation_type", operationType.rawValue),
+        ("feature.data.ext.failing_step", failingStep?.rawValue),
+    ])
+}
+```
+
+### Step 4: Implement Completion Decision (Optional)
+
+Override `completionDecision(for:)` if you need custom timeout or recovery logic when the app launches with a pending wide event.
+
 ## Example: Subscription Purchase Wide Event
 
-See `SubscriptionPurchaseWideEventData` for an example wide event.
+See `SubscriptionPurchaseWideEventData` in `SharedPackages/BrowserServicesKit/Sources/Subscription/WideEvents/` for a complete production example.
 
 ## Wide Event Lifecycle
 

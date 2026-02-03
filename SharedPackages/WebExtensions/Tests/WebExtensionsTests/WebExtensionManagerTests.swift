@@ -30,6 +30,7 @@ final class WebExtensionManagerTests: XCTestCase {
     var lifecycleDelegateMock: WebExtensionLifecycleDelegateMock!
     var configurationMock: WebExtensionConfigurationProvidingMock!
 
+    @MainActor
     override func setUp() {
         super.setUp()
 
@@ -300,19 +301,19 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testThatHasInstalledWebExtensions_ReturnsTrueWhenExtensionsExist() {
+    func testThatHasInstalledExtensions_ReturnsTrueWhenExtensionsExist() {
         let manager = makeManager()
         installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: "extension.zip")]
 
-        XCTAssertTrue(manager.hasInstalledWebExtensions)
+        XCTAssertTrue(manager.hasInstalledExtensions)
     }
 
     @MainActor
-    func testThatHasInstalledWebExtensions_ReturnsFalseWhenNoExtensionsExist() {
+    func testThatHasInstalledExtensions_ReturnsFalseWhenNoExtensionsExist() {
         let manager = makeManager()
         installedExtensionStoringMock.installedExtensions = []
 
-        XCTAssertFalse(manager.hasInstalledWebExtensions)
+        XCTAssertFalse(manager.hasInstalledExtensions)
     }
 
 }

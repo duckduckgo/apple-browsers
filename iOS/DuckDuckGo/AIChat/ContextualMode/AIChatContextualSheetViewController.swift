@@ -492,7 +492,6 @@ extension AIChatContextualSheetViewController: AIChatContextualWebViewController
 
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?) {
         Logger.aiChat.debug("[AIChatContextual] Received contextual chat URL update: \(String(describing: url?.absoluteString))")
-        // Coordinator handles state update via delegate
         delegate?.aiChatContextualSheetViewController(self, didUpdateContextualChatURL: url)
     }
 
@@ -722,6 +721,7 @@ private extension AIChatContextualSheetViewController {
 
     func showOnboardingIfNeeded() {
         guard !aiChatSettings.hasSeenContextualOnboarding else { return }
+        guard onboardingHostingController == nil else { return }
 
         isModalInPresentation = true
         Pixel.fire(pixel: .aiChatContextualOnboardingDisplayed)

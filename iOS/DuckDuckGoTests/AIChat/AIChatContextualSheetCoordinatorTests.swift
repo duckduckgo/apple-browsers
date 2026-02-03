@@ -32,6 +32,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private final class MockPageContextHandler: AIChatPageContextHandling {
         var triggerContextCollectionCallCount = 0
         var triggerContextCollectionReturnValue = true
+        var clearCallCount = 0
 
         private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
         var contextPublisher: AnyPublisher<AIChatPageContext?, Never> {
@@ -41,6 +42,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func triggerContextCollection() -> Bool {
             triggerContextCollectionCallCount += 1
             return triggerContextCollectionReturnValue
+        }
+
+        func clear() {
+            clearCallCount += 1
+            contextSubject.send(nil)
         }
     }
 

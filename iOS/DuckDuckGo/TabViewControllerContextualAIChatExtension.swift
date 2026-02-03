@@ -89,8 +89,7 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     }
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
-        guard let url else { return }
-        tabModel.contextualChatURL = url.absoluteString
+        tabModel.contextualChatURL = url?.absoluteString
         delegate?.tabLoadingStateDidChange(tab: self)
     }
 

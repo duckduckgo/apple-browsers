@@ -56,6 +56,9 @@ protocol AIChatPageContextHandling: AnyObject {
     /// Callers should subscribe to `contextPublisher` for results.
     /// Note: First call also starts observing auto-updates from the page.
     @discardableResult func triggerContextCollection() -> Bool
+
+    /// Clears stored context and cancels active subscriptions.
+    func clear()
 }
 
 // MARK: - Implementation
@@ -69,8 +72,6 @@ final class AIChatPageContextHandler: @MainActor AIChatPageContextHandling {
     private let userScriptProvider: UserScriptProvider
     private let faviconProvider: FaviconProvider
 
-    private var storedContext: AIChatPageContextData?
-    private var storedFavicon: UIImage?
     private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
     private var updatesCancellable: AnyCancellable?
 
@@ -104,6 +105,17 @@ final class AIChatPageContextHandler: @MainActor AIChatPageContextHandling {
         script.collect()
         return true
     }
+
+    func clear() {
+        Logger.aiChat.debug("[PageContext] Clearing stored context and cancelling subscriptions")
+        updatesCancellable?.cancel()
+        updatesCancellable = nil
+        contextSubject.send(nil)
+
+        if let script = userScriptProvider() {
+            script.webView = nil
+        }
+    }
 }
 
 // MARK: - Private Methods
@@ -117,14 +129,16 @@ private extension AIChatPageContextHandler {
         updatesCancellable = script.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
-                guard let self, let pageContext else { return }
+                guard let self else { return }
+
+                guard let pageContext else {
+                    Logger.aiChat.debug("[PageContext] Context collection returned nil - publishing nil to subscribers")
+                    self.contextSubject.send(nil)
+                    return
+                }
+
                 self.publishContextUpdate(pageContext)
             }
-    }
-
-    func stopObservingUpdates() {
-        updatesCancellable?.cancel()
-        updatesCancellable = nil
     }
 
     func publishContextUpdate(_ context: AIChatPageContextData) {

@@ -140,10 +140,9 @@ final class AIChatContextualSheetCoordinator {
     
     func clearActiveChat() {
         sheetViewController = nil
-        webViewController = nil
-        viewModel = nil
         stopObservingContextUpdates()
         pageContextHandler.clear()
+        sessionState.resetToNoChat()
         pixelHandler.reset()
     }
 
@@ -159,7 +158,10 @@ final class AIChatContextualSheetCoordinator {
 
         guard sessionState.shouldAutoCollectContext else { return }
 
-        pageContextHandler.triggerContextCollection()
+        let didTrigger = pageContextHandler.triggerContextCollection()
+        if !didTrigger {
+            sessionState.clearProcessingNavigationFlag()
+        }
     }
 
     /// Returns true if the contextual sheet has been shown.
@@ -251,16 +253,7 @@ private extension AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler
         )
 
-        webVC.onContextualChatURLChange = { [weak self] url in
-            self?.handleWebViewChatURLChange(url)
-        }
-
         return webVC
-    }
-
-    /// Handles chat URL changes for persistence.
-    func handleWebViewChatURLChange(_ url: URL?) {
-        delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: url)
     }
     
     /// Starts the session timer after the sheet is dismissed.
@@ -327,6 +320,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
             self?.startSessionTimer()
         }
         stopObservingContextUpdates()
+        sessionState.cancelManualAttach()
     }
 
 
@@ -358,7 +352,6 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?) {
         sessionState.updateContextualChatURL(url)
-        guard let url else { return }
         delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: url)
     }
 

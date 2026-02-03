@@ -77,6 +77,7 @@ enum SheetEffect {
 // MARK: - Session State
 
 /// Single source of truth for all contextual chat session state.
+@MainActor
 final class AIChatContextualChatSessionState {
 
     // MARK: - Dependencies
@@ -203,14 +204,14 @@ final class AIChatContextualChatSessionState {
 
     /// Updates the contextual chat URL (for persistence/expansion)
     func updateContextualChatURL(_ url: URL?) {
-        guard let url else {
-            Logger.aiChat.debug("[SessionState] Ignored nil contextual chat URL update")
-            return
-        }
-
         contextualChatURL = url
         rebuildViewState()
-        Logger.aiChat.debug("[SessionState] Updated contextual chat URL: \(url.absoluteString)")
+
+        if let url {
+            Logger.aiChat.debug("[SessionState] Updated contextual chat URL: \(url.absoluteString)")
+        } else {
+            Logger.aiChat.debug("[SessionState] Cleared contextual chat URL")
+        }
     }
 
     func restoreChat(with url: URL) {
@@ -261,6 +262,12 @@ final class AIChatContextualChatSessionState {
         isProcessingNavigation = true
     }
 
+    /// Clear the navigation processing flag (called when collection can't start)
+    func clearProcessingNavigationFlag() {
+        isProcessingNavigation = false
+        Logger.aiChat.debug("[SessionState] Cleared processing navigation flag")
+    }
+
     /// Refresh cached auto-attach setting and clear user downgrade if toggled on.
     func refreshAutoAttachSetting() {
         let isEnabled = shouldAutoCollectContext
@@ -274,7 +281,11 @@ final class AIChatContextualChatSessionState {
     /// Updates the latest page context and determines attach behavior based on internal state.
     func updateContext(_ context: AIChatPageContext?) {
         guard let context = context else {
+            Logger.aiChat.debug("[SessionState] Context collection returned nil - clearing context and downgrading to placeholder")
+            latestContext = nil
+            chipState = .placeholder
             cleanupFlags()
+            rebuildViewState()
             return
         }
 
@@ -389,10 +400,6 @@ private extension AIChatContextualChatSessionState {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[SessionState] Cleared user downgrade flag on navigation")
         }
-    }
-
-    func urlContainsChatID(_ url: URL) -> Bool {
-        url.duckAIChatID != nil
     }
 
     func rebuildViewState() {

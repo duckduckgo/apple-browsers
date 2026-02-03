@@ -3327,6 +3327,10 @@ extension MainViewController: TabDelegate {
         _ = findInPageView.resignFirstResponder()
         newTab()
     }
+    
+    func newTab(reuseExisting: Bool) {
+        newTab(reuseExisting: reuseExisting, allowingKeyboard: false)
+    }
 
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,

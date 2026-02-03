@@ -81,4 +81,14 @@ class MockTabManager: TabManaging {
         controllerForTabCalledWith = tab
         return controllerForTabReturnValue
     }
+
+    private(set) var closeTabAndNavigateToHomepageCalled = false
+    private(set) var closeTabAndNavigateToHomepageCalledWith: Tab?
+    private(set) var closeTabAndNavigateToHomepageClearTabHistory: Bool?
+
+    func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool) {
+        closeTabAndNavigateToHomepageCalled = true
+        closeTabAndNavigateToHomepageCalledWith = tab
+        closeTabAndNavigateToHomepageClearTabHistory = clearTabHistory
+    }
 }

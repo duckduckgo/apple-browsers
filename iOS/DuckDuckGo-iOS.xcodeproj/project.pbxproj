@@ -67,6 +67,7 @@
 		1E4FAA6427D8DFB900ADC5B3 /* OngoingDownloadRowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E4FAA6327D8DFB900ADC5B3 /* OngoingDownloadRowViewModel.swift */; };
 		1E4FAA6627D8DFC800ADC5B3 /* CompleteDownloadRowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E4FAA6527D8DFC800ADC5B3 /* CompleteDownloadRowViewModel.swift */; };
 		1E6A4D692984208800A371D3 /* LocaleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E6A4D682984208800A371D3 /* LocaleExtension.swift */; };
+		1E6DF8352F2B7AE800493342 /* WebExtensionsDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E6DF8342F2B7AE800493342 /* WebExtensionsDebugView.swift */; };
 		1E7851452D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7851442D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift */; };
 		1E7A71172934EB6400B7EA19 /* OmniBarNotificationAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7A71162934EB6400B7EA19 /* OmniBarNotificationAnimator.swift */; };
 		1E7A71192934EC6100B7EA19 /* OmniBarNotificationContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7A71182934EC6100B7EA19 /* OmniBarNotificationContainerView.swift */; };
@@ -88,6 +89,13 @@
 		1E9529A12C4E748B006E80D4 /* UINavigationControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9529A02C4E748B006E80D4 /* UINavigationControllerExtension.swift */; };
 		1EA51376286596A000493C6A /* PrivacyIconLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA51375286596A000493C6A /* PrivacyIconLogic.swift */; };
 		1EC458462948932500CB2B13 /* UIHostingControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC458452948932500CB2B13 /* UIHostingControllerExtension.swift */; };
+		1EC8B1832F29139400F18679 /* WebExtensionManager+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC8B17E2F29139400F18679 /* WebExtensionManager+iOS.swift */; };
+		1EC8B1842F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC8B17D2F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift */; };
+		1EC8B1852F29139400F18679 /* TabViewController+WKWebExtensionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC8B1802F29139400F18679 /* TabViewController+WKWebExtensionTab.swift */; };
+		1EC8B1862F29139400F18679 /* WebExtensionConfigurationProvider+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC8B17C2F29139400F18679 /* WebExtensionConfigurationProvider+iOS.swift */; };
+		1EC8B1872F29139400F18679 /* MainViewController+WKWebExtensionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC8B1812F29139400F18679 /* MainViewController+WKWebExtensionWindow.swift */; };
+		1EC8B1882F29139400F18679 /* WebExtensionWindowTabProvider+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC8B17F2F29139400F18679 /* WebExtensionWindowTabProvider+iOS.swift */; };
+		1EC8B18A2F29145C00F18679 /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1EC8B1892F29145C00F18679 /* WebExtensions */; };
 		1EDE39D22705D4A200C99C72 /* FileSizeDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EDE39D12705D4A100C99C72 /* FileSizeDebugViewController.swift */; };
 		1EE411F728587AC50003FE64 /* PrivacyIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1EE411F628587AC50003FE64 /* PrivacyIcon.xcassets */; };
 		1EE52ABB28FB1D6300B750C1 /* UIImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC51CD828D8C0DF00E9D05A /* UIImageExtension.swift */; };
@@ -2353,6 +2361,7 @@
 		1E4FAA6327D8DFB900ADC5B3 /* OngoingDownloadRowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OngoingDownloadRowViewModel.swift; sourceTree = "<group>"; };
 		1E4FAA6527D8DFC800ADC5B3 /* CompleteDownloadRowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteDownloadRowViewModel.swift; sourceTree = "<group>"; };
 		1E6A4D682984208800A371D3 /* LocaleExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocaleExtension.swift; sourceTree = "<group>"; };
+		1E6DF8342F2B7AE800493342 /* WebExtensionsDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionsDebugView.swift; sourceTree = "<group>"; };
 		1E7851442D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncHeadlessWebViewSettingsTests.swift; sourceTree = "<group>"; };
 		1E7A71162934EB6400B7EA19 /* OmniBarNotificationAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarNotificationAnimator.swift; sourceTree = "<group>"; };
 		1E7A71182934EC6100B7EA19 /* OmniBarNotificationContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarNotificationContainerView.swift; sourceTree = "<group>"; };
@@ -2375,6 +2384,13 @@
 		1EA51375286596A000493C6A /* PrivacyIconLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyIconLogic.swift; sourceTree = "<group>"; };
 		1EC458452948932500CB2B13 /* UIHostingControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIHostingControllerExtension.swift; sourceTree = "<group>"; };
 		1EC51CD828D8C0DF00E9D05A /* UIImageExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIImageExtension.swift; sourceTree = "<group>"; };
+		1EC8B17C2F29139400F18679 /* WebExtensionConfigurationProvider+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionConfigurationProvider+iOS.swift"; sourceTree = "<group>"; };
+		1EC8B17D2F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionEventsCoordinator+iOS.swift"; sourceTree = "<group>"; };
+		1EC8B17E2F29139400F18679 /* WebExtensionManager+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionManager+iOS.swift"; sourceTree = "<group>"; };
+		1EC8B17F2F29139400F18679 /* WebExtensionWindowTabProvider+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionWindowTabProvider+iOS.swift"; sourceTree = "<group>"; };
+		1EC8B1802F29139400F18679 /* TabViewController+WKWebExtensionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabViewController+WKWebExtensionTab.swift"; sourceTree = "<group>"; };
+		1EC8B1812F29139400F18679 /* MainViewController+WKWebExtensionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+WKWebExtensionWindow.swift"; sourceTree = "<group>"; };
+		1EC8B18B2F29147000F18679 /* WebExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = WebExtensions; path = ../SharedPackages/WebExtensions; sourceTree = SOURCE_ROOT; };
 		1EDE39D12705D4A100C99C72 /* FileSizeDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSizeDebugViewController.swift; sourceTree = "<group>"; };
 		1EE411F628587AC50003FE64 /* PrivacyIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = PrivacyIcon.xcassets; sourceTree = "<group>"; };
 		1EE7C298294227EC0026C8CB /* AutoconsentSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentSettingsViewController.swift; sourceTree = "<group>"; };
@@ -4676,6 +4692,7 @@
 				4BC95E7B2D7416AD002FAB32 /* Navigation in Frameworks */,
 				4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */,
 				31E69A63280F4CB600478327 /* DuckUI in Frameworks */,
+				1EC8B18A2F29145C00F18679 /* WebExtensions in Frameworks */,
 				9F454D242E05489200B8CC5A /* SetDefaultBrowserCore in Frameworks */,
 				9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */,
 				9F254AF12CF8D5250063B308 /* MaliciousSiteProtection in Frameworks */,
@@ -5111,6 +5128,19 @@
 			path = Autoconsent;
 			sourceTree = "<group>";
 		};
+		1EC8B1822F29139400F18679 /* WebExtensions */ = {
+			isa = PBXGroup;
+			children = (
+				1EC8B17C2F29139400F18679 /* WebExtensionConfigurationProvider+iOS.swift */,
+				1EC8B17D2F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift */,
+				1EC8B17E2F29139400F18679 /* WebExtensionManager+iOS.swift */,
+				1EC8B17F2F29139400F18679 /* WebExtensionWindowTabProvider+iOS.swift */,
+				1EC8B1802F29139400F18679 /* TabViewController+WKWebExtensionTab.swift */,
+				1EC8B1812F29139400F18679 /* MainViewController+WKWebExtensionWindow.swift */,
+			);
+			path = WebExtensions;
+			sourceTree = "<group>";
+		};
 		1EE411F42857C5130003FE64 /* PrivacyIconAndTrackers */ = {
 			isa = PBXGroup;
 			children = (
@@ -5512,6 +5542,7 @@
 		31E69A60280F4BAD00478327 /* LocalPackages */ = {
 			isa = PBXGroup;
 			children = (
+				1EC8B18B2F29147000F18679 /* WebExtensions */,
 				BBD9C3942E9D71F50060A6E8 /* SERPSettings */,
 				4B7D0D542E86A4E60081E568 /* AttributedMetric */,
 				9F9845142E8D35C4004D5C9B /* SystemFrameworksExtensions */,
@@ -6566,6 +6597,7 @@
 				84E341E31E2FC0E400BDBA6F /* UserInterfaceResources */,
 				3151F0E827357F8F00226F58 /* VoiceSearch */,
 				4B6484F427FD1E390050A7A1 /* Waitlist */,
+				1EC8B1822F29139400F18679 /* WebExtensions */,
 				9FE7E7A22EAAF7B700AEAD83 /* WhatsNew */,
 				7B059F0E2D0387E900371ED0 /* Widgets */,
 			);
@@ -6843,6 +6875,7 @@
 				D6F93E3B2B4FFA97004C268D /* SubscriptionDebugViewController.swift */,
 				983D71B02A286E810072E26D /* SyncDebugViewController.swift */,
 				6F72353C2D3EBCB000710C07 /* WebViewStateRestorationDebugView.swift */,
+				1E6DF8342F2B7AE800493342 /* WebExtensionsDebugView.swift */,
 			);
 			name = Debug;
 			sourceTree = "<group>";
@@ -10256,6 +10289,7 @@
 				BBD9C3962E9D73610060A6E8 /* SERPSettings */,
 				9F909E382EEA6BD00057F518 /* UIKitExtensions */,
 				374E76072EF56C1F00F8AADE /* PrivacyConfig */,
+				1EC8B1892F29145C00F18679 /* WebExtensions */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -11460,6 +11494,7 @@
 				C1935A0E2C88D11D001AD72D /* AutofillSurveyView.swift in Sources */,
 				1DEAADF02BA46E0700E25A97 /* PrivateSearchView.swift in Sources */,
 				6526CA6D2D70CABD0048819E /* DuckPlayerMiniPillView.swift in Sources */,
+				1E6DF8352F2B7AE800493342 /* WebExtensionsDebugView.swift in Sources */,
 				85058366219AE9EA00ED4EDB /* HomePageConfiguration.swift in Sources */,
 				1E9529A12C4E748B006E80D4 /* UINavigationControllerExtension.swift in Sources */,
 				6F2331662DD4D046004D102D /* TabSwitcherStaticButton.swift in Sources */,
@@ -11853,6 +11888,12 @@
 				9FE7E7A12EAAF4BE00AEAD83 /* WhatsNewModalPromptProvider.swift in Sources */,
 				85010502292FB1000033978F /* FireproofFaviconUpdater.swift in Sources */,
 				981CA7EA2617797500E119D5 /* MainViewController+AddFavoriteFlow.swift in Sources */,
+				1EC8B1832F29139400F18679 /* WebExtensionManager+iOS.swift in Sources */,
+				1EC8B1842F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift in Sources */,
+				1EC8B1852F29139400F18679 /* TabViewController+WKWebExtensionTab.swift in Sources */,
+				1EC8B1862F29139400F18679 /* WebExtensionConfigurationProvider+iOS.swift in Sources */,
+				1EC8B1872F29139400F18679 /* MainViewController+WKWebExtensionWindow.swift in Sources */,
+				1EC8B1882F29139400F18679 /* WebExtensionWindowTabProvider+iOS.swift in Sources */,
 				C1E9B8F02F0E85C700E845AA /* TabViewControllerContextualAIChatExtension.swift in Sources */,
 				CBF259BD2D4E56E900AC63E4 /* ReportingService.swift in Sources */,
 				C13830FE2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift in Sources */,
@@ -16475,6 +16516,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F486D2FD25069744002D07D7 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
 			productName = OHHTTPStubsSwift;
+		};
+		1EC8B1892F29145C00F18679 /* WebExtensions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WebExtensions;
 		};
 		315C77812CFA41A400699683 /* AIChat */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -243,6 +243,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let displaysTabsProgressIndicator: Bool
 
     let wideEvent: WideEventManaging
+    let freeTrialConversionService: FreeTrialConversionWideEventService
     let subscriptionManager: any SubscriptionManager
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
@@ -357,6 +358,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    private var webExtensionFeatureFlagHandler: AnyObject?
 
     private var didFinishLaunching = false
 
@@ -533,6 +535,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.featureFlagger = featureFlagger
 
         wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
+        freeTrialConversionService = DefaultFreeTrialConversionWideEventService(
+            wideEvent: wideEvent,
+            isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
+        )
+        freeTrialConversionService.startObservingSubscriptionChanges()
         displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
@@ -1554,6 +1561,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
             let webExtensionManager = WebExtensionManagerFactory.makeManager()
             self.webExtensionManager = webExtensionManager
+
+            let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+                .flagDidChangePublisher
+                .filter { $0.0 == .webExtensions }
+                .map { $0.1 }
+                .eraseToAnyPublisher()
+
+            webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+                webExtensionManager: webExtensionManager,
+                featureFlagPublisher: publisher) { [weak self] in
+                    self?.webExtensionManager = nil
+                }
 
             Task {
                 await webExtensionManager.loadInstalledExtensions()

@@ -29,6 +29,7 @@ import os.log
 import AIChat
 import Combine
 import PrivacyConfig
+import WebExtensions
 
 protocol TabManaging {
     var count: Int { get }
@@ -41,6 +42,8 @@ protocol TabManaging {
     @MainActor func closeTab(_ tab: Tab,
                              shouldCreateEmptyTabAtSamePosition: Bool,
                              clearTabHistory: Bool)
+    func controller(for tab: Tab) -> TabViewController?
+
 }
 
 class TabManager: TabManaging {
@@ -78,6 +81,7 @@ class TabManager: TabManaging {
     private let sharedSecureVault: (any AutofillSecureVault)?
     private let privacyStats: PrivacyStatsProviding
     private let voiceSearchHelper: VoiceSearchHelperProtocol
+    private var webExtensionManager: WebExtensionManaging?
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -150,6 +154,10 @@ class TabManager: TabManaging {
         registerForNotifications()
     }
 
+    func setWebExtensionManager(_ manager: WebExtensionManaging?) {
+        self.webExtensionManager = manager
+    }
+
     @MainActor
     private func buildController(forTab tab: Tab, inheritedAttribution: AdClickAttributionLogic.State?, interactionState: Data?) -> TabViewController {
         let url = tab.link?.url
@@ -161,7 +169,11 @@ class TabManager: TabManaging {
                                  url: URL?,
                                  inheritedAttribution: AdClickAttributionLogic.State?,
                                  interactionState: Data?) -> TabViewController {
-        let configuration =  WKWebViewConfiguration.persistent()
+        let configuration = WKWebViewConfiguration.persistent()
+
+        if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
+            configuration.webExtensionController = webExtensionManager.controller
+        }
 
         let specialErrorPageNavigationHandler = SpecialErrorPageNavigationHandler(
             maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(

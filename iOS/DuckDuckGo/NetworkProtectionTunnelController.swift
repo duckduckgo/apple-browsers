@@ -52,6 +52,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     // Wide Event
     private let wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
+    private let freeTrialConversionService: FreeTrialConversionWideEventService
 
     // MARK: - Manager, Session, & Connection
 
@@ -155,7 +156,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          featureFlagger: FeatureFlagger,
          persistentPixel: PersistentPixelFiring,
          settings: VPNSettings,
-         wideEvent: WideEventManaging
+         wideEvent: WideEventManaging,
+         freeTrialConversionService: FreeTrialConversionWideEventService
     ) {
 
         self.featureFlagger = featureFlagger
@@ -163,6 +165,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.settings = settings
         self.tokenHandler = tokenHandler
         self.wideEvent = wideEvent
+        self.freeTrialConversionService = freeTrialConversionService
 
         subscribeToSnoozeTimingChanges()
         subscribeToStatusChanges()
@@ -343,6 +346,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 )
             }
             self.connectionWideEventData?.tunnelStartDuration?.complete()
+            freeTrialConversionService.markVPNActivated()
         } catch {
             completeAtStepWithFailure(.tunnelStart, with: error, description: error.contextualizedDescription())
             Pixel.fire(pixel: .networkProtectionActivationRequestFailed, error: error)

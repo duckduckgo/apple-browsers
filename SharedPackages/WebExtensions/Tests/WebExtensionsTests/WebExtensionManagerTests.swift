@@ -270,6 +270,20 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertTrue(eventsListenerMock.controller === manager.controller)
     }
 
+    @MainActor
+    func testWhenLoadInstalledExtensions_ThenOrphanedExtensionsAreCleaned() async {
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1"),
+            makeInstalledWebExtension(uniqueIdentifier: "extension2")
+        ]
+        let manager = makeManager()
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertTrue(storageProvidingMock.cleanupOrphanedExtensionsCalled)
+        XCTAssertEqual(storageProvidingMock.cleanupOrphanedExtensionsKnownIdentifiers, Set(["extension1", "extension2"]))
+    }
+
     // MARK: - Computed Properties Tests
 
     @MainActor

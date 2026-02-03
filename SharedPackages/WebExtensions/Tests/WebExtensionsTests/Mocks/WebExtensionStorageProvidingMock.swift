@@ -76,4 +76,11 @@ final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
             throw error
         }
     }
+
+    var cleanupOrphanedExtensionsCalled = false
+    var cleanupOrphanedExtensionsKnownIdentifiers: Set<String>?
+    func cleanupOrphanedExtensions(keeping knownIdentifiers: Set<String>) {
+        cleanupOrphanedExtensionsCalled = true
+        cleanupOrphanedExtensionsKnownIdentifiers = knownIdentifiers
+    }
 }

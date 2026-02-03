@@ -57,6 +57,12 @@ public protocol WebExtensionStorageProviding: AnyObject {
     /// - Parameter identifier: The extension identifier to remove.
     /// - Throws: If the removal fails.
     func removeExtension(identifier: String) throws
+
+    /// Cleans up orphaned extension folders that are not in the list of known extensions.
+    /// This removes any subdirectories in the extensions directory that don't match
+    /// the provided identifiers.
+    /// - Parameter knownIdentifiers: Set of extension identifiers that should be kept.
+    func cleanupOrphanedExtensions(keeping knownIdentifiers: Set<String>)
 }
 
 // MARK: - Default Implementations
@@ -112,6 +118,27 @@ public extension WebExtensionStorageProviding {
             try fileManager.removeItem(at: path)
         } catch {
             throw WebExtensionStorageError.failedToRemoveExtension(error)
+        }
+    }
+
+    func cleanupOrphanedExtensions(keeping knownIdentifiers: Set<String>) {
+        guard fileManager.fileExists(atPath: extensionsDirectory.path) else {
+            return
+        }
+
+        guard let contents = try? fileManager.contentsOfDirectory(
+            at: extensionsDirectory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return
+        }
+
+        for item in contents {
+            let identifier = item.lastPathComponent
+            if !knownIdentifiers.contains(identifier) {
+                try? fileManager.removeItem(at: item)
+            }
         }
     }
 }

@@ -215,6 +215,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
             Logger.webExtensions.error("❌ Extension loading completed with errors: \(successCount) loaded, \(failedIdentifiers.count) failed and removed")
         }
 
+        let knownIdentifiers = Set(installationStore.installedExtensions.map(\.uniqueIdentifier))
+        storageProvider.cleanupOrphanedExtensions(keeping: knownIdentifiers)
+
         notifyUpdate()
     }
 

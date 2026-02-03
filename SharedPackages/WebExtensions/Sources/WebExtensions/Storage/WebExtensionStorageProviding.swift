@@ -18,11 +18,23 @@
 
 import Foundation
 
+/// Errors that can occur during web extension storage operations.
+@available(macOS 15.4, iOS 18.4, *)
+public enum WebExtensionStorageError: Error {
+    case applicationSupportDirectoryNotFound
+    case failedToCreateDirectory(Error)
+    case failedToCopyExtension(Error)
+    case failedToRemoveExtension(Error)
+}
+
 /// Protocol defining platform-specific storage for web extensions.
 /// Each platform (iOS, macOS) provides its own implementation that determines
 /// where extensions are stored on disk.
 @available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionStorageProviding: AnyObject {
+
+    /// File manager used for file operations.
+    var fileManager: FileManager { get }
 
     /// Base directory where extensions are stored.
     var extensionsDirectory: URL { get }
@@ -45,4 +57,61 @@ public protocol WebExtensionStorageProviding: AnyObject {
     /// - Parameter identifier: The extension identifier to remove.
     /// - Throws: If the removal fails.
     func removeExtension(identifier: String) throws
+}
+
+// MARK: - Default Implementations
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension WebExtensionStorageProviding {
+
+    func resolveInstalledExtension(identifier: String) -> URL? {
+        let folderPath = extensionsDirectory.appendingPathComponent(identifier)
+        guard fileManager.fileExists(atPath: folderPath.path) else {
+            return nil
+        }
+
+        guard let contents = try? fileManager.contentsOfDirectory(at: folderPath, includingPropertiesForKeys: nil),
+              let extensionFile = contents.first else {
+            return nil
+        }
+        return extensionFile
+    }
+
+    func copyExtension(from sourceURL: URL, identifier: String) throws -> URL {
+        let identifierFolder = extensionsDirectory.appendingPathComponent(identifier)
+        let originalFilename = sourceURL.lastPathComponent
+        let destinationURL = identifierFolder.appendingPathComponent(originalFilename)
+
+        do {
+            try fileManager.createDirectory(at: identifierFolder,
+                                            withIntermediateDirectories: true)
+        } catch {
+            throw WebExtensionStorageError.failedToCreateDirectory(error)
+        }
+
+        if fileManager.fileExists(atPath: destinationURL.path) {
+            try? fileManager.removeItem(at: destinationURL)
+        }
+
+        do {
+            try fileManager.copyItem(at: sourceURL, to: destinationURL)
+        } catch {
+            throw WebExtensionStorageError.failedToCopyExtension(error)
+        }
+
+        return destinationURL
+    }
+
+    func removeExtension(identifier: String) throws {
+        let path = extensionsDirectory.appendingPathComponent(identifier)
+        guard fileManager.fileExists(atPath: path.path) else {
+            return
+        }
+
+        do {
+            try fileManager.removeItem(at: path)
+        } catch {
+            throw WebExtensionStorageError.failedToRemoveExtension(error)
+        }
+    }
 }

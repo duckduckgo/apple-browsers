@@ -23,14 +23,7 @@ import WebExtensions
 @available(macOS 15.4, *)
 public final class WebExtensionStorageProvider: WebExtensionStorageProviding {
 
-    public enum StorageError: Error {
-        case applicationSupportDirectoryNotFound
-        case failedToCreateDirectory(Error)
-        case failedToCopyExtension(Error)
-        case failedToRemoveExtension(Error)
-    }
-
-    private let fileManager: FileManager
+    public let fileManager: FileManager
 
     public init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
@@ -41,49 +34,5 @@ public final class WebExtensionStorageProvider: WebExtensionStorageProviding {
             fatalError("Application Support directory not found")
         }
         return appSupport.appendingPathComponent("WebExtensions", isDirectory: true)
-    }
-
-    public func resolveInstalledExtension(identifier: String) -> URL? {
-        let path = extensionsDirectory.appendingPathComponent(identifier)
-        guard fileManager.fileExists(atPath: path.path) else {
-            return nil
-        }
-        return path
-    }
-
-    public func copyExtension(from sourceURL: URL, identifier: String) throws -> URL {
-        let destinationURL = extensionsDirectory.appendingPathComponent(identifier)
-
-        do {
-            try fileManager.createDirectory(at: extensionsDirectory,
-                                            withIntermediateDirectories: true)
-        } catch {
-            throw StorageError.failedToCreateDirectory(error)
-        }
-
-        if fileManager.fileExists(atPath: destinationURL.path) {
-            try? fileManager.removeItem(at: destinationURL)
-        }
-
-        do {
-            try fileManager.copyItem(at: sourceURL, to: destinationURL)
-        } catch {
-            throw StorageError.failedToCopyExtension(error)
-        }
-
-        return destinationURL
-    }
-
-    public func removeExtension(identifier: String) throws {
-        let path = extensionsDirectory.appendingPathComponent(identifier)
-        guard fileManager.fileExists(atPath: path.path) else {
-            return
-        }
-
-        do {
-            try fileManager.removeItem(at: path)
-        } catch {
-            throw StorageError.failedToRemoveExtension(error)
-        }
     }
 }

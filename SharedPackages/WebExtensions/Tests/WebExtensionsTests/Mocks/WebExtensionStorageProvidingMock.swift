@@ -22,12 +22,14 @@ import Foundation
 @available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
 
+    var fileManager: FileManager = .default
     var extensionsDirectory: URL = URL(fileURLWithPath: "/mock/extensions")
 
     var resolveInstalledExtensionCalled = false
     var resolveInstalledExtensionIdentifier: String?
     var shouldReturnNilForResolve = false
     var mockResolveResult: URL?
+    var mockResolveFilename = "extension.xpi"
     func resolveInstalledExtension(identifier: String) -> URL? {
         resolveInstalledExtensionCalled = true
         resolveInstalledExtensionIdentifier = identifier
@@ -37,7 +39,8 @@ final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
         if let mockResult = mockResolveResult {
             return mockResult
         }
-        return extensionsDirectory.appendingPathComponent(identifier)
+        let identifierFolder = extensionsDirectory.appendingPathComponent(identifier)
+        return identifierFolder.appendingPathComponent(mockResolveFilename)
     }
 
     var copyExtensionCalled = false
@@ -58,7 +61,8 @@ final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
             return result
         }
 
-        return extensionsDirectory.appendingPathComponent(identifier)
+        let identifierFolder = extensionsDirectory.appendingPathComponent(identifier)
+        return identifierFolder.appendingPathComponent(sourceURL.lastPathComponent)
     }
 
     var removeExtensionCalled = false

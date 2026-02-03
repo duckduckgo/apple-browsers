@@ -75,7 +75,7 @@ struct WebExtensionsDebugView: View {
                             Button {
                                 performExtensionAction(for: installedExtension.identifier)
                             } label: {
-                                Text("🚀")
+                                Image(systemName: "play.circle.fill")
                             }
                         }
                     }

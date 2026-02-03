@@ -155,7 +155,7 @@ final class TabCollectionViewModel: NSObject {
         }
     }
     
-    enum TabCollectionViewModelError: Error {
+    private enum TabCollectionViewModelError: Error {
         case tabCollectionAtIndexNotFound(String)
         case noTabSelected
     }

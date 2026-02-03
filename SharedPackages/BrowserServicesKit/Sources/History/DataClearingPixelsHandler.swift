@@ -1,5 +1,5 @@
 //
-//  FirePixelsHandler.swift
+//  DataClearingPixelsHandler.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //

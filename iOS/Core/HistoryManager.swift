@@ -146,6 +146,8 @@ class NullHistoryCoordinator: HistoryCoordinating {
     var historyDictionaryPublisher: Published<[URL: History.HistoryEntry]?>.Publisher {
         $historyDictionary
     }
+    
+    var dataClearingPixelsHandler: (any History.DataClearingPixelsHandler)?
 
     func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
         return nil

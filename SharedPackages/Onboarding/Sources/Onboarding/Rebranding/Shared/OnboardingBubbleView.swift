@@ -49,10 +49,7 @@ public struct OnboardingBubbleView<Content: View>: View {
             borderColor: onboardingTheme.colorPalette.bubbleBorder,
             borderWidth: onboardingTheme.bubbleMetrics.borderWidth,
             contentPadding: onboardingTheme.bubbleMetrics.contentInsets,
-            content: {
-                content()
-                    .background(onboardingTheme.colorPalette.bubbleBackground)
-            }
+            content: content
         )
         .applyOnboardingShadow()
     }

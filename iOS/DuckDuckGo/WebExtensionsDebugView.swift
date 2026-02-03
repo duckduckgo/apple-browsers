@@ -50,12 +50,12 @@ struct WebExtensionsDebugView: View {
                     Text("No extensions installed")
                         .foregroundColor(.secondary)
                 } else {
-                    ForEach(installedExtensions) { extension_ in
+                    ForEach(installedExtensions) { installedExtension in
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(extension_.name)
+                                Text(installedExtension.name)
                                     .font(.body)
-                                Text(extension_.path)
+                                Text(installedExtension.path)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                     .lineLimit(1)
@@ -114,8 +114,8 @@ struct WebExtensionsDebugView: View {
 
     private func uninstallExtensions(at offsets: IndexSet) {
         for index in offsets {
-            let extension_ = installedExtensions[index]
-            try? webExtensionManager.uninstallExtension(path: extension_.path)
+            let installedExtension = installedExtensions[index]
+            try? webExtensionManager.uninstallExtension(path: installedExtension.path)
         }
         refreshExtensions()
     }

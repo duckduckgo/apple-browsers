@@ -27,6 +27,8 @@ import Suggestions
 public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSource, SuggestionContainer.HistoryProvider {
 
     public init() {}
+    
+    public var dataClearingPixelsHandler: (any DataClearingPixelsHandler)? = nil
 
     public func loadHistory(onCleanFinished: @escaping () -> Void) {
         onCleanFinished()

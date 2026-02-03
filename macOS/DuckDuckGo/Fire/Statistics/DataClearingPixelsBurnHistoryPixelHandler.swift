@@ -1,5 +1,5 @@
 //
-//  FirePixelsBurnHistoryHandler.swift
+//  DataClearingPixelsBurnHistoryHandler.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,16 +19,23 @@
 import History
 import Foundation
 
-struct FirePixelsBurnHistoryHandler: FirePixelsHandler {
+struct DataClearingPixelsBurnHistoryHandler: DataClearingPixelsHandler {
+    
+    private let dataClearingPixelsReporter: DataClearingPixelsReporter
+    
+    init(_ dataClearingPixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter()) {
+        self.dataClearingPixelsReporter = dataClearingPixelsReporter
+    }
+    
     func fireErrorPixel(_ error: Error) {
-        FirePixels.fireErrorPixel(FirePixels.burnHistoryError(error))
+        dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnHistoryError(error))
     }
     
     func fireResiduePixel() {
-        FirePixels.fireResiduePixel(FirePixels.burnHistoryHasResidue)
+        dataClearingPixelsReporter.fireResiduePixel(DataClearingPixels.burnHistoryHasResidue)
     }
     
     func fireDurationPixel(_ startTime: Date) {
-        FirePixels.fireDurationPixel(FirePixels.burnVisitsDuration, from: startTime)
+        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnVisitsDuration, from: startTime)
     }
 }

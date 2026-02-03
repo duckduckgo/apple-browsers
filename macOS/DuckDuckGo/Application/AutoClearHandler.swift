@@ -181,7 +181,7 @@ final class AutoClearHandler: ApplicationTerminationDecider {
 extension AutoClearHandler {
     private static func fireCompletionPixel(from startTime: Date, isAutoClearAIChatHistoryEnabled: Bool) {
         PixelKit.fire(
-            FirePixels.fireCompletion(
+            DataClearingPixels.fireCompletion(
                 duration: Int(Date().timeIntervalSince(startTime) * 1000),
                 option: "allData",
                 domains: isAutoClearAIChatHistoryEnabled ? "ChatHistory": "",

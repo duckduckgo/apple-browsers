@@ -173,6 +173,7 @@ final class Fire: FireProtocol {
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
     let isAppActiveProvider: @MainActor () -> Bool
     let aiChatHistoryCleaner: AIChatHistoryCleaning
+    let dataClearingPixelsReporter: DataClearingPixelsReporter
 
     private var dispatchGroup: DispatchGroup?
 
@@ -277,7 +278,8 @@ final class Fire: FireProtocol {
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
          isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive },
-         aIChatHistoryCleaner: AIChatHistoryCleaning? = nil
+         aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
+         dataClearingPixelsReporter: DataClearingPixelsReporter = .init()
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -309,8 +311,8 @@ final class Fire: FireProtocol {
                                                                                  aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
                                                                                  privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
-        
-        self.historyCoordinating.firePixelsHandler = FirePixelsBurnHistoryHandler()
+        self.dataClearingPixelsReporter = dataClearingPixelsReporter
+        self.historyCoordinating.dataClearingPixelsHandler = DataClearingPixelsBurnHistoryHandler(dataClearingPixelsReporter)
     }
 
     @MainActor
@@ -539,7 +541,7 @@ final class Fire: FireProtocol {
     func burnChatHistory() async {
         let startTime = Date()
         await aiChatHistoryCleaner.cleanAIChatHistory()
-        FirePixels.fireDurationPixel(FirePixels.burnChatHistoryDuration, from: startTime)
+        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnChatHistoryDuration, from: startTime)
         if syncService?.authState != .inactive {
             syncService?.scheduler.requestSyncImmediately()
         }
@@ -643,7 +645,7 @@ final class Fire: FireProtocol {
         case .none(selectedDomains: let domains):
             burnHistory(of: domains) { urls in
                 self.burnVisitedLinks(urls)
-                FirePixels.fireDurationPixel(FirePixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
+                self.dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
                 completion()
             }
             return
@@ -664,14 +666,14 @@ final class Fire: FireProtocol {
 
             burnAllVisitedLinks()
             burnAllHistory(completion: completion)
-            FirePixels.fireDurationPixel(FirePixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
+            dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
 
             return
         }
 
         burnVisitedLinks(visits)
         historyCoordinating.burnVisits(visits, completion: completion)
-        FirePixels.fireDurationPixel(FirePixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
+        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
     }
 
     @MainActor
@@ -710,7 +712,7 @@ final class Fire: FireProtocol {
             guard let url = visit.historyEntry?.url else { continue }
             visitedLinkStore.removeVisitedLink(with: url)
         }
-        FirePixels.fireDurationPixel(FirePixels.burnVisitedLinksDuration, from: startTime)
+        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnVisitedLinksDuration, from: startTime)
     }
 
     @MainActor
@@ -721,7 +723,7 @@ final class Fire: FireProtocol {
         for url in urls {
             visitedLinkStore.removeVisitedLink(with: url)
         }
-        FirePixels.fireDurationPixel(FirePixels.burnVisitedLinksDuration, from: startTime)
+        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnVisitedLinksDuration, from: startTime)
     }
 
     // MARK: - Zoom levels
@@ -750,14 +752,14 @@ final class Fire: FireProtocol {
     private func burnDownloads() {
         let startTime = Date()
         self.downloadListCoordinator.cleanupInactiveDownloads(for: nil)
-        FirePixels.fireDurationPixel(FirePixels.burnDownloadsDuration, from: startTime)
+        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnDownloadsDuration, from: startTime)
     }
 
     @MainActor
     private func burnDownloads(of baseDomains: Set<String>) {
         let startTime = Date()
         self.downloadListCoordinator.cleanupInactiveDownloads(for: baseDomains, tld: tld)
-        FirePixels.fireDurationPixel(FirePixels.burnDownloadsDuration, from: startTime)
+        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnDownloadsDuration, from: startTime)
     }
 
     // MARK: - Favicons
@@ -848,7 +850,8 @@ final class Fire: FireProtocol {
             
             // Either replacing the only tab or minues 1 tab
             let expectedCount = (countBeforeBurn == 1) ? 1 : countBeforeBurn - 1
-            FirePixels.fireResiduePixelIfNeeded(FirePixels.burnTabsHasResidue(entity: burningEntity.description)){
+            dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
+            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)){
                 tabCollectionViewModel.tabCollection.tabs.count != expectedCount
             }
 
@@ -866,9 +869,10 @@ final class Fire: FireProtocol {
                 burnPinnedTabs(in: tabCollectionViewModel)
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
 
-                FirePixels.fireResiduePixelIfNeeded(FirePixels.burnTabsHasResidue(entity: burningEntity.description)) {
+                dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)) {
                     tabCollectionViewModel.tabCollection.tabs.count > 1
                 }
+                dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
             }
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
@@ -885,11 +889,10 @@ final class Fire: FireProtocol {
                 selectPinnedTabIfNeeded(in: windowController.mainViewController.tabCollectionViewModel)
             }
 
-            FirePixels.fireResiduePixelIfNeeded(FirePixels.burnTabsHasResidue(entity: burningEntity.description)) {
+            dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
+            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)) {
                 mainWindowControllers.contains { $0.mainViewController.tabCollectionViewModel.tabCollection.tabs.count > 1 }
             }
-            
-        FirePixels.fireDurationPixel(FirePixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
         }
     }
 
@@ -940,7 +943,7 @@ final class Fire: FireProtocol {
     private func burnLastSessionState() {
         let startTime = Date()
         stateRestorationManager?.clearLastSessionState()
-        FirePixels.fireDurationPixel(FirePixels.burnLastSessionStateDuration, from: startTime)
+        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnLastSessionStateDuration, from: startTime)
     }
 
     // MARK: - Burn Recently Closed
@@ -949,7 +952,7 @@ final class Fire: FireProtocol {
     private func burnRecentlyClosed(baseDomains: Set<String>? = nil) {
         let startTime = Date()
         recentlyClosedCoordinator?.burnCache(baseDomains: baseDomains, tld: tld)
-        FirePixels.fireDurationPixel(FirePixels.burnRecentlyClosedDuration, from: startTime)
+        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnRecentlyClosedDuration, from: startTime)
     }
 
     // MARK: - Bookmarks cleanup

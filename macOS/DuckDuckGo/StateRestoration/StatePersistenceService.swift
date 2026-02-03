@@ -33,6 +33,7 @@ final class StatePersistenceService {
     private var lastSessionStateArchive: Data?
     private let queue = DispatchQueue(label: "StateRestorationManager.queue", qos: .background)
     private var job: DispatchWorkItem?
+    private let dataClearingPixelsReporter: DataClearingPixelsReporter
 
     private(set) var error: Error?
 
@@ -46,9 +47,10 @@ final class StatePersistenceService {
         }
     }
 
-    init(fileStore: FileStore, fileName: String) {
+    init(fileStore: FileStore, fileName: String, dataClearingPixelsReporter: DataClearingPixelsReporter = .init()) {
         self.fileStore = fileStore
         self.fileName = fileName
+        self.dataClearingPixelsReporter = DataClearingPixelsReporter()
     }
 
     var canRestoreLastSessionState: Bool {
@@ -90,10 +92,10 @@ final class StatePersistenceService {
             try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.lastLoadedStateFileName))
             try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.oldStateFileName))
         } catch {
-            FirePixels.fireErrorPixel(FirePixels.burnLastSessionStateError(error))
+            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
         }
 
-        FirePixels.fireResiduePixelIfNeeded(FirePixels.burnLastSessionStateHasResidue) {
+        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnLastSessionStateHasResidue) {
             check(at: location, fileStore: fileStore)
         }
     }

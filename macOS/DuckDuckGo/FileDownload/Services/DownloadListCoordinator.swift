@@ -31,6 +31,7 @@ final class DownloadListCoordinator {
     private let downloadManager: FileDownloadManagerProtocol
     private let windowControllersManager: WindowControllersManagerProtocol
     private let webViewProvider: (() -> WKWebView?)?
+    private let dataClearingPixelsReporter: DataClearingPixelsReporter
 
     private var items = [UUID: DownloadListItem]()
     var downloadListItems: [DownloadListItem] {
@@ -67,12 +68,14 @@ final class DownloadListCoordinator {
          downloadManager: FileDownloadManagerProtocol,
          windowControllersManager: WindowControllersManagerProtocol,
          clearItemsOlderThan clearDate: Date = .daysAgo(2),
-         webViewProvider: (() -> WKWebView?)? = nil) {
+         webViewProvider: (() -> WKWebView?)? = nil,
+         dataClearingPixelsReporter: DataClearingPixelsReporter = .init()) {
 
         self.store = store
         self.downloadManager = downloadManager
         self.windowControllersManager = windowControllersManager
         self.webViewProvider = webViewProvider
+        self.dataClearingPixelsReporter = dataClearingPixelsReporter
 
         load(clearingItemsOlderThan: clearDate)
         subscribeToDownloadManager()
@@ -429,7 +432,7 @@ final class DownloadListCoordinator {
                 try fm.removeItem(at: url)
             })
         } catch {
-            FirePixels.fireErrorPixel(FirePixels.burnDownloadsError(error))
+            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnDownloadsError(error))
             Logger.fileDownload.error("🦀 coordinator: failed to remove temp file: \(error)")
         }
 
@@ -437,7 +440,7 @@ final class DownloadListCoordinator {
         do {
             guard let presenter = filePresenters[item.identifier]?.destination,
                   (try? presenter.url?.resourceValues(forKeys: [.fileSizeKey]).fileSize) == 0 else {
-                FirePixels.fireErrorPixel(FirePixels.burnDownloadsError(DestinationFileNotEmpty()))
+                dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnDownloadsError(DestinationFileNotEmpty()))
                 throw DestinationFileNotEmpty()
             }
             try presenter.coordinateWrite(with: .forDeleting, using: { url in
@@ -447,7 +450,7 @@ final class DownloadListCoordinator {
         } catch is DestinationFileNotEmpty {
             // don‘t delete non-empty destination file
         } catch {
-            FirePixels.fireErrorPixel(FirePixels.burnDownloadsError(error))
+            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnDownloadsError(error))
             Logger.fileDownload.error("🦀 coordinator: failed to remove destination file: \(error)")
         }
     }
@@ -557,7 +560,7 @@ final class DownloadListCoordinator {
             remove(downloadWithIdentifier: id)
         }
         
-        FirePixels.fireResiduePixelIfNeeded(FirePixels.burnDownloadsHasResidue) {
+        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnDownloadsHasResidue) {
             itemsToRemove.contains { self.items[$0] != nil }
         }
     }
@@ -588,7 +591,7 @@ final class DownloadListCoordinator {
             }
         }
         
-        FirePixels.fireResiduePixelIfNeeded(FirePixels.burnDownloadsHasResidue) {
+        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnDownloadsHasResidue) {
             itemsToRemove.contains { self.items[$0] != nil }
         }
     }

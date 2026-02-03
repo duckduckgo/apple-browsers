@@ -70,6 +70,7 @@ final class FireCoordinator {
     private let pixelFiring: PixelFiring?
     private let aiChatSyncCleaner: (() -> AIChatSyncCleaning?)?
     private let visualizeFireAnimationDecider: OverridableVisualizeFireSettingsDecider
+    private let dataClearingPixelsReporter: DataClearingPixelsReporter
 
     init(tld: TLD,
          featureFlagger: FeatureFlagger,
@@ -99,6 +100,7 @@ final class FireCoordinator {
         }
         self.pixelFiring = pixelFiring
         self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.dataClearingPixelsReporter = .init(pixelFiring: self.pixelFiring)
         self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
 
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
@@ -281,7 +283,7 @@ extension FireCoordinator {
 
     @MainActor
     func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool) async {
-        FirePixels.fireRetriggerPixelIfNeeded()
+        dataClearingPixelsReporter.fireRetriggerPixelIfNeeded()
 
         if result.includeChatHistory {
             pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
@@ -298,7 +300,7 @@ extension FireCoordinator {
                                                 clearSiteData: result.includeCookiesAndSiteData,
                                                 clearChatHistory: result.includeChatHistory,
                                                 urlToOpenIfWindowsAreClosed: nil)
-            FirePixels.fireCompletionPixel(from: startTime, dialogResult: result, path: .burnVisits, autoClear: false)
+            dataClearingPixelsReporter.fireCompletionPixel(from: startTime, dialogResult: result, path: .burnVisits, autoClear: false)
             return
         }
         pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
@@ -319,7 +321,7 @@ extension FireCoordinator {
                                                 includingHistory: result.includeHistory,
                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
                                                 includeChatHistory: result.includeChatHistory)
-            FirePixels.fireCompletionPixel(from: startTime, dialogResult: result, path: .burnEntity, autoClear: false)
+            dataClearingPixelsReporter.fireCompletionPixel(from: startTime, dialogResult: result, path: .burnEntity, autoClear: false)
 
         case .currentWindow:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
@@ -335,7 +337,7 @@ extension FireCoordinator {
                                                 includingHistory: result.includeHistory,
                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
                                                 includeChatHistory: result.includeChatHistory)
-            FirePixels.fireCompletionPixel(from: startTime, dialogResult: result, path: .burnEntity, autoClear: false)
+            dataClearingPixelsReporter.fireCompletionPixel(from: startTime, dialogResult: result, path: .burnEntity, autoClear: false)
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
@@ -346,7 +348,7 @@ extension FireCoordinator {
                                                  opening: .newtab,
                                                  includeCookiesAndSiteData: result.includeCookiesAndSiteData,
                                                  includeChatHistory: result.includeChatHistory)
-                FirePixels.fireCompletionPixel(from: startTime, dialogResult: result, path: .burnAll, autoClear: false)
+                dataClearingPixelsReporter.fireCompletionPixel(from: startTime, dialogResult: result, path: .burnAll, autoClear: false)
             } else {
                 let entity = Fire.BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers,
                                                            selectedDomains: result.selectedCookieDomains ?? [],
@@ -357,7 +359,7 @@ extension FireCoordinator {
                                                     includingHistory: result.includeHistory,
                                                     includeCookiesAndSiteData: result.includeCookiesAndSiteData,
                                                     includeChatHistory: result.includeChatHistory)
-                FirePixels.fireCompletionPixel(from: startTime, dialogResult: result, path: .burnEntity, autoClear: false)
+                dataClearingPixelsReporter.fireCompletionPixel(from: startTime, dialogResult: result, path: .burnEntity, autoClear: false)
             }
         }
         if result.includeHistory,

@@ -1,5 +1,5 @@
 //
-//  FirePixels.swift
+//  DataClearingPixels.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,9 @@
 import Foundation
 import PixelKit
 
-enum FirePixels {
+enum DataClearingPixels {
+    
+    static var pixelFiring: PixelFiring? = PixelKit.shared
     
     // Overall Flow Metrics
     
@@ -67,118 +69,12 @@ enum FirePixels {
     @MainActor
     private static var lastFireTime: Date?
     private static let retriggerWindow: TimeInterval = 20.0
-}
-
-// MARK: - Overall Flow Measurement
-
-extension FirePixels {
     
-    // Overal completion duration measurement
-    static func fireCompletionPixel(from startTime: Date, dialogResult: FireDialogResult, path: FirePixels.BurnPath, autoClear: Bool) {
-        PixelKit.fire(
-            FirePixels.fireCompletion(
-                duration: prepareDuration(from: startTime, to: Date()),
-                option: prepare(dialogResult.clearingOption),
-                domains: prepare(dialogResult),
-                path: prepare(path),
-                autoClear: String(autoClear)
-            ),
-            frequency: .standard
-        )
-    }
-    
-    // Repid retrigger measurement
-    @MainActor
-    static func fireRetriggerPixelIfNeeded() {
-        let now = Date()
-        if let lastFire = lastFireTime, now.timeIntervalSince(lastFire) <= retriggerWindow {
-            PixelKit.fire(FirePixels.retriggerIn20s, frequency: .dailyAndStandard)
-        }
-        lastFireTime = now
-    }
-}
-
-// MARK: - Per-Action Quality Metrics
-
-extension FirePixels {
-    
-    // Duration
-    static func fireDurationPixel(_ durationPixel: @escaping (Int) -> FirePixels, from startTime: Date, to endTime: Date = Date()) {
-        PixelKit.fire(
-            durationPixel(prepareDuration(from: startTime, to: endTime)),
-            frequency: .dailyAndStandard
-        )
-    }
-    
-    static func fireDurationPixel(_ durationPixel: @escaping (String, Int) -> FirePixels, from startTime: Date, to endTime: Date = Date(), entity: String) {
-        PixelKit.fire(
-            durationPixel(entity, prepareDuration(from: startTime, to: endTime)),
-            frequency: .dailyAndStandard
-        )
-    }
-    
-    // Effectiveness
-    static func fireResiduePixelIfNeeded(_ residuePixel: FirePixels, check: () -> Bool) {
-        let hasResidue = check()
-        if hasResidue {
-            PixelKit.fire(residuePixel, frequency: .dailyAndStandard)
-        }
-    }
-    
-    static func fireResiduePixel(_ residuePixel: FirePixels) {
-        PixelKit.fire(residuePixel, frequency: .dailyAndStandard)
-    }
-    
-
-    // Error
-    static func fireErrorPixel(_ errorPixel: FirePixels) {
-        PixelKit.fire(errorPixel, frequency: .dailyAndStandard)
-    }
-}
-
-// MARK: - Measurement Helpers
-
-extension FirePixels {
-    
-    enum BurnPath: String {
-        case burnEntity = "burn_entity"
-        case burnAll = "burn_all"
-        case burnVisits =  "burn_visits"
-    }
-    
-    private static func prepareDuration(from startTime: Date, to endTime: Date) -> Int {
-        return Int(endTime.timeIntervalSince(startTime) * 1000)
-    }
-    
-    private static func prepare(_ result: FireDialogResult) -> String {
-        var domains: [String] = []
-        if result.includeHistory {
-            domains.append("History")
-        }
-        if result.includeTabsAndWindows {
-            domains.append("TabsAndWindows")
-        }
-        if result.includeCookiesAndSiteData {
-            domains.append("CookiesAndSiteData")
-        }
-        if result.includeChatHistory {
-            domains.append("ChatHistory")
-        }
-        return domains.commaSeparatedString
-    }
-    
-    private static func prepare(_ option: FireDialogViewModel.ClearingOption) -> String {
-        return option.string
-    }
-    
-    private static func prepare(_ path: FirePixels.BurnPath) -> String {
-        return path.rawValue
-    }
 }
 
 // MARK: - PixelKitEvent Protocol
 
-extension FirePixels: PixelKitEvent {
+extension DataClearingPixels: PixelKitEvent {
     
     var name: String {
         switch self {
@@ -300,8 +196,4 @@ extension FirePixels: PixelKitEvent {
     var standardParameters: [PixelKitStandardParameter]? {
         return [.pixelSource]
     }
-}
-
-private extension Array where Element == String {
-    var commaSeparatedString: String { joined(separator: ",") }
 }

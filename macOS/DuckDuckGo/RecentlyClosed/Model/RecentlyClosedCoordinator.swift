@@ -54,10 +54,12 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
 
     var windowControllersManager: WindowControllersManagerProtocol
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
+    let dataClearingPixelsReporter: DataClearingPixelsReporter
 
-    init(windowControllersManager: WindowControllersManagerProtocol, pinnedTabsManagerProvider: PinnedTabsManagerProviding) {
+    init(windowControllersManager: WindowControllersManagerProtocol, pinnedTabsManagerProvider: PinnedTabsManagerProviding, dataClearingPixelsReporter: DataClearingPixelsReporter = .init()) {
         self.windowControllersManager = windowControllersManager
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
+        self.dataClearingPixelsReporter = dataClearingPixelsReporter
 
         guard AppVersion.runType.requiresEnvironment else { return }
         subscribeToWindowControllersManager()
@@ -245,12 +247,12 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
     func burnCache(baseDomains: Set<String>? = nil, tld: TLD) {
         if let baseDomains = baseDomains {
             cache.burn(for: baseDomains, tld: tld)
-            FirePixels.fireResiduePixelIfNeeded(FirePixels.burnRecentlyClosedHasResidue) {
+            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnRecentlyClosedHasResidue) {
                 cache.hasResidues(for: baseDomains, tld: tld)
             }
         } else {
             cache.removeAll()
-            FirePixels.fireResiduePixelIfNeeded(FirePixels.burnRecentlyClosedHasResidue) {
+            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnRecentlyClosedHasResidue) {
                 !cache.isEmpty
             }
         }

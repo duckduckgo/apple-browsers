@@ -1,5 +1,5 @@
 //
-//  WebExtensionConfigurationProvider.swift
+//  WebExtensionConfigurationProvider+macOS.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

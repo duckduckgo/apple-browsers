@@ -1,7 +1,8 @@
 //
-//  WebExtensionLoadResult.swift
+//  WebExtensionConfigurationProvider+iOS.swift
+//  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,17 +18,14 @@
 //
 
 import Foundation
-import WebKit
+import WebExtensions
+import Core
+import Common
 
-@available(macOS 15.4, iOS 18.4, *)
-public struct WebExtensionLoadResult {
-    let context: WKWebExtensionContext
-    let extensionIdentifier: WebExtensionIdentifier?
-    let path: String
+@available(iOS 18.4, *)
+struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
 
-    init(context: WKWebExtensionContext, path: String, extensionIdentifier: WebExtensionIdentifier? = nil) {
-        self.context = context
-        self.path = path
-        self.extensionIdentifier = extensionIdentifier
+    var applicationNameForUserAgent: String {
+        "DuckDuckGo/\(AppVersion.shared.versionNumber)"
     }
 }

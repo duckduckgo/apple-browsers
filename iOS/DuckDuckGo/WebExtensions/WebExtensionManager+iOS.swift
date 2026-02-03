@@ -1,5 +1,6 @@
 //
-//  WebExtensionError.swift
+//  WebExtensionManager+iOS.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,10 +17,24 @@
 //  limitations under the License.
 //
 
-import Foundation
+import UIKit
+import WebExtensions
+import WebKit
 
-/// Errors that can occur when managing web extensions.
-@available(macOS 15.4, iOS 18.4, *)
-public enum WebExtensionError: Error {
-    case failedToUnloadWebExtension(_ error: Error)
+// MARK: - Factory
+
+@available(iOS 18.4, *)
+public enum WebExtensionManagerFactory {
+
+    @MainActor
+    static func makeManager(mainViewController: MainViewController) -> WebExtensionManager {
+        let windowTabProvider = WebExtensionWindowTabProvider(mainViewController: mainViewController)
+
+        let manager = WebExtensionManager(
+            configuration: WebExtensionConfigurationProvider(),
+            windowTabProvider: windowTabProvider
+        )
+
+        return manager
+    }
 }

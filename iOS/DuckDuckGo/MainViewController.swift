@@ -48,6 +48,7 @@ import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import UserScript
 import PrivacyConfig
+import WebExtensions
 
 class MainViewController: UIViewController {
 
@@ -260,6 +261,16 @@ class MainViewController: UIViewController {
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
+
+    private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
+    func setWebExtensionEventsCoordinator(_ coordinator: WebExtensionEventsCoordinator?) {
+        self.webExtensionEventsCoordinator = coordinator
+    }
+
+    private(set) var webExtensionManager: WebExtensionManaging?
+    func setWebExtensionManager(_ manager: WebExtensionManaging?) {
+        self.webExtensionManager = manager
+    }
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -1464,6 +1475,10 @@ class MainViewController: UIViewController {
         tab.inferredOpenerContext = .external
         dismissOmniBar()
         attachTab(tab: tab)
+
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didOpenTab(tab)
+        }
     }
 
     func select(tabAt index: Int) {
@@ -1479,6 +1494,8 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func select(tab: TabViewController) {
+        let previousTab = currentTab
+
         hideNotificationBarIfBrokenSitePromptShown()
         if tab.link == nil {
             attachHomeScreen()
@@ -1490,6 +1507,10 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
+        }
+
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didActivateTab(tab, previousActiveTab: previousTab)
         }
     }
 
@@ -3356,6 +3377,10 @@ extension MainViewController: TabDelegate {
         newTab()
     }
 
+    func tabDidRequestActivate(_ tab: TabViewController) {
+        select(tab: tab)
+    }
+
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
@@ -3663,6 +3688,13 @@ extension MainViewController: TabSwitcherDelegate {
                   andOpenEmptyOneAtSamePosition shouldOpen: Bool = false,
                   clearTabHistory: Bool = true) {
         guard let index = tabManager.model.indexOf(tab: tab) else { return }
+
+        if #available(iOS 18.4, *) {
+            if let closingTabController = tabManager.controller(for: tab) {
+                webExtensionEventsCoordinator?.didCloseTab(closingTabController)
+            }
+        }
+
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
         themeColorManager.updateThemeColor()

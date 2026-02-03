@@ -19,7 +19,7 @@
 import CryptoKit
 import WebKit
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionLoading: AnyObject {
     @discardableResult
     func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
@@ -27,7 +27,7 @@ public protocol WebExtensionLoading: AnyObject {
     func unloadExtension(at path: String, from controller: WKWebExtensionController) throws
 }
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionLoader: WebExtensionLoading {
 
     enum WebExtensionLoaderError: Error {

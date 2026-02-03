@@ -28,6 +28,7 @@ extension OnboardingRebranding {
         private let model: AddToDockPromoViewModel
 
         @State private var isAnimating = false
+        @State private var hasStartedAnimation = false
 
         init(appIconManager: AppIconProviding) {
             self.model = AddToDockPromoViewModel(appIconManager: appIconManager)
@@ -43,7 +44,9 @@ extension OnboardingRebranding {
                     keypath: AnimationKeypath(keypath: Self.appIconFillKeyPath)
                 )
             )
-            .onFirstAppear {
+            .onAppear {
+                guard !hasStartedAnimation else { return }
+                hasStartedAnimation = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     isAnimating = true
                 }

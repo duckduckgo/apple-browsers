@@ -28,14 +28,14 @@ extension OnboardingRebranding.OnboardingView {
 
         @State private var showAddToDockTutorial = false
 
-        private let appIconManager: AppIconProviding
+        private let appIconManager: OnboardingRebranding.AppIconProviding
         private let isAnimating: Binding<Bool>
         private let isSkipped: Binding<Bool>
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
 
         init(
-            appIconManager: AppIconProviding,
+            appIconManager: OnboardingRebranding.AppIconProviding,
             isAnimating: Binding<Bool> = .constant(true),
             isSkipped: Binding<Bool>,
             showTutorialAction: @escaping () -> Void,
@@ -50,7 +50,7 @@ extension OnboardingRebranding.OnboardingView {
 
         var body: some View {
             if showAddToDockTutorial {
-                AddToDockTutorialView(
+                OnboardingRebranding.AddToDockTutorialView(
                     title: OnboardingRebranding.UserText.AddToDockOnboarding.Tutorial.title,
                     message: OnboardingRebranding.UserText.AddToDockOnboarding.Tutorial.message,
                     cta: OnboardingRebranding.UserText.AddToDockOnboarding.Buttons.gotIt,
@@ -73,20 +73,20 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         private var addToDockPromoView: some View {
-            AddToDockPromoView(appIconManager: appIconManager)
+            OnboardingRebranding.AddToDockPromoView(appIconManager: appIconManager)
                 .aspectRatio(contentMode: .fit)
                 .padding(.vertical)
         }
 
         private var customActionView: some View {
             VStack {
-                PrimaryButton(title: OnboardingRebranding.UserText.AddToDockOnboarding.Buttons.tutorial) {
+                OnboardingRebranding.PrimaryButton(title: OnboardingRebranding.UserText.AddToDockOnboarding.Buttons.tutorial) {
                     showTutorialAction()
                     isSkipped.wrappedValue = false
                     showAddToDockTutorial = true
                 }
 
-                SecondaryButton(title: OnboardingRebranding.UserText.AddToDockOnboarding.Buttons.skip) {
+                OnboardingRebranding.SecondaryButton(title: OnboardingRebranding.UserText.AddToDockOnboarding.Buttons.skip) {
                     dismissAction(false)
                 }
             }

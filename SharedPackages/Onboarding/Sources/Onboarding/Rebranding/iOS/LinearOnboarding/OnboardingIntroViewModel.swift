@@ -236,7 +236,7 @@ private extension OnboardingRebranding.OnboardingIntroViewModel {
         setViewState(introStep: currentIntroStep)
     }
 
-    func setViewState(introStep: OnboardingIntroStep) {
+    func setViewState(introStep: OnboardingRebranding.OnboardingIntroStep) {
         func stepInfo() -> OnboardingRebranding.OnboardingView.ViewState.Intro.StepInfo {
             guard let currentStepIndex = introSteps.firstIndex(of: introStep) else { return .hidden }
 

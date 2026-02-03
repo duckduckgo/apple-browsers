@@ -19,7 +19,6 @@
 
 import Foundation
 import protocol PrivacyConfig.FeatureFlagger
-import class UIKit.UIApplication
 import SystemSettingsPiPTutorial
 
 @MainActor
@@ -73,20 +72,5 @@ extension SystemSettingsPiPTutorialService {
     func setPresenter(_ presenter: SystemSettingsPiPTutorialPresenting) {
         manager.setPresenter(presenter)
     }
-
-}
-
-// MARK: - PiP Destinations
-
-extension SystemSettingsPiPTutorialDestination {
-
-    enum Identifiers: String {
-        case defaultBrowser
-    }
-
-    static let defaultBrowser = SystemSettingsPiPTutorialDestination(
-        identifier: Identifiers.defaultBrowser.rawValue,
-        url: URL(string: UIApplication.openSettingsURLString)! // If this URL changes (E.g. to openDefaultApplicationsSettingsURLString) ensure that the PiP Video UI reflects the system settings UI.
-    )
 
 }

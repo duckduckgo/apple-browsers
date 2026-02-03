@@ -205,8 +205,9 @@ private extension OnboardingRebranding.VideoPlayerCoordinator {
 
     func observePlayerItemStatus() {
         playerItemStatusCancellable = player
-            .currentItem?
-            .publisher(for: \.status)
+            .publisher(for: \.currentItem, options: [.initial, .new])
+            .compactMap { $0 }
+            .flatMap { $0.publisher(for: \.status, options: [.initial, .new]) }
             .receive(on: scheduler)
             .assign(to: \.playerItemStatus, onWeaklyHeld: self)
     }

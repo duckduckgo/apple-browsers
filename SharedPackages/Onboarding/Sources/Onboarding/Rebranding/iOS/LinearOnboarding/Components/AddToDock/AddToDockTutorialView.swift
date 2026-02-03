@@ -41,6 +41,7 @@ extension OnboardingRebranding {
         @State private var animateMessage = false
         @State private var showContent = false
         @State private var videoPlayerWidth: CGFloat = 0.0
+        @State private var hasLoadedAsset = false
         @StateObject private var videoPlayerModel = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
 
         init(
@@ -85,14 +86,22 @@ extension OnboardingRebranding {
                             }
                         }
                     }
-                    .onFirstAppear {
+                    .onAppear {
+                        guard !hasLoadedAsset else { return }
+                        hasLoadedAsset = true
                         videoPlayerModel.loadAsset(url: Self.videoURL, shouldLoopVideo: true)
                     }
 
                 PrimaryButton(title: cta, action: action)
                     .visibility(showContent ? .visible : .invisible)
             }
-            .onFrameUpdate(in: .global, using: VideoPlayerFramePreferenceKey.self) { rect in
+            .background {
+                GeometryReader { geometry in
+                    Color.clear
+                        .preference(key: VideoPlayerFramePreferenceKey.self, value: geometry.frame(in: .global))
+                }
+            }
+            .onPreferenceChange(VideoPlayerFramePreferenceKey.self) { rect in
                 videoPlayerWidth = rect.width
             }
         }

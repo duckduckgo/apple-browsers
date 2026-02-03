@@ -1,8 +1,7 @@
 //
-//  DaxDialogStyles.swift
-//  DuckDuckGo
+//  SystemSettingsPiPTutorialDestination+DefaultBrowser.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,4 +16,20 @@
 //  limitations under the License.
 //
 
-// Intentionally left blank. Style modifiers live in the Onboarding package.
+#if os(iOS)
+import Foundation
+import UIKit
+
+public extension SystemSettingsPiPTutorialDestination {
+
+    enum Identifiers: String {
+        case defaultBrowser
+    }
+
+    static let defaultBrowser = SystemSettingsPiPTutorialDestination(
+        identifier: Identifiers.defaultBrowser.rawValue,
+        url: URL(string: UIApplication.openSettingsURLString)!
+    )
+
+}
+#endif

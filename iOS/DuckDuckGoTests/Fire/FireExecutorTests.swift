@@ -338,10 +338,9 @@ final class FireExecutorTests: XCTestCase {
         await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
         
         // Then
-        XCTAssertTrue(mockTabManager.closeTabCalled)
-        XCTAssertEqual(mockTabManager.closeTabCalledWith, tabViewModel.tab)
-        XCTAssertEqual(mockTabManager.closeTabShouldCreateEmptyTab, true)
-        XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageClearTabHistory, false)
     }
     
     func testBurnTabsWithTabScopeWhenNotLastTabDoesNotCreateEmptyTab() async {
@@ -354,10 +353,9 @@ final class FireExecutorTests: XCTestCase {
         await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
         
         // Then
-        XCTAssertTrue(mockTabManager.closeTabCalled)
-        XCTAssertEqual(mockTabManager.closeTabCalledWith, tabViewModel.tab)
-        XCTAssertEqual(mockTabManager.closeTabShouldCreateEmptyTab, false)
-        XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageClearTabHistory, false)
     }
     
     func testBurnTabsWithTabScopeCleansUpTabHistoryAfterBurnCompletes() async {

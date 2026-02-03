@@ -449,6 +449,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case vpnMenuItem
     case blackFridayCampaign
     case allowProTierPurchase
+    case freeTrialConversionWideEvent
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

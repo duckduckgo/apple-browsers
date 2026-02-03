@@ -31,7 +31,7 @@ public enum FailureRecoveryStep {
     case failed(_ error: Error)
 }
 
-protocol FailureRecoveryHandling {
+public protocol FailureRecoveryHandling {
     func attemptRecovery(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,

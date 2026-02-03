@@ -55,7 +55,7 @@ struct BrowsingMenuSheetView: View {
 
         static let websiteHeaderHeight: CGFloat = 56
         /// Height of header when only close button is shown (compact mode without website info)
-        static let closeButtonHeaderHeight: CGFloat = 40
+        static let closeButtonHeaderHeight: CGFloat = 48
     }
 
     @Environment(\.dismiss) var dismiss
@@ -367,7 +367,7 @@ private struct BrowsingMenuHeaderView: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(alignment: .top, spacing: 0) {
             if isWebsiteInfoVisible {
                 HStack(spacing: MenuHeaderConstant.contentSpacing) {
                     faviconView
@@ -381,7 +381,7 @@ private struct BrowsingMenuHeaderView: View {
 
             closeButton
         }
-        .padding(.vertical, MenuHeaderConstant.bottomPadding)
+        .padding(.bottom, MenuHeaderConstant.bottomPadding)
         .frame(maxWidth: .infinity)
     }
 

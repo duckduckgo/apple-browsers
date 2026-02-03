@@ -293,6 +293,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
 
+    /// Failsafe flag for whether the free trial conversion wide event is enabled
+    case freeTrialConversionWideEvent
+
     /// Shows tracker count banner in Tab Switcher and related settings item
     case tabSwitcherTrackerCount
 
@@ -346,6 +349,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
              .crashCollectionDisableKeysSorting,
+             .freeTrialConversionWideEvent,
              .crashCollectionLimitCallStackTreeDepth,
              .tabSwitcherTrackerCount:
             true
@@ -432,6 +436,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .tabSwitcherTrackerCount,
              .burnSingleTab,
              .uiTestFeatureFlag,
+             .freeTrialConversionWideEvent,
              .uiTestExperiment,
              .onboardingRebranding:
             return true
@@ -659,6 +664,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint))
         case .uiTestFeatureFlag:
             return .disabled
+        case .freeTrialConversionWideEvent:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .uiTestExperiment:
             return .disabled
         case .tabSwitcherTrackerCount:

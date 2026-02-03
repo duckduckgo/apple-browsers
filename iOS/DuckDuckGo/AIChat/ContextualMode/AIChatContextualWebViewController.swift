@@ -62,7 +62,6 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private var pendingPrompt: String?
     private var pendingPageContext: AIChatPageContextData?
-    private var userContentController: UserContentController?
     private var isPageReady = false
     private var isContentHandlerReady = false
     private var urlObservation: NSKeyValueObservation?
@@ -154,9 +153,22 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        setupKeyboardObservers()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        removeKeyboardObservers()
+        webViewBottomConstraint?.constant = 0
+        lastKnownKeyboardFrame = nil
+    }
+
     deinit {
         urlObservation?.invalidate()
-        NotificationCenter.default.removeObserver(self)
+        removeKeyboardObservers()
     }
 
     // MARK: - Public Methods
@@ -202,10 +214,8 @@ final class AIChatContextualWebViewController: UIViewController {
         self.isMediumDetent = isMediumDetent
 
         if isMediumDetent && !wasInMediumDetent {
-            // Transitioning TO medium: recalculate keyboard overlap if keyboard is visible
             recalculateKeyboardOverlapIfNeeded()
         } else if !isMediumDetent && webViewBottomConstraint?.constant != 0 {
-            // Transitioning FROM medium: animate constraint reset
             UIView.animate(withDuration: 0.25) {
                 self.webViewBottomConstraint?.constant = 0
                 self.view.layoutIfNeeded()
@@ -214,7 +224,9 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     private func recalculateKeyboardOverlapIfNeeded() {
-        guard let keyboardFrame = lastKnownKeyboardFrame else { return }
+        guard let keyboardFrame = lastKnownKeyboardFrame else {
+            return
+        }
         adjustForKeyboard(frame: keyboardFrame, duration: 0.25, options: .curveEaseInOut)
     }
 
@@ -238,11 +250,11 @@ final class AIChatContextualWebViewController: UIViewController {
             loadingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
-
-        setupKeyboardObservers()
     }
 
     private func setupKeyboardObservers() {
+        removeKeyboardObservers()
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(keyboardWillChangeFrame),
@@ -257,13 +269,30 @@ final class AIChatContextualWebViewController: UIViewController {
         )
     }
 
+    private func removeKeyboardObservers() {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: UIResponder.keyboardWillChangeFrameNotification,
+            object: nil
+        )
+        NotificationCenter.default.removeObserver(
+            self,
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
-              let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return }
+              let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
+            return
+        }
 
         lastKnownKeyboardFrame = keyboardFrame
 
-        guard isMediumDetent, view.window != nil else { return }
+        guard isMediumDetent, view.window != nil else {
+            return
+        }
 
         let duration = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
         let animationCurveRaw = (userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber)?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
@@ -275,7 +304,9 @@ final class AIChatContextualWebViewController: UIViewController {
     @objc private func keyboardWillHide(_ notification: Notification) {
         lastKnownKeyboardFrame = nil
 
-        guard view.window != nil else { return }
+        guard view.window != nil else {
+            return
+        }
 
         let userInfo = notification.userInfo
         let duration = (userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
@@ -293,6 +324,12 @@ final class AIChatContextualWebViewController: UIViewController {
         let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
         let keyboardOverlap = max(0, view.bounds.height - keyboardFrameInView.origin.y)
 
+        // Guard against invalid keyboard positions during sheet animation transitions
+        // If keyboard is above the view (negative Y) or overlap exceeds view height, skip adjustment
+        if keyboardFrameInView.origin.y < 0 || keyboardOverlap > view.bounds.height {
+            return
+        }
+
         webViewBottomConstraint?.constant = -keyboardOverlap
 
         UIView.animate(withDuration: duration, delay: 0, options: options) {
@@ -308,7 +345,6 @@ final class AIChatContextualWebViewController: UIViewController {
         )
         userContentController.delegate = self
         configuration.userContentController = userContentController
-        self.userContentController = userContentController
         return configuration
     }
 

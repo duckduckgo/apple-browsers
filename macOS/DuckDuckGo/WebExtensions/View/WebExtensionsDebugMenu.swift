@@ -121,7 +121,7 @@ final class WebExtensionMenuItem: NSMenuItem {
         super.init(title: webExtensionName ?? identifier,
                    action: nil,
                    keyEquivalent: "")
-        submenu = WebExtensionSubMenu(identifier: identifier)
+        submenu = WebExtensionSubMenu(extensionIdentifier: identifier)
     }
 
 }
@@ -129,14 +129,14 @@ final class WebExtensionMenuItem: NSMenuItem {
 @available(macOS 15.4, *)
 final class WebExtensionSubMenu: NSMenu {
 
-    private let identifier: String
+    private let extensionIdentifier: String
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(identifier: String) {
-        self.identifier = identifier
+    init(extensionIdentifier: String) {
+        self.extensionIdentifier = extensionIdentifier
         super.init(title: "")
 
         buildItems {
@@ -149,6 +149,6 @@ final class WebExtensionSubMenu: NSMenu {
             return
         }
 
-        try? webExtensionManager.uninstallExtension(identifier: identifier)
+        try? webExtensionManager.uninstallExtension(identifier: extensionIdentifier)
     }
 }

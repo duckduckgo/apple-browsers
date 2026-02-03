@@ -20,6 +20,7 @@
 import SwiftUI
 import WebExtensions
 import UniformTypeIdentifiers
+import WebKit
 
 @available(iOS 18.4, *)
 struct WebExtensionsDebugView: View {
@@ -71,6 +72,11 @@ struct WebExtensionsDebugView: View {
                                     .truncationMode(.middle)
                             }
                             Spacer()
+                            Button {
+                                performExtensionAction(for: installedExtension.identifier)
+                            } label: {
+                                Text("🚀")
+                            }
                         }
                     }
                     .onDelete(perform: uninstallExtensions)
@@ -137,6 +143,38 @@ struct WebExtensionsDebugView: View {
     private func uninstallAllExtensions() {
         webExtensionManager.uninstallAllExtensions()
         refreshExtensions()
+    }
+
+    private func performExtensionAction(for identifier: String) {
+        let extensionName = webExtensionManager.extensionName(from: identifier)
+        guard let context = webExtensionManager.loadedExtensions.first(where: { context in
+            context.webExtension.displayName == extensionName ||
+            context.webExtension.displayShortName == extensionName
+        }) else {
+            errorMessage = "Extension context not found for '\(extensionName ?? identifier)'"
+            return
+        }
+
+        dismissSettingsModal {
+            context.performAction(for: nil)
+        }
+    }
+
+    private func dismissSettingsModal(completion: @escaping () -> Void) {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first,
+              let rootViewController = window.rootViewController else {
+            completion()
+            return
+        }
+
+        if let presentedViewController = rootViewController.presentedViewController {
+            presentedViewController.dismiss(animated: true) {
+                completion()
+            }
+        } else {
+            completion()
+        }
     }
 }
 

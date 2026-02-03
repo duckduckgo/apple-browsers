@@ -17,6 +17,7 @@
 //
 
 import CryptoKit
+import os.log
 import WebKit
 
 @available(macOS 15.4, iOS 18.4, *)

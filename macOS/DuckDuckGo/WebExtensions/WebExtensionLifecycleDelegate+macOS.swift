@@ -47,8 +47,8 @@ final class AppWebExtensionLifecycleDelegate: WebExtensionLifecycleDelegate {
 
         let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
 
-        if manager.webExtensionPaths.contains(bitwardenExtensionPath) {
-            try? manager.uninstallExtension(path: bitwardenExtensionPath)
-        }
+//        if manager.webExtensionPaths.contains(bitwardenExtensionPath) {
+//            try? manager.uninstallExtension(path: bitwardenExtensionPath)
+//        }
     }
 }

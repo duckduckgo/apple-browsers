@@ -156,7 +156,10 @@ final class AIChatContextualSheetCoordinator {
 
         sessionState.notifyPageChanged()
 
-        guard sessionState.shouldAutoCollectContext else { return }
+        guard sessionState.shouldAutoCollectContext else {
+            sessionState.clearProcessingNavigationFlag()
+            return
+        }
 
         let didTrigger = pageContextHandler.triggerContextCollection()
         if !didTrigger {

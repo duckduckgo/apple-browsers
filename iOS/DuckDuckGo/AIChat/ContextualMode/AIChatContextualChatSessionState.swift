@@ -374,7 +374,7 @@ private extension AIChatContextualChatSessionState {
     }
 
     func cleanupFlags() {
-        Logger.aiChat.debug("[SessionState] Context update - nil result, preserving existing context")
+        Logger.aiChat.debug("[SessionState] Context update - nil result")
 
         if isManualAttachInProgress {
             isManualAttachInProgress = false

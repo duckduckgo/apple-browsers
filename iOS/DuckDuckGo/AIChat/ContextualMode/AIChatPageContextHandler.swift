@@ -64,7 +64,7 @@ protocol AIChatPageContextHandling: AnyObject {
 // MARK: - Implementation
 
 @MainActor
-final class AIChatPageContextHandler: @MainActor AIChatPageContextHandling {
+final class AIChatPageContextHandler: AIChatPageContextHandling {
 
     // MARK: - Properties
 
@@ -99,8 +99,13 @@ final class AIChatPageContextHandler: @MainActor AIChatPageContextHandling {
             Logger.aiChat.debug("[PageContext] Collection skipped - no user script available")
             return false
         }
+        
+        guard let webView = webViewProvider() else {
+           Logger.aiChat.debug("[PageContext] Collection skipped - no web view available")
+           return false
+       }
 
-        script.webView = webViewProvider()
+        script.webView = webView
         startObservingUpdates()
         script.collect()
         return true

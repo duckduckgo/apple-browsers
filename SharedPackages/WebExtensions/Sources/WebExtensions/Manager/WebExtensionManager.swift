@@ -171,6 +171,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
             Logger.webExtensions.info("✅ Uninstall all completed: \(successCount) extensions removed")
         }
 
+        storageProvider.cleanupOrphanedExtensions(keeping: [])
+
         return results
     }
 

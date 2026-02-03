@@ -82,7 +82,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc func selectAndLoadWebExtension() {
-        let panel = NSOpenPanel(allowedFileTypes: [.directory, .applicationExtension], directoryURL: .downloadsDirectory)
+        let panel = NSOpenPanel(allowedFileTypes: [.directory, .zip, .applicationExtension], directoryURL: .downloadsDirectory)
         panel.canChooseFiles = true
         panel.canChooseDirectories = true
         guard case .OK = panel.runModal(),

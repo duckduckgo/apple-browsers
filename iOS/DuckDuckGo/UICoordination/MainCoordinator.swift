@@ -29,6 +29,7 @@ import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import PrivacyStats
+import WebExtensions
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -59,6 +60,9 @@ final class MainCoordinator {
     private let launchSourceManager: LaunchSourceManaging
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
+
+    private(set) var webExtensionManager: WebExtensionManaging?
+    private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -158,7 +162,8 @@ final class MainCoordinator {
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: privacyConfigurationManager,
                                         appSettings: AppDependencyProvider.shared.appSettings,
-                                        privacyStats: privacyStats)
+                                        privacyStats: privacyStats,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -198,12 +203,37 @@ final class MainCoordinator {
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
-                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         whatsNewRepository: whatsNewRepository)
+        setupWebExtensions()
     }
 
     func start() {
         controller.loadViewIfNeeded()
+    }
+
+    private func setupWebExtensions() {
+        if #available(iOS 18.4, *), featureFlagger.isFeatureOn(.webExtensions) {
+            let webExtensionManager = WebExtensionManagerFactory.makeManager(mainViewController: controller)
+            self.webExtensionManager = webExtensionManager
+
+            self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(webExtensionManager: webExtensionManager,
+                                                                               mainViewController: controller)
+
+            tabManager.setWebExtensionManager(webExtensionManager)
+            controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
+            controller.setWebExtensionManager(webExtensionManager)
+            Task { @MainActor in
+                // FIXME: Currently loading installed extensions does not work on iOS due to absolute paths being unstable
+                webExtensionManager.uninstallAllExtensions()
+//                await webExtensionManager.loadInstalledExtensions()
+            }
+        } else {
+            self.webExtensionManager = nil
+            self.webExtensionEventsCoordinator = nil
+            tabManager.setWebExtensionManager(nil)
+            controller.setWebExtensionEventsCoordinator(nil)
+            controller.setWebExtensionManager(nil)
+        }
     }
 
     private static func makeHistoryManager(tabsModel: TabsModel) throws -> HistoryManaging {

@@ -22,7 +22,7 @@ import WebKit
 
 /// Manages web extensions including installation, loading, and lifecycle.
 /// Platform-specific behavior is delegated to the windowTabProvider and lifecycleDelegate.
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 open class WebExtensionManager: NSObject, WebExtensionManaging {
 
     // MARK: - Dependencies
@@ -36,10 +36,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     public let windowTabProvider: WebExtensionWindowTabProviding
 
     /// Platform-specific lifecycle hooks.
-    public weak var lifecycleDelegate: WebExtensionLifecycleDelegate?
+    public private(set) weak var lifecycleDelegate: WebExtensionLifecycleDelegate?
 
     /// Optional internal site handler for platform-specific URL handling.
-    public var internalSiteHandler: (any WebExtensionInternalSiteHandling)?
+    public private(set) var internalSiteHandler: (any WebExtensionInternalSiteHandling)?
 
     // MARK: - AsyncStream
 
@@ -55,7 +55,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
                 windowTabProvider: WebExtensionWindowTabProviding,
                 installationStore: WebExtensionPathsStoring = WebExtensionPathsStore(),
                 loader: WebExtensionLoading = WebExtensionLoader(),
-                eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()) {
+                eventsListener: WebExtensionEventsListening = WebExtensionEventsListener(),
+                lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
+                internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
@@ -64,6 +66,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         self.installationStore = installationStore
         self.loader = loader
         self.eventsListener = eventsListener
+        self.lifecycleDelegate = lifecycleDelegate
+        self.internalSiteHandler = internalSiteHandler
 
         super.init()
 
@@ -179,7 +183,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
 // MARK: - WKWebExtensionControllerDelegate
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 extension WebExtensionManager: WKWebExtensionControllerDelegate {
 
     public func webExtensionController(_ controller: WKWebExtensionController,
@@ -251,7 +255,7 @@ extension WebExtensionManager: WebExtensionInternalSiteHandlerDataSource {
 
 // MARK: - Errors
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionControllerDelegateError: Error {
     case notSupported
 }

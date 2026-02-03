@@ -19,21 +19,21 @@
 import Foundation
 import Persistence
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionPathsStoring: AnyObject {
     var paths: [String] { get }
     func add(_ url: String)
     func remove(_ url: String)
 }
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public struct WebExtensionPathsSettings: StoringKeys {
     let paths = StorageKey<[String]>(WebExtensionStorageKeys.storedPaths, assertionHandler: { _ in })
 
     public init() {}
 }
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionPathsStore: WebExtensionPathsStoring {
 
     private let storage: any KeyedStoring<WebExtensionPathsSettings>

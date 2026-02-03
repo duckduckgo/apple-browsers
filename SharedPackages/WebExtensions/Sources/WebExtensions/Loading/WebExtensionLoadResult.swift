@@ -19,8 +19,8 @@
 import Foundation
 import WebKit
 
-@available(macOS 15.4, *)
-public  struct WebExtensionLoadResult {
+@available(macOS 15.4, iOS 18.4, *)
+public struct WebExtensionLoadResult {
     let context: WKWebExtensionContext
     let extensionIdentifier: WebExtensionIdentifier?
     let path: String

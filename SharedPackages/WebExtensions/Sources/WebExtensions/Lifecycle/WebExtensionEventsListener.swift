@@ -18,7 +18,7 @@
 
 import WebKit
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionEventsListening {
 
     var controller: WKWebExtensionController? { get set }
@@ -36,7 +36,7 @@ public protocol WebExtensionEventsListening {
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab)
 }
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     public weak var controller: WKWebExtensionController?

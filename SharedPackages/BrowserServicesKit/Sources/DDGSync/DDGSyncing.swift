@@ -165,6 +165,13 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func deleteAIChats(until: Date) async throws
 
     /**
+     Deletes multiple AI Chats by their IDs in a single request.
+
+     - Parameter chatIds: An array of unique identifiers for the chats to delete.
+     */
+    func deleteAIChats(chatIds: [String]) async throws
+
+    /**
      Persists whether AI Chat History is enabled in the AI Chat frontend.
 
      This value is intended for client apps to gate AI Chat server-side deletion behavior when mirroring local clears.

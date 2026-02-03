@@ -275,6 +275,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
+
+    /// Failsafe flag for whether the free trial conversion wide event is enabled
+    case freeTrialConversionWideEvent
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -396,7 +399,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSync,
                 .heuristicAction,
                 .nextStepsListWidget,
-                .wideEventPostEndpoint:
+                .wideEventPostEndpoint,
+                .freeTrialConversionWideEvent:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -569,6 +573,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
+        case .freeTrialConversionWideEvent:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
         }
     }
 }

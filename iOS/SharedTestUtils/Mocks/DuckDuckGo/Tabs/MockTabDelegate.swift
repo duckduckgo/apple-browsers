@@ -50,6 +50,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestNewTab(_ tab: DuckDuckGo.TabViewController) {}
 
+    func tabDidRequestActivate(_ tab: TabViewController) {}
+
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) -> WKWebView? { nil }
 
     func tabDidRequestClose(_ tab: DuckDuckGo.Tab,

@@ -187,7 +187,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1)
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.frequency, .dailyAndStandard)
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.frequency, .standard)
 
         // Verify duration parameter is correct (1500ms)
         if case .burnWebCacheDuration(let duration) = mockPixelFiring.actualFireCalls.first?.pixel as? DataClearingPixels {

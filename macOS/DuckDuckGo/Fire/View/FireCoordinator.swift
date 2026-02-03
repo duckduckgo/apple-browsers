@@ -315,7 +315,6 @@ extension FireCoordinator {
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
                                                 close: result.includeTabsAndWindows)
-            let startTime = Date()
             await fireViewModel.fire.burnEntity(entity,
                                                 includingHistory: result.includeHistory,
                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
@@ -331,7 +330,6 @@ extension FireCoordinator {
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
-            let startTime = Date()
             await fireViewModel.fire.burnEntity(entity,
                                                 includingHistory: result.includeHistory,
                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
@@ -342,7 +340,6 @@ extension FireCoordinator {
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
-                let startTime = Date()
                 await fireViewModel.fire.burnAll(isBurnOnExit: false,
                                                  opening: .newtab,
                                                  includeCookiesAndSiteData: result.includeCookiesAndSiteData,
@@ -353,7 +350,6 @@ extension FireCoordinator {
                                                            selectedDomains: result.selectedCookieDomains ?? [],
                                                            customURLToOpen: nil,
                                                            close: result.includeTabsAndWindows)
-                let startTime = Date()
                 await fireViewModel.fire.burnEntity(entity,
                                                     includingHistory: result.includeHistory,
                                                     includeCookiesAndSiteData: result.includeCookiesAndSiteData,

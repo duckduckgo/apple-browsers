@@ -226,7 +226,7 @@ final class Fire: FireProtocol {
                 return nil
             }
         }
-        
+
         var description: String {
             switch self {
             case .none:

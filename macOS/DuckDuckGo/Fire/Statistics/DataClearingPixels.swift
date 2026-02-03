@@ -21,8 +21,6 @@ import PixelKit
 
 enum DataClearingPixels {
 
-    static var pixelFiring: PixelFiring? = PixelKit.shared
-
     // Overall Flow Metrics
 
     /// Fire completed
@@ -64,12 +62,6 @@ enum DataClearingPixels {
 
     case burnRecentlyClosedDuration(Int)
     case burnRecentlyClosedHasResidue
-
-    // Retrigger Timer
-    @MainActor
-    private static var lastFireTime: Date?
-    private static let retriggerWindow: TimeInterval = 20.0
-
 }
 
 // MARK: - PixelKitEvent Protocol

@@ -92,13 +92,13 @@ final class StatePersistenceService {
         } catch {
             dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
         }
-        
+
         do {
             try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.lastLoadedStateFileName))
         } catch {
             dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
         }
-        
+
         do {
             try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.oldStateFileName))
         } catch {
@@ -178,10 +178,10 @@ final class StatePersistenceService {
 // MARK: - Instrumentation Helper
 
 private extension StatePersistenceService {
-    
+
     func check(at location: URL, fileStore: FileStore) -> Bool {
         let hasDataAtLocation = fileStore.hasData(at: location)
-        let hasDataAtLastLoadedStateFile = fileStore.hasData(at:  .persistenceLocation(for: self.lastLoadedStateFileName))
+        let hasDataAtLastLoadedStateFile = fileStore.hasData(at: .persistenceLocation(for: self.lastLoadedStateFileName))
         let hasDataAtOldStateFile = fileStore.hasData(at: .persistenceLocation(for: self.oldStateFileName))
         return hasDataAtLocation || hasDataAtOldStateFile || hasDataAtLastLoadedStateFile
     }

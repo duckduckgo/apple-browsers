@@ -167,7 +167,7 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     func burnOnStartIfNeeded() -> Bool {
         let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
-        
+
         let startTime = Date()
         fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
         Self.fireCompletionPixel(from: startTime, isAutoClearAIChatHistoryEnabled: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)

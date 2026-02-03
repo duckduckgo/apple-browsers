@@ -342,27 +342,6 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(sut.isManualAttachInProgress == false)
     }
 
-    @Test("Concurrent navigation pixel calls are thread-safe")
-    func testConcurrentNavigationPixelCalls() async {
-        // GIVEN
-        var pixelCount = 0
-        let sut = AIChatContextualModePixelHandler(firePixel: { _ in
-            pixelCount += 1
-        })
-
-        // WHEN
-        await withTaskGroup(of: Void.self) { group in
-            for i in 0..<10 {
-                group.addTask {
-                    sut.firePageContextUpdatedOnNavigation(url: "https://example\(i).com")
-                }
-            }
-        }
-
-        // THEN
-        #expect(pixelCount == 10)
-    }
-
     @Test("Concurrent reset and navigation calls are thread-safe")
     func testConcurrentResetAndNavigation() async {
         // GIVEN

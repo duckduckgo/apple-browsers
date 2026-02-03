@@ -154,12 +154,12 @@ final class TabCollectionViewModel: NSObject {
             manager.openNewWindow(with: tabCollectionViewModel, burnerMode: tab.burnerMode, showWindow: true)
         }
     }
-    
+
     private enum TabCollectionViewModelError: Error {
         case tabCollectionAtIndexNotFound(String)
         case noTabSelected
     }
-    
+
     private let dataClearingPixelsReporter: DataClearingPixelsReporter
 
     init(

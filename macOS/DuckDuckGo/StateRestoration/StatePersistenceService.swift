@@ -89,7 +89,17 @@ final class StatePersistenceService {
         let location = URL.persistenceLocation(for: self.fileName)
         do {
             try fileStore.removeOrThrow(fileAtURL: location)
+        } catch {
+            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
+        }
+        
+        do {
             try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.lastLoadedStateFileName))
+        } catch {
+            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
+        }
+        
+        do {
             try fileStore.removeOrThrow(fileAtURL: .persistenceLocation(for: self.oldStateFileName))
         } catch {
             dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))

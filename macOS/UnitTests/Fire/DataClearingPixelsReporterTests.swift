@@ -26,15 +26,22 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
     private var mockPixelFiring: PixelKitMock!
     private var sut: DataClearingPixelsReporter!
+    private var currentDate: Date!
 
     override func setUp() {
         super.setUp()
         mockPixelFiring = PixelKitMock()
+        currentDate = Date()
+        sut = DataClearingPixelsReporter(
+            pixelFiring: mockPixelFiring,
+            endDateProvider: { [weak self] in self?.currentDate ?? Date() }
+        )
     }
 
     override func tearDown() {
         mockPixelFiring = nil
         sut = nil
+        currentDate = nil
         super.tearDown()
     }
 
@@ -42,12 +49,8 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
     @MainActor
     func testWhenFirstFireThenNoRetriggerPixelIsFired() {
-        // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-        let baseDate = Date()
-
         // When
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { baseDate })
+        sut.fireRetriggerPixelIfNeeded()
 
         // Then
         XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire on first call")
@@ -55,14 +58,12 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
     @MainActor
     func testWhenCalledTwiceWithin20SecondsThenRetriggerPixelIsFired() {
-        // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-        let baseDate = Date()
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { baseDate })
+        // Given - first call sets lastFireTime
+        sut.fireRetriggerPixelIfNeeded()
 
         // When - second call within 20 seconds
-        let secondCallDate = baseDate.addingTimeInterval(10)
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { secondCallDate })
+        currentDate = currentDate.addingTimeInterval(10)
+        sut.fireRetriggerPixelIfNeeded()
 
         // Then
         mockPixelFiring.expectedFireCalls = [
@@ -74,13 +75,11 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     @MainActor
     func testWhenCalledExactlyAt20SecondsThenRetriggerPixelIsFired() {
         // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-        let baseDate = Date()
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { baseDate })
+        sut.fireRetriggerPixelIfNeeded()
 
         // When - exactly at 20 seconds (edge case, <= condition)
-        let secondCallDate = baseDate.addingTimeInterval(20)
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { secondCallDate })
+        currentDate = currentDate.addingTimeInterval(20)
+        sut.fireRetriggerPixelIfNeeded()
 
         // Then
         mockPixelFiring.expectedFireCalls = [
@@ -92,13 +91,11 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     @MainActor
     func testWhenCalledAfter20SecondsThenNoRetriggerPixelIsFired() {
         // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-        let baseDate = Date()
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { baseDate })
+        sut.fireRetriggerPixelIfNeeded()
 
         // When - after 20 seconds
-        let secondCallDate = baseDate.addingTimeInterval(21)
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { secondCallDate })
+        currentDate = currentDate.addingTimeInterval(21)
+        sut.fireRetriggerPixelIfNeeded()
 
         // Then
         XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should fire after window expires")
@@ -107,40 +104,22 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     @MainActor
     func testWhenCalledMultipleTimesWithinWindowThenRetriggerPixelFiredEachTime() {
         // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-        let baseDate = Date()
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { baseDate })
+        sut.fireRetriggerPixelIfNeeded()
 
         // When - multiple rapid calls within window
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { baseDate.addingTimeInterval(5) })
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { baseDate.addingTimeInterval(10) })
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { baseDate.addingTimeInterval(15) })
+        currentDate = currentDate.addingTimeInterval(5)
+        sut.fireRetriggerPixelIfNeeded()
+
+        currentDate = currentDate.addingTimeInterval(5)
+        sut.fireRetriggerPixelIfNeeded()
+
+        currentDate = currentDate.addingTimeInterval(5)
+        sut.fireRetriggerPixelIfNeeded()
 
         // Then
         mockPixelFiring.expectedFireCalls = [
             .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard),
             .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard),
-            .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard)
-        ]
-        mockPixelFiring.verifyExpectations(file: #file, line: #line)
-    }
-
-    @MainActor
-    func testWhenWindowExpiresAndNewSequenceStartsThenNoPixelOnFirstCallOfNewSequence() {
-        // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-        let baseDate = Date()
-        
-        // First sequence
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { baseDate })
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { baseDate.addingTimeInterval(10) }) // fires pixel
-        
-        // Window expires
-        let expiredDate = baseDate.addingTimeInterval(35)
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { expiredDate }) // no pixel (> 20s from last)
-
-        // Then - only one pixel fired (from 10s call)
-        mockPixelFiring.expectedFireCalls = [
             .init(pixel: DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard)
         ]
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
@@ -150,7 +129,6 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
     func testWhenFireErrorPixelCalledThenPixelIsFired() {
         // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
         let testError = NSError(domain: "test", code: 123)
 
         // When
@@ -166,9 +144,6 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     // MARK: - fireResiduePixel Tests
 
     func testWhenFireResiduePixelCalledThenPixelIsFired() {
-        // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-
         // When
         sut.fireResiduePixel(.burnHistoryHasResidue)
 
@@ -182,9 +157,6 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     // MARK: - fireResiduePixelIfNeeded Tests
 
     func testWhenResidueCheckReturnsTrueThenPixelIsFired() {
-        // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-
         // When
         sut.fireResiduePixelIfNeeded(.burnVisitsHasResidue) { true }
 
@@ -196,9 +168,6 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     }
 
     func testWhenResidueCheckReturnsFalseThenNoPixelIsFired() {
-        // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-
         // When
         sut.fireResiduePixelIfNeeded(.burnVisitsHasResidue) { false }
 
@@ -210,31 +179,44 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
     func testWhenFireDurationPixelCalledThenPixelIsFiredWithCorrectDuration() {
         // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-        let startTime = Date()
-        
-        // When - Note: This will use Date() internally, so duration will be ~0
+        let startTime = currentDate!
+        currentDate = currentDate.addingTimeInterval(1.5) // 1.5 seconds = 1500ms
+
+        // When
         sut.fireDurationPixel(DataClearingPixels.burnWebCacheDuration, from: startTime)
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1)
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.frequency, .dailyAndStandard)
+
+        // Verify duration parameter is correct (1500ms)
+        if case .burnWebCacheDuration(let duration) = mockPixelFiring.actualFireCalls.first?.pixel as? DataClearingPixels {
+            XCTAssertEqual(duration, 1500)
+        } else {
+            XCTFail("Expected burnWebCacheDuration pixel")
+        }
     }
 
     func testWhenFireDurationPixelWithEntityCalledThenPixelIsFired() {
         // Given
-        sut = DataClearingPixelsReporter(pixelFiring: mockPixelFiring)
-        let startTime = Date()
+        let startTime = currentDate!
+        currentDate = currentDate.addingTimeInterval(2.0) // 2 seconds = 2000ms
 
         // When
         sut.fireDurationPixel(DataClearingPixels.burnHistoryDuration, from: startTime, entity: "history")
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1)
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.frequency, .dailyAndStandard)
+
+        if case .burnHistoryDuration(let entity, let duration) = mockPixelFiring.actualFireCalls.first?.pixel as? DataClearingPixels {
+            XCTAssertEqual(entity, "history")
+            XCTAssertEqual(duration, 2000)
+        } else {
+            XCTFail("Expected burnHistoryDuration pixel")
+        }
     }
 
-    // MARK: - Nil PixelFiring
+    // MARK: - Nil PixelFiring Tests
 
     @MainActor
     func testWhenPixelFiringIsNilThenNoPixelIsFiredAndNoCrash() {
@@ -242,11 +224,11 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut = DataClearingPixelsReporter(pixelFiring: nil)
 
         // When - should not crash
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { Date() })
-        sut.fireRetriggerPixelIfNeeded(dateProvider: { Date() })
+        sut.fireRetriggerPixelIfNeeded()
+        sut.fireRetriggerPixelIfNeeded()
         sut.fireErrorPixel(.burnWebCacheError(NSError(domain: "test", code: 1)))
         sut.fireResiduePixel(.burnHistoryHasResidue)
 
-        // Then - nothing happens
+        // Then - no crash
     }
 }

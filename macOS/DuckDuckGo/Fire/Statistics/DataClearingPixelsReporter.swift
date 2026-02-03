@@ -21,6 +21,7 @@ import PixelKit
 
 final class DataClearingPixelsReporter {
     
+    var endDateProvider: () -> Date
     private let pixelFiring: PixelFiring?
     
     @MainActor
@@ -33,8 +34,9 @@ final class DataClearingPixelsReporter {
         case burnVisits =  "burn_visits"
     }
     
-    init(pixelFiring: PixelFiring? = PixelKit.shared) {
+    init(pixelFiring: PixelFiring? = PixelKit.shared, endDateProvider: @escaping () -> Date = { Date() }) {
         self.pixelFiring = pixelFiring
+        self.endDateProvider = endDateProvider
     }
     
     // MARK: - Overall Flow Measurement
@@ -45,7 +47,7 @@ final class DataClearingPixelsReporter {
                              autoClear: Bool) {
         pixelFiring?.fire(
             DataClearingPixels.fireCompletion(
-                duration: prepareDuration(from: startTime, to: Date()),
+                duration: prepareDuration(from: startTime, to: endDateProvider()),
                 option: prepare(dialogResult.clearingOption),
                 domains: prepare(dialogResult),
                 path: path.rawValue,
@@ -56,8 +58,8 @@ final class DataClearingPixelsReporter {
     }
     
     @MainActor
-    func fireRetriggerPixelIfNeeded(dateProvider: @escaping () -> Date = { Date() }) {
-        let now = dateProvider()
+    func fireRetriggerPixelIfNeeded() {
+        let now = endDateProvider()
         if let lastFire = lastFireTime, now.timeIntervalSince(lastFire) <= retriggerWindow {
             pixelFiring?.fire(DataClearingPixels.retriggerIn20s, frequency: .dailyAndStandard)
         }
@@ -69,7 +71,7 @@ final class DataClearingPixelsReporter {
     func fireDurationPixel(_ durationPixel: @escaping (Int) -> DataClearingPixels,
                            from startTime: Date) {
         pixelFiring?.fire(
-            durationPixel(prepareDuration(from: startTime, to: Date())),
+            durationPixel(prepareDuration(from: startTime, to: endDateProvider())),
             frequency: .dailyAndStandard
         )
     }
@@ -78,7 +80,7 @@ final class DataClearingPixelsReporter {
                            from startTime: Date,
                            entity: String) {
         pixelFiring?.fire(
-            durationPixel(entity, prepareDuration(from: startTime, to: Date())),
+            durationPixel(entity, prepareDuration(from: startTime, to: endDateProvider())),
             frequency: .dailyAndStandard
         )
     }

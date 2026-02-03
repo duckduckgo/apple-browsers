@@ -163,6 +163,9 @@ extension DataClearingPixels: PixelKitEvent {
              .burnLastSessionStateDuration(let duration):
             return ["duration": String(duration)]
         
+        case .burnTabsHasResidue(let entity):
+            return ["entity": entity]
+        
         case .burnHistoryDuration(let entity, let duration),
              .burnTabsDuration(let entity, let duration):
             return ["entity": entity, "duration": String(duration)]
@@ -173,7 +176,7 @@ extension DataClearingPixels: PixelKitEvent {
         case .burnWebCacheError, .burnHistoryError, .burnChatHistoryError,
              .burnVisitsError, .burnLastSessionStateError, .burnTabsError, .burnDownloadsError,
              .burnHistoryHasResidue, .burnVisitsHasResidue, .burnLastSessionStateHasResidue,
-             .burnTabsHasResidue, .burnDownloadsHasResidue, .burnRecentlyClosedHasResidue:
+             .burnDownloadsHasResidue, .burnRecentlyClosedHasResidue:
             return nil
         }
     }

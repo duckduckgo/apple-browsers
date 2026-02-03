@@ -319,7 +319,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         entries.forEach { entry in
             historyDictionary?.removeValue(forKey: entry.url)
         }
-        
+
         let hasResidue = entries.map { $0.url }.contains { url in
             historyDictionary?[url] != nil
         }
@@ -373,7 +373,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 assertionFailure("No history entry")
             }
         }
-        
+
         // Check for residue after removal
         let hasResidue = localVisitsToRemove.contains { visit in
             visit.historyEntry?.visits.contains(visit) ?? false
@@ -381,7 +381,6 @@ final public class HistoryCoordinator: HistoryCoordinating {
         if hasResidue {
             dataClearingPixelsHandler?.fireResiduePixel()
         }
-
 
         entriesToSave.forEach { entry in
             save(entry: entry)

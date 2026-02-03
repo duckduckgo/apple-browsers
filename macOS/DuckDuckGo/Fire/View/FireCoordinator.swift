@@ -70,7 +70,7 @@ final class FireCoordinator {
     private let pixelFiring: PixelFiring?
     private let aiChatSyncCleaner: (() -> AIChatSyncCleaning?)?
     private let visualizeFireAnimationDecider: OverridableVisualizeFireSettingsDecider
-    private let dataClearingPixelsReporter: DataClearingPixelsReporter
+    let dataClearingPixelsReporter: DataClearingPixelsReporter
 
     init(tld: TLD,
          featureFlagger: FeatureFlagger,
@@ -282,7 +282,7 @@ extension FireCoordinator {
     }
 
     @MainActor
-    func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool) async {
+    func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool, from startTime: Date = Date()) async {
         dataClearingPixelsReporter.fireRetriggerPixelIfNeeded()
 
         if result.includeChatHistory {
@@ -292,7 +292,6 @@ extension FireCoordinator {
         if result.clearingOption == .allData /* not Current Tab or Window */,
            result.includeHistory, !isAllHistorySelected,
            let visits = result.selectedVisits, !visits.isEmpty {
-            let startTime = Date()
             await fireViewModel.fire.burnVisits(visits,
                                                 except: fireViewModel.fire.fireproofDomains,
                                                 isToday: result.isToday,

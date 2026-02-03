@@ -65,10 +65,6 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         submenu.addItem(.separator())
 
-        let bitwardenItem = NSMenuItem(title: "Bitwarden", action: #selector(installBitwardenExtension))
-        bitwardenItem.target = self
-        submenu.addItem(bitwardenItem)
-
         return submenu
     }
 
@@ -100,14 +96,6 @@ final class WebExtensionsDebugMenu: NSMenu {
     @objc func uninstallAllExtensions() {
         webExtensionManager.uninstallAllExtensions()
     }
-
-    @objc func installBitwardenExtension() {
-        guard let url = URL(string: WebExtensionIdentifier.bitwarden.defaultPath) else { return }
-        Task {
-            try? await webExtensionManager.installExtension(from: url)
-        }
-    }
-
 }
 
 @available(macOS 15.4, *)

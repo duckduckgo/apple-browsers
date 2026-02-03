@@ -45,12 +45,12 @@ final class InstalledWebExtensionStoreTests: XCTestCase {
     // MARK: - Test Helpers
 
     private func makeExtension(uniqueIdentifier: String = "test-extension",
+                               filename: String = "extension.zip",
                                name: String? = "Test Extension",
-                               storagePath: String = "/path/to/extension",
                                version: String? = "1.0.0") -> InstalledWebExtension {
         InstalledWebExtension(uniqueIdentifier: uniqueIdentifier,
+                           filename: filename,
                            name: name,
-                           storagePath: storagePath,
                            version: version)
     }
 

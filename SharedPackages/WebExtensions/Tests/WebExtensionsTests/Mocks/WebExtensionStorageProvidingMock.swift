@@ -42,11 +42,13 @@ final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
 
     var copyExtensionCalled = false
     var copyExtensionSourceURL: URL?
-    var mockCopyResult: (path: URL, identifier: String)?
+    var copyExtensionIdentifier: String?
+    var mockCopyResult: URL?
     var mockCopyError: Error?
-    func copyExtension(from sourceURL: URL) throws -> (path: URL, identifier: String) {
+    func copyExtension(from sourceURL: URL, identifier: String) throws -> URL {
         copyExtensionCalled = true
         copyExtensionSourceURL = sourceURL
+        copyExtensionIdentifier = identifier
 
         if let error = mockCopyError {
             throw error
@@ -56,9 +58,7 @@ final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
             return result
         }
 
-        let identifier = sourceURL.lastPathComponent
-        let path = extensionsDirectory.appendingPathComponent(identifier)
-        return (path, identifier)
+        return extensionsDirectory.appendingPathComponent(identifier)
     }
 
     var removeExtensionCalled = false

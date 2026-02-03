@@ -21,14 +21,14 @@ import Foundation
 @available(macOS 15.4, iOS 18.4, *)
 public struct InstalledWebExtension: Codable, Equatable, Identifiable {
 
-    /// Unique identifier for the extension (filename, e.g., "extension.zip")
+    /// Unique identifier for the extension (UUID)
     public let uniqueIdentifier: String
+
+    /// Original filename from the source URL (e.g., "extension.zip")
+    public let filename: String
 
     /// Display name of the extension
     public let name: String?
-
-    /// Storage path where extension files are located
-    public let storagePath: String
 
     /// Version string
     public let version: String?
@@ -37,13 +37,13 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
 
     public init(
         uniqueIdentifier: String,
+        filename: String,
         name: String?,
-        storagePath: String,
         version: String?
     ) {
         self.uniqueIdentifier = uniqueIdentifier
+        self.filename = filename
         self.name = name
-        self.storagePath = storagePath
         self.version = version
     }
 }

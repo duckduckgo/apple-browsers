@@ -67,13 +67,13 @@ public protocol WebExtensionManaging: AnyObject {
 
     /// Returns the extension name from the given path.
     @available(macOS 15.4, iOS 18.4, *)
-    func extensionName(from path: String) -> String?
+    func extensionName(for identifier: String) -> String?
 
     /// Returns the extension context for the given URL.
     @available(macOS 15.4, iOS 18.4, *)
     func extensionContext(for url: URL) -> WKWebExtensionContext?
 
-    /// Returns the extension context for the given path.
+    /// Returns the extension context for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
-    func context(forPath path: String) -> WKWebExtensionContext?
+    func context(for identifier: String) -> WKWebExtensionContext?
 }

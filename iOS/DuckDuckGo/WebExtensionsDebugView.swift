@@ -115,7 +115,7 @@ struct WebExtensionsDebugView: View {
         isLoading = true
         let identifiers = webExtensionManager.webExtensionIdentifiers
         installedExtensions = identifiers.map { identifier in
-            let name = webExtensionManager.extensionName(from: identifier) ?? "Unknown Extension"
+            let name = webExtensionManager.extensionName(for: identifier) ?? "Unknown Extension"
             return InstalledExtension(identifier: identifier, name: name)
         }
         isLoading = false
@@ -146,18 +146,15 @@ struct WebExtensionsDebugView: View {
     }
 
     private func performExtensionAction(for identifier: String) {
-        let extensionName = webExtensionManager.extensionName(from: identifier)
+        let extensionName = webExtensionManager.extensionName(for: identifier)
         guard let context = webExtensionManager.loadedExtensions.first(where: { context in
-            context.webExtension.displayName == extensionName ||
-            context.webExtension.displayShortName == extensionName
+            context.uniqueIdentifier == identifier
         }) else {
             errorMessage = "Extension context not found for '\(extensionName ?? identifier)'"
             return
         }
 
-        dismissSettingsModal {
-            context.performAction(for: nil)
-        }
+        context.performAction(for: nil)
     }
 
     private func dismissSettingsModal(completion: @escaping () -> Void) {

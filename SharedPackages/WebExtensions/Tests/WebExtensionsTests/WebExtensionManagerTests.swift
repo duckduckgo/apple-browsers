@@ -71,13 +71,13 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     private func makeInstalledWebExtension(uniqueIdentifier: String,
+                                        filename: String = "extension.zip",
                                         name: String? = nil,
-                                        storagePath: String? = nil,
                                         version: String? = nil) -> InstalledWebExtension {
         InstalledWebExtension(
             uniqueIdentifier: uniqueIdentifier,
+            filename: filename,
             name: name,
-            storagePath: storagePath ?? "/path/to/\(uniqueIdentifier)",
             version: version
         )
     }
@@ -103,7 +103,8 @@ final class WebExtensionManagerTests: XCTestCase {
         try await manager.installExtension(from: sourceURL)
 
         XCTAssertTrue(installedExtensionStoringMock.addCalled)
-        XCTAssertEqual(installedExtensionStoringMock.addedExtension?.uniqueIdentifier, "extension.zip")
+        XCTAssertNotNil(installedExtensionStoringMock.addedExtension?.uniqueIdentifier)
+        XCTAssertEqual(storageProvidingMock.copyExtensionIdentifier, installedExtensionStoringMock.addedExtension?.uniqueIdentifier)
     }
 
     @MainActor
@@ -144,18 +145,6 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Uninstall Extension Tests
 
     @MainActor
-    func testWhenExtensionIsUninstalled_ThenStorageProviderResolvesPath() throws {
-        let manager = makeManager()
-        let identifier = "extension.zip"
-        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier)]
-
-        try manager.uninstallExtension(identifier: identifier)
-
-        XCTAssertTrue(storageProvidingMock.resolveInstalledWebExtensionCalled)
-        XCTAssertEqual(storageProvidingMock.resolveInstalledWebExtensionIdentifier, identifier)
-    }
-
-    @MainActor
     func testWhenExtensionIsUninstalled_ThenIdentifierIsRemovedFromStore() throws {
         let manager = makeManager()
         let identifier = "extension.zip"
@@ -168,22 +157,6 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenUninstallExtensionNotFound_ThenErrorIsThrown() {
-        let manager = makeManager()
-        let identifier = "extension.zip"
-        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier)]
-        storageProvidingMock.shouldReturnNilForResolve = true
-
-        XCTAssertThrowsError(try manager.uninstallExtension(identifier: identifier)) { error in
-            if case WebExtensionError.extensionNotFound(let notFoundIdentifier) = error {
-                XCTAssertEqual(notFoundIdentifier, identifier)
-            } else {
-                XCTFail("Expected WebExtensionError.extensionNotFound, got \(error)")
-            }
-        }
-    }
-
-    @MainActor
     func testWhenExtensionIsUninstalled_ThenLoaderUnloadIsCalled() throws {
         let manager = makeManager()
         let identifier = "extension.zip"
@@ -192,6 +165,7 @@ final class WebExtensionManagerTests: XCTestCase {
         try manager.uninstallExtension(identifier: identifier)
 
         XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(webExtensionLoadingMock.unloadedIdentifier, identifier)
     }
 
     @MainActor
@@ -204,24 +178,6 @@ final class WebExtensionManagerTests: XCTestCase {
 
         XCTAssertTrue(storageProvidingMock.removeExtensionCalled)
         XCTAssertEqual(storageProvidingMock.removeExtensionIdentifier, identifier)
-    }
-
-    @MainActor
-    func testWhenUninstallFails_ThenErrorIsThrown() {
-        let manager = makeManager()
-        let identifier = "extension.zip"
-        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier)]
-
-        let expectedError = NSError(domain: "test", code: 1)
-        webExtensionLoadingMock.mockUnloadError = expectedError
-
-        XCTAssertThrowsError(try manager.uninstallExtension(identifier: identifier)) { error in
-            if case WebExtensionError.failedToUnloadWebExtension = error {
-                // Expected error type
-            } else {
-                XCTFail("Expected WebExtensionError.failedToUnloadWebExtension, got \(error)")
-            }
-        }
     }
 
     @MainActor
@@ -273,58 +229,42 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Load Installed Extensions Tests
 
     @MainActor
-    func testWhenLoadInstalledWebExtensions_ThenIdentifiersAreResolvedToPaths() async {
+    func testWhenLoadInstalledExtensions_ThenLoaderIsCalledWithIdentifiers() async {
         installedExtensionStoringMock.installedExtensions = [
-            makeInstalledWebExtension(uniqueIdentifier: "extension1.zip"),
-            makeInstalledWebExtension(uniqueIdentifier: "extension2.zip")
+            makeInstalledWebExtension(uniqueIdentifier: "extension1"),
+            makeInstalledWebExtension(uniqueIdentifier: "extension2")
         ]
         let manager = makeManager()
 
-        await manager.loadInstalledWebExtensions()
+        await manager.loadInstalledExtensions()
 
-        XCTAssertTrue(storageProvidingMock.resolveInstalledWebExtensionCalled)
         XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionsCalled)
-        XCTAssertEqual(webExtensionLoadingMock.loadedPaths.count, 2)
+        XCTAssertEqual(webExtensionLoadingMock.loadedIdentifiers, ["extension1", "extension2"])
     }
 
     @MainActor
-    func testWhenLoadInstalledWebExtensions_ThenMissingExtensionsAreRemovedFromStore() async {
-        installedExtensionStoringMock.installedExtensions = [
-            makeInstalledWebExtension(uniqueIdentifier: "extension1.zip"),
-            makeInstalledWebExtension(uniqueIdentifier: "extension2.zip")
-        ]
-        storageProvidingMock.shouldReturnNilForResolve = true
+    func testWhenLoadInstalledExtensions_ThenLifecycleDelegateWillLoadIsCalled() async {
         let manager = makeManager()
 
-        await manager.loadInstalledWebExtensions()
-
-        XCTAssertTrue(installedExtensionStoringMock.removeCalled)
-        XCTAssertFalse(webExtensionLoadingMock.loadWebExtensionsCalled)
-    }
-
-    @MainActor
-    func testWhenLoadInstalledWebExtensions_ThenLifecycleDelegateWillLoadIsCalled() async {
-        let manager = makeManager()
-
-        await manager.loadInstalledWebExtensions()
+        await manager.loadInstalledExtensions()
 
         XCTAssertTrue(lifecycleDelegateMock.willLoadExtensionsCalled)
     }
 
     @MainActor
-    func testWhenLoadInstalledWebExtensions_ThenLifecycleDelegateDidUpdateIsCalled() async {
+    func testWhenLoadInstalledExtensions_ThenLifecycleDelegateDidUpdateIsCalled() async {
         let manager = makeManager()
 
-        await manager.loadInstalledWebExtensions()
+        await manager.loadInstalledExtensions()
 
         XCTAssertTrue(lifecycleDelegateMock.didUpdateExtensionsCalled)
     }
 
     @MainActor
-    func testWhenLoadInstalledWebExtensions_ThenEventsListenerControllerIsSet() async {
+    func testWhenLoadInstalledExtensions_ThenEventsListenerControllerIsSet() async {
         let manager = makeManager()
 
-        await manager.loadInstalledWebExtensions()
+        await manager.loadInstalledExtensions()
 
         XCTAssertNotNil(eventsListenerMock.controller)
         XCTAssertTrue(eventsListenerMock.controller === manager.controller)
@@ -361,56 +301,4 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertFalse(manager.hasInstalledWebExtensions)
     }
 
-    // MARK: - Identifier Hash Tests
-
-    @MainActor
-    func testThatIdentifierHash_ReturnsConsistentHashForSamePath() {
-        let manager = makeManager()
-        let path = "/path/to/extension"
-
-        let hash1 = manager.identifierHash(forPath: path)
-        let hash2 = manager.identifierHash(forPath: path)
-
-        XCTAssertEqual(hash1, hash2)
-    }
-
-    @MainActor
-    func testThatIdentifierHash_ReturnsDifferentHashForDifferentPaths() {
-        let manager = makeManager()
-
-        let hash1 = manager.identifierHash(forPath: "/path/to/extension1")
-        let hash2 = manager.identifierHash(forPath: "/path/to/extension2")
-
-        XCTAssertNotEqual(hash1, hash2)
-    }
-
-    @MainActor
-    func testThatIdentifierHash_ReturnsHexString() {
-        let manager = makeManager()
-
-        let hash = manager.identifierHash(forPath: "/path/to/extension")
-
-        let hexCharacterSet = CharacterSet(charactersIn: "0123456789abcdef")
-        XCTAssertTrue(hash.unicodeScalars.allSatisfy { hexCharacterSet.contains($0) })
-    }
-
-    // MARK: - Extension Name Tests
-
-    @MainActor
-    func testThatExtensionName_ReturnsLastPathComponent() {
-        let manager = makeManager()
-
-        let name = manager.extensionName(from: "file:///path/to/MyExtension.appex")
-
-        XCTAssertEqual(name, "MyExtension.appex")
-    }
-
-    @MainActor
-    func testThatExtensionName_ReturnsNilForInvalidURL() {
-        let manager = makeManager()
-
-        let name = manager.extensionName(from: "")
-
-        XCTAssertNil(name)
-    }
 }

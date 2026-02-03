@@ -1746,8 +1746,6 @@
 		C1AD33352DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33322DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift */; };
 		C1AD33362DBAD1DD003B80A4 /* SaveCreditCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33302DBAD1DD003B80A4 /* SaveCreditCardView.swift */; };
 		C1AICOBV2F1A000100E35AD5 /* AIChatContextualOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AICOBV2F1A000000E35AD5 /* AIChatContextualOnboardingView.swift */; };
-		C1AICSVM2F0E000100E35AD5 /* AIChatContextualSheetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AICSVM2F0E000000E35AD5 /* AIChatContextualSheetViewModel.swift */; };
-		C1AICSVMT2F0E000200E35AD5 /* AIChatContextualSheetViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AICSVMT2F0E000300E35AD5 /* AIChatContextualSheetViewModelTests.swift */; };
 		C1AIREPO2F2E000100E35AD5 /* AIChatPageContextHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AIREPO2F2E000000E35AD5 /* AIChatPageContextHandler.swift */; };
 		C1AITEST2F2E000500E35AD5 /* AIChatPageContextHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AITEST2F2E000400E35AD5 /* AIChatPageContextHandlerTests.swift */; };
 		C1B3BF472D8D99DA00EE1D43 /* AutofillCreditCardListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B3BF432D8D99DA00EE1D43 /* AutofillCreditCardListView.swift */; };
@@ -4182,8 +4180,6 @@
 		C1AD33312DBAD1DD003B80A4 /* SaveCreditCardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardViewController.swift; sourceTree = "<group>"; };
 		C1AD33322DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardViewModel.swift; sourceTree = "<group>"; };
 		C1AICOBV2F1A000000E35AD5 /* AIChatContextualOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualOnboardingView.swift; sourceTree = "<group>"; };
-		C1AICSVM2F0E000000E35AD5 /* AIChatContextualSheetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetViewModel.swift; sourceTree = "<group>"; };
-		C1AICSVMT2F0E000300E35AD5 /* AIChatContextualSheetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetViewModelTests.swift; sourceTree = "<group>"; };
 		C1AIREPO2F2E000000E35AD5 /* AIChatPageContextHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPageContextHandler.swift; sourceTree = "<group>"; };
 		C1AITEST2F2E000400E35AD5 /* AIChatPageContextHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPageContextHandlerTests.swift; sourceTree = "<group>"; };
 		C1B3BF432D8D99DA00EE1D43 /* AutofillCreditCardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardListView.swift; sourceTree = "<group>"; };
@@ -5263,7 +5259,6 @@
 				C16670E32EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift */,
 				C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */,
 				C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */,
-				C1AICSVMT2F0E000300E35AD5 /* AIChatContextualSheetViewModelTests.swift */,
 				C1AITEST2F2E000400E35AD5 /* AIChatPageContextHandlerTests.swift */,
 			);
 			path = AIChat;
@@ -8306,7 +8301,6 @@
 				C19888DE2EF1519F004612AD /* QuickActions */,
 				C1F9D91C2EF6400000E35AD5 /* AIChatContextualInputViewController.swift */,
 				C1F9D9162EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift */,
-				C1AICSVM2F0E000000E35AD5 /* AIChatContextualSheetViewModel.swift */,
 				C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */,
 				C1F9D9112EEAE70400E35AD5 /* AIChatContextualSheetViewController.swift */,
 				C1AICOBV2F1A000000E35AD5 /* AIChatContextualOnboardingView.swift */,
@@ -11471,7 +11465,6 @@
 				9F0B19B42EA5E4FA001FA867 /* DefaultBrowserModalPromptProvider.swift in Sources */,
 				9FB0271D2C293619009EA190 /* OnboardingIntroViewModel.swift in Sources */,
 				C1F9D9172EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift in Sources */,
-				C1AICSVM2F0E000100E35AD5 /* AIChatContextualSheetViewModel.swift in Sources */,
 				1E1626072968413B0004127F /* ViewExtension.swift in Sources */,
 				31A42566285A0A6300049386 /* FaviconViewModel.swift in Sources */,
 				859DB8132CE6263C001F7210 /* TextZoomStorage.swift in Sources */,
@@ -12501,7 +12494,6 @@
 				F194FAFB1F14E622009B4DF8 /* UIFontExtensionTests.swift in Sources */,
 				C13EBC512EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift in Sources */,
 				C13EBC532EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift in Sources */,
-				C1AICSVMT2F0E000200E35AD5 /* AIChatContextualSheetViewModelTests.swift in Sources */,
 				BBFF18B12C76448100C48D7D /* QuerySubmittedTests.swift in Sources */,
 				9FFDA8392DFA8DC2007923F7 /* VideoPlayerCoordinatorTests.swift in Sources */,
 				CB18A3662E2790C700BE9D8D /* UserAgentConfigurationTests.swift in Sources */,

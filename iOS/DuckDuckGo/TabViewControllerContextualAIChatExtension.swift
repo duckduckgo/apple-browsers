@@ -33,10 +33,8 @@ extension TabViewController {
         Task { @MainActor in
             var restoreURL: URL?
 
-            let hasExistingWebVC = aiChatContextualSheetCoordinator.hasActiveChat
-            let needsColdRestore = !hasExistingWebVC && tabModel.contextualChatURL != nil
-
-            if needsColdRestore, let urlString = tabModel.contextualChatURL {
+            if !aiChatContextualSheetCoordinator.hasActiveSheet,
+               let urlString = tabModel.contextualChatURL {
                 restoreURL = URL(string: urlString)
             }
 
@@ -91,7 +89,8 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     }
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
-        tabModel.contextualChatURL = url?.absoluteString
+        guard let url else { return }
+        tabModel.contextualChatURL = url.absoluteString
         delegate?.tabLoadingStateDidChange(tab: self)
     }
 

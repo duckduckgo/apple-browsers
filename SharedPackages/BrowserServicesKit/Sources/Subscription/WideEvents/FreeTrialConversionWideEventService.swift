@@ -95,9 +95,9 @@ public final class DefaultFreeTrialConversionWideEventService: FreeTrialConversi
         if subscription.isActive && subscription.hasActiveTrialOffer {
             // User is in free trial. Start flow if one does not yet exist.
             guard existingFlow == nil else { return }
-            let data = FreeTrialConversionWideEventData(freeTrialPlan: subscription.productId)
+            let data = FreeTrialConversionWideEventData()
             wideEvent.startFlow(data)
-            Logger.subscription.log("[FreeTrialConversion] Started flow for plan: \(subscription.productId, privacy: .public)")
+            Logger.subscription.log("[FreeTrialConversion] Started flow")
         } else if subscription.isActive, let data = existingFlow {
             // User is active, but not on trial. Mark the existing flow as completed.
             _ = try? await wideEvent.completeFlow(data, status: .success)

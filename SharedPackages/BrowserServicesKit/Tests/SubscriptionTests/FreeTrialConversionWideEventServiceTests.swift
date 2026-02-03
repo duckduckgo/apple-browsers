@@ -59,7 +59,6 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         XCTAssertEqual(mockWideEvent.started.count, 1)
         let startedData = mockWideEvent.started.first as? FreeTrialConversionWideEventData
         XCTAssertNotNil(startedData)
-        XCTAssertEqual(startedData?.freeTrialPlan, subscription.productId)
     }
 
     func testWhenUserIsAlreadyInFreeTrialWithExistingFlow_ItDoesNotStartANewFlow() {

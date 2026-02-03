@@ -41,7 +41,6 @@ public class FreeTrialConversionWideEventData: WideEventData {
     // MARK: - Trial Data
 
     public var trialStartDate: Date
-    public var freeTrialPlan: String?
 
     // MARK: - Feature Activation (D1 = day 1, D2toD7 = days 2-7)
 
@@ -53,7 +52,7 @@ public class FreeTrialConversionWideEventData: WideEventData {
 
     private enum CodingKeys: String, CodingKey {
         case globalData, contextData, appData, errorData
-        case trialStartDate, freeTrialPlan
+        case trialStartDate
         case vpnActivatedD1, vpnActivatedD2ToD7
         case pirActivatedD1, pirActivatedD2ToD7
     }
@@ -61,12 +60,10 @@ public class FreeTrialConversionWideEventData: WideEventData {
     // MARK: - Init
 
     public init(trialStartDate: Date = Date(),
-                freeTrialPlan: String? = nil,
                 contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
                 globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.trialStartDate = trialStartDate
-        self.freeTrialPlan = freeTrialPlan
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
@@ -119,13 +116,12 @@ extension FreeTrialConversionWideEventData {
 extension FreeTrialConversionWideEventData {
 
     public func pixelParameters() -> [String: String] {
-        Dictionary(compacting: [
-            (WideEventParameter.FreeTrialConversionFeature.freeTrialPlan, freeTrialPlan),
-            (WideEventParameter.FreeTrialConversionFeature.vpnActivatedD1, String(vpnActivatedD1)),
-            (WideEventParameter.FreeTrialConversionFeature.vpnActivatedD2ToD7, String(vpnActivatedD2ToD7)),
-            (WideEventParameter.FreeTrialConversionFeature.pirActivatedD1, String(pirActivatedD1)),
-            (WideEventParameter.FreeTrialConversionFeature.pirActivatedD2ToD7, String(pirActivatedD2ToD7)),
-        ])
+        [
+            WideEventParameter.FreeTrialConversionFeature.vpnActivatedD1: String(vpnActivatedD1),
+            WideEventParameter.FreeTrialConversionFeature.vpnActivatedD2ToD7: String(vpnActivatedD2ToD7),
+            WideEventParameter.FreeTrialConversionFeature.pirActivatedD1: String(pirActivatedD1),
+            WideEventParameter.FreeTrialConversionFeature.pirActivatedD2ToD7: String(pirActivatedD2ToD7),
+        ]
     }
 }
 
@@ -134,7 +130,6 @@ extension FreeTrialConversionWideEventData {
 extension WideEventParameter {
 
     public enum FreeTrialConversionFeature {
-        static let freeTrialPlan = "feature.data.ext.free_trial_plan"
         static let vpnActivatedD1 = "feature.data.ext.step.vpn_activated_d1"
         static let vpnActivatedD2ToD7 = "feature.data.ext.step.vpn_activated_d2_to_d7"
         static let pirActivatedD1 = "feature.data.ext.step.pir_activated_d1"

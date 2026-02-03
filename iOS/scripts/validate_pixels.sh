@@ -1,14 +1,20 @@
 #!/bin/bash
 
 # validate_pixels.sh
-# Prints pixel validation logs from the iOS Simulator.
+# Validates pixel logs from the iOS Simulator against pixel definitions.
 #
 # Usage:
 #   ./validate_pixels.sh
 
 set -e
 
+# Get the directory where the script is stored
+SCRIPT_DIR=$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")
+BASE_DIR="${SCRIPT_DIR}/.."
+
 BUNDLE_ID="com.duckduckgo.mobile.ios"
+PIXEL_DEFINITIONS_PATH="${BASE_DIR}/PixelDefinitions"
+PIXEL_PREFIX="m_"
 
 # Check for a booted simulator
 if ! xcrun simctl list devices booted 2>/dev/null | grep -q "Booted"; then
@@ -36,4 +42,6 @@ if [[ ! -f "${LOG_FILE}" ]]; then
     exit 0
 fi
 
-cat "${LOG_FILE}"
+# Run the npm validation script
+cd "${BASE_DIR}"
+npm run validate-pixel-debug-logs "${PIXEL_DEFINITIONS_PATH}" "${LOG_FILE}" "${PIXEL_PREFIX}"

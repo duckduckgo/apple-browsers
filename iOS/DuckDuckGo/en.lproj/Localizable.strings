@@ -3154,6 +3154,9 @@ Take back control of your personal information with the browser designed for dat
 /* The name of Settings category in Privacy Features related to configuration of the search */
 "settings.private.search" = "Private Search";
 
+/* The name of Settings category when both search suggestions and Duck.ai chat suggestions are available */
+"settings.private.search.and.chat" = "Private Search & Chat";
+
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search is your default search engine, so you can search the web without being tracked.";
 

@@ -22,7 +22,7 @@ private struct OnboardingThemeKey: EnvironmentKey {
     static let defaultValue = OnboardingTheme.rebranding2026
 }
 
-extension EnvironmentValues {
+public extension EnvironmentValues {
 
     var onboardingTheme: OnboardingTheme {
         get { self[OnboardingThemeKey.self] }

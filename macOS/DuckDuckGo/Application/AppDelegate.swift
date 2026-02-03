@@ -243,6 +243,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let displaysTabsProgressIndicator: Bool
 
     let wideEvent: WideEventManaging
+    let freeTrialConversionService: FreeTrialConversionWideEventService
     let subscriptionManager: any SubscriptionManager
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
@@ -533,6 +534,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.featureFlagger = featureFlagger
 
         wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
+        freeTrialConversionService = DefaultFreeTrialConversionWideEventService(
+            wideEvent: wideEvent,
+            isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
+        )
+        freeTrialConversionService.startObservingSubscriptionChanges()
         displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
@@ -605,7 +611,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager, userDefaults: .subs) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                                  accessError: error,
-                                                                                 source: KeychainErrorSource.shared,
+                                                                                 source: KeychainErrorSource.browser,
                                                                                  authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
@@ -1570,11 +1576,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - PixelKit
 
     static func configurePixelKit() {
-#if DEBUG || REVIEW
-            Self.setUpPixelKit(dryRun: true)
-#else
-            Self.setUpPixelKit(dryRun: false)
-#endif
+        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild))
     }
 
     private static func setUpPixelKit(dryRun: Bool) {

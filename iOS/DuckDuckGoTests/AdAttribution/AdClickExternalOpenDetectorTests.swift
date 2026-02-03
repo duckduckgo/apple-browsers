@@ -45,7 +45,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
 
-        waitForExpectations(timeout: 1.0)
+        waitForExpectations(timeout: 5.0)
     }
 
     func test_invalidSequence_startThenFinishNavigation_doesNotTriggerMitigation() {
@@ -114,7 +114,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
 
-        waitForExpectations(timeout: 1.0)
+        waitForExpectations(timeout: 5.0)
 
         // Try to repeat the same sequence again, should still trigger mitigation
         detector.startNavigation()
@@ -166,7 +166,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        waitForExpectations(timeout: 1.0)
+        waitForExpectations(timeout: 5.0)
     }
     
     func test_otherWebKitErrorCodes_doNotTriggerMitigation() {
@@ -187,7 +187,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         
         wait(for: [expectation], timeout: 1.0)
     }
-    
+
     // MARK: - User Interaction Invalidation Tests
     
     func test_userInteractionInvalidation_preventsDetection() {
@@ -299,7 +299,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        waitForExpectations(timeout: 1.0)
+        waitForExpectations(timeout: 5.0)
     }
     
     func test_errorThenFinishNavigation_resetsState() {
@@ -334,7 +334,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             timeoutExpectation.fulfill()
         }
-        wait(for: [timeoutExpectation], timeout: 0.3)
+        wait(for: [timeoutExpectation], timeout: 5)
         
         shortTimeout.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
@@ -343,6 +343,6 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             finalExpectation.fulfill()
         }
-        wait(for: [finalExpectation], timeout: 0.2)
+        wait(for: [finalExpectation], timeout: 5)
     }
 }

@@ -68,15 +68,19 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
     private let featureFlagger = NSApp.delegateTyped.featureFlagger
     private var cancellables = Set<AnyCancellable>()
 
+    private let freeTrialConversionService: FreeTrialConversionWideEventService
+
     init(ipcClient: VPNControllerXPCClient,
          vpnUninstaller: VPNUninstalling,
          vpnUIPresenting: VPNUIPresenting,
-         proxySettings: TransparentProxySettings = .init(defaults: .netP)) {
+         proxySettings: TransparentProxySettings = .init(defaults: .netP),
+         freeTrialConversionService: FreeTrialConversionWideEventService) {
 
         self.ipcClient = ipcClient
         self.vpnUninstaller = vpnUninstaller
         self.vpnUIPresenting = vpnUIPresenting
         self.proxySettings = proxySettings
+        self.freeTrialConversionService = freeTrialConversionService
 
         let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: Application.appDelegate.windowControllersManager)
 
@@ -179,7 +183,8 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 vpnURLEventHandler: vpnURLEventHandler,
                 tunnelController: controller,
                 proxySettings: proxySettings,
-                vpnAppState: vpnAppState)
+                vpnAppState: vpnAppState,
+                freeTrialConversionService: freeTrialConversionService)
 
             let connectionStatusPublisher = CurrentValuePublisher(
                 initialValue: statusReporter.statusObserver.recentValue,

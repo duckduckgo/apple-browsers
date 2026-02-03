@@ -90,6 +90,13 @@ final class AIChatSidebar: NSObject {
         }
     }
 
+    /// Returns true if the sidebar session has expired based on the configured timeout.
+    /// A session is expired if the sidebar was hidden and the time since hiding exceeds the timeout.
+    public var isSessionExpired: Bool {
+        guard let hiddenAt else { return false }
+        return hiddenAt.minutesSinceNow() > aiChatRemoteSettings.sessionTimeoutMinutes
+    }
+
     /// Subscribes to restoration data updates from the sidebar view controller.
     /// This method is called automatically when the sidebarViewController is set.
     private func subscribeToRestorationDataUpdates() {
@@ -140,17 +147,20 @@ extension AIChatSidebar: NSSecureCoding {
     private enum CodingKeys {
         static let initialAIChatURL = "initialAIChatURL"
         static let isPresented = "isPresented"
+        static let hiddenAt = "hiddenAt"
     }
 
     convenience init?(coder: NSCoder) {
         let initialAIChatURL = coder.decodeObject(of: NSURL.self, forKey: CodingKeys.initialAIChatURL) as URL?
         self.init(initialAIChatURL: initialAIChatURL, burnerMode: .regular)
         self.isPresented = coder.decodeIfPresent(at: CodingKeys.isPresented) ?? true
+        self.hiddenAt = coder.decodeObject(of: NSDate.self, forKey: CodingKeys.hiddenAt) as Date?
     }
 
     func encode(with coder: NSCoder) {
         coder.encode(currentAIChatURL as NSURL, forKey: CodingKeys.initialAIChatURL)
         coder.encode(isPresented, forKey: CodingKeys.isPresented)
+        coder.encode(hiddenAt as NSDate?, forKey: CodingKeys.hiddenAt)
     }
 
     static var supportsSecureCoding: Bool {

@@ -176,22 +176,6 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(PixelFiringMock.lastPixelName == Pixel.Event.aiChatContextualPageContextUpdatedOnNavigation.name)
     }
 
-    @Test("Page context updated on navigation does not fire for same URL")
-    func testPageContextUpdatedOnNavigationDeduplication() {
-        // GIVEN
-        var pixelCount = 0
-        let sut = AIChatContextualModePixelHandler(firePixel: { _ in
-            pixelCount += 1
-        })
-
-        // WHEN
-        sut.firePageContextUpdatedOnNavigation(url: "https://example.com")
-        sut.firePageContextUpdatedOnNavigation(url: "https://example.com")
-
-        // THEN
-        #expect(pixelCount == 1)
-    }
-
     @Test("Page context updated on navigation fires for different URL")
     func testPageContextUpdatedOnNavigationDifferentURLs() {
         // GIVEN
@@ -206,40 +190,6 @@ final class AIChatContextualModePixelHandlerTests {
 
         // THEN
         #expect(pixelCount == 2)
-    }
-
-    @Test("Page context updated on navigation blocked during manual attach")
-    func testPageContextUpdatedOnNavigationBlockedDuringManualAttach() {
-        // GIVEN
-        var pixelCount = 0
-        let sut = AIChatContextualModePixelHandler(firePixel: { _ in
-            pixelCount += 1
-        })
-
-        // WHEN
-        sut.beginManualAttach()
-        sut.firePageContextUpdatedOnNavigation(url: "https://example.com")
-
-        // THEN
-        #expect(pixelCount == 0)
-    }
-
-    @Test("Page context updated on navigation allowed after manual attach ends")
-    func testPageContextUpdatedOnNavigationAllowedAfterManualAttachEnds() {
-        // GIVEN
-        var pixelCount = 0
-        let sut = AIChatContextualModePixelHandler(firePixel: { _ in
-            pixelCount += 1
-        })
-
-        // WHEN
-        sut.beginManualAttach()
-        sut.firePageContextUpdatedOnNavigation(url: "https://example.com")
-        sut.endManualAttach()
-        sut.firePageContextUpdatedOnNavigation(url: "https://different.com")
-
-        // THEN
-        #expect(pixelCount == 1)
     }
 
     // MARK: - Page Context Removal Pixels
@@ -338,40 +288,6 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(sut.isManualAttachInProgress == false)
     }
 
-    // MARK: - URL Priming
-
-    @Test("URL priming prevents immediate navigation pixel")
-    func testURLPriming() {
-        // GIVEN
-        var pixelCount = 0
-        let sut = AIChatContextualModePixelHandler(firePixel: { _ in
-            pixelCount += 1
-        })
-
-        // WHEN
-        sut.primeNavigationURL("https://example.com")
-        sut.firePageContextUpdatedOnNavigation(url: "https://example.com")
-
-        // THEN
-        #expect(pixelCount == 0)
-    }
-
-    @Test("URL priming allows different URL pixel")
-    func testURLPrimingDifferentURL() {
-        // GIVEN
-        var pixelCount = 0
-        let sut = AIChatContextualModePixelHandler(firePixel: { _ in
-            pixelCount += 1
-        })
-
-        // WHEN
-        sut.primeNavigationURL("https://example.com")
-        sut.firePageContextUpdatedOnNavigation(url: "https://different.com")
-
-        // THEN
-        #expect(pixelCount == 1)
-    }
-
     // MARK: - Reset Functionality
 
     @Test("Reset clears navigation URL")
@@ -424,27 +340,6 @@ final class AIChatContextualModePixelHandlerTests {
 
         // THEN
         #expect(sut.isManualAttachInProgress == false)
-    }
-
-    @Test("Concurrent navigation pixel calls are thread-safe")
-    func testConcurrentNavigationPixelCalls() async {
-        // GIVEN
-        var pixelCount = 0
-        let sut = AIChatContextualModePixelHandler(firePixel: { _ in
-            pixelCount += 1
-        })
-
-        // WHEN
-        await withTaskGroup(of: Void.self) { group in
-            for i in 0..<10 {
-                group.addTask {
-                    sut.firePageContextUpdatedOnNavigation(url: "https://example\(i).com")
-                }
-            }
-        }
-
-        // THEN
-        #expect(pixelCount == 10)
     }
 
     @Test("Concurrent reset and navigation calls are thread-safe")

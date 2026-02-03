@@ -283,6 +283,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
     case crashCollectionLimitCallStackTreeDepth
+
+    /// Failsafe flag for whether the free trial conversion wide event is enabled
+    case freeTrialConversionWideEvent
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -406,7 +409,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSync,
                 .heuristicAction,
                 .nextStepsListWidget,
-                .wideEventPostEndpoint:
+                .wideEventPostEndpoint,
+                .freeTrialConversionWideEvent:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -582,9 +586,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
         case .crashCollectionDisableKeysSorting:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.disableKeysSorting))
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionDisableKeysSorting))
         case .crashCollectionLimitCallStackTreeDepth:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.limitCallStackTreeDepth))
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
+        case .freeTrialConversionWideEvent:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
         }
     }
 }

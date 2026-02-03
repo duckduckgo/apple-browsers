@@ -24,6 +24,37 @@ import PixelKit
 import SwiftUI
 import QuartzCore
 
+/// Delegate protocol for WarnBeforeQuitManager (mockable DuckDuckGo_Privacy_Browser.Application) to handle event interception
+@MainActor
+protocol WarnBeforeQuitManagerDelegate: AnyObject, Sendable {
+    /// Installs an event interceptor with the given token and interceptor closure
+    /// - Parameters:
+    ///   - token: Unique identifier for this interceptor
+    ///   - interceptor: Closure that processes events. Returns nil to consume, or the event to pass through
+    func installEventInterceptor(token: UUID, interceptor: @escaping (NSEvent) -> NSEvent?)
+
+    /// Resets the event interceptor if the token matches
+    /// - Parameter token: Token to match against current interceptor
+    func resetEventInterceptor(token: UUID?)
+
+    /// Returns the current event interceptor token, if any
+    var eventInterceptorToken: UUID? { get }
+
+    /// Gets the next event matching the given criteria
+    /// - Parameters:
+    ///   - mask: Event type mask to match
+    ///   - expiration: Deadline for waiting
+    ///   - mode: Run loop mode
+    ///   - dequeue: Whether to dequeue the event
+    /// - Returns: The next matching event, or nil if deadline reached
+    func nextEvent(matching mask: NSEvent.EventTypeMask, until expiration: Date?, inMode mode: RunLoop.Mode, dequeue deqFlag: Bool) -> NSEvent?
+
+    /// Reposts an event to the event queue
+    /// - Parameter event: The event to repost
+    /// - Parameter atStart: If true, post at the start of the queue; if false, at the end
+    func postEvent(_ event: NSEvent, atStart: Bool)
+}
+
 /// Manages the "Warn Before Quitting" feature that prevents accidental app termination.
 ///
 /// Business logic layer that emits state changes via AsyncStream.
@@ -63,9 +94,6 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     /// Provides current time (injectable for testing)
     private let now: () -> Date
 
-    /// Receives events from the event loop (injectable for testing)
-    private let eventReceiver: (NSEvent.EventTypeMask, Date, RunLoop.Mode, Bool) -> NSEvent?
-
     /// Creates timers (injectable for testing)
     private let timerFactory: (TimeInterval, @escaping @MainActor () -> Void) -> Timer
 
@@ -74,6 +102,9 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     /// Checks if modifiers are currently held (injectable for testing)
     private let isModifierHeld: (NSEvent.ModifierFlags) -> Bool
+
+    /// Delegate for event interception
+    private weak var application: WarnBeforeQuitManagerDelegate?
 
     // State machine
 
@@ -117,10 +148,10 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
           isWarningEnabled: @escaping () -> Bool,
           pixelFiring: PixelFiring? = PixelKit.shared,
           now: @escaping () -> Date = Date.init,
-          eventReceiver: ((NSEvent.EventTypeMask, Date, RunLoop.Mode, Bool) -> NSEvent?)? = nil,
           timerFactory: ((TimeInterval, @escaping @MainActor () -> Void) -> Timer)? = nil,
           animationDelay: TimeInterval = Constants.defaultAnimationDelay,
-          isModifierHeld: ((NSEvent.ModifierFlags) -> Bool)? = nil) {
+          isModifierHeld: ((NSEvent.ModifierFlags) -> Bool)? = nil,
+          delegate: WarnBeforeQuitManagerDelegate? = nil) {
         // Validate this is a keyDown event with modifier and valid character
         guard currentEvent.type == .keyDown,
               let keyEquivalent = currentEvent.keyEquivalent, !keyEquivalent.modifierMask.isEmpty else { return nil }
@@ -130,7 +161,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         self.pixelFiring = pixelFiring
         self.isWarningEnabled = isWarningEnabled
         self.now = now
-        self.eventReceiver = eventReceiver ?? MainActor.assumeMainThread { NSApp.nextEvent }
+        self.application = delegate ?? (NSApp as? WarnBeforeQuitManagerDelegate)
         self.timerFactory = timerFactory ?? { @MainActor interval, block in
             dispatchPrecondition(condition: .onQueue(.main))
             let timer = Timer(timeInterval: interval, repeats: false) { _ in MainActor.assumeMainThread(block) }
@@ -148,8 +179,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     deinit {
         stateSubject.finish()
-        DispatchQueue.main.async { [interceptorToken] in
-            (NSApp as? Application)?.resetEventInterceptor(token: interceptorToken)
+        DispatchQueue.main.async { [interceptorToken, application] in
+            application?.resetEventInterceptor(token: interceptorToken)
         }
     }
 
@@ -269,7 +300,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 return .completed(shouldProceed: true)
             }
 
-            guard let event = eventReceiver([.keyUp, .keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown, .flagsChanged], deadline, .eventTracking, true) else {
+            guard let event = application?.nextEvent(matching: [.keyUp, .keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown, .flagsChanged], until: deadline, inMode: .eventTracking, dequeue: true) else {
                 // deadline reached
                 if case .keyDown = currentState {
                     // Reached progressThreshold - transition to holding and start progress
@@ -303,7 +334,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 // Other key pressed during hold - cancel and pass through
                 var keyDescr: String { event.type == .keyDown ? "'\(event.keyEquivalent?.charCode ?? "")' key" : "button \(event.buttonNumber)" }
                 Logger.general.debug("WarnBeforeQuitManager: \(keyDescr) pressed during hold, canceling")
-                NSApp.postEvent(event, atStart: true)
+                application?.postEvent(event, atStart: true)
                 return .completed(shouldProceed: false)
 
             case .keyUp where event.charactersIgnoringModifiers == keyEquivalent.charCode:
@@ -313,7 +344,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
             default:
                 // Repost other events to keep app responsive
-                NSApp.postEvent(event, atStart: true)
+                application?.postEvent(event, atStart: true)
             }
         }
 
@@ -348,7 +379,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 if shouldProceed {
                     self.installEventInterceptor()
                 } else {
-                    (NSApp as? Application)?.resetEventInterceptor(token: interceptorToken)
+                    application?.resetEventInterceptor(token: interceptorToken)
                 }
 
                 // Resume continuation (this must be last)
@@ -385,12 +416,12 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
             // Install event interceptor hook for the shortcut, Escape, and clicks
             // Don't overwrite existing interceptor - if one exists, cancel this manager
-            guard (NSApp as? Application)?.eventInterceptorToken ?? interceptorToken == interceptorToken else {
+            guard application?.eventInterceptorToken ?? interceptorToken == interceptorToken else {
                 Logger.general.error("WarnBeforeQuitManager: Another event interceptor already active, cancelling")
                 resume(with: false)
                 return
             }
-            (NSApp as? Application)?.installEventInterceptor(token: interceptorToken) { event in
+            application?.installEventInterceptor(token: interceptorToken) { event in
                 switch event.type {
                 case .keyDown where event.keyEquivalent == .escape:
                     Logger.general.debug("WarnBeforeQuitManager: Escape pressed")
@@ -489,8 +520,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         }
         // Reset event interceptor set to prevent beeps for repeated shortcut key events
         // Done on the next pass to let the event loop process any queued repeated key events before resetting the interceptor
-        DispatchQueue.main.async { [interceptorToken] in
-            (NSApp as? Application)?.resetEventInterceptor(token: interceptorToken)
+        DispatchQueue.main.async { [interceptorToken, application] in
+            application?.resetEventInterceptor(token: interceptorToken)
         }
     }
 
@@ -512,7 +543,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
         while true {
             // Wait for key up or flags changed events with timeout
-            guard let event = eventReceiver([.keyDown, .keyUp, .flagsChanged], deadline, .eventTracking, true) else {
+            guard let event = application?.nextEvent(matching: [.keyDown, .keyUp, .flagsChanged], until: deadline, inMode: .eventTracking, dequeue: true) else {
                 // Timeout reached - stop waiting
                 Logger.general.debug("WarnBeforeQuitManager: Key release wait timed out after \(timeout)s")
                 return
@@ -537,8 +568,8 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     /// Install event interceptor to prevent beeps from repeated shortcut key presses
     private func installEventInterceptor() {
         // Don't overwrite existing interceptor
-        guard (NSApp as? Application)?.eventInterceptorToken ?? interceptorToken == interceptorToken else { return }
-        (NSApp as? Application)?.installEventInterceptor(token: interceptorToken) { [shortcutKeyEquivalent] event in
+        guard application?.eventInterceptorToken ?? interceptorToken == interceptorToken else { return }
+        application?.installEventInterceptor(token: interceptorToken) { [shortcutKeyEquivalent] event in
             if event.type == .keyDown && event.keyEquivalent == shortcutKeyEquivalent {
                 return nil // consume event to prevent beep
             }

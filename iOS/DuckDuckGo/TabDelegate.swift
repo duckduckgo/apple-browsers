@@ -33,7 +33,9 @@ protocol TabDelegate: AnyObject {
              for navigationAction: WKNavigationAction,
              inheritingAttribution: AdClickAttributionLogic.State?) -> WKWebView?
 
-    func tabDidRequestClose(_ tab: TabViewController, shouldCreateEmptyTabAtSamePosition: Bool)
+    func tabDidRequestClose(_ tab: Tab,
+                            shouldCreateEmptyTabAtSamePosition: Bool,
+                            clearTabHistory: Bool)
 
     func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
@@ -136,7 +138,7 @@ protocol TabDelegate: AnyObject {
 extension TabDelegate {
 
     func tabDidRequestClose(_ tab: TabViewController) {
-        tabDidRequestClose(tab, shouldCreateEmptyTabAtSamePosition: false)
+        tabDidRequestClose(tab.tabModel, shouldCreateEmptyTabAtSamePosition: false, clearTabHistory: true)
     }
     
 }

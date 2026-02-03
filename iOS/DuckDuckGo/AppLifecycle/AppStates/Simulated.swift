@@ -26,7 +26,6 @@ struct Simulated {
     private let rootViewController: UIViewController
 
     init() {
-        Pixel.isDryRun = true
         _ = DefaultUserAgentManager.shared
         Database.shared.loadStore { _, _ in }
         try? BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: BookmarksDatabase.make())

@@ -357,6 +357,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    private var webExtensionFeatureFlagCancellable: AnyCancellable?
 
     private var didFinishLaunching = false
 
@@ -1551,6 +1552,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setupWebExtensions() {
+        subscribeToWebExtensionFeatureFlagChanges()
+
         if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
             let webExtensionManager = WebExtensionManagerFactory.makeManager()
             self.webExtensionManager = webExtensionManager
@@ -1561,6 +1564,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             self.webExtensionManager = nil
         }
+    }
+
+    private func subscribeToWebExtensionFeatureFlagChanges() {
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        webExtensionFeatureFlagCancellable = overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .webExtensions }
+            .sink { [weak self] (_, enabled) in
+                if !enabled {
+                    self?.webExtensionManager?.uninstallAllExtensions()
+                    self?.webExtensionManager = nil
+                }
+            }
     }
 
     // MARK: - PixelKit

@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import Combine
 import BrowserServicesKit
 import PrivacyConfig
 import Subscription
@@ -63,6 +64,7 @@ final class MainCoordinator {
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
+    private var webExtensionFeatureFlagCancellable: AnyCancellable?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -212,6 +214,8 @@ final class MainCoordinator {
     }
 
     private func setupWebExtensions() {
+        subscribeToWebExtensionFeatureFlagChanges()
+
         if #available(iOS 18.4, *), featureFlagger.isFeatureOn(.webExtensions) {
             let webExtensionManager = WebExtensionManagerFactory.makeManager(mainViewController: controller)
             self.webExtensionManager = webExtensionManager
@@ -232,6 +236,25 @@ final class MainCoordinator {
             controller.setWebExtensionEventsCoordinator(nil)
             controller.setWebExtensionManager(nil)
         }
+    }
+
+    private func subscribeToWebExtensionFeatureFlagChanges() {
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        webExtensionFeatureFlagCancellable = overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .webExtensions }
+            .sink { [weak self] (_, enabled) in
+                if !enabled {
+                    self?.webExtensionManager?.uninstallAllExtensions()
+                    self?.webExtensionManager = nil
+                    self?.webExtensionEventsCoordinator = nil
+                    self?.tabManager.setWebExtensionManager(nil)
+                    self?.controller.setWebExtensionEventsCoordinator(nil)
+                    self?.controller.setWebExtensionManager(nil)
+                }
+            }
     }
 
     private static func makeHistoryManager(tabsModel: TabsModel) throws -> HistoryManaging {

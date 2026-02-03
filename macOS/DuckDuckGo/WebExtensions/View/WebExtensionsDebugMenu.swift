@@ -49,7 +49,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         if !webExtensionManager.webExtensionIdentifiers.isEmpty {
             addItem(.separator())
             for identifier in webExtensionManager.webExtensionIdentifiers {
-                let name = webExtensionManager.extensionName(from: identifier)
+                let name = webExtensionManager.extensionName(for: identifier)
                 let menuItem = WebExtensionMenuItem(identifier: identifier, webExtensionName: name)
                 self.addItem(menuItem)
             }

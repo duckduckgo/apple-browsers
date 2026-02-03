@@ -232,7 +232,7 @@ extension DebugScreensViewModel {
                     guard let capturedController else { return }
 
                     let controller: Onboarding = if isOnboardingRebranding {
-                        OnboardingIntroViewController.rebranded(
+                        RebrandedOnboardingIntroViewController.rebranded(
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                             daxDialogsManager: d.daxDialogManager

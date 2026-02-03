@@ -54,7 +54,7 @@ extension MainViewController {
         hideAllHighlightsIfNeeded()
 
         let controller: Onboarding = if featureFlagger.isFeatureOn(.onboardingRebranding) {
-            OnboardingIntroViewController.rebranded(
+            RebrandedOnboardingIntroViewController.rebranded(
                 onboardingPixelReporter: contextualOnboardingPixelReporter,
                 systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                 daxDialogsManager: daxDialogsManager

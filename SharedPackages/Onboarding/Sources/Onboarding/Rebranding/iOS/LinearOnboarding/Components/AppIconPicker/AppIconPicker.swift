@@ -20,7 +20,7 @@
 #if os(iOS)
 import SwiftUI
 
-private enum Metrics {
+private enum AppIconPickerMetrics {
     static let cornerRadius: CGFloat = 13.0
     static let iconSize: CGFloat = 56.0
     static let spacing: CGFloat = 16.0
@@ -34,19 +34,19 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @StateObject private var viewModel: AppIconPickerViewModel
 
-        let layout = [GridItem(.adaptive(minimum: Metrics.iconSize), spacing: Metrics.spacing, alignment: .leading)]
+        let layout = [GridItem(.adaptive(minimum: AppIconPickerMetrics.iconSize), spacing: AppIconPickerMetrics.spacing, alignment: .leading)]
 
         init(appIconManager: AppIconManaging) {
             _viewModel = StateObject(wrappedValue: AppIconPickerViewModel(appIconManager: appIconManager))
         }
         
         var body: some View {
-            LazyVGrid(columns: layout, spacing: Metrics.spacing) {
+            LazyVGrid(columns: layout, spacing: AppIconPickerMetrics.spacing) {
                 ForEach(viewModel.items, id: \.icon) { item in
                     Image(uiImage: item.icon.mediumImage)
                         .resizable()
-                        .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                        .cornerRadius(Metrics.cornerRadius)
+                        .frame(width: AppIconPickerMetrics.iconSize, height: AppIconPickerMetrics.iconSize)
+                        .cornerRadius(AppIconPickerMetrics.cornerRadius)
                         .overlay {
                             strokeOverlay(isSelected: item.isSelected)
                         }
@@ -60,13 +60,13 @@ extension OnboardingRebranding {
         @ViewBuilder
         private func strokeOverlay(isSelected: Bool) -> some View {
             if isSelected {
-                RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                RoundedRectangle(cornerRadius: AppIconPickerMetrics.cornerRadius)
                     .foregroundColor(.clear)
-                    .frame(width: Metrics.strokeFrameSize, height: Metrics.strokeFrameSize)
+                    .frame(width: AppIconPickerMetrics.strokeFrameSize, height: AppIconPickerMetrics.strokeFrameSize)
                     .overlay(
-                        RoundedRectangle(cornerRadius: Metrics.cornerRadius)
-                            .inset(by: -Metrics.strokeInset)
-                            .stroke(onboardingTheme.colorPalette.primaryButtonBackgroundColor, lineWidth: Metrics.strokeWidth)
+                        RoundedRectangle(cornerRadius: AppIconPickerMetrics.cornerRadius)
+                            .inset(by: -AppIconPickerMetrics.strokeInset)
+                            .stroke(onboardingTheme.colorPalette.primaryButtonBackgroundColor, lineWidth: AppIconPickerMetrics.strokeWidth)
                     )
             }
         }

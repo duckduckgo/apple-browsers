@@ -99,9 +99,9 @@ extension OnboardingRebranding {
                     .onboardingProgressIndicator(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
                 }
                 .frame(width: geometry.size.width, alignment: .center)
-                .offset(y: geometry.size.height * Metrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass))
+                .offset(y: geometry.size.height * OnboardingViewMetrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass))
                 .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.daxDialogVisibilityDelay) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingViewMetrics.daxDialogVisibilityDelay) {
                         model.introState.showDaxDialogBox = true
                         model.introState.animateIntroText = true
                     }
@@ -114,13 +114,13 @@ extension OnboardingRebranding {
             return LandingView(animationNamespace: animationNamespace)
                 .ignoresSafeArea(edges: .bottom)
                 .frame(maxHeight: .infinity, alignment: .bottom)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.daxDialogDelay) {
-                        withAnimation {
-                            model.onAppear()
-                        }
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingViewMetrics.daxDialogDelay) {
+                    withAnimation {
+                        model.onAppear()
                     }
                 }
+            }
         }
 
         private func introView(shouldShowSkipOnboardingButton: Bool) -> some View {
@@ -233,7 +233,7 @@ extension OnboardingRebranding {
             model.introState.showIntroViewContent = false
 
             // Animation with small delay for a better effect when intro content disappear
-            let animationDuration = Metrics.comparisonChartAnimationDuration
+            let animationDuration = OnboardingViewMetrics.comparisonChartAnimationDuration
             let animation = Animation
                 .linear(duration: animationDuration)
                 .delay(0.2)
@@ -308,7 +308,7 @@ extension OnboardingRebranding.OnboardingView.ViewState.Intro {
 
 // MARK: - Metrics
 
-private enum Metrics {
+private enum OnboardingViewMetrics {
     static let daxDialogDelay: TimeInterval = 2.0
     static let daxDialogVisibilityDelay: TimeInterval = 0.5
     static let comparisonChartAnimationDuration = 0.25
@@ -324,8 +324,8 @@ private extension View {
     func onboardingProgressIndicator(currentStep: Int, totalSteps: Int) -> some View {
         overlay(alignment: .topTrailing) {
             OnboardingRebranding.OnboardingProgressIndicator(stepInfo: .init(currentStep: currentStep, totalSteps: totalSteps))
-                .padding(.trailing, Metrics.progressBarTrailingPadding)
-                .padding(.top, Metrics.progressBarTopPadding)
+                .padding(.trailing, OnboardingViewMetrics.progressBarTrailingPadding)
+                .padding(.top, OnboardingViewMetrics.progressBarTopPadding)
                 .transition(.identity)
                 .visibility(totalSteps == 0 ? .invisible : .visible)
         }

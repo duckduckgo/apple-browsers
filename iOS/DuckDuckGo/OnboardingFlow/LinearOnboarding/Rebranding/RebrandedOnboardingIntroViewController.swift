@@ -1,5 +1,5 @@
 //
-//  OnboardingIntroViewController.swift
+//  RebrandedOnboardingIntroViewController.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -21,13 +21,13 @@ import SwiftUI
 import SystemSettingsPiPTutorial
 import AIChat
 
-final class OnboardingIntroViewController<Content: View>: UIHostingController<Content>, Onboarding {
+final class RebrandedOnboardingIntroViewController<Content: View>: UIHostingController<Content>, Onboarding {
     weak var delegate: OnboardingDelegate?
-    private let viewModel: OnboardingIntroViewModel
+    private let viewModel: RebrandedOnboardingIntroViewModel
 
     init(
         rootView: Content,
-        viewModel: OnboardingIntroViewModel
+        viewModel: RebrandedOnboardingIntroViewModel
     ) {
         self.viewModel = viewModel
         super.init(rootView: rootView)
@@ -58,22 +58,20 @@ final class OnboardingIntroViewController<Content: View>: UIHostingController<Co
 
 }
 
-extension OnboardingIntroViewController where Content == OnboardingView {
+extension RebrandedOnboardingIntroViewController where Content == RebrandedOnboardingView {
 
-    static func legacy(
+    static func rebranded(
         onboardingPixelReporter: OnboardingPixelReporting,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: ContextualDaxDialogDisabling
-    ) -> OnboardingIntroViewController {
-        let viewModel = OnboardingIntroViewModel(
+    ) -> RebrandedOnboardingIntroViewController {
+        let viewModel = RebrandedOnboardingIntroViewModel(
             pixelReporter: onboardingPixelReporter,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             daxDialogsManager: daxDialogsManager
         )
-        let rootView = OnboardingView(model: viewModel)
-        return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)
+        let rootView = RebrandedOnboardingView(model: viewModel)
+        return RebrandedOnboardingIntroViewController(rootView: rootView, viewModel: viewModel)
     }
 
 }
-
-// Rebranded flow uses its own controller to keep the legacy flow untouched.

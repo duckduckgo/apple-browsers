@@ -1,5 +1,5 @@
 //
-//  OnboardingAddressBarPositionPicker.swift
+//  RebrandedOnboardingAddressBarPositionPicker.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -17,31 +17,24 @@
 //  limitations under the License.
 //
 
-#if os(iOS)
 import SwiftUI
 import DesignResourcesKitIcons
 
-extension OnboardingRebranding {
-    struct OnboardingAddressBarPositionPicker: View {
-        @StateObject private var viewModel: OnboardingAddressBarPositionPickerViewModel
+struct RebrandedOnboardingAddressBarPositionPicker: View {
+    @StateObject private var viewModel = RebrandedOnboardingAddressBarPositionPickerViewModel()
 
-        init(addressBarPositionManager: AddressBarPositionManaging) {
-            _viewModel = StateObject(wrappedValue: OnboardingAddressBarPositionPickerViewModel(addressBarPositionManager: addressBarPositionManager))
-        }
-
-        var body: some View {
-            VStack(spacing: 16.0) {
-                ForEach(viewModel.items, id: \.type) { item in
-                    AddressBarPositionButton(
-                        icon: item.icon,
-                        title: AttributedString(item.title),
-                        message: item.message,
-                        isSelected: item.isSelected,
-                        action: {
-                            viewModel.setAddressBar(position: item.type)
-                        }
-                    )
-                }
+    var body: some View {
+        VStack(spacing: 16.0) {
+            ForEach(viewModel.items, id: \.type) { item in
+                AddressBarPositionButton(
+                    icon: item.icon,
+                    title: AttributedString(item.title),
+                    message: item.message,
+                    isSelected: item.isSelected,
+                    action: {
+                        viewModel.setAddressBar(position: item.type)
+                    }
+                )
             }
         }
     }
@@ -49,7 +42,7 @@ extension OnboardingRebranding {
 
 // MARK: - Views
 
-private enum AddressBarPositionPickerMetrics {
+private enum Metrics {
     enum Button {
         static let messageFont = Font.system(size: 15)
         static let overlayRadius: CGFloat = 13.0
@@ -66,7 +59,7 @@ private enum AddressBarPositionPickerMetrics {
     }
 }
 
-extension OnboardingRebranding.OnboardingAddressBarPositionPicker {
+extension RebrandedOnboardingAddressBarPositionPicker {
     
     struct AddressBarPositionButton: View {
         @Environment(\.colorScheme) private var colorScheme
@@ -79,13 +72,13 @@ extension OnboardingRebranding.OnboardingAddressBarPositionPicker {
         
         var body: some View {
             Button(action: action) {
-                HStack(spacing: AddressBarPositionPickerMetrics.Button.itemSpacing) {
+                HStack(spacing: Metrics.Button.itemSpacing) {
                     Image(icon)
                     
                     VStack(alignment: .leading) {
                         Text(title)
                         Text(message)
-                            .font(AddressBarPositionPickerMetrics.Button.messageFont)
+                            .font(Metrics.Button.messageFont)
                             .foregroundStyle(Color.secondary)
                     }
                     
@@ -95,8 +88,8 @@ extension OnboardingRebranding.OnboardingAddressBarPositionPicker {
                 }
             }
             .overlay {
-                RoundedRectangle(cornerRadius: AddressBarPositionPickerMetrics.Button.overlayRadius)
-                    .stroke(strokeColor, lineWidth: AddressBarPositionPickerMetrics.Button.overlayStroke)
+                RoundedRectangle(cornerRadius: Metrics.Button.overlayRadius)
+                    .stroke(strokeColor, lineWidth: Metrics.Button.overlayStroke)
             }
             .buttonStyle(AddressBarPostionButtonStyle(isSelected: isSelected))
         }
@@ -105,7 +98,7 @@ extension OnboardingRebranding.OnboardingAddressBarPositionPicker {
             if isSelected {
                 Color(designSystemColor: .accent)
             } else {
-                colorScheme == .light ? AddressBarPositionPickerMetrics.Button.borderLightColor : AddressBarPositionPickerMetrics.Button.borderDarkColor
+                colorScheme == .light ? Metrics.Button.borderLightColor : Metrics.Button.borderDarkColor
             }
         }
 
@@ -113,7 +106,7 @@ extension OnboardingRebranding.OnboardingAddressBarPositionPicker {
     
 }
 
-extension OnboardingRebranding.OnboardingAddressBarPositionPicker.AddressBarPositionButton {
+extension RebrandedOnboardingAddressBarPositionPicker.AddressBarPositionButton {
 
     struct Checkbox: View {
         @Environment(\.colorScheme) private var colorScheme
@@ -122,7 +115,7 @@ extension OnboardingRebranding.OnboardingAddressBarPositionPicker.AddressBarPosi
 
         var body: some View {
             Circle()
-                .frame(width: AddressBarPositionPickerMetrics.Checkbox.size, height: AddressBarPositionPickerMetrics.Checkbox.size)
+                .frame(width: Metrics.Checkbox.size, height: Metrics.Checkbox.size)
                 .foregroundColor(foregroundColor)
                 .overlay {
                     selectionOverlay
@@ -139,15 +132,15 @@ extension OnboardingRebranding.OnboardingAddressBarPositionPicker.AddressBarPosi
                         Circle()
                             .fill(Color.white)
                             // Use smaller frame for checkbox bg to not fill the transparent edge of the glyph
-                            .frame(width: AddressBarPositionPickerMetrics.Checkbox.checkSize, height: AddressBarPositionPickerMetrics.Checkbox.checkSize)
+                            .frame(width: Metrics.Checkbox.checkSize, height: Metrics.Checkbox.checkSize)
                     )
                     .foregroundStyle(Color(designSystemColor: .accent))
-                    .frame(width: AddressBarPositionPickerMetrics.Checkbox.size, height: AddressBarPositionPickerMetrics.Checkbox.size)
+                    .frame(width: Metrics.Checkbox.size, height: Metrics.Checkbox.size)
                     .clipShape(Circle())
             } else {
                 Circle()
-                    .inset(by: AddressBarPositionPickerMetrics.Checkbox.strokeInset)
-                    .stroke(.secondary, lineWidth: AddressBarPositionPickerMetrics.Checkbox.strokeWidth)
+                    .inset(by: Metrics.Checkbox.strokeInset)
+                    .stroke(.secondary, lineWidth: Metrics.Checkbox.strokeWidth)
             }
         }
 
@@ -192,4 +185,3 @@ private struct AddressBarPostionButtonStyle: ButtonStyle {
         isHighlighted ? Color(designSystemColor: .buttonsGhostPressedFill) : .clear
     }
 }
-#endif

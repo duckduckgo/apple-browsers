@@ -88,6 +88,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
             pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
+            FirePixels.fireErrorPixel(FirePixels.burnChatHistoryError(error))
             pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
 
             if let userScriptError = error as? UserScriptError {

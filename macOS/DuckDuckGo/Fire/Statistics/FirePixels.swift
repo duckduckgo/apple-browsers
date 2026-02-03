@@ -37,7 +37,7 @@ enum FirePixels {
     
     case burnHistoryError(Error)
     case burnHistoryDuration(entity: String, duration: Int)
-    case burnHistoryHasResidue(entity: String)
+    case burnHistoryHasResidue
     
     case burnChatHistoryError(Error)
     case burnChatHistoryDuration(Int)
@@ -273,13 +273,10 @@ extension FirePixels: PixelKitEvent {
             
         case .burnWebCacheHasResidue(let steps):
             return ["step": steps]
-        
-        case .burnHistoryHasResidue(let entity):
-            return ["entity": entity]
             
         case .burnWebCacheError, .burnHistoryError, .burnChatHistoryError,
              .burnVisitsError, .burnLastSessionStateError, .burnTabsError, .burnDownloadsError,
-             .burnVisitsHasResidue, .burnLastSessionStateHasResidue,
+             .burnHistoryHasResidue, .burnVisitsHasResidue, .burnLastSessionStateHasResidue,
              .burnTabsHasResidue, .burnDownloadsHasResidue, .burnRecentlyClosedHasResidue:
             return nil
         }

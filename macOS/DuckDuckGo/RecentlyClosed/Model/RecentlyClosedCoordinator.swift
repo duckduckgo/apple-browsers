@@ -245,8 +245,14 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
     func burnCache(baseDomains: Set<String>? = nil, tld: TLD) {
         if let baseDomains = baseDomains {
             cache.burn(for: baseDomains, tld: tld)
+            FirePixels.fireResiduePixelIfNeeded(FirePixels.burnRecentlyClosedHasResidue) {
+                cache.hasResidues(for: baseDomains, tld: tld)
+            }
         } else {
             cache.removeAll()
+            FirePixels.fireResiduePixelIfNeeded(FirePixels.burnRecentlyClosedHasResidue) {
+                !cache.isEmpty
+            }
         }
     }
 }

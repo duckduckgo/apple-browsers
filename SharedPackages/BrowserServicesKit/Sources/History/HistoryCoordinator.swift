@@ -43,6 +43,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor var allHistoryVisits: [Visit]? { get }
     @MainActor var historyDictionary: [URL: HistoryEntry]? { get }
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { get }
+    var firePixelsHandler: FirePixelsHandler? { get set }
 
     @MainActor func addBlockedTracker(entityName: String, on url: URL)
     @MainActor func trackerFound(on: URL)
@@ -88,6 +89,7 @@ extension HistoryCoordinating {
 /// Coordinates access to History. Uses its own queue with high qos for all operations.
 final public class HistoryCoordinator: HistoryCoordinating {
 
+    public lazy var firePixelsHandler: FirePixelsHandler? = nil
     let historyStoringProvider: () -> HistoryStoring
 
     public init(historyStoring: @autoclosure @escaping () -> HistoryStoring) {
@@ -302,7 +304,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
                     onCleanFinished?()
                 }
             } catch {
-                // This should really be a pixel
+                firePixelsHandler?.fireErrorPixel(error)
                 Logger.history.error("Cleaning of history failed: \(error.localizedDescription)")
                 await MainActor.run {
                     onCleanFinished?()
@@ -317,6 +319,13 @@ final public class HistoryCoordinator: HistoryCoordinating {
         entries.forEach { entry in
             historyDictionary?.removeValue(forKey: entry.url)
         }
+        
+        let hasResidue = entries.map { $0.url }.contains { url in
+            historyDictionary?[url] != nil
+        }
+        if hasResidue {
+            firePixelsHandler?.fireResiduePixel()
+        }
 
         // Remove from the storage
         Task {
@@ -328,6 +337,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 }
             } catch {
                 assertionFailure("Removal failed")
+                firePixelsHandler?.fireErrorPixel(error)
                 Logger.history.error("Removal failed: \(error.localizedDescription)")
                 await MainActor.run {
                     completionHandler?(error)
@@ -341,11 +351,13 @@ final public class HistoryCoordinator: HistoryCoordinating {
                               completionHandler: (@MainActor (Error?) -> Void)? = nil) {
         var entriesToRemove = Set<HistoryEntry>()
         var entriesToSave = Set<HistoryEntry>()
+        var localVisitsToRemove = Set<Visit>()
 
         // Remove from the local memory
         visits.forEach { visit in
             if let historyEntry = visit.historyEntry {
                 historyEntry.visits.remove(visit)
+                localVisitsToRemove.insert(visit)
 
                 if historyEntry.visits.count > 0 {
                     if let newLastVisit = historyEntry.visits.map({ $0.date }).max() {
@@ -361,6 +373,16 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 assertionFailure("No history entry")
             }
         }
+        
+        // Check for residue after removal
+        let hasResidue = localVisitsToRemove.contains { visit in
+            visit.historyEntry?.visits.contains(visit) ?? false
+        }
+        if hasResidue {
+            firePixelsHandler?.fireResiduePixel()
+        }
+
+
         entriesToSave.forEach { entry in
             save(entry: entry)
         }
@@ -372,14 +394,17 @@ final public class HistoryCoordinator: HistoryCoordinating {
         // Remove from the storage
         Task {
             do {
+                let startTime = Date()
                 try await historyStoring.removeVisits(visits)
                 Logger.history.debug("Visits removed successfully")
                 // Remove entries with no remaining visits
                 await MainActor.run {
                     self.removeEntries(entriesToRemove, completionHandler: completionHandler)
                 }
+                firePixelsHandler?.fireDurationPixel(startTime)
             } catch {
                 assertionFailure("Removal failed")
+                firePixelsHandler?.fireErrorPixel(error)
                 Logger.history.error("Removal failed: \(error.localizedDescription)")
                 await MainActor.run {
                     completionHandler?(error)

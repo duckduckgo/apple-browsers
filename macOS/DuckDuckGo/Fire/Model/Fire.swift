@@ -309,6 +309,8 @@ final class Fire: FireProtocol {
                                                                                  aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
                                                                                  privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
+        
+        self.historyCoordinating.firePixelsHandler = FirePixelsBurnHistoryHandler()
     }
 
     @MainActor
@@ -535,7 +537,9 @@ final class Fire: FireProtocol {
 
     @MainActor
     func burnChatHistory() async {
+        let startTime = Date()
         await aiChatHistoryCleaner.cleanAIChatHistory()
+        FirePixels.fireDurationPixel(FirePixels.burnChatHistoryDuration, from: startTime)
         if syncService?.authState != .inactive {
             syncService?.scheduler.requestSyncImmediately()
         }
@@ -633,11 +637,13 @@ final class Fire: FireProtocol {
     @MainActor
     private func burnHistory(ofEntity entity: BurningEntity, completion: @escaping @MainActor () -> Void) {
         let visits: [Visit]
+        let burnHistoryStartTime = Date()
 
         switch entity {
         case .none(selectedDomains: let domains):
             burnHistory(of: domains) { urls in
                 self.burnVisitedLinks(urls)
+                FirePixels.fireDurationPixel(FirePixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
                 completion()
             }
             return
@@ -658,12 +664,14 @@ final class Fire: FireProtocol {
 
             burnAllVisitedLinks()
             burnAllHistory(completion: completion)
+            FirePixels.fireDurationPixel(FirePixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
 
             return
         }
 
         burnVisitedLinks(visits)
         historyCoordinating.burnVisits(visits, completion: completion)
+        FirePixels.fireDurationPixel(FirePixels.burnHistoryDuration, from: burnHistoryStartTime, entity: entity.description)
     }
 
     @MainActor
@@ -696,18 +704,24 @@ final class Fire: FireProtocol {
     @MainActor
     private func burnVisitedLinks(_ visits: [Visit]) {
         guard let visitedLinkStore = getVisitedLinkStore() else { return }
+
+        let startTime = Date()
         for visit in visits {
             guard let url = visit.historyEntry?.url else { continue }
             visitedLinkStore.removeVisitedLink(with: url)
         }
+        FirePixels.fireDurationPixel(FirePixels.burnVisitedLinksDuration, from: startTime)
     }
 
     @MainActor
     private func burnVisitedLinks(_ urls: Set<URL>) {
         guard let visitedLinkStore = getVisitedLinkStore() else { return }
+
+        let startTime = Date()
         for url in urls {
             visitedLinkStore.removeVisitedLink(with: url)
         }
+        FirePixels.fireDurationPixel(FirePixels.burnVisitedLinksDuration, from: startTime)
     }
 
     // MARK: - Zoom levels
@@ -734,12 +748,16 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnDownloads() {
+        let startTime = Date()
         self.downloadListCoordinator.cleanupInactiveDownloads(for: nil)
+        FirePixels.fireDurationPixel(FirePixels.burnDownloadsDuration, from: startTime)
     }
 
     @MainActor
     private func burnDownloads(of baseDomains: Set<String>) {
+        let startTime = Date()
         self.downloadListCoordinator.cleanupInactiveDownloads(for: baseDomains, tld: tld)
+        FirePixels.fireDurationPixel(FirePixels.burnDownloadsDuration, from: startTime)
     }
 
     // MARK: - Favicons
@@ -791,7 +809,6 @@ final class Fire: FireProtocol {
 
         func burnPinnedTabs(in tabCollectionViewModel: TabCollectionViewModel) {
             guard let pinnedTabsManager = tabCollectionViewModel.pinnedTabsManager else {
-                FirePixels.fireErrorPixel(FirePixels.burnTabsError(BurnTabsError.noPinnedTabsManager))
                 assertionFailure("No pinned tabs manager")
                 return
             }
@@ -801,11 +818,6 @@ final class Fire: FireProtocol {
                 pinnedTabsManager.tabCollection.replaceTab(at: index, with: newTab)
             }
         }
-        
-        enum BurnTabsError: Error {
-            case noPinnedTabsManager
-            case tabsViewModelMismatch
-        }
 
         // Close tabs or reset history based on entity.close
         switch burningEntity {
@@ -814,12 +826,7 @@ final class Fire: FireProtocol {
                   selectedDomains: _,
                   parentTabCollectionViewModel: let tabCollectionViewModel,
                   close: let shouldClose):
-            guard tabViewModel === tabCollectionViewModel.selectedTabViewModel else {
-                FirePixels.fireErrorPixel(FirePixels.burnTabsError(BurnTabsError.tabsViewModelMismatch))
-                assertionFailure("TabViewModel mismatch")
-                return
-            }
-
+            assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
             let startTime = Date()
             let countBeforeBurn = tabCollectionViewModel.tabCollection.tabs.count
 
@@ -940,7 +947,9 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnRecentlyClosed(baseDomains: Set<String>? = nil) {
+        let startTime = Date()
         recentlyClosedCoordinator?.burnCache(baseDomains: baseDomains, tld: tld)
+        FirePixels.fireDurationPixel(FirePixels.burnRecentlyClosedDuration, from: startTime)
     }
 
     // MARK: - Bookmarks cleanup

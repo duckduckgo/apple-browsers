@@ -32,7 +32,6 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
     enum WebExtensionLoaderError: Error {
         case extensionNotFound(identifier: String)
-        case failedToCreateURLFromPath(path: String)
         case failedToFindContextForIdentifier(identifier: String)
     }
 
@@ -40,11 +39,6 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
     public init(storageProvider: WebExtensionStorageProviding) {
         self.storageProvider = storageProvider
-    }
-
-    func bundle(from path: String) -> Bundle? {
-        let url = URL(fileURLWithPath: path, isDirectory: true)
-        return Bundle(url: url)
     }
 
     @MainActor

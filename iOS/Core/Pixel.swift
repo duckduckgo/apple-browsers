@@ -240,6 +240,19 @@ public class Pixel {
     private init() {
     }
 
+    /// Constructs a pixel URI in the format: `pixel_name?param1=value1&param2=value2`
+    /// This format is used for validating pixels against pixel definitions.
+    private static func pixelURI(name: String, parameters: [String: String]) -> String {
+        guard !parameters.isEmpty else {
+            return name
+        }
+        let sortedParams = parameters.sorted { $0.key < $1.key }
+        let queryString = sortedParams
+            .map { "\($0.key)=\($0.value)" }
+            .joined(separator: "&")
+        return "\(name)?\(queryString)"
+    }
+
     public static func fire(pixel: Pixel.Event,
                             forDeviceType deviceType: UIUserInterfaceIdiom? = UIDevice.current.userInterfaceIdiom,
                             withAdditionalParameters params: [String: String] = [:],
@@ -286,6 +299,11 @@ public class Pixel {
 
         guard !isDryRun else {
             Logger.pixels.debug("Pixel fired \(pixelName.replacingOccurrences(of: "_", with: "."), privacy: .public) \(params.count > 0 ? "\(params)" : "", privacy: .public)")
+
+            #if DEBUG
+            Self.writeValidationPixel(pixelName: pixelName, deviceType: deviceType, parameters: newParams)
+            #endif
+
             // simulate server response time for Dry Run mode
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 onComplete(nil)
@@ -386,3 +404,57 @@ extension Dictionary where Key == String, Value == String {
     }
 
 }
+
+// MARK: - Pixel Validation Logging (Debug Only)
+
+#if DEBUG
+extension Pixel {
+
+    private static let validationLogQueue = DispatchQueue(label: "com.duckduckgo.pixel.validation")
+    private static var validationLogCleared = false
+
+    private static var validationLogURL: URL {
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        return cacheDir.appendingPathComponent("pixel-validation-log.txt")
+    }
+
+    /// Logs a pixel in URI format for validation purposes.
+    static func writeValidationPixel(pixelName: String, deviceType: UIUserInterfaceIdiom?, parameters: [String: String]) {
+        let formFactor: String
+        if let deviceType = deviceType {
+            formFactor = deviceType == .pad ? Constants.tablet : Constants.phone
+        } else {
+            formFactor = Constants.phone
+        }
+        let fullPixelName = "\(pixelName)_ios_\(formFactor)"
+        let pixelURI = pixelURI(name: fullPixelName, parameters: parameters)
+
+        writeToValidationLog("Pixel fired: \(pixelURI)")
+    }
+
+    private static func writeToValidationLog(_ message: String) {
+        validationLogQueue.async {
+            let fileURL = validationLogURL
+
+            // Clear the log file on first write of each session
+            if !validationLogCleared {
+                try? FileManager.default.removeItem(at: fileURL)
+                validationLogCleared = true
+            }
+
+            let entry = message + "\n"
+            if let data = entry.data(using: .utf8) {
+                if FileManager.default.fileExists(atPath: fileURL.path) {
+                    if let handle = try? FileHandle(forWritingTo: fileURL) {
+                        handle.seekToEndOfFile()
+                        handle.write(data)
+                        handle.closeFile()
+                    }
+                } else {
+                    try? data.write(to: fileURL)
+                }
+            }
+        }
+    }
+}
+#endif

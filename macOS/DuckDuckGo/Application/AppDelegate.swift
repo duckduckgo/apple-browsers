@@ -240,8 +240,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let themeManager: ThemeManager
 
-    let displaysTabsProgressIndicator: Bool
-
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionWideEventService
     let subscriptionManager: any SubscriptionManager
@@ -539,7 +537,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
         )
         freeTrialConversionService.startObservingSubscriptionChanges()
-        displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(

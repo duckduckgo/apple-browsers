@@ -19,6 +19,7 @@
 
 #if os(iOS)
 import AVKit
+import os.log
 
 extension OnboardingRebranding {
     protocol PictureInPictureControllerFactory {

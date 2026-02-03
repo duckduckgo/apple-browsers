@@ -22,21 +22,21 @@ import SwiftUI
 
 public extension OnboardingStyles {
 
-    struct DaxDialogStyle: ViewModifier {
+    public struct DaxDialogStyle: ViewModifier {
         @Environment(\.verticalSizeClass) private var verticalSizeClass
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-        func body(content: Content) -> some View {
+        public func body(content: Content) -> some View {
             content
-                .frame(maxWidth: Metrics.daxDialogMaxWidth.build(v: verticalSizeClass, h: horizontalSizeClass))
+                .frame(maxWidth: DaxDialogMetrics.daxDialogMaxWidth.build(v: verticalSizeClass, h: horizontalSizeClass))
         }
 
     }
 
-    struct BackgroundStyle: ViewModifier {
+    public struct BackgroundStyle: ViewModifier {
         let backgroundType: OnboardingBackgroundType
 
-        func body(content: Content) -> some View {
+        public func body(content: Content) -> some View {
             ZStack {
                 switch backgroundType {
                 case .illustratedGradient:
@@ -54,7 +54,7 @@ public extension OnboardingStyles {
 
 }
 
-private enum Metrics {
+private enum DaxDialogMetrics {
     static let daxDialogMaxWidth = MetricBuilder<CGFloat?>(iPhone: nil, iPad: 480)
 }
 

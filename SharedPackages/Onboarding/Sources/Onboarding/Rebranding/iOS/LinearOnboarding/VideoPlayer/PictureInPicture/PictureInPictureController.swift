@@ -20,6 +20,7 @@
 #if os(iOS)
 import AVKit
 import Combine
+import os.log
 
 extension OnboardingRebranding {
     /// A type that controls the Picture in Picture functionality.
@@ -71,7 +72,7 @@ extension OnboardingRebranding {
 
 extension OnboardingRebranding.PictureInPictureController: OnboardingRebranding.PictureInPictureControlling {
 
-    var pictureInPictureEventPublisher: AnyPublisher<PictureInPictureEvent, Never> {
+    var pictureInPictureEventPublisher: AnyPublisher<OnboardingRebranding.PictureInPictureEvent, Never> {
         subject.eraseToAnyPublisher()
     }
 

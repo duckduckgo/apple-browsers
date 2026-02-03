@@ -19,6 +19,7 @@
 
 #if os(iOS)
 import AVFoundation
+import os.log
 
 extension OnboardingRebranding {
     enum AudioSessionPlaybackOption {
@@ -64,7 +65,7 @@ extension OnboardingRebranding {
 
 extension OnboardingRebranding.AudioSessionManager: OnboardingRebranding.AudioSessionManaging {
 
-    public func setPlaybackSessionActive(option: AudioSessionPlaybackOption) {
+    public func setPlaybackSessionActive(option: OnboardingRebranding.AudioSessionPlaybackOption) {
         do {
             try audioSession.setCategory(.playback, mode: .moviePlayback, options: AVAudioSession.CategoryOptions(option))
             try audioSession.setActive(true)

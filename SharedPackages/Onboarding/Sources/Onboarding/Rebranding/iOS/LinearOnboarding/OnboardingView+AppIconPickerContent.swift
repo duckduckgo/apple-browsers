@@ -53,7 +53,7 @@ extension OnboardingRebranding.OnboardingView {
                     animateMessage.wrappedValue = true
                 }
                 .foregroundColor(.primary)
-                .font(Metrics.titleFont)
+                .font(AppIconPickerMetrics.titleFont)
 
                 AnimatableTypingText(OnboardingRebranding.UserText.Onboarding.AppIconSelection.message, startAnimating: animateMessage, skipAnimation: isSkipped) {
                     withAnimation {
@@ -61,12 +61,12 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
                 .foregroundColor(.primary)
-                .font(Metrics.messageFont)
+                .font(AppIconPickerMetrics.messageFont)
 
                 VStack(spacing: 24) {
-                    AppIconPicker(appIconManager: appIconManager)
+                    OnboardingRebranding.AppIconPicker(appIconManager: appIconManager)
 
-                    PrimaryButton(title: OnboardingRebranding.UserText.Onboarding.AppIconSelection.cta, action: action)
+                    OnboardingRebranding.PrimaryButton(title: OnboardingRebranding.UserText.Onboarding.AppIconSelection.cta, action: action)
                 }
                 .visibility(showContent.wrappedValue ? .visible : .invisible)
             }
@@ -76,7 +76,7 @@ extension OnboardingRebranding.OnboardingView {
 
 }
 
-private enum Metrics {
+private enum AppIconPickerMetrics {
     static let titleFont = Font.system(size: 20, weight: .semibold)
     static let messageFont = Font.system(size: 16)
 }

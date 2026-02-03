@@ -18,6 +18,8 @@
 //
 
 #if os(iOS)
+import AVFoundation
+import Combine
 import SwiftUI
 import UIKit
 import SystemSettingsPiPTutorial
@@ -371,13 +373,31 @@ struct OnboardingView_Previews: PreviewProvider {
         var currentAddressBarPosition: OnboardingRebranding.AddressBarPosition = .top
     }
 
+    final class MockSystemSettingsPiPTutorialEventMapper: SystemSettingsPiPTutorialEventMapper {
+        func fireFailedToLoadPiPTutorialEvent(error: Error?, urlPath: String?) {}
+    }
+
+    final class MockSystemSettingsPiPTutorialPlayer: SystemSettingsPiPTutorialPlayer {
+        var playerItemStatusPublisher: AnyPublisher<AVPlayerItem.Status, Never> {
+            Just(.unknown).eraseToAnyPublisher()
+        }
+
+        var currentItemError: Error? { nil }
+        var currentItemURL: URL? { nil }
+
+        func isPictureInPictureSupported() -> Bool { false }
+        func load(url: URL) {}
+        func play() {}
+        func stop() {}
+    }
+
     static var previews: some View {
         let dependencies = OnboardingRebranding.OnboardingIntroViewModel.Dependencies(
             pixelReporter: MockPixelReporter(),
             systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManager(
                 playerView: UIView(),
-                videoPlayer: OnboardingRebranding.VideoPlayerCoordinator(configuration: OnboardingRebranding.VideoPlayerConfiguration()),
-                eventMapper: SystemSettingsPiPTutorialPixelHandler()
+                videoPlayer: MockSystemSettingsPiPTutorialPlayer(),
+                eventMapper: MockSystemSettingsPiPTutorialEventMapper()
             ),
             daxDialogsManager: MockDaxDialogDisabling(),
             introSteps: [

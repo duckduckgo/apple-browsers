@@ -20,7 +20,7 @@
 #if os(iOS)
 import SwiftUI
 
-private enum Metrics {
+private enum AddressBarPositionMetrics {
     static let titleFont = Font.system(size: 20, weight: .semibold)
 }
 
@@ -54,12 +54,12 @@ extension OnboardingRebranding.OnboardingView {
                     showContent.wrappedValue = true
                 }
                 .foregroundColor(.primary)
-                .font(Metrics.titleFont)
+                .font(AddressBarPositionMetrics.titleFont)
 
                 VStack(spacing: 24) {
-                    OnboardingAddressBarPositionPicker(addressBarPositionManager: addressBarPositionManager)
+                    OnboardingRebranding.OnboardingAddressBarPositionPicker(addressBarPositionManager: addressBarPositionManager)
 
-                    PrimaryButton(title: OnboardingRebranding.UserText.Onboarding.AddressBarPosition.cta, action: action)
+                    OnboardingRebranding.PrimaryButton(title: OnboardingRebranding.UserText.Onboarding.AddressBarPosition.cta, action: action)
                 }
                 .visibility(showContent.wrappedValue ? .visible : .invisible)
             }

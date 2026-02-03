@@ -22,7 +22,7 @@ import Foundation
 import UIKit
 
 extension NSAttributedString {
-    public func withText(_ text: String) -> NSAttributedString {
+    func withText(_ text: String) -> NSAttributedString {
         guard let mutableText = mutableCopy() as? NSMutableAttributedString else {
             return NSAttributedString(string: text)
         }
@@ -30,11 +30,11 @@ extension NSAttributedString {
         return mutableText
     }
 
-    public var font: UIFont? {
+    var font: UIFont? {
         attributes(at: 0, effectiveRange: nil)[.font] as? UIFont
     }
 
-    public func stringWithFontSize(_ size: CGFloat) -> NSAttributedString? {
+    func stringWithFontSize(_ size: CGFloat) -> NSAttributedString? {
         guard let font = font else { return nil }
         let newFont = font.withSize(size)
 
@@ -43,15 +43,15 @@ extension NSAttributedString {
         return newString
     }
 
-    public func withFont(_ font: UIFont) -> NSAttributedString {
+    func withFont(_ font: UIFont) -> NSAttributedString {
         with(attribute: .font, value: font)
     }
 
-    public func withTextColor(_ color: UIColor) -> NSAttributedString {
+    func withTextColor(_ color: UIColor) -> NSAttributedString {
         with(attribute: .foregroundColor, value: color)
     }
 
-    public func withFont(_ font: UIFont, forText text: String) -> NSAttributedString {
+    func withFont(_ font: UIFont, forText text: String) -> NSAttributedString {
         let range = self.string.range(of: text)
         guard range.location != NSNotFound else {
             return self
@@ -60,18 +60,18 @@ extension NSAttributedString {
         return with(attribute: .font, value: font, in: range)
     }
 
-    public func with(attribute key: NSAttributedString.Key, value: Any, in range: NSRange? = nil) -> NSAttributedString {
+    func with(attribute key: NSAttributedString.Key, value: Any, in range: NSRange? = nil) -> NSAttributedString {
         with(attributes: [key: value], in: range)
     }
 
-    public func with(attributes: [NSAttributedString.Key: Any], in range: NSRange? = nil) -> NSAttributedString {
+    func with(attributes: [NSAttributedString.Key: Any], in range: NSRange? = nil) -> NSAttributedString {
         let mutableString = NSMutableAttributedString(attributedString: self)
         mutableString.addAttributes(attributes, range: range ?? string.nsRange)
         return mutableString
     }
 }
 
-public extension String {
+extension String {
     var attributed: NSAttributedString {
         NSAttributedString(string: self)
     }
@@ -85,17 +85,17 @@ public extension String {
     }
 }
 
-public func + (lhs: NSAttributedString, rhs: NSAttributedString) -> NSAttributedString {
+func + (lhs: NSAttributedString, rhs: NSAttributedString) -> NSAttributedString {
     let mutable = NSMutableAttributedString(attributedString: lhs)
     mutable.append(rhs)
     return mutable
 }
 
-public func + (lhs: NSAttributedString, rhs: String) -> NSAttributedString {
+func + (lhs: NSAttributedString, rhs: String) -> NSAttributedString {
     lhs + NSAttributedString(string: rhs)
 }
 
-public func + (lhs: String, rhs: NSAttributedString) -> NSAttributedString {
+func + (lhs: String, rhs: NSAttributedString) -> NSAttributedString {
     NSAttributedString(string: lhs) + rhs
 }
 #endif

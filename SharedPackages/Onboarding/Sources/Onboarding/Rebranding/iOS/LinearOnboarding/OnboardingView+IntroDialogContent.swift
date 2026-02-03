@@ -71,10 +71,10 @@ extension OnboardingRebranding.OnboardingView {
                 .font(Font.system(size: 20, weight: .bold))
 
                 VStack {
-                    PrimaryButton(title: OnboardingRebranding.UserText.Onboarding.Intro.continueCTA, action: continueAction)
+                    OnboardingRebranding.PrimaryButton(title: OnboardingRebranding.UserText.Onboarding.Intro.continueCTA, action: continueAction)
 
                     if skipOnboardingView != nil {
-                        SecondaryButton(title: OnboardingRebranding.UserText.Onboarding.Intro.skipCTA) {
+                        OnboardingRebranding.SecondaryButton(title: OnboardingRebranding.UserText.Onboarding.Intro.skipCTA) {
                             isSkipped.wrappedValue = false
                             showSkipOnboarding = true
                             skipAction()

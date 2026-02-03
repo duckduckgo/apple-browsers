@@ -157,6 +157,16 @@ public extension OnboardingRebranding {
                     value: "Want easy access to private AI chat?",
                     comment: "The title of the onboarding dialog popup to select the preferred search experience."
                 )
+                static let searchOnlyOption = localized(
+                    "settings.ai.experimental.picker.search_only",
+                    value: "Search Only",
+                    comment: "Title for the 'Search Only' option in the search experience picker."
+                )
+                static let searchAndDuckAIOption = localized(
+                    "settings.ai.experimental.picker.search_and_duckai",
+                    value: "Search & Duck.ai",
+                    comment: "Title for the 'Search & Duck.ai' option in the search experience picker."
+                )
                 static let footer = localized(
                     "onboarding.highlights.searchExperience.footer",
                     value: "AI features are private and optional. You can make changes in Settings > AI Features.",

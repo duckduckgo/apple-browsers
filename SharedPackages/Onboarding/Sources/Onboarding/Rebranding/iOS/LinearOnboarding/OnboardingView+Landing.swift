@@ -47,7 +47,7 @@ extension OnboardingRebranding.OnboardingView {
 
                 Spacer()
 
-                Image(Metrics.hikerImage.build(v: verticalSizeClass, h: horizontalSizeClass))
+                Image(LandingMetrics.hikerImage.build(v: verticalSizeClass, h: horizontalSizeClass))
             }
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
         }
@@ -58,37 +58,37 @@ extension OnboardingRebranding.OnboardingView {
                 // 1. Hiker to be centered horizontally in the container and with a height of 90% of the screen size
                 // 2. Welcome view horizontally centered in the container with min padding leading and trailing to wrap the text if needed.
                 VStack(alignment: .center) {
-                    Image(Metrics.hikerImage.build(v: verticalSizeClass, h: horizontalSizeClass))
+                    Image(LandingMetrics.hikerImage.build(v: verticalSizeClass, h: horizontalSizeClass))
                         .resizable()
                         .scaledToFit()
-                        .frame(height: proxy.size.height * Metrics.Landscape.hikerHeightPercentage)
+                        .frame(height: proxy.size.height * LandingMetrics.Landscape.hikerHeightPercentage)
                 }
                 .frame(width: proxy.size.width / 2, height: proxy.size.height, alignment: .bottom)
 
                 HStack {
-                    Spacer(minLength: proxy.size.width / 2 * Metrics.Landscape.textMinSpacerPercentage)
+                    Spacer(minLength: proxy.size.width / 2 * LandingMetrics.Landscape.textMinSpacerPercentage)
 
                     welcomeView
-                        .padding(.top, proxy.size.height * Metrics.Landscape.daxImagePositionPercentage)
+                        .padding(.top, proxy.size.height * LandingMetrics.Landscape.daxImagePositionPercentage)
 
-                    Spacer(minLength: proxy.size.width / 2 * Metrics.Landscape.textMinSpacerPercentage)
+                    Spacer(minLength: proxy.size.width / 2 * LandingMetrics.Landscape.textMinSpacerPercentage)
                 }
                 .frame(width: proxy.size.width / 2, height: proxy.size.height, alignment: .top)
             }
         }
 
         private var welcomeView: some View {
-            let iconSize = Metrics.iconSize.build(v: verticalSizeClass, h: horizontalSizeClass)
+            let iconSize = LandingMetrics.iconSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
-            return VStack(alignment: .center, spacing: Metrics.welcomeMessageStackSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)) {
+            return VStack(alignment: .center, spacing: LandingMetrics.welcomeMessageStackSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)) {
                 Image(.daxIconExperiment)
                     .resizable()
-                    .matchedGeometryEffect(id: OnboardingView.daxGeometryEffectID, in: animationNamespace)
+                    .matchedGeometryEffect(id: OnboardingRebranding.OnboardingView.daxGeometryEffectID, in: animationNamespace)
                     .frame(width: iconSize.width, height: iconSize.height)
 
                 Text(OnboardingRebranding.UserText.onboardingWelcomeHeader)
-                    .onboardingTitleStyle(fontSize: Metrics.titleSize.build(v: verticalSizeClass, h: horizontalSizeClass))
-                    .frame(width: Metrics.titleWidth.build(v: verticalSizeClass, h: horizontalSizeClass), alignment: .top)
+                    .onboardingTitleStyle(fontSize: LandingMetrics.titleSize.build(v: verticalSizeClass, h: horizontalSizeClass))
+                    .frame(width: LandingMetrics.titleWidth.build(v: verticalSizeClass, h: horizontalSizeClass), alignment: .top)
             }
         }
 
@@ -97,7 +97,7 @@ extension OnboardingRebranding.OnboardingView {
 
 // MARK: - Metrics
 
-private enum Metrics {
+private enum LandingMetrics {
     static let iconSize = MetricBuilder<CGSize>(default: .init(width: 70, height: 70)).iPad(landscape: .init(width: 96, height: 96))
     static let welcomeMessageStackSpacing = MetricBuilder<CGFloat>(iPhone: 13, iPad: 32)
     static let titleSize = MetricBuilder<CGFloat>(iPhone: 28, iPad: 36).iPad(landscape: 48)

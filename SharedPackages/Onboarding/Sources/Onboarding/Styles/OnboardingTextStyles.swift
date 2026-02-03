@@ -21,11 +21,11 @@ import SwiftUI
 
 public extension OnboardingStyles {
 
-    struct TitleStyle: ViewModifier {
+    public struct TitleStyle: ViewModifier {
 
         let fontSize: CGFloat
 
-        func body(content: Content) -> some View {
+        public func body(content: Content) -> some View {
             let view = content
                 .font(.system(size: fontSize, weight: .bold))
                 .foregroundStyle(Color.primary)
@@ -40,9 +40,9 @@ public extension OnboardingStyles {
 
     }
 
-    struct ProgressBarTitleStyle: ViewModifier {
+    public struct ProgressBarTitleStyle: ViewModifier {
 
-        func body(content: Content) -> some View {
+        public func body(content: Content) -> some View {
             let view = content
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Color.secondary)

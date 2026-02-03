@@ -71,9 +71,9 @@ extension OnboardingRebranding.OnboardingView {
                 .font(Font.system(size: 16))
 
                 VStack {
-                    PrimaryButton(title: Copy.confirmSkipOnboardingCTA, action: startBrowsingAction)
+                    OnboardingRebranding.PrimaryButton(title: Copy.confirmSkipOnboardingCTA, action: startBrowsingAction)
 
-                    SecondaryButton(title: Copy.resumeOnboardingCTA, action: resumeOnboardingAction)
+                    OnboardingRebranding.SecondaryButton(title: Copy.resumeOnboardingCTA, action: resumeOnboardingAction)
                 }
                 .visibility(showCTA.wrappedValue ? .visible : .invisible)
             }

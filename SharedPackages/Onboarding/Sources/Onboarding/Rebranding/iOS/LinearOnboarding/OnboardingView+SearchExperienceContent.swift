@@ -47,17 +47,17 @@ extension OnboardingRebranding.OnboardingView {
                     showContent = true
                 }
                 .foregroundColor(.primary)
-                .font(Metrics.titleFont)
+                .font(SearchExperienceMetrics.titleFont)
 
                 VStack(spacing: 24.0) {
-                    OnboardingSearchExperiencePicker(viewModel: viewModel)
+                    OnboardingRebranding.OnboardingSearchExperiencePicker(viewModel: viewModel)
                     
                     Text(AttributedString(OnboardingRebranding.UserText.Onboarding.SearchExperience.footerAttributed()))
                         .foregroundColor(.secondary)
                         .font(.footnote)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    PrimaryButton(title: OnboardingRebranding.UserText.Onboarding.SearchExperience.cta) {
+                    OnboardingRebranding.PrimaryButton(title: OnboardingRebranding.UserText.Onboarding.SearchExperience.cta) {
                         viewModel.confirmChoice()
                         action()
                     }
@@ -69,7 +69,7 @@ extension OnboardingRebranding.OnboardingView {
     }
 }
 
-private enum Metrics {
+private enum SearchExperienceMetrics {
     static let titleFont = Font.system(size: 20, weight: .semibold)
     static let messageFont = Font.system(size: 16)
 }

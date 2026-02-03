@@ -21,6 +21,7 @@
 import AVKit
 import Combine
 import Common
+import os.log
 
 extension OnboardingRebranding {
 
@@ -213,14 +214,10 @@ private extension OnboardingRebranding.VideoPlayerCoordinator {
     }
 
     func performPostLoadAssetSetup() {
+        guard playerItemStatus != .failed, configuration.allowsPictureInPicturePlayback else { return }
+
+        // If the video can continue playing in the background in a PiP window, activate the audio session.
         audioSessionManager.setPlaybackSessionActive()
-        if configuration.allowsPictureInPicturePlayback {
-            if player.isPictureInPicturePossible {
-                pictureInPictureController.setupPictureInPicture(playerLayer: AVPlayerLayer(player: player))
-            } else {
-                Logger.videoPlayer.debug("[Video Player] - Picture in Picture Not Possible")
-            }
-        }
     }
 }
 #endif

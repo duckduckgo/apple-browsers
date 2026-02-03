@@ -60,7 +60,7 @@ extension OnboardingRebranding.OnboardingView {
                 VStack(spacing: 24) {
                     BrowsersComparisonChart(privacyFeatures: BrowsersComparisonModel.privacyFeatures)
 
-                    OnboardingActions(
+                    OnboardingRebranding.OnboardingActions(
                         viewModel: .init(
                             primaryButtonTitle: OnboardingRebranding.UserText.Onboarding.BrowsersComparison.cta,
                             secondaryButtonTitle: OnboardingRebranding.UserText.onboardingSkip

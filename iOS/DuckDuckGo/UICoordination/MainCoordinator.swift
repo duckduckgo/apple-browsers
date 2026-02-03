@@ -64,7 +64,7 @@ final class MainCoordinator {
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
-    private var webExtensionFeatureFlagCancellable: AnyCancellable?
+    private var webExtensionFeatureFlagHandler: AnyObject?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -214,8 +214,6 @@ final class MainCoordinator {
     }
 
     private func setupWebExtensions() {
-        subscribeToWebExtensionFeatureFlagChanges()
-
         if #available(iOS 18.4, *), featureFlagger.isFeatureOn(.webExtensions) {
             let webExtensionManager = WebExtensionManagerFactory.makeManager(mainViewController: controller)
             self.webExtensionManager = webExtensionManager
@@ -226,35 +224,33 @@ final class MainCoordinator {
             tabManager.setWebExtensionManager(webExtensionManager)
             controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
             controller.setWebExtensionManager(webExtensionManager)
+
+            let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+                .flagDidChangePublisher
+                .filter { $0.0 == .webExtensions }
+                .map { $0.1 }
+                .eraseToAnyPublisher()
+
+            webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+                webExtensionManager: webExtensionManager,
+                featureFlagPublisher: publisher) { [weak self] in
+                    self?.clearWebExtensionReferences()
+                }
+
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
             }
         } else {
-            self.webExtensionManager = nil
-            self.webExtensionEventsCoordinator = nil
-            tabManager.setWebExtensionManager(nil)
-            controller.setWebExtensionEventsCoordinator(nil)
-            controller.setWebExtensionManager(nil)
+            clearWebExtensionReferences()
         }
     }
 
-    private func subscribeToWebExtensionFeatureFlagChanges() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        webExtensionFeatureFlagCancellable = overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .webExtensions }
-            .sink { [weak self] (_, enabled) in
-                if !enabled {
-                    self?.webExtensionManager?.uninstallAllExtensions()
-                    self?.webExtensionManager = nil
-                    self?.webExtensionEventsCoordinator = nil
-                    self?.tabManager.setWebExtensionManager(nil)
-                    self?.controller.setWebExtensionEventsCoordinator(nil)
-                    self?.controller.setWebExtensionManager(nil)
-                }
-            }
+    private func clearWebExtensionReferences() {
+        webExtensionManager = nil
+        webExtensionEventsCoordinator = nil
+        tabManager.setWebExtensionManager(nil)
+        controller.setWebExtensionEventsCoordinator(nil)
+        controller.setWebExtensionManager(nil)
     }
 
     private static func makeHistoryManager(tabsModel: TabsModel) throws -> HistoryManaging {

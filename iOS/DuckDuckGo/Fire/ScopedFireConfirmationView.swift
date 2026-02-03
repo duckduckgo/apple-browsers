@@ -71,7 +71,7 @@ struct ScopedFireConfirmationView: View {
             animation
             
             VStack(spacing: Constants.headlineTextSpacing) {
-                Text(UserText.scopedFireConfirmationAlertTitle)
+                Text(viewModel.headerTitle)
                     .daxTitle3()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .multilineTextAlignment(.center)

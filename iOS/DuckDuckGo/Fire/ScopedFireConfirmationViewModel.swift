@@ -45,17 +45,21 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     private let tabViewModel: TabViewModel?
     private let downloadManager: DownloadManaging
     private let keyValueStore: KeyValueStoring
+    private let appSettings: AppSettings
+
     
     // MARK: - Initializer
     
     init(tabViewModel: TabViewModel?,
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          keyValueStore: KeyValueStoring = UserDefaults.standard,
+         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
         self.tabViewModel = tabViewModel
         self.downloadManager = downloadManager
         self.keyValueStore = keyValueStore
+        self.appSettings = appSettings
         self.onConfirm = onConfirm
         self.onCancel = onCancel
         self.subtitle = computeSubtitle()
@@ -70,6 +74,11 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             return false
         }
         return true
+    }
+    
+    var headerTitle: String {
+        let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
+        return shouldIncludeAIChat ? UserText.scopedFireConfirmationAlertTitleWithAIChat : UserText.scopedFireConfirmationAlertTitle
     }
     
     // MARK: - Public Functions

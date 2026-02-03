@@ -205,6 +205,16 @@ extension XCUIElement {
         return element.tabGroups["TabBarViewController.CollectionView"].radioButtons
     }
 
+    /// Returns the collection of pinned tabs
+    var pinnedTabs: XCUIElementQuery {
+        var element = self
+        if element is XCUIApplication {
+            element = windows.firstMatch
+        }
+
+        return element.tabGroups["PinnedTabsView"].radioButtons
+    }
+
     @objc func closeTab() throws {
         // Hover the tab to reveal its close ("x") button
         self.hover()
@@ -267,6 +277,36 @@ extension XCUIElement {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
         return result == .completed
+    }
+
+}
+
+extension XCUIElement.KeyModifierFlags {
+
+    /// Converts XCUIElement.KeyModifierFlags to NSEvent.ModifierFlags
+    func toNSEventModifierFlags() -> NSEvent.ModifierFlags {
+        var nsFlags: NSEvent.ModifierFlags = []
+
+        if contains(.command) {
+            nsFlags.insert(.command)
+        }
+        if contains(.shift) {
+            nsFlags.insert(.shift)
+        }
+        if contains(.control) {
+            nsFlags.insert(.control)
+        }
+        if contains(.option) {
+            nsFlags.insert(.option)
+        }
+        if contains(.function) {
+            nsFlags.insert(.function)
+        }
+        if contains(.alphaShift) {
+            nsFlags.insert(.capsLock)
+        }
+
+        return nsFlags
     }
 
 }

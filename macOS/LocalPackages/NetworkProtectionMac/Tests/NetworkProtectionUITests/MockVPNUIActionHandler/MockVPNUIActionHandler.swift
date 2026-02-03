@@ -20,6 +20,10 @@ import Foundation
 import NetworkProtectionUI
 
 public final class MockVPNUIActionHandler: VPNUIActionHandling {
+
+    public var didStartVPNCalled = false
+    public var didStartVPNCallback: (() -> Void)?
+
     public func setExclusion(_ exclude: Bool, forDomain domain: String) async {
         // placeholder
     }
@@ -42,5 +46,10 @@ public final class MockVPNUIActionHandler: VPNUIActionHandling {
 
     public func willStopVPN() async -> Bool {
         true
+    }
+
+    public func didStartVPN() {
+        didStartVPNCalled = true
+        didStartVPNCallback?()
     }
 }

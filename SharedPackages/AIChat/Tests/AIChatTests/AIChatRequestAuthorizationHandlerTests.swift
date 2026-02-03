@@ -24,6 +24,7 @@ import WebKit
 final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
     var messagePolicyHostname: String?
     var customURL: String?
+    var contextualSessionTimerSeconds: Int?
     func reset() {}
 }
 

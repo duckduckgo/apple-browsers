@@ -61,7 +61,25 @@ public class WebCacheManager: WebsiteDataManaging {
     
     private enum Scope {
         case all
-        case some(dataRecords: DataRecordInScopeEvaluator, cookies: CookieInScopeEvaluator)
+        case limited(dataRecords: DataRecordInScopeEvaluator, cookies: CookieInScopeEvaluator)
+        
+        var dataRecordsEvaluator: DataRecordInScopeEvaluator {
+            switch self {
+            case .all:
+                return { _ in true }
+            case .limited(let dataRecords, _):
+                return dataRecords
+            }
+        }
+        
+        var cookiesEvaluator: CookieInScopeEvaluator {
+            switch self {
+            case .all:
+                return { _ in true }
+            case .limited(_, let cookies):
+                return cookies
+            }
+        }
     }
 
     static let safelyRemovableWebsiteDataTypes: Set<String> = {
@@ -173,7 +191,7 @@ public class WebCacheManager: WebsiteDataManaging {
             domains.contains(where: { HTTPCookie.cookieDomain(cookie.domain, matchesTestDomain: $0) })
         }
         
-        let scope = Scope.some(dataRecords: dataRecordInScope, cookies: cookieInScope)
+        let scope = Scope.limited(dataRecords: dataRecordInScope, cookies: cookieInScope)
         await performMigrationIfNeeded(dataStoreIDManager: dataStoreIDManager, cookieStorage: cookieStorage, destinationStore: dataStore)
         await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: scope)
     }
@@ -229,7 +247,7 @@ extension WebCacheManager {
         switch scope {
         case .all:
             await dataStore.removeData(ofTypes: Self.safelyRemovableWebsiteDataTypes, modifiedSince: Date.distantPast)
-        case .some(let dataRecords, _):
+        case .limited(let dataRecords, _):
             let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
             let removableRecords = allRecords.filter { record in
                 dataRecords(record.displayName)
@@ -245,11 +263,7 @@ extension WebCacheManager {
         let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
         let removableRecords = allRecords.filter { record in
             let fireproofed = fireproofing.isAllowed(fireproofDomain: record.displayName)
-            var inScope = true
-            if case .some(let dataRecords, _) = scope {
-                inScope = dataRecords(record.displayName)
-            }
-            return !fireproofed && inScope
+            return !fireproofed && scope.dataRecordsEvaluator(record.displayName)
         }
 
         let fireproofableTypesExceptCookies = Self.fireproofableDataTypesExceptCookies
@@ -263,11 +277,7 @@ extension WebCacheManager {
 
         let cookiesToRemove = cookies.filter { cookie in
             let fireproofed = fireproofing.isAllowed(cookieDomain: cookie.domain)
-            var inScope = true
-            if case .some(_, let cookies) = scope {
-                inScope = cookies(cookie)
-            }
-            return !fireproofed && inScope
+            return !fireproofed && scope.cookiesEvaluator(cookie)
         }
 
         for cookie in cookiesToRemove {

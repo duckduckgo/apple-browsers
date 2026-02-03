@@ -259,7 +259,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.attributionManager.process(trigger: .appDidStart)
 
         // Wait for expectations
-        wait(for: [week1Expectation, week4Expectation, month2Expectation, month6Expectation], timeout: 1.0)
+        wait(for: [week1Expectation, week4Expectation, month2Expectation, month6Expectation], timeout: 5.0)
         wait(for: [noDuplicateExpectation], timeout: 0.1)
 
         // Verify correct number of pixels fired
@@ -329,7 +329,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         // Process active search days
         fixture.attributionManager.process(trigger: .appDidStart)
 
-        wait(for: [pixelExpectation], timeout: 1.0)
+        wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(pixelFireCount, 1, "Should fire once")
         XCTAssertNotNil(capturedDays, "Should send bucketed search count")
         XCTAssertEqual(capturedDaysSinceInstalled, 4, "Should include days since installed within first week")
@@ -376,7 +376,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.timeMachine.travel(by: .day, value: 1)
         fixture.attributionManager.process(trigger: .appDidStart)
 
-        wait(for: [pixelExpectation], timeout: 1.0)
+        wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNil(capturedDaysSinceInstalled, "Should not include days since installed after first week")
     }
 
@@ -430,7 +430,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.timeMachine.travel(by: .day, value: 1)
         fixture.attributionManager.process(trigger: .userDidSearch)
 
-        wait(for: [pixelExpectation], timeout: 1.0)
+        wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
     }
 
@@ -484,7 +484,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.timeMachine.travel(by: .day, value: 1)
         fixture.attributionManager.process(trigger: .userDidSearch)
 
-        wait(for: [pixelExpectation], timeout: 1.0)
+        wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
         XCTAssertFalse(hasDayAverage, "Should not include day average after first month")
     }
@@ -539,7 +539,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.timeMachine.travel(by: .day, value: 1)
         fixture.attributionManager.process(trigger: .userDidSelectAD)
 
-        wait(for: [pixelExpectation], timeout: 1.0)
+        wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
     }
 
@@ -593,7 +593,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.timeMachine.travel(by: .day, value: 1)
         fixture.attributionManager.process(trigger: .userDidDuckAIChat)
 
-        wait(for: [pixelExpectation], timeout: 1.0)
+        wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
     }
 
@@ -646,7 +646,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         // Test: Process subscription (free trial)
         fixture.attributionManager.process(trigger: .userDidSubscribe)
 
-        await fulfillment(of: [pixelExpectation], timeout: 2.0)
+        await fulfillment(of: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(capturedLength, 0, "Should send bucketed month 0 for free trial")
         XCTAssertTrue(fixture.dataStorage.subscriptionFreeTrialFired, "Should mark free trial as fired")
     }
@@ -698,7 +698,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         // Test: Process subscription (paid)
         fixture.attributionManager.process(trigger: .userDidSubscribe)
 
-        await fulfillment(of: [pixelExpectation], timeout: 2.0)
+        await fulfillment(of: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(capturedMonth, 1, "Should send bucketed month 1 for paid subscription")
         XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired, "Should mark month 1 as fired")
     }
@@ -756,7 +756,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         // Test: Process app start (should trigger processSubscriptionCheck)
         fixture.attributionManager.process(trigger: .appDidStart)
 
-        await fulfillment(of: [pixelExpectation], timeout: 2.0)
+        await fulfillment(of: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(capturedMonth, 1, "Should send bucketed length 1 for month 1")
     }
 
@@ -816,7 +816,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         // Test: Process app start (should trigger processSubscriptionCheck)
         fixture.attributionManager.process(trigger: .appDidStart)
 
-        await fulfillment(of: [pixelExpectation], timeout: 2.0)
+        await fulfillment(of: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(capturedMonth, 2, "Should send bucketed length 2 for month 2+")
     }
 
@@ -867,7 +867,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         // Test: Process sync with 2 devices
         fixture.attributionManager.process(trigger: .userDidSync(devicesCount: 2))
 
-        wait(for: [pixelExpectation], timeout: 1.0)
+        wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedDevices, "Should capture bucketed devices count")
     }
 

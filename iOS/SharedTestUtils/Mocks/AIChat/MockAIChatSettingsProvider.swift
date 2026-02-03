@@ -32,6 +32,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var sessionTimerInMinutes: Int
     public var isAIChatSearchInputUserSettingsEnabled: Bool
     public var isAutomaticContextAttachmentEnabled: Bool
+    public var isChatSuggestionsEnabled: Bool
     public var hasSeenContextualOnboarding: Bool
 
     public init(aiChatURL: URL = URL(string: "https://example.com")!,
@@ -44,6 +45,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
                 isAIChatTabSwitcherUserSettingsEnabled: Bool = false,
                 isAIChatSearchInputUserSettingsEnabled: Bool = false,
                 isAutomaticContextAttachmentEnabled: Bool = false,
+                isChatSuggestionsEnabled: Bool = true,
                 hasSeenContextualOnboarding: Bool = false,
                 sessionTimerInMinutes: Int = 60) {
 
@@ -56,6 +58,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         self.isAIChatTabSwitcherUserSettingsEnabled = isAIChatTabSwitcherUserSettingsEnabled
         self.isAIChatSearchInputUserSettingsEnabled = isAIChatSearchInputUserSettingsEnabled
         self.isAutomaticContextAttachmentEnabled = isAutomaticContextAttachmentEnabled
+        self.isChatSuggestionsEnabled = isChatSuggestionsEnabled
         self.hasSeenContextualOnboarding = hasSeenContextualOnboarding
         self.sessionTimerInMinutes = sessionTimerInMinutes
     }
@@ -86,6 +89,10 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
 
     public func enableAutomaticContextAttachment(enable: Bool) {
         isAutomaticContextAttachmentEnabled = enable
+    }
+
+    public func enableChatSuggestions(enable: Bool) {
+        isChatSuggestionsEnabled = enable
     }
 
     public func markContextualOnboardingSeen() {

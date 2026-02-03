@@ -70,11 +70,20 @@ struct ScopedFireConfirmationView: View {
         VStack(spacing: Constants.headerSectionSpacing) {
             animation
             
-            Text(UserText.scopedFireConfirmationAlertTitle)
-                .daxTitle3()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: Constants.headlineTextSpacing) {
+                Text(viewModel.headerTitle)
+                    .daxTitle3()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let subtitle = viewModel.subtitle {
+                    Text(subtitle)
+                        .daxSubheadRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
         .padding(Constants.headerSectionPadding)
     }
@@ -126,6 +135,7 @@ private extension ScopedFireConfirmationView {
         static let headerSectionSpacing: CGFloat = 8
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96
+        static let headlineTextSpacing: CGFloat = 4
         static let buttonSpacing: CGFloat = 16
         static let closeButtonPadding: CGFloat = 8
         static let animationDelay: Double = 0.5

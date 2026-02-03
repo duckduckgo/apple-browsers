@@ -83,6 +83,16 @@ jobs:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
     secrets: inherit
 
+  memory_tests:
+
+    name: Memory Tests
+
+    needs: create_release_branch
+    uses: ./.github/workflows/macos_memory_usage_tests.yml
+    with:
+      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+    secrets: inherit
+
   increment_build_number:
 
     name: Increment Build Number

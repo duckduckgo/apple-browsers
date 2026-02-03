@@ -215,7 +215,8 @@ extension MainViewController {
                                       productSurfaceTelemetry: self.productSurfaceTelemetry,
                                       historyManager: self.historyManager,
                                       fireproofing: self.fireproofing,
-                                      keyValueStore: self.keyValueStore)
+                                      keyValueStore: self.keyValueStore,
+                                      daxDialogsManager: self.daxDialogsManager)
         }) else {
             assertionFailure()
             return

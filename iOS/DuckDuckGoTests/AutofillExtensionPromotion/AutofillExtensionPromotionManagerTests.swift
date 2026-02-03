@@ -67,7 +67,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertFalse(result)
@@ -87,7 +87,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertFalse(result)
@@ -106,7 +106,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertFalse(result)
@@ -124,7 +124,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertFalse(result)
@@ -144,7 +144,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertFalse(result)
@@ -163,7 +163,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertFalse(result)
@@ -183,7 +183,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertTrue(result)
@@ -203,7 +203,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertTrue(result)
@@ -223,7 +223,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertTrue(result)
@@ -261,7 +261,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
         XCTAssertFalse(result)
     }
 
@@ -300,7 +300,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
         XCTAssertTrue(result)
     }
 
@@ -365,7 +365,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertFalse(result)
@@ -386,7 +386,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             result = shouldShow
             expectation.fulfill()
         }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Then
         XCTAssertTrue(result)

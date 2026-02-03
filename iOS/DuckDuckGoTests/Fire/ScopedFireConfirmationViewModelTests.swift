@@ -195,7 +195,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         sut = makeSUT(tabViewModel: tabViewModel)
         
         // Then don't show subtitle
-        XCTAssertNil(sut.subtitle, UserText.scopedFireConfirmationDeleteThisTabDescription)
+        XCTAssertNil(sut.subtitle)
     }
     
     // MARK: - subtitle Tests - Web Tab

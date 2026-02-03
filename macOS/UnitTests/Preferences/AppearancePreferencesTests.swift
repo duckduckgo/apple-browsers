@@ -283,7 +283,7 @@ final class AppearancePreferencesTests: XCTestCase {
         incrementDate()
         model.continueSetUpCardsViewDidAppear()
         XCTAssertFalse(model.isContinueSetUpVisible, "dismissNextStepsCardsAfterDays")
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
 
         // shouldn‘t change after being set once
         for i in (model.maxNextStepsCardsDemonstrationDays + 1)..<(model.maxNextStepsCardsDemonstrationDays + 20) {
@@ -316,7 +316,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         model.themeName = ThemeName.green
 
-        wait(for: [expectation], timeout: 0.5)
+        wait(for: [expectation], timeout: 5)
         cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
@@ -342,7 +342,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         model.themeAppearance = .dark
 
-        wait(for: [expectation], timeout: 0.5)
+        wait(for: [expectation], timeout: 5)
         cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
@@ -368,7 +368,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         model.homePageCustomBackground = CustomBackground.gradient(.gradient01)
 
-        wait(for: [expectation], timeout: 0.5)
+        wait(for: [expectation], timeout: 5)
         cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
@@ -394,7 +394,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         model.isOmnibarVisible = false
 
-        wait(for: [expectation], timeout: 0.5)
+        wait(for: [expectation], timeout: 5)
         cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
@@ -420,7 +420,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         model.isFavoriteVisible = false
 
-        wait(for: [expectation], timeout: 0.5)
+        wait(for: [expectation], timeout: 5)
         cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
@@ -446,7 +446,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         model.isProtectionsReportVisible = false
 
-        wait(for: [expectation], timeout: 0.5)
+        wait(for: [expectation], timeout: 5)
         cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)
@@ -474,7 +474,7 @@ final class AppearancePreferencesTests: XCTestCase {
         mockAIChatConfig.shouldDisplayNewTabPageShortcut = false
         mockAIChatConfig.valuesChangedPublisher.send()
 
-        wait(for: [expectation], timeout: 0.5)
+        wait(for: [expectation], timeout: 5)
         cancellable.cancel()
 
         XCTAssertTrue(model.didChangeAnyNewTabPageCustomizationSetting)

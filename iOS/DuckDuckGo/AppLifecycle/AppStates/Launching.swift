@@ -93,7 +93,7 @@ struct Launching: LaunchingHandling {
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService()
+        let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)

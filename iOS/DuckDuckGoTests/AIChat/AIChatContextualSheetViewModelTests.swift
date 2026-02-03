@@ -46,38 +46,29 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testInitialStateWithNoExistingChat() {
         // When
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
 
         // Then
         XCTAssertFalse(sut.hasSubmittedPrompt)
         XCTAssertNil(sut.contextualChatURL)
         XCTAssertTrue(sut.isExpandEnabled)
         XCTAssertFalse(sut.isNewChatButtonVisible)
-        XCTAssertFalse(sut.hasContext)
     }
 
     func testInitialStateWithExistingChat() {
         // When
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false, hasExistingChat: true)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasExistingChat: true)
 
         // Then
         XCTAssertTrue(sut.hasSubmittedPrompt)
         XCTAssertTrue(sut.isNewChatButtonVisible)
     }
 
-    func testInitialStateWithContext() {
-        // When
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: true)
-
-        // Then
-        XCTAssertTrue(sut.hasContext)
-    }
-
     // MARK: - expandURL Tests
 
     func testExpandURLReturnsBaseURLWhenNoContextualChatURL() {
         // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
 
         // When
         let url = sut.expandURL()
@@ -88,7 +79,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testExpandURLReturnsContextualChatURLWhenAvailable() {
         // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
         let chatURL = URL(string: "https://duck.ai/chat/abc123")!
         sut.didUpdateContextualChatURL(chatURL)
 
@@ -101,7 +92,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testExpandURLPreservesChatURLAfterNewChat() {
         // Given - User had a chat, started new chat, then got a new chat URL
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
         let originalChatURL = URL(string: "https://duck.ai/chat/original123")!
         sut.didSubmitPrompt()
         sut.didUpdateContextualChatURL(originalChatURL)
@@ -119,7 +110,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testDidSubmitPromptSetsHasSubmittedPromptAndShowsNewChatButton() {
         // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
         XCTAssertFalse(sut.hasSubmittedPrompt)
         XCTAssertFalse(sut.isNewChatButtonVisible)
 
@@ -135,7 +126,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testDidUpdateContextualChatURLUpdatesURL() {
         // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
         let chatURL = URL(string: "https://duck.ai/chat/abc123")!
 
         // When
@@ -147,7 +138,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testDidUpdateContextualChatURLDoesNotResetHasSubmittedPromptWhenURLGoesNil() {
         // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
         let chatURL = URL(string: "https://duck.ai/chat/abc123")!
         sut.didSubmitPrompt()
         sut.didUpdateContextualChatURL(chatURL)
@@ -165,7 +156,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testDidStartNewChatResetsState() {
         // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
         let chatURL = URL(string: "https://duck.ai/chat/abc123")!
         sut.didSubmitPrompt()
         sut.didUpdateContextualChatURL(chatURL)
@@ -186,7 +177,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testIsExpandEnabledIsTrueInitially() {
         // When
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
 
         // Then
         XCTAssertTrue(sut.isExpandEnabled)
@@ -194,7 +185,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testIsExpandEnabledBecomesFalseAfterPromptSubmissionWithoutChatURL() {
         // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
 
         // When
         sut.didSubmitPrompt()
@@ -205,7 +196,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testIsExpandEnabledBecomesTrueWhenChatURLIsSet() {
         // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
         sut.didSubmitPrompt()
         XCTAssertFalse(sut.isExpandEnabled)
 
@@ -219,7 +210,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testIsExpandEnabledPublishesChanges() {
         // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
         var receivedValues: [Bool] = []
 
         sut.$isExpandEnabled
@@ -235,55 +226,12 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
         XCTAssertEqual(receivedValues, [true, false, true])
     }
 
-    // MARK: - createAttachActions Tests
-
-    func testCreateAttachActionsReturnsOneAction() {
-        // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
-        var actionCalled = false
-
-        // When
-        let actions = sut.createAttachActions {
-            actionCalled = true
-        }
-
-        // Then
-        XCTAssertEqual(actions.count, 1)
-        XCTAssertNotNil(actions.first?.icon)
-
-        // When handler is called
-        actions.first?.handler()
-
-        // Then
-        XCTAssertTrue(actionCalled)
-    }
-
-    // MARK: - updateContextAvailability Tests
-
-    func testUpdateContextAvailabilitySetsHasContext() {
-        // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
-        XCTAssertFalse(sut.hasContext)
-
-        // When
-        sut.updateContextAvailability(true)
-
-        // Then
-        XCTAssertTrue(sut.hasContext)
-
-        // When
-        sut.updateContextAvailability(false)
-
-        // Then
-        XCTAssertFalse(sut.hasContext)
-    }
-
     // MARK: - isAutomaticContextAttachmentEnabled Tests
 
     func testIsAutomaticContextAttachmentEnabledReflectsSettings() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = true
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings)
 
         // Then
         XCTAssertTrue(sut.isAutomaticContextAttachmentEnabled)
@@ -299,7 +247,7 @@ final class AIChatContextualSheetViewModelTests: XCTestCase {
 
     func testSetInitialContextualChatURLSetsURLAndUpdatesExpandState() {
         // Given
-        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasContext: false, hasExistingChat: true)
+        sut = AIChatContextualSheetViewModel(settings: mockSettings, hasExistingChat: true)
         XCTAssertFalse(sut.isExpandEnabled) // hasSubmittedPrompt is true, no chat URL yet
 
         // When

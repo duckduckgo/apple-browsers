@@ -146,12 +146,14 @@ private struct Buttons: View {
                 Button(UserText.pmCancel) {
                     model.cancel()
                 }
+                .keyboardShortcut(.cancelAction)
 
                 Button(UserText.pmSave) {
                     model.save()
                 }
                 .disabled(!model.isDirty || !model.isCardValid)
                 .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardValid))
+                .keyboardShortcut(.defaultAction)
 
             } else {
                 Button(UserText.pmDelete) {

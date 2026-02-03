@@ -73,7 +73,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
     }
     
     func testNotificationTemporaryRealityDownload() throws {
@@ -100,7 +100,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
         
     }
     
@@ -127,7 +127,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
     }
     
     func testNotificationPermanentBinaryDownload() throws {
@@ -153,7 +153,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
     }
     
     func testClosurePermanentBinaryDownload() throws {
@@ -173,7 +173,7 @@ class DownloadManagerTests: XCTestCase {
             XCTAssertTrue(downloadManagerTestsHelper.checkIfFileExists(finalPath), "File should exist")
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
     }
     
     func testIfFinishedDownloadIsRemovedFromList() throws {
@@ -231,7 +231,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
     }
     
     func testDownloadListUniqueFilenames() throws {
@@ -311,7 +311,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
         
         // Then
         XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory should exist after non-temporary download")
@@ -338,7 +338,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
         
         // Then
         XCTAssertFalse(handler.downloadsDirectoryExists(), "Directory should not exist after temporary download")

@@ -64,6 +64,7 @@ public final class WebExtensionFeatureFlagHandler {
         guard let publisher else { return }
 
         cancellable = publisher
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] enabled in
                 if !enabled {
                     self?.handleFeatureFlagDisabled()

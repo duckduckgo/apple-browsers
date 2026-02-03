@@ -89,14 +89,12 @@ enum WebExtensionManagerFactory {
     /// Creates a fully configured WebExtensionManager with all macOS-specific providers.
     @MainActor
     static func makeManager() -> WebExtensionManager {
-        let windowTabProvider = WebExtensionWindowTabProvider()
-        let lifecycleDelegate = AppWebExtensionLifecycleDelegate()
         let internalSiteHandler = WebExtensionInternalSiteHandler()
 
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
-            windowTabProvider: windowTabProvider,
-            lifecycleDelegate: lifecycleDelegate,
+            windowTabProvider: WebExtensionWindowTabProvider(),
+            storageProvider: WebExtensionStorageProvider(),
             internalSiteHandler: internalSiteHandler
         )
 

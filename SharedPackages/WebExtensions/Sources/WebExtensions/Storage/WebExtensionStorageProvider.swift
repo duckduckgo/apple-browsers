@@ -1,5 +1,5 @@
 //
-//  WebExtensionPathsStoringMock.swift
+//  WebExtensionStorageProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,26 +16,21 @@
 //  limitations under the License.
 //
 
-@testable import WebExtensions
+import Foundation
 
-@available(macOS 15.4, *)
-final class WebExtensionPathsStoringMock: WebExtensionPathsStoring {
+@available(macOS 15.4, iOS 18.4, *)
+public final class WebExtensionStorageProvider: WebExtensionStorageProviding {
 
-    var paths: [String] = []
+    public let fileManager: FileManager
 
-    var addCalled = false
-    var addedPath: String?
-    func add(_ url: String) {
-        addCalled = true
-        addedPath = url
-        paths.append(url)
+    public init(fileManager: FileManager = .default) {
+        self.fileManager = fileManager
     }
 
-    var removeCalled = false
-    var removedPath: String?
-    func remove(_ url: String) {
-        removeCalled = true
-        removedPath = url
-        paths.removeAll { $0 == url }
+    public var extensionsDirectory: URL {
+        guard let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Application Support directory not found")
+        }
+        return appSupport.appendingPathComponent("WebExtensions", isDirectory: true)
     }
 }

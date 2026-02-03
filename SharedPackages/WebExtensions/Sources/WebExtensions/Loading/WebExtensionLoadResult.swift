@@ -21,13 +21,11 @@ import WebKit
 
 @available(macOS 15.4, iOS 18.4, *)
 public struct WebExtensionLoadResult {
-    let context: WKWebExtensionContext
-    let extensionIdentifier: WebExtensionIdentifier?
-    let path: String
+    public let context: WKWebExtensionContext
+    public let identifier: String
 
-    init(context: WKWebExtensionContext, path: String, extensionIdentifier: WebExtensionIdentifier? = nil) {
+    public init(context: WKWebExtensionContext, identifier: String) {
         self.context = context
-        self.path = path
-        self.extensionIdentifier = extensionIdentifier
+        self.identifier = identifier
     }
 }

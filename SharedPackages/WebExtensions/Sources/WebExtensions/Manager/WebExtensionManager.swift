@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import CryptoKit
 import Foundation
+import os.log
 import WebKit
 
 /// Manages web extensions including installation, loading, and lifecycle.
@@ -27,7 +27,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
     // MARK: - Dependencies
 
-    public let installationStore: WebExtensionPathsStoring
+    public let installationStore: InstalledWebExtensionStoring
+    public let storageProvider: WebExtensionStorageProviding
     public let loader: WebExtensionLoading
     public let controller: WKWebExtensionController
     public var eventsListener: WebExtensionEventsListening
@@ -53,8 +54,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     @MainActor
     public init(configuration: WebExtensionConfigurationProviding,
                 windowTabProvider: WebExtensionWindowTabProviding,
-                installationStore: WebExtensionPathsStoring = WebExtensionPathsStore(),
-                loader: WebExtensionLoading = WebExtensionLoader(),
+                storageProvider: WebExtensionStorageProviding,
+                installationStore: InstalledWebExtensionStoring = InstalledWebExtensionStore(),
+                loader: WebExtensionLoading? = nil,
                 eventsListener: WebExtensionEventsListening = WebExtensionEventsListener(),
                 lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil) {
@@ -63,8 +65,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         self.windowTabProvider = windowTabProvider
+        self.storageProvider = storageProvider
         self.installationStore = installationStore
-        self.loader = loader
+        self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider)
         self.eventsListener = eventsListener
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
@@ -80,12 +83,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         Array(controller.extensionContexts)
     }
 
-    public var webExtensionPaths: [String] {
-        installationStore.paths
+    public var webExtensionIdentifiers: [String] {
+        installationStore.installedExtensions.map(\.uniqueIdentifier)
     }
 
     public var hasInstalledExtensions: Bool {
-        !installationStore.paths.isEmpty
+        !installationStore.installedExtensions.isEmpty
     }
 
     public var loadedExtensions: Set<WKWebExtensionContext> {
@@ -94,40 +97,83 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
     // MARK: - Install/Uninstall
 
-    public func installExtension(path: String) async {
-        installationStore.add(path)
+    public func installExtension(from sourceURL: URL) async throws {
+        Logger.webExtensions.debug("🔄 Installing extension from: \(sourceURL.path)")
+
+        let identifier = UUID().uuidString
+
+        _ = try storageProvider.copyExtension(from: sourceURL, identifier: identifier)
+        Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
 
         do {
-            _ = try await loader.loadWebExtension(path: path, into: controller)
+            let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+            let installedExtension = await InstalledWebExtension(
+                uniqueIdentifier: identifier,
+                filename: sourceURL.lastPathComponent,
+                name: loadResult.context.webExtension.displayName,
+                version: loadResult.context.webExtension.version
+            )
+
+            installationStore.add(installedExtension)
+            Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) (\(identifier))")
         } catch {
-            assertionFailure("Failed to load web extension \(path): \(error)")
+            Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
+            try? storageProvider.removeExtension(identifier: identifier)
+            throw WebExtensionError.failedToLoadWebExtension(error)
         }
 
         notifyUpdate()
     }
 
-    public func uninstallExtension(path: String) throws {
-        installationStore.remove(path)
+    public func uninstallExtension(identifier: String) throws {
+        Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
+
+        installationStore.remove(uniqueIdentifier: identifier)
 
         do {
-            try loader.unloadExtension(at: path, from: controller)
+            try loader.unloadExtension(identifier: identifier, from: controller)
+            Logger.webExtensions.debug("✅ Unloaded extension '\(identifier)' from memory")
         } catch {
-            throw WebExtensionError.failedToUnloadWebExtension(error)
+            Logger.webExtensions.debug("⚠️ Extension '\(identifier)' was not loaded in memory: \(error.localizedDescription)")
         }
 
+        do {
+            try storageProvider.removeExtension(identifier: identifier)
+        } catch {
+            Logger.webExtensions.error("❌ Failed to remove extension files for '\(identifier)': \(error.localizedDescription)")
+            throw WebExtensionError.failedToRemoveWebExtension(error)
+        }
+
+        Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
         notifyUpdate()
     }
 
     @discardableResult
     public func uninstallAllExtensions() -> [Result<Void, Error>] {
-        installationStore.paths.map { path in
+        let identifiers = installationStore.installedExtensions.map(\.uniqueIdentifier)
+        Logger.webExtensions.debug("🔄 Uninstalling all extensions (count: \(identifiers.count))")
+
+        let results: [Result<Void, Error>] = identifiers.map { identifier in
             do {
-                try uninstallExtension(path: path)
+                try uninstallExtension(identifier: identifier)
                 return .success(())
             } catch {
                 return .failure(error)
             }
         }
+
+        let successCount = results.filter { if case .success = $0 { return true } else { return false } }.count
+        let failureCount = results.count - successCount
+        if failureCount > 0 {
+            Logger.webExtensions.error("❌ Uninstall all completed with errors: \(successCount) succeeded, \(failureCount) failed")
+        } else {
+            Logger.webExtensions.info("✅ Uninstall all completed: \(successCount) extensions removed")
+        }
+
+        storageProvider.cleanupOrphanedExtensions(keeping: [])
+
+        return results
     }
 
     // MARK: - Loading
@@ -138,41 +184,57 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
         lifecycleDelegate?.webExtensionManagerWillLoadExtensions(self)
 
-        let results = await loader.loadWebExtensions(from: installationStore.paths, into: controller)
+        let extensions = installationStore.installedExtensions
+        Logger.webExtensions.debug("🔄 Loading installed extensions (count: \(extensions.count))")
 
-        for result in results {
+        let identifiers = extensions.map(\.uniqueIdentifier)
+        let results = await loader.loadWebExtensions(identifiers: identifiers, into: controller)
+
+        var failedIdentifiers: [String] = []
+        var successCount = 0
+        for (installedExtension, result) in zip(extensions, results) {
             switch result {
             case .success:
-                continue
+                Logger.webExtensions.debug("✅ Loaded extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier))")
+                successCount += 1
             case .failure(let failure):
-                assertionFailure("Failed to load web extension: \(failure)")
+                Logger.webExtensions.error("❌ Failed to load web extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier)): \(failure.localizedDescription)")
+                failedIdentifiers.append(installedExtension.uniqueIdentifier)
             }
         }
+
+        for identifier in failedIdentifiers {
+            do {
+                try uninstallExtension(identifier: identifier)
+            } catch {
+                Logger.webExtensions.error("❌ Failed to uninstall broken extension '\(identifier)': \(error.localizedDescription)")
+            }
+        }
+
+        if failedIdentifiers.isEmpty {
+            Logger.webExtensions.info("✅ Extension loading completed: \(successCount) loaded")
+        } else {
+            Logger.webExtensions.error("❌ Extension loading completed with errors: \(successCount) loaded, \(failedIdentifiers.count) failed and removed")
+        }
+
+        let knownIdentifiers = Set(installationStore.installedExtensions.map(\.uniqueIdentifier))
+        storageProvider.cleanupOrphanedExtensions(keeping: knownIdentifiers)
 
         notifyUpdate()
     }
 
     // MARK: - Lookups
 
-    public func extensionName(from path: String) -> String? {
-        URL(string: path)?.lastPathComponent
+    public func extensionName(for identifier: String) -> String? {
+        contexts.first { $0.uniqueIdentifier == identifier }?.webExtension.displayName
     }
 
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
         contexts.first { url.absoluteString.hasPrefix($0.baseURL.absoluteString) }
     }
 
-    public func context(forPath path: String) -> WKWebExtensionContext? {
-        let hash = identifierHash(forPath: path)
-        return contexts.first { $0.uniqueIdentifier == hash }
-    }
-
-    // MARK: - Helpers
-
-    public func identifierHash(forPath path: String) -> String {
-        let identifier = Data(path.utf8)
-        let hash = SHA256.hash(data: identifier)
-        return hash.compactMap { String(format: "%02x", $0) }.joined()
+    public func context(for identifier: String) -> WKWebExtensionContext? {
+        contexts.first { $0.uniqueIdentifier == identifier }
     }
 
     private func notifyUpdate() {

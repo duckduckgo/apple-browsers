@@ -26,6 +26,7 @@ import History
 import BrowserServicesKit
 import PrivacyConfig
 import UIComponents
+import RemoteMessaging
 import AIChat
 
 class SuggestionTrayViewController: UIViewController {
@@ -109,6 +110,7 @@ class SuggestionTrayViewController: UIViewController {
         let newTabDaxDialogManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
         let faviconLoader: FavoritesFaviconLoading
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
+        let remoteMessagingImageLoader: RemoteMessagingImageLoading
         let appSettings: AppSettings
         let internalUserCommands: URLBasedDebugCommands
     }
@@ -287,6 +289,7 @@ class SuggestionTrayViewController: UIViewController {
             daxDialogsManager: dependencies.newTabDaxDialogManager,
             faviconLoader: dependencies.faviconLoader,
             remoteMessagingActionHandler: dependencies.remoteMessagingActionHandler,
+            remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
             appSettings: dependencies.appSettings,
             internalUserCommands: dependencies.internalUserCommands
         )

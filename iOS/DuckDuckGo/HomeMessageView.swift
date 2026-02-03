@@ -22,13 +22,13 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import RemoteMessaging
 import Core
-import Kingfisher
 
 struct HomeMessageView: View {
 
     let viewModel: HomeMessageViewModel
 
     @State var activityItem: TitleValueShareItem?
+    @State private var loadedImage: UIImage?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -100,24 +100,15 @@ struct HomeMessageView: View {
     
     @ViewBuilder
     private var image: some View {
-        if let imageUrl = viewModel.imageUrl {
-            KFImage(imageUrl)
-                .cacheMemoryOnly(false) // TODO: Remove - temporarily disable cache for testing
-                .forceRefresh() // TODO: Remove - temporarily disable cache for testing
-                .placeholder {
-                    if let placeholderImage = viewModel.image {
-                        Image(placeholderImage)
-                            .scaledToFit()
-                    }
-                }
-                .onFailure { _ in
-                    // Failure handled by showing placeholder via fallback
-                }
-                .resizable()
+        if let displayImage = loadedImage ?? viewModel.preloadedImage {
+            Image(uiImage: displayImage)
                 .scaledToFit()
-        } else if let image = viewModel.image {
-            Image(image)
-                .scaledToFit()
+        } else if let placeholderName = viewModel.image {
+            Image(placeholderName)
+                    .scaledToFit()
+                .task {
+                    loadedImage = await viewModel.loadRemoteImage()
+            }
         }
     }
 
@@ -338,30 +329,40 @@ struct HomeMessageView_Previews: PreviewProvider {
                                                             sendPixels: false,
                                                             modelType: small,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
+                                                            imageLoader: PreviewImageLoader(),
+                                                            preloadedImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Critical",
                                                             sendPixels: false,
                                                             modelType: critical,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
+                                                            imageLoader: PreviewImageLoader(),
+                                                            preloadedImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Single",
                                                             sendPixels: false,
                                                             modelType: bigSingle,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
+                                                            imageLoader: PreviewImageLoader(),
+                                                            preloadedImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Two",
                                                             sendPixels: false,
                                                             modelType: bigTwo,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
+                                                            imageLoader: PreviewImageLoader(),
+                                                            preloadedImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Promo",
                                                             sendPixels: false,
                                                             modelType: promo,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
+                                                            imageLoader: PreviewImageLoader(),
+                                                            preloadedImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
         }
         .frame(height: 200)
@@ -372,6 +373,14 @@ struct HomeMessageView_Previews: PreviewProvider {
     struct PreviewNavigator: MessageNavigator {
         func navigateTo(_ target: RemoteMessaging.NavigationTarget, presentationStyle: PresentationContext.Style) {
             // no-op
+        }
+    }
+
+    struct PreviewImageLoader: RemoteMessagingImageLoading {
+        func prefetch(_ urls: [URL]) {}
+        func cachedImage(for url: URL) -> RemoteMessagingImage? { nil }
+        func loadImage(from url: URL) async throws -> RemoteMessagingImage {
+            throw RemoteMessagingImageLoadingError.invalidImageData
         }
     }
 }

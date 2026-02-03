@@ -34,6 +34,12 @@ protocol WhatsNewDisplayModelMapping {
 
 struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
+    let imageLoader: RemoteMessagingImageLoading?
+
+    init(imageLoader: RemoteMessagingImageLoading? = nil) {
+        self.imageLoader = imageLoader
+    }
+
     /// Maps a RemoteMessageModel to CardsListDisplayModel
     /// Returns nil if message is not a cardsList type
     /// - Parameters:
@@ -95,16 +101,19 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
         guard
             let contentType = message.content,
-            case let .cardsList(mainTitleText, placeholder, items, primaryActionText, primaryAction) = contentType
+            case let .cardsList(mainTitleText, placeholder, imageUrl, items, primaryActionText, primaryAction) = contentType
         else {
             return nil
         }
 
         let listItems = mapRemoteListItems(items)
 
+        let preloadedHeaderImage: UIImage? = imageUrl.flatMap { imageLoader?.cachedImage(for: $0) }
+
         return RemoteMessagingUI.CardsListDisplayModel(
             screenTitle: mainTitleText,
             icon: placeholder?.rawValue,
+            preloadedHeaderImage: preloadedHeaderImage,
             items: listItems,
             onAppear: onMessageAppear,
             primaryAction: (

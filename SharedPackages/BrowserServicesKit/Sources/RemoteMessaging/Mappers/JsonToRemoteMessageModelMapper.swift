@@ -425,6 +425,7 @@ private extension JsonToRemoteMessageModelMapper {
         } else {
             nil
         }
+        let imageUrl = jsonContent.imageUrl.flatMap(URL.init(string:))
         let listItems = try validator.mapRequired(\.listItems) { items throws(MappingError) in
             let mappedItems = try mapToListItems(items, surveyActionMapper: surveyActionMapper)
             return try validator.notEmpty(mappedItems, keyPath: \RemoteMessageResponse.JsonContent.listItems)
@@ -433,7 +434,7 @@ private extension JsonToRemoteMessageModelMapper {
         let primaryAction = try validator.mapRequired(\.primaryAction) { action in
             mapToAction(action, surveyActionMapper: surveyActionMapper)
         }
-        return .cardsList(titleText: titleText, placeholder: placeHolderImage, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        return .cardsList(titleText: titleText, placeholder: placeHolderImage, imageUrl: imageUrl, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
     }
 
     static func mapToListItems(_ jsonListItems: [RemoteMessageResponse.JsonListItem], surveyActionMapper: RemoteMessagingSurveyActionMapping) throws(MappingError) -> [RemoteMessageModelType.ListItem] {

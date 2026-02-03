@@ -39,6 +39,7 @@ extension RemoteMessagingUI {
 
         let screenTitle: String
         let icon: String?
+        let preloadedHeaderImage: UIImage?
         let items: [CardsListDisplayModel.Item]
         let onAppear: (() -> Void)?
         let primaryAction: (title: String, action: () -> Void)?
@@ -78,7 +79,7 @@ extension RemoteMessagingUI {
         var body: some View {
             VStack(spacing: Metrics.CardsList.componentsVerticalSpacing) {
                 VStack(spacing: Metrics.CardsList.contentInset) {
-                    Header(icon: displayModel.icon, title: displayModel.screenTitle)
+                    Header(icon: displayModel.icon, preloadedHeaderImage: displayModel.preloadedHeaderImage, title: displayModel.screenTitle)
 
                     Content(items: displayModel.items)
                 }
@@ -222,6 +223,7 @@ private extension RemoteMessagingUI.CardsListView {
 
     struct Header: View {
         let icon: String?
+        let preloadedHeaderImage: UIImage?
         let title: String
 
         var body: some View {
@@ -238,7 +240,10 @@ private extension RemoteMessagingUI.CardsListView {
 
         @ViewBuilder
         private var logoImage: some View {
-            if let icon {
+            if let preloadedHeaderImage {
+                Image(uiImage: preloadedHeaderImage)
+                    .scaledToFit()
+            } else if let icon {
                 Image(icon)
                     .scaledToFit()
             } else {
@@ -439,6 +444,7 @@ struct CardsList_Previews: PreviewProvider {
         return .init(displayModel: .init(
             screenTitle: "What’s New",
             icon: "RemoteMessageDDGAnnouncement",
+            preloadedHeaderImage: nil,
             items: items,
             onAppear: nil,
             primaryAction: action

@@ -32,17 +32,20 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let pixelFiring: PixelFiring.Type
     private let subscriptionDataReporter: SubscriptionDataReporting?
     private let messageActionHandler: RemoteMessagingActionHandling
+    private let imageLoader: RemoteMessagingImageLoading
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
          pixelFiring: PixelFiring.Type = Pixel.self,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
-         messageActionHandler: RemoteMessagingActionHandling) {
+         messageActionHandler: RemoteMessagingActionHandling,
+         imageLoader: RemoteMessagingImageLoading) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
         self.subscriptionDataReporter = subscriptionDataReporter
         self.messageActionHandler = messageActionHandler
+        self.imageLoader = imageLoader
     }
 
     func load() {
@@ -83,7 +86,9 @@ final class NewTabPageMessagesModel: ObservableObject {
             return HomeMessageViewModel(messageId: "",
                                         sendPixels: false,
                                         modelType: .small(titleText: "", descriptionText: ""),
-                                        messageActionHandler: messageActionHandler) { [weak self] _ in
+                                        messageActionHandler: messageActionHandler,
+                                        imageLoader: imageLoader,
+                                        preloadedImage: nil) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
                 // no-op
@@ -98,7 +103,8 @@ final class NewTabPageMessagesModel: ObservableObject {
 
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
                                                      with: subscriptionDataReporter,
-                                                     messageActionHandler: messageActionHandler) { @MainActor [weak self] action in
+                                                     messageActionHandler: messageActionHandler,
+                                                     imageLoader: imageLoader) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
 

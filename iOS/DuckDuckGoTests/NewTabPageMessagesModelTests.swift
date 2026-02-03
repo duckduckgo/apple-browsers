@@ -291,7 +291,16 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         return NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
-                                messageActionHandler: remoteMessageActionHandler)
+                                messageActionHandler: remoteMessageActionHandler,
+                                imageLoader: MockRemoteMessagingImageLoader())
+    }
+}
+
+private final class MockRemoteMessagingImageLoader: RemoteMessagingImageLoading {
+    func prefetch(_ urls: [URL]) {}
+    func cachedImage(for url: URL) -> RemoteMessagingImage? { nil }
+    func loadImage(from url: URL) async throws -> RemoteMessagingImage {
+        throw RemoteMessagingImageLoadingError.invalidImageData
     }
 }
 

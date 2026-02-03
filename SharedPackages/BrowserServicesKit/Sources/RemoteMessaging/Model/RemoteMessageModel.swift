@@ -89,13 +89,13 @@ public struct RemoteMessageModel: Equatable, Codable {
                                          secondaryAction: secondaryAction)
         case .promoSingleAction(let titleText, let descriptionText, let placeholder, let imageUrl, let actionText, let action):
             self.content = .promoSingleAction(titleText: translation.titleText ?? titleText,
-                                              descriptionText: translation.descriptionText ?? descriptionText,
-                                              placeholder: placeholder,
+                                            descriptionText: translation.descriptionText ?? descriptionText,
+                                            placeholder: placeholder,
                                               imageUrl: imageUrl,
-                                              actionText: translation.primaryActionText ?? actionText,
-                                              action: action)
+                                            actionText: translation.primaryActionText ?? actionText,
+                                            action: action)
 
-        case .cardsList(let titleText, let placeholder, let items, let primaryActionText, let primaryAction):
+        case .cardsList(let titleText, let placeholder, let imageUrl, let items, let primaryActionText, let primaryAction):
 
             let translatedItems: [RemoteMessageModelType.ListItem] = items.map { item in
                 guard let translatedItem = translation.listItems?[item.id] else {
@@ -137,6 +137,7 @@ public struct RemoteMessageModel: Equatable, Codable {
             self.content = .cardsList(
                 titleText: translation.titleText ?? titleText,
                 placeholder: placeholder,
+                imageUrl: imageUrl,
                 items: translatedItems,
                 primaryActionText: translation.primaryActionText ?? primaryActionText,
                 primaryAction: primaryAction
@@ -191,6 +192,7 @@ public enum RemoteMessageModelType: Codable, Equatable {
                            action: RemoteAction)
     case cardsList(titleText: String,
                    placeholder: RemotePlaceholder?,
+                   imageUrl: URL?,
                    items: [ListItem],
                    primaryActionText: String,
                    primaryAction: RemoteAction)
@@ -202,8 +204,22 @@ extension RemoteMessageModelType {
         switch self {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
             return nil
-        case let .cardsList(_, _, items, _, _):
+        case let .cardsList(_, _, _, items, _, _):
             return items
+        }
+    }
+
+    /// Returns the remote image URL if present for this message type.
+    public var imageUrl: URL? {
+        switch self {
+        case .small:
+            return nil
+        case .medium(_, _, _, let imageUrl),
+             .bigSingleAction(_, _, _, let imageUrl, _, _),
+             .bigTwoAction(_, _, _, let imageUrl, _, _, _, _),
+             .promoSingleAction(_, _, _, let imageUrl, _, _),
+             .cardsList(_, _, let imageUrl, _, _, _):
+            return imageUrl
         }
     }
 }

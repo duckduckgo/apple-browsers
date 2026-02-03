@@ -36,6 +36,8 @@ struct HomeMessageViewModelTests {
             sendPixels: true,
             modelType: modelType,
             messageActionHandler: mockActionHandler,
+            imageLoader: MockImageLoader(),
+            preloadedImage: nil,
             onDidClose: onDidClose,
             onDidAppear: {},
             onAttachAdditionalParameters: nil
@@ -217,5 +219,13 @@ struct HomeMessageViewModelTests {
         // THEN
         #expect(mockActionHandler.capturedPresentationContext?.presentationStyle == .dismissModalsAndPresentFromRoot)
         #expect(mockActionHandler.capturedPresentationContext?.presenter != nil)
+    }
+}
+
+private final class MockImageLoader: RemoteMessagingImageLoading {
+    func prefetch(_ urls: [URL]) {}
+    func cachedImage(for url: URL) -> RemoteMessagingImage? { nil }
+    func loadImage(from url: URL) async throws -> RemoteMessagingImage {
+        throw RemoteMessagingImageLoadingError.invalidImageData
     }
 }

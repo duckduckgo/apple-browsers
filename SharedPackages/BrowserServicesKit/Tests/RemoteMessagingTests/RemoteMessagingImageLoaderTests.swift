@@ -245,6 +245,47 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
         XCTAssertEqual(mockProvider.dataCallCount, 1)
     }
 
+    func testCachedImageReturnsNilWhenNotCached() {
+        let mockProvider = MockRemoteMessagingImageDataProvider()
+        let cache = URLCache(memoryCapacity: 1024, diskCapacity: 1024)
+        let loader = RemoteMessagingImageLoader(dataProvider: mockProvider, cache: cache)
+
+        let result = loader.cachedImage(for: testURL)
+
+        XCTAssertNil(result)
+    }
+
+    func testCachedImageReturnsImageWhenCached() {
+        let mockProvider = MockRemoteMessagingImageDataProvider()
+        let cache = URLCache(memoryCapacity: 1024, diskCapacity: 1024)
+        let loader = RemoteMessagingImageLoader(dataProvider: mockProvider, cache: cache)
+
+        let imageData = createValidImageData()
+        let response = createSuccessResponse()
+        let cachedResponse = CachedURLResponse(response: response, data: imageData)
+        cache.storeCachedResponse(cachedResponse, for: URLRequest(url: testURL))
+
+        let result = loader.cachedImage(for: testURL)
+
+        XCTAssertNotNil(result)
+    }
+
+    func testCachedImageReturnsNilForInvalidCachedData() {
+        let mockProvider = MockRemoteMessagingImageDataProvider()
+        let cache = URLCache(memoryCapacity: 1024, diskCapacity: 1024)
+        let loader = RemoteMessagingImageLoader(dataProvider: mockProvider, cache: cache)
+
+        // Manually populate the cache with invalid data
+        let invalidData = Data("not an image".utf8)
+        let response = createSuccessResponse()
+        let cachedResponse = CachedURLResponse(response: response, data: invalidData)
+        cache.storeCachedResponse(cachedResponse, for: URLRequest(url: testURL))
+
+        let result = loader.cachedImage(for: testURL)
+
+        XCTAssertNil(result)
+    }
+
     // MARK: - Helpers
 
     private var testURL: URL {
@@ -295,4 +336,3 @@ final class MockRemoteMessagingImageDataProvider: RemoteMessagingImageDataProvid
         return (mockData ?? Data(), response)
     }
 }
-

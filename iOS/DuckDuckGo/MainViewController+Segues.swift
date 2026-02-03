@@ -368,6 +368,7 @@ extension MainViewController {
             isIPad: UIDevice.current.userInterfaceIdiom == .pad,
             pixelReporter: nil,
             userScriptsDependencies: userScriptsDependencies,
+            imageLoader: remoteMessagingImageLoader,
             featureFlagger: featureFlagger)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,

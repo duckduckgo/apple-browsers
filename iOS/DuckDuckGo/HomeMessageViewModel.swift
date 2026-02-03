@@ -64,6 +64,8 @@ struct HomeMessageViewModel {
     let sendPixels: Bool
     let modelType: HomeSupportedMessageDisplayType
     let messageActionHandler: RemoteMessagingActionHandling
+    let imageLoader: RemoteMessagingImageLoading
+    let preloadedImage: UIImage?
 
     var image: String? {
         switch modelType {
@@ -180,6 +182,18 @@ struct HomeMessageViewModel {
         return { @MainActor presenter in
             await self.messageActionHandler.handleAction(remoteAction, context: PresentationContext(presenter: presenter, presentationStyle: .dismissModalsAndPresentFromRoot))
             await onDidClose(buttonAction)
+        }
+    }
+
+    func loadRemoteImage() async -> UIImage? {
+        guard let imageUrl else { return nil }
+        do {
+            let image = try await imageLoader.loadImage(from: imageUrl)
+            // TODO: Fire success pixel
+            return image
+        } catch {
+            // TODO: Fire failure pixel
+            return nil
         }
     }
 }

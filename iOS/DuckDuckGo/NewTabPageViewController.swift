@@ -22,6 +22,7 @@ import DDGSync
 import Bookmarks
 import BrowserServicesKit
 import Core
+import RemoteMessaging
 
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
@@ -56,6 +57,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
+         remoteMessagingImageLoader: RemoteMessagingImageLoading,
          appSettings: AppSettings,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
@@ -74,7 +76,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             faviconLoader: faviconLoader)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
-                                                messageActionHandler: remoteMessagingActionHandler)
+                                                messageActionHandler: remoteMessagingActionHandler,
+                                                imageLoader: remoteMessagingImageLoader)
 
         super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,

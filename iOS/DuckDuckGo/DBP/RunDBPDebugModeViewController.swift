@@ -227,7 +227,7 @@ struct RunDBPDebugModeView: View {
                         viewModel.runSelectedBroker()
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(viewModel.selectedBroker == nil || !viewModel.hasValidInput)
+                    .disabled(viewModel.selectedBrokerJSON.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !viewModel.hasValidInput)
                     
                 }
             }

@@ -24,7 +24,7 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
     var emailConfirmationStore: EmailConfirmationSupporting {
         debugEmailConfirmationStore
     }
-    
+
     func checkForEmailConfirmation() {
         updateProgress("Checking email confirmations...")
         let emailConfirmationDataService = emailConfirmationDataService

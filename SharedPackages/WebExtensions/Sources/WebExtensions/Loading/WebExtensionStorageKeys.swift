@@ -21,5 +21,5 @@ import Persistence
 
 @available(macOS 15.4, *)
 public enum WebExtensionStorageKeys: String, StorageKeyDescribing {
-    case storedPaths = "com.duckduckgo.web.extension.stored-paths"
+    case installedExtensions = "com.duckduckgo.web.extension.installed-extensions"
 }

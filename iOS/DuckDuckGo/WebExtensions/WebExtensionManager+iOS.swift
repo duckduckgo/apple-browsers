@@ -28,11 +28,10 @@ public enum WebExtensionManagerFactory {
 
     @MainActor
     static func makeManager(mainViewController: MainViewController) -> WebExtensionManager {
-        let windowTabProvider = WebExtensionWindowTabProvider(mainViewController: mainViewController)
-
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
-            windowTabProvider: windowTabProvider
+            windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),
+            storageProvider: WebExtensionStorageProvider()
         )
 
         return manager

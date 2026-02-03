@@ -20,6 +20,7 @@
 import SwiftUI
 import WebExtensions
 import UniformTypeIdentifiers
+import WebKit
 
 @available(iOS 18.4, *)
 struct WebExtensionsDebugView: View {
@@ -29,6 +30,7 @@ struct WebExtensionsDebugView: View {
     @State private var installedExtensions: [InstalledExtension] = []
     @State private var showDocumentPicker = false
     @State private var isLoading = false
+    @State private var errorMessage: String?
 
     var body: some View {
         List {
@@ -40,6 +42,14 @@ struct WebExtensionsDebugView: View {
                 }
             } header: {
                 Text("Install Extension")
+            }
+
+            if let errorMessage {
+                Section {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
             }
 
             Section {
@@ -55,13 +65,18 @@ struct WebExtensionsDebugView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(installedExtension.name)
                                     .font(.body)
-                                Text(installedExtension.path)
+                                Text(installedExtension.identifier)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
                             }
                             Spacer()
+                            Button {
+                                performExtensionAction(for: installedExtension.identifier)
+                            } label: {
+                                Image(systemName: "play.circle.fill")
+                            }
                         }
                     }
                     .onDelete(perform: uninstallExtensions)
@@ -98,24 +113,29 @@ struct WebExtensionsDebugView: View {
 
     private func refreshExtensions() {
         isLoading = true
-        let paths = webExtensionManager.webExtensionPaths
-        installedExtensions = paths.map { path in
-            let name = webExtensionManager.extensionName(from: path) ?? "Unknown Extension"
-            return InstalledExtension(path: path, name: name)
+        let identifiers = webExtensionManager.webExtensionIdentifiers
+        installedExtensions = identifiers.map { identifier in
+            let name = webExtensionManager.extensionName(for: identifier) ?? "Unknown Extension"
+            return InstalledExtension(identifier: identifier, name: name)
         }
         isLoading = false
     }
 
     private func installExtension(from url: URL) async {
         isLoading = true
-        await webExtensionManager.installExtension(path: url.absoluteString)
+        errorMessage = nil
+        do {
+            try await webExtensionManager.installExtension(from: url)
+        } catch {
+            errorMessage = "Failed to install: \(error.localizedDescription)"
+        }
         refreshExtensions()
     }
 
     private func uninstallExtensions(at offsets: IndexSet) {
         for index in offsets {
             let installedExtension = installedExtensions[index]
-            try? webExtensionManager.uninstallExtension(path: installedExtension.path)
+            try? webExtensionManager.uninstallExtension(identifier: installedExtension.identifier)
         }
         refreshExtensions()
     }
@@ -124,12 +144,41 @@ struct WebExtensionsDebugView: View {
         webExtensionManager.uninstallAllExtensions()
         refreshExtensions()
     }
+
+    private func performExtensionAction(for identifier: String) {
+        let extensionName = webExtensionManager.extensionName(for: identifier)
+        guard let context = webExtensionManager.loadedExtensions.first(where: { context in
+            context.uniqueIdentifier == identifier
+        }) else {
+            errorMessage = "Extension context not found for '\(extensionName ?? identifier)'"
+            return
+        }
+
+        context.performAction(for: nil)
+    }
+
+    private func dismissSettingsModal(completion: @escaping () -> Void) {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first,
+              let rootViewController = window.rootViewController else {
+            completion()
+            return
+        }
+
+        if let presentedViewController = rootViewController.presentedViewController {
+            presentedViewController.dismiss(animated: true) {
+                completion()
+            }
+        } else {
+            completion()
+        }
+    }
 }
 
 @available(iOS 18.4, *)
 struct InstalledExtension: Identifiable {
     let id = UUID()
-    let path: String
+    let identifier: String
     let name: String
 }
 

@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import Combine
 import BrowserServicesKit
 import PrivacyConfig
 import Subscription
@@ -63,6 +64,7 @@ final class MainCoordinator {
 
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
+    private var webExtensionFeatureFlagHandler: AnyObject?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -222,18 +224,33 @@ final class MainCoordinator {
             tabManager.setWebExtensionManager(webExtensionManager)
             controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
             controller.setWebExtensionManager(webExtensionManager)
+
+            let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+                .flagDidChangePublisher
+                .filter { $0.0 == .webExtensions }
+                .map { $0.1 }
+                .eraseToAnyPublisher()
+
+            webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+                webExtensionManager: webExtensionManager,
+                featureFlagPublisher: publisher) { [weak self] in
+                    self?.clearWebExtensionReferences()
+                }
+
             Task { @MainActor in
-                // FIXME: Currently loading installed extensions does not work on iOS due to absolute paths being unstable
-                webExtensionManager.uninstallAllExtensions()
-//                await webExtensionManager.loadInstalledExtensions()
+                await webExtensionManager.loadInstalledExtensions()
             }
         } else {
-            self.webExtensionManager = nil
-            self.webExtensionEventsCoordinator = nil
-            tabManager.setWebExtensionManager(nil)
-            controller.setWebExtensionEventsCoordinator(nil)
-            controller.setWebExtensionManager(nil)
+            clearWebExtensionReferences()
         }
+    }
+
+    private func clearWebExtensionReferences() {
+        webExtensionManager = nil
+        webExtensionEventsCoordinator = nil
+        tabManager.setWebExtensionManager(nil)
+        controller.setWebExtensionEventsCoordinator(nil)
+        controller.setWebExtensionManager(nil)
     }
 
     private static func makeHistoryManager(tabsModel: TabsModel) throws -> HistoryManaging {

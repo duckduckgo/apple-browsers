@@ -71,9 +71,9 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     private func makeInstalledWebExtension(uniqueIdentifier: String,
-                                        filename: String = "extension.zip",
-                                        name: String? = nil,
-                                        version: String? = nil) -> InstalledWebExtension {
+                                           filename: String = "extension.zip",
+                                           name: String? = nil,
+                                           version: String? = nil) -> InstalledWebExtension {
         InstalledWebExtension(
             uniqueIdentifier: uniqueIdentifier,
             filename: filename,

@@ -177,7 +177,8 @@ final class MainViewController: NSViewController {
             return NetworkProtectionNavBarPopoverManager(
                 ipcClient: vpnXPCClient,
                 vpnUninstaller: vpnUninstaller,
-                vpnUIPresenting: Application.appDelegate.windowControllersManager)
+                vpnUIPresenting: Application.appDelegate.windowControllersManager,
+                freeTrialConversionService: Application.appDelegate.freeTrialConversionService)
         }()
         let networkProtectionStatusReporter: NetworkProtectionStatusReporter = {
             var connectivityIssuesObserver: ConnectivityIssueObserver!

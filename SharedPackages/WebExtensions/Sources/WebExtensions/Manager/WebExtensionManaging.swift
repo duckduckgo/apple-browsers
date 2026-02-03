@@ -22,56 +22,56 @@ import WebKit
 public protocol WebExtensionManaging: AnyObject {
 
     /// Whether there are any installed extensions.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     var hasInstalledExtensions: Bool { get }
 
     /// The set of currently loaded extension contexts.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
 
     /// The paths of installed web extensions.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     var webExtensionPaths: [String] { get }
 
     /// The web extension controller.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     var controller: WKWebExtensionController { get }
 
     /// The events listener for web extension events.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     var eventsListener: WebExtensionEventsListening { get }
 
     /// An async stream that yields when extensions are updated.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     var extensionUpdates: AsyncStream<Void> { get }
 
     /// Loads all installed extensions.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func loadInstalledExtensions() async
 
     /// Installs an extension from the given path.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     func installExtension(path: String) async
 
     /// Uninstalls an extension at the given path.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     func uninstallExtension(path: String) throws
 
     /// Uninstalls all extensions.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     @discardableResult
     func uninstallAllExtensions() -> [Result<Void, Error>]
 
     /// Returns the extension name from the given path.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     func extensionName(from path: String) -> String?
 
     /// Returns the extension context for the given URL.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     func extensionContext(for url: URL) -> WKWebExtensionContext?
 
     /// Returns the extension context for the given path.
-    @available(macOS 15.4, *)
+    @available(macOS 15.4, iOS 18.4, *)
     func context(forPath path: String) -> WKWebExtensionContext?
 }

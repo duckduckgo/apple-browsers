@@ -20,6 +20,7 @@ import Foundation
 import XCTest
 import ObjectiveC
 import SharedTestUtilities
+import Carbon
 
 /// Helper values for the UI tests
 enum UITests {
@@ -135,7 +136,11 @@ class UITestCase: XCTestCase {
     private var cleanupPaths: Set<String> = []
 
     override class func setUp() {
+        // Set up method swizzling to enable precise keyboard/mouse event simulation.
+        // This allows tests to simulate "hold key" scenarios (keyDown/keyUp with proper timing)
+        // and middle-click events that aren't directly supported by XCTest's standard APIs.
         setupXCPointerEventPathSwizzling()
+        _ = XCUIDevice.swizzlePerformWithKeyModifiersOnce
         super.setUp()
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
 
@@ -158,6 +163,10 @@ class UITestCase: XCTestCase {
                     print("Warning: XCPointerEventPath class not found for swizzling")
                     return
                 }
+                guard let pointerEventClass = NSClassFromString("XCPointerEvent") else {
+                    print("Warning: XCPointerEventPath class not found for swizzling")
+                    return
+                }
 
                 swizzleMethod(
                     class: pointerEventPathClass,
@@ -169,6 +178,12 @@ class UITestCase: XCTestCase {
                     class: pointerEventPathClass,
                     originalSelector: NSSelectorFromString("releaseButton:atOffset:clickCount:"),
                     swizzledSelector: #selector(swizzled_releaseButton)
+                )
+
+                swizzleMethod(
+                    class: pointerEventClass,
+                    originalSelector: NSSelectorFromString("setKey:"),
+                    swizzledSelector: #selector(swizzled_setKey)
                 )
             }()
 
@@ -209,23 +224,53 @@ class UITestCase: XCTestCase {
 extension UITestCase {
 
     @TaskLocal static var shouldReplaceButtonWithMiddleMouseButton: Bool = false
+    @TaskLocal static var keyEventOverride: (keyCode: Int, phase: UInt)?
 
-    /// Swizzled implementation of pressButton:atOffset:clickCount:
+    /// Swizzled implementation of [XCPointerEventPath pressButton:atOffset:clickCount:]
+    /// Calls original implementation after optionally modifying button parameter allowing to simulate middle-click.
     @objc dynamic private func swizzled_pressButton(_ button: UInt64, at offset: Double, clickCount: UInt64) {
         var button = button
         if Self.shouldReplaceButtonWithMiddleMouseButton {
             button = 3
         }
+        // Call the original
         self.swizzled_pressButton(button, at: offset, clickCount: clickCount)
     }
 
-    /// Swizzled implementation of releaseButton:atOffset:clickCount:
+    /// Swizzled implementation of [XCPointerEventPath releaseButton:atOffset:clickCount:]
+    /// Calls original implementation after optionally modifying button parameter allowing to simulate middle-click.
     @objc dynamic private func swizzled_releaseButton(_ button: UInt64, at offset: Double, clickCount: UInt64) {
         var button = button
         if Self.shouldReplaceButtonWithMiddleMouseButton {
             button = 3
         }
+        // Call the original
         self.swizzled_releaseButton(button, at: offset, clickCount: clickCount)
+    }
+
+    /// Swizzled implementation of [XCPointerEvent setKey:]
+    /// When keyEventOverride is set, manually configures the event with proper key code and phase (keyDown/keyUp).
+    /// Otherwise calls original implementation.
+    @objc dynamic private func swizzled_setKey(_ key: String) {
+        if let keyEvent = Self.keyEventOverride {
+            self.setEventType(0xb)
+            self.setKeyCode(keyEvent.keyCode)
+            self.setKeyPhase(keyEvent.phase)
+            self.keyModifierFlags = (XCUIDevice.activeKeyModifiers ?? []).toNSEventModifierFlags()
+            Logger.log("[\(self) setKey: \(key) keyCode: \(keyEvent.keyCode) phase: \(keyEvent.phase) modifierFlags: \(self.keyModifierFlags)]")
+            return
+        }
+
+        // Call the original
+        self.swizzled_setKey(key)
+    }
+    // XCPointerEvent private method definitions to use from swizzled_setKey
+    @objc private dynamic func setEventType(_: UInt) {}
+    @objc private dynamic func setKeyCode(_: Int) {}
+    @objc private dynamic func setKeyPhase(_: UInt) {}
+    @objc private dynamic var keyModifierFlags: NSEvent.ModifierFlags {
+        get { [] }
+        set {}
     }
 
     override func tearDown() {

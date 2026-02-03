@@ -78,6 +78,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Text
     private static let textPrimary = DynamicColor(lightColor: x1F1F1F, darkColor: .tint(0.9))
     private static let textSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.72), darkColor: .tint(0.6))
+    private static let textTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.36))
     private static let textPlaceholder = DynamicColor(lightColor: x1F1F1F.opacity(0.4), darkColor: .tint(0.4))
 
     // System
@@ -195,6 +196,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .textLink: return textLink
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
+        case .textTertiary: return textTertiary
         case .textSelectionFill: return textSelectionFill
 
         // Destructive
@@ -256,8 +258,36 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: background.darkColor)
         case .duckAIContextualSheetBackground:
             return DynamicColor(lightColor: .white, darkColor: .x161616)
+        case let .rebranding(rebrandingColor):
+            return dynamicColor(for: rebrandingColor)
         }
     }
+}
+
+// MARK: - Rebranding 2026
+
+// Temporary. To be removed after Rebranding Color Palette is rolled out across the whole app.
+private extension DefaultColorPalette {
+
+    private static func dynamicColor(for rebrandingColor: SingleUseColor.Rebranding) -> DynamicColor {
+        switch rebrandingColor {
+        case .textPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
+        case .textSecondary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell70, darkColor: RebrandingColor.Eggshell.eggshell30)
+        case .accentPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater50, darkColor: RebrandingColor.Pondwater.pondwater40)
+        case .accentAltPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: Color(0x133E7C))
+        case .surfaceTertiary:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x011D34))
+        case .buttonsPrimaryDefault:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen30)
+        case .buttonsPrimaryText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+        }
+    }
+
 }
 
 #endif

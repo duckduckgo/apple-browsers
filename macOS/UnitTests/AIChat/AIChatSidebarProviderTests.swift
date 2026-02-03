@@ -575,4 +575,81 @@ final class AIChatSidebarProviderTests: XCTestCase {
         XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID]?.restorationData)
     }
 
+    // MARK: - Clear Sidebar If Session Expired Tests
+
+    func testClearSidebarIfSessionExpired_withExpiredSession_clearsSidebarAndReturnsTrue() {
+        // Given - Create provider with keep session enabled
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatKeepSession]
+        let keepSessionProvider = AIChatSidebarProvider(featureFlagger: mockFeatureFlagger)
+
+        let tabID = "expired-session-tab"
+        _ = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        keepSessionProvider.sidebarsByTab[tabID]?.setRevealed()
+
+        // Simulate closing and set hiddenAt to 70 minutes ago (exceeds 60 minute timeout)
+        keepSessionProvider.handleSidebarDidClose(for: tabID)
+        let oldDate = Date().addingTimeInterval(-4200) // 70 minutes ago
+        keepSessionProvider.sidebarsByTab[tabID]?.updateHiddenAt(oldDate)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
+
+        // When
+        let wasCleared = keepSessionProvider.clearSidebarIfSessionExpired(for: tabID)
+
+        // Then
+        XCTAssertTrue(wasCleared)
+        XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID])
+    }
+
+    func testClearSidebarIfSessionExpired_withValidSession_doesNotClearAndReturnsFalse() {
+        // Given - Create provider with keep session enabled
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatKeepSession]
+        let keepSessionProvider = AIChatSidebarProvider(featureFlagger: mockFeatureFlagger)
+
+        let tabID = "valid-session-tab"
+        _ = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        keepSessionProvider.sidebarsByTab[tabID]?.setRevealed()
+
+        // Simulate closing and set hiddenAt to 30 minutes ago (within 60 minute timeout)
+        keepSessionProvider.handleSidebarDidClose(for: tabID)
+        let recentDate = Date().addingTimeInterval(-1800) // 30 minutes ago
+        keepSessionProvider.sidebarsByTab[tabID]?.updateHiddenAt(recentDate)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
+
+        // When
+        let wasCleared = keepSessionProvider.clearSidebarIfSessionExpired(for: tabID)
+
+        // Then
+        XCTAssertFalse(wasCleared)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
+    }
+
+    func testClearSidebarIfSessionExpired_withNoSidebar_returnsFalse() {
+        // Given
+        let tabID = "non-existent-tab"
+        XCTAssertNil(provider.sidebarsByTab[tabID])
+
+        // When
+        let wasCleared = provider.clearSidebarIfSessionExpired(for: tabID)
+
+        // Then
+        XCTAssertFalse(wasCleared)
+    }
+
+    func testClearSidebarIfSessionExpired_withNilHiddenAt_returnsFalse() {
+        // Given - Sidebar that was never hidden (hiddenAt is nil)
+        let tabID = "never-hidden-tab"
+        _ = provider.makeSidebarViewController(for: tabID, burnerMode: .regular)
+        provider.sidebarsByTab[tabID]?.setRevealed()
+        XCTAssertNil(provider.sidebarsByTab[tabID]?.hiddenAt)
+
+        // When
+        let wasCleared = provider.clearSidebarIfSessionExpired(for: tabID)
+
+        // Then
+        XCTAssertFalse(wasCleared)
+        XCTAssertNotNil(provider.sidebarsByTab[tabID])
+    }
+
 }

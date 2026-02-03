@@ -30,6 +30,8 @@ protocol TabDelegate: AnyObject {
     
     func newTab(reuseExisting: Bool)
 
+    func tabDidRequestActivate(_ tab: TabViewController)
+
     func tab(_ tab: TabViewController,
              didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration,
              for navigationAction: WKNavigationAction,

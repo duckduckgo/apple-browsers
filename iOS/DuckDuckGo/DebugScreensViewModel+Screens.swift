@@ -25,6 +25,7 @@ import BareBonesBrowserKit
 import Core
 import DataBrokerProtection_iOS
 import AIChat
+import WebExtensions
 
 extension DebugScreensViewModel {
 
@@ -181,6 +182,7 @@ extension DebugScreensViewModel {
                                                             runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
                 }
             }) : nil,
+            webExtensionsDebugScreen,
             .controller(title: "File Size Inspector", { _ in
                 return self.debugStoryboard.instantiateViewController(identifier: "FileSizeDebug") { coder in
                     FileSizeDebugViewController(coder: coder)
@@ -284,6 +286,21 @@ extension DebugScreensViewModel {
         )
 
         store.lastPresentationTimestamp = nil
+    }
+
+    private var webExtensionsDebugScreen: DebugScreen? {
+        guard #available(iOS 18.4, *),
+              AppDependencyProvider.shared.featureFlagger.isFeatureOn(.webExtensions) else {
+            return nil
+        }
+
+        return .view(title: "Web Extensions") { d in
+            if let manager = d.webExtensionManager {
+                WebExtensionsDebugView(webExtensionManager: manager)
+            } else {
+                Text("Web Extensions not available")
+            }
+        }
     }
 
 }

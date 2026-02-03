@@ -62,6 +62,7 @@ final class AIChatContextualSheetCoordinator {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let debugSettings: AIChatDebugSettingsHandling
 
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
@@ -69,6 +70,9 @@ final class AIChatContextualSheetCoordinator {
 
     /// Handles all pixel firing for contextual mode.
     let pixelHandler: AIChatContextualModePixelFiring
+
+    /// Session state - single source of truth for frontend and chip state
+    let sessionState = AIChatContextualChatSessionState()
 
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
@@ -78,6 +82,15 @@ final class AIChatContextualSheetCoordinator {
 
     /// The view model for the current sheet session (retained alongside the sheet)
     private var viewModel: AIChatContextualSheetViewModel?
+
+    /// Session timer for auto-resetting the chat after inactivity
+    private var sessionTimer: AIChatSessionTimer?
+
+    /// Flag to prevent duplicate navigation processing
+    private var isProcessingNavigation = false
+
+    /// Hash of last processed context to prevent duplicate updates
+    private var lastProcessedContextHash: String?
 
     /// Returns true if the sheet is currently presented.
     var isSheetPresented: Bool {
@@ -93,6 +106,7 @@ final class AIChatContextualSheetCoordinator {
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
          pageContextHandler: AIChatPageContextHandling,
+         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
         self.voiceSearchHelper = voiceSearchHelper
         self.aiChatSettings = aiChatSettings
@@ -101,6 +115,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         self.pageContextHandler = pageContextHandler
+        self.debugSettings = debugSettings
         self.pixelHandler = pixelHandler
     }
 
@@ -121,21 +136,7 @@ final class AIChatContextualSheetCoordinator {
         if let existingSheet = sheetViewController {
             sheetVC = existingSheet
             isNewSheet = false
-
-            if restoreURL == nil {
-                await pageContextHandler.triggerContextCollection()
-            }
-
-            // Auto-attach: push to frontend if chat is active (frontend manages context),
-            // otherwise apply to native input view (context submitted with prompt).
-            if aiChatSettings.isAutomaticContextAttachmentEnabled {
-                if hasActiveChat, let context = pageContextHandler.latestContext {
-                    existingSheet.pushPageContextToFrontend(context)
-                } else if let snapshot = currentSnapshot {
-                    existingSheet.markNextAttachAsAutomatic()
-                    existingSheet.applyContextSnapshot(snapshot)
-                }
-            }
+            // Restore logic moved to after presentation to ensure view is loaded
         } else {
             if restoreURL == nil {
                 await pageContextHandler.triggerContextCollection()
@@ -143,12 +144,12 @@ final class AIChatContextualSheetCoordinator {
 
             let sheetViewModel = AIChatContextualSheetViewModel(
                 settings: aiChatSettings,
-                hasContext: pageContextHandler.hasContext,
                 hasExistingChat: webViewController != nil || restoreURL != nil
             )
             viewModel = sheetViewModel
 
             sheetVC = AIChatContextualSheetViewController(
+                sessionState: sessionState,
                 viewModel: sheetViewModel,
                 voiceSearchHelper: voiceSearchHelper,
                 webViewControllerFactory: { [weak self] in
@@ -175,7 +176,18 @@ final class AIChatContextualSheetCoordinator {
         }
 
         startObservingContextUpdates()
-        presentingViewController.present(sheetVC, animated: true)
+        stopSessionTimer()
+
+        presentingViewController.present(sheetVC, animated: true) { [weak self] in
+            guard let self else { return }
+
+            // Restore existing sheet after presentation to ensure view is loaded
+            if !isNewSheet {
+                Task {
+                    await self.restoreExistingSheet(sheetVC, restoreURL: restoreURL)
+                }
+            }
+        }
 
         pixelHandler.fireSheetOpened()
         if isNewSheet && restoreURL != nil {
@@ -197,8 +209,6 @@ final class AIChatContextualSheetCoordinator {
             return
         }
 
-        viewModel?.updateContextAvailability(true)
-
         guard let snapshot = currentSnapshot else {
             pixelHandler.endManualAttach()
             return
@@ -212,8 +222,7 @@ final class AIChatContextualSheetCoordinator {
     func dismissSheet() {
         sheetViewController?.dismiss(animated: true)
     }
-
-    /// Clears the retained sheet and web view, ending the chat session for this tab.
+    
     func clearActiveChat() {
         sheetViewController = nil
         webViewController = nil
@@ -226,7 +235,6 @@ final class AIChatContextualSheetCoordinator {
     /// Clears the current page context.
     func clearPageContext() {
         pageContextHandler.clear()
-        viewModel?.updateContextAvailability(false)
     }
 
     /// Reloads the contextual chat web view if one exists.
@@ -235,15 +243,22 @@ final class AIChatContextualSheetCoordinator {
     }
 
     /// Called by TabViewController when the page navigates to a new URL.
-    /// Triggers context collection if there's an active sheet and auto-attach is enabled.
+    /// Triggers context collection based on session state.
     func notifyPageChanged() async {
-        guard hasActiveSheet,
-              aiChatSettings.isAutomaticContextAttachmentEnabled else { return }
+        guard hasActiveSheet else { return }
+        guard !isProcessingNavigation else {
+            Logger.aiChat.debug("[PageContext] Navigation processing skipped (already in progress)")
+            return
+        }
+
+        isProcessingNavigation = true
+        defer { isProcessingNavigation = false }
+
+        sessionState.clearUserDowngradeOnNavigation()
 
         Logger.aiChat.debug("[PageContext] Navigation detected - triggering collection")
         await pageContextHandler.triggerContextCollection()
 
-        // Fire navigation pixel only when navigation actually happens
         if let context = pageContextHandler.latestContext {
             pixelHandler.firePageContextUpdatedOnNavigation(url: context.url)
         }
@@ -265,6 +280,59 @@ final class AIChatContextualSheetCoordinator {
         return AIChatPageContextSnapshot(context: context, favicon: pageContextHandler.latestFavicon)
     }
 
+    // MARK: - Session Timer
+
+    /// Starts the session timer after the sheet is dismissed.
+    /// Timer will automatically reset the chat to native input after configured inactivity period.
+    /// Uses privacy config value, but can be overridden via debug settings.
+    func startSessionTimer() {
+        guard hasActiveChat else { return }
+
+        let sessionDuration: TimeInterval
+        if let debugSeconds = debugSettings.contextualSessionTimerSeconds {
+            sessionDuration = TimeInterval(debugSeconds)
+            Logger.aiChat.debug("[Contextual SessionTimer] Started: \(debugSeconds) seconds (debug setting)")
+        } else {
+            let minutes = aiChatSettings.sessionTimerInMinutes
+            sessionDuration = TimeInterval(minutes * 60)
+            Logger.aiChat.debug("[Contextual SessionTimer] Started: \(minutes) minutes (privacy config)")
+        }
+
+        sessionTimer = AIChatSessionTimer(durationInSeconds: sessionDuration) { [weak self] in
+            Task { @MainActor in
+                await self?.resetToNativeInputState()
+            }
+        }
+        sessionTimer?.start()
+    }
+
+    /// Stops the session timer when the sheet is re-opened.
+    func stopSessionTimer() {
+        sessionTimer?.cancel()
+        sessionTimer = nil
+        Logger.aiChat.debug("[Contextual SessionTimer] Stopped")
+    }
+
+    /// Resets the chat session to native input state.
+    /// Called when the session timer expires or when the user taps "New Chat".
+    func resetToNativeInputState() async {
+        Logger.aiChat.debug("[Contextual] Resetting to native input")
+
+        sessionState.resetToNoChat()
+
+        Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
+        await pageContextHandler.triggerContextCollection()
+
+        if let snapshot = currentSnapshot {
+            Logger.aiChat.debug("[PageContext] Applying fresh snapshot immediately after collection")
+            sheetViewController?.updateLatestSnapshot(snapshot)
+        }
+
+        sheetViewController?.resetToNativeInput()
+        webViewController = nil
+        delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
+        viewModel?.didStartNewChat()
+    }
 
     // MARK: - Context Observation
 
@@ -287,20 +355,46 @@ final class AIChatContextualSheetCoordinator {
     private func handleContextUpdate(_ context: AIChatPageContextData?) {
         guard let context = context else { return }
 
-        viewModel?.updateContextAvailability(pageContextHandler.hasContext)
+        // Deduplicate: ignore if identical to last processed context
+        let contextHash = "\(context.url)_\(context.title)_\(context.content)"
+        if contextHash == lastProcessedContextHash {
+            Logger.aiChat.debug("[PageContext] Duplicate context update ignored")
+            return
+        }
+        lastProcessedContextHash = contextHash
+
+        guard isSheetPresented else {
+            Logger.aiChat.debug("[PageContext] Context update - sheet not presented")
+            return
+        }
+
+        guard let snapshot = currentSnapshot else {
+            Logger.aiChat.debug("[PageContext] Context update - no snapshot available")
+            return
+        }
+
+        sheetViewController?.updateLatestSnapshot(snapshot)
 
         let autoAttachEnabled = aiChatSettings.isAutomaticContextAttachmentEnabled
-        guard isSheetPresented && autoAttachEnabled else { return }
+        let shouldUpdate = sessionState.shouldUpdateUI(autoAttachEnabled: autoAttachEnabled)
 
-        guard let snapshot = currentSnapshot else { return }
+        guard shouldUpdate else {
+            Logger.aiChat.debug("[PageContext] Context update - not updating UI (shouldUpdate=false)")
+            return
+        }
 
-        if hasActiveChat {
-            Logger.aiChat.debug("[PageContext] Auto-attached to active chat")
+        if sessionState.isShowingNativeInput {
+            guard sessionState.shouldAllowAutomaticUpgrade() else {
+                Logger.aiChat.debug("[PageContext] Context update - skipping native input update (user downgraded)")
+                return
+            }
+            Logger.aiChat.debug("[PageContext] Context update - updating native input chip")
+            sheetViewController?.applyContextSnapshot(snapshot)
+        } else if sessionState.canPushToFrontend() {
+            Logger.aiChat.debug("[PageContext] Context update - pushing to frontend")
             sheetViewController?.pushPageContextToFrontend(snapshot.context)
         } else {
-            Logger.aiChat.debug("[PageContext] Auto-attached to input box")
-            sheetViewController?.markNextAttachAsAutomatic()
-            sheetViewController?.applyContextSnapshot(snapshot)
+            Logger.aiChat.debug("[PageContext] Context update - frontend already has initial context, not pushing")
         }
     }
 }
@@ -324,8 +418,7 @@ private extension AIChatContextualSheetCoordinator {
             downloadHandler: downloadHandler,
             getPageContext: { [weak self] reason in
                 guard let self else { return nil }
-                let autoAttachEnabled = self.aiChatSettings.isAutomaticContextAttachmentEnabled
-                guard autoAttachEnabled || reason == .userAction else { return nil }
+                guard reason == .userAction else { return nil }
                 return self.pageContextHandler.latestContext
             },
             pixelHandler: pixelHandler
@@ -338,13 +431,31 @@ private extension AIChatContextualSheetCoordinator {
         return webVC
     }
 
-    /// Handles auto-attach decision when web view's chat URL changes.
-    func handleWebViewChatURLChange(_ url: URL?, webViewController: AIChatContextualWebViewController?) {
-        guard url != nil,
-              aiChatSettings.isAutomaticContextAttachmentEnabled,
-              let context = pageContextHandler.latestContext else { return }
+    func restoreExistingSheet(_ existingSheet: AIChatContextualSheetViewController, restoreURL: URL?) async {
+        if restoreURL == nil && aiChatSettings.isAutomaticContextAttachmentEnabled {
+            await pageContextHandler.triggerContextCollection()
+        }
 
-        webViewController?.pushPageContext(context)
+        if aiChatSettings.isAutomaticContextAttachmentEnabled {
+            if hasActiveChat, let context = pageContextHandler.latestContext {
+                existingSheet.pushPageContextToFrontend(context)
+            } else if let snapshot = currentSnapshot {
+                existingSheet.applyContextSnapshot(snapshot)
+            }
+        } else {
+            if !hasActiveChat, let snapshot = currentSnapshot {
+                if sessionState.chipState == .attached {
+                    existingSheet.applyContextSnapshot(snapshot)
+                } else {
+                    existingSheet.showPlaceholderContextChip(snapshot)
+                }
+            }
+        }
+    }
+
+    /// Handles chat URL changes for persistence.
+    func handleWebViewChatURLChange(_ url: URL?, webViewController: AIChatContextualWebViewController?) {
+        delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: url)
     }
 }
 
@@ -357,14 +468,18 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidRequestDismiss(_ viewController: AIChatContextualSheetViewController) {
-        viewController.dismiss(animated: true)
+        viewController.dismiss(animated: true) { [weak self] in
+            self?.aiChatContextualSheetViewControllerDidDismiss(viewController)
+        }
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL) {
         delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url)
         viewController.dismiss(animated: true)
         sheetViewController = nil
+        webViewController = nil
         viewModel = nil
+        stopSessionTimer()
         stopObservingContextUpdates()
         pixelHandler.reset()
     }
@@ -405,6 +520,16 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         viewController.dismiss(animated: true) { [weak self] in
             guard let self else { return }
             self.delegate?.aiChatContextualSheetCoordinator(self, didRequestOpenDownloadWithFileName: fileName)
+        }
+    }
+
+    func aiChatContextualSheetViewControllerDidDismiss(_ viewController: AIChatContextualSheetViewController) {
+        startSessionTimer()
+    }
+
+    func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {
+        Task {
+            await resetToNativeInputState()
         }
     }
 }

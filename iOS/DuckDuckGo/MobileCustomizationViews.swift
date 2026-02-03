@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Core
 import DesignResourcesKitIcons
 
 protocol MobileCustomizationView { }
@@ -51,7 +52,11 @@ extension MobileCustomizationView {
         case .bookmarks:
             UserText.actionOpenBookmarks
         case .fire:
-            isAIChatEnabled ? UserText.settingsAutoClearTabsAndDataWithAIChat :  UserText.settingsAutoClearTabsAndData
+            if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.enhancedDataClearingSettings) {
+                UserText.settingsDeleteTabsAndData
+            } else {
+                isAIChatEnabled ? UserText.settingsAutoClearTabsAndDataWithAIChat : UserText.settingsAutoClearTabsAndData
+            }
         case .vpn:
             UserText.actionVPN
         case .passwords:

@@ -80,9 +80,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             openSyncSettingsCallCount += 1
         }
 
+        var contextualChatURLUpdates: [URL?] = []
+
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
+            contextualChatURLUpdates.append(url)
         }
-        
+
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestOpenDownloadWithFileName fileName: String) {
         }
     }
@@ -178,7 +181,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         // Then
         XCTAssertNotNil(sut.sheetViewController?.delegate)
     }
-
+    
     // MARK: - clearActiveChat Tests
 
     @MainActor
@@ -283,15 +286,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     // MARK: - Page Context Handling Tests
 
     @MainActor
-    func testClearActiveChatClearsPageContext() async {
-        await sut.presentSheet(from: mockPresentingVC)
-
-        sut.clearActiveChat()
-
-        XCTAssertEqual(mockPageContextHandler.clearCallCount, 1)
-    }
-
-    @MainActor
     func testClearPageContextUpdatesViewModel() async {
         mockPageContextHandler.setContext(makeTestContext())
         await sut.presentSheet(from: mockPresentingVC)
@@ -313,14 +307,14 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testNotifyPageChangedDoesNotTriggerCollectionWhenAutoAttachDisabled() async {
+    func testNotifyPageChangedDoesTriggerCollectionWhenAutoAttachDisabled() async {
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
         await sut.notifyPageChanged()
 
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
     @MainActor
@@ -331,6 +325,9 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
     }
+
+    // MARK: - Session Timer Tests
+
 
     // MARK: - Helpers
 

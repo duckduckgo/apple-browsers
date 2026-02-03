@@ -19,7 +19,7 @@
 import Foundation
 
 /// Errors that can occur when managing web extensions.
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionError: Error {
     case failedToUnloadWebExtension(_ error: Error)
 }

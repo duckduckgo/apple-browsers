@@ -446,6 +446,7 @@ public extension DesignSystemImages {
             public static var news: DesignSystemImage { .init(resource: .news24) }
             public static var note: DesignSystemImage { .init(resource: .note24) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn24) }
+            public static var pageContentAttach: DesignSystemImage { .init(resource: .pageContentAttach24) }
             public static var paste: DesignSystemImage { .init(resource: .paste24) }
             public static var pin: DesignSystemImage { .init(resource: .pin24) }
             public static var phone: DesignSystemImage { .init(resource: .phone24) }

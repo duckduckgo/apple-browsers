@@ -118,6 +118,7 @@ final class AutoconsentManagement {
     }
 
     func clearCache() {
+        dispatchPrecondition(condition: .onQueue(.main))
         sitesNotifiedCache.removeAll()
         detectedByPatternsCache.removeAll()
         detectedByBothCache.removeAll()
@@ -125,6 +126,7 @@ final class AutoconsentManagement {
     }
     
     func clearCache(forDomains domains: [String]) {
+        dispatchPrecondition(condition: .onQueue(.main))
         let domainSet = Set(domains)
 
         // sitesNotifiedCache stores hosts directly

@@ -22,12 +22,14 @@ import Foundation
 public protocol AIChatDebugSettingsHandling {
     var messagePolicyHostname: String? { get set }
     var customURL: String? { get set }
+    var contextualSessionTimerSeconds: Int? { get set }
     func reset()
 }
 
 public class AIChatDebugSettings: AIChatDebugSettingsHandling {
     private let hostnameUserDefaultsKey = "aichat.debug.messagePolicyHostname"
     private let customURLUserDefaultsKey = "aichat.debug.customURL"
+    private let contextualSessionTimerSecondsKey = "aichat.debug.contextualSessionTimerSeconds"
     private let userDefault: UserDefaults
 
     public init(userDefault: UserDefaults = .standard) {
@@ -62,9 +64,24 @@ public class AIChatDebugSettings: AIChatDebugSettingsHandling {
         }
     }
 
+    public var contextualSessionTimerSeconds: Int? {
+        get {
+            let value = userDefault.integer(forKey: contextualSessionTimerSecondsKey)
+            return value > 0 ? value : nil
+        }
+        set {
+            if let newValue = newValue, newValue > 0 {
+                userDefault.set(newValue, forKey: contextualSessionTimerSecondsKey)
+            } else {
+                userDefault.removeObject(forKey: contextualSessionTimerSecondsKey)
+            }
+        }
+    }
+
     public func reset() {
         messagePolicyHostname = nil
         customURL = nil
+        contextualSessionTimerSeconds = nil
     }
 }
 #endif

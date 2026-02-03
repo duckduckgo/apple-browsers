@@ -7480,7 +7480,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В отсутствие блокировки любой, у кого появится доступ к устройству, сможет использовать или изменить ваши автозаполняемые данные. Из соображений безопасности при заполнении платежных данных в формах всегда требуется аутентификация."
+            "value" : "В отсутствие блокировки, любой у кого появится доступ к устройству сможет использовать или изменить ваши автозаполняемые данные. Из соображений безопасности при заполнении платежных данных в формах всегда требуется аутентификация."
           }
         }
       }
@@ -84910,7 +84910,7 @@
     },
     "quit-survey.option.asked-to-disable-ad-blocker" : {
       "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -84970,7 +84970,7 @@
     },
     "quit-survey.option.bad-ai-responses" : {
       "comment" : "Quit survey feedback option - AI",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85150,7 +85150,7 @@
     },
     "quit-survey.option.couldnt-change-search-engine" : {
       "comment" : "Quit survey feedback option - search",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85210,7 +85210,7 @@
     },
     "quit-survey.option.couldnt-check-out" : {
       "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85330,7 +85330,7 @@
     },
     "quit-survey.option.couldnt-find-incognito" : {
       "comment" : "Quit survey feedback option - features",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85390,7 +85390,7 @@
     },
     "quit-survey.option.couldnt-import-bookmarks" : {
       "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85450,7 +85450,7 @@
     },
     "quit-survey.option.couldnt-import-passwords" : {
       "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85510,7 +85510,7 @@
     },
     "quit-survey.option.couldnt-import-pay-details" : {
       "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85570,7 +85570,7 @@
     },
     "quit-survey.option.couldnt-sign-in-to-bank" : {
       "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85630,7 +85630,7 @@
     },
     "quit-survey.option.couldnt-skip-onboarding" : {
       "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85690,7 +85690,7 @@
     },
     "quit-survey.option.fire-button-removed-too-much" : {
       "comment" : "Quit survey feedback option - Fire Button",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85750,7 +85750,7 @@
     },
     "quit-survey.option.had-to-re-sign-in" : {
       "comment" : "Quit survey feedback option - ecosystem",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85870,7 +85870,7 @@
     },
     "quit-survey.option.hard-to-manage-downloads" : {
       "comment" : "Quit survey feedback option - UI",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -85924,6 +85924,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сложно управлять загрузками"
+          }
+        }
+      }
+    },
+    "quit-survey.option.issue-importing-my-stuff" : {
+      "comment" : "Quit survey feedback option - onboarding",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problem beim Importieren meiner Daten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Issue importing my stuff"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problema al importar mis datos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problème d'importation de mes données"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problema nell'importazione dei miei dati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probleem bij het importeren van mijn gegevens"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problem z importowaniem moich danych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problema ao importar os meus dados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проблема с импортом моих данных"
           }
         }
       }
@@ -85990,7 +86050,7 @@
     },
     "quit-survey.option.more-captchas" : {
       "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86050,7 +86110,7 @@
     },
     "quit-survey.option.navigation-unfamiliar" : {
       "comment" : "Quit survey feedback option - UI",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86108,9 +86168,189 @@
         }
       }
     },
+    "quit-survey.option.no-extensions" : {
+      "comment" : "Quit survey feedback option - features/extensions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Erweiterungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No extensions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin extensiones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas d'extensions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna estensione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen extensies"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak rozszerzeń"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem extensões"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет расширений"
+          }
+        }
+      }
+    },
+    "quit-survey.option.no-password-manager-extensions" : {
+      "comment" : "Quit survey feedback option - features/extensions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Passwortmanager-Erweiterungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No password manager extensions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin extensiones de gestor de contraseñas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas d'extensions de gestionnaire de mots de passe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna estensione per il gestore di password"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen wachtwoordbeheerder-extensies"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak rozszerzeń menedżera haseł"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem extensões de gestor de palavras-passe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет расширений для менеджера паролей"
+          }
+        }
+      }
+    },
+    "quit-survey.option.no-website-translations" : {
+      "comment" : "Quit survey feedback option - features/extensions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Website-Übersetzungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No website translations"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin traducciones de sitios web"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas de traduction de sites web"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna traduzione dei siti web"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen websitevertalingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak tłumaczeń stron internetowych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem traduções de sites"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет перевода веб-сайтов"
+          }
+        }
+      }
+    },
     "quit-survey.option.not-ready-to-switch-browsers" : {
       "comment" : "Quit survey feedback option - value proposition",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86350,7 +86590,7 @@
     },
     "quit-survey.option.password-manager-unavailable" : {
       "comment" : "Quit survey feedback option - features/extensions",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86470,7 +86710,7 @@
     },
     "quit-survey.option.shortcuts-didnt-work" : {
       "comment" : "Quit survey feedback option - UI",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86830,7 +87070,7 @@
     },
     "quit-survey.option.unexpected-search-results" : {
       "comment" : "Quit survey feedback option - search",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86890,7 +87130,7 @@
     },
     "quit-survey.option.unsure-how-history-is-handled" : {
       "comment" : "Quit survey feedback option - value proposition",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86950,7 +87190,7 @@
     },
     "quit-survey.option.videos-didnt-play" : {
       "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -87004,6 +87244,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Видео не воспроизводились"
+          }
+        }
+      }
+    },
+    "quit-survey.option.websites-didnt-work" : {
+      "comment" : "Quit survey feedback option - site breakage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Websites haben nicht funktioniert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Websites didn't work"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los sitios web no funcionaron"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les sites web n'ont pas fonctionné"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I siti web non hanno funzionato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Websites werkten niet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strony internetowe nie działały"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os sites não funcionaram"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Веб-сайты не работали"
           }
         }
       }

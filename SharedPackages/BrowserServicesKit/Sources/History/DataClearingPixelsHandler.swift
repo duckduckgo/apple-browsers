@@ -23,4 +23,3 @@ public protocol DataClearingPixelsHandler {
     func fireResiduePixel()
     func fireDurationPixel(_ startTime: Date)
 }
-

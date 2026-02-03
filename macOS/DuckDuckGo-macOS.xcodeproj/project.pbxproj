@@ -447,8 +447,8 @@
 		31FBF2322CDD130900626C17 /* AIChatUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */; };
 		31FC23512DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
 		31FC23522DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
-		36618AD62F31F96800DAC9CF /* DataClearingPixelsBurnHistoryPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36618AD52F31F95E00DAC9CF /* DataClearingPixelsBurnHistoryPixelHandler.swift */; };
-		36618AD72F31F96800DAC9CF /* DataClearingPixelsBurnHistoryPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36618AD52F31F95E00DAC9CF /* DataClearingPixelsBurnHistoryPixelHandler.swift */; };
+		36618AD62F31F96800DAC9CF /* DataClearingPixelsBurnHistoryHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36618AD52F31F95E00DAC9CF /* DataClearingPixelsBurnHistoryHandler.swift */; };
+		36618AD72F31F96800DAC9CF /* DataClearingPixelsBurnHistoryHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36618AD52F31F95E00DAC9CF /* DataClearingPixelsBurnHistoryHandler.swift */; };
 		369BA9862F31305F0037B56D /* DataClearingPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369BA9852F31305C0037B56D /* DataClearingPixels.swift */; };
 		369BA9872F31305F0037B56D /* DataClearingPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369BA9852F31305C0037B56D /* DataClearingPixels.swift */; };
 		36E19A022F322D0200556F78 /* DataClearingPixelsReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E19A012F322CFE00556F78 /* DataClearingPixelsReporterTests.swift */; };
@@ -4677,7 +4677,7 @@
 		31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptTests.swift; sourceTree = "<group>"; };
 		31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarMenuButton.swift; sourceTree = "<group>"; };
 		336B39E22726B4B700C417D3 /* LocalUnprotectedDomains.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalUnprotectedDomains.swift; sourceTree = "<group>"; };
-		36618AD52F31F95E00DAC9CF /* DataClearingPixelsBurnHistoryPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsBurnHistoryPixelHandler.swift; sourceTree = "<group>"; };
+		36618AD52F31F95E00DAC9CF /* DataClearingPixelsBurnHistoryHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsBurnHistoryHandler.swift; sourceTree = "<group>"; };
 		369BA9852F31305C0037B56D /* DataClearingPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixels.swift; sourceTree = "<group>"; };
 		36E19A012F322CFE00556F78 /* DataClearingPixelsReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporterTests.swift; sourceTree = "<group>"; };
 		36E19A042F3230D200556F78 /* DataClearingPixelsReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataClearingPixelsReporter.swift; sourceTree = "<group>"; };
@@ -7411,7 +7411,7 @@
 			isa = PBXGroup;
 			children = (
 				36E19A042F3230D200556F78 /* DataClearingPixelsReporter.swift */,
-				36618AD52F31F95E00DAC9CF /* DataClearingPixelsBurnHistoryPixelHandler.swift */,
+				36618AD52F31F95E00DAC9CF /* DataClearingPixelsBurnHistoryHandler.swift */,
 				369BA9852F31305C0037B56D /* DataClearingPixels.swift */,
 			);
 			path = Statistics;
@@ -15219,7 +15219,7 @@
 				B655124929A79465009BFE1C /* NavigationActionExtension.swift in Sources */,
 				84658D3E2EAA0BCF0018D992 /* PinnedTabsManagerProvidingMock.swift in Sources */,
 				CCF40A722ED7529D00CBF271 /* UserChurnPixel.swift in Sources */,
-				36618AD72F31F96800DAC9CF /* DataClearingPixelsBurnHistoryPixelHandler.swift in Sources */,
+				36618AD72F31F96800DAC9CF /* DataClearingPixelsBurnHistoryHandler.swift in Sources */,
 				3706FC9A293F65D500E42796 /* AutoconsentManagement.swift in Sources */,
 				3706FC9C293F65D500E42796 /* BookmarkStore.swift in Sources */,
 				3706FC9D293F65D500E42796 /* PrivacyDashboardViewController.swift in Sources */,
@@ -16515,7 +16515,7 @@
 				CB24F70C29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift in Sources */,
 				7BD55C9A2E8F05110094A2B8 /* SiteLoadingPixel.swift in Sources */,
 				1DEF3BAD2BD145A9004A2FBA /* AutoClearHandler.swift in Sources */,
-				36618AD62F31F96800DAC9CF /* DataClearingPixelsBurnHistoryPixelHandler.swift in Sources */,
+				36618AD62F31F96800DAC9CF /* DataClearingPixelsBurnHistoryHandler.swift in Sources */,
 				37CBCA9A2A8966E60050218F /* SyncSettingsAdapter.swift in Sources */,
 				BBE013EA2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */,
 				1E15F6982DF08EDD0061395E /* AIChatSidebarHosting.swift in Sources */,

@@ -200,6 +200,7 @@ internal class WebCacheManager {
     private func removeCookies(for baseDomains: Set<String>? = nil) async {
         guard let cookieStore = websiteDataStore.cookieStore else { return }
         var cookies = await cookieStore.allCookies()
+        let beforeClearingCookieCount = cookies.count
 
         if let baseDomains = baseDomains {
             // If domains are specified, clear just their cookies
@@ -223,7 +224,7 @@ internal class WebCacheManager {
         Task {
             let postClearingCookieCount = await cookieStore.allCookies().count
             dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnWebCacheHasResidue(steps: ClearSteps.clearCookies.rawValue)) {
-                postClearingCookieCount != cookies.count - cookiesToRemove.count
+                postClearingCookieCount != beforeClearingCookieCount - cookiesToRemove.count
             }
         }
     }

@@ -149,7 +149,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
         // Then
         mockPixelFiring.expectedFireCalls = [
-            .init(pixel: DataClearingPixels.burnHistoryHasResidue, frequency: .dailyAndStandard)
+            .init(pixel: DataClearingPixels.burnHistoryHasResidue, frequency: .standard)
         ]
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
@@ -162,7 +162,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
         // Then
         mockPixelFiring.expectedFireCalls = [
-            .init(pixel: DataClearingPixels.burnVisitsHasResidue, frequency: .dailyAndStandard)
+            .init(pixel: DataClearingPixels.burnVisitsHasResidue, frequency: .standard)
         ]
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }

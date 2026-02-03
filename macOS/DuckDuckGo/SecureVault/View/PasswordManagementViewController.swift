@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Carbon.HIToolbox
 import BrowserServicesKit
 import Combine
 import Common
@@ -143,6 +144,7 @@ final class PasswordManagementViewController: NSViewController {
 
     var itemModel: PasswordManagementItemModel? {
         didSet {
+            removeEscapeKeyMonitor()
             editingCancellable?.cancel()
             editingCancellable = nil
 
@@ -156,6 +158,12 @@ final class PasswordManagementViewController: NSViewController {
                 self.searchField.isEditable = !isEditing
 
                 self.recalculateKeyViewLoop()
+
+                if isEditing {
+                    self.installEscapeKeyMonitor()
+                } else {
+                    self.removeEscapeKeyMonitor()
+                }
 
                 // If editing ended and we have a pending refresh, do it now
                 if !isEditing && self.pendingRefresh {
@@ -179,6 +187,8 @@ final class PasswordManagementViewController: NSViewController {
     private let urlSort = AutofillDomainNameUrlSort()
     private let syncButtonModel = SyncDeviceButtonModel()
     private lazy var privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager
+
+    private var escapeKeyMonitor: Any?
 
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
@@ -351,6 +361,11 @@ final class PasswordManagementViewController: NSViewController {
     override func viewDidDisappear() {
         super.viewDidDisappear()
         listView?.removeFromSuperview()
+        removeEscapeKeyMonitor()
+    }
+
+    deinit {
+        removeEscapeKeyMonitor()
     }
 
     private func refetchAndPromptForAuthentication(text: String, selectItemMatchingDomain: String?, clearWhenNoMatches: Bool) {
@@ -628,6 +643,50 @@ final class PasswordManagementViewController: NSViewController {
         // Manually call NSWindow.recalculateKeyViewLoop() after the item view changes so that user can tab between text fields. This is necessary because MainWindow sets autorecalculatesKeyViewLoop to false.
         DispatchQueue.main.async {
             self.view.window?.recalculateKeyViewLoop()
+        }
+    }
+
+    /// Install a local key monitor so Escape cancels the form even before any field has been focused.
+    /// SwiftUI's .keyboardShortcut(.cancelAction) on the Cancel button only receives Escape once the
+    /// user has focused a field and dismissed the form once. This monitor ensures Escape works
+    /// immediately when the edit form is shown.
+    private func installEscapeKeyMonitor() {
+        guard escapeKeyMonitor == nil else { return }
+        escapeKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self,
+                  event.keyCode == kVK_Escape,
+                  let ourWindow = view.window else {
+                return event
+            }
+
+            // Check that our window or parent is focused
+            guard let keyWindow = NSApp.keyWindow,
+                  keyWindow === ourWindow || keyWindow === ourWindow.parent else {
+                return event
+            }
+
+            // Check the events are targetted at us or our parent
+            guard event.window === ourWindow || event.window === ourWindow.parent else {
+                return event
+            }
+
+            // Check that no sheets are presented
+            let parentSheets = ourWindow.parent?.sheets ?? []
+            guard ourWindow.sheets.isEmpty,
+                  parentSheets.isEmpty else {
+                return event
+            }
+
+            itemModel?.cancel()
+            removeEscapeKeyMonitor()
+            return nil
+        }
+    }
+
+    private func removeEscapeKeyMonitor() {
+        if let monitor = escapeKeyMonitor {
+            NSEvent.removeMonitor(monitor)
+            escapeKeyMonitor = nil
         }
     }
 

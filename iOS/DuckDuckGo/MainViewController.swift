@@ -682,6 +682,7 @@ class MainViewController: UIViewController {
         controller.aiChatSettings = aiChatSettings
         controller.keyValueStore = keyValueStore
         controller.tabManager = tabManager
+        controller.daxDialogsManager = daxDialogsManager
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
@@ -768,6 +769,27 @@ class MainViewController: UIViewController {
     private func keyboardDidShow() {
         keyboardShowing = true
         productSurfaceTelemetry.keyboardActive()
+
+        // Dismiss contextual sheet if keyboard is for background web view
+        dismissContextualSheetIfKeyboardIsForBackgroundContent()
+    }
+
+    private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
+        guard let currentTab,
+              currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
+              let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
+            return
+        }
+
+        // Check if first responder is within the sheet's view hierarchy
+        if let firstResponder = UIResponder.currentFirstResponder(),
+           firstResponder.isInViewHierarchy(of: sheetVC.view) {
+            // Keyboard is for the sheet, don't dismiss
+            return
+        }
+
+        // Keyboard is for background content (web view), dismiss the sheet
+        currentTab.aiChatContextualSheetCoordinator.dismissSheet()
     }
 
     @objc
@@ -1218,6 +1240,7 @@ class MainViewController: UIViewController {
                 on: self,
                 attachPopoverTo: source,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
+                daxDialogsManager: daxDialogsManager,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAllWithAnimation(request: fireRequest) {}
                 },
@@ -3089,6 +3112,7 @@ extension MainViewController: OmniBarDelegate {
         hideSuggestionTray()
 
         if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
+            omniBar.endEditing()
             currentTab.presentContextualAIChatSheet(from: self)
         } else {
             openAIChatFromAddressBar()
@@ -3794,6 +3818,7 @@ extension MainViewController {
                                 transitionCompletion: (() -> Void)? = nil,
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
+        let tabsCount = tabManager.count
         Pixel.fire(pixel: .forgetAllExecuted)
         DailyPixel.fire(pixel: .forgetAllExecutedDaily)
         productSurfaceTelemetry.dataClearingUsed()
@@ -3804,9 +3829,8 @@ extension MainViewController {
             await self.fireExecutor.burn(request: request, applicationState: .unknown)
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
-        } onTransitionCompleted: {
-            ActionMessageView.present(message: UserText.actionForgetAllDone,
-                                      presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom))
+        } onTransitionCompleted: { [weak self] in
+            self?.presentPostBurnMessage(scope: request.scope, tabsCount: tabsCount)
             transitionCompletion?()
         } completion: {
             self.subscriptionDataReporter.saveFireCount()
@@ -3826,6 +3850,20 @@ extension MainViewController {
 
             self.daxDialogsManager.clearedBrowserData()
         }
+    }
+    
+    @MainActor
+    private func presentPostBurnMessage(scope: FireRequest.Scope, tabsCount: Int) {
+        let message: String
+        switch scope {
+        case .all:
+            message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
+            
+        case .tab:
+            message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: 1)
+        }
+        ActionMessageView.present(message: message,
+                                  presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom))
     }
     
     private func refreshUIAfterClear() {

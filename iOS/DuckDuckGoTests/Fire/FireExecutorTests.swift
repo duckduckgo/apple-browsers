@@ -428,11 +428,63 @@ final class FireExecutorTests: XCTestCase {
 
         // Then - Verify text zoom is reset with fireproofed domains excluded
         XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsCallCount, 1)
-        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsExcludingDomains, fireproofedDomains)
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsExcludingDomainsArg, fireproofedDomains)
 
         // Then - Verify history is removed
         XCTAssertEqual(mockHistoryManager.removeAllHistoryCallCount, 1)
     }
+    
+    func testBurnDataForTabScopePerformsAllCleanupActions() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        
+        mockHistoryManager.tabHistoryResult = [URL(string: "https://test.com")!]
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - Verify delegate calls
+        XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningDataCalled)
+
+        // Then - Verify website data is cleared
+        XCTAssertEqual(mockWebsiteDataManager.clearWithDomainsCallCount, 1)
+        XCTAssertEqual(mockWebsiteDataManager.clearCalledWithDomains, ["test.com"])
+
+        // Then - Verify text zoom reset is called with visited domains and excluding domains
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomainsCallCount, 1)
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomains, ["test.com"])
+        XCTAssertNotNil(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains)
+
+        // Then - Verify browsing history is removed for the tab
+        XCTAssertEqual(mockHistoryManager.removeBrowsingHistoryCalls.count, 1)
+        XCTAssertEqual(mockHistoryManager.removeBrowsingHistoryCalls.first, tabViewModel.tab.uid)
+    }
+
+    func testBurnDataForTabScope_PassesVisitedDomainsAndExcludingDomainsToZoomCoordinator() async {
+        // Given - amazon.com is fireproofed, user visited mail.amazon.com and facebook.com
+        let fireproofing = MockFireproofing(domains: ["amazon.com"])
+        let executor = makeFireExecutor(fireproofing: fireproofing)
+        let tabViewModel = makeTabViewModel()
+
+        mockHistoryManager.tabHistoryResult = [
+            URL(string: "https://mail.amazon.com/inbox")!,
+            URL(string: "https://facebook.com/feed")!
+        ]
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - Verify coordinator receives visited domains and excluding domains
+        // The S3 filtering logic happens inside the coordinator/storage
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomainsCallCount, 1)
+        let visitedDomains = Set(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomains ?? [])
+        XCTAssertTrue(visitedDomains.contains("mail.amazon.com"))
+        XCTAssertTrue(visitedDomains.contains("facebook.com"))
+        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains, ["amazon.com"])
+    }
+    
     
     // MARK: - Burn ongoing downloads
     
@@ -446,6 +498,20 @@ final class FireExecutorTests: XCTestCase {
         
         // Then
         XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 1)
+    }
+    
+    func testTabScopeDoesntCancelDownloads() async {
+        // Given
+        let executor = makeFireExecutor()
+        executor.delegate = mockDelegate
+        let tabViewModel = makeTabViewModel()
+        
+        // When
+        let request = makeFireRequest(options: [.tabs, .data], scope: .tab(viewModel: tabViewModel))
+        await executor.burn(request: request, applicationState: .unknown)
+        
+        // Then
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
     }
     
     // MARK: - burn AI History Tests

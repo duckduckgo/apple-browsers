@@ -679,6 +679,71 @@ class HistoryCoordinatorTests: XCTestCase {
         XCTAssertNil(savedTabID)
     }
 
+    // MARK: - Burn Visits For Tab ID Tests
+
+    @MainActor
+    func testWhenBurnVisitsForTabID_ThenOnlyThatTabsVisitsAreRemoved() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+        historyStoringMock.removeEntriesResult = .success(())
+        historyStoringMock.removeVisitsResult = .success(())
+
+        let url1 = URL(string: "https://site1.com")!
+        let url2 = URL(string: "https://site2.com")!
+
+        // Add visits for tab-1
+        let visit1 = historyCoordinator.addVisit(of: url1, tabID: "tab-1")
+        // Add visits for tab-2
+        _ = historyCoordinator.addVisit(of: url2, tabID: "tab-2")
+
+        // Wait for saves to complete
+        let saveExpectation = expectation(description: "Saves completed")
+        saveExpectation.expectedFulfillmentCount = 2
+        historyStoringMock.saveCompletion = {
+            saveExpectation.fulfill()
+        }
+        await fulfillment(of: [saveExpectation], timeout: 1.0)
+
+        // Configure mock to return only tab-1's visit ID
+        historyStoringMock.pageVisitIDsResult = [visit1!.identifier!]
+
+        // When
+        let burnExpectation = expectation(description: "Burn completed")
+        do {
+            try await historyCoordinator.burnVisits(for: "tab-1")
+            burnExpectation.fulfill()
+        } catch {
+            XCTFail("burnVisits should not throw: \(error)")
+        }
+        await fulfillment(of: [burnExpectation], timeout: 1.0)
+
+        // Then - Only tab-1's visit should be removed
+        XCTAssertEqual(historyStoringMock.removeVisitsArray.count, 1)
+        XCTAssertEqual(historyStoringMock.removeVisitsArray.first?.identifier, visit1?.identifier)
+        XCTAssertTrue(historyCoordinator.history!.contains { $0.url == url2 })
+    }
+
+    @MainActor
+    func testWhenBurnVisitsForTabIDWithNoHistory_ThenNoVisitsAreBurned() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+        historyStoringMock.removeVisitsResult = .success(())
+
+        // Configure mock to return empty visit IDs (no history for this tab)
+        historyStoringMock.pageVisitIDsResult = []
+
+        // When
+        let burnExpectation = expectation(description: "Burn completed")
+        do {
+            try await historyCoordinator.burnVisits(for: "non-existent-tab")
+            burnExpectation.fulfill()
+        } catch {
+            XCTFail("burnVisits should not throw: \(error)")
+        }
+        await fulfillment(of: [burnExpectation], timeout: 1.0)
+
+        // Then - No visits should be removed
+        XCTAssertTrue(historyStoringMock.removeVisitsArray.isEmpty)
+    }
+
 }
 
 fileprivate extension HistoryCoordinator {
@@ -788,6 +853,16 @@ actor HistoryStoringMock: HistoryStoring {
         }
 
         return entry.visits.map { ($0.identifier!, $0.date) }
+    }
+
+    @MainActor var pageVisitIDsCalled = false
+    @MainActor var pageVisitIDsResult: [Visit.ID] = []
+
+    func pageVisitIDs(in tabID: String) async throws -> [History.Visit.ID] {
+        await MainActor.run {
+            pageVisitIDsCalled = true
+            return pageVisitIDsResult
+        }
     }
 
 }

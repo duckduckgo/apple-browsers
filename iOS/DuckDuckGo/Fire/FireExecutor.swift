@@ -18,6 +18,7 @@
 //
 
 import Core
+import Common
 import DDGSync
 import Bookmarks
 import AIChat
@@ -154,21 +155,37 @@ class FireExecutor: FireExecuting {
             prepare(for: newRequest)
         }
         
+        // Notify delegate that we're starting
         delegate?.willStartBurning(fireRequest: request)
         
-        cancelOngoingDownloadsIfNeeded(request)
-        
+        // Compute flags
         let shouldBurnTabs = request.options.contains(.tabs)
-        async let tabsTask: Void = shouldBurnTabs ? burnTabsWithDelegateCallbacks(request: request) : ()
-        
         let shouldBurnData = request.options.contains(.data)
-        async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(request: request, applicationState: applicationState) : ()
-        
         let shouldBurnAIChats = shouldBurnAIHistory(request)
+        
+        // Pre-fetch domains once for tab scope when tabs or data burning is needed
+        let domains: [String]?
+        if case .tab(let viewModel) = request.scope, shouldBurnTabs || shouldBurnData {
+            domains = await Array(viewModel.visitedDomains())
+        } else {
+            domains = nil
+        }
+        
+        // Start async tasks
+        async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(request: request, applicationState: applicationState, domains: domains) : ()
+        
         async let aiTask: Void = shouldBurnAIChats ? burnAIHistoryWithDelegateCallbacks(request: request) : ()
 
-        _ = await (tabsTask, dataTask, aiTask)
+        // Execute sync tasks
+        cancelOngoingDownloadsIfNeeded(request)
+        if shouldBurnTabs {
+            burnTabsWithDelegateCallbacks(request: request, domains: domains)
+        }
         
+        // Await async tasks
+        _ = await (dataTask, aiTask)
+        
+        // Notify delegate that we finished
         await didFinishBurning(fireRequest: request)
         
         // Reset prepared state for next burn cycle
@@ -178,7 +195,9 @@ class FireExecutor: FireExecuting {
     // MARK: - General Helpers
     
     private func cancelOngoingDownloadsIfNeeded(_ request: FireRequest) {
-        guard request.options.contains(.tabs), request.options.contains(.data) else {
+        guard case .all = request.scope,
+              request.options.contains(.tabs),
+              request.options.contains(.data) else {
             return
         }
         downloadManager.cancelAllDownloads()
@@ -194,17 +213,18 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnTabsWithDelegateCallbacks(request: FireRequest) async {
+    private func burnTabsWithDelegateCallbacks(request: FireRequest, domains: [String]?) {
         delegate?.willStartBurningTabs(fireRequest: request)
-        await burnTabs(scope: request.scope)
+        burnTabs(scope: request.scope, domains: domains)
         delegate?.didFinishBurningTabs(fireRequest: request)
     }
     
     @MainActor
     private func burnDataWithDelegateCallbacks(request: FireRequest,
-                                               applicationState: DataStoreWarmup.ApplicationState) async {
+                                               applicationState: DataStoreWarmup.ApplicationState,
+                                               domains: [String]?) async {
         delegate?.willStartBurningData(fireRequest: request)
-        await burnData(scope: request.scope, applicationState: applicationState)
+        await burnData(scope: request.scope, applicationState: applicationState, domains: domains)
         delegate?.didFinishBurningData(fireRequest: request)
     }
     
@@ -232,13 +252,17 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnTabs(scope: FireRequest.Scope) async {
+    private func burnTabs(scope: FireRequest.Scope, domains: [String]?) {
         switch scope {
         case .all:
             tabManager.prepareCurrentTabForDataClearing()
             tabManager.removeAll()
             Favicons.shared.clearCache(.tabs)
         case .tab(let viewModel):
+            guard let domains else {
+                Logger.general.error("Expected domains to be present when burning a single tab")
+                return
+            }
             // Prepare the tab if it's the current tab (non-current tabs were prepared earlier)
             if tabManager.isCurrentTab(viewModel.tab) {
                 tabManager.prepareTab(viewModel.tab)
@@ -252,20 +276,16 @@ class FireExecutor: FireExecuting {
                                 shouldCreateEmptyTabAtSamePosition: isLastOpenTab,
                                 clearTabHistory: false)
             
-            let domainsToClear = await Array(viewModel.visitedDomains())
-            Favicons.shared.removeTabFavicons(forDomains: domainsToClear)
+            Favicons.shared.removeTabFavicons(forDomains: domains)
         }
     }
     
     // MARK: - Clear Data Helpers
     
-    private func forgetTextZoom() {
-        let allowedDomains = fireproofing.allowedDomains
-        textZoomCoordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
-    }
-    
     @MainActor
-    private func burnData(scope: FireRequest.Scope, applicationState: DataStoreWarmup.ApplicationState) async {
+    private func burnData(scope: FireRequest.Scope,
+                          applicationState: DataStoreWarmup.ApplicationState,
+                          domains: [String]?) async {
         guard !burnInProgress else {
             assertionFailure("Shouldn't get called multiple times")
             return
@@ -280,7 +300,7 @@ class FireExecutor: FireExecuting {
 
         switch scope {
         case .tab(let viewModel):
-            await burnTabData(tab: viewModel)
+            await burnTabData(tab: viewModel, domains: domains)
         case .all:
             await burnAllData()
         }
@@ -313,8 +333,30 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnTabData(tab: TabViewModel) async {
-        // TODO: - Implement tab specific data burning
+    private func burnTabData(tab: TabViewModel, domains: [String]?) async {
+        guard let domains else {
+            Logger.general.error("Expected domains to be present when burning tab scoped data")
+            return
+        }
+        // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
+        //  this is the same as `WKWebsiteDataStore.default()`
+        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
+        await websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)
+        
+        AutoconsentManagement.shared.clearCache(forDomains: domains)
+        
+        forgetTextZoom(forDomains: domains)
+        await historyManager.removeBrowsingHistory(tabID: tab.tab.uid)
+    }
+    
+    private func forgetTextZoom() {
+        let allowedDomains = fireproofing.allowedDomains
+        textZoomCoordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
+    }
+    
+    private func forgetTextZoom(forDomains domains: [String]) {
+        let allowedDomains = fireproofing.allowedDomains
+        textZoomCoordinator.resetTextZoomLevels(forVisitedDomains: domains, excludingDomains: allowedDomains)
     }
     
     // MARK: - Clear AI History

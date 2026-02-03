@@ -292,8 +292,6 @@
 		1EB01D922E61DF2B006CB411 /* AIChatTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB01D902E61DF2B006CB411 /* AIChatTranslator.swift */; };
 		1EB714F02EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB714EF2EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift */; };
 		1EB714F12EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB714EF2EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift */; };
-		1EC3208F2F23F12200A38D09 /* AppWebExtensionLifecycleDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC3208E2F23F12200A38D09 /* AppWebExtensionLifecycleDelegate.swift */; };
-		1EC320902F23F12200A38D09 /* AppWebExtensionLifecycleDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC3208E2F23F12200A38D09 /* AppWebExtensionLifecycleDelegate.swift */; };
 		1EC320952F23F12A00A38D09 /* WebExtensionManager+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC320922F23F12A00A38D09 /* WebExtensionManager+macOS.swift */; };
 		1EC320962F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC320932F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift */; };
 		1EC320972F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC320912F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift */; };

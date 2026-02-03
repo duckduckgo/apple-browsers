@@ -76,7 +76,9 @@ public extension WebExtensionStorageProviding {
             return nil
         }
 
-        guard let contents = try? fileManager.contentsOfDirectory(at: folderPath, includingPropertiesForKeys: nil),
+        guard let contents = try? fileManager.contentsOfDirectory(at: folderPath,
+                                                                   includingPropertiesForKeys: nil,
+                                                                   options: [.skipsHiddenFiles]),
               let extensionFile = contents.first else {
             return nil
         }

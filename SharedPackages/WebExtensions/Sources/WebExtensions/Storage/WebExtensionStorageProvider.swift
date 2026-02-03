@@ -1,5 +1,5 @@
 //
-//  WebExtensionStorageProvider+macOS.swift
+//  WebExtensionStorageProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,9 +17,8 @@
 //
 
 import Foundation
-import WebExtensions
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionStorageProvider: WebExtensionStorageProviding {
 
     public let fileManager: FileManager

@@ -46,7 +46,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     private let downloadManager: DownloadManaging
     private let keyValueStore: KeyValueStoring
     private let appSettings: AppSettings
-
+    private let daxDialogsManager: DaxDialogsManaging
     
     // MARK: - Initializer
     
@@ -54,12 +54,14 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          keyValueStore: KeyValueStoring = UserDefaults.standard,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         daxDialogsManager: DaxDialogsManaging,
          onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
         self.tabViewModel = tabViewModel
         self.downloadManager = downloadManager
         self.keyValueStore = keyValueStore
         self.appSettings = appSettings
+        self.daxDialogsManager = daxDialogsManager
         self.onConfirm = onConfirm
         self.onCancel = onCancel
         self.subtitle = computeSubtitle()
@@ -112,6 +114,11 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// 5. For normal web tabs → show sign out warning (up to 2 times)
     /// 6. Otherwise → return nil
     private func computeSubtitle() -> String? {
+        // Skip all subtitles if in onboarding
+        if daxDialogsManager.isShowingFireDialog {
+            return nil
+        }
+        
         // Check for ongoing downloads first
         if hasOngoingDownloads() {
             return UserText.scopedFireConfirmationDownloadsWarning

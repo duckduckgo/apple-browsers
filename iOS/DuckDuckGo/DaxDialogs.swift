@@ -53,6 +53,7 @@ protocol ContextualOnboardingLogic {
     var isShowingSitesSuggestions: Bool { get }
     var isAddFavoriteFlow: Bool { get }
     var isDismissedPublisher: PassthroughSubject<Bool, Never> { get }
+    var fireModalShown: Bool { get }
 
     func setTryAnonymousSearchMessageSeen()
     func setSearchMessageSeen()
@@ -312,6 +313,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     var shouldShowPrivacyButtonPulse: Bool {
         return settings.browsingWithTrackersShown && !settings.privacyButtonPulseShown && fireButtonPulseTimer == nil && isEnabled
+    }
+    
+    var fireModalShown: Bool {
+        settings.fireMessageExperimentShown
     }
 
     func isStillOnboarding() -> Bool {

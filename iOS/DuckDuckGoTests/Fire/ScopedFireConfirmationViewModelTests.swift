@@ -223,6 +223,21 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertNil(sut.subtitle)
     }
     
+    // MARK: - subtitle Tests - Dax Dialogs (Onboarding)
+    
+    func testWhenDaxDialogsIsShowingFireDialogThenSubtitleIsNil() {
+        // Given
+        let mockDaxDialogsManager = DummyDaxDialogsManager()
+        mockDaxDialogsManager.isShowingFireDialog = true
+        let tabViewModel = createTabViewModel()
+        
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel, daxDialogsManager: mockDaxDialogsManager)
+        
+        // Then - subtitle is nil even though it would normally show sign out warning
+        XCTAssertNil(sut.subtitle)
+    }
+    
     // MARK: - subtitle Tests - Priority
     
     func testWhenOngoingDownloadsExistEvenForAITabThenSubtitleIsDownloadsWarning() {
@@ -256,11 +271,13 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     // MARK: - Helpers
     
     private func makeSUT(tabViewModel: TabViewModel?,
+                         daxDialogsManager: DaxDialogsManaging = DummyDaxDialogsManager(),
                          onConfirm: @escaping (FireRequest) -> Void = { _ in },
                          onCancel: @escaping () -> Void = { }) -> ScopedFireConfirmationViewModel {
         return ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                downloadManager: mockDownloadManager,
                                                keyValueStore: mockKeyValueStore,
+                                               daxDialogsManager: daxDialogsManager,
                                                onConfirm: onConfirm,
                                                onCancel: onCancel)
     }

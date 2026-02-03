@@ -671,6 +671,7 @@ class MainViewController: UIViewController {
         controller.aiChatSettings = aiChatSettings
         controller.keyValueStore = keyValueStore
         controller.tabManager = tabManager
+        controller.daxDialogsManager = daxDialogsManager
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
@@ -1228,6 +1229,7 @@ class MainViewController: UIViewController {
                 on: self,
                 attachPopoverTo: source,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
+                daxDialogsManager: daxDialogsManager,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAllWithAnimation(request: fireRequest) {}
                 },

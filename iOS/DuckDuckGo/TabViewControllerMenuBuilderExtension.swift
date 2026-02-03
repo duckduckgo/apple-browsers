@@ -431,8 +431,9 @@ extension TabViewController {
     }
     
     private func buildClearDataEntry(clearTabsAndData: @escaping () -> Void, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        return BrowsingMenuEntry.regular(name: UserText.actionForgetAll,
-                                         accessibilityLabel: UserText.actionForgetAll,
+        let title = featureFlagger.isFeatureOn(.enhancedDataClearingSettings) ? UserText.settingsDeleteTabsAndData : UserText.actionForgetAll
+        return BrowsingMenuEntry.regular(name: title,
+                                         accessibilityLabel: title,
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireSolid,
                                          action: clearTabsAndData)
     }

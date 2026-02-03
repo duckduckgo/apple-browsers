@@ -1,0 +1,85 @@
+//
+//  OnboardingView+AddressBarPositionContent.swift
+//  DuckDuckGo
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+#if os(iOS)
+import SwiftUI
+
+private enum Metrics {
+    static let titleFont = Font.system(size: 20, weight: .semibold)
+}
+
+extension OnboardingRebranding.OnboardingView {
+
+    struct AddressBarPositionContent: View {
+
+        private var animateTitle: Binding<Bool>
+        private var showContent: Binding<Bool>
+        private var isSkipped: Binding<Bool>
+        private let addressBarPositionManager: OnboardingRebranding.AddressBarPositionManaging
+        private let action: () -> Void
+
+        init(
+            animateTitle: Binding<Bool> = .constant(true),
+            showContent: Binding<Bool> = .constant(true),
+            isSkipped: Binding<Bool>,
+            addressBarPositionManager: OnboardingRebranding.AddressBarPositionManaging,
+            action: @escaping () -> Void
+        ) {
+            self.animateTitle = animateTitle
+            self.showContent = showContent
+            self.isSkipped = isSkipped
+            self.addressBarPositionManager = addressBarPositionManager
+            self.action = action
+        }
+
+        var body: some View {
+            VStack(spacing: 16.0) {
+                AnimatableTypingText(OnboardingRebranding.UserText.Onboarding.AddressBarPosition.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
+                    showContent.wrappedValue = true
+                }
+                .foregroundColor(.primary)
+                .font(Metrics.titleFont)
+
+                VStack(spacing: 24) {
+                    OnboardingAddressBarPositionPicker(addressBarPositionManager: addressBarPositionManager)
+
+                    PrimaryButton(title: OnboardingRebranding.UserText.Onboarding.AddressBarPosition.cta, action: action)
+                }
+                .visibility(showContent.wrappedValue ? .visible : .invisible)
+            }
+        }
+    }
+
+}
+
+// MARK: - Preview
+
+#Preview {
+    OnboardingRebranding.OnboardingView.AddressBarPositionContent(
+        isSkipped: .constant(false),
+        addressBarPositionManager: PreviewAddressBarPositionManager(),
+        action: {}
+    )
+    .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
+}
+
+private final class PreviewAddressBarPositionManager: OnboardingRebranding.AddressBarPositionManaging {
+    var currentAddressBarPosition: OnboardingRebranding.AddressBarPosition = .top
+}
+#endif

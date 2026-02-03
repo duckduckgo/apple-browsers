@@ -38,7 +38,11 @@ let package = Package(
     dependencies: [
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Infrastructure/DesignResourcesKit"),
-        .package(path: "../Infrastructure/DesignResourcesKitIcons")
+        .package(path: "../Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../AIChat"),
+        .package(path: "../../iOS/LocalPackages/MetricBuilder"),
+        .package(path: "../../iOS/LocalPackages/SystemSettingsPiPTutorial"),
+        .package(url: "https://github.com/airbnb/lottie-spm.git", exact: "4.5.2")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -48,8 +52,13 @@ let package = Package(
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "BrowserServicesKit"),
                 "DesignResourcesKit",
-                "DesignResourcesKitIcons"
+                "DesignResourcesKitIcons",
+                .product(name: "AIChat", package: "AIChat", condition: .when(platforms: [.iOS])),
+                .product(name: "MetricBuilder", package: "MetricBuilder", condition: .when(platforms: [.iOS])),
+                .product(name: "SystemSettingsPiPTutorial", package: "SystemSettingsPiPTutorial", condition: .when(platforms: [.iOS])),
+                .product(name: "Lottie", package: "lottie-spm", condition: .when(platforms: [.iOS]))
             ],
             resources: [
                 .process("Resources")

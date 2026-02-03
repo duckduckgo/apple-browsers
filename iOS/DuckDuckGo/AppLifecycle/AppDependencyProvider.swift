@@ -138,6 +138,7 @@ final class AppDependencyProvider: DependencyProvider {
         self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         self.freeTrialConversionService = DefaultFreeTrialConversionWideEventService(
             wideEvent: wideEvent,
+            pixelHandler: FreeTrialPixelHandler(),
             isFeatureEnabled: { featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
         )
         self.freeTrialConversionService.startObservingSubscriptionChanges()

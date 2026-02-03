@@ -536,6 +536,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         freeTrialConversionService = DefaultFreeTrialConversionWideEventService(
             wideEvent: wideEvent,
+            pixelHandler: FreeTrialPixelHandler(),
             isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
         )
         freeTrialConversionService.startObservingSubscriptionChanges()

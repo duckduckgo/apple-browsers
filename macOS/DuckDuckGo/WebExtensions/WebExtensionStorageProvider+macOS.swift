@@ -51,7 +51,7 @@ public final class WebExtensionStorageProvider: WebExtensionStorageProviding {
         return path
     }
 
-    public func installExtension(from sourceURL: URL) throws -> (path: URL, identifier: String) {
+    public func copyExtension(from sourceURL: URL) throws -> (path: URL, identifier: String) {
         let identifier = sourceURL.lastPathComponent
         let destinationURL = extensionsDirectory.appendingPathComponent(identifier)
 

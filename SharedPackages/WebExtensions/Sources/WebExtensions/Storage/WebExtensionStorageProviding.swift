@@ -33,11 +33,12 @@ public protocol WebExtensionStorageProviding: AnyObject {
     func resolveInstalledExtension(identifier: String) -> URL?
 
     /// Copies an extension from a source URL to platform storage.
+    /// This only handles file operations - it does not load the extension or persist metadata.
     /// For zip files, the filename is used as the identifier.
     /// - Parameter sourceURL: The source URL of the extension (e.g., from document picker).
     /// - Returns: A tuple containing the destination path and the identifier.
     /// - Throws: If the copy operation fails.
-    func installExtension(from sourceURL: URL) throws -> (path: URL, identifier: String)
+    func copyExtension(from sourceURL: URL) throws -> (path: URL, identifier: String)
 
     /// Removes an extension from storage.
     /// - Parameter identifier: The extension identifier to remove.

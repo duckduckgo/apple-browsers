@@ -40,19 +40,19 @@ final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
         return extensionsDirectory.appendingPathComponent(identifier)
     }
 
-    var installExtensionCalled = false
-    var installExtensionSourceURL: URL?
-    var mockInstallResult: (path: URL, identifier: String)?
-    var mockInstallError: Error?
-    func installExtension(from sourceURL: URL) throws -> (path: URL, identifier: String) {
-        installExtensionCalled = true
-        installExtensionSourceURL = sourceURL
+    var copyExtensionCalled = false
+    var copyExtensionSourceURL: URL?
+    var mockCopyResult: (path: URL, identifier: String)?
+    var mockCopyError: Error?
+    func copyExtension(from sourceURL: URL) throws -> (path: URL, identifier: String) {
+        copyExtensionCalled = true
+        copyExtensionSourceURL = sourceURL
 
-        if let error = mockInstallError {
+        if let error = mockCopyError {
             throw error
         }
 
-        if let result = mockInstallResult {
+        if let result = mockCopyResult {
             return result
         }
 

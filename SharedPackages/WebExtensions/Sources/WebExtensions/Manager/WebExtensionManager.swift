@@ -28,7 +28,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
     // MARK: - Dependencies
 
-    public let installationStore: WebExtensionPathsStoring
+    public let installationStore: InstalledWebExtensionStoring
     public let storageProvider: WebExtensionStorageProviding
     public let loader: WebExtensionLoading
     public let controller: WKWebExtensionController
@@ -56,7 +56,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     public init(configuration: WebExtensionConfigurationProviding,
                 windowTabProvider: WebExtensionWindowTabProviding,
                 storageProvider: WebExtensionStorageProviding,
-                installationStore: WebExtensionPathsStoring = WebExtensionPathsStore(),
+                installationStore: InstalledWebExtensionStoring = InstalledWebExtensionStore(),
                 loader: WebExtensionLoading = WebExtensionLoader(),
                 eventsListener: WebExtensionEventsListening = WebExtensionEventsListener(),
                 lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
@@ -85,11 +85,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     }
 
     public var webExtensionIdentifiers: [String] {
-        installationStore.paths
+        installationStore.installedExtensions.map(\.uniqueIdentifier)
     }
 
     public var hasInstalledExtensions: Bool {
-        !installationStore.paths.isEmpty
+        !installationStore.installedExtensions.isEmpty
     }
 
     public var loadedExtensions: Set<WKWebExtensionContext> {
@@ -101,17 +101,23 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     public func installExtension(from sourceURL: URL) async throws {
         Logger.webExtensions.debug("🔄 Installing extension from: \(sourceURL.path)")
 
-        let (installedPath, identifier) = try storageProvider.installExtension(from: sourceURL)
+        let (installedPath, identifier) = try storageProvider.copyExtension(from: sourceURL)
         Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
 
-        installationStore.add(identifier)
-
         do {
-            _ = try await loader.loadWebExtension(path: installedPath.absoluteString, into: controller)
+            let loadResult = try await loader.loadWebExtension(path: installedPath.absoluteString, into: controller)
+
+            let installedExtension = InstalledWebExtension(
+                uniqueIdentifier: identifier,
+                name: loadResult.context.webExtension.displayName,
+                storagePath: installedPath.absoluteString,
+                version: loadResult.context.webExtension.version
+            )
+
+            installationStore.add(installedExtension)
             Logger.webExtensions.info("✅ Successfully installed extension '\(identifier)'")
         } catch {
             Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
-            installationStore.remove(identifier)
             try? storageProvider.removeExtension(identifier: identifier)
             throw WebExtensionError.failedToLoadWebExtension(error)
         }
@@ -124,11 +130,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
         guard let storagePath = storageProvider.resolveInstalledExtension(identifier: identifier) else {
             Logger.webExtensions.error("❌ Extension '\(identifier)' not found in storage")
-            installationStore.remove(identifier)
+            installationStore.remove(uniqueIdentifier: identifier)
             throw WebExtensionError.extensionNotFound(identifier)
         }
 
-        installationStore.remove(identifier)
+        installationStore.remove(uniqueIdentifier: identifier)
 
         Logger.webExtensions.debug("🔄 Unloading '\(identifier)' at \(storagePath.absoluteString)")
 
@@ -152,7 +158,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
     @discardableResult
     public func uninstallAllExtensions() -> [Result<Void, Error>] {
-        let identifiers = installationStore.paths
+        let identifiers = installationStore.installedExtensions.map(\.uniqueIdentifier)
         Logger.webExtensions.debug("🔄 Uninstalling all extensions (count: \(identifiers.count))")
 
         let results: [Result<Void, Error>] = identifiers.map { identifier in
@@ -183,38 +189,38 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
         lifecycleDelegate?.webExtensionManagerWillLoadExtensions(self)
 
-        let identifiers = installationStore.paths
-        Logger.webExtensions.debug("🔄 Loading installed extensions (count: \(identifiers.count))")
+        let extensions = installationStore.installedExtensions
+        Logger.webExtensions.debug("🔄 Loading installed extensions (count: \(extensions.count))")
 
-        var resolvedExtensions: [(identifier: String, path: String)] = []
+        var extensionsToLoad: [(ext: InstalledWebExtension, path: String)] = []
         var missingIdentifiers: [String] = []
 
-        for identifier in identifiers {
-            if let path = storageProvider.resolveInstalledExtension(identifier: identifier) {
-                resolvedExtensions.append((identifier, path.absoluteString))
+        for ext in extensions {
+            if let path = storageProvider.resolveInstalledExtension(identifier: ext.uniqueIdentifier) {
+                extensionsToLoad.append((ext, path.absoluteString))
             } else {
-                Logger.webExtensions.error("❌ Extension '\(identifier)' not found in storage, will be removed from store")
-                missingIdentifiers.append(identifier)
+                Logger.webExtensions.error("❌ Extension '\(ext.uniqueIdentifier)' not found in storage, will be removed from store")
+                missingIdentifiers.append(ext.uniqueIdentifier)
             }
         }
 
         for identifier in missingIdentifiers {
-            installationStore.remove(identifier)
+            installationStore.remove(uniqueIdentifier: identifier)
         }
 
-        let paths = resolvedExtensions.map(\.path)
+        let paths = extensionsToLoad.map(\.path)
         let results = await loader.loadWebExtensions(from: paths, into: controller)
 
         var failedIdentifiers: [String] = []
         var successCount = 0
-        for (extension_, result) in zip(resolvedExtensions, results) {
+        for (extensionToLoad, result) in zip(extensionsToLoad, results) {
             switch result {
             case .success:
-                Logger.webExtensions.debug("✅ Loaded extension '\(extension_.identifier)'")
+                Logger.webExtensions.debug("✅ Loaded extension '\(extensionToLoad.ext.uniqueIdentifier)'")
                 successCount += 1
             case .failure(let failure):
-                Logger.webExtensions.error("❌ Failed to load web extension '\(extension_.identifier)': \(failure.localizedDescription)")
-                failedIdentifiers.append(extension_.identifier)
+                Logger.webExtensions.error("❌ Failed to load web extension '\(extensionToLoad.ext.uniqueIdentifier)': \(failure.localizedDescription)")
+                failedIdentifiers.append(extensionToLoad.ext.uniqueIdentifier)
             }
         }
 

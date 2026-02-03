@@ -27,7 +27,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
 
-private typealias LegacyOnboardingViewState = OnboardingView.ViewState
+typealias LegacyOnboardingViewState = OnboardingView.ViewState
 
 enum OnboardingRebranding {}
 
@@ -882,6 +882,18 @@ extension OnboardingRebranding.OnboardingView {
         var primaryAction: (() -> Void)?
         var secondaryAction: (() -> Void)?
 
+        final class Model: ObservableObject {
+            @Published var primaryButtonTitle: String
+            @Published var secondaryButtonTitle: String
+            @Published var isContinueEnabled: Bool
+
+            init(primaryButtonTitle: String = "", secondaryButtonTitle: String = "", isContinueEnabled: Bool = true) {
+                self.primaryButtonTitle = primaryButtonTitle
+                self.secondaryButtonTitle = secondaryButtonTitle
+                self.isContinueEnabled = isContinueEnabled
+            }
+        }
+
         var body: some View {
             VStack(spacing: 8) {
                 Button(action: {
@@ -900,20 +912,6 @@ extension OnboardingRebranding.OnboardingView {
                 })
                 .buttonStyle(GhostButtonStyle())
                 .accessibilityIdentifier("Skip")
-            }
-        }
-    }
-
-    extension OnboardingActions {
-        class Model: ObservableObject {
-            @Published var primaryButtonTitle: String
-            @Published var secondaryButtonTitle: String
-            @Published var isContinueEnabled: Bool
-
-            init(primaryButtonTitle: String = "", secondaryButtonTitle: String = "", isContinueEnabled: Bool = true) {
-                self.primaryButtonTitle = primaryButtonTitle
-                self.secondaryButtonTitle = secondaryButtonTitle
-                self.isContinueEnabled = isContinueEnabled
             }
         }
     }

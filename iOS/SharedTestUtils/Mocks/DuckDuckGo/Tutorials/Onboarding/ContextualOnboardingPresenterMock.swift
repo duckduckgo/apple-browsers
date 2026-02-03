@@ -61,7 +61,6 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     var shouldShowFireButtonPulse: Bool = false
     var isAddFavoriteFlow: Bool = false
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
-    var fireModalShown: Bool = false
 
     func setTryAnonymousSearchMessageSeen() {
         didCallSetTryAnonymousSearchMessageSeen = true
@@ -156,8 +155,6 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     var subscriptionPromotionDialogSeen: Bool = false
 
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
-
-    var fireModalShown: Bool = false
 
     private(set) var clearHeldURLDataCallCount = 0
 

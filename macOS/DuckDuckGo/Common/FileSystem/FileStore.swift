@@ -93,7 +93,7 @@ final class EncryptedFileStore: FileStore {
         guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir) && !isDir.boolValue else { return }
         try? fileManager.removeItem(at: url)
     }
-    
+
     func removeOrThrow(fileAtURL url: URL) throws {
         var isDir: ObjCBool = false
         let fileManager = FileManager()
@@ -138,7 +138,7 @@ extension FileManager: FileStore {
     func remove(fileAtURL url: URL) {
         try? removeItem(at: url)
     }
-    
+
     func removeOrThrow(fileAtURL url: URL) throws {
         try removeItem(at: url)
     }

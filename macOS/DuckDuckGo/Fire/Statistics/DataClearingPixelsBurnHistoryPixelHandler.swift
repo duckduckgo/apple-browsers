@@ -20,21 +20,21 @@ import History
 import Foundation
 
 struct DataClearingPixelsBurnHistoryHandler: DataClearingPixelsHandler {
-    
+
     private let dataClearingPixelsReporter: DataClearingPixelsReporter
-    
+
     init(_ dataClearingPixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter()) {
         self.dataClearingPixelsReporter = dataClearingPixelsReporter
     }
-    
+
     func fireErrorPixel(_ error: Error) {
         dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnHistoryError(error))
     }
-    
+
     func fireResiduePixel() {
         dataClearingPixelsReporter.fireResiduePixel(DataClearingPixels.burnHistoryHasResidue)
     }
-    
+
     func fireDurationPixel(_ startTime: Date) {
         dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnVisitsDuration, from: startTime)
     }

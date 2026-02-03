@@ -829,10 +829,11 @@ final class Fire: FireProtocol {
                   parentTabCollectionViewModel: let tabCollectionViewModel,
                   close: let shouldClose):
             assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
-            let startTime = Date()
-            let countBeforeBurn = tabCollectionViewModel.tabCollection.tabs.count
-
             if shouldClose {
+                let startTime = Date()
+                let countBeforeBurn = tabCollectionViewModel.tabCollection.tabs.count
+                var expectedCount = countBeforeBurn
+
                 if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
                     let tab = replacementPinnedTab(from: tabViewModel.tab)
                     if let index = tabCollectionViewModel.selectionIndex {
@@ -845,14 +846,12 @@ final class Fire: FireProtocol {
                         _=insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
                     }
                     tabCollectionViewModel.removeSelected(forceChange: true)
+                    expectedCount = (countBeforeBurn == 1) ? 1 : countBeforeBurn - 1
                 }
-            }
-            
-            // Either replacing the only tab or minues 1 tab
-            let expectedCount = (countBeforeBurn == 1) ? 1 : countBeforeBurn - 1
-            dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
-            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)){
-                tabCollectionViewModel.tabCollection.tabs.count != expectedCount
+                dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
+                dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)){
+                    tabCollectionViewModel.tabCollection.tabs.count != expectedCount
+                }
             }
 
         case .window(tabCollectionViewModel: let tabCollectionViewModel,

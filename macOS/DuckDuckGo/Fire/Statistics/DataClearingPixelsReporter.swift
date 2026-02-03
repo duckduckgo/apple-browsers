@@ -20,27 +20,27 @@ import Foundation
 import PixelKit
 
 final class DataClearingPixelsReporter {
-    
+
     var endDateProvider: () -> Date
     private let pixelFiring: PixelFiring?
-    
+
     @MainActor
     private var lastFireTime: Date?
     private let retriggerWindow: TimeInterval = 20.0
-    
+
     enum BurnPath: String {
         case burnEntity = "burn_entity"
         case burnAll = "burn_all"
         case burnVisits =  "burn_visits"
     }
-    
+
     init(pixelFiring: PixelFiring? = PixelKit.shared, endDateProvider: @escaping () -> Date = { Date() }) {
         self.pixelFiring = pixelFiring
         self.endDateProvider = endDateProvider
     }
-    
+
     // MARK: - Overall Flow Measurement
-    
+
     func fireCompletionPixel(from startTime: Date,
                              dialogResult: FireDialogResult,
                              path: BurnPath,
@@ -56,7 +56,7 @@ final class DataClearingPixelsReporter {
             frequency: .standard
         )
     }
-    
+
     @MainActor
     func fireRetriggerPixelIfNeeded() {
         let now = endDateProvider()
@@ -65,36 +65,36 @@ final class DataClearingPixelsReporter {
         }
         lastFireTime = now
     }
-    
+
     // MARK: - Per-Action Quality Metrics
-    
+
     func fireDurationPixel(_ durationPixel: @escaping (Int) -> DataClearingPixels,
                            from startTime: Date) {
         pixelFiring?.fire(
             durationPixel(prepareDuration(from: startTime, to: endDateProvider())),
-            frequency: .dailyAndStandard
+            frequency: .standard
         )
     }
-    
+
     func fireDurationPixel(_ durationPixel: @escaping (String, Int) -> DataClearingPixels,
                            from startTime: Date,
                            entity: String) {
         pixelFiring?.fire(
             durationPixel(entity, prepareDuration(from: startTime, to: endDateProvider())),
-            frequency: .dailyAndStandard
+            frequency: .standard
         )
     }
-    
+
     func fireResiduePixelIfNeeded(_ residuePixel: DataClearingPixels, check: () -> Bool) {
         if check() {
-            pixelFiring?.fire(residuePixel, frequency: .dailyAndStandard)
+            pixelFiring?.fire(residuePixel, frequency: .standard)
         }
     }
-    
+
     func fireResiduePixel(_ residuePixel: DataClearingPixels) {
-        pixelFiring?.fire(residuePixel, frequency: .dailyAndStandard)
+        pixelFiring?.fire(residuePixel, frequency: .standard)
     }
-    
+
     func fireErrorPixel(_ errorPixel: DataClearingPixels) {
         pixelFiring?.fire(errorPixel, frequency: .dailyAndStandard)
     }
@@ -103,11 +103,11 @@ final class DataClearingPixelsReporter {
 // MARK: - Private Helpers
 
 private extension DataClearingPixelsReporter {
-    
+
     private func prepareDuration(from startTime: Date, to endTime: Date) -> Int {
         Int(endTime.timeIntervalSince(startTime) * 1000)
     }
-    
+
     private func prepare(_ result: FireDialogResult) -> String {
         var domains: [String] = []
         if result.includeHistory {
@@ -124,16 +124,15 @@ private extension DataClearingPixelsReporter {
         }
         return domains.commaSeparatedString
     }
-    
+
     private func prepare(_ option: FireDialogViewModel.ClearingOption) -> String {
         option.string
     }
-    
+
     private static func prepare(_ path: BurnPath) -> String {
         path.rawValue
     }
 }
-
 
 private extension Array where Element == String {
     var commaSeparatedString: String { joined(separator: ",") }

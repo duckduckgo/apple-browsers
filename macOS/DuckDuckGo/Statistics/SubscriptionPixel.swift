@@ -331,7 +331,10 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionTierOptionsFailure,
                 .subscriptionTierOptionsUnexpectedProTier,
                 .subscriptionViewAllPlansClick,
-                .subscriptionUpgradeClick:
+                .subscriptionUpgradeClick,
+                .freeTrialStart,
+                .freeTrialVPNActivation,
+                .freeTrialPIRActivation:
             return [.pixelSource]
         }
     }

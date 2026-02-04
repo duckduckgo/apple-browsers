@@ -240,19 +240,6 @@ public class Pixel {
     private init() {
     }
 
-    /// Constructs a pixel URI in the format: `pixel_name?param1=value1&param2=value2`
-    /// This format is used for validating pixels against pixel definitions.
-    private static func pixelURI(name: String, parameters: [String: String]) -> String {
-        guard !parameters.isEmpty else {
-            return name
-        }
-        let sortedParams = parameters.sorted { $0.key < $1.key }
-        let queryString = sortedParams
-            .map { "\($0.key)=\($0.value)" }
-            .joined(separator: "&")
-        return "\(name)?\(queryString)"
-    }
-
     public static func fire(pixel: Pixel.Event,
                             forDeviceType deviceType: UIUserInterfaceIdiom? = UIDevice.current.userInterfaceIdiom,
                             withAdditionalParameters params: [String: String] = [:],
@@ -405,12 +392,12 @@ extension Dictionary where Key == String, Value == String {
 
 }
 
-// MARK: - Pixel Validation Logging (Debug Only)
+// MARK: - Local Pixel Validation
 
 #if DEBUG
 extension Pixel {
 
-    private static let validationLogQueue = DispatchQueue(label: "com.duckduckgo.pixel.validation")
+    private static let validationLogQueue = DispatchQueue(label: "Debug Pixel Validation")
     private static var validationLogCleared = false
 
     private static var validationLogURL: URL {
@@ -418,7 +405,20 @@ extension Pixel {
         return cacheDir.appendingPathComponent("pixel-validation-log.txt")
     }
 
-    /// Logs a pixel in URI format for validation purposes.
+    private static func pixelURI(name: String, parameters: [String: String]) -> String {
+        guard !parameters.isEmpty else {
+            return name
+        }
+
+        let sortedParams = parameters.sorted { $0.key < $1.key }
+        let queryString = sortedParams
+            .map { "\($0.key)=\($0.value)" }
+            .joined(separator: "&")
+        return "\(name)?\(queryString)"
+    }
+
+    /// Writes pixel calls to a file in the Caches directory, so that we can validate the pixels against the JSON definitions before they go to production.
+    /// To use this, trigger your pixel in the iOS Simulator, and then run `./iOS/scripts/validate_pixels.sh`.
     static func writeValidationPixel(pixelName: String, deviceType: UIUserInterfaceIdiom?, parameters: [String: String]) {
         let formFactor: String
         if let deviceType = deviceType {

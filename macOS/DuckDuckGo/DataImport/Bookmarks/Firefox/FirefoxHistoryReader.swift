@@ -118,7 +118,7 @@ final class FirefoxHistoryReader {
 
     /// Returns the search shortcut URL for a given URL string, if applicable.
     ///
-    /// Search site URLs with common subdomains (`www`, `m`, `mobile`) or different eTLDs are consolidated to a single shortcut:
+    /// Search site URLs with common subdomains (`www`, `wwwN`, `m`, `mobile`) or different eTLDs are consolidated to a single shortcut:
     /// - `www.amazon.com`, `m.amazon.de`, `amazon.co.uk` → `https://amazon.com`
     ///
     /// URLs from other sites or search sites with other subdomains are not consolidated and return `nil`:
@@ -128,11 +128,8 @@ final class FirefoxHistoryReader {
               let eTLD = tld.eTLD(forStringURL: urlString) else {
             return nil
         }
-        var shortHostname = host.dropping(suffix: ".\(eTLD)")
-        let commonSubdomains = ["www", "m", "mobile"]
-        for subdomain in commonSubdomains {
-            shortHostname = shortHostname.dropping(prefix: "\(subdomain).")
-        }
+        // Remove common subdomains ("www", "wwwN", "m", and "mobile") and eTLD to get the short hostname.
+        var shortHostname = host.replacing(regex: #"^(m|mobile|www\d*)\."#, with: "").dropping(suffix: ".\(eTLD)")
         return searchShortcuts[shortHostname]
     }
 

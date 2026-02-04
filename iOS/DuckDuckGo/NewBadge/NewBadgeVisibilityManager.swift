@@ -168,11 +168,9 @@ struct DefaultNewBadgeConfigProvider: NewBadgeConfigProviding {
 
     private func maximumVersion(from minimumVersion: [Int], byMinorReleaseOffset offset: Int) -> [Int] {
         var result = minimumVersion
-        while result.count < 3 {
-            result.append(0)
-        }
         result[1] += offset
         result[2] = 0
+
         return result
     }
 }

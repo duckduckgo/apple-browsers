@@ -27,9 +27,8 @@ public extension OnboardingTheme {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
 
-        return OnboardingTheme(
-            typography: .system,
-            colorPalette: ColorPalette(
+        let typography: OnboardingTheme.Typography = .system
+        let colorPalette = ColorPalette(
                 bubbleBorder: Color(designSystemColor: .accentAltPrimary),
                 bubbleBackground: Color(designSystemColor: .surfaceTertiary),
                 bubbleShadow: Color.shade(0.03),
@@ -37,21 +36,32 @@ public extension OnboardingTheme {
                 textSecondary: Color(designSystemColor: .textSecondary),
                 primaryButtonBackgroundColor: Color(designSystemColor: .buttonsPrimaryDefault),
                 primaryButtonTextColor: Color(designSystemColor: .buttonsPrimaryText)
-            ),
-            bubbleMetrics: BubbleMetrics(
+            )
+        let bubbleMetrics = BubbleMetrics(
                 contentInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
                 cornerRadius: bubbleCornerRadius,
                 borderWidth: borderWidth,
                 shadowRadius: 6.0,
                 shadowPosition: CGPoint(x: 0, y: 7)
-            ),
+            )
+        let contextualMetrics = ContextualOnboardingMetrics(
+            titleTextAlignment: .leading,
+            bodyTextAlignment: .leading
+        )
+
+        return OnboardingTheme(
+            typography: typography,
+            colorPalette: colorPalette,
+            bubbleMetrics: bubbleMetrics,
             linearTitleTextAlignment: .center,
             linearBodyTextAlignment: .center,
-            contextualTitleTextAlignment: .leading,
-            contextualBodyTextAlignment: .leading,
+            contextualMetrics: contextualMetrics,
             primaryButtonStyle: OnboardingButtonStyle(
                 id: .primary,
-                style: AnyButtonStyle(OnboardingPrimaryButtonStyle())
+                style: AnyButtonStyle(OnboardingPrimaryButtonStyle(
+                    typography: typography,
+                    colorPalette: colorPalette
+                ))
             )
         )
     }()

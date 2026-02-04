@@ -31,10 +31,8 @@ public struct OnboardingTheme: Equatable {
     public let linearTitleTextAlignment: TextAlignment
     /// Text alignment for linear flow body copy.
     public let linearBodyTextAlignment: TextAlignment
-    /// Text alignment for contextual flow titles.
-    public let contextualTitleTextAlignment: TextAlignment
-    /// Text alignment for contextual flow body copy.
-    public let contextualBodyTextAlignment: TextAlignment
+    /// Layout and visual metrics for contextual onboarding content.
+    public let contextualMetrics: ContextualOnboardingMetrics
     /// Style used by the primary onboarding button.
     public let primaryButtonStyle: OnboardingButtonStyle
 
@@ -46,8 +44,7 @@ public struct OnboardingTheme: Equatable {
     ///   - bubbleMetrics: Bubble layout and visual metrics.
     ///   - linearTitleTextAlignment: Title alignment for linear flows.
     ///   - linearBodyTextAlignment: Body alignment for linear flows.
-    ///   - contextualTitleTextAlignment: Title alignment for contextual flows.
-    ///   - contextualBodyTextAlignment: Body alignment for contextual flows.
+    ///   - contextualMetrics: Layout and visual metrics for contextual flows.
     ///   - primaryButtonStyle: Primary button style.
     public init(
         typography: Typography,
@@ -55,8 +52,7 @@ public struct OnboardingTheme: Equatable {
         bubbleMetrics: BubbleMetrics,
         linearTitleTextAlignment: TextAlignment,
         linearBodyTextAlignment: TextAlignment,
-        contextualTitleTextAlignment: TextAlignment,
-        contextualBodyTextAlignment: TextAlignment,
+        contextualMetrics: ContextualOnboardingMetrics,
         primaryButtonStyle: OnboardingButtonStyle
     ){
         self.typography = typography
@@ -64,8 +60,7 @@ public struct OnboardingTheme: Equatable {
         self.bubbleMetrics = bubbleMetrics
         self.linearTitleTextAlignment = linearTitleTextAlignment
         self.linearBodyTextAlignment = linearBodyTextAlignment
-        self.contextualTitleTextAlignment = contextualTitleTextAlignment
-        self.contextualBodyTextAlignment = contextualBodyTextAlignment
+        self.contextualMetrics = contextualMetrics
         self.primaryButtonStyle = primaryButtonStyle
     }
 

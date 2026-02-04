@@ -20,19 +20,25 @@
 import SwiftUI
 
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
-    @Environment(\.onboardingTheme) private var onboardingTheme
+    private let typography: OnboardingTheme.Typography
+    private let colorPalette: OnboardingTheme.ColorPalette
+
+    init(typography: OnboardingTheme.Typography, colorPalette: OnboardingTheme.ColorPalette) {
+        self.typography = typography
+        self.colorPalette = colorPalette
+    }
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .lineLimit(nil)
-            .font(onboardingTheme.typography.body)
-            .foregroundColor(onboardingTheme.colorPalette.primaryButtonTextColor)
+            .font(typography.body)
+            .foregroundColor(colorPalette.primaryButtonTextColor)
             .padding(.vertical)
             .padding(.horizontal, nil)
             .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 40)
-            .background(onboardingTheme.colorPalette.primaryButtonBackgroundColor)
+            .background(colorPalette.primaryButtonBackgroundColor)
             .cornerRadius(64.0)
     }
 

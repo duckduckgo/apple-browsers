@@ -18,6 +18,38 @@
 
 import SwiftUI
 
+// MARK: OnboardingTheme
+
+public extension OnboardingTheme {
+
+    /// Layout metrics used by the dismiss button style and overlay positioning.
+    struct DismissButtonMetrics: Equatable {
+        /// Outer frame size of the dismiss button.
+        public let buttonSize: CGSize
+        /// Offset applied from the bubble's top-trailing corner to place the dismiss button.
+        ///
+        /// Positive `x` moves the button inward from the trailing edge.
+        /// Positive `y` moves the button downward from the top edge.
+        public let offsetRelativeToBubble: CGPoint
+        /// Internal padding applied to the dismiss button's icon within its circular container.
+        public let contentPadding: CGFloat
+
+        /// Creates dismiss button layout metrics.
+        ///
+        /// - Parameters:
+        ///   - buttonSize: Outer frame size of the dismiss button.
+        ///   - offsetRelativeToBubble: Positional offset from the bubble's top-trailing corner.
+        ///   - contentPadding: Internal icon padding inside the circular button.
+        public init(buttonSize: CGSize, offsetRelativeToBubble: CGPoint, contentPadding: CGFloat) {
+            self.buttonSize = buttonSize
+            self.offsetRelativeToBubble = offsetRelativeToBubble
+            self.contentPadding = contentPadding
+        }
+    }
+}
+
+// MARK: - Style Helpers
+
 /// Semantic identifiers for onboarding button styles.
 public enum OnboardingButtonStyleID {
     /// Primary call-to-action button style.
@@ -26,6 +58,8 @@ public enum OnboardingButtonStyleID {
     case secondary
     /// List row button style.
     case list
+    /// Dismiss button style
+    case dismiss
 }
 
 /// Type-erased, equatable wrapper for onboarding button styles.

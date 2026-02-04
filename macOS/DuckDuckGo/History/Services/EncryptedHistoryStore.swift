@@ -314,6 +314,11 @@ actor EncryptedHistoryStore: HistoryStoring {
         } as Void
     }
 
+    func pageVisitIDs(in tabID: String) async throws -> [Visit.ID] {
+        // macOS does not currently record tab history in core data - return empty array
+        return []
+    }
+
     nonisolated private func remove(_ visits: some Sequence<Visit>, context: NSManagedObjectContext) -> Result<Void, Error> {
         // To avoid long predicate, execute multiple times
         let chunkedVisits = visits.chunkedSequence(into: 100)

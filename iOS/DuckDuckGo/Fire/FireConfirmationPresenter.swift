@@ -39,11 +39,12 @@ struct FireConfirmationPresenter {
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
                                  tabViewModel: TabViewModel?,
+                                 daxDialogsManager: DaxDialogsManaging,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
         if featureFlagger.isFeatureOn(.burnSingleTab) {
-            presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, onConfirm: onConfirm, onCancel: onCancel)
+            presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, daxDialogsManager: daxDialogsManager, onConfirm: onConfirm, onCancel: onCancel)
         } else {
             presentLegacyConfirmationAlert(on: viewController, from: source, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
         }
@@ -53,6 +54,7 @@ struct FireConfirmationPresenter {
     func presentFireConfirmation(on viewController: UIViewController,
                                  sourceRect: CGRect,
                                  tabViewModel: TabViewModel?,
+                                 daxDialogsManager: DaxDialogsManaging,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         guard let window = UIApplication.shared.firstKeyWindow else {
@@ -60,7 +62,7 @@ struct FireConfirmationPresenter {
             return
         }
         if featureFlagger.isFeatureOn(.burnSingleTab) {
-            presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, onConfirm: onConfirm, onCancel: onCancel)
+            presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, daxDialogsManager: daxDialogsManager, onConfirm: onConfirm, onCancel: onCancel)
         } else {
             presentLegacyConfirmationAlert(on: viewController, from: window, sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
         }
@@ -73,9 +75,11 @@ struct FireConfirmationPresenter {
                                                    from source: AnyObject,
                                                    sourceRect: CGRect,
                                                    tabViewModel: TabViewModel?,
+                                                   daxDialogsManager: DaxDialogsManaging,
                                                    onConfirm: @escaping (FireRequest) -> Void,
                                                    onCancel: @escaping () -> Void) {
             let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
+                                                            daxDialogsManager: daxDialogsManager,
                 onConfirm: { [weak viewController] fireOptions in
                     viewController?.dismiss(animated: true) {
                         onConfirm(fireOptions)

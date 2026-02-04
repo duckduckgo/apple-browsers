@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import Combine
 import BrowserServicesKit
 import PrivacyConfig
 import Subscription
@@ -29,6 +30,7 @@ import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import PrivacyStats
+import WebExtensions
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -59,6 +61,10 @@ final class MainCoordinator {
     private let launchSourceManager: LaunchSourceManaging
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
+
+    private(set) var webExtensionManager: WebExtensionManaging?
+    private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
+    private var webExtensionFeatureFlagHandler: AnyObject?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -158,7 +164,8 @@ final class MainCoordinator {
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: privacyConfigurationManager,
                                         appSettings: AppDependencyProvider.shared.appSettings,
-                                        privacyStats: privacyStats)
+                                        privacyStats: privacyStats,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -198,12 +205,52 @@ final class MainCoordinator {
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
-                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         whatsNewRepository: whatsNewRepository)
+        setupWebExtensions()
     }
 
     func start() {
         controller.loadViewIfNeeded()
+    }
+
+    private func setupWebExtensions() {
+        if #available(iOS 18.4, *), featureFlagger.isFeatureOn(.webExtensions) {
+            let webExtensionManager = WebExtensionManagerFactory.makeManager(mainViewController: controller)
+            self.webExtensionManager = webExtensionManager
+
+            self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(webExtensionManager: webExtensionManager,
+                                                                               mainViewController: controller)
+
+            tabManager.setWebExtensionManager(webExtensionManager)
+            controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
+            controller.setWebExtensionManager(webExtensionManager)
+
+            let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+                .flagDidChangePublisher
+                .filter { $0.0 == .webExtensions }
+                .map { $0.1 }
+                .eraseToAnyPublisher()
+
+            webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+                webExtensionManager: webExtensionManager,
+                featureFlagPublisher: publisher) { [weak self] in
+                    self?.clearWebExtensionReferences()
+                }
+
+            Task { @MainActor in
+                await webExtensionManager.loadInstalledExtensions()
+            }
+        } else {
+            clearWebExtensionReferences()
+        }
+    }
+
+    private func clearWebExtensionReferences() {
+        webExtensionManager = nil
+        webExtensionEventsCoordinator = nil
+        tabManager.setWebExtensionManager(nil)
+        controller.setWebExtensionEventsCoordinator(nil)
+        controller.setWebExtensionManager(nil)
     }
 
     private static func makeHistoryManager(tabsModel: TabsModel) throws -> HistoryManaging {

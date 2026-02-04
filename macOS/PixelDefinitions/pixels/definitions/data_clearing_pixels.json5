@@ -7,6 +7,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "duration",
@@ -16,21 +17,24 @@
             {
                 "key": "clearing_option",
                 "type": "string",
-                "description": "The clearing option selected by the user (e.g., all data, last hour, etc.)"
+                "description": "The clearing option selected by the user",
+                "enum": ["current_tab", "current_window", "all_data"]
             },
             {
                 "key": "domains",
                 "type": "string",
-                "description": "Information about domains affected by the clearing operation"
+                "description": "Information about domains affected by the clearing operation",
+                "examples": ["History", "History,TabsAndWindows", "CookiesAndSiteData", "History,TabsAndWindows,ChatHistory"]
             },
             {
                 "key": "path",
                 "type": "string",
-                "description": "The clearing path or scope of the operation"
+                "description": "The clearing path of the operation",
+                "enum": ["burn_entity", "burn_all", "burn_visits"]
             },
             {
                 "key": "autoClear",
-                "type": "string",
+                "type": "boolean",
                 "description": "Whether this was an automatic clear operation"
             }
         ]
@@ -40,7 +44,7 @@
         "description": "Fired when the fire button is triggered again within 20 seconds of a previous fire",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
-        "parameters": ["pixelSource"]
+        "parameters": ["appVersion", "pixelSource"]
     },
 
     // ==================== Web Cache Metrics ====================
@@ -49,7 +53,7 @@
         "description": "Fired when an error occurs while clearing web cache data",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
     "m_mac_fire_burn_web_cache_duration": {
@@ -57,6 +61,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "duration",
@@ -71,11 +76,20 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "step",
                 "type": "string",
-                "description": "The clearing step(s) where residue was detected"
+                "description": "The clearing step where residue was detected",
+                "enum": [
+                    "clear_file_cache",
+                    "clear_device_hash_salts",
+                    "clear_safely_removable_data_types",
+                    "clear_local_storage_and_indexed_db_for_non_fireproof_domains",
+                    "clear_cookies",
+                    "clear_resource_load_statistics_database"
+                ]
             }
         ]
     },
@@ -86,7 +100,7 @@
         "description": "Fired when an error occurs while clearing browsing history",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
     "m_mac_fire_burn_history_duration": {
@@ -94,11 +108,13 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "entity",
                 "type": "string",
-                "description": "The history entity type being cleared"
+                "description": "The history entity type being cleared",
+                "enum": ["none", "tab", "window", "all_windows"]
             },
             {
                 "key": "duration",
@@ -108,20 +124,13 @@
         ]
     },
 
-    "m_mac_fire_burn_history_has_residue": {
-        "description": "Fired when residual history data is detected after clearing",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "parameters": ["pixelSource"]
-    },
-
     // ==================== Chat History Metrics ====================
 
     "m_mac_fire_burn_chat_history_error": {
         "description": "Fired when an error occurs while clearing chat history",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
     "m_mac_fire_burn_chat_history_duration": {
@@ -129,6 +138,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "duration",
@@ -145,6 +155,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "duration",
@@ -160,7 +171,7 @@
         "description": "Fired when an error occurs while clearing visits data",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
     "m_mac_fire_burn_visits_duration": {
@@ -168,6 +179,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "duration",
@@ -181,7 +193,7 @@
         "description": "Fired when residual visits data is detected after clearing",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource"]
+        "parameters": ["appVersion", "pixelSource"]
     },
 
     // ==================== Last Session State Metrics ====================
@@ -190,7 +202,7 @@
         "description": "Fired when an error occurs while clearing last session state",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
     "m_mac_fire_burn_last_session_state_duration": {
@@ -198,6 +210,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "duration",
@@ -211,7 +224,7 @@
         "description": "Fired when residual last session state data is detected after clearing",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource"]
+        "parameters": ["appVersion", "pixelSource"]
     },
 
     // ==================== Tabs Metrics ====================
@@ -220,7 +233,7 @@
         "description": "Fired when an error occurs while clearing tabs",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
     "m_mac_fire_burn_tabs_duration": {
@@ -228,11 +241,13 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "entity",
                 "type": "string",
-                "description": "The tab entity type being cleared"
+                "description": "The tab entity type being cleared",
+                "enum": ["none", "tab", "window", "all_windows"]
             },
             {
                 "key": "duration",
@@ -247,11 +262,13 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "entity",
                 "type": "string",
-                "description": "The tab entity type where residue was detected"
+                "description": "The tab entity type where residue was detected",
+                "enum": ["none", "tab", "window", "all_windows"]
             }
         ]
     },
@@ -262,7 +279,7 @@
         "description": "Fired when an error occurs while clearing downloads",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource", "errorDomain", "errorCode"]
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
     "m_mac_fire_burn_downloads_duration": {
@@ -270,6 +287,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "duration",
@@ -283,7 +301,7 @@
         "description": "Fired when residual downloads data is detected after clearing",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource"]
+        "parameters": ["appVersion", "pixelSource"]
     },
 
     // ==================== Recently Closed Metrics ====================
@@ -293,6 +311,7 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": [
+            "appVersion",
             "pixelSource",
             {
                 "key": "duration",
@@ -306,6 +325,6 @@
         "description": "Fired when residual recently closed data is detected after clearing",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["pixelSource"]
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

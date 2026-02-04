@@ -236,7 +236,7 @@ final class Fire: FireProtocol {
             case .window:
                 return "window"
             case .allWindows:
-                return "allWindows"
+                return "all_windows"
             }
         }
 

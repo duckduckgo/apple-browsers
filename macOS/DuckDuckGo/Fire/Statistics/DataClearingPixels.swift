@@ -37,7 +37,6 @@ enum DataClearingPixels {
 
     case burnHistoryError(Error)
     case burnHistoryDuration(entity: String, duration: Int)
-    case burnHistoryHasResidue
 
     case burnChatHistoryError(Error)
     case burnChatHistoryDuration(Int)
@@ -86,8 +85,6 @@ extension DataClearingPixels: PixelKitEvent {
             return "m_mac_fire_burn_history_error"
         case .burnHistoryDuration:
             return "m_mac_fire_burn_history_duration"
-        case .burnHistoryHasResidue:
-            return "m_mac_fire_burn_history_has_residue"
 
         case .burnChatHistoryError:
             return "m_mac_fire_burn_chat_history_error"
@@ -167,7 +164,7 @@ extension DataClearingPixels: PixelKitEvent {
 
         case .burnWebCacheError, .burnHistoryError, .burnChatHistoryError,
              .burnVisitsError, .burnLastSessionStateError, .burnTabsError, .burnDownloadsError,
-             .burnHistoryHasResidue, .burnVisitsHasResidue, .burnLastSessionStateHasResidue,
+             .burnVisitsHasResidue, .burnLastSessionStateHasResidue,
              .burnDownloadsHasResidue, .burnRecentlyClosedHasResidue:
             return nil
         }

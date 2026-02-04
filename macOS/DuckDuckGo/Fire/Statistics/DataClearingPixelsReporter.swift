@@ -126,7 +126,7 @@ private extension DataClearingPixelsReporter {
     }
 
     private func prepare(_ option: FireDialogViewModel.ClearingOption) -> String {
-        option.string
+        option.description
     }
 
     private static func prepare(_ path: BurnPath) -> String {

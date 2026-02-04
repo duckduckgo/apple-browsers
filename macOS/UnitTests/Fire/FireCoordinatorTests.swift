@@ -66,7 +66,7 @@ struct FireCoordinatorTests {
         dataClearingPixelsReporter.endDateProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
-            option: "All sites visited in current tab",
+            option: "current_tab",
             domains: "History,TabsAndWindows,CookiesAndSiteData,ChatHistory",
             path: "burn_entity",
             autoClear: "false"
@@ -95,7 +95,7 @@ struct FireCoordinatorTests {
         dataClearingPixelsReporter.endDateProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
-            option: "All sites visited in current tab",
+            option: "current_tab",
             domains: "History,TabsAndWindows,CookiesAndSiteData",
             path: "burn_entity",
             autoClear: "false"
@@ -123,7 +123,7 @@ struct FireCoordinatorTests {
         dataClearingPixelsReporter.endDateProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
-            option: "All sites visited in current window",
+            option: "current_window",
             domains: "History,TabsAndWindows,CookiesAndSiteData,ChatHistory",
             path: "burn_entity",
             autoClear: "false"
@@ -152,7 +152,7 @@ struct FireCoordinatorTests {
         dataClearingPixelsReporter.endDateProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
-            option: "All sites visited in current window",
+            option: "current_window",
             domains: "History,TabsAndWindows,CookiesAndSiteData",
             path: "burn_entity",
             autoClear: "false"
@@ -180,7 +180,7 @@ struct FireCoordinatorTests {
         dataClearingPixelsReporter.endDateProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
-            option: "All sites",
+            option: "all_data",
             domains: "History,TabsAndWindows,CookiesAndSiteData,ChatHistory",
             path: "burn_all",
             autoClear: "false"
@@ -209,7 +209,7 @@ struct FireCoordinatorTests {
         dataClearingPixelsReporter.endDateProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
-            option: "All sites",
+            option: "all_data",
             domains: "History,TabsAndWindows,CookiesAndSiteData",
             path: "burn_all",
             autoClear: "false"

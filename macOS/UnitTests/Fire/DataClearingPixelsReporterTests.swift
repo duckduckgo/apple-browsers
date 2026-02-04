@@ -145,11 +145,11 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
     func testWhenFireResiduePixelCalledThenPixelIsFired() {
         // When
-        sut.fireResiduePixel(.burnHistoryHasResidue)
+        sut.fireResiduePixel(.burnVisitsHasResidue)
 
         // Then
         mockPixelFiring.expectedFireCalls = [
-            .init(pixel: DataClearingPixels.burnHistoryHasResidue, frequency: .standard)
+            .init(pixel: DataClearingPixels.burnVisitsHasResidue, frequency: .standard)
         ]
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
@@ -227,7 +227,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded()
         sut.fireRetriggerPixelIfNeeded()
         sut.fireErrorPixel(.burnWebCacheError(NSError(domain: "test", code: 1)))
-        sut.fireResiduePixel(.burnHistoryHasResidue)
+        sut.fireResiduePixel(.burnLastSessionStateHasResidue)
 
         // Then - no crash
     }

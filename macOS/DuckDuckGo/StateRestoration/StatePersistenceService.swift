@@ -50,7 +50,7 @@ final class StatePersistenceService {
     init(fileStore: FileStore, fileName: String, dataClearingPixelsReporter: DataClearingPixelsReporter = .init()) {
         self.fileStore = fileStore
         self.fileName = fileName
-        self.dataClearingPixelsReporter = DataClearingPixelsReporter()
+        self.dataClearingPixelsReporter = dataClearingPixelsReporter
     }
 
     var canRestoreLastSessionState: Bool {

@@ -26,12 +26,20 @@ public extension OnboardingTheme {
     static let macOSRebranding2026 = {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
+        let bubbleBackgroundColor = Color(designSystemColor: .surfaceTertiary)
+        let bubbleBorderColor = Color(designSystemColor: .accentAltPrimary)
+
+        let dismissButtonMetrics = DismissButtonMetrics(
+            buttonSize: CGSize(width: 44, height: 44),
+            offsetRelativeToBubble: CGPoint(x: 4, y: 4),
+            contentPadding: 8.0
+        )
 
         return OnboardingTheme(
             typography: .system,
             colorPalette: ColorPalette(
-                bubbleBorder: Color(designSystemColor: .accentAltPrimary),
-                bubbleBackground: Color(designSystemColor: .surfaceTertiary),
+                bubbleBorder: bubbleBorderColor,
+                bubbleBackground: bubbleBackgroundColor,
                 bubbleShadow: Color.shade(0.03),
                 textPrimary: Color(designSystemColor: .textPrimary),
                 textSecondary: Color(designSystemColor: .textSecondary),
@@ -48,11 +56,7 @@ public extension OnboardingTheme {
                 shadowRadius: 6.0,
                 shadowPosition: CGPoint(x: 0, y: 7)
             ),
-            dismissButtonMetrics: DismissButtonMetrics(
-                buttonSize: CGSize(width: 44, height: 44),
-                offsetRelativeToBubble: CGPoint(x: 4, y: 4),
-                contentPadding: 8
-            ),
+            dismissButtonMetrics: dismissButtonMetrics,
             contextualOnboardingMetrics: OnboardingTheme.ContextualOnboardingMetrics(
                 contextualTitleTextAlignment: .leading,
                 contextualBodyTextAlignment: .leading,
@@ -72,7 +76,15 @@ public extension OnboardingTheme {
             ),
             dismissButtonStyle: OnboardingButtonStyle(
                 id: .dismiss,
-                style: AnyButtonStyle(OnboardingBubbleDismissButtonStyle())
+                style: AnyButtonStyle(
+                    OnboardingRebranding.OnboardingStyles.BubbleDismissButtonStyle(
+                        contentPadding: dismissButtonMetrics.contentPadding,
+                        backgroundColor: bubbleBackgroundColor,
+                        borderColor: bubbleBorderColor,
+                        borderWidth: borderWidth,
+                        buttonSize: dismissButtonMetrics.buttonSize
+                    )
+                )
             )
         )
     }()

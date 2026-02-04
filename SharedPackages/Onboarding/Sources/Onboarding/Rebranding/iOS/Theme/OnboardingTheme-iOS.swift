@@ -28,6 +28,14 @@ public extension OnboardingTheme {
     static let iOSRebranding2026 = {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
+        let bubbleBackgroundColor = Color(singleUseColor: .rebranding(.surfaceTertiary))
+        let bubbleBorderColor = Color(singleUseColor: .rebranding(.accentAltPrimary))
+
+        let dismissButtonMetrics = DismissButtonMetrics(
+            buttonSize: CGSize(width: 44, height: 44),
+            offsetRelativeToBubble: CGPoint(x: 4, y: 4),
+            contentPadding: 8.0
+        )
 
         let typography: OnboardingTheme.Typography = .system
         let colorPalette = ColorPalette(
@@ -36,6 +44,9 @@ public extension OnboardingTheme {
             bubbleShadow: Color.shade(0.03),
             textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
             textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
+            optionsListBorderColor: Color(singleUseColor: .rebranding(.accentPrimary)),
+            optionsListIconColor: Color(singleUseColor: .rebranding(.accentPrimary)),
+            optionsListTextColor: Color(singleUseColor: .rebranding(.textLink)),
             primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
             primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText))
         )
@@ -79,7 +90,15 @@ public extension OnboardingTheme {
             ),
             dismissButtonStyle: OnboardingButtonStyle(
                 id: .dismiss,
-                style: AnyButtonStyle(OnboardingBubbleDismissButtonStyle())
+                style: AnyButtonStyle(
+                    OnboardingRebranding.OnboardingStyles.BubbleDismissButtonStyle(
+                        contentPadding: dismissButtonMetrics.contentPadding,
+                        backgroundColor: bubbleBackgroundColor,
+                        borderColor: bubbleBorderColor,
+                        borderWidth: borderWidth,
+                        buttonSize: dismissButtonMetrics.buttonSize
+                    )
+                )
             )
         )
     }()

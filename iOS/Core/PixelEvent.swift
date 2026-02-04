@@ -1614,6 +1614,24 @@ extension Pixel {
         case productTelemeterySurfaceUsageSettings
         case productTelemeterySurfaceUsageBookmarksPage
         case productTelemeterySurfaceUsagePasswordsPage
+
+        // MARK: - Web Extensions
+        case webExtensionInstalled
+        case webExtensionInstalledDaily
+        case webExtensionInstallError
+        case webExtensionInstallErrorDaily
+        case webExtensionUninstalled
+        case webExtensionUninstalledDaily
+        case webExtensionUninstallError
+        case webExtensionUninstallErrorDaily
+        case webExtensionUninstalledAll
+        case webExtensionUninstalledAllDaily
+        case webExtensionUninstallAllError
+        case webExtensionUninstallAllErrorDaily
+        case webExtensionLoaded
+        case webExtensionLoadedDaily
+        case webExtensionLoadError
+        case webExtensionLoadErrorDaily
     }
 
 }
@@ -3160,12 +3178,30 @@ extension Pixel.Event {
         case .productTelemeterySurfaceUsageSettings: return "m_product_telemetry_surface_usage_settings"
         case .productTelemeterySurfaceUsageBookmarksPage: return "m_product_telemetry_surface_usage_bookmarks_page"
         case .productTelemeterySurfaceUsagePasswordsPage: return "m_product_telemetry_surface_usage_passwords_page"
+
+        // MARK: - Web Extensions
+        case .webExtensionInstalled: return "m_web_extension_installed"
+        case .webExtensionInstalledDaily: return "m_web_extension_installed_daily"
+        case .webExtensionInstallError: return "m_web_extension_install_error"
+        case .webExtensionInstallErrorDaily: return "m_web_extension_install_error_daily"
+        case .webExtensionUninstalled: return "m_web_extension_uninstalled"
+        case .webExtensionUninstalledDaily: return "m_web_extension_uninstalled_daily"
+        case .webExtensionUninstallError: return "m_web_extension_uninstall_error"
+        case .webExtensionUninstallErrorDaily: return "m_web_extension_uninstall_error_daily"
+        case .webExtensionUninstalledAll: return "m_web_extension_uninstalled_all"
+        case .webExtensionUninstalledAllDaily: return "m_web_extension_uninstalled_all_daily"
+        case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
+        case .webExtensionUninstallAllErrorDaily: return "m_web_extension_uninstall_all_error_daily"
+        case .webExtensionLoaded: return "m_web_extension_loaded"
+        case .webExtensionLoadedDaily: return "m_web_extension_loaded_daily"
+        case .webExtensionLoadError: return "m_web_extension_load_error"
+        case .webExtensionLoadErrorDaily: return "m_web_extension_load_error_daily"
         }
     }
 }
 
 extension Pixel.Event {
-    
+
     public enum BucketAggregation: String, CustomStringConvertible {
 
         public var description: String { rawValue }

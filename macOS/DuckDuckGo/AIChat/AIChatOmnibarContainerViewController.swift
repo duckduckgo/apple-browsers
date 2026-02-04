@@ -31,7 +31,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let submitButtonSize: CGFloat = 28
         static let submitButtonCornerRadius: CGFloat = 14
         static let submitButtonTrailingInset: CGFloat = 13
-        static let submitButtonBottomInset: CGFloat = 13
+        static let submitButtonBottomInset: CGFloat = 8
+        static let toolButtonSize: CGFloat = 28
+        static let toolButtonLeadingInset: CGFloat = 10
+        static let toolButtonSpacing: CGFloat = 3
+        static let toolButtonBottomInset: CGFloat = 8
         static let suggestionsBottomPadding: CGFloat = 4
     }
 
@@ -40,6 +44,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let innerBorderView = ColorView(frame: .zero)
     private let containerView = NSView()
     private let submitButton = MouseOverButton()
+    private let customizeButton = AIChatOmnibarToolButton()
+    private let searchToggleButton = AIChatOmnibarToolButton()
+    private let imageUploadButton = AIChatOmnibarToolButton()
 
     /// Suggestions view - always in hierarchy, height is 0 when no suggestions
     private let suggestionsView = AIChatSuggestionsView()
@@ -164,6 +171,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.toolTip = UserText.aiChatSendButtonTooltip
         containerView.addSubview(submitButton)
 
+        customizeButton.translatesAutoresizingMaskIntoConstraints = false
+        customizeButton.target = self
+        customizeButton.action = #selector(customizeButtonClicked)
+        customizeButton.image = DesignSystemImages.Glyphs.Size16.options
+        containerView.addSubview(customizeButton)
+
+        searchToggleButton.translatesAutoresizingMaskIntoConstraints = false
+        searchToggleButton.target = self
+        searchToggleButton.action = #selector(searchToggleButtonClicked)
+        searchToggleButton.image = DesignSystemImages.Glyphs.Size16.globe
+        containerView.addSubview(searchToggleButton)
+
+        imageUploadButton.translatesAutoresizingMaskIntoConstraints = false
+        imageUploadButton.target = self
+        imageUploadButton.action = #selector(imageUploadButtonClicked)
+        imageUploadButton.image = DesignSystemImages.Glyphs.Size16.image
+        containerView.addSubview(imageUploadButton)
+
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -184,6 +209,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // Bottom constraint is set in setupSuggestionsView() to be above suggestions
             submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize),
             submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
+
+            customizeButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset),
+            // Bottom constraints are set in setupSuggestionsView() to be above suggestions
+            customizeButton.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+            customizeButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+
+            searchToggleButton.leadingAnchor.constraint(equalTo: customizeButton.trailingAnchor, constant: Constants.toolButtonSpacing),
+            searchToggleButton.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+            searchToggleButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+
+            imageUploadButton.leadingAnchor.constraint(equalTo: searchToggleButton.trailingAnchor, constant: Constants.toolButtonSpacing),
+            imageUploadButton.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+            imageUploadButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
         ])
 
         applyTheme(theme: themeManager.theme)
@@ -206,7 +244,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             heightConstraint,
 
             // Submit button sits above suggestions
-            submitButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.submitButtonBottomInset)
+            submitButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.submitButtonBottomInset),
+
+            // Tool buttons sit above suggestions
+            customizeButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
+            searchToggleButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset),
+            imageUploadButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset)
         ])
 
         // Handle suggestion clicks
@@ -291,6 +334,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.submit()
     }
 
+    @objc private func customizeButtonClicked() {
+        // Implement customize action
+    }
+
+    @objc private func searchToggleButtonClicked() {
+        // Implement search toggle action
+    }
+
+    @objc private func imageUploadButtonClicked() {
+        // Implement image upload action
+    }
+
     private func applyTheme(theme: ThemeStyleProviding) {
         let barStyleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
@@ -308,6 +363,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         submitButton.normalTintColor = .white
         submitButton.mouseOverTintColor = NSColor(designSystemColor: .buttonsPrimaryText).withAlphaComponent(0.8)
+
+        let toolButtonTintColor = NSColor(designSystemColor: .textPrimary)
+        customizeButton.tintColor = toolButtonTintColor
+        searchToggleButton.tintColor = toolButtonTintColor
+        imageUploadButton.tintColor = toolButtonTintColor
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")

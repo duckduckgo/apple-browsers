@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+#if os(macOS)
 import Navigation
+#endif
 import WebKit
 import XCTest
 @testable import BrowserServicesKit
@@ -154,11 +156,11 @@ final class PrintingSubfeatureTests: XCTestCase {
 
 class MockPrintingSubfeatureDelegate: PrintingSubfeatureDelegate {
     var didRequestPrintCalled = false
-    var receivedFrameHandle: FrameHandle?
+    var receivedFrameHandle: Any?
     var receivedWebView: WKWebView?
 
     @MainActor
-    func printingSubfeatureDidRequestPrint(for frameHandle: FrameHandle?, in webView: WKWebView?) {
+    func printingSubfeatureDidRequestPrint(for frameHandle: Any?, in webView: WKWebView?) {
         didRequestPrintCalled = true
         receivedFrameHandle = frameHandle
         receivedWebView = webView

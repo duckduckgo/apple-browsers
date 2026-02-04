@@ -40,7 +40,6 @@ import SpecialErrorPages
 import VPN
 import Onboarding
 import os.log
-import Navigation
 import Subscription
 import WKAbstractions
 import SERPSettings
@@ -3146,7 +3145,7 @@ extension TabViewController: SurrogatesUserScriptDelegate {
 // MARK: - PrintingSubfeatureDelegate
 extension TabViewController: PrintingSubfeatureDelegate {
 
-    func printingSubfeatureDidRequestPrint(for frameHandle: FrameHandle?, in webView: WKWebView?) {
+    func printingSubfeatureDidRequestPrint(for frameHandle: Any?, in webView: WKWebView?) {
         guard let webView = webView ?? self.webView else { return }
         let controller = UIPrintInteractionController.shared
         controller.printFormatter = webView.viewPrintFormatter()

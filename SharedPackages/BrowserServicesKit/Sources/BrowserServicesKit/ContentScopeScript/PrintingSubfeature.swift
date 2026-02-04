@@ -17,7 +17,9 @@
 //
 
 import Foundation
+#if os(macOS)
 import Navigation
+#endif
 import UserScript
 import WebKit
 
@@ -30,13 +32,13 @@ public protocol PrintingSubfeatureDelegate: AnyObject {
     /// Called when the web content requests printing via `window.print()`.
     ///
     /// - Parameters:
-    ///   - frameHandle: The handle identifying the frame that requested printing.
-    ///                  On macOS, this can be used to get the correct print operation
-    ///                  for a specific frame. May be `nil` if the frame info is unavailable.
+    ///   - frameHandle: On macOS, this is the `FrameHandle` identifying the frame that
+    ///                  requested printing. On iOS, this is always `nil`. Cast to
+    ///                  `FrameHandle?` on macOS to use with frame-specific print operations.
     ///   - webView: The web view containing the content to print. May be `nil` if
     ///              the web view is no longer available.
     @MainActor
-    func printingSubfeatureDidRequestPrint(for frameHandle: FrameHandle?, in webView: WKWebView?)
+    func printingSubfeatureDidRequestPrint(for frameHandle: Any?, in webView: WKWebView?)
 }
 
 /// Subfeature that handles print notifications from content-scope-scripts.
@@ -100,8 +102,13 @@ public final class PrintingSubfeature: NSObject, Subfeature {
 
     @MainActor
     private func handlePrint(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        #if os(macOS)
+        let frameHandle: Any? = original.frameInfo.handle
+        #else
+        let frameHandle: Any? = nil
+        #endif
         delegate?.printingSubfeatureDidRequestPrint(
-            for: original.frameInfo.handle,
+            for: frameHandle,
             in: original.webView
         )
         return nil

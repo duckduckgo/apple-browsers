@@ -26,7 +26,7 @@ import WebKit
 // MARK: - Page Context DTO
 
 /// Page context wrapper for UI display.
-struct AIChatPageContext {
+struct AIChatPageContext: Equatable {
     let title: String
     let favicon: UIImage?
     let contextData: AIChatPageContextData
@@ -35,6 +35,10 @@ struct AIChatPageContext {
         self.title = contextData.title
         self.favicon = favicon
         self.contextData = contextData
+    }
+
+    static func == (lhs: AIChatPageContext, rhs: AIChatPageContext) -> Bool {
+        lhs.contextData == rhs.contextData
     }
 }
 

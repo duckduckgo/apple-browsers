@@ -43,7 +43,7 @@ enum FrontendChatState: CustomStringConvertible {
 }
 
 /// Manages the current state of the context chip
-enum ChipState: CustomStringConvertible {
+enum ChipState: CustomStringConvertible, Equatable {
     case placeholder
     case attached(AIChatPageContext)
 

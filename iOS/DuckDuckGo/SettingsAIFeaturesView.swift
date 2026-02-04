@@ -99,14 +99,6 @@ struct SettingsAIFeaturesView: View {
                     }
                 }
 
-                if viewModel.featureFlagger.isFeatureOn(.aiChatSuggestions) {
-                    Section {
-                        SettingsCellView(label: UserText.settingsChatSuggestionsTitle,
-                                         subtitle: UserText.settingsChatSuggestionsSubtitle,
-                                         accessory: .toggle(isOn: viewModel.isChatSuggestionsEnabled))
-                    }
-                }
-
                 Section {
                     NavigationLink(destination: SettingsAIChatShortcutsView().environmentObject(viewModel)) {
                         SettingsCellView(label: UserText.settingsManageAIChatShortcuts)

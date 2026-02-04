@@ -3443,6 +3443,8 @@
 		BB7BAAC02DDBADB2004A5A58 /* NavigationToolbarIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7BAABE2DDBADB1004A5A58 /* NavigationToolbarIconsProviding.swift */; };
 		BB7BAAC22DDBB096004A5A58 /* AddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7BAAC12DDBB089004A5A58 /* AddressBarStyleProviding.swift */; };
 		BB7BAAC32DDBB096004A5A58 /* AddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7BAAC12DDBB089004A5A58 /* AddressBarStyleProviding.swift */; };
+		BB7C38452F322455008D6FEC /* FreeTrialPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7C38442F322455008D6FEC /* FreeTrialPixelHandler.swift */; };
+		BB7C38462F322455008D6FEC /* FreeTrialPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7C38442F322455008D6FEC /* FreeTrialPixelHandler.swift */; };
 		BB7D100C2DE0D9430027222A /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = BB7D100B2DE0D9430027222A /* DesignResourcesKitIcons */; };
 		BB7D35702DB80E0D0002CDB6 /* TabStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7D356F2DB80E040002CDB6 /* TabStyleProviding.swift */; };
 		BB7D35712DB80E0D0002CDB6 /* TabStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7D356F2DB80E040002CDB6 /* TabStyleProviding.swift */; };
@@ -6144,6 +6146,7 @@
 		BB7BAABB2DDBAD4F004A5A58 /* IconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconsProviding.swift; sourceTree = "<group>"; };
 		BB7BAABE2DDBADB1004A5A58 /* NavigationToolbarIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationToolbarIconsProviding.swift; sourceTree = "<group>"; };
 		BB7BAAC12DDBB089004A5A58 /* AddressBarStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarStyleProviding.swift; sourceTree = "<group>"; };
+		BB7C38442F322455008D6FEC /* FreeTrialPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTrialPixelHandler.swift; sourceTree = "<group>"; };
 		BB7D100A2DE0D9370027222A /* DesignResourcesKitIcons */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKitIcons; path = ../SharedPackages/Infrastructure/DesignResourcesKitIcons; sourceTree = SOURCE_ROOT; };
 		BB7D356F2DB80E040002CDB6 /* TabStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabStyleProviding.swift; sourceTree = "<group>"; };
 		BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptCoordinatorTests.swift; sourceTree = "<group>"; };
@@ -12327,6 +12330,7 @@
 		F118EA7B2BEA2B8700F77634 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
+				BB7C38442F322455008D6FEC /* FreeTrialPixelHandler.swift */,
 				F1C70D7B2BFF510000599292 /* SubscriptionEnvironment+Default.swift */,
 				F1D447222D9EAA950085809A /* SubscriptionPixelHandler.swift */,
 				F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */,
@@ -14297,6 +14301,7 @@
 				3706FEC3293F6F0600E42796 /* NativeMessagingCommunicator.swift in Sources */,
 				1DA6D0FE2A1FF9A100540406 /* HTTPCookie.swift in Sources */,
 				3706FAFC293F65D500E42796 /* DownloadListItem.swift in Sources */,
+				BB7C38462F322455008D6FEC /* FreeTrialPixelHandler.swift in Sources */,
 				3706FAFD293F65D500E42796 /* DownloadsPopover.swift in Sources */,
 				311309762ECE71B600FCD220 /* AddressBarSharedTextState.swift in Sources */,
 				3706FAFE293F65D500E42796 /* SpacerNode.swift in Sources */,
@@ -16145,6 +16150,7 @@
 				316913232BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift in Sources */,
 				37AFCE8727DA334800471A10 /* PreferencesRootView.swift in Sources */,
 				B684590825C9027900DC17B6 /* AppStateChangedPublisher.swift in Sources */,
+				BB7C38452F322455008D6FEC /* FreeTrialPixelHandler.swift in Sources */,
 				4B92928F26670D1700AD2C21 /* BookmarkTableCellView.swift in Sources */,
 				4B9292CF2667123700AD2C21 /* BookmarkManagementSidebarViewController.swift in Sources */,
 				4B39AAF627D9B2C700A73FD5 /* NSStackViewExtension.swift in Sources */,

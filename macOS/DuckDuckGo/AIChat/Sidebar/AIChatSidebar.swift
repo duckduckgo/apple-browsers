@@ -48,7 +48,19 @@ final class AIChatSidebar: NSObject {
     var sidebarViewController: AIChatSidebarViewController? {
         didSet {
             subscribeToRestorationDataUpdates()
+            sidebarViewControllerSubject.send(sidebarViewController)
         }
+    }
+
+    private let sidebarViewControllerSubject = CurrentValueSubject<AIChatSidebarViewController?, Never>(nil)
+
+    /// Publisher that emits the current view controller's `pageContextRequestedPublisher` and automatically
+    /// switches to new view controller's publisher when the view controller changes.
+    var pageContextRequestedPublisher: AnyPublisher<Void, Never> {
+        sidebarViewControllerSubject
+            .compactMap { $0?.pageContextRequestedPublisher }
+            .switchToLatest()
+            .eraseToAnyPublisher()
     }
 
     /// Cancellables for Combine subscriptions

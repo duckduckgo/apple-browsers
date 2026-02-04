@@ -414,6 +414,7 @@ final class PreviewStartupPreferencesPersistor: StartupPreferencesPersistor {
 /// Helper to create StartupPreferences for previews
 func makePreviewStartupPreferences(restorePreviousSession: Bool) -> StartupPreferences {
     StartupPreferences(
+        pinningManager: MockPinningManager(),
         persistor: PreviewStartupPreferencesPersistor(restorePreviousSession: restorePreviousSession),
         appearancePreferences: .mock
     )

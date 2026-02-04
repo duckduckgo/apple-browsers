@@ -261,6 +261,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212783502979551?focus=true
     case memoryPressureReporting
 
+    /// Memory Usage Reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
+    case memoryUsageReporting
+
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
     case aiChatSync
 
@@ -275,6 +279,15 @@ public enum FeatureFlag: String, CaseIterable {
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
+    case crashCollectionLimitCallStackTreeDepth
+
+    /// Failsafe flag for whether the free trial conversion wide event is enabled
+    case freeTrialConversionWideEvent
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -307,7 +320,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .warnBeforeQuit,
                 .wideEventPostEndpoint,
                 .memoryPressureReporting,
-                .themes:
+                .themes,
+                .crashCollectionDisableKeysSorting,
+                .crashCollectionLimitCallStackTreeDepth,
+                .memoryUsageReporting:
             true
         default:
             false
@@ -393,10 +409,12 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
                 .memoryPressureReporting,
+                .memoryUsageReporting,
                 .aiChatSync,
                 .heuristicAction,
                 .nextStepsListWidget,
-                .wideEventPostEndpoint:
+                .wideEventPostEndpoint,
+                .freeTrialConversionWideEvent:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -404,7 +422,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledDefaultBrowserAndDockPromptsInactiveUser,
                 .tabClosingEventRecreation,
-                .terminationDeciderSequence:
+                .terminationDeciderSequence,
+                .crashCollectionDisableKeysSorting,
+                .crashCollectionLimitCallStackTreeDepth:
             return false
         }
     }
@@ -561,6 +581,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .memoryPressureReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryPressureReporting))
+        case .memoryUsageReporting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryUsageReporting))
         case .aiChatSync:
             return .disabled
         case .heuristicAction:
@@ -569,6 +591,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
+        case .crashCollectionDisableKeysSorting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionDisableKeysSorting))
+        case .crashCollectionLimitCallStackTreeDepth:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
+        case .freeTrialConversionWideEvent:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
         }
     }
 }

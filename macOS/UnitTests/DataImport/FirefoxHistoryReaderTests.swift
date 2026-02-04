@@ -32,7 +32,7 @@ struct FirefoxHistoryReaderTests {
         let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL(), tld: tld)
         let frecentSites = try historyReader.readFrecentSites().get()
 
-        #expect(frecentSites.count == 5)
+        #expect(frecentSites.count == 6)
 
         let firstSite = try #require(frecentSites.first)
         #expect(firstSite.url == "https://spreadprivacy.com/")
@@ -65,6 +65,15 @@ struct FirefoxHistoryReaderTests {
         let searchSite = try #require(frecentSites.first { $0.url.contains("amazon.com") })
         #expect(searchSite.url == "https://amazon.com")
         #expect(searchSite.title == "Amazon.com : ducks")
+    }
+
+    @Test("Check if subdomain of frecent search shortcut has expected shortcut URL")
+    func frecentSearchSiteSubdomain_UsesOriginalShortcutURL() throws {
+        let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL(), tld: tld)
+        let frecentSites = try historyReader.readFrecentSites().get()
+
+        let site = try #require(frecentSites.first { $0.url.contains("photos.google.com") })
+        #expect(site.url == "https://photos.google.com/")
     }
 
     @Test("Check if frecent site containing search shortcut string has expected shortcut URL")

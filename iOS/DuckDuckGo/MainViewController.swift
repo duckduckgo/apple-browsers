@@ -48,6 +48,7 @@ import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import UserScript
 import PrivacyConfig
+import WebExtensions
 
 class MainViewController: UIViewController {
 
@@ -245,8 +246,6 @@ class MainViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
-    private let aiChatSyncCleaner: AIChatSyncCleaning
-
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionManager
     
@@ -262,6 +261,16 @@ class MainViewController: UIViewController {
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
+
+    private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
+    func setWebExtensionEventsCoordinator(_ coordinator: WebExtensionEventsCoordinator?) {
+        self.webExtensionEventsCoordinator = coordinator
+    }
+
+    private(set) var webExtensionManager: WebExtensionManaging?
+    func setWebExtensionManager(_ manager: WebExtensionManaging?) {
+        self.webExtensionManager = manager
+    }
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -311,7 +320,6 @@ class MainViewController: UIViewController {
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
-        aiChatSyncCleaner: AIChatSyncCleaning,
         whatsNewRepository: WhatsNewMessageRepository
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -363,7 +371,6 @@ class MainViewController: UIViewController {
         self.privacyStats = privacyStats
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
-        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.whatsNewRepository = whatsNewRepository
 
         super.init(nibName: nil, bundle: nil)
@@ -671,6 +678,7 @@ class MainViewController: UIViewController {
         controller.aiChatSettings = aiChatSettings
         controller.keyValueStore = keyValueStore
         controller.tabManager = tabManager
+        controller.daxDialogsManager = daxDialogsManager
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
@@ -757,6 +765,27 @@ class MainViewController: UIViewController {
     private func keyboardDidShow() {
         keyboardShowing = true
         productSurfaceTelemetry.keyboardActive()
+
+        // Dismiss contextual sheet if keyboard is for background web view
+        dismissContextualSheetIfKeyboardIsForBackgroundContent()
+    }
+
+    private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
+        guard let currentTab,
+              currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
+              let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
+            return
+        }
+
+        // Check if first responder is within the sheet's view hierarchy
+        if let firstResponder = UIResponder.currentFirstResponder(),
+           firstResponder.isInViewHierarchy(of: sheetVC.view) {
+            // Keyboard is for the sheet, don't dismiss
+            return
+        }
+
+        // Keyboard is for background content (web view), dismiss the sheet
+        currentTab.aiChatContextualSheetCoordinator.dismissSheet()
     }
 
     @objc
@@ -1207,6 +1236,7 @@ class MainViewController: UIViewController {
                 on: self,
                 attachPopoverTo: source,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
+                daxDialogsManager: daxDialogsManager,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAllWithAnimation(request: fireRequest) {}
                 },
@@ -1445,6 +1475,10 @@ class MainViewController: UIViewController {
         tab.inferredOpenerContext = .external
         dismissOmniBar()
         attachTab(tab: tab)
+
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didOpenTab(tab)
+        }
     }
 
     func select(tabAt index: Int) {
@@ -1460,6 +1494,8 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func select(tab: TabViewController) {
+        let previousTab = currentTab
+
         hideNotificationBarIfBrokenSitePromptShown()
         if tab.link == nil {
             attachHomeScreen()
@@ -1471,6 +1507,10 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
+        }
+
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didActivateTab(tab, previousActiveTab: previousTab)
         }
     }
 
@@ -2899,8 +2939,7 @@ extension MainViewController: OmniBarDelegate {
 
         if let popoverController = controller.popoverPresentationController {
             popoverController.sourceView = omniBar.barView.menuButton
-            controller.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
-            controller.preferredContentSize = CGSize(width: 320, height: contentHeight)
+            controller.preferredContentSize = CGSize(width: 391, height: contentHeight)
 
             configureSheetPresentationController(popoverController.adaptiveSheetPresentationController)
         }
@@ -3069,6 +3108,7 @@ extension MainViewController: OmniBarDelegate {
         hideSuggestionTray()
 
         if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
+            omniBar.endEditing()
             currentTab.presentContextualAIChatSheet(from: self)
         } else {
             openAIChatFromAddressBar()
@@ -3335,6 +3375,14 @@ extension MainViewController: TabDelegate {
     func tabDidRequestNewTab(_ tab: TabViewController) {
         _ = findInPageView.resignFirstResponder()
         newTab()
+    }
+    
+    func newTab(reuseExisting: Bool) {
+        newTab(reuseExisting: reuseExisting, allowingKeyboard: false)
+    }
+
+    func tabDidRequestActivate(_ tab: TabViewController) {
+        select(tab: tab)
     }
 
     func tab(_ tab: TabViewController,
@@ -3644,6 +3692,13 @@ extension MainViewController: TabSwitcherDelegate {
                   andOpenEmptyOneAtSamePosition shouldOpen: Bool = false,
                   clearTabHistory: Bool = true) {
         guard let index = tabManager.model.indexOf(tab: tab) else { return }
+
+        if #available(iOS 18.4, *) {
+            if let closingTabController = tabManager.controller(for: tab) {
+                webExtensionEventsCoordinator?.didCloseTab(closingTabController)
+            }
+        }
+
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
         themeColorManager.updateThemeColor()
@@ -3763,6 +3818,7 @@ extension MainViewController {
                                 transitionCompletion: (() -> Void)? = nil,
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
+        let tabsCount = tabManager.count
         Pixel.fire(pixel: .forgetAllExecuted)
         DailyPixel.fire(pixel: .forgetAllExecutedDaily)
         productSurfaceTelemetry.dataClearingUsed()
@@ -3773,9 +3829,8 @@ extension MainViewController {
             await self.fireExecutor.burn(request: request, applicationState: .unknown)
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
-        } onTransitionCompleted: {
-            ActionMessageView.present(message: UserText.actionForgetAllDone,
-                                      presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom))
+        } onTransitionCompleted: { [weak self] in
+            self?.presentPostBurnMessage(scope: request.scope, tabsCount: tabsCount)
             transitionCompletion?()
         } completion: {
             self.subscriptionDataReporter.saveFireCount()
@@ -3795,6 +3850,20 @@ extension MainViewController {
 
             self.daxDialogsManager.clearedBrowserData()
         }
+    }
+    
+    @MainActor
+    private func presentPostBurnMessage(scope: FireRequest.Scope, tabsCount: Int) {
+        let message: String
+        switch scope {
+        case .all:
+            message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
+            
+        case .tab:
+            message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: 1)
+        }
+        ActionMessageView.present(message: message,
+                                  presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom))
     }
     
     private func refreshUIAfterClear() {
@@ -3879,19 +3948,7 @@ extension MainViewController: FireExecutorDelegate {
     }
 
     func willStartBurningAIHistory(fireRequest: FireRequest) {
-        switch fireRequest.scope {
-        case .all:
-            Task {
-                if autoClearInProgress {
-                    await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
-                } else {
-                    await aiChatSyncCleaner.recordLocalClear(date: Date())
-                }
-            }
-        case .tab:
-            // TODO: - Custom logic if needed
-            return
-        }
+        // No operation
     }
     
     func didFinishBurningAIHistory(fireRequest: FireRequest) {
@@ -3900,17 +3957,18 @@ extension MainViewController: FireExecutorDelegate {
             Task {
                 await aiChatViewControllerManager.killSessionAndResetTimer()
             }
-
-            if syncService.authState != .inactive {
-                syncService.scheduler.requestSyncImmediately()
-            }
         case .tab:
-            // TODO: - Custom logic if needed
+            // No custom logic for tab scope
             return
         }
     }
     
     func didFinishBurning(fireRequest: FireRequest) {
+        // Trigger sync if needed after data and aichats finish
+        // because data could potentially delete a contextual chat that needs syncing
+        if syncService.authState != .inactive {
+            syncService.scheduler.requestSyncImmediately()
+        }
         switch fireRequest.trigger {
         case .manualFire:
             return

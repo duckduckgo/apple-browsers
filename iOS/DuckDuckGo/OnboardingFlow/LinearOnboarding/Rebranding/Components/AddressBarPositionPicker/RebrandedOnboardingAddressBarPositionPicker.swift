@@ -1,0 +1,183 @@
+//
+//  RebrandedOnboardingAddressBarPositionPicker.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import SwiftUI
+import DesignResourcesKitIcons
+
+extension OnboardingRebranding.OnboardingView {
+
+    struct OnboardingAddressBarPositionPicker: View {
+        @StateObject private var viewModel = OnboardingAddressBarPositionPickerViewModel()
+
+        var body: some View {
+            VStack(spacing: AddressBarPositionPickerMetrics.Button.itemSpacing) {
+                ForEach(viewModel.items, id: \.type) { item in
+                    AddressBarPositionButton(
+                        icon: item.icon,
+                        title: AttributedString(item.title),
+                        message: item.message,
+                        isSelected: item.isSelected,
+                        action: {
+                            viewModel.setAddressBar(position: item.type)
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+}
+
+private enum AddressBarPositionPickerMetrics {
+    enum Button {
+        static let messageFont = Font.system(size: 15)
+        static let overlayRadius: CGFloat = 13.0
+        static let overlayStroke: CGFloat = 1
+        static let itemSpacing: CGFloat = 16.0
+        static let borderLightColor = Color.black.opacity(0.18)
+        static let borderDarkColor = Color.white.opacity(0.18)
+    }
+    enum Checkbox {
+        static let size: CGFloat = 24.0
+        static let checkSize: CGFloat = 16.0
+        static let strokeInset = 0.75
+        static let strokeWidth = 1.5
+    }
+}
+
+extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker {
+
+    struct AddressBarPositionButton: View {
+        @Environment(\.colorScheme) private var colorScheme
+
+        let icon: ImageResource
+        let title: AttributedString
+        let message: String
+        let isSelected: Bool
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                HStack(spacing: AddressBarPositionPickerMetrics.Button.itemSpacing) {
+                    Image(icon)
+
+                    VStack(alignment: .leading) {
+                        Text(title)
+                        Text(message)
+                            .font(AddressBarPositionPickerMetrics.Button.messageFont)
+                            .foregroundStyle(Color.secondary)
+                    }
+
+                    Spacer()
+
+                    Checkbox(isSelected: isSelected)
+                }
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: AddressBarPositionPickerMetrics.Button.overlayRadius)
+                    .stroke(strokeColor, lineWidth: AddressBarPositionPickerMetrics.Button.overlayStroke)
+            }
+            .buttonStyle(AddressBarPostionButtonStyle(isSelected: isSelected))
+        }
+
+        private var strokeColor: Color {
+            if isSelected {
+                Color(designSystemColor: .accent)
+            } else {
+                colorScheme == .light ? AddressBarPositionPickerMetrics.Button.borderLightColor : AddressBarPositionPickerMetrics.Button.borderDarkColor
+            }
+        }
+
+    }
+
+    struct Checkbox: View {
+        @Environment(\.colorScheme) private var colorScheme
+
+        let isSelected: Bool
+
+        var body: some View {
+            Circle()
+                .frame(width: AddressBarPositionPickerMetrics.Checkbox.size, height: AddressBarPositionPickerMetrics.Checkbox.size)
+                .foregroundColor(foregroundColor)
+                .overlay {
+                    selectionOverlay
+                }
+        }
+
+        @ViewBuilder
+        private var selectionOverlay: some View {
+            if isSelected {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSolid)
+                    .renderingMode(.template)
+                    .resizable()
+                    .background(
+                        Circle()
+                            .fill(Color.white)
+                            // Use smaller frame for checkbox bg to not fill the transparent edge of the glyph
+                            .frame(width: AddressBarPositionPickerMetrics.Checkbox.checkSize, height: AddressBarPositionPickerMetrics.Checkbox.checkSize)
+                    )
+                    .foregroundStyle(Color(designSystemColor: .accent))
+                    .frame(width: AddressBarPositionPickerMetrics.Checkbox.size, height: AddressBarPositionPickerMetrics.Checkbox.size)
+                    .clipShape(Circle())
+            } else {
+                Circle()
+                    .inset(by: AddressBarPositionPickerMetrics.Checkbox.strokeInset)
+                    .stroke(.secondary, lineWidth: AddressBarPositionPickerMetrics.Checkbox.strokeWidth)
+            }
+        }
+
+        private var foregroundColor: Color {
+            switch (colorScheme, isSelected) {
+            case (.light, true), (.dark, true):
+                Color(designSystemColor: .accent)
+            case (.light, false):
+                .black.opacity(0.03)
+            case (.dark, false):
+                .white.opacity(0.06)
+            default:
+                .clear
+            }
+        }
+    }
+
+}
+
+private struct AddressBarPostionButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+
+    private let minHeight = 63.0
+
+    let isSelected: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .fixedSize(horizontal: false, vertical: true)
+            .multilineTextAlignment(.leading)
+            .lineLimit(nil)
+            .padding()
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: minHeight)
+            .background(backgroundColor(configuration.isPressed || isSelected))
+            .cornerRadius(12)
+            .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
+    }
+
+    private func backgroundColor(_ isHighlighted: Bool) -> Color {
+        isHighlighted ? Color(designSystemColor: .buttonsGhostPressedFill) : .clear
+    }
+}

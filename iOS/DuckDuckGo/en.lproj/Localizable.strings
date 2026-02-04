@@ -1376,7 +1376,7 @@
 "duckai.quick.action.attach" = "Attach Page Content";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.summarize" = "Summarize this Page";
+"duckai.quick.action.summarize" = "Summarize This Page";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Show Duck.ai buttons and links in DuckDuckGo search results.";

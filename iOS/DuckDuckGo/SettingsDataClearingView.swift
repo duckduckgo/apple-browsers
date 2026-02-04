@@ -50,60 +50,59 @@ struct SettingsDataClearingView: View {
             }
 
             Section {
-                    // Fire Button Animation
-                    SettingsPickerCellView(label: UserText.settingsFirebutton,
-                                           options: FireButtonAnimationType.allCases,
-                                           selectedOption: viewModel.fireButtonAnimationBinding)
-                }
+                // Fire Button Animation
+                SettingsPickerCellView(label: UserText.settingsFirebutton,
+                                       options: FireButtonAnimationType.allCases,
+                                        selectedOption: viewModel.fireButtonAnimationBinding)
+            }
+            
+            if viewModel.showAIChatsToggle && viewModel.newUIEnabled {
+                aiChatsToggleSection
+            }
 
-                Section {
-                    // Fireproof Sites
-                    SettingsCellView(label: viewModel.fireproofedSitesTitle,
-                                     subtitle: viewModel.fireproofedSitesSubtitle,
-                                     action: { viewModel.openFireproofSites() },
-                                     disclosureIndicator: true,
-                                     isButton: true)
+            Section {
+                // Fireproof Sites
+                SettingsCellView(label: viewModel.fireproofedSitesTitle,
+                                 subtitle: viewModel.fireproofedSitesSubtitle,
+                                 action: { viewModel.openFireproofSites() },
+                                 disclosureIndicator: true,
+                                 isButton: true)
 
-                    // Automatically Clear Data
-                    SettingsCellView(label: viewModel.autoClearTitle,
-                                     action: { viewModel.openAutoClearData() },
-                                     accessory: .rightDetail(viewModel.autoClearAccessibilityLabel),
-                                      disclosureIndicator: true,
-                                      isButton: true)
-                }
+                // Automatically Clear Data
+                SettingsCellView(label: viewModel.autoClearTitle,
+                                 action: { viewModel.openAutoClearData() },
+                                 accessory: .rightDetail(viewModel.autoClearAccessibilityLabel),
+                                  disclosureIndicator: true,
+                                  isButton: true)
+            }
 
-                if viewModel.showAIChatsToggle {
-                    Section {
-                        SettingsCellView(label: UserText.settingsClearAIChatHistory,
-                                         accessory: .toggle(isOn: settingsViewModel.autoClearAIChatHistoryBinding))
-                    } footer: {
-                        Text(UserText.settingsClearAIChatHistoryFooter)
-                    }
-                }
+            if viewModel.showAIChatsToggle && !viewModel.newUIEnabled {
+                aiChatsToggleSection
+            }
                 
-                Section {
-                    SettingsCellView(action: {
-                        viewModel.presentFireConfirmation(from: clearButtonFrame)
-                    }, customView: {
-                        forgetAllButtonContent
-                    }, isButton: true)
-                    .background(
-                        GeometryReader { geometryProxy in
-                            Color.clear
-                                .preference(key: ClearButtonFrameKey.self, value: geometryProxy.frame(in: .global))
-                        }
-                    )
-                    .onPreferenceChange(ClearButtonFrameKey.self) { newFrame in
-                        if UIDevice.current.userInterfaceIdiom == .pad {
-                            self.clearButtonFrame = newFrame
-                        }
+            Section {
+                SettingsCellView(action: {
+                    viewModel.presentFireConfirmation(from: clearButtonFrame)
+                }, customView: {
+                    forgetAllButtonContent
+                }, isButton: true)
+                .background(
+                    GeometryReader { geometryProxy in
+                        Color.clear
+                            .preference(key: ClearButtonFrameKey.self, value: geometryProxy.frame(in: .global))
                     }
-                    .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
-                } footer: {
-                    if !viewModel.newUIEnabled {
-                        Text(viewModel.footnoteText)
+                )
+                .onPreferenceChange(ClearButtonFrameKey.self) { newFrame in
+                    if UIDevice.current.userInterfaceIdiom == .pad {
+                        self.clearButtonFrame = newFrame
                     }
                 }
+                .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
+            } footer: {
+                if !viewModel.newUIEnabled {
+                    Text(viewModel.footnoteText)
+                }
+            }
         }
         .applySettingsListModifiers(title: UserText.dataClearing,
                                     displayMode: .inline,
@@ -128,6 +127,15 @@ struct SettingsDataClearingView: View {
                 Spacer()
             }
         )
+    }
+    
+    private var aiChatsToggleSection: some View {
+        Section {
+            SettingsCellView(label: viewModel.aiChatsToggleTitle,
+                             accessory: .toggle(isOn: settingsViewModel.autoClearAIChatHistoryBinding))
+        } footer: {
+            Text(UserText.settingsClearAIChatHistoryFooter)
+        }
     }
 }
 

@@ -159,6 +159,7 @@ public final class DataBrokerProtectionIOSManager {
     private let wideEventSweeper: DBPWideEventSweeper?
     private let eventsHandler: EventMapping<JobEvent>
     private let isWebViewInspectable: Bool
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService?
 
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
@@ -214,7 +215,8 @@ public final class DataBrokerProtectionIOSManager {
          wideEvent: WideEventManaging?,
          eventsHandler: EventMapping<JobEvent>,
          engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp),
-         isWebViewInspectable: Bool = false
+         isWebViewInspectable: Bool = false,
+         freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -235,6 +237,7 @@ public final class DataBrokerProtectionIOSManager {
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
         self.eventsHandler = eventsHandler
         self.isWebViewInspectable = isWebViewInspectable
+        self.freeTrialConversionService = freeTrialConversionService
 
         self.queueManager.delegate = self
 
@@ -343,6 +346,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
         }
         eventPixels.markInitialScansStarted()
         eventsHandler.fire(.profileSaved)
+        freeTrialConversionService?.markPIRActivated()
 
         await startImmediateScanOperations()
     }

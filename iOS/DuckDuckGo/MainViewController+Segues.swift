@@ -215,7 +215,8 @@ extension MainViewController {
                                       productSurfaceTelemetry: self.productSurfaceTelemetry,
                                       historyManager: self.historyManager,
                                       fireproofing: self.fireproofing,
-                                      keyValueStore: self.keyValueStore)
+                                      keyValueStore: self.keyValueStore,
+                                      daxDialogsManager: self.daxDialogsManager)
         }) else {
             assertionFailure()
             return
@@ -385,7 +386,8 @@ extension MainViewController {
                                                             dbpIOSPublicInterface: dbpIOSPublicInterface,
                                                             subscriptionDataReporter: subscriptionDataReporter,
                                                             remoteMessagingDebugHandler: remoteMessagingDebugHandler,
-                                                            productSurfaceTelemetry: productSurfaceTelemetry)
+                                                            productSurfaceTelemetry: productSurfaceTelemetry,
+                                                            webExtensionManager: webExtensionManager)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
@@ -483,7 +485,8 @@ extension MainViewController {
             debuggingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
             subscriptionDataReporter: self.subscriptionDataReporter,
-            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler))
+            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
+            webExtensionManager: self.webExtensionManager))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

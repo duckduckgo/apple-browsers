@@ -31,9 +31,9 @@ tags:
     element: "Privacy Policy"
     timeout: 50000
     speed: 100
-# Make sure bottom bar is visible
+# Tap status bar to make sure bottom bar is visible
 - tapOn:
-    point: 80%, 99%
+    point: 90%, 1%
 - tapOn: "Browse Back"
 - assertVisible: "DuckDuckGo.*"
 

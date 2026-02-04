@@ -91,6 +91,11 @@
         "description": "Schema version of the wide event (MAJOR.MINOR.PATCH format)",
         "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
     },
+    "wideEventIsFirstDailyOccurrence": {
+        "key": "global.is_first_daily_occurrence",
+        "type": "boolean",
+        "description": "Whether this is the first occurrence of this wide event today. Only included when true."
+    },
     "wideEventFeatureStatus": {
         "key": "feature.status",
         "type": "string",

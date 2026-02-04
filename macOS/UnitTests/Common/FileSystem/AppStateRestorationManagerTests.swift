@@ -49,7 +49,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
                                                           privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                                           featureFlagger: MockFeatureFlagger(),
                                                           aiChatMenuConfig: MockAIChatConfig())
-        mockStartupPreferences = StartupPreferences(persistor: persistor, appearancePreferences: appearancePreferences)
+        mockStartupPreferences = StartupPreferences(pinningManager: MockPinningManager(), persistor: persistor, appearancePreferences: appearancePreferences)
         mockTabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager)
         mockKeyValueStore = try MockKeyValueFileStore()
         mockPromptCoordinator = SessionRestorePromptCoordinatorMock()

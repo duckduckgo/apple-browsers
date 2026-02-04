@@ -30,31 +30,23 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     // MARK: - Mocks
 
     private final class MockPageContextHandler: AIChatPageContextHandling {
-        var latestContext: AIChatPageContextData?
-        var latestFavicon: UIImage?
-        var hasContext: Bool { latestContext != nil }
         var triggerContextCollectionCallCount = 0
+        var triggerContextCollectionReturnValue = true
         var clearCallCount = 0
 
-        private let contextSubject = CurrentValueSubject<AIChatPageContextData?, Never>(nil)
-        var contextPublisher: AnyPublisher<AIChatPageContextData?, Never> {
+        private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
+        var contextPublisher: AnyPublisher<AIChatPageContext?, Never> {
             contextSubject.eraseToAnyPublisher()
         }
 
-        func triggerContextCollection() async {
+        func triggerContextCollection() -> Bool {
             triggerContextCollectionCallCount += 1
+            return triggerContextCollectionReturnValue
         }
 
         func clear() {
             clearCallCount += 1
-            latestContext = nil
-            latestFavicon = nil
             contextSubject.send(nil)
-        }
-
-        func setContext(_ context: AIChatPageContextData?) {
-            latestContext = context
-            contextSubject.send(context)
         }
     }
 
@@ -181,7 +173,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         // Then
         XCTAssertNotNil(sut.sheetViewController?.delegate)
     }
-
+    
     // MARK: - clearActiveChat Tests
 
     @MainActor
@@ -210,6 +202,21 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertFalse(firstSheet === secondSheet)
+    }
+
+    @MainActor
+    func testPresentExistingSheetTriggersContextCollectionWhenAutoAttachEnabled() async {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+
+        // When
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+
+        // Then
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
     // MARK: - Delegate Forwarding Tests
@@ -241,7 +248,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testExpandRequestClearsActiveChat() async {
+    func testExpandRequestRetainsActiveChat() async {
         // Given
         await sut.presentSheet(from: mockPresentingVC)
         XCTAssertNotNil(sut.sheetViewController)
@@ -251,58 +258,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         sut.aiChatContextualSheetViewController(sut.sheetViewController!, didRequestExpandWithURL: expandURL)
 
         // Then
-        XCTAssertNil(sut.sheetViewController)
-    }
-
-    // MARK: - hasActiveChat Tests
-
-    @MainActor
-    func testHasActiveChatIsFalseInitially() {
-        XCTAssertFalse(sut.hasActiveChat)
-    }
-
-    @MainActor
-    func testHasActiveChatIsFalseAfterPresentingSheet() async {
-        // Presenting sheet alone doesn't create webViewController
-        await sut.presentSheet(from: mockPresentingVC)
-        XCTAssertFalse(sut.hasActiveChat)
-    }
-
-    // MARK: - Snapshot Tests
-
-    @MainActor
-    func testCurrentSnapshotIsNilWhenNoContext() {
-        XCTAssertNil(sut.currentSnapshot)
-    }
-
-    @MainActor
-    func testCurrentSnapshotReturnsContextWhenAvailable() {
-        mockPageContextHandler.setContext(makeTestContext())
-
-        XCTAssertNotNil(sut.currentSnapshot)
-        XCTAssertEqual(sut.currentSnapshot?.context.title, "Test Page")
+        XCTAssertNotNil(sut.sheetViewController)
     }
 
     // MARK: - Page Context Handling Tests
-
-    @MainActor
-    func testClearActiveChatClearsPageContext() async {
-        await sut.presentSheet(from: mockPresentingVC)
-
-        sut.clearActiveChat()
-
-        XCTAssertEqual(mockPageContextHandler.clearCallCount, 1)
-    }
-
-    @MainActor
-    func testClearPageContextUpdatesViewModel() async {
-        mockPageContextHandler.setContext(makeTestContext())
-        await sut.presentSheet(from: mockPresentingVC)
-
-        sut.clearPageContext()
-
-        XCTAssertEqual(mockPageContextHandler.clearCallCount, 1)
-    }
 
     @MainActor
     func testNotifyPageChangedTriggersCollectionWhenAutoAttachEnabled() async {
@@ -316,14 +275,14 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testNotifyPageChangedDoesTriggerCollectionWhenAutoAttachDisabled() async {
+    func testNotifyPageChangedDoesNotTriggerCollectionWhenAutoAttachDisabled() async {
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
         await sut.notifyPageChanged()
 
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
     }
 
     @MainActor
@@ -340,14 +299,4 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeTestContext(url: String = "https://example.com") -> AIChatPageContextData {
-        AIChatPageContextData(
-            title: "Test Page",
-            favicon: [],
-            url: url,
-            content: "Test content",
-            truncated: false,
-            fullContentLength: 12
-        )
-    }
 }

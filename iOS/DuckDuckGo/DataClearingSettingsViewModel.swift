@@ -69,10 +69,14 @@ final class DataClearingSettingsViewModel: ObservableObject {
 
     var clearDataButtonTitle: String {
         if newUIEnabled {
-            return UserText.settingsClearBrowsingData
+            return UserText.settingsDeleteTabsAndData
         }
         let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
         return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
+    }
+    
+    var aiChatsToggleTitle: String {
+        newUIEnabled ? UserText.settingsDeleteDuckAIChats : UserText.settingsClearAIChatHistory
     }
     
     var fireproofedSitesTitle: String {
@@ -87,7 +91,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     }
     
     var autoClearTitle: String {
-        newUIEnabled ? UserText.settingsAutomaticDataClearing : UserText.settingsClearData
+        newUIEnabled ? UserText.settingsAutomaticallyDeleteData : UserText.settingsClearData
     }
     
     var footnoteText: String {

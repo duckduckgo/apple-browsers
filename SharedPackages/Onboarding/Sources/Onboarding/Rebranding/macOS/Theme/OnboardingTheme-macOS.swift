@@ -44,18 +44,14 @@ public extension OnboardingTheme {
                 shadowRadius: 6.0,
                 shadowPosition: CGPoint(x: 0, y: 7)
             )
-        let contextualMetrics = ContextualOnboardingMetrics(
-            titleTextAlignment: .leading,
-            bodyTextAlignment: .leading
-        )
-
         return OnboardingTheme(
             typography: typography,
             colorPalette: colorPalette,
             bubbleMetrics: bubbleMetrics,
             linearTitleTextAlignment: .center,
             linearBodyTextAlignment: .center,
-            contextualMetrics: contextualMetrics,
+            contextualTitleTextAlignment: .leading,
+            contextualBodyTextAlignment: .leading,
             primaryButtonStyle: OnboardingButtonStyle(
                 id: .primary,
                 style: AnyButtonStyle(OnboardingPrimaryButtonStyle(

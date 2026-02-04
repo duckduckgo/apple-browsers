@@ -20,6 +20,7 @@ import PixelKit
 
 /// Threshold memory usage pixels that fire once daily when memory enters a specific bucket.
 enum MemoryUsagePixel: PixelKitEvent {
+    // swiftlint:disable identifier_name
     case less512
     case range512_1023
     case range1024_2047
@@ -27,6 +28,7 @@ enum MemoryUsagePixel: PixelKitEvent {
     case range4096_8191
     case range8192_16383
     case range16384_more
+    // swiftlint:enable identifier_name
 
     var name: String {
         switch self {

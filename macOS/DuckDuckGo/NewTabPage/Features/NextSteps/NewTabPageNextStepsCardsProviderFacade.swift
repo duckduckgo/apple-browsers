@@ -82,7 +82,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
             }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] isFlagEnabled in
+            .sink { [weak self] _ in
                 guard let self else { return }
                 activeProvider = getActiveProvider()
             }

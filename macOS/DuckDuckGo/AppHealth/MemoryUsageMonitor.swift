@@ -58,7 +58,7 @@ final class MemoryUsageMonitor: @unchecked Sendable {
         var usedMB: Double { residentMB }
         var usedGB: Double { residentGB }
 
-        var usedMemoryString: String {
+        var residentMemoryString: String {
             if residentBytes > Self.oneGB {
                 let formattedValue = Self.gbFormatter.string(from: NSNumber(value: residentGB)) ?? String(residentGB)
                 return "\(formattedValue) GB"
@@ -67,24 +67,18 @@ final class MemoryUsageMonitor: @unchecked Sendable {
             return "\(formattedValue) MB"
         }
 
+        var footprintMemoryString: String {
+            if physFootprintBytes > Self.oneGB {
+                let formattedValue = Self.gbFormatter.string(from: NSNumber(value: physFootprintGB)) ?? String(physFootprintGB)
+                return "\(formattedValue) GB"
+            }
+            let formattedValue = Self.mbFormatter.string(from: NSNumber(value: physFootprintMB)) ?? String(physFootprintMB)
+            return "\(formattedValue) MB"
+        }
+
         /// Comparison string showing both resident and physical footprint values.
         var comparisonString: String {
-            let residentStr: String
-            let footprintStr: String
-
-            if residentBytes > Self.oneGB {
-                residentStr = "\(Self.gbFormatter.string(from: NSNumber(value: residentGB)) ?? String(residentGB)) GB"
-            } else {
-                residentStr = "\(Self.mbFormatter.string(from: NSNumber(value: residentMB)) ?? String(residentMB)) MB"
-            }
-
-            if physFootprintBytes > Self.oneGB {
-                footprintStr = "\(Self.gbFormatter.string(from: NSNumber(value: physFootprintGB)) ?? String(physFootprintGB)) GB"
-            } else {
-                footprintStr = "\(Self.mbFormatter.string(from: NSNumber(value: physFootprintMB)) ?? String(physFootprintMB)) MB"
-            }
-
-            return "R: \(residentStr) | F: \(footprintStr)"
+            return "R:\(residentMemoryString) | F:\(footprintMemoryString)"
         }
 
         private static let oneMB: UInt64 = 1_048_576
@@ -141,7 +135,7 @@ final class MemoryUsageMonitor: @unchecked Sendable {
             while !Task.isCancelled {
                 let report = self.getCurrentMemoryUsage()
 
-                self.logger?.info("Memory usage: \(report.usedMemoryString)")
+                self.logger?.info("Memory usage - resident: \(report.residentMemoryString), footprint: \(report.footprintMemoryString)")
                 await MainActor.run {
                     self.memoryReportSubject.send(report)
                 }

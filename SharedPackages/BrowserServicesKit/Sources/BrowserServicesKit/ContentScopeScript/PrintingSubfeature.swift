@@ -80,6 +80,10 @@ public final class PrintingSubfeature: NSObject, Subfeature {
         super.init()
     }
 
+    public func with(broker: UserScriptMessageBroker) {
+        self.broker = broker
+    }
+
     /// Message names that this subfeature handles.
     enum MessageNames: String, CaseIterable {
         case print

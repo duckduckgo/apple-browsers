@@ -141,7 +141,10 @@ struct DefaultNewBadgeConfigProvider: NewBadgeConfigProviding {
 
         let minVersion = parse(versionString: minimumVersion)
         let currentVersion = parse(versionString: currentAppVersion)
-        let maxVersion = maximumVersion(from: minVersion, byMinorReleaseOffset: maxMinorReleaseOffset(for: feature))
+
+        guard let maxVersion = maximumVersion(from: minVersion, byMinorReleaseOffset: maxMinorReleaseOffset(for: feature)) else {
+            return false
+        }
 
         return compareVersions(minVersion, currentVersion) != .orderedDescending && compareVersions(currentVersion, maxVersion) == .orderedAscending
     }
@@ -166,7 +169,9 @@ struct DefaultNewBadgeConfigProvider: NewBadgeConfigProviding {
         return .orderedSame
     }
 
-    private func maximumVersion(from minimumVersion: [Int], byMinorReleaseOffset offset: Int) -> [Int] {
+    private func maximumVersion(from minimumVersion: [Int], byMinorReleaseOffset offset: Int) -> [Int]? {
+        guard minimumVersion.count == 3 else { return nil }
+
         var result = minimumVersion
         result[1] += offset
         result[2] = 0

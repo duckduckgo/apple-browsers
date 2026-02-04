@@ -59,6 +59,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     private var textChangeCancellable: AnyCancellable?
+    private var toolsVisibilityCancellable: AnyCancellable?
     private var windowFrameObserver: AnyCancellable?
     private var viewBoundsObserver: AnyCancellable?
 
@@ -89,6 +90,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         setupSuggestionsView()
         subscribeToThemeChanges()
         subscribeToTextChanges()
+        subscribeToToolsVisibilityChanges()
         applyThemeStyle()
     }
 
@@ -120,13 +122,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             }
     }
 
+    private func subscribeToToolsVisibilityChanges() {
+        toolsVisibilityCancellable = omnibarController.isOmnibarToolsEnabledPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isEnabled in
+                self?.updateToolButtonsVisibility(isEnabled: isEnabled)
+            }
+    }
+
     private func updateSubmitButtonVisibility(for text: String) {
         let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         submitButton.isHidden = !hasText
     }
 
-    private func updateToolButtonsVisibility() {
-        let isEnabled = omnibarController.isOmnibarToolsEnabled
+    private func updateToolButtonsVisibility(isEnabled: Bool) {
         customizeButton.isHidden = !isEnabled
         searchToggleButton.isHidden = !isEnabled
         imageUploadButton.isHidden = !isEnabled
@@ -195,8 +204,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.action = #selector(imageUploadButtonClicked)
         imageUploadButton.image = DesignSystemImages.Glyphs.Size16.image
         containerView.addSubview(imageUploadButton)
-
-        updateToolButtonsVisibility()
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),

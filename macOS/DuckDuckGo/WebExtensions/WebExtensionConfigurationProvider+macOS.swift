@@ -1,5 +1,5 @@
 //
-//  WebExtensionPathsStoringMock.swift
+//  WebExtensionConfigurationProvider+macOS.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,26 +16,13 @@
 //  limitations under the License.
 //
 
-@testable import WebExtensions
+import Foundation
+import WebExtensions
 
 @available(macOS 15.4, *)
-final class WebExtensionPathsStoringMock: WebExtensionPathsStoring {
+struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
 
-    var paths: [String] = []
-
-    var addCalled = false
-    var addedPath: String?
-    func add(_ url: String) {
-        addCalled = true
-        addedPath = url
-        paths.append(url)
-    }
-
-    var removeCalled = false
-    var removedPath: String?
-    func remove(_ url: String) {
-        removeCalled = true
-        removedPath = url
-        paths.removeAll { $0 == url }
+    var applicationNameForUserAgent: String {
+        UserAgent.brandedDefaultSuffix
     }
 }

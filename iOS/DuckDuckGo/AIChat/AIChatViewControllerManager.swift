@@ -91,6 +91,12 @@ final class AIChatViewControllerManager {
 
     // MARK: - Public Methods
 
+    @MainActor
+    func killSessionAndResetTimer() async {
+        stopSessionTimer()
+        await cleanUpSession()
+    }
+
     /// Opens AI Chat in a modal presentation (sheet).
     ///
     /// - Parameters:
@@ -99,12 +105,6 @@ final class AIChatViewControllerManager {
     ///   - autoSend: Whether to automatically send the query
     ///   - tools: Optional RAG tools available in AI Chat
     ///   - viewController: View controller to present the modal on
-    @MainActor
-    func killSessionAndResetTimer() async {
-        stopSessionTimer()
-        await cleanUpSession()
-    }
-
     @MainActor
     func openAIChat(_ query: String? = nil,
                     payload: Any? = nil,

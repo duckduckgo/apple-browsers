@@ -1,5 +1,6 @@
 //
-//  WebExtensionConfigurationProvider.swift
+//  WebExtensionManager+iOS.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,13 +17,23 @@
 //  limitations under the License.
 //
 
-import Foundation
+import UIKit
 import WebExtensions
+import WebKit
 
-@available(macOS 15.4, *)
-struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
+// MARK: - Factory
 
-    var applicationNameForUserAgent: String {
-        UserAgent.brandedDefaultSuffix
+@available(iOS 18.4, *)
+public enum WebExtensionManagerFactory {
+
+    @MainActor
+    static func makeManager(mainViewController: MainViewController) -> WebExtensionManager {
+        let manager = WebExtensionManager(
+            configuration: WebExtensionConfigurationProvider(),
+            windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),
+            storageProvider: WebExtensionStorageProvider()
+        )
+
+        return manager
     }
 }

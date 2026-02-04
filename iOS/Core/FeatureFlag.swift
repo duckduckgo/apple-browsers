@@ -323,6 +323,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true
+    case webExtensions
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -438,7 +441,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .uiTestFeatureFlag,
              .freeTrialConversionWideEvent,
              .uiTestExperiment,
-             .onboardingRebranding:
+             .onboardingRebranding,
+             .webExtensions:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -680,6 +684,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
         case .onboardingRebranding:
             return .disabled
+        case .webExtensions:
+            return .internalOnly()
         }
     }
 }

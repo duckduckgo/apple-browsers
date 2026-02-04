@@ -222,6 +222,15 @@ final class AIChatContextualSheetCoordinator {
     func dismissSheet() {
         sheetViewController?.dismiss(animated: true)
     }
+    
+    func clearActiveChat() {
+        sheetViewController = nil
+        webViewController = nil
+        viewModel = nil
+        stopObservingContextUpdates()
+        pageContextHandler.clear()
+        pixelHandler.reset()
+    }
 
     /// Clears the current page context.
     func clearPageContext() {

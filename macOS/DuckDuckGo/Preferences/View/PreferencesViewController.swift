@@ -58,7 +58,8 @@ final class PreferencesViewController: NSViewController {
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
         subscriptionManager: any SubscriptionManager,
-        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+        pinningManager: PinningManager
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -67,7 +68,7 @@ final class PreferencesViewController: NSViewController {
         model = PreferencesSidebarModel(privacyConfigurationManager: privacyConfigurationManager,
                                         featureFlagger: featureFlagger,
                                         syncService: syncService,
-                                        vpnGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
+                                        vpnGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
                                         includeDuckPlayer: duckPlayer.shouldDisplayPreferencesSideBar,
                                         includeAIChat: aiChatRemoteSettings.isAIChatEnabled,
                                         subscriptionManager: subscriptionManager,

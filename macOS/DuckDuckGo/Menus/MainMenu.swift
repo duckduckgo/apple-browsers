@@ -704,7 +704,7 @@ final class MainMenu: NSMenu {
             toggleDownloadsShortcutMenuItem.title = pinningManager.shortcutTitle(for: .downloads)
             toggleShareShortcutMenuItem.title = pinningManager.shortcutTitle(for: .share)
 
-            if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager).isVPNVisible() {
+            if DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: Application.appDelegate.subscriptionManager).isVPNVisible() {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = false
                 toggleNetworkProtectionShortcutMenuItem.title = pinningManager.shortcutTitle(for: .networkProtection)
             } else {

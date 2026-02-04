@@ -173,7 +173,7 @@ final class MainViewController: NSViewController {
                 NetworkProtectionKnownFailureStore().lastKnownFailure = KnownFailure(error)
             }
 
-            let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
+            let vpnUninstaller = VPNUninstaller(pinningManager: pinningManager, ipcClient: vpnXPCClient)
 
             return NetworkProtectionNavBarPopoverManager(
                 ipcClient: vpnXPCClient,
@@ -217,7 +217,8 @@ final class MainViewController: NSViewController {
             aiChatPreferences: aiChatPreferences,
             aboutPreferences: aboutPreferences,
             accessibilityPreferences: accessibilityPreferences,
-            duckPlayer: duckPlayer
+            duckPlayer: duckPlayer,
+            pinningManager: pinningManager
         )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,

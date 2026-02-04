@@ -331,8 +331,13 @@ final class NavigationBarViewController: NSViewController {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.pinningManager = pinningManager
+        let vpnGatekeeper = DefaultVPNFeatureGatekeeper(
+            vpnUninstaller: VPNUninstaller(pinningManager: pinningManager),
+            subscriptionManager: Application.appDelegate.subscriptionManager
+        )
         self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager,
                                                                                pinningManager: pinningManager,
+                                                                               vpnGatekeeper: vpnGatekeeper,
                                                                                statusReporter: networkProtectionStatusReporter,
                                                                                themeManager: themeManager,
                                                                                vpnUpsellVisibilityManager: vpnUpsellVisibilityManager)
@@ -1419,7 +1424,7 @@ final class NavigationBarViewController: NSViewController {
                                    recentlyClosedCoordinator: recentlyClosedCoordinator,
                                    fireproofDomains: fireproofDomains,
                                    passwordManagerCoordinator: PasswordManagerCoordinator.shared,
-                                   vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
+                                   vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
                                    internalUserDecider: internalUserDecider,
                                    subscriptionManager: subscriptionManager,
                                    freemiumDBPFeature: freemiumDBPFeature,
@@ -1918,7 +1923,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         let bookmarksTitle = pinningManager.shortcutTitle(for: .bookmarks)
         menu.addItem(withTitle: bookmarksTitle, action: #selector(toggleBookmarksPanelPinning), keyEquivalent: "K")
 
-        if !isInPopUpWindow && DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager).isVPNVisible() {
+        if !isInPopUpWindow && DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager).isVPNVisible() {
             let networkProtectionTitle = pinningManager.shortcutTitle(for: .networkProtection)
             menu.addItem(withTitle: networkProtectionTitle, action: #selector(toggleNetworkProtectionPanelPinning), keyEquivalent: "")
         }

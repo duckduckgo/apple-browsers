@@ -200,7 +200,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     // MARK: - Debug Logic
 
-    private let debugUtilities = NetworkProtectionDebugUtilities()
+    private lazy var debugUtilities = NetworkProtectionDebugUtilities(pinningManager: NSApp.delegateTyped.pinningManager)
 
     // MARK: - Debug Menu Actions
 
@@ -285,7 +285,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     @objc func simulateSubscriptionExpirationInTunnel(_ sender: Any?) {
         Task { @MainActor in
             do {
-                try await NetworkProtectionDebugUtilities().simulateSubscriptionExpirationInTunnel()
+                try await NetworkProtectionDebugUtilities(pinningManager: NSApp.delegateTyped.pinningManager).simulateSubscriptionExpirationInTunnel()
             } catch {
                 await NSAlert(error: error).runModal()
             }

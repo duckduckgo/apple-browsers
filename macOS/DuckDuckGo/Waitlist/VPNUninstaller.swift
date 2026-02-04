@@ -140,7 +140,7 @@ final class VPNUninstaller: VPNUninstalling {
 
     init(ipcServiceLauncher: IPCServiceLauncher? = nil,
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
-         pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
+         pinningManager: PinningManager,
          userDefaults: UserDefaults = .netP,
          settings: VPNSettings = .init(defaults: .netP),
          ipcClient: VPNControllerIPCClient = VPNControllerUDSClient(),

@@ -101,6 +101,7 @@ final class BrowserTabViewController: NSViewController {
     private let duckPlayer: DuckPlayer
     private let subscriptionManager: any SubscriptionManager
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    private let pinningManager: PinningManager
 
     private let tld: TLD
 
@@ -156,6 +157,7 @@ final class BrowserTabViewController: NSViewController {
          duckPlayer: DuckPlayer,
          subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManager,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
+         pinningManager: PinningManager,
          tld: TLD = NSApp.delegateTyped.tld
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -181,6 +183,7 @@ final class BrowserTabViewController: NSViewController {
         self.duckPlayer = duckPlayer
         self.subscriptionManager = subscriptionManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.pinningManager = pinningManager
 
         self.tld = tld
         containerStackView = NSStackView()
@@ -1203,7 +1206,8 @@ final class BrowserTabViewController: NSViewController {
                 accessibilityPreferences: accessibilityPreferences,
                 duckPlayerPreferences: duckPlayer.preferences,
                 subscriptionManager: subscriptionManager,
-                winBackOfferVisibilityManager: winBackOfferVisibilityManager
+                winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                pinningManager: pinningManager
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController
@@ -1755,7 +1759,8 @@ extension BrowserTabViewController {
         aiChatPreferences: Application.appDelegate.aiChatPreferences,
         aboutPreferences: Application.appDelegate.aboutPreferences,
         accessibilityPreferences: Application.appDelegate.accessibilityPreferences,
-        duckPlayer: Application.appDelegate.duckPlayer
+        duckPlayer: Application.appDelegate.duckPlayer,
+        pinningManager: Application.appDelegate.pinningManager
     )
 }
 

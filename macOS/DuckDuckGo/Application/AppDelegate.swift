@@ -266,7 +266,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     public let vpnSettings = VPNSettings(defaults: .netP)
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
-        featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
+        featureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
         featureFlagOverridesPublisher: featureFlagOverridesPublishingHandler.flagDidChangePublisher,
         loginItemsManager: LoginItemsManager(),
         defaults: .netP)
@@ -1095,7 +1095,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if AppVersion.runType.requiresEnvironment {
             // Configure Event handlers
             let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
-            let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
+            let vpnUninstaller = VPNUninstaller(pinningManager: pinningManager, ipcClient: vpnXPCClient)
 
             vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionManager,
                                                                        tunnelController: tunnelController,

@@ -95,7 +95,7 @@ final class VPNPreferencesModel: ObservableObject {
 
     private var onboardingStatus: OnboardingStatus {
         didSet {
-            showUninstallVPN = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled
+            showUninstallVPN = DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled
         }
     }
 
@@ -283,7 +283,7 @@ final class VPNPreferencesModel: ObservableObject {
 
         switch response {
         case .OK:
-            try? await VPNUninstaller().uninstall(
+            try? await VPNUninstaller(pinningManager: pinningManager).uninstall(
                 removeSystemExtension: true,
                 showNotification: true)
         default:

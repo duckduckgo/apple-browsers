@@ -20,12 +20,16 @@
 import SwiftUI
 import DuckUI
 import Onboarding
+import UIKit
 
 extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockPromoContent: View {
 
         @State private var showAddToDockTutorial = false
+        @State private var animateTitle = true
+        @State private var animateMessage = false
+        @State private var showContent = false
 
         private let isAnimating: Binding<Bool>
         private let isSkipped: Binding<Bool>
@@ -45,20 +49,41 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         var body: some View {
-            if showAddToDockTutorial {
-                RebrandedOnboardingView.AddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt, isSkipped: isSkipped) {
-                    dismissAction(true)
+            Group {
+                if showAddToDockTutorial {
+                    RebrandedOnboardingView.AddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt, isSkipped: isSkipped) {
+                        dismissAction(true)
+                    }
+                } else {
+                    promoContent
                 }
-            } else {
-                ContextualDaxDialogContent(
-                    title: UserText.AddToDockOnboarding.Promo.title,
-                    titleFont: Font(UIFont.daxTitle3()),
-                    message: NSAttributedString(string: UserText.AddToDockOnboarding.Promo.introMessage),
-                    messageFont: Font.system(size: 16),
-                    customView: AnyView(addToDockPromoView),
-                    customActionView: AnyView(customActionView),
-                    skipAnimations: isSkipped
-                )
+            }
+            .onboardingDaxDialogStyle()
+        }
+
+        private var promoContent: some View {
+            VStack(spacing: 16.0) {
+                AnimatableTypingText(UserText.AddToDockOnboarding.Promo.title, startAnimating: $animateTitle, skipAnimation: isSkipped) {
+                    withAnimation {
+                        animateMessage = true
+                    }
+                }
+                .foregroundColor(.primary)
+                .font(Font(UIFont.daxTitle3()))
+
+                AnimatableTypingText(UserText.AddToDockOnboarding.Promo.introMessage, startAnimating: $animateMessage, skipAnimation: isSkipped) {
+                    withAnimation {
+                        showContent = true
+                    }
+                }
+                .foregroundColor(.primary)
+                .font(Font.system(size: 16))
+
+                VStack(spacing: 24) {
+                    addToDockPromoView
+                    customActionView
+                }
+                .visibility(showContent ? .visible : .invisible)
             }
         }
 

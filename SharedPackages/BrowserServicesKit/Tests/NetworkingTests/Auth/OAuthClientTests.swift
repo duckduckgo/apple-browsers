@@ -371,6 +371,25 @@ final class OAuthClientTests: XCTestCase {
         }
     }
 
+    func testGetToken_localForceRefresh_unknownAccount() async throws {
+        mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
+        let bodyError = OAuthRequest.BodyError(errorCode: .unknownAccount, tokenStatus: nil)
+        let requestError = OAuthRequestError(from: bodyError)
+        mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.authAPIError(requestError))
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+
+        do {
+            _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? OAuthClientError, .unknownAccount)
+        }
+
+        assertRefreshFailedEvents { error in
+            XCTAssertEqual(error as? OAuthClientError, .unknownAccount)
+        }
+    }
+
     func testGetToken_localForceRefresh_concurrentCallsOnlyRefreshOnce() async throws {
         mockOAuthService.getJWTSignersResponse = .success(JWTSigners())
         mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())

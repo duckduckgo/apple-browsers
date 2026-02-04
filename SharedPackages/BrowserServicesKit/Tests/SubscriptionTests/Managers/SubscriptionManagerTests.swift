@@ -588,7 +588,7 @@ private final class MockSubscriptionPixelHandler: SubscriptionPixelHandling {
     }
 }
 
-//private struct SubscriptionPixelHandler: SubscriptionPixelHandling {
+// private struct SubscriptionPixelHandler: SubscriptionPixelHandling {
 //
 //    public enum Source: String {
 //        case mainApp = "MainApp"
@@ -647,8 +647,7 @@ private final class MockSubscriptionPixelHandler: SubscriptionPixelHandling {
 //                                         withAdditionalParameters: sourceParam)
 //        }
 //    }
-//}
-
+// }
 
 private struct SubscriptionPixelEvent: PixelKitEvent {
     let name: String

@@ -133,8 +133,8 @@ public struct OAuthRequest {
     }
 
     public struct BodyError: Decodable, Equatable {
-        let errorCode: BodyErrorCode
-        let tokenStatus: TokenStatus?
+        public let errorCode: BodyErrorCode
+        public let tokenStatus: TokenStatus?
 
         private enum CodingKeys: String, CodingKey {
             case errorCode = "error"

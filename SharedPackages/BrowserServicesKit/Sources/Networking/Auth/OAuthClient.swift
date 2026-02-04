@@ -322,7 +322,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     Logger.OAuthClient.error("Failed to refresh token: \(apiError.description, privacy: .public)")
                     let error = OAuthClientError.unknownAccount
                     refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
-                    throw apiError
+                    throw error
                 } catch {
                     Logger.OAuthClient.error("Failed to refresh token: \(String(describing: error), privacy: .public)")
                     refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))

@@ -129,7 +129,7 @@ final class FirefoxHistoryReader {
             return nil
         }
         // Remove common subdomains ("www", "wwwN", "m", and "mobile") and eTLD to get the short hostname.
-        var shortHostname = host.replacing(regex: #"^(m|mobile|www\d*)\."#, with: "").dropping(suffix: ".\(eTLD)")
+        let shortHostname = host.replacing(regex: #"^(m|mobile|www\d*)\."#, with: "").dropping(suffix: ".\(eTLD)")
         return searchShortcuts[shortHostname]
     }
 

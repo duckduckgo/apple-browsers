@@ -135,65 +135,6 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
     }
 
-//    func testGetTokenContainer_InvalidTokenRequest_RecoverySuccess_RealPixelHandlerParameters() async throws {
-//        let testSuiteName = "SubscriptionManagerTests.PixelKit.\(UUID().uuidString)"
-//        let pixelDefaults = UserDefaults(suiteName: testSuiteName)!
-//        var firedPixels: [(name: String, parameters: [String: String])] = []
-//
-//        let mockFireRequest: PixelKit.FireRequest = { pixelName, _, parameters, _, _, onComplete in
-//            firedPixels.append((name: pixelName, parameters: parameters))
-//            DispatchQueue.main.async {
-//                onComplete(true, nil)
-//            }
-//        }
-//
-//        let pixelKit = PixelKit(
-//            dryRun: false,
-//            appVersion: "1.0.0",
-//            source: "test",
-//            defaultHeaders: [:],
-//            dateGenerator: Date.init,
-//            defaults: pixelDefaults,
-//            fireRequest: mockFireRequest
-//        )
-//        defer {
-//            pixelDefaults.removePersistentDomain(forName: testSuiteName)
-//        }
-//
-//        let localOAuthClient = MockOAuthClient()
-//        let localSubscriptionEndpointService = SubscriptionEndpointServiceMock()
-//        let localStorePurchaseManager = StorePurchaseManagerMock()
-//        let pixelHandler: SubscriptionPixelHandling = PixelKitSubscriptionPixelHandler(source: "MainApp")
-//
-//        let localUserDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
-//        let localManager = DefaultSubscriptionManager(
-//            storePurchaseManager: localStorePurchaseManager,
-//            oAuthClient: localOAuthClient,
-//            userDefaults: localUserDefaults,
-//            subscriptionEndpointService: localSubscriptionEndpointService,
-//            subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-//            pixelHandler: pixelHandler
-//        )
-//
-//        let recoveredTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-//        localOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
-//        localManager.tokenRecoveryHandler = {
-//            localOAuthClient.internalCurrentTokenContainer = recoveredTokenContainer
-//        }
-//
-//        let result = try await localManager.getTokenContainer(policy: .localValid)
-//        XCTAssertEqual(result, recoveredTokenContainer)
-//
-//        guard let errorPixel = firedPixels.first(where: { $0.name.contains("privacy-pro_auth_v2_get_tokens_error") }) else {
-//            XCTFail("Expected getTokensError pixel to fire")
-//            return
-//        }
-//
-//        XCTAssertEqual(errorPixel.parameters["policycache"], AuthTokensCachePolicy.localValid.description)
-//        XCTAssertEqual(errorPixel.parameters["source"], "MainApp")
-//        XCTAssertEqual(errorPixel.parameters["error"], OAuthClientError.invalidTokenRequest(.reused).localizedDescription)
-//    }
-
     func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_Pixels() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
         overrideTokenResponseInRecoveryHandler = .failure(OAuthClientError.invalidTokenRequest(.reused))
@@ -587,67 +528,6 @@ private final class MockSubscriptionPixelHandler: SubscriptionPixelHandling {
         handledKeychainPixels.append(pixel)
     }
 }
-
-// private struct SubscriptionPixelHandler: SubscriptionPixelHandling {
-//
-//    public enum Source: String {
-//        case mainApp = "MainApp"
-//        case systemExtension = "SysExt"
-//    }
-//
-//    let source: Source
-//
-//    public struct Defaults {
-//        static let policyCacheKey = "policycache"
-//        static let sourceKey = "source"
-//    }
-//
-//    public func handle(pixel: Subscription.SubscriptionPixelType) {
-//        let sourceParam = [Defaults.sourceKey: source.rawValue]
-//        switch pixel {
-//        case .invalidRefreshToken:
-//            DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenDetected,
-//                                         withAdditionalParameters: sourceParam)
-//        case .subscriptionIsActive:
-//            DailyPixel.fire(pixel: .subscriptionActive,
-//                            withAdditionalParameters: [AuthVersion.key: AuthVersion.v2.rawValue])
-//        case .getTokensError(let policy, let error):
-//            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2GetTokensError2,
-//                                         error: error,
-//                                         withAdditionalParameters: [Defaults.policyCacheKey: policy.description].merging(sourceParam) { $1 })
-//        case .invalidRefreshTokenSignedOut:
-//            DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenSignedOut,
-//                                         withAdditionalParameters: sourceParam)
-//        case .invalidRefreshTokenRecovered:
-//            DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenRecovered,
-//                                         withAdditionalParameters: sourceParam)
-//        case .purchaseSuccessAfterPendingTransaction:
-//            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseSuccessAfterPendingTransaction,
-//                                         withAdditionalParameters: sourceParam)
-//        case .pendingTransactionApproved:
-//            DailyPixel.fireDailyAndCount(pixel: .subscriptionPendingTransactionApproved,
-//                                         withAdditionalParameters: sourceParam)
-//        }
-//    }
-//
-//    public func handle(pixel: Subscription.KeychainManager.Pixel) {
-//        let sourceParam = [Defaults.sourceKey: source.rawValue]
-//        switch pixel {
-//        case .deallocatedWithBacklog:
-//            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerDeallocatedWithBacklog,
-//                                         withAdditionalParameters: sourceParam)
-//        case .dataAddedToTheBacklog:
-//            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerDataAddedToTheBacklog,
-//                                         withAdditionalParameters: sourceParam)
-//        case .dataWroteFromBacklog:
-//            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerDataWroteFromBacklog,
-//                                         withAdditionalParameters: sourceParam)
-//        case .failedToWriteDataFromBacklog:
-//            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerFailedToWriteDataFromBacklog,
-//                                         withAdditionalParameters: sourceParam)
-//        }
-//    }
-// }
 
 private struct SubscriptionPixelEvent: PixelKitEvent {
     let name: String

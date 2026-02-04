@@ -2777,7 +2777,7 @@ https://duckduckgo.com/mac";
 "scoped.fire.confirmation.delete.this.tab.button" = "Delete This Tab";
 
 /* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "\"Delete This Tab\" clears this Duck.ai chat, and any site data from the sites visited in this tab.";
+"scoped.fire.confirmation.delete.this.tab.description" = "\"Delete This Tab\" deletes this Duck.ai chat and any site data from the sites visited in this tab.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "This will cancel downloads in progress.";

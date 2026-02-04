@@ -59,6 +59,12 @@ protocol LegacyDataImportFlowRelaunching {
 /// integration and customizable UI configurations. Handles the coordination between
 /// data import functionality and sync features when available.
 final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportFlowRelaunching {
+    private let pinningManager: PinningManager
+
+    init(pinningManager: PinningManager) {
+        self.pinningManager = pinningManager
+    }
+
     @MainActor
     func relaunchDataImport(
         model: DataImportViewModel
@@ -66,7 +72,8 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
         DataImportView(
             model: model,
             importFlowLauncher: self,
-            syncFeatureVisibility: syncFeatureVisibility
+            syncFeatureVisibility: syncFeatureVisibility,
+            pinningManager: pinningManager
         ).show()
     }
 
@@ -81,7 +88,8 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
             importFlowLauncher: self,
             title: title,
             isDataTypePickerExpanded: isDataTypePickerExpanded,
-            syncFeatureVisibility: syncFeatureVisibility
+            syncFeatureVisibility: syncFeatureVisibility,
+            pinningManager: pinningManager
         ).show()
     }
 
@@ -102,7 +110,8 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
                 importFlowLauncher: self,
                 title: title,
                 isDataTypePickerExpanded: isDataTypePickerExpanded,
-                syncFeatureVisibility: syncFeatureVisibility
+                syncFeatureVisibility: syncFeatureVisibility,
+                pinningManager: pinningManager
             ).show(in: window, completion: completion)
             return
         }
@@ -114,7 +123,8 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
         DataImportView(
             model: viewModel,
             importFlowLauncher: self,
-            syncFeatureVisibility: syncFeatureVisibility
+            syncFeatureVisibility: syncFeatureVisibility,
+            pinningManager: pinningManager
         ).show(in: window, completion: completion)
     }
 

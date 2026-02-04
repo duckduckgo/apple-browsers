@@ -1,5 +1,5 @@
 //
-//  FreeTrialConversionWideEventServiceTests.swift
+//  FreeTrialConversionInstrumentationServiceTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -24,9 +24,9 @@ import PixelKitTestingUtilities
 
 // MARK: - Service Tests
 
-final class FreeTrialConversionWideEventServiceTests: XCTestCase {
+final class FreeTrialConversionInstrumentationServiceTests: XCTestCase {
 
-    private var sut: DefaultFreeTrialConversionWideEventService!
+    private var sut: DefaultFreeTrialConversionInstrumentationService!
     private var mockWideEvent: WideEventMock!
     private var mockPixelHandler: MockFreeTrialPixelHandler!
     private var notificationCenter: NotificationCenter!
@@ -36,7 +36,7 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         mockWideEvent = WideEventMock()
         mockPixelHandler = MockFreeTrialPixelHandler()
         notificationCenter = NotificationCenter()
-        sut = DefaultFreeTrialConversionWideEventService(
+        sut = DefaultFreeTrialConversionInstrumentationService(
             wideEvent: mockWideEvent,
             notificationCenter: notificationCenter,
             pixelHandler: mockPixelHandler
@@ -223,7 +223,7 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         let disabledMockWideEvent = WideEventMock()
         let disabledPixelHandler = MockFreeTrialPixelHandler()
         let disabledNotificationCenter = NotificationCenter()
-        let disabledSut = DefaultFreeTrialConversionWideEventService(
+        let disabledSut = DefaultFreeTrialConversionInstrumentationService(
             wideEvent: disabledMockWideEvent,
             notificationCenter: disabledNotificationCenter,
             pixelHandler: disabledPixelHandler,

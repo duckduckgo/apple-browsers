@@ -1,5 +1,5 @@
 //
-//  MockFreeTrialConversionWideEventService.swift
+//  MockFreeTrialConversionInstrumentationService.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -20,7 +20,7 @@
 import Foundation
 import Subscription
 
-final class MockFreeTrialConversionWideEventService: FreeTrialConversionWideEventService {
+final class MockFreeTrialConversionInstrumentationService: FreeTrialConversionInstrumentationService {
 
     var startObservingSubscriptionChangesCalled = false
     var markVPNActivatedCalled = false

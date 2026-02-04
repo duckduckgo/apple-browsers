@@ -35,7 +35,7 @@ public final class DataBrokerProtectionManager {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let fakeBrokerFlag: DataBrokerDebugFlag = DataBrokerDebugFlagFakeBroker()
     private let vpnBypassService: VPNBypassFeatureProvider
-    private let freeTrialConversionService: FreeTrialConversionWideEventService
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     private lazy var freemiumDBPFirstProfileSavedNotifier: FreemiumDBPFirstProfileSavedNotifier = {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)

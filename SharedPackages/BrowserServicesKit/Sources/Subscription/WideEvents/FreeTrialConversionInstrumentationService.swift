@@ -1,5 +1,5 @@
 //
-//  FreeTrialConversionWideEventService.swift
+//  FreeTrialConversionInstrumentationService.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -45,7 +45,7 @@ public protocol FreeTrialPixelHandling {
 // MARK: - Protocol
 
 /// Protocol for managing the free trial conversion wide event lifecycle.
-public protocol FreeTrialConversionWideEventService: AnyObject {
+public protocol FreeTrialConversionInstrumentationService: AnyObject {
     /// Starts observing subscription changes to automatically manage the wide event lifecycle.
     /// Call this once during app initialization.
     func startObservingSubscriptionChanges()
@@ -65,7 +65,7 @@ public protocol FreeTrialConversionWideEventService: AnyObject {
 /// - Start tracking when a user begins a free trial
 /// - Complete with success when the user converts to a paid subscription
 /// - Complete with failure when the trial expires without conversion
-public final class DefaultFreeTrialConversionWideEventService: FreeTrialConversionWideEventService {
+public final class DefaultFreeTrialConversionInstrumentationService: FreeTrialConversionInstrumentationService {
 
     private let wideEvent: WideEventManaging
     private let notificationCenter: NotificationCenter

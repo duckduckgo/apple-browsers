@@ -32,6 +32,7 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockMetricHandler: MockAIChatPixelMetricHandler!
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
+    var mockFreeTrialConversionService: MockFreeTrialConversionInstrumentationService!
 
     override func setUpWithError() throws {
         mockSettings = MockAIChatSettingsProvider()
@@ -39,6 +40,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         mockMetricHandler = MockAIChatPixelMetricHandler()
         mockFeatureFlagger = MockFeatureFlagger()
         mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
+        mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
@@ -46,7 +48,8 @@ final class AIChatContentHandlerTests: XCTestCase {
             pixelMetricHandler: mockMetricHandler,
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
-            productSurfaceTelemetry: mockProductSurfaceTelemetry
+            productSurfaceTelemetry: mockProductSurfaceTelemetry,
+            freeTrialConversionService: mockFreeTrialConversionService
         )
     }
 
@@ -294,6 +297,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
+            freeTrialConversionService: mockFreeTrialConversionService,
             getPageContext: { _ in pageContext }
         )
 
@@ -321,6 +325,7 @@ final class AIChatContentHandlerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
+            freeTrialConversionService: mockFreeTrialConversionService,
             getPageContext: { _ in nil }
         )
 
@@ -428,6 +433,68 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(mockProductSurfaceTelemetry.duckAIUsedCallCount, 1)
+    }
+
+    // MARK: - Free Trial Conversion Tracking
+
+    func testWhenPlusModelTierPromptSubmitted_ThenMarkDuckAIActivatedIsCalled() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+
+        let metric = AIChatMetric(metricName: .userDidSubmitPrompt, modelTier: .plus)
+
+        // When
+        handler.aiChatUserScript(AIChatUserScript(), didReceiveMetric: metric)
+
+        // Then
+        XCTAssertTrue(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    func testWhenPlusModelTierFirstPromptSubmitted_ThenMarkDuckAIActivatedIsCalled() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+
+        let metric = AIChatMetric(metricName: .userDidSubmitFirstPrompt, modelTier: .plus)
+
+        // When
+        handler.aiChatUserScript(AIChatUserScript(), didReceiveMetric: metric)
+
+        // Then
+        XCTAssertTrue(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    func testWhenFreeModelTierPromptSubmitted_ThenMarkDuckAIActivatedIsNotCalled() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+
+        let metric = AIChatMetric(metricName: .userDidSubmitPrompt, modelTier: .free)
+
+        // When
+        handler.aiChatUserScript(AIChatUserScript(), didReceiveMetric: metric)
+
+        // Then
+        XCTAssertFalse(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    func testWhenNoModelTierPromptSubmitted_ThenMarkDuckAIActivatedIsNotCalled() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .fullTab)
+
+        let metric = AIChatMetric(metricName: .userDidSubmitPrompt, modelTier: nil)
+
+        // When
+        handler.aiChatUserScript(AIChatUserScript(), didReceiveMetric: metric)
+
+        // Then
+        XCTAssertFalse(mockFreeTrialConversionService.markDuckAIActivatedCalled)
     }
 }
 

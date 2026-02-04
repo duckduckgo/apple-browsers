@@ -173,7 +173,8 @@ struct SettingsSubscriptionView: View {
                 label: UserText.settingsPProDBPTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                 statusIndicator: StatusIndicatorView(status: .off),
-                isGreyedOut: true
+                isGreyedOut: true,
+                optionalBadgeText: settingsViewModel.shouldShowNewBadge(for: .personalInformationRemoval) ? UserText.settingsItemNewBadge : nil
             )
         }
 
@@ -309,7 +310,8 @@ struct SettingsSubscriptionView: View {
                     label: UserText.settingsPProDBPTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                     statusIndicator: StatusIndicatorView(status: statusIndicator),
-                    isGreyedOut: !hasDBPEntitlement
+                    isGreyedOut: !hasDBPEntitlement,
+                    optionalBadgeText: settingsViewModel.shouldShowNewBadge(for: .personalInformationRemoval) ? UserText.settingsItemNewBadge : nil
                 )
             }
             .disabled(!hasDBPEntitlement)

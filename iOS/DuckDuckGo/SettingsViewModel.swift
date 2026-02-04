@@ -68,6 +68,17 @@ final class SettingsViewModel: ObservableObject {
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     var browsingMenuSheetCapability: BrowsingMenuSheetCapable
     private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
+    
+    private lazy var newBadgeVisibilityManager: NewBadgeVisibilityManaging = {
+        NewBadgeVisibilityManager(
+            keyValueStore: keyValueStore,
+            configProvider: DefaultNewBadgeConfigProvider(
+                featureFlagger: featureFlagger,
+                privacyConfigurationManager: privacyConfigurationManager
+            ),
+            currentAppVersionProvider: { AppVersion.shared.versionNumber }
+        )
+    }()
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
@@ -979,6 +990,10 @@ extension SettingsViewModel {
 
     func openEmailSupport() {
         urlOpener.open(URL.emailProtectionSupportLink)
+    }
+
+    func shouldShowNewBadge(for feature: NewBadgeFeature) -> Bool {
+        newBadgeVisibilityManager.shouldShowBadge(for: feature)
     }
 
     func openOtherPlatforms() {

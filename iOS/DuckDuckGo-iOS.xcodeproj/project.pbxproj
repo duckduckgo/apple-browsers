@@ -2020,6 +2020,7 @@
 		EE0153E12A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0153E02A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift */; };
 		EE0153ED2A6FF9E6002A8B26 /* NetworkProtectionRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0153EC2A6FF9E6002A8B26 /* NetworkProtectionRootView.swift */; };
 		EE01EB402AFBD0000096AAC9 /* NetworkProtectionVPNSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE01EB3F2AFBD0000096AAC9 /* NetworkProtectionVPNSettingsViewModel.swift */; };
+		F0A100012F30200100BAD001 /* NewBadgeVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A100002F30200100BAD001 /* NewBadgeVisibilityManager.swift */; };
 		EE01EB432AFC1E0A0096AAC9 /* NetworkProtectionVPNLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE01EB422AFC1E0A0096AAC9 /* NetworkProtectionVPNLocationView.swift */; };
 		EE0798C52B179936000A4F64 /* NetworkProtectionVPNCountryLabelsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0798C42B179936000A4F64 /* NetworkProtectionVPNCountryLabelsModel.swift */; };
 		EE3766DE2AC5945500AAB575 /* NetworkProtectionUNNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3766DD2AC5945500AAB575 /* NetworkProtectionUNNotificationPresenter.swift */; };
@@ -4500,6 +4501,7 @@
 		EE0153E02A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionConvenienceInitialisers.swift; sourceTree = "<group>"; };
 		EE0153EC2A6FF9E6002A8B26 /* NetworkProtectionRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionRootView.swift; sourceTree = "<group>"; };
 		EE01EB3F2AFBD0000096AAC9 /* NetworkProtectionVPNSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionVPNSettingsViewModel.swift; sourceTree = "<group>"; };
+		F0A100002F30200100BAD001 /* NewBadgeVisibilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewBadgeVisibilityManager.swift; sourceTree = "<group>"; };
 		EE01EB422AFC1E0A0096AAC9 /* NetworkProtectionVPNLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionVPNLocationView.swift; sourceTree = "<group>"; };
 		EE0798C42B179936000A4F64 /* NetworkProtectionVPNCountryLabelsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionVPNCountryLabelsModel.swift; sourceTree = "<group>"; };
 		EE3766DD2AC5945500AAB575 /* NetworkProtectionUNNotificationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionUNNotificationPresenter.swift; sourceTree = "<group>"; };
@@ -9900,11 +9902,20 @@
 			children = (
 				CB1A79722E4CAD54009C96C1 /* SERP */,
 				D6E83C492B20C883006C8AFB /* Model */,
+				F0A100022F30200100BAD001 /* NewBadge */,
 				D6E83C3B2B1F27BA006C8AFB /* Views */,
 				858566F1252E55AE007501B8 /* Debug */,
 				1DDF402A2BA05A65006850D9 /* Settings.xcassets */,
 			);
 			name = Settings;
+			sourceTree = "<group>";
+		};
+		F0A100022F30200100BAD001 /* NewBadge */ = {
+			isa = PBXGroup;
+			children = (
+				F0A100002F30200100BAD001 /* NewBadgeVisibilityManager.swift */,
+			);
+			path = NewBadge;
 			sourceTree = "<group>";
 		};
 		F1AE54DB1F0425BB00D9A700 /* Privacy */ = {
@@ -11366,6 +11377,7 @@
 				AA3D854923DA1DFB00788410 /* AppIcon.swift in Sources */,
 				C1BF26152C74D10F00F6405E /* SyncPromoManager.swift in Sources */,
 				D6E83C2E2B1EA06E006C8AFB /* SettingsViewModel.swift in Sources */,
+				F0A100012F30200100BAD001 /* NewBadgeVisibilityManager.swift in Sources */,
 				9F44A7CC2E973F8D008B3D5A /* RemoteMessagingActionHandling.swift in Sources */,
 				8590CB612684D0600089F6BF /* CookieDebugViewController.swift in Sources */,
 				319A37152829A55F0079FBCE /* AutofillListItemTableViewCell.swift in Sources */,

@@ -68,13 +68,13 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
     private let featureFlagger = NSApp.delegateTyped.featureFlagger
     private var cancellables = Set<AnyCancellable>()
 
-    private let freeTrialConversionService: FreeTrialConversionWideEventService
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     init(ipcClient: VPNControllerXPCClient,
          vpnUninstaller: VPNUninstalling,
          vpnUIPresenting: VPNUIPresenting,
          proxySettings: TransparentProxySettings = .init(defaults: .netP),
-         freeTrialConversionService: FreeTrialConversionWideEventService) {
+         freeTrialConversionService: FreeTrialConversionInstrumentationService) {
 
         self.ipcClient = ipcClient
         self.vpnUninstaller = vpnUninstaller

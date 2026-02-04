@@ -1218,6 +1218,11 @@ extension Pixel {
         case subscriptionWinBackOfferSubscriptionSettingsShown
         case subscriptionWinBackOfferSubscriptionSettingsCTAClicked
 
+        // Free Trial Journey
+        case privacyProFreeTrialStart
+        case privacyProFreeTrialVPNActivation
+        case privacyProFreeTrialPIRActivation
+
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
 
@@ -2703,6 +2708,11 @@ extension Pixel.Event {
         case .subscriptionWinBackOfferSettingsLoggedInOfferShown: return "m_privacy-pro_winback_settings_logged_in_offer_shown"
         case .subscriptionWinBackOfferSubscriptionSettingsShown: return "m_privacy-pro_winback_subscription_settings_shown"
         case .subscriptionWinBackOfferSubscriptionSettingsCTAClicked: return "m_privacy-pro_winback_subscription_settings_clicked"
+
+        // Free Trial Journey
+        case .privacyProFreeTrialStart: return "m_privacy-pro_freetrial_start"
+        case .privacyProFreeTrialVPNActivation: return "m_privacy-pro_freetrial_vpn_activation"
+        case .privacyProFreeTrialPIRActivation: return "m_privacy-pro_freetrial_pir_activation"
 
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"

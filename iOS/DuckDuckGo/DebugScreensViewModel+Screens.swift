@@ -228,12 +228,13 @@ extension DebugScreensViewModel {
                 }
 
                 let isOnboardingRebranding = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.onboardingRebranding)
+                let defaultFlow: OnboardingDebugFlow = isOnboardingRebranding ? .rebranding : .legacy
 
                 weak var capturedController: OnboardingDebugViewController?
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(isRebrandingFlow: isOnboardingRebranding) {
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(initialFlow: defaultFlow) { flow in
                     guard let capturedController else { return }
 
-                    let controller: Onboarding = if isOnboardingRebranding {
+                    let controller: Onboarding = if flow.isRebranding {
                         OnboardingIntroViewController.rebranded(
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,

@@ -127,6 +127,70 @@ final class FreeTrialConversionWideEventDataTests: XCTestCase {
         XCTAssertFalse(data.pirActivatedD2ToD7)
     }
 
+    // MARK: - Should Fire Pixel Tests
+
+    func testShouldFireVPNActivationPixel_WhenNotActivated_ReturnsTrue() {
+        // Given
+        let data = FreeTrialConversionWideEventData()
+
+        // Then
+        XCTAssertTrue(data.shouldFireVPNActivationPixel)
+    }
+
+    func testShouldFireVPNActivationPixel_WhenD1Activated_ReturnsFalse() {
+        // Given
+        let data = FreeTrialConversionWideEventData()
+        data.vpnActivatedD1 = true
+
+        // Then
+        XCTAssertFalse(data.shouldFireVPNActivationPixel)
+    }
+
+    func testShouldFireVPNActivationPixel_WhenD2ToD7Activated_ReturnsFalse() {
+        // Given
+        let data = FreeTrialConversionWideEventData()
+        data.vpnActivatedD2ToD7 = true
+
+        // Then
+        XCTAssertFalse(data.shouldFireVPNActivationPixel)
+    }
+
+    func testShouldFirePIRActivationPixel_WhenNotActivated_ReturnsTrue() {
+        // Given
+        let data = FreeTrialConversionWideEventData()
+
+        // Then
+        XCTAssertTrue(data.shouldFirePIRActivationPixel)
+    }
+
+    func testShouldFirePIRActivationPixel_WhenD1Activated_ReturnsFalse() {
+        // Given
+        let data = FreeTrialConversionWideEventData()
+        data.pirActivatedD1 = true
+
+        // Then
+        XCTAssertFalse(data.shouldFirePIRActivationPixel)
+    }
+
+    // MARK: - Activation Day Tests
+
+    func testActivationDay_OnDay1_ReturnsD1() {
+        // Given - trial started now
+        let data = FreeTrialConversionWideEventData(trialStartDate: Date())
+
+        // Then
+        XCTAssertEqual(data.activationDay(), .d1)
+    }
+
+    func testActivationDay_OnDay2OrLater_ReturnsD2ToD7() {
+        // Given - trial started 2 days ago
+        let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: Date())!
+        let data = FreeTrialConversionWideEventData(trialStartDate: twoDaysAgo)
+
+        // Then
+        XCTAssertEqual(data.activationDay(), .d2ToD7)
+    }
+
     // MARK: - Pixel Parameters Tests
 
     func testPixelParameters_ContainsExpectedKeys() {

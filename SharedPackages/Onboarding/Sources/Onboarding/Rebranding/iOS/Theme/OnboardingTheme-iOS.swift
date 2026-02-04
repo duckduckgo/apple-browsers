@@ -29,36 +29,44 @@ public extension OnboardingTheme {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
 
+        let typography: OnboardingTheme.Typography = .system
+        let colorPalette = ColorPalette(
+            bubbleBorder: Color(singleUseColor: .rebranding(.accentAltPrimary)),
+            bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
+            bubbleShadow: Color.shade(0.03),
+            textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
+            textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
+            primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
+            primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText))
+        )
+        let bubbleMetrics = BubbleMetrics(
+            contentInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
+            cornerRadius: bubbleCornerRadius,
+            borderWidth: borderWidth,
+            shadowRadius: 6.0,
+            shadowPosition: CGPoint(x: 0, y: 7)
+        )
+        let dismissButtonMetrics = DismissButtonMetrics(
+            buttonSize: CGSize(width: 44, height: 44),
+            offsetRelativeToBubble: CGPoint(x: 4, y: 4),
+            contentPadding: 8
+        )
+
         return OnboardingTheme(
-            typography: .system,
-            colorPalette: ColorPalette(
-                bubbleBorder: Color(singleUseColor: .rebranding(.accentAltPrimary)),
-                bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
-                bubbleShadow: Color.shade(0.03),
-                textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
-                textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
-                primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
-                primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText))
-            ),
-            bubbleMetrics: BubbleMetrics(
-                contentInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
-                cornerRadius: bubbleCornerRadius,
-                borderWidth: borderWidth,
-                shadowRadius: 6.0,
-                shadowPosition: CGPoint(x: 0, y: 7)
-            ),
-            dismissButtonMetrics: DismissButtonMetrics(
-                buttonSize: CGSize(width: 44, height: 44),
-                offsetRelativeToBubble: CGPoint(x: 4, y: 4),
-                contentPadding: 8
-            ),
+            typography: typography,
+            colorPalette: colorPalette,
+            bubbleMetrics: bubbleMetrics,
+            dismissButtonMetrics: dismissButtonMetrics,
             linearTitleTextAlignment: .center,
             linearBodyTextAlignment: .center,
             contextualTitleTextAlignment: .leading,
             contextualBodyTextAlignment: .leading,
             primaryButtonStyle: OnboardingButtonStyle(
                 id: .primary,
-                style: AnyButtonStyle(OnboardingPrimaryButtonStyle())
+                style: AnyButtonStyle(OnboardingPrimaryButtonStyle(
+                    typography: typography,
+                    colorPalette: colorPalette
+                ))
             ),
             dismissButtonStyle: OnboardingButtonStyle(
                 id: .dismiss,

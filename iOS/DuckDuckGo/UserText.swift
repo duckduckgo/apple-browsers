@@ -1337,6 +1337,7 @@ public struct UserText {
     public static let emailProtectionSigningOutAlert = NSLocalizedString("settings.email.protection.signing.out.alert", value: "Signing out of your Email Protection account will disable Duck Address autofill in this browser. You can still use these addresses and receive forwarded email as usual.", comment: "Alert presented to user after clicking on 'Sign out' in Email Protection Settings")
     public static let defaultBrowser = NSLocalizedString("settings.default.browser", value: "Default Browser", comment: "The name of Settings category in Privacy Features related to configuration of the default browser")
     public static let privateSearch = NSLocalizedString("settings.private.search", value: "Private Search", comment: "The name of Settings category in Privacy Features related to configuration of the search")
+    public static let privateSearchAndChat = NotLocalizedString("settings.private.search.and.chat", value: "Private Search & Chat", comment: "The name of Settings category when both search suggestions and Duck.ai chat suggestions are available")
     public static let searchSettings = NSLocalizedString("settings.search.settings", value: "Search Settings", comment: "Header of settings related to search")
     public static let moreSearchSettings = NSLocalizedString("settings.more.search.settings", value: "More Search Settings", comment: "Button navigating to other settings related to search")
     public static let moreSearchSettingsExplanation = NSLocalizedString("settings.more.search.settings.explanation", value: "Customize your language, region, and more", comment: "Subtitle of the 'More Search Settings' button")
@@ -1565,6 +1566,7 @@ public struct UserText {
     public static let settingsPreviews = NSLocalizedString("settings.previews", value: "Long-Press Previews", comment: "Settings screen cell for long press previews")
     public static let settingsAutocompleteLabel = NSLocalizedString("settings.autocomplete", value: "Search Suggestions", comment: "Settings screen cell for autocomplete")
     public static let settingsAutocompleteSubtitle = NSLocalizedString("settings.autocomplete.subtitle", value: "Show search suggestions as you type, including your bookmarks. All searches are private.", comment: "Subtitle for Search Suggestions setting")
+    public static let settingsAutocompleteWithChatSubtitle = NotLocalizedString("settings.autocomplete.with.chat.subtitle", value: "Show suggestions from your history, bookmarks, and (optionally) Duck.ai chat history as you type in the search bar. All searches are private.", comment: "Subtitle for Search Suggestions setting when chat suggestions are available")
 
     public static let settingsAutocompleteRecentlyVisitedLabel = NSLocalizedString("settings.autocomplete.recentlyvisited", value: "Recently Visited Sites", comment: "Settings label for enabling or disabling recently visited sites")
 
@@ -1938,7 +1940,7 @@ public struct UserText {
 
     public static let settingsChatSuggestionsTitle = NotLocalizedString("settings.aifeatures.chat.suggestions.title", value: "Chat Suggestions", comment: "Settings screen cell title for enabling chat suggestions")
 
-    public static let settingsChatSuggestionsSubtitle = NotLocalizedString("settings.aifeatures.chat.suggestions.subtitle", value: "Show recent Duck.ai chats", comment: "Settings screen cell subtitle for enabling chat suggestions")
+    public static let settingsChatSuggestionsSubtitle = NotLocalizedString("settings.aifeatures.chat.suggestions.subtitle", value: "Show recent Duck.ai chats as you type", comment: "Settings screen cell subtitle for enabling chat suggestions")
 
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 

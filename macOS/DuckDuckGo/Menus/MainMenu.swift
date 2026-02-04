@@ -852,7 +852,6 @@ final class MainMenu: NSMenu {
             }
 
             NSMenuItem(title: "Simulate memory pressure event") {
-                NSMenuItem(title: "Warning", action: #selector(AppDelegate.simulateMemoryPressureWarning))
                 NSMenuItem(title: "Critical", action: #selector(AppDelegate.simulateMemoryPressureCritical))
             }
 

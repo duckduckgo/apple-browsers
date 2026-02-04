@@ -36,6 +36,7 @@ struct HomeMessageViewModelBuilder {
                       with subscriptionDataReporter: SubscriptionDataReporting?,
                       messageActionHandler: RemoteMessagingActionHandling,
                       imageLoader: RemoteMessagingImageLoading,
+                      pixelReporter: RemoteMessagingPixelReporting?,
                       onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void,
                       onDidAppear: @escaping () -> Void) -> HomeMessageViewModel? {
         guard
@@ -48,11 +49,11 @@ struct HomeMessageViewModelBuilder {
         let preloadedImage: UIImage? = content.imageUrl.flatMap { imageLoader.cachedImage(for: $0) }
 
         return HomeMessageViewModel(
-            messageId: remoteMessage.id,
-            sendPixels: remoteMessage.isMetricsEnabled,
+            remoteMessage: remoteMessage,
             modelType: homeSupportedMessageDisplayType,
             messageActionHandler: messageActionHandler,
             imageLoader: imageLoader,
+            pixelReporter: pixelReporter,
             preloadedImage: preloadedImage,
             onDidClose: onDidClose,
             onDidAppear: onDidAppear,

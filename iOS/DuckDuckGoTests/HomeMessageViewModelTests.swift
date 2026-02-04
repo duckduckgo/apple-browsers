@@ -27,16 +27,25 @@ struct HomeMessageViewModelTests {
     let mockActionHandler = MockRemoteMessagingActionHandler()
     let mockPresenter = MockRemoteMessagingPresenter()
 
+    static let testMessage = RemoteMessageModel(
+        id: "test-message",
+        surfaces: .newTabPage,
+        content: nil,
+        matchingRules: [],
+        exclusionRules: [],
+        isMetricsEnabled: true
+    )
+
     func makeSUT(
         modelType: HomeSupportedMessageDisplayType = .small(titleText: "Title", descriptionText: "Description"),
         onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void = { _ in }
     ) -> HomeMessageViewModel {
         HomeMessageViewModel(
-            messageId: "test-message",
-            sendPixels: true,
+            remoteMessage: Self.testMessage,
             modelType: modelType,
             messageActionHandler: mockActionHandler,
             imageLoader: MockImageLoader(),
+            pixelReporter: nil,
             preloadedImage: nil,
             onDidClose: onDidClose,
             onDidAppear: {},

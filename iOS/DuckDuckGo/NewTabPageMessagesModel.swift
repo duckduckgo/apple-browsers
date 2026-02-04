@@ -33,19 +33,22 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let subscriptionDataReporter: SubscriptionDataReporting?
     private let messageActionHandler: RemoteMessagingActionHandling
     private let imageLoader: RemoteMessagingImageLoading
+    private let pixelReporter: RemoteMessagingPixelReporting?
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
          pixelFiring: PixelFiring.Type = Pixel.self,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
          messageActionHandler: RemoteMessagingActionHandling,
-         imageLoader: RemoteMessagingImageLoading) {
+         imageLoader: RemoteMessagingImageLoading,
+         pixelReporter: RemoteMessagingPixelReporting? = nil) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
         self.subscriptionDataReporter = subscriptionDataReporter
         self.messageActionHandler = messageActionHandler
         self.imageLoader = imageLoader
+        self.pixelReporter = pixelReporter
     }
 
     func load() {
@@ -80,14 +83,23 @@ final class NewTabPageMessagesModel: ObservableObject {
         self.homeMessageViewModels = homePageMessagesConfiguration.homeMessages.compactMap(self.homeMessageViewModel(for:))
     }
 
+    private static let placeholderMessage = RemoteMessageModel(
+        id: "",
+        surfaces: .newTabPage,
+        content: nil,
+        matchingRules: [],
+        exclusionRules: [],
+        isMetricsEnabled: false
+    )
+
     private func homeMessageViewModel(for message: HomeMessage) -> HomeMessageViewModel? {
         switch message {
         case .placeholder:
-            return HomeMessageViewModel(messageId: "",
-                                        sendPixels: false,
+            return HomeMessageViewModel(remoteMessage: Self.placeholderMessage,
                                         modelType: .small(titleText: "", descriptionText: ""),
                                         messageActionHandler: messageActionHandler,
                                         imageLoader: imageLoader,
+                                        pixelReporter: nil,
                                         preloadedImage: nil) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
@@ -104,7 +116,8 @@ final class NewTabPageMessagesModel: ObservableObject {
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
                                                      with: subscriptionDataReporter,
                                                      messageActionHandler: messageActionHandler,
-                                                     imageLoader: imageLoader) { @MainActor [weak self] action in
+                                                     imageLoader: imageLoader,
+                                                     pixelReporter: pixelReporter) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
 

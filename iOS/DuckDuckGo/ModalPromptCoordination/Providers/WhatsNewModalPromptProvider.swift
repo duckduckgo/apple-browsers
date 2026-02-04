@@ -62,7 +62,7 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         self.isIPad = isIPad
         self.pixelReporter = pixelReporter
         self.userScriptsDependencies = userScriptsDependencies
-        self.displayModelMapper = displayModelMapper ?? WhatsNewDisplayModelMapper(imageLoader: imageLoader)
+        self.displayModelMapper = displayModelMapper ?? WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
         self.featureFlagger = featureFlagger
     }
 

@@ -35,9 +35,11 @@ protocol WhatsNewDisplayModelMapping {
 struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
     let imageLoader: RemoteMessagingImageLoading?
+    let pixelReporter: RemoteMessagingPixelReporting?
 
-    init(imageLoader: RemoteMessagingImageLoading? = nil) {
+    init(imageLoader: RemoteMessagingImageLoading? = nil, pixelReporter: RemoteMessagingPixelReporting? = nil) {
         self.imageLoader = imageLoader
+        self.pixelReporter = pixelReporter
     }
 
     /// Maps a RemoteMessageModel to CardsListDisplayModel
@@ -110,10 +112,22 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
         let preloadedHeaderImage: UIImage? = imageUrl.flatMap { imageLoader?.cachedImage(for: $0) }
 
+        let loadHeaderImage: ((URL) async throws -> UIImage)? = imageLoader.map { loader in
+            { url in try await loader.loadImage(from: url) }
+        }
+
         return RemoteMessagingUI.CardsListDisplayModel(
             screenTitle: mainTitleText,
             icon: placeholder?.rawValue,
             preloadedHeaderImage: preloadedHeaderImage,
+            headerImageUrl: imageUrl,
+            loadHeaderImage: loadHeaderImage,
+            onHeaderImageLoadSuccess: { [pixelReporter, message] in
+                pixelReporter?.measureRemoteMessageImageLoadSuccess(message)
+            },
+            onHeaderImageLoadFailed: { [pixelReporter, message] in
+                pixelReporter?.measureRemoteMessageImageLoadFailed(message)
+            },
             items: listItems,
             onAppear: onMessageAppear,
             primaryAction: (

@@ -60,12 +60,15 @@ struct HomeMessageViewModel {
         case secondaryAction(isShare: Bool)
     }
 
-    let messageId: String
-    let sendPixels: Bool
+    let remoteMessage: RemoteMessageModel
     let modelType: HomeSupportedMessageDisplayType
     let messageActionHandler: RemoteMessagingActionHandling
     let imageLoader: RemoteMessagingImageLoading
+    let pixelReporter: RemoteMessagingPixelReporting?
     let preloadedImage: UIImage?
+
+    var messageId: String { remoteMessage.id }
+    var sendPixels: Bool { remoteMessage.isMetricsEnabled }
 
     var image: String? {
         switch modelType {
@@ -189,10 +192,10 @@ struct HomeMessageViewModel {
         guard let imageUrl else { return nil }
         do {
             let image = try await imageLoader.loadImage(from: imageUrl)
-            // TODO: Fire success pixel
+            pixelReporter?.measureRemoteMessageImageLoadSuccess(remoteMessage)
             return image
         } catch {
-            // TODO: Fire failure pixel
+            pixelReporter?.measureRemoteMessageImageLoadFailed(remoteMessage)
             return nil
         }
     }

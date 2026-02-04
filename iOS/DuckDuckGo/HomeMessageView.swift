@@ -326,45 +326,49 @@ struct HomeMessageView_Previews: PreviewProvider {
                            actionText: "Share",
                            action: .share(value: "value", title: "title"))
 
+    static func previewMessage(id: String) -> RemoteMessageModel {
+        RemoteMessageModel(id: id, surfaces: .newTabPage, content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+    }
+
     static var previews: some View {
         Group {
-            HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Small",
-                                                            sendPixels: false,
+            HomeMessageView(viewModel: HomeMessageViewModel(remoteMessage: previewMessage(id: "Small"),
                                                             modelType: small,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
                                                             imageLoader: PreviewImageLoader(),
+                                                            pixelReporter: nil,
                                                             preloadedImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
-            HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Critical",
-                                                            sendPixels: false,
+            HomeMessageView(viewModel: HomeMessageViewModel(remoteMessage: previewMessage(id: "Critical"),
                                                             modelType: critical,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
                                                             imageLoader: PreviewImageLoader(),
+                                                            pixelReporter: nil,
                                                             preloadedImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
-            HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Single",
-                                                            sendPixels: false,
+            HomeMessageView(viewModel: HomeMessageViewModel(remoteMessage: previewMessage(id: "Big Single"),
                                                             modelType: bigSingle,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
                                                             imageLoader: PreviewImageLoader(),
+                                                            pixelReporter: nil,
                                                             preloadedImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
-            HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Two",
-                                                            sendPixels: false,
+            HomeMessageView(viewModel: HomeMessageViewModel(remoteMessage: previewMessage(id: "Big Two"),
                                                             modelType: bigTwo,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
                                                             imageLoader: PreviewImageLoader(),
+                                                            pixelReporter: nil,
                                                             preloadedImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
-            HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Promo",
-                                                            sendPixels: false,
+            HomeMessageView(viewModel: HomeMessageViewModel(remoteMessage: previewMessage(id: "Promo"),
                                                             modelType: promo,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
                                                             imageLoader: PreviewImageLoader(),
+                                                            pixelReporter: nil,
                                                             preloadedImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
         }

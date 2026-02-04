@@ -202,6 +202,7 @@ final class MainCoordinator {
                                         mobileCustomization: mobileCustomization,
                                         remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                                         remoteMessagingImageLoader: remoteMessagingService.remoteMessagingImageLoader,
+                                        remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
                                         productSurfaceTelemetry: productSurfaceTelemetry,
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,

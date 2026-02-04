@@ -111,6 +111,7 @@ class SuggestionTrayViewController: UIViewController {
         let faviconLoader: FavoritesFaviconLoading
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingImageLoader: RemoteMessagingImageLoading
+        let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
         let appSettings: AppSettings
         let internalUserCommands: URLBasedDebugCommands
     }
@@ -290,6 +291,7 @@ class SuggestionTrayViewController: UIViewController {
             faviconLoader: dependencies.faviconLoader,
             remoteMessagingActionHandler: dependencies.remoteMessagingActionHandler,
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
+            remoteMessagingPixelReporter: dependencies.remoteMessagingPixelReporter,
             appSettings: dependencies.appSettings,
             internalUserCommands: dependencies.internalUserCommands
         )

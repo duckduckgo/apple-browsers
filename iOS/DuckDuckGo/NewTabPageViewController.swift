@@ -58,6 +58,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          faviconLoader: FavoritesFaviconLoading,
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
+         remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          appSettings: AppSettings,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
@@ -77,7 +78,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,
-                                                imageLoader: remoteMessagingImageLoader)
+                                                imageLoader: remoteMessagingImageLoader,
+                                                pixelReporter: remoteMessagingPixelReporter)
 
         super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,

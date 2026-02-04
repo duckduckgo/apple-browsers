@@ -14,7 +14,7 @@ BASE_DIR="${SCRIPT_DIR}/.."
 
 BUNDLE_ID="com.duckduckgo.mobile.ios"
 PIXEL_DEFINITIONS_PATH="${BASE_DIR}/PixelDefinitions"
-PIXEL_PREFIX="m_"
+PIXEL_PREFIX="Pixel fired: "
 
 # Check for a booted simulator
 if ! xcrun simctl list devices booted 2>/dev/null | grep -q "Booted"; then

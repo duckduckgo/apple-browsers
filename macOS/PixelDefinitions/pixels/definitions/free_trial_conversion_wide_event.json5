@@ -13,6 +13,7 @@
             "wideEventSampleRate",
             "wideEventFeatureStatus",
             "wideEventFeatureStatusReason",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",

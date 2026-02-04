@@ -40,8 +40,6 @@ protocol PinningManager {
 
 final class LocalPinningManager: PinningManager {
 
-    static let shared = LocalPinningManager()
-
     static let pinnedViewChangedNotificationViewTypeKey = "pinning.pinnedViewChanged.viewType"
 
     @UserDefaultsWrapper(key: .pinnedViews, defaultValue: [])

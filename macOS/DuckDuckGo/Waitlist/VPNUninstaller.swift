@@ -127,7 +127,7 @@ final class VPNUninstaller: VPNUninstalling {
 
     private let ipcServiceLauncher: IPCServiceLauncher
     private let loginItemsManager: LoginItemsManaging
-    private let pinningManager: LocalPinningManager
+    private let pinningManager: PinningManager
     private let settings: VPNSettings
     private let userDefaults: UserDefaults
     private let vpnMenuLoginItem: LoginItem
@@ -139,7 +139,7 @@ final class VPNUninstaller: VPNUninstalling {
 
     init(ipcServiceLauncher: IPCServiceLauncher? = nil,
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
-         pinningManager: LocalPinningManager = .shared,
+         pinningManager: PinningManager = Application.appDelegate.pinningManager,
          userDefaults: UserDefaults = .netP,
          settings: VPNSettings = .init(defaults: .netP),
          ipcClient: VPNControllerIPCClient = VPNControllerUDSClient(),

@@ -134,7 +134,7 @@ final class VPNPreferencesModel: ObservableObject {
     init(vpnXPCClient: VPNControllerXPCClient = .shared,
          settings: VPNSettings = NSApp.delegateTyped.vpnSettings,
          proxySettings: TransparentProxySettings = .init(defaults: .netP),
-         pinningManager: PinningManager = LocalPinningManager.shared,
+         pinningManager: PinningManager = Application.appDelegate.pinningManager,
          defaults: UserDefaults = .netP,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
 

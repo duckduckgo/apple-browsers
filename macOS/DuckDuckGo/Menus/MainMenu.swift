@@ -698,14 +698,15 @@ final class MainMenu: NSMenu {
 
     private func updateShortcutMenuItems() {
         Task { @MainActor in
-            toggleAutofillShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .autofill)
-            toggleBookmarksShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .bookmarks)
-            toggleDownloadsShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .downloads)
-            toggleShareShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .share)
+            let pinningManager = Application.appDelegate.pinningManager
+            toggleAutofillShortcutMenuItem.title = pinningManager.shortcutTitle(for: .autofill)
+            toggleBookmarksShortcutMenuItem.title = pinningManager.shortcutTitle(for: .bookmarks)
+            toggleDownloadsShortcutMenuItem.title = pinningManager.shortcutTitle(for: .downloads)
+            toggleShareShortcutMenuItem.title = pinningManager.shortcutTitle(for: .share)
 
             if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager).isVPNVisible() {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = false
-                toggleNetworkProtectionShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .networkProtection)
+                toggleNetworkProtectionShortcutMenuItem.title = pinningManager.shortcutTitle(for: .networkProtection)
             } else {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = true
             }

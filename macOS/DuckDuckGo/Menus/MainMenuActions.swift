@@ -1115,23 +1115,23 @@ extension MainViewController {
     }
 
     @objc func toggleAutofillShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .autofill)
+        Application.appDelegate.pinningManager.togglePinning(for: .autofill)
     }
 
     @objc func toggleBookmarksShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .bookmarks)
+        Application.appDelegate.pinningManager.togglePinning(for: .bookmarks)
     }
 
     @objc func toggleDownloadsShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .downloads)
+        Application.appDelegate.pinningManager.togglePinning(for: .downloads)
     }
 
     @objc func toggleShareShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .share)
+        Application.appDelegate.pinningManager.togglePinning(for: .share)
     }
 
     @objc func toggleNetworkProtectionShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .networkProtection)
+        Application.appDelegate.pinningManager.togglePinning(for: .networkProtection)
     }
 
     // MARK: - History

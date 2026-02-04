@@ -98,6 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
+    let pinningManager = LocalPinningManager()
     let tabDragAndDropManager: TabDragAndDropManager
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!

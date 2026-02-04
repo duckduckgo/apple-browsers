@@ -321,7 +321,7 @@ final class SaveCredentialsViewController: NSViewController {
                 NSApp.delegateTyped.syncService?.scheduler.notifyDataChanged()
                 Logger.sync.debug("Requesting sync if enabled")
 
-                if existingCredentials?.account.id == nil, !LocalPinningManager.shared.isPinned(.autofill), let count = try? vault.accountsCount(), count == 1 {
+                if existingCredentials?.account.id == nil, !Application.appDelegate.pinningManager.isPinned(.autofill), let count = try? vault.accountsCount(), count == 1 {
                     shouldFirePinPromptNotification = true
                 }
             }

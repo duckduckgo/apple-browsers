@@ -98,7 +98,7 @@ public struct OAuthRequest {
     /// API `TOKEN_STATUS` values describing refresh token validity.
     /// https://dub.duckduckgo.com/duckduckgo/ddg/blob/main/components/auth/docs/AuthAPIV2Documentation.md#access-token scroll down to `TOKEN_STATUS` enum values
     /// Task: https://app.asana.com/1/137249556945/project/1205842942115003/task/1212840065651597?focus=true
-    public enum TokenStatus: Int, Equatable, Decodable, DDGError {
+    public enum TokenStatus: Int, Equatable, Decodable, DDGError, CustomStringConvertible {
         /// Token is invalid in a non-stateful way (e.g., bad signature, malformed, etc) or the request failed for a reason unrelated to the token itself (e.g., suspended account).
         case invalid = 0
         /// Token is valid but has expired. Specifically the exp claim in the JWT indicates a time in the past. This means the tokens is more than 30 days old.

@@ -216,7 +216,6 @@ enum SubscriptionPixel: PixelKitEvent {
     }
 
     private struct SubscriptionPixelsDefaults {
-        static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
         static let platformKey = "platform"
@@ -232,9 +231,8 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionKeychainManagerDataWroteFromBacklog(let source),
                 .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.description]
-        case .subscriptionAuthV2GetTokensError(let policy, let source, let error):
-            return [SubscriptionPixelsDefaults.errorKey: error.localizedDescription,
-                    SubscriptionPixelsDefaults.policyCacheKey: policy.description,
+        case .subscriptionAuthV2GetTokensError(let policy, let source, _):
+            return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.description]
         case .subscriptionActive(let authVersion):
             return [AuthVersion.key: authVersion.rawValue]

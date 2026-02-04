@@ -4086,6 +4086,8 @@
 		F14890862ECCCAA800B5239E /* AttributedMetricUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14890842ECCCAA800B5239E /* AttributedMetricUtils.swift */; };
 		F14890972ECDD24400B5239E /* AttributedMetricDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14890962ECDD24400B5239E /* AttributedMetricDebugMenu.swift */; };
 		F14890982ECDD24400B5239E /* AttributedMetricDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14890962ECDD24400B5239E /* AttributedMetricDebugMenu.swift */; };
+		F14B813F2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14B813E2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift */; };
+		F14B81402F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14B813E2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift */; };
 		F158DE022E9E992C00628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE012E9E992C00628DD0 /* ContentBlocking */; };
 		F158DE042E9E995F00628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE032E9E995F00628DD0 /* ContentBlocking */; };
 		F158DE062E9E9DF100628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE052E9E9DF100628DD0 /* ContentBlocking */; };
@@ -6459,6 +6461,7 @@
 		F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionUIHandler.swift; sourceTree = "<group>"; };
 		F14890842ECCCAA800B5239E /* AttributedMetricUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedMetricUtils.swift; sourceTree = "<group>"; };
 		F14890962ECDD24400B5239E /* AttributedMetricDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedMetricDebugMenu.swift; sourceTree = "<group>"; };
+		F14B813E2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPixelHandlerTests.swift; sourceTree = "<group>"; };
 		F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeature.swift; sourceTree = "<group>"; };
 		F17114812C7C98FB009836C1 /* Logger+Favicons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Favicons.swift"; sourceTree = "<group>"; };
 		F17114842C7C9D28009836C1 /* Logger+Fire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Fire.swift"; sourceTree = "<group>"; };
@@ -9845,6 +9848,7 @@
 		9F64346E2BECB9FB00D2D8A0 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
+				F14B813E2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift */,
 				BBB819102EC493750064977E /* PreferencesPurchaseSubscriptionModelTests.swift */,
 				BBB819122EC493750064977E /* PreferencesSubscriptionSettingsModelTests.swift */,
 				F16F92812C2AC0080007C93E /* Mocks */,
@@ -15380,6 +15384,7 @@
 				1D8C2FEE2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift in Sources */,
 				BB80DDDC2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */,
 				37D0469A2C7D037500AEAA50 /* CapturingUserBackgroundImagesManager.swift in Sources */,
+				F14B81402F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift in Sources */,
 				56B234C02A84EFD800F2A1CC /* NavigationBarUrlExtensionsTests.swift in Sources */,
 				3706FE19293F661700E42796 /* DeviceAuthenticatorTests.swift in Sources */,
 				3706FE1A293F661700E42796 /* BrowserProfileTests.swift in Sources */,
@@ -17546,6 +17551,7 @@
 				BDA764912BC4E57200D0400C /* MockVPNLocationFormatter.swift in Sources */,
 				B63ED0E326B3E7FA00A9DAD1 /* CLLocationManagerMock.swift in Sources */,
 				37A756EF2DD610930003C8C9 /* NewTabPageCoordinatorTests.swift in Sources */,
+				F14B813F2F323C5200C39E26 /* SubscriptionPixelHandlerTests.swift in Sources */,
 				37CD54BB27F25A4000F1F7B9 /* DownloadsPreferencesTests.swift in Sources */,
 				4BE344EE2B2376DF003FC223 /* UnifiedFeedbackFormViewModelTests.swift in Sources */,
 				C1C257132ECD178400C4AEAD /* SafariArchiveImporterTests.swift in Sources */,

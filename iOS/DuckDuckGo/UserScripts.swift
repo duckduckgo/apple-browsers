@@ -99,11 +99,7 @@ final class UserScripts: UserScriptsProvider {
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
 
-        if featureFlagger.isFeatureOn(.contextualDuckAIMode) {
-            pageContextUserScript = PageContextUserScript()
-        } else {
-            pageContextUserScript = nil
-        }
+        pageContextUserScript = PageContextUserScript()    
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)

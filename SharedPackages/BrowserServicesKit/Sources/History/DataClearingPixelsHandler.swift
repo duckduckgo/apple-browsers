@@ -20,6 +20,5 @@ import Foundation
 
 public protocol DataClearingPixelsHandler {
     func fireErrorPixel(_ error: Error)
-    func fireResiduePixel()
     func fireDurationPixel(_ startTime: Date)
 }

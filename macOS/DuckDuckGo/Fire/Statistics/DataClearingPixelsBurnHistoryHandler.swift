@@ -31,10 +31,6 @@ struct DataClearingPixelsBurnHistoryHandler: DataClearingPixelsHandler {
         dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnHistoryError(error))
     }
 
-    func fireResiduePixel() {
-        dataClearingPixelsReporter.fireResiduePixel(DataClearingPixels.burnHistoryHasResidue)
-    }
-
     func fireDurationPixel(_ startTime: Date) {
         dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnVisitsDuration, from: startTime)
     }

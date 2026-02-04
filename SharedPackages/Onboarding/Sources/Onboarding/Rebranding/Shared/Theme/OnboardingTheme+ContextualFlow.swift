@@ -30,15 +30,19 @@ public extension OnboardingTheme {
         /// Metrics used to lay out contextual option list rows.
         /// [Figma Selector  Buttons](https://www.figma.com/design/wMxBpe0mKrRS0nVhtwMGO7/%F0%9F%9A%80-Onboarding-Components--2026-?node-id=2-1521)
         public let optionsListMetrics: OptionsListMetrics
+        /// [Figma Selector  Buttons](https://www.figma.com/design/wMxBpe0mKrRS0nVhtwMGO7/%F0%9F%9A%80-Onboarding-Components--2026-?node-id=2-1521)
+        public let optionsListButtonStyle: OnboardingButtonStyle
 
         public init(
             contextualTitleTextAlignment: TextAlignment,
             contextualBodyTextAlignment: TextAlignment,
-            optionsListMetrics: OptionsListMetrics
+            optionsListMetrics: OptionsListMetrics,
+            optionsListButtonStyle: OnboardingButtonStyle
         ) {
             self.contextualTitleTextAlignment = contextualTitleTextAlignment
             self.contextualBodyTextAlignment = contextualBodyTextAlignment
             self.optionsListMetrics = optionsListMetrics
+            self.optionsListButtonStyle = optionsListButtonStyle
         }
     }
 

@@ -26,8 +26,21 @@ public extension OnboardingTheme {
     static let macOSRebranding2026 = {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
-        let bubbleBackgroundColor = Color(designSystemColor: .surfaceTertiary)
-        let bubbleBorderColor = Color(designSystemColor: .accentAltPrimary)
+
+        let typography = Typography.system
+
+        let colorPalette = ColorPalette(
+            bubbleBorder: Color(designSystemColor: .accentAltPrimary),
+            bubbleBackground: Color(designSystemColor: .surfaceTertiary),
+            bubbleShadow: Color.shade(0.03),
+            textPrimary: Color(designSystemColor: .textPrimary),
+            textSecondary: Color(designSystemColor: .textSecondary),
+            optionsListBorderColor: Color(designSystemColor: .accentPrimary),
+            optionsListIconColor: Color(designSystemColor: .accentPrimary),
+            optionsListTextColor: Color(designSystemColor: .textLink),
+            primaryButtonBackgroundColor: Color(designSystemColor: .buttonsPrimaryDefault),
+            primaryButtonTextColor: Color(designSystemColor: .buttonsPrimaryText)
+        )
 
         let dismissButtonMetrics = DismissButtonMetrics(
             buttonSize: CGSize(width: 44, height: 44),
@@ -35,20 +48,17 @@ public extension OnboardingTheme {
             contentPadding: 8.0
         )
 
+        let contextualOptionsListMetrics = ContextualOnboardingMetrics.OptionsListMetrics(
+            cornerRadius: 32,
+            borderWidth: 1,
+            borderInset: 0.5,
+            iconSize: CGSize(width: 16, height: 16),
+            itemMaxHeight: 40,
+        )
+
         return OnboardingTheme(
             typography: .system,
-            colorPalette: ColorPalette(
-                bubbleBorder: bubbleBorderColor,
-                bubbleBackground: bubbleBackgroundColor,
-                bubbleShadow: Color.shade(0.03),
-                textPrimary: Color(designSystemColor: .textPrimary),
-                textSecondary: Color(designSystemColor: .textSecondary),
-                optionsListBorderColor: Color(designSystemColor: .accentPrimary),
-                optionsListIconColor: Color(designSystemColor: .accentPrimary),
-                optionsListTextColor: Color(designSystemColor: .textLink),
-                primaryButtonBackgroundColor: Color(designSystemColor: .buttonsPrimaryDefault),
-                primaryButtonTextColor: Color(designSystemColor: .buttonsPrimaryText)
-            ),
+            colorPalette: colorPalette,
             bubbleMetrics: BubbleMetrics(
                 contentInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
                 cornerRadius: bubbleCornerRadius,
@@ -60,12 +70,16 @@ public extension OnboardingTheme {
             contextualOnboardingMetrics: OnboardingTheme.ContextualOnboardingMetrics(
                 contextualTitleTextAlignment: .leading,
                 contextualBodyTextAlignment: .leading,
-                optionsListMetrics: ContextualOnboardingMetrics.OptionsListMetrics(
-                    cornerRadius: 32,
-                    borderWidth: 1,
-                    borderInset: 0.5,
-                    iconSize: CGSize(width: 16, height: 16),
-                    itemMaxHeight: 40,
+                optionsListMetrics: contextualOptionsListMetrics,
+                optionsListButtonStyle: OnboardingButtonStyle(
+                    id: .list,
+                    style: AnyButtonStyle(
+                        OnboardingRebranding.OnboardingStyles.ListButtonStyle(
+                            typography: typography,
+                            colorPalette: colorPalette,
+                            optionsListMetrics: contextualOptionsListMetrics
+                        )
+                    )
                 )
             ),
             linearTitleTextAlignment: .center,
@@ -79,8 +93,8 @@ public extension OnboardingTheme {
                 style: AnyButtonStyle(
                     OnboardingRebranding.OnboardingStyles.BubbleDismissButtonStyle(
                         contentPadding: dismissButtonMetrics.contentPadding,
-                        backgroundColor: bubbleBackgroundColor,
-                        borderColor: bubbleBorderColor,
+                        backgroundColor: colorPalette.bubbleBackground,
+                        borderColor: colorPalette.bubbleBorder,
                         borderWidth: borderWidth,
                         buttonSize: dismissButtonMetrics.buttonSize
                     )

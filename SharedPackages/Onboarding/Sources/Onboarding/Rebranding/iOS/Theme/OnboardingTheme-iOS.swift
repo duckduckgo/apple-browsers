@@ -28,14 +28,6 @@ public extension OnboardingTheme {
     static let iOSRebranding2026 = {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
-        let bubbleBackgroundColor = Color(singleUseColor: .rebranding(.surfaceTertiary))
-        let bubbleBorderColor = Color(singleUseColor: .rebranding(.accentAltPrimary))
-
-        let dismissButtonMetrics = DismissButtonMetrics(
-            buttonSize: CGSize(width: 44, height: 44),
-            offsetRelativeToBubble: CGPoint(x: 4, y: 4),
-            contentPadding: 8.0
-        )
 
         let typography: OnboardingTheme.Typography = .system
         let colorPalette = ColorPalette(
@@ -62,6 +54,13 @@ public extension OnboardingTheme {
             offsetRelativeToBubble: CGPoint(x: 4, y: 4),
             contentPadding: 8
         )
+        let contextualOptionsListMetrics = ContextualOnboardingMetrics.OptionsListMetrics(
+            cornerRadius: 32,
+            borderWidth: 1,
+            borderInset: 0.5,
+            iconSize: CGSize(width: 16, height: 16),
+            itemMaxHeight: 40
+        )
 
         return OnboardingTheme(
             typography: typography,
@@ -71,12 +70,16 @@ public extension OnboardingTheme {
             contextualOnboardingMetrics: ContextualOnboardingMetrics(
                 contextualTitleTextAlignment: .leading,
                 contextualBodyTextAlignment: .leading,
-                optionsListMetrics: ContextualOnboardingMetrics.OptionsListMetrics(
-                    cornerRadius: 32,
-                    borderWidth: 1,
-                    borderInset: 0.5,
-                    iconSize: CGSize(width: 16, height: 16),
-                    itemMaxHeight: 40,
+                optionsListMetrics: contextualOptionsListMetrics,
+                optionsListButtonStyle: OnboardingButtonStyle(
+                    id: .list,
+                    style: AnyButtonStyle(
+                        OnboardingRebranding.OnboardingStyles.ListButtonStyle(
+                            typography: typography,
+                            colorPalette: colorPalette,
+                            optionsListMetrics: contextualOptionsListMetrics
+                        )
+                    )
                 )
             ),
             linearTitleTextAlignment: .center,
@@ -93,8 +96,8 @@ public extension OnboardingTheme {
                 style: AnyButtonStyle(
                     OnboardingRebranding.OnboardingStyles.BubbleDismissButtonStyle(
                         contentPadding: dismissButtonMetrics.contentPadding,
-                        backgroundColor: bubbleBackgroundColor,
-                        borderColor: bubbleBorderColor,
+                        backgroundColor: colorPalette.bubbleBackground,
+                        borderColor: colorPalette.bubbleBorder,
                         borderWidth: borderWidth,
                         buttonSize: dismissButtonMetrics.buttonSize
                     )

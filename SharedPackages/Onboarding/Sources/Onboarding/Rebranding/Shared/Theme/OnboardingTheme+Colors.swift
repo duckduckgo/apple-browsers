@@ -34,6 +34,13 @@ public extension OnboardingTheme {
         /// Secondary text color.
         public let textSecondary: Color
 
+        /// Border color for contextual onboarding multiple option list rows.
+        public let optionsListBorderColor: Color
+        /// Icon tint color for contextual onboarding option list rows.
+        public let optionsListIconColor: Color
+        /// Text color for contextual onboarding option list rows.
+        public let optionsListTextColor: Color
+
         /// Primary button background color.
         public let primaryButtonBackgroundColor: Color
         /// Primary button foreground/text color.
@@ -44,15 +51,22 @@ public extension OnboardingTheme {
             bubbleBorder: Color,
             bubbleBackground: Color,
             bubbleShadow: Color,
-            textPrimary: Color, textSecondary: Color,
+            textPrimary: Color,
+            textSecondary: Color,
+            optionsListBorderColor: Color,
+            optionsListIconColor: Color,
+            optionsListTextColor: Color,
             primaryButtonBackgroundColor: Color,
-            primaryButtonTextColor: Color
+            primaryButtonTextColor: Color,
         ) {
             self.bubbleBorder = bubbleBorder
             self.bubbleBackground = bubbleBackground
             self.bubbleShadow = bubbleShadow
             self.textPrimary = textPrimary
             self.textSecondary = textSecondary
+            self.optionsListBorderColor = optionsListBorderColor
+            self.optionsListIconColor = optionsListIconColor
+            self.optionsListTextColor = optionsListTextColor
             self.primaryButtonBackgroundColor = primaryButtonBackgroundColor
             self.primaryButtonTextColor = primaryButtonTextColor
         }

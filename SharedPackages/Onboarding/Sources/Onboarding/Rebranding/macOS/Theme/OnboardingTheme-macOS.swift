@@ -35,6 +35,9 @@ public extension OnboardingTheme {
                 bubbleShadow: Color.shade(0.03),
                 textPrimary: Color(designSystemColor: .textPrimary),
                 textSecondary: Color(designSystemColor: .textSecondary),
+                optionsListBorderColor: Color(designSystemColor: .accentPrimary),
+                optionsListIconColor: Color(designSystemColor: .accentPrimary),
+                optionsListTextColor: Color(designSystemColor: .textLink),
                 primaryButtonBackgroundColor: Color(designSystemColor: .buttonsPrimaryDefault),
                 primaryButtonTextColor: Color(designSystemColor: .buttonsPrimaryText)
             ),
@@ -50,10 +53,19 @@ public extension OnboardingTheme {
                 offsetRelativeToBubble: CGPoint(x: 4, y: 4),
                 contentPadding: 8
             ),
+            contextualOnboardingMetrics: OnboardingTheme.ContextualOnboardingMetrics(
+                contextualTitleTextAlignment: .leading,
+                contextualBodyTextAlignment: .leading,
+                optionsListMetrics: ContextualOnboardingMetrics.OptionsListMetrics(
+                    cornerRadius: 32,
+                    borderWidth: 1,
+                    borderInset: 0.5,
+                    iconSize: CGSize(width: 16, height: 16),
+                    itemMaxHeight: 40,
+                )
+            ),
             linearTitleTextAlignment: .center,
             linearBodyTextAlignment: .center,
-            contextualTitleTextAlignment: .leading,
-            contextualBodyTextAlignment: .leading,
             primaryButtonStyle: OnboardingButtonStyle(
                 id: .primary,
                 style: AnyButtonStyle(OnboardingPrimaryButtonStyle())

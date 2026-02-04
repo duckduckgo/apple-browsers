@@ -57,10 +57,19 @@ public extension OnboardingTheme {
             colorPalette: colorPalette,
             bubbleMetrics: bubbleMetrics,
             dismissButtonMetrics: dismissButtonMetrics,
+            contextualOnboardingMetrics: ContextualOnboardingMetrics(
+                contextualTitleTextAlignment: .leading,
+                contextualBodyTextAlignment: .leading,
+                optionsListMetrics: ContextualOnboardingMetrics.OptionsListMetrics(
+                    cornerRadius: 32,
+                    borderWidth: 1,
+                    borderInset: 0.5,
+                    iconSize: CGSize(width: 16, height: 16),
+                    itemMaxHeight: 40,
+                )
+            ),
             linearTitleTextAlignment: .center,
             linearBodyTextAlignment: .center,
-            contextualTitleTextAlignment: .leading,
-            contextualBodyTextAlignment: .leading,
             primaryButtonStyle: OnboardingButtonStyle(
                 id: .primary,
                 style: AnyButtonStyle(OnboardingPrimaryButtonStyle(

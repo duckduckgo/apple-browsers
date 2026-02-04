@@ -29,6 +29,10 @@ public extension OnboardingTheme {
         public let title: Font
         /// Primary body text style.
         public let body: Font
+        /// Standard title style for contextual Flow.
+        public let contextualTitle: Font
+        /// Standard body style for contextual Flow.
+        public let contextualBody: Font
         /// Step progress text style.
         public let progressIndicator: Font
         /// List row title style (E.g Address Bar position picker title).
@@ -43,6 +47,8 @@ public extension OnboardingTheme {
             largeTitle: Font,
             title: Font,
             body: Font,
+            contextualTitle: Font,
+            contextualBody: Font,
             progressIndicator: Font,
             row: Font,
             rowDetails: Font,
@@ -51,6 +57,8 @@ public extension OnboardingTheme {
             self.largeTitle = largeTitle
             self.title = title
             self.body = body
+            self.contextualTitle = contextualTitle
+            self.contextualBody = contextualBody
             self.progressIndicator = progressIndicator
             self.row = row
             self.rowDetails = rowDetails
@@ -70,6 +78,8 @@ public extension OnboardingTheme.Typography {
         largeTitle: makeFont(size: 44, family: .duckSansDisplay, weight: .bold),
         title: makeFont(size: 24, family: .duckSansDisplay, weight: .bold),
         body: makeFont(size: 18, family: .duckSansProduct, weight: .regular),
+        contextualTitle: makeFont(size: 20, family: .duckSansDisplay, weight: .bold),
+        contextualBody: makeFont(size: 16, family: .duckSansProduct, weight: .regular),
         progressIndicator: makeFont(size: 12, family: .duckSansProduct, weight: .regular),
         row: makeFont(size: 16, family: .duckSansProduct, weight: .medium),
         rowDetails: makeFont(size: 14, family: .duckSansProduct, weight: .regular),
@@ -81,6 +91,8 @@ public extension OnboardingTheme.Typography {
         largeTitle: .system(size: 44, weight: .bold),
         title: .system(size: 24, weight: .bold),
         body: .system(size: 18, weight: .regular),
+        contextualTitle: .system(size: 20, weight: .bold),
+        contextualBody: .system(size: 16, weight: .regular),
         progressIndicator: .system(size: 12, weight: .regular),
         row: .system(size: 16, weight: .medium),
         rowDetails: .system(size: 14, weight: .regular),

@@ -53,11 +53,6 @@ final class MemoryUsageMonitor: @unchecked Sendable {
         /// Physical footprint in gigabytes.
         var physFootprintGB: Double { Double(physFootprintBytes) / Double(Self.oneGB) }
 
-        /// Legacy compatibility: use resident_size as default.
-        var usedBytes: UInt64 { residentBytes }
-        var usedMB: Double { residentMB }
-        var usedGB: Double { residentGB }
-
         var residentMemoryString: String {
             if residentBytes > Self.oneGB {
                 let formattedValue = Self.gbFormatter.string(from: NSNumber(value: residentGB)) ?? String(residentGB)

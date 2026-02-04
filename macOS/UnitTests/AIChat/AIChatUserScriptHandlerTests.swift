@@ -725,7 +725,7 @@ struct AIChatUserScriptHandlerTests {
     @Test("When plus model tier prompt submitted, markDuckAIActivated is called")
     @MainActor
     func testWhenPlusModelTierPromptSubmittedThenMarkDuckAIActivatedIsCalled() async {
-        await handler.reportMetric(params: ["metricName": "submitPrompt", "modelTier": "plus"], message: MockWKScriptMessage())
+        await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt", "modelTier": "plus"], message: MockWKScriptMessage())
 
         #expect(mockFreeTrialConversionService.markDuckAIActivatedCalled)
     }
@@ -733,7 +733,7 @@ struct AIChatUserScriptHandlerTests {
     @Test("When plus model tier first prompt submitted, markDuckAIActivated is called")
     @MainActor
     func testWhenPlusModelTierFirstPromptSubmittedThenMarkDuckAIActivatedIsCalled() async {
-        await handler.reportMetric(params: ["metricName": "submitFirstPrompt", "modelTier": "plus"], message: MockWKScriptMessage())
+        await handler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt", "modelTier": "plus"], message: MockWKScriptMessage())
 
         #expect(mockFreeTrialConversionService.markDuckAIActivatedCalled)
     }
@@ -741,7 +741,7 @@ struct AIChatUserScriptHandlerTests {
     @Test("When free model tier prompt submitted, markDuckAIActivated is not called")
     @MainActor
     func testWhenFreeModelTierPromptSubmittedThenMarkDuckAIActivatedIsNotCalled() async {
-        await handler.reportMetric(params: ["metricName": "submitPrompt", "modelTier": "free"], message: MockWKScriptMessage())
+        await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt", "modelTier": "free"], message: MockWKScriptMessage())
 
         #expect(!mockFreeTrialConversionService.markDuckAIActivatedCalled)
     }
@@ -749,7 +749,7 @@ struct AIChatUserScriptHandlerTests {
     @Test("When no model tier prompt submitted, markDuckAIActivated is not called")
     @MainActor
     func testWhenNoModelTierPromptSubmittedThenMarkDuckAIActivatedIsNotCalled() async {
-        await handler.reportMetric(params: ["metricName": "submitPrompt"], message: MockWKScriptMessage())
+        await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt"], message: MockWKScriptMessage())
 
         #expect(!mockFreeTrialConversionService.markDuckAIActivatedCalled)
     }

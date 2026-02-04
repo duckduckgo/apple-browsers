@@ -91,6 +91,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
 
     var isViewExpandedPublisher: AnyPublisher<Bool, Never> {
         $activeProvider
+            .receive(on: DispatchQueue.main)
             .flatMap { provider in
                 provider.isViewExpandedPublisher
             }
@@ -103,6 +104,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
 
     var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> {
         $activeProvider
+            .receive(on: DispatchQueue.main)
             .flatMap { provider in
                 provider.cardsPublisher
             }

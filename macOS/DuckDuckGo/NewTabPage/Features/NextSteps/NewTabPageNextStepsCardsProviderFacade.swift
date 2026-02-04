@@ -89,27 +89,27 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
         }
     }
 
-    var isViewExpandedPublisher: AnyPublisher<Bool, Never> {
+    private(set) lazy var isViewExpandedPublisher: AnyPublisher<Bool, Never> = {
         $activeProvider
             .receive(on: DispatchQueue.main)
             .flatMap { provider in
                 provider.isViewExpandedPublisher
             }
             .eraseToAnyPublisher()
-    }
+    }()
 
     var cards: [NewTabPageDataModel.CardID] {
         activeProvider.cards
     }
 
-    var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> {
+    private(set) lazy var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> = {
         $activeProvider
             .receive(on: DispatchQueue.main)
             .flatMap { provider in
                 provider.cardsPublisher
             }
             .eraseToAnyPublisher()
-    }
+    }()
 
     @MainActor
     func handleAction(for card: NewTabPageDataModel.CardID) {

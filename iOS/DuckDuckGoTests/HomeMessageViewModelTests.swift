@@ -27,26 +27,16 @@ struct HomeMessageViewModelTests {
     let mockActionHandler = MockRemoteMessagingActionHandler()
     let mockPresenter = MockRemoteMessagingPresenter()
 
-    static let testMessage = RemoteMessageModel(
-        id: "test-message",
-        surfaces: .newTabPage,
-        content: nil,
-        matchingRules: [],
-        exclusionRules: [],
-        isMetricsEnabled: true
-    )
-
     func makeSUT(
         modelType: HomeSupportedMessageDisplayType = .small(titleText: "Title", descriptionText: "Description"),
         onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void = { _ in }
     ) -> HomeMessageViewModel {
         HomeMessageViewModel(
-            remoteMessage: Self.testMessage,
+            messageId: "test-message",
             modelType: modelType,
             messageActionHandler: mockActionHandler,
-            imageLoader: MockImageLoader(),
-            pixelReporter: nil,
             preloadedImage: nil,
+            loadRemoteImage: nil,
             onDidClose: onDidClose,
             onDidAppear: {},
             onAttachAdditionalParameters: nil
@@ -228,13 +218,5 @@ struct HomeMessageViewModelTests {
         // THEN
         #expect(mockActionHandler.capturedPresentationContext?.presentationStyle == .dismissModalsAndPresentFromRoot)
         #expect(mockActionHandler.capturedPresentationContext?.presenter != nil)
-    }
-}
-
-private final class MockImageLoader: RemoteMessagingImageLoading {
-    func prefetch(_ urls: [URL]) {}
-    func cachedImage(for url: URL) -> RemoteMessagingImage? { nil }
-    func loadImage(from url: URL) async throws -> RemoteMessagingImage {
-        throw RemoteMessagingImageLoadingError.invalidImageData
     }
 }

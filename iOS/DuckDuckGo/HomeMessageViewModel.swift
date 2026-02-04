@@ -60,15 +60,11 @@ struct HomeMessageViewModel {
         case secondaryAction(isShare: Bool)
     }
 
-    let remoteMessage: RemoteMessageModel
+    let messageId: String
     let modelType: HomeSupportedMessageDisplayType
     let messageActionHandler: RemoteMessagingActionHandling
-    let imageLoader: RemoteMessagingImageLoading
-    let pixelReporter: RemoteMessagingPixelReporting?
     let preloadedImage: UIImage?
-
-    var messageId: String { remoteMessage.id }
-    var sendPixels: Bool { remoteMessage.isMetricsEnabled }
+    let loadRemoteImage: (() async -> UIImage?)?
 
     var image: String? {
         switch modelType {
@@ -85,20 +81,6 @@ struct HomeMessageViewModel {
         }
     }
 
-    var imageUrl: URL? {
-        switch modelType {
-        case .small:
-            return nil
-        case .medium(_, _, _, let imageUrl):
-            return imageUrl
-        case .bigSingleAction(_, _, _, let imageUrl, _, _):
-            return imageUrl
-        case .bigTwoAction(_, _, _, let imageUrl, _, _, _, _):
-            return imageUrl
-        case .promoSingleAction(_, _, _, let imageUrl, _, _):
-            return imageUrl
-        }
-    }
     
     var title: String {
         switch modelType {
@@ -188,17 +170,6 @@ struct HomeMessageViewModel {
         }
     }
 
-    func loadRemoteImage() async -> UIImage? {
-        guard let imageUrl else { return nil }
-        do {
-            let image = try await imageLoader.loadImage(from: imageUrl)
-            pixelReporter?.measureRemoteMessageImageLoadSuccess(remoteMessage)
-            return image
-        } catch {
-            pixelReporter?.measureRemoteMessageImageLoadFailed(remoteMessage)
-            return nil
-        }
-    }
 }
 
 struct HomeMessageButtonViewModel {

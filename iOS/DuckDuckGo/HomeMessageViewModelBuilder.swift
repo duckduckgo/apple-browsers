@@ -48,13 +48,29 @@ struct HomeMessageViewModelBuilder {
 
         let preloadedImage: UIImage? = content.imageUrl.flatMap { imageLoader.cachedImage(for: $0) }
 
+        if preloadedImage != nil {
+            pixelReporter?.measureRemoteMessageImageLoadSuccess(remoteMessage)
+        }
+
+        let loadRemoteImage: (() async -> UIImage?)? = content.imageUrl.map { imageUrl in
+            return {
+                do {
+                    let image = try await imageLoader.loadImage(from: imageUrl)
+                    pixelReporter?.measureRemoteMessageImageLoadSuccess(remoteMessage)
+                    return image
+                } catch {
+                    pixelReporter?.measureRemoteMessageImageLoadFailed(remoteMessage)
+                    return nil
+                }
+            }
+        }
+
         return HomeMessageViewModel(
-            remoteMessage: remoteMessage,
+            messageId: remoteMessage.id,
             modelType: homeSupportedMessageDisplayType,
             messageActionHandler: messageActionHandler,
-            imageLoader: imageLoader,
-            pixelReporter: pixelReporter,
             preloadedImage: preloadedImage,
+            loadRemoteImage: loadRemoteImage,
             onDidClose: onDidClose,
             onDidAppear: onDidAppear,
             onAttachAdditionalParameters: { useCase, params in

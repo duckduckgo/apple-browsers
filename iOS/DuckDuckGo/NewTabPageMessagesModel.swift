@@ -95,12 +95,11 @@ final class NewTabPageMessagesModel: ObservableObject {
     private func homeMessageViewModel(for message: HomeMessage) -> HomeMessageViewModel? {
         switch message {
         case .placeholder:
-            return HomeMessageViewModel(remoteMessage: Self.placeholderMessage,
+            return HomeMessageViewModel(messageId: "",
                                         modelType: .small(titleText: "", descriptionText: ""),
                                         messageActionHandler: messageActionHandler,
-                                        imageLoader: imageLoader,
-                                        pixelReporter: nil,
-                                        preloadedImage: nil) { [weak self] _ in
+                                        preloadedImage: nil,
+                                        loadRemoteImage: nil) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
                 // no-op

@@ -112,6 +112,10 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
         let preloadedHeaderImage: UIImage? = imageUrl.flatMap { imageLoader?.cachedImage(for: $0) }
 
+        if preloadedHeaderImage != nil {
+            pixelReporter?.measureRemoteMessageImageLoadSuccess(message)
+        }
+
         let loadHeaderImage: ((URL) async throws -> UIImage)? = imageLoader.map { loader in
             { url in try await loader.loadImage(from: url) }
         }

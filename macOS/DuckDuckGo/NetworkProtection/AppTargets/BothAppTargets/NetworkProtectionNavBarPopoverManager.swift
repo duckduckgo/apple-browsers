@@ -164,7 +164,8 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
         let popover: NSPopover = {
             let vpnAppState = VPNAppState(defaults: .netP)
             let vpnSettings = VPNSettings(defaults: .netP)
-            let controller = NetworkProtectionIPCTunnelController(ipcClient: ipcClient)
+            let featureGatekeeper = DefaultVPNFeatureGatekeeper(vpnUninstaller: vpnUninstaller, subscriptionManager: Application.appDelegate.subscriptionManager)
+            let controller = NetworkProtectionIPCTunnelController(featureGatekeeper: featureGatekeeper, ipcClient: ipcClient)
 
             let statusReporter = DefaultNetworkProtectionStatusReporter(
                 vpnEnabledObserver: ipcClient.ipcVPNEnabledObserver,

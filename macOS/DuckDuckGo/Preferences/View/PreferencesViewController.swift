@@ -39,6 +39,7 @@ final class PreferencesViewController: NSViewController {
 
     private var bitwardenManager: BWManagement = BWManager.shared
     private let featureFlagger: FeatureFlagger
+    private let pinningManager: PinningManager
 
     init(
         syncService: DDGSyncing,
@@ -65,6 +66,7 @@ final class PreferencesViewController: NSViewController {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagger = featureFlagger
         self.aiChatRemoteSettings = aiChatRemoteSettings
+        self.pinningManager = pinningManager
         model = PreferencesSidebarModel(privacyConfigurationManager: privacyConfigurationManager,
                                         featureFlagger: featureFlagger,
                                         syncService: syncService,
@@ -101,7 +103,8 @@ final class PreferencesViewController: NSViewController {
                                                   subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
                                                   featureFlagger: featureFlagger,
                                                   aiChatURLSettings: aiChatRemoteSettings,
-                                                  wideEvent: Application.appDelegate.wideEvent)
+                                                  wideEvent: Application.appDelegate.wideEvent,
+                                                  pinningManager: pinningManager)
         let host = NSHostingView(rootView: prefRootView)
         view.addAndLayout(host)
     }

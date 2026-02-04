@@ -21,7 +21,7 @@ import Foundation
 
 struct HomeButtonMenuFactory {
 
-    static func replace(_ menuItem: NSMenuItem, prefs: AppearancePreferences, pinningManager: PinningManager = NSApp.delegateTyped.pinningManager) -> NSMenuItem? {
+    static func replace(_ menuItem: NSMenuItem, prefs: AppearancePreferences, pinningManager: PinningManager) -> NSMenuItem? {
         guard let menu = menuItem.menu else { return nil }
         let index = menu.index(of: menuItem)
         guard index >= 0 else { return nil }
@@ -31,7 +31,7 @@ struct HomeButtonMenuFactory {
         return item
     }
 
-    static func addToMenu(_ menu: NSMenu, prefs: AppearancePreferences, pinningManager: PinningManager = NSApp.delegateTyped.pinningManager) {
+    static func addToMenu(_ menu: NSMenu, prefs: AppearancePreferences, pinningManager: PinningManager) {
         menu.addItem(makeMenuItem(prefs: prefs, pinningManager: pinningManager))
     }
 

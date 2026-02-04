@@ -44,7 +44,7 @@ final class DataImportShortcutsViewModel: ObservableObject {
         }
     }
 
-    init(dataTypes: Set<DataType>? = nil, prefs: AppearancePreferences = NSApp.delegateTyped.appearancePreferences, pinningManager: PinningManager = NSApp.delegateTyped.pinningManager) {
+    init(dataTypes: Set<DataType>? = nil, prefs: AppearancePreferences = NSApp.delegateTyped.appearancePreferences, pinningManager: PinningManager) {
         self.dataTypes = dataTypes
         self.prefs = prefs
         self.pinningManager = pinningManager

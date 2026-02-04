@@ -37,12 +37,14 @@ struct DataImportView: ModalView {
     let internalUserDecider: InternalUserDecider = Application.appDelegate.internalUserDecider
 
     private let syncFeatureVisibility: SyncFeatureVisibility
+    private let pinningManager: PinningManager
 
-    init(model: DataImportViewModel? = nil, importFlowLauncher: DataImportFlowRelaunching, syncFeatureVisibility: SyncFeatureVisibility) {
+    init(model: DataImportViewModel? = nil, importFlowLauncher: DataImportFlowRelaunching, syncFeatureVisibility: SyncFeatureVisibility, pinningManager: PinningManager) {
         let model = model ?? DataImportViewModel(syncFeatureVisibility: syncFeatureVisibility)
         self._model = State(initialValue: model)
         self.importFlowLauncher = importFlowLauncher
         self.syncFeatureVisibility = syncFeatureVisibility
+        self.pinningManager = pinningManager
     }
 
     struct ProgressState {
@@ -133,7 +135,8 @@ struct DataImportView: ModalView {
                 NewImportSummaryView(
                     summary: summary,
                     sourceImage: model.importSource.importSourceImage ?? DesignSystemImages.Color.Size24.document,
-                    reportModel: $model.reportModel
+                    reportModel: $model.reportModel,
+                    pinningManager: pinningManager
                 ) { type in
                     model.showSummaryDetail(summary: summary, type: type)
                 }

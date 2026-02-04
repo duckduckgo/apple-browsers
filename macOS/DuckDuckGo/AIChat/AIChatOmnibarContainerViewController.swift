@@ -125,6 +125,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.isHidden = !hasText
     }
 
+    private func updateToolButtonsVisibility() {
+        let isEnabled = omnibarController.isOmnibarToolsEnabled
+        customizeButton.isHidden = !isEnabled
+        searchToggleButton.isHidden = !isEnabled
+        imageUploadButton.isHidden = !isEnabled
+    }
+
     private func applyTopClipMask() {
         view.wantsLayer = true
         guard view.bounds.height > 10 else {
@@ -188,6 +195,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         imageUploadButton.action = #selector(imageUploadButtonClicked)
         imageUploadButton.image = DesignSystemImages.Glyphs.Size16.image
         containerView.addSubview(imageUploadButton)
+
+        updateToolButtonsVisibility()
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),

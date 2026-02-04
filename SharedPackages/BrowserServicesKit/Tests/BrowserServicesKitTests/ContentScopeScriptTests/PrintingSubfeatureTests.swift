@@ -166,29 +166,3 @@ class MockPrintingSubfeatureDelegate: PrintingSubfeatureDelegate {
         receivedWebView = webView
     }
 }
-
-// MARK: - Mock WKScriptMessage
-
-private class MockWKScriptMessage: WKScriptMessage {
-    private let mockedName: String
-    private let mockedBody: Any
-    private let mockedWebView: WKWebView?
-    private let mockedFrameInfo: WKFrameInfo
-
-    override var name: String { mockedName }
-    override var body: Any { mockedBody }
-    override var webView: WKWebView? { mockedWebView }
-    override var frameInfo: WKFrameInfo { mockedFrameInfo }
-
-    init(name: String, body: Any, webView: WKWebView? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        self.mockedFrameInfo = MockFrameInfo()
-        super.init()
-    }
-}
-
-private class MockFrameInfo: WKFrameInfo {
-    override var isMainFrame: Bool { true }
-}

@@ -849,6 +849,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             duckPlayer: duckPlayer,
             windowControllersManager: windowControllersManager,
             bookmarkManager: bookmarkManager,
+            pinningManager: pinningManager,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,

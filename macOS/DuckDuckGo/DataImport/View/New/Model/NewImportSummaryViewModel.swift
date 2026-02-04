@@ -89,7 +89,7 @@ final class NewImportSummaryViewModel: ObservableObject {
         }
     }
 
-    init(summary: DataImportSummary, prefs: AppearancePreferences? = nil, pinningManager: PinningManager = Application.appDelegate.pinningManager) {
+    init(summary: DataImportSummary, prefs: AppearancePreferences? = nil, pinningManager: PinningManager = NSApp.delegateTyped.pinningManager) {
         self.prefs = prefs ?? NSApp.delegateTyped.appearancePreferences
         self.pinningManager = pinningManager
 

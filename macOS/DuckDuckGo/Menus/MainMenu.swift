@@ -698,7 +698,7 @@ final class MainMenu: NSMenu {
 
     private func updateShortcutMenuItems() {
         Task { @MainActor in
-            let pinningManager = Application.appDelegate.pinningManager
+            let pinningManager = NSApp.delegateTyped.pinningManager
             toggleAutofillShortcutMenuItem.title = pinningManager.shortcutTitle(for: .autofill)
             toggleBookmarksShortcutMenuItem.title = pinningManager.shortcutTitle(for: .bookmarks)
             toggleDownloadsShortcutMenuItem.title = pinningManager.shortcutTitle(for: .downloads)

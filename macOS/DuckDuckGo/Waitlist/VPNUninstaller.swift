@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import AppLauncher
 import BrowserServicesKit
 import Common
@@ -139,7 +140,7 @@ final class VPNUninstaller: VPNUninstalling {
 
     init(ipcServiceLauncher: IPCServiceLauncher? = nil,
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
-         pinningManager: PinningManager = Application.appDelegate.pinningManager,
+         pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
          userDefaults: UserDefaults = .netP,
          settings: VPNSettings = .init(defaults: .netP),
          ipcClient: VPNControllerIPCClient = VPNControllerUDSClient(),

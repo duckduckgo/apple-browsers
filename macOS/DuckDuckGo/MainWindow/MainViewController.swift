@@ -132,6 +132,7 @@ final class MainViewController: NSViewController {
          vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
          sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator,
          winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter,
+         pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
          memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor
     ) {
 
@@ -263,6 +264,7 @@ final class MainViewController: NSViewController {
                                                                          downloadsPreferences: downloadsPreferences,
                                                                          tabsPreferences: tabsPreferences,
                                                                          accessibilityPreferences: accessibilityPreferences,
+                                                                         pinningManager: pinningManager,
                                                                          memoryUsageMonitor: memoryUsageMonitor)
 
         findInPageViewController = FindInPageViewController.create()

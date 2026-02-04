@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Combine
+import AppKit
 import BrowserServicesKit
+import Combine
+import Foundation
 import FeatureFlags
 import Persistence
 
@@ -109,7 +110,7 @@ final class StartupPreferences: ObservableObject {
     private var persistor: StartupPreferencesPersistor
     private var pinnedViewsNotificationCancellable: AnyCancellable?
 
-    init(pinningManager: PinningManager = Application.appDelegate.pinningManager,
+    init(pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
          persistor: StartupPreferencesPersistor,
          appearancePreferences: AppearancePreferences) {
         self.pinningManager = pinningManager

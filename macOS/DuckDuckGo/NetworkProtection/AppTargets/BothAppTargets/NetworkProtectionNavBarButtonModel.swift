@@ -78,7 +78,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     // MARK: - Initialization
 
     init(popoverManager: NetPPopoverManager,
-         pinningManager: PinningManager = Application.appDelegate.pinningManager,
+         pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
          vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager),
          statusReporter: NetworkProtectionStatusReporter,
          themeManager: ThemeManaging,

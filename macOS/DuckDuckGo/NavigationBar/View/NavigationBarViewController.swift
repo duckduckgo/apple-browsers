@@ -165,6 +165,7 @@ final class NavigationBarViewController: NSViewController {
     private let tabsPreferences: TabsPreferences
     private let accessibilityPreferences: AccessibilityPreferences
     private let showTab: (Tab.TabContent) -> Void
+    private let pinningManager: PinningManager
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -235,6 +236,7 @@ final class NavigationBarViewController: NSViewController {
                        downloadsPreferences: DownloadsPreferences,
                        tabsPreferences: TabsPreferences,
                        accessibilityPreferences: AccessibilityPreferences,
+                       pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
                        memoryUsageMonitor: MemoryUsageMonitor,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
@@ -271,6 +273,7 @@ final class NavigationBarViewController: NSViewController {
                 downloadsPreferences: downloadsPreferences,
                 tabsPreferences: tabsPreferences,
                 accessibilityPreferences: accessibilityPreferences,
+                pinningManager: pinningManager,
                 memoryUsageMonitor: memoryUsageMonitor,
                 showTab: showTab
             )
@@ -305,6 +308,7 @@ final class NavigationBarViewController: NSViewController {
         downloadsPreferences: DownloadsPreferences,
         tabsPreferences: TabsPreferences,
         accessibilityPreferences: AccessibilityPreferences,
+        pinningManager: PinningManager,
         memoryUsageMonitor: MemoryUsageMonitor,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
@@ -325,7 +329,9 @@ final class NavigationBarViewController: NSViewController {
         )
 
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.pinningManager = pinningManager
         self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager,
+                                                                               pinningManager: pinningManager,
                                                                                statusReporter: networkProtectionStatusReporter,
                                                                                themeManager: themeManager,
                                                                                vpnUpsellVisibilityManager: vpnUpsellVisibilityManager)
@@ -634,7 +640,7 @@ final class NavigationBarViewController: NSViewController {
     private func updatePasswordManagementButton() {
         if !isInPopUpWindow {
             passwordManagementButton.menu = NSMenu {
-                NSMenuItem(title: Application.appDelegate.pinningManager.shortcutTitle(for: .autofill),
+                NSMenuItem(title: pinningManager.shortcutTitle(for: .autofill),
                            action: #selector(toggleAutofillPanelPinning),
                            keyEquivalent: "")
             }
@@ -659,7 +665,7 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 #endif
-        if Application.appDelegate.pinningManager.isPinned(.autofill) && !isInPopUpWindow {
+        if pinningManager.isPinned(.autofill) && !isInPopUpWindow {
             passwordManagementButton.isHidden = false
         } else {
             passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown || isAutoFillAutosaveMessageVisible
@@ -675,7 +681,7 @@ final class NavigationBarViewController: NSViewController {
 
     private func updateHomeButton() {
         guard !isInPopUpWindow,
-              Application.appDelegate.pinningManager.isPinned(.homeButton) else {
+              pinningManager.isPinned(.homeButton) else {
 
             homeButton.isHidden = true
             homeButtonSeparator.isHidden = true
@@ -697,13 +703,13 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func updateNetworkProtectionButton() {
-        let isPinned = Application.appDelegate.pinningManager.isPinned(.networkProtection)
+        let isPinned = pinningManager.isPinned(.networkProtection)
         vpnUpsellVisibilityManager.handlePinningChange(isPinned: isPinned)
         networkProtectionButtonModel.updateVisibility()
     }
 
     private func updateShareButton() {
-        let isPinned = Application.appDelegate.pinningManager.isPinned(.share)
+        let isPinned = pinningManager.isPinned(.share)
         shareButton.isHidden = !isPinned || isInPopUpWindow
     }
 
@@ -716,7 +722,7 @@ final class NavigationBarViewController: NSViewController {
     private func updateDownloadsButton(source: DownloadsButtonUpdateSource) {
         if !isInPopUpWindow {
             downloadsButton.menu = NSMenu {
-                NSMenuItem(title: Application.appDelegate.pinningManager.shortcutTitle(for: .downloads),
+                NSMenuItem(title: pinningManager.shortcutTitle(for: .downloads),
                            action: #selector(toggleDownloadsPanelPinning(_:)),
                            keyEquivalent: "")
             }
@@ -729,7 +735,7 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 #endif
-        if Application.appDelegate.pinningManager.isPinned(.downloads) && !isInPopUpWindow {
+        if pinningManager.isPinned(.downloads) && !isInPopUpWindow {
             downloadsButton.isShown = true
             return
         }
@@ -763,7 +769,7 @@ final class NavigationBarViewController: NSViewController {
         // If the user has selected Hide Downloads from the navigation bar context menu, and no downloads are active, then force it to be hidden
         // even if the timer is active.
         if case .pinnedViewsNotification = source {
-            if !Application.appDelegate.pinningManager.isPinned(.downloads) || isInPopUpWindow {
+            if !pinningManager.isPinned(.downloads) || isInPopUpWindow {
                 invalidateDownloadButtonHidingTimer()
                 downloadsButton.isShown = hasActiveDownloads
             }
@@ -791,7 +797,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func hideDownloadButtonIfPossible() {
-        if (Application.appDelegate.pinningManager.isPinned(.downloads) && !isInPopUpWindow) ||
+        if (pinningManager.isPinned(.downloads) && !isInPopUpWindow) ||
             downloadListCoordinator.hasActiveDownloads(for: FireWindowSessionRef(window: view.window)) ||
             popovers.isDownloadsPopoverShown { return }
 
@@ -805,12 +811,12 @@ final class NavigationBarViewController: NSViewController {
         }
 
         let menu = NSMenu()
-        let title = Application.appDelegate.pinningManager.shortcutTitle(for: .bookmarks)
+        let title = pinningManager.shortcutTitle(for: .bookmarks)
         menu.addItem(withTitle: title, action: #selector(toggleBookmarksPanelPinning(_:)), keyEquivalent: "")
 
         bookmarkListButton.menu = menu
 
-        if Application.appDelegate.pinningManager.isPinned(.bookmarks) {
+        if pinningManager.isPinned(.bookmarks) {
             bookmarkListButton.isHidden = false
         } else {
             bookmarkListButton.isHidden = !popovers.bookmarkListPopoverShown
@@ -1506,7 +1512,7 @@ final class NavigationBarViewController: NSViewController {
 
                 isAutoFillAutosaveMessageVisible = false
                 passwordManagementButton.isHidden = !popovers.isPasswordManagementPopoverShown
-                && (!Application.appDelegate.pinningManager.isPinned(.autofill) || isInPopUpWindow)
+                && (!pinningManager.isPinned(.autofill) || isInPopUpWindow)
             }
             self.isAutoFillAutosaveMessageVisible = true
             self.passwordManagementButton.isHidden = false
@@ -1531,7 +1537,7 @@ final class NavigationBarViewController: NSViewController {
                 self.popovers.closeAutofillOnboardingPopover()
 
                 if didAddShortcut {
-                    Application.appDelegate.pinningManager.pin(.autofill)
+                    pinningManager.pin(.autofill)
                 }
             }
         }
@@ -1607,7 +1613,7 @@ final class NavigationBarViewController: NSViewController {
 
     var pinnedViews: [PinnableView] {
         let allButtons: [PinnableView] = [.share, .downloads, .autofill, .bookmarks, .networkProtection, .homeButton]
-        return allButtons.filter(Application.appDelegate.pinningManager.isPinned)
+        return allButtons.filter(pinningManager.isPinned)
     }
 
     private var visiblePinnedItems: [PinnableView] {
@@ -1898,9 +1904,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        HomeButtonMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences)
-
-        let pinningManager = Application.appDelegate.pinningManager
+        HomeButtonMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences, pinningManager: pinningManager)
         let shareTitle = pinningManager.shortcutTitle(for: .share)
         menu.addItem(withTitle: shareTitle, action: #selector(toggleSharePanelPinning), keyEquivalent: "")
 
@@ -1921,27 +1925,27 @@ extension NavigationBarViewController: NSMenuDelegate {
 
     @objc
     private func toggleAutofillPanelPinning(_ sender: NSMenuItem) {
-        Application.appDelegate.pinningManager.togglePinning(for: .autofill)
+        pinningManager.togglePinning(for: .autofill)
     }
 
     @objc
     private func toggleBookmarksPanelPinning(_ sender: NSMenuItem) {
-        Application.appDelegate.pinningManager.togglePinning(for: .bookmarks)
+        pinningManager.togglePinning(for: .bookmarks)
     }
 
     @objc
     private func toggleDownloadsPanelPinning(_ sender: NSMenuItem) {
-        Application.appDelegate.pinningManager.togglePinning(for: .downloads)
+        pinningManager.togglePinning(for: .downloads)
     }
 
     @objc
     private func toggleSharePanelPinning(_ sender: NSMenuItem) {
-        Application.appDelegate.pinningManager.togglePinning(for: .share)
+        pinningManager.togglePinning(for: .share)
     }
 
     @objc
     private func toggleNetworkProtectionPanelPinning(_ sender: NSMenuItem) {
-        Application.appDelegate.pinningManager.togglePinning(for: .networkProtection)
+        pinningManager.togglePinning(for: .networkProtection)
     }
 
     // MARK: - VPN
@@ -1963,7 +1967,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
         assert(networkProtectionButton.menu == nil)
 
-        let menuItem = NSMenuItem(title: Application.appDelegate.pinningManager.shortcutTitle(for: .networkProtection), action: #selector(toggleNetworkProtectionPanelPinning), target: self)
+        let menuItem = NSMenuItem(title: pinningManager.shortcutTitle(for: .networkProtection), action: #selector(toggleNetworkProtectionPanelPinning), target: self)
         let menu = NSMenu(items: [menuItem])
         networkProtectionButton.menu = menu
 

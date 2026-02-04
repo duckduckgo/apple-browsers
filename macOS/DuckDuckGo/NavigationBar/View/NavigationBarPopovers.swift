@@ -85,6 +85,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private let permissionManager: PermissionManagerProtocol
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
+    private let pinningManager: PinningManager
     private let isBurner: Bool
 
     private var popoverIsShownCancellables = Set<AnyCancellable>()
@@ -101,6 +102,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         networkProtectionPopoverManager: NetPPopoverManager,
         autofillPopoverPresenter: AutofillPopoverPresenter,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
+        pinningManager: PinningManager,
         isBurner: Bool
     ) {
         self.bookmarkManager = bookmarkManager
@@ -114,6 +116,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
+        self.pinningManager = pinningManager
         self.isBurner = isBurner
     }
 
@@ -507,7 +510,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     }
 
     private func showSaveCredentialsPopover(usingView view: NSView, withDelegate delegate: NSPopoverDelegate) {
-        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains)
+        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains, pinningManager: pinningManager)
         popover.delegate = delegate
         saveCredentialsPopover = popover
         show(popover, positionedBelow: view)

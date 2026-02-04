@@ -769,6 +769,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(
+            pinningManager: pinningManager,
             persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
             appearancePreferences: appearancePreferences
         )

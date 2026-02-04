@@ -236,7 +236,7 @@ final class NavigationBarViewController: NSViewController {
                        downloadsPreferences: DownloadsPreferences,
                        tabsPreferences: TabsPreferences,
                        accessibilityPreferences: AccessibilityPreferences,
-                       pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
+                       pinningManager: PinningManager,
                        memoryUsageMonitor: MemoryUsageMonitor,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
@@ -325,6 +325,7 @@ final class NavigationBarViewController: NSViewController {
             networkProtectionPopoverManager: networkProtectionPopoverManager,
             autofillPopoverPresenter: autofillPopoverPresenter,
             vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
+            pinningManager: pinningManager,
             isBurner: tabCollectionViewModel.isBurner
         )
 

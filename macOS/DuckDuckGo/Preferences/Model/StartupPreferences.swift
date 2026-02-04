@@ -110,7 +110,7 @@ final class StartupPreferences: ObservableObject {
     private var persistor: StartupPreferencesPersistor
     private var pinnedViewsNotificationCancellable: AnyCancellable?
 
-    init(pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
+    init(pinningManager: PinningManager,
          persistor: StartupPreferencesPersistor,
          appearancePreferences: AppearancePreferences) {
         self.pinningManager = pinningManager

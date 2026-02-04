@@ -65,7 +65,7 @@ extension SaveCredentialsViewController: MouseOverViewDelegate {
 
 final class SaveCredentialsViewController: NSViewController {
 
-    static func create(fireproofDomains: FireproofDomains, pinningManager: PinningManager = NSApp.delegateTyped.pinningManager) -> SaveCredentialsViewController {
+    static func create(fireproofDomains: FireproofDomains, pinningManager: PinningManager) -> SaveCredentialsViewController {
         let storyboard = NSStoryboard(name: "PasswordManager", bundle: nil)
         let controller: SaveCredentialsViewController = storyboard.instantiateController(identifier: "SaveCredentials") { coder in
             self.init(coder: coder, fireproofDomains: fireproofDomains, pinningManager: pinningManager)
@@ -75,7 +75,7 @@ final class SaveCredentialsViewController: NSViewController {
         return controller
     }
 
-    init?(coder: NSCoder, fireproofDomains: FireproofDomains, pinningManager: PinningManager = NSApp.delegateTyped.pinningManager) {
+    init?(coder: NSCoder, fireproofDomains: FireproofDomains, pinningManager: PinningManager) {
         self.fireproofDomains = fireproofDomains
         self.pinningManager = pinningManager
         super.init(coder: coder)

@@ -24,6 +24,9 @@ import NewTabPage
 import PrivacyConfig
 
 final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProviding {
+    private let featureFlagger: FeatureFlagger
+    private let singleCardProvider: NewTabPageNextStepsSingleCardProvider
+    private let legacyCardsProvider: NewTabPageNextStepsCardsProvider
     private var cancellables: Set<AnyCancellable> = []
     @Published private(set) var activeProvider: NewTabPageNextStepsCardsProviding
 
@@ -38,44 +41,41 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
          persistor: NewTabPageNextStepsCardsPersisting,
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          syncService: DDGSyncing?) {
+        let singleCardProvider = NewTabPageNextStepsSingleCardProvider(
+            cardActionHandler: cardActionsHandler,
+            pixelHandler: pixelHandler,
+            persistor: persistor,
+            legacyPersistor: legacyPersistor,
+            legacySubscriptionCardPersistor: legacySubscriptionCardPersistor,
+            appearancePreferences: appearancePreferences,
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
+            dockCustomizer: DockCustomizer(),
+            dataImportProvider: dataImportProvider,
+            duckPlayerPreferences: duckPlayerPreferences,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            syncService: syncService
+        )
+        let legacyCardsProvider = NewTabPageNextStepsCardsProvider(
+            continueSetUpModel: HomePage.Models.ContinueSetUpModel(
+                dataImportProvider: dataImportProvider,
+                subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+                persistor: legacyPersistor,
+                pixelHandler: pixelHandler,
+                cardActionsHandler: cardActionsHandler
+            ),
+            appearancePreferences: appearancePreferences,
+            pixelHandler: pixelHandler
+        )
+        self.featureFlagger = featureFlagger
+        self.singleCardProvider = singleCardProvider
+        self.legacyCardsProvider = legacyCardsProvider
+        activeProvider = featureFlagger.isFeatureOn(.nextStepsListWidget) ? singleCardProvider : legacyCardsProvider
 
-        func getActiveProvider() -> NewTabPageNextStepsCardsProviding {
-            if featureFlagger.isFeatureOn(.nextStepsListWidget) {
-                return NewTabPageNextStepsSingleCardProvider(
-                    cardActionHandler: cardActionsHandler,
-                    pixelHandler: pixelHandler,
-                    persistor: persistor,
-                    legacyPersistor: legacyPersistor,
-                    legacySubscriptionCardPersistor: legacySubscriptionCardPersistor,
-                    appearancePreferences: appearancePreferences,
-                    defaultBrowserProvider: SystemDefaultBrowserProvider(),
-                    dockCustomizer: DockCustomizer(),
-                    dataImportProvider: dataImportProvider,
-                    duckPlayerPreferences: duckPlayerPreferences,
-                    subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-                    syncService: syncService
-                )
-            } else {
-                return NewTabPageNextStepsCardsProvider(
-                    continueSetUpModel: HomePage.Models.ContinueSetUpModel(
-                        dataImportProvider: dataImportProvider,
-                        subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-                        persistor: legacyPersistor,
-                        pixelHandler: pixelHandler,
-                        cardActionsHandler: cardActionsHandler
-                    ),
-                    appearancePreferences: appearancePreferences,
-                    pixelHandler: pixelHandler
-                )
-            }
-        }
-
-        activeProvider = getActiveProvider()
 
         featureFlagger.updatesPublisher
             .sink { [weak self] _ in
                 guard let self else { return }
-                activeProvider = getActiveProvider()
+                activeProvider = featureFlagger.isFeatureOn(.nextStepsListWidget) ? singleCardProvider : legacyCardsProvider
             }
             .store(in: &cancellables)
     }

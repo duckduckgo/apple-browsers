@@ -411,20 +411,10 @@ final class PreviewStartupPreferencesPersistor: StartupPreferencesPersistor {
     }
 }
 
-/// Mock pinning manager for previews
-final class PreviewPinningManager: PinningManager {
-    func togglePinning(for view: PinnableView) {}
-    func isPinned(_ view: PinnableView) -> Bool { false }
-    func wasManuallyToggled(_ view: PinnableView) -> Bool { false }
-    func pin(_ view: PinnableView) {}
-    func unpin(_ view: PinnableView) {}
-    func shortcutTitle(for view: PinnableView) -> String { "" }
-}
-
 /// Helper to create StartupPreferences for previews
 func makePreviewStartupPreferences(restorePreviousSession: Bool) -> StartupPreferences {
     StartupPreferences(
-        pinningManager: PreviewPinningManager(),
+        pinningManager: MockPinningManager(),
         persistor: PreviewStartupPreferencesPersistor(restorePreviousSession: restorePreviousSession),
         appearancePreferences: .mock
     )

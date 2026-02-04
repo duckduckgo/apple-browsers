@@ -97,7 +97,6 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         assertLegacyDailyPixel(
             baseName: SubscriptionPixel.subscriptionActive.name,
             expectedParameters: [
-                AuthVersion.key: AuthVersion.v2.rawValue,
                 PixelKit.Parameters.pixelSource: pixelSource,
                 PixelKit.Parameters.appVersion: "1.0.0",
                 PixelKit.Parameters.test: "1"

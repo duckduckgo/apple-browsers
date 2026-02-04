@@ -690,21 +690,43 @@ class HistoryCoordinatorTests: XCTestCase {
         let url1 = URL(string: "https://site1.com")!
         let url2 = URL(string: "https://site2.com")!
 
+        // Set up save completion expectation BEFORE adding visits
+        let saveExpectation = expectation(description: "Saves completed")
+        saveExpectation.expectedFulfillmentCount = 2
+        historyStoringMock.saveCompletion = {
+            saveExpectation.fulfill()
+        }
+
         // Add visits for tab-1
         let visit1 = historyCoordinator.addVisit(of: url1, tabID: "tab-1")
         // Add visits for tab-2
         _ = historyCoordinator.addVisit(of: url2, tabID: "tab-2")
 
         // Wait for saves to complete
-        let saveExpectation = expectation(description: "Saves completed")
-        saveExpectation.expectedFulfillmentCount = 2
-        historyStoringMock.saveCompletion = {
-            saveExpectation.fulfill()
-        }
         await fulfillment(of: [saveExpectation], timeout: 1.0)
 
+        // Wait for identifier to be set on the original visit (happens asynchronously after save returns)
+        guard let visit1 else {
+            XCTFail("visit1 should not be nil")
+            return
+        }
+
+        // Poll for identifier to be set (it's set asynchronously after the mock's save returns)
+        let identifierExpectation = expectation(description: "Identifier set")
+        Task {
+            while visit1.identifier == nil {
+                try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+            }
+            identifierExpectation.fulfill()
+        }
+        await fulfillment(of: [identifierExpectation], timeout: 1.0)
+
         // Configure mock to return only tab-1's visit ID
-        historyStoringMock.pageVisitIDsResult = [visit1!.identifier!]
+        guard let visit1ID = visit1.identifier else {
+            XCTFail("visit1 identifier should not be nil after save")
+            return
+        }
+        historyStoringMock.pageVisitIDsResult = [visit1ID]
 
         // When
         let burnExpectation = expectation(description: "Burn completed")
@@ -718,7 +740,7 @@ class HistoryCoordinatorTests: XCTestCase {
 
         // Then - Only tab-1's visit should be removed
         XCTAssertEqual(historyStoringMock.removeVisitsArray.count, 1)
-        XCTAssertEqual(historyStoringMock.removeVisitsArray.first?.identifier, visit1?.identifier)
+        XCTAssertEqual(historyStoringMock.removeVisitsArray.first?.identifier, visit1.identifier)
         XCTAssertTrue(historyCoordinator.history!.contains { $0.url == url2 })
     }
 

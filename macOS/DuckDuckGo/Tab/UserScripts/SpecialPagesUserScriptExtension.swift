@@ -62,6 +62,7 @@ extension SpecialPagesUserScript {
             appearancePreferences: NSApp.delegateTyped.appearancePreferences,
             startupPreferences: NSApp.delegateTyped.startupPreferences,
             bookmarkManager: NSApp.delegateTyped.bookmarkManager,
+            pinningManager: NSApp.delegateTyped.pinningManager,
             featureFlagger: NSApp.delegateTyped.featureFlagger
         )
     }

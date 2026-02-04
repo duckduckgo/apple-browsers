@@ -97,8 +97,9 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
-            showTab: { _ in },
+            showTab: { _ in }
             )
 
         // Then
@@ -117,7 +118,8 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: mockRemoteAISettings,
             wideEvent: WideEventMock(),
-            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            pinningManager: MockPinningManager(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -151,7 +153,8 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionUIHandler: subscriptionUIHandler,
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
-            wideEvent: WideEventMock()
+            wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -188,6 +191,7 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in },
             pixelHandler: { pixel, _ in

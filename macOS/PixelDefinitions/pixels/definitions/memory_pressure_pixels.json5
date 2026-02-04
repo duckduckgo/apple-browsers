@@ -1,12 +1,5 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    "m_mac_memory_pressure_warning": {
-        "description": "Sent when the operating system reports warning level memory pressure.",
-        "owners": ["ayoy"],
-        "triggers": ["other"],
-        "suffixes": ["daily"],
-        "parameters": ["appVersion"]
-    },
     "m_mac_memory_pressure_critical": {
         "description": "Sent when the operating system reports critical level memory pressure.",
         "owners": ["ayoy"],

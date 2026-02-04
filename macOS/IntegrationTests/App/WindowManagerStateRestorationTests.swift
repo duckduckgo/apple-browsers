@@ -100,12 +100,12 @@ final class WindowManagerStateRestorationTests: XCTestCase {
                                               historyProvider: MockHistoryViewDataProvider())
         let model1 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs1), selectionIndex: .unpinned(0), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
         let mainViewController1 = MainViewController(tabCollectionViewModel: model1,
-                                                     autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+                                                     autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
                                                      aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
                                                      fireCoordinator: fireCoordinator)
         let model2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs2), selectionIndex: .unpinned(2), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
         let mainViewController2 = MainViewController(tabCollectionViewModel: model2,
-                                                     autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+                                                     autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
                                                      aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
                                                      fireCoordinator: fireCoordinator)
         let windowController1 = MainWindowController(mainViewController: mainViewController1, fireWindowSession: nil, fireViewModel: FireViewModel(tld: Application.appDelegate.tld, visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider()), themeManager: MockThemeManager())

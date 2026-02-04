@@ -48,7 +48,9 @@ final class MockTabDelegate: TabDelegate {
 
     func tabWillRequestNewTab(_ tab: DuckDuckGo.TabViewController) -> UIKeyModifierFlags? { nil }
 
-    func tabDidRequestNewTab(_ tab: DuckDuckGo.TabViewController) {}
+    func tabDidRequestNewTab(_ tab: TabViewController) {}
+    
+    func newTab(reuseExisting: Bool) {}
 
     func tabDidRequestActivate(_ tab: TabViewController) {}
 

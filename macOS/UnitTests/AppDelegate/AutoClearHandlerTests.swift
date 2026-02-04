@@ -66,6 +66,7 @@ class AutoClearHandlerTests: XCTestCase {
             aiChatMenuConfig: MockAIChatConfig()
         )
         startupPreferences = StartupPreferences(
+            pinningManager: MockPinningManager(),
             persistor: persistor2,
             appearancePreferences: appearancePreferences
         )

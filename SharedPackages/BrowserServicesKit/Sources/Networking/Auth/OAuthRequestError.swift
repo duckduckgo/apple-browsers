@@ -20,91 +20,91 @@ import Foundation
 import Common
 
 public enum OAuthRequestError: DDGError {
-    case invalidAuthorizationRequest(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case authorizeFailed(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case invalidRequest(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case accountCreateFailed(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case invalidEmailAddress(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case invalidSessionId(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case suspendedAccount(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case emailSendingError(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case invalidLoginCredentials(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case unknownAccount(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case invalidTokenRequest(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case unverifiedAccount(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case emailAddressNotChanged(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case failedMxCheck(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case accountEditFailed(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case invalidLinkSignature(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case accountChangeEmailAddressFailed(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case invalidToken(bodyErrorCode: OAuthRequest.BodyErrorCode)
-    case expiredToken(bodyErrorCode: OAuthRequest.BodyErrorCode)
+    case invalidAuthorizationRequest(bodyError: OAuthRequest.BodyError)
+    case authorizeFailed(bodyError: OAuthRequest.BodyError)
+    case invalidRequest(bodyError: OAuthRequest.BodyError)
+    case accountCreateFailed(bodyError: OAuthRequest.BodyError)
+    case invalidEmailAddress(bodyError: OAuthRequest.BodyError)
+    case invalidSessionId(bodyError: OAuthRequest.BodyError)
+    case suspendedAccount(bodyError: OAuthRequest.BodyError)
+    case emailSendingError(bodyError: OAuthRequest.BodyError)
+    case invalidLoginCredentials(bodyError: OAuthRequest.BodyError)
+    case unknownAccount(bodyError: OAuthRequest.BodyError)
+    case invalidTokenRequest(bodyError: OAuthRequest.BodyError)
+    case unverifiedAccount(bodyError: OAuthRequest.BodyError)
+    case emailAddressNotChanged(bodyError: OAuthRequest.BodyError)
+    case failedMxCheck(bodyError: OAuthRequest.BodyError)
+    case accountEditFailed(bodyError: OAuthRequest.BodyError)
+    case invalidLinkSignature(bodyError: OAuthRequest.BodyError)
+    case accountChangeEmailAddressFailed(bodyError: OAuthRequest.BodyError)
+    case invalidToken(bodyError: OAuthRequest.BodyError)
+    case expiredToken(bodyError: OAuthRequest.BodyError)
 
-    public init(from bodyErrorCode: OAuthRequest.BodyErrorCode) {
-        switch bodyErrorCode {
+    public init(from bodyError: OAuthRequest.BodyError) {
+        switch bodyError.errorCode {
         case .invalidAuthorizationRequest:
-            self = .invalidAuthorizationRequest(bodyErrorCode: bodyErrorCode)
+            self = .invalidAuthorizationRequest(bodyError: bodyError)
         case .authorizeFailed:
-            self = .authorizeFailed(bodyErrorCode: bodyErrorCode)
+            self = .authorizeFailed(bodyError: bodyError)
         case .invalidRequest:
-            self = .invalidRequest(bodyErrorCode: bodyErrorCode)
+            self = .invalidRequest(bodyError: bodyError)
         case .accountCreateFailed:
-            self = .accountCreateFailed(bodyErrorCode: bodyErrorCode)
+            self = .accountCreateFailed(bodyError: bodyError)
         case .invalidEmailAddress:
-            self = .invalidEmailAddress(bodyErrorCode: bodyErrorCode)
+            self = .invalidEmailAddress(bodyError: bodyError)
         case .invalidSessionId:
-            self = .invalidSessionId(bodyErrorCode: bodyErrorCode)
+            self = .invalidSessionId(bodyError: bodyError)
         case .suspendedAccount:
-            self = .suspendedAccount(bodyErrorCode: bodyErrorCode)
+            self = .suspendedAccount(bodyError: bodyError)
         case .emailSendingError:
-            self = .emailSendingError(bodyErrorCode: bodyErrorCode)
+            self = .emailSendingError(bodyError: bodyError)
         case .invalidLoginCredentials:
-            self = .invalidLoginCredentials(bodyErrorCode: bodyErrorCode)
+            self = .invalidLoginCredentials(bodyError: bodyError)
         case .unknownAccount:
-            self = .unknownAccount(bodyErrorCode: bodyErrorCode)
+            self = .unknownAccount(bodyError: bodyError)
         case .invalidTokenRequest:
-            self = .invalidTokenRequest(bodyErrorCode: bodyErrorCode)
+            self = .invalidTokenRequest(bodyError: bodyError)
         case .unverifiedAccount:
-            self = .unverifiedAccount(bodyErrorCode: bodyErrorCode)
+            self = .unverifiedAccount(bodyError: bodyError)
         case .emailAddressNotChanged:
-            self = .emailAddressNotChanged(bodyErrorCode: bodyErrorCode)
+            self = .emailAddressNotChanged(bodyError: bodyError)
         case .failedMxCheck:
-            self = .failedMxCheck(bodyErrorCode: bodyErrorCode)
+            self = .failedMxCheck(bodyError: bodyError)
         case .accountEditFailed:
-            self = .accountEditFailed(bodyErrorCode: bodyErrorCode)
+            self = .accountEditFailed(bodyError: bodyError)
         case .invalidLinkSignature:
-            self = .invalidLinkSignature(bodyErrorCode: bodyErrorCode)
+            self = .invalidLinkSignature(bodyError: bodyError)
         case .accountChangeEmailAddressFailed:
-            self = .accountChangeEmailAddressFailed(bodyErrorCode: bodyErrorCode)
+            self = .accountChangeEmailAddressFailed(bodyError: bodyError)
         case .invalidToken:
-            self = .invalidToken(bodyErrorCode: bodyErrorCode)
+            self = .invalidToken(bodyError: bodyError)
         case .expiredToken:
-            self = .expiredToken(bodyErrorCode: bodyErrorCode)
+            self = .expiredToken(bodyError: bodyError)
         }
     }
 
-    public var bodyErrorCode: OAuthRequest.BodyErrorCode {
+    public var bodyError: OAuthRequest.BodyError {
         switch self {
-        case .invalidAuthorizationRequest(let bodyErrorCode),
-             .authorizeFailed(let bodyErrorCode),
-             .invalidRequest(let bodyErrorCode),
-             .accountCreateFailed(let bodyErrorCode),
-             .invalidEmailAddress(let bodyErrorCode),
-             .invalidSessionId(let bodyErrorCode),
-             .suspendedAccount(let bodyErrorCode),
-             .emailSendingError(let bodyErrorCode),
-             .invalidLoginCredentials(let bodyErrorCode),
-             .unknownAccount(let bodyErrorCode),
-             .invalidTokenRequest(let bodyErrorCode),
-             .unverifiedAccount(let bodyErrorCode),
-             .emailAddressNotChanged(let bodyErrorCode),
-             .failedMxCheck(let bodyErrorCode),
-             .accountEditFailed(let bodyErrorCode),
-             .invalidLinkSignature(let bodyErrorCode),
-             .accountChangeEmailAddressFailed(let bodyErrorCode),
-             .invalidToken(let bodyErrorCode),
-             .expiredToken(let bodyErrorCode):
-            return bodyErrorCode
+        case .invalidAuthorizationRequest(let bodyError),
+             .authorizeFailed(let bodyError),
+             .invalidRequest(let bodyError),
+             .accountCreateFailed(let bodyError),
+             .invalidEmailAddress(let bodyError),
+             .invalidSessionId(let bodyError),
+             .suspendedAccount(let bodyError),
+             .emailSendingError(let bodyError),
+             .invalidLoginCredentials(let bodyError),
+             .unknownAccount(let bodyError),
+             .invalidTokenRequest(let bodyError),
+             .unverifiedAccount(let bodyError),
+             .emailAddressNotChanged(let bodyError),
+             .failedMxCheck(let bodyError),
+             .accountEditFailed(let bodyError),
+             .invalidLinkSignature(let bodyError),
+             .accountChangeEmailAddressFailed(let bodyError),
+             .invalidToken(let bodyError),
+             .expiredToken(let bodyError):
+            return bodyError
         }
     }
 
@@ -153,9 +153,11 @@ public enum OAuthRequestError: DDGError {
         }
     }
 
-    public var underlyingError: (any Error)? { nil }
+    public var underlyingError: (any Error)? {
+        return self.bodyError.tokenStatus
+    }
 
     public var description: String {
-        bodyErrorCode.description
+        bodyError.description
     }
 }

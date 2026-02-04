@@ -273,14 +273,12 @@ class FireExecutor: FireExecuting {
             if tabManager.isCurrentTab(viewModel.tab) {
                 tabManager.prepareTab(viewModel.tab)
             }
-            let isLastOpenTab = tabManager.count == 1
 
             // Pass false to clearTabHistory to preserve tab history while burning
             // As tab history is needed by other processes running in parallel
             // didFinishBurning(fireRequest:) manually clears data after burn is complete
-            tabManager.closeTab(viewModel.tab,
-                                shouldCreateEmptyTabAtSamePosition: isLastOpenTab,
-                                clearTabHistory: false)
+            // Close the tab and append a new empty tab, reusing existing one if exists
+            tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
             
             Favicons.shared.removeTabFavicons(forDomains: domains)
         }

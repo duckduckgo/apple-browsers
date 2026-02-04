@@ -23,21 +23,15 @@ import PixelKit
 import PrivacyConfig
 
 extension Notification.Name {
-    static let memoryPressureWarning = Notification.Name("com.duckduckgo.macos.memoryPressure.warning")
     static let memoryPressureCritical = Notification.Name("com.duckduckgo.macos.memoryPressure.critical")
 }
 
 enum MemoryPressurePixel: PixelKitEvent {
-    /// Fired when the system reports warning level memory pressure.
-    case memoryPressureWarning
-
     /// Fired when the system reports critical level memory pressure.
     case memoryPressureCritical
 
     var name: String {
         switch self {
-        case .memoryPressureWarning:
-            return "m_mac_memory_pressure_warning"
         case .memoryPressureCritical:
             return "m_mac_memory_pressure_critical"
         }
@@ -50,7 +44,7 @@ enum MemoryPressurePixel: PixelKitEvent {
 /// Reports system memory pressure events as pixels.
 ///
 /// This reporter listens to macOS memory pressure notifications using `DispatchSource`
-/// and fires pixels when warning or critical memory pressure levels are detected.
+/// and fires pixels when critical memory pressure levels are detected.
 ///
 final class MemoryPressureReporter {
 
@@ -97,7 +91,7 @@ final class MemoryPressureReporter {
     func startMonitoring() {
         guard memoryPressureSource == nil, featureFlagger.isFeatureOn(.memoryPressureReporting) else { return }
 
-        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: .critical, queue: .main)
 
         source.setEventHandler { [weak self] in
             guard let self else { return }
@@ -121,10 +115,6 @@ final class MemoryPressureReporter {
             logger?.warning("Memory pressure: critical")
             notificationCenter.post(name: .memoryPressureCritical, object: self)
             pixelFiring?.fire(MemoryPressurePixel.memoryPressureCritical, frequency: .dailyAndStandard)
-        } else if event.contains(.warning) {
-            logger?.warning("Memory pressure: warning")
-            notificationCenter.post(name: .memoryPressureWarning, object: self)
-            pixelFiring?.fire(MemoryPressurePixel.memoryPressureWarning, frequency: .dailyAndStandard)
         }
     }
 
@@ -136,7 +126,7 @@ final class MemoryPressureReporter {
     /// memory pressure handling without waiting for actual system memory pressure events.
     /// It allows developers to test the app's response to memory pressure conditions.
     ///
-    /// - Parameter level: The memory pressure level to simulate (`.warning` or `.critical`).
+    /// - Parameter level: The memory pressure level to simulate (`.critical`).
     ///
     /// - Warning: Do not use this method in production code. It is designed exclusively
     ///   for debugging and testing purposes via the Debug menu.

@@ -328,36 +328,18 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertFalse(mockTabManager.prepareTabCalled)
     }
     
-    func testBurnTabsWithTabScopeWhenLastTabCreatesEmptyTab() async {
+    func testBurnTabsWithTabScopeClosesTabAndNavigatesToHomepage() async {
         // Given
         let executor = makeFireExecutor()
         let tabViewModel = makeTabViewModel()
-        mockTabManager.count = 1
         
         // When
         await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
         
-        // Then
-        XCTAssertTrue(mockTabManager.closeTabCalled)
-        XCTAssertEqual(mockTabManager.closeTabCalledWith, tabViewModel.tab)
-        XCTAssertEqual(mockTabManager.closeTabShouldCreateEmptyTab, true)
-        XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
-    }
-    
-    func testBurnTabsWithTabScopeWhenNotLastTabDoesNotCreateEmptyTab() async {
-        // Given
-        let executor = makeFireExecutor()
-        let tabViewModel = makeTabViewModel()
-        mockTabManager.count = 3
-        
-        // When
-        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
-        
-        // Then
-        XCTAssertTrue(mockTabManager.closeTabCalled)
-        XCTAssertEqual(mockTabManager.closeTabCalledWith, tabViewModel.tab)
-        XCTAssertEqual(mockTabManager.closeTabShouldCreateEmptyTab, false)
-        XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
+        // Then - Tab is closed and navigates to homepage (reusing existing or creating new)
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageClearTabHistory, false)
     }
     
     func testBurnTabsWithTabScopeCleansUpTabHistoryAfterBurnCompletes() async {

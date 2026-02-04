@@ -1564,6 +1564,12 @@ extension TabViewController: WKNavigationDelegate {
         
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
+
+        if aiChatContextualSheetCoordinator.hasActiveSheet {
+            Task { [weak self] in
+                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
+            }
+        }
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -1731,13 +1737,6 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
         specialErrorPageNavigationHandler.handleWebView(webView, didFinish: navigation)
-
-        // Notify contextual AI chat coordinator that the page changed (for context refresh)
-        if aiChatContextualSheetCoordinator.hasActiveSheet {
-            Task { [weak self] in
-                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
-            }
-        }
     }
 
     /// Fires product telemetry related to the current URL

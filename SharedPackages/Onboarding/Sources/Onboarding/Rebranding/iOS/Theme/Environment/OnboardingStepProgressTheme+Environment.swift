@@ -23,7 +23,7 @@ private struct OnboardingStepProgressThemeKey: EnvironmentKey {
     static let defaultValue = OnboardingStepProgressTheme.rebranding2026
 }
 
-extension EnvironmentValues {
+public extension EnvironmentValues {
 
     var onboardingStepProgressTheme: OnboardingStepProgressTheme {
         get { self[OnboardingStepProgressThemeKey.self] }

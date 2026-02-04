@@ -36,14 +36,14 @@ final class VPNUIActionHandler {
     private let tunnelController: TunnelController
     private let vpnAppState: VPNAppState
     private let vpnURLEventHandler: VPNURLEventHandler
-    private let freeTrialConversionService: FreeTrialConversionWideEventService
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     init(vpnIPCClient: VPNControllerXPCClient = .shared,
          vpnURLEventHandler: VPNURLEventHandler,
          tunnelController: TunnelController,
          proxySettings: TransparentProxySettings,
          vpnAppState: VPNAppState,
-         freeTrialConversionService: FreeTrialConversionWideEventService) {
+         freeTrialConversionService: FreeTrialConversionInstrumentationService) {
 
         self.vpnIPCClient = vpnIPCClient
         self.vpnURLEventHandler = vpnURLEventHandler

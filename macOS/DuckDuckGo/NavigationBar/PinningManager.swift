@@ -40,8 +40,6 @@ protocol PinningManager {
 
 final class LocalPinningManager: PinningManager {
 
-    static let shared = LocalPinningManager()
-
     static let pinnedViewChangedNotificationViewTypeKey = "pinning.pinnedViewChanged.viewType"
 
     @UserDefaultsWrapper(key: .pinnedViews, defaultValue: [])
@@ -141,3 +139,37 @@ extension NSNotification.Name {
     static let PinnedViewsChanged = NSNotification.Name("pinning.pinnedViewsChanged")
 
 }
+
+#if DEBUG
+final class MockPinningManager: PinningManager {
+    var pinnedViews: Set<PinnableView> = []
+
+    func togglePinning(for view: PinnableView) {
+        if pinnedViews.contains(view) {
+            pinnedViews.remove(view)
+        } else {
+            pinnedViews.insert(view)
+        }
+    }
+
+    func isPinned(_ view: PinnableView) -> Bool {
+        pinnedViews.contains(view)
+    }
+
+    func wasManuallyToggled(_ view: PinnableView) -> Bool {
+        false
+    }
+
+    func pin(_ view: PinnableView) {
+        pinnedViews.insert(view)
+    }
+
+    func unpin(_ view: PinnableView) {
+        pinnedViews.remove(view)
+    }
+
+    func shortcutTitle(for view: PinnableView) -> String {
+        ""
+    }
+}
+#endif

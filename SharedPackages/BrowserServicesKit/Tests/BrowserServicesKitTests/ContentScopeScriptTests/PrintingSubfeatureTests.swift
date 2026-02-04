@@ -110,6 +110,44 @@ final class PrintingSubfeatureTests: XCTestCase {
         XCTAssertNil(subfeature.delegate)
         XCTAssertNil(subfeature.broker)
     }
+
+    func testWithBrokerSetsBrokerProperty() {
+        let broker = UserScriptMessageBroker(context: "test")
+        printingSubfeature.with(broker: broker)
+        XCTAssertNotNil(printingSubfeature.broker)
+    }
+
+    // MARK: - Handler Invocation Tests
+
+    @MainActor
+    func testHandlerCallsDelegateWhenInvoked() async throws {
+        // GIVEN
+        let handler = printingSubfeature.handler(forMethodNamed: "print")
+        XCTAssertNotNil(handler)
+
+        let mockMessage = MockWKScriptMessage(name: "print", body: [:])
+
+        // WHEN
+        _ = try await handler!([:], mockMessage)
+
+        // THEN
+        XCTAssertTrue(mockDelegate.didRequestPrintCalled, "Delegate should be called when print handler is invoked")
+    }
+
+    @MainActor
+    func testHandlerPassesWebViewToDelegate() async throws {
+        // GIVEN
+        let handler = printingSubfeature.handler(forMethodNamed: "print")
+        let webView = WKWebView()
+        let mockMessage = MockWKScriptMessage(name: "print", body: [:], webView: webView)
+
+        // WHEN
+        _ = try await handler!([:], mockMessage)
+
+        // THEN
+        XCTAssertTrue(mockDelegate.didRequestPrintCalled)
+        XCTAssertEqual(mockDelegate.receivedWebView, webView, "Delegate should receive the webView from the message")
+    }
 }
 
 // MARK: - Mock Delegate
@@ -125,4 +163,30 @@ class MockPrintingSubfeatureDelegate: PrintingSubfeatureDelegate {
         receivedFrameHandle = frameHandle
         receivedWebView = webView
     }
+}
+
+// MARK: - Mock WKScriptMessage
+
+private class MockWKScriptMessage: WKScriptMessage {
+    private let mockedName: String
+    private let mockedBody: Any
+    private let mockedWebView: WKWebView?
+    private let mockedFrameInfo: WKFrameInfo
+
+    override var name: String { mockedName }
+    override var body: Any { mockedBody }
+    override var webView: WKWebView? { mockedWebView }
+    override var frameInfo: WKFrameInfo { mockedFrameInfo }
+
+    init(name: String, body: Any, webView: WKWebView? = nil) {
+        self.mockedName = name
+        self.mockedBody = body
+        self.mockedWebView = webView
+        self.mockedFrameInfo = MockFrameInfo()
+        super.init()
+    }
+}
+
+private class MockFrameInfo: WKFrameInfo {
+    override var isMainFrame: Bool { true }
 }

@@ -309,7 +309,6 @@
 		4B6ED9452B992FE4007F5CAA /* vpn-dark-mode.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B6ED9442B992FE4007F5CAA /* vpn-dark-mode.json */; };
 		4B74A1C12E49510400277779 /* NetworkProtectionLogViewerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B74A1C02E49510400277779 /* NetworkProtectionLogViewerViewController.swift */; };
 		4B74A1C32E49512500277779 /* NetworkProtectionLogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B74A1C22E49512500277779 /* NetworkProtectionLogManager.swift */; };
-		4B75EA9226A266CB00018634 /* PrintingUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B75EA9126A266CB00018634 /* PrintingUserScript.swift */; };
 		4B821FAC2E21CD3900685484 /* RunDBPDebugModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B821FAB2E21CD3600685484 /* RunDBPDebugModeViewController.swift */; };
 		4B82E4772E64E4CF00DE9F0C /* WideEventLaunchCleanupTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B82E4762E64E4CF00DE9F0C /* WideEventLaunchCleanupTask.swift */; };
 		4B94B79E2D4831D90014AAB8 /* SyncUI-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 4B94B79D2D4831D90014AAB8 /* SyncUI-iOS */; };
@@ -2607,7 +2606,6 @@
 		4B6ED9442B992FE4007F5CAA /* vpn-dark-mode.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vpn-dark-mode.json"; sourceTree = "<group>"; };
 		4B74A1C02E49510400277779 /* NetworkProtectionLogViewerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionLogViewerViewController.swift; sourceTree = "<group>"; };
 		4B74A1C22E49512500277779 /* NetworkProtectionLogManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionLogManager.swift; sourceTree = "<group>"; };
-		4B75EA9126A266CB00018634 /* PrintingUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrintingUserScript.swift; sourceTree = "<group>"; };
 		4B7D0D542E86A4E60081E568 /* AttributedMetric */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = AttributedMetric; path = ../SharedPackages/AttributedMetric; sourceTree = SOURCE_ROOT; };
 		4B821FAB2E21CD3600685484 /* RunDBPDebugModeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunDBPDebugModeViewController.swift; sourceTree = "<group>"; };
 		4B82E4762E64E4CF00DE9F0C /* WideEventLaunchCleanupTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WideEventLaunchCleanupTask.swift; sourceTree = "<group>"; };
@@ -9737,7 +9735,6 @@
 				85BDC3182436161C0053DB07 /* LoginFormDetectionUserScript.swift */,
 				85A1B3B120C6CD9900C18F15 /* MigratableCookieStorage.swift */,
 				85C503FA2CF0ADBD0075DF6F /* ObservationsDataCleaning.swift */,
-				4B75EA9126A266CB00018634 /* PrintingUserScript.swift */,
 				988F3DCE237D5C0F00AEE34C /* SchemeHandler.swift */,
 				836A941C247F23C600BF8EF5 /* UserAgentManaging.swift */,
 				F1A886771F29394E0096251E /* WebCacheManager.swift */,
@@ -13118,7 +13115,6 @@
 				F1134EB51F40AEEA00B73467 /* StatisticsLoader.swift in Sources */,
 				CB2A7EF4285383B300885F67 /* AppLastCompiledRulesStore.swift in Sources */,
 				566B73762BECE53D00FF1959 /* SyncPausedStateManaging.swift in Sources */,
-				4B75EA9226A266CB00018634 /* PrintingUserScript.swift in Sources */,
 				37445F972A155F7C0029F789 /* SyncDataProviders.swift in Sources */,
 				EE9D68DE2AE2A65600B55EF4 /* UserDefaults+NetworkProtection.swift in Sources */,
 				31B2F1112C92FEE000CD30E3 /* MarketplaceAdPostback.swift in Sources */,

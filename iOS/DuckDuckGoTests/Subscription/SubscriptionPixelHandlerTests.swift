@@ -84,8 +84,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
                 PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.test: "1"
+                PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
     }
@@ -98,8 +97,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             baseName: SubscriptionPixel.subscriptionActive.name,
             expectedParameters: [
                 PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.test: "1"
+                PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
     }
@@ -119,7 +117,6 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
                 PixelKit.Parameters.underlyingErrorDomain: OAuthRequest.TokenStatus.errorDomain,
                 PixelKit.Parameters.errorDomain: OAuthClientError.errorDomain,
                 "source": subscriptionSource.rawValue,
-                PixelKit.Parameters.test: "1",
                 "policycache": AuthTokensCachePolicy.localValid.description
             ]
         )
@@ -133,8 +130,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut.name,
             expectedParameters: [
                 PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.test: "1"
+                PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
     }
@@ -147,8 +143,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered.name,
             expectedParameters: [
                 PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.test: "1"
+                PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
     }
@@ -162,8 +157,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
                 PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.test: "1"
+                PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
     }
@@ -177,8 +171,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
                 PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.test: "1"
+                PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
     }
@@ -192,8 +185,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
                 PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.test: "1"
+                PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
     }
@@ -207,8 +199,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
                 PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.test: "1"
+                PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
     }
@@ -222,8 +213,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
                 PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.test: "1"
+                PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
     }
@@ -237,8 +227,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
             expectedParameters: [
                 "source": subscriptionSource.rawValue,
                 PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0",
-                PixelKit.Parameters.test: "1"
+                PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
     }
@@ -247,22 +236,31 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         let dailyName = baseName + "_daily"
         let countName = baseName + "_count"
 
+        var modifiedExpectedParameters = expectedParameters
         let daily = firedPixels.first(where: { $0.name == dailyName })
         let count = firedPixels.first(where: { $0.name == countName })
 
         XCTAssertNotNil(daily, "Expected daily pixel \(dailyName)")
         XCTAssertNotNil(count, "Expected count pixel \(countName)")
 
-        assertParameters(expectedParameters, in: daily?.parameters)
-        assertParameters(expectedParameters, in: count?.parameters)
+#if DEBUG
+        modifiedExpectedParameters[PixelKit.Parameters.test] = "1"
+#endif
+
+        assertParameters(modifiedExpectedParameters, in: daily?.parameters)
+        assertParameters(modifiedExpectedParameters, in: count?.parameters)
     }
 
     private func assertLegacyDailyPixel(baseName: String, expectedParameters: [String: String]) {
         let legacyDailyName = baseName + "_d"
         let legacyDaily = firedPixels.first(where: { $0.name == legacyDailyName })
 
+        var modifiedExpectedParameters = expectedParameters
+#if DEBUG
+        modifiedExpectedParameters[PixelKit.Parameters.test] = "1"
+#endif
         XCTAssertNotNil(legacyDaily, "Expected legacy daily pixel \(legacyDailyName)")
-        assertParameters(expectedParameters, in: legacyDaily?.parameters)
+        assertParameters(modifiedExpectedParameters, in: legacyDaily?.parameters)
     }
 
     private func assertParameters(_ expected: [String: String], in actual: [String: String]?) {

@@ -36,7 +36,7 @@ struct SettingsGeneralView: View {
             }
 
             Section(header: Text(showChatSuggestions ? UserText.privateSearchAndChat : UserText.privateSearch),
-                    footer: Text(UserText.settingsAutocompleteSubtitle)) {
+                    footer: Text(showChatSuggestions ? UserText.settingsAutocompleteWithChatSubtitle : UserText.settingsAutocompleteSubtitle)) {
                 // Autocomplete Suggestions
                 SettingsCellView(label: UserText.settingsAutocompleteLabel,
                                  accessory: .toggle(isOn: viewModel.autocompleteGeneralBinding))

@@ -21,6 +21,7 @@ import XCTest
 @testable import DuckDuckGo
 @testable import Core
 import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKit
 import Bookmarks
 import Persistence
@@ -85,9 +86,17 @@ final class FireExecutorTests: XCTestCase {
         var cleanAIChatHistoryResult: Result<Void, Error> = .success(())
         private(set) var cleanAIChatHistoryCallCount = 0
         
+        var deleteAIChatResult: Result<Void, Error> = .success(())
+        private(set) var deleteAIChatCalls: [String] = []
+        
         func cleanAIChatHistory() async -> Result<Void, Error> {
             cleanAIChatHistoryCallCount += 1
             return cleanAIChatHistoryResult
+        }
+        
+        func deleteAIChat(chatID: String) async -> Result<Void, Error> {
+            deleteAIChatCalls.append(chatID)
+            return deleteAIChatResult
         }
     }
 
@@ -117,6 +126,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockBookmarkDatabaseCleaner: MockBookmarkDatabaseCleaner!
     private var mockDelegate: MockFireExecutorDelegate!
     private var mockAppSettings: AppSettingsMock!
+    private var mockAIChatSyncCleaner: MockAIChatSyncCleaning!
     
     override func setUp() {
         super.setUp()
@@ -136,6 +146,7 @@ final class FireExecutorTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockAppSettings.autoClearAIChatHistory = true
         mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockAIChatSyncCleaner = MockAIChatSyncCleaning()
     }
     
     override func tearDown() {
@@ -153,6 +164,7 @@ final class FireExecutorTests: XCTestCase {
         mockBookmarkDatabaseCleaner = nil
         mockDelegate = nil
         mockAppSettings = nil
+        mockAIChatSyncCleaner = nil
         super.tearDown()
     }
     
@@ -174,8 +186,9 @@ final class FireExecutorTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             dataStore: MockWebsiteDataStore(),
-            aiChatHistoryCleaner: mockHistoryCleaner,
-            appSettings: mockAppSettings
+            historyCleanerProvider: { self.mockHistoryCleaner },
+            appSettings: mockAppSettings,
+            aiChatSyncCleaner: mockAIChatSyncCleaner
         )
         executor.delegate = mockDelegate
         return executor
@@ -191,6 +204,19 @@ final class FireExecutorTests: XCTestCase {
     
     private func makeTabViewModel() -> TabViewModel {
         let tab = Tab(uid: "test-tab-uid")
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+    
+    private func makeAITabViewModel(chatID: String) -> TabViewModel {
+        let tab = Tab(uid: "test-ai-tab-uid")
+        let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
+        tab.link = Link(title: nil, url: aiURL)
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+    
+    private func makeTabViewModelWithContextualChat(contextualChatID: String) -> TabViewModel {
+        let tab = Tab(uid: "test-tab-with-contextual-chat")
+        tab.contextualChatURL = "https://duckduckgo.com/?ia=chat&duckai=4&chatID=\(contextualChatID)"
         return TabViewModel(tab: tab, historyManager: mockHistoryManager)
     }
     
@@ -302,36 +328,18 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertFalse(mockTabManager.prepareTabCalled)
     }
     
-    func testBurnTabsWithTabScopeWhenLastTabCreatesEmptyTab() async {
+    func testBurnTabsWithTabScopeClosesTabAndNavigatesToHomepage() async {
         // Given
         let executor = makeFireExecutor()
         let tabViewModel = makeTabViewModel()
-        mockTabManager.count = 1
         
         // When
         await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
         
-        // Then
-        XCTAssertTrue(mockTabManager.closeTabCalled)
-        XCTAssertEqual(mockTabManager.closeTabCalledWith, tabViewModel.tab)
-        XCTAssertEqual(mockTabManager.closeTabShouldCreateEmptyTab, true)
-        XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
-    }
-    
-    func testBurnTabsWithTabScopeWhenNotLastTabDoesNotCreateEmptyTab() async {
-        // Given
-        let executor = makeFireExecutor()
-        let tabViewModel = makeTabViewModel()
-        mockTabManager.count = 3
-        
-        // When
-        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
-        
-        // Then
-        XCTAssertTrue(mockTabManager.closeTabCalled)
-        XCTAssertEqual(mockTabManager.closeTabCalledWith, tabViewModel.tab)
-        XCTAssertEqual(mockTabManager.closeTabShouldCreateEmptyTab, false)
-        XCTAssertEqual(mockTabManager.closeTabClearTabHistory, false)
+        // Then - Tab is closed and navigates to homepage (reusing existing or creating new)
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageClearTabHistory, false)
     }
     
     func testBurnTabsWithTabScopeCleansUpTabHistoryAfterBurnCompletes() async {
@@ -599,5 +607,88 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertFalse(mockDelegate.willStartBurningAIHistoryCalled)
         XCTAssertFalse(mockDelegate.didFinishBurningAIHistoryCalled)
         XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
+    }
+    
+    func testWhenScopeIsTabThenAIChatsAreClearedRegardlessOfUserSetting() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [] // enhancedDataClearingSettings disabled
+        mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
+        let executor = makeFireExecutor()
+        let chatID = "test-chat-id-123"
+        let tabViewModel = makeAITabViewModel(chatID: chatID)
+        
+        // When - Burn AI chats for a specific tab
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - AI history should be cleared because scope is .tab (single chat burn)
+        XCTAssertTrue(mockDelegate.willStartBurningAIHistoryCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
+        // Verify deleteAIChat was called with the correct chatID (not cleanAIChatHistory)
+        XCTAssertEqual(mockHistoryCleaner.deleteAIChatCalls, [chatID])
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
+        // Verify sync cleaner was notified of the chat deletion
+        XCTAssertEqual(mockAIChatSyncCleaner.recordChatDeletionCalls, [chatID])
+    }
+    
+    func testWhenScopeIsTabWithoutChatIDThenDeleteAIChatIsNotCalled() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel() // Regular tab without chatID
+        
+        // When - Burn AI chats for a tab without chatID
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Delegate callbacks should still happen, but deleteAIChat should not be called
+        XCTAssertTrue(mockDelegate.willStartBurningAIHistoryCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningAIHistoryCalled)
+        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
+    }
+    
+    // MARK: - Contextual Chat Deletion Tests (Data Burn)
+    
+    func testWhenBurningDataForTabWithContextualChat_ThenContextualChatIsDeleted() async {
+        // Given
+        let contextualChatID = "contextual-chat-id-456"
+        let tabViewModel = makeTabViewModelWithContextualChat(contextualChatID: contextualChatID)
+        mockAppSettings.autoClearAIChatHistory = true
+        let executor = makeFireExecutor()
+        
+        // When - Burn data for a tab with contextual chat
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Contextual chat should be deleted
+        XCTAssertEqual(mockHistoryCleaner.deleteAIChatCalls, [contextualChatID])
+        XCTAssertEqual(mockAIChatSyncCleaner.recordChatDeletionCalls, [contextualChatID])
+    }
+    
+    func testWhenBurningDataForTabWithoutContextualChat_ThenNoContextualChatDeleted() async {
+        // Given
+        let tabViewModel = makeTabViewModel() // Regular tab without contextual chat
+        mockAppSettings.autoClearAIChatHistory = true
+        let executor = makeFireExecutor()
+        
+        // When - Burn data for a tab without contextual chat
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - No contextual chat should be deleted
+        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
+    }
+    
+    func testWhenAutoClearAIChatHistoryDisabled_ThenContextualChatNotDeleted() async {
+        // Given
+        let contextualChatID = "contextual-chat-id-789"
+        let tabViewModel = makeTabViewModelWithContextualChat(contextualChatID: contextualChatID)
+        mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
+        let executor = makeFireExecutor()
+        
+        // When - Burn data for a tab with contextual chat but auto-clear disabled
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Contextual chat should NOT be deleted because user setting is disabled
+        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
     }
 }

@@ -74,6 +74,8 @@ protocol FireExecuting {
 
 class FireExecutor: FireExecuting {
     
+    typealias HistoryCleanerProvider = () -> HistoryCleaning
+    
     // MARK: - Variables
     
     private let tabManager: TabManaging
@@ -90,11 +92,12 @@ class FireExecutor: FireExecuting {
     private let dataStore: (any DDGWebsiteDataStore)?
     private let appSettings: AppSettings
     private let privacyStats: PrivacyStatsProviding?
+    private let aiChatSyncCleaner: AIChatSyncCleaning
 
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
     private var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
-    private let aiChatHistoryCleaner: HistoryCleaning
+    private let historyCleanerProvider: HistoryCleanerProvider
     private var preparedOptions: FireRequest.Options = []
     
     // MARK: - Init
@@ -111,9 +114,10 @@ class FireExecutor: FireExecuting {
          featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          dataStore: (any DDGWebsiteDataStore)? = nil,
-         aiChatHistoryCleaner: HistoryCleaning? = nil,
+         historyCleanerProvider: HistoryCleanerProvider? = nil,
          appSettings: AppSettings,
-         privacyStats: PrivacyStatsProviding? = nil) {
+         privacyStats: PrivacyStatsProviding? = nil,
+         aiChatSyncCleaner: AIChatSyncCleaning) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.websiteDataManager = websiteDataManager
@@ -126,10 +130,12 @@ class FireExecutor: FireExecuting {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.dataStore = dataStore
-        self.aiChatHistoryCleaner = aiChatHistoryCleaner ?? HistoryCleaner(featureFlagger: featureFlagger,
-                                                                          privacyConfig: privacyConfigurationManager)
+        self.historyCleanerProvider = historyCleanerProvider ??
+        { return HistoryCleaner(featureFlagger: featureFlagger,
+                                privacyConfig: privacyConfigurationManager)}
         self.appSettings = appSettings
         self.privacyStats = privacyStats
+        self.aiChatSyncCleaner = aiChatSyncCleaner
     }
 
     
@@ -231,7 +237,7 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnAIHistoryWithDelegateCallbacks(request: FireRequest) async {
         delegate?.willStartBurningAIHistory(fireRequest: request)
-        await burnAIHistory(scope: request.scope)
+        await burnAIHistory(request: request)
         delegate?.didFinishBurningAIHistory(fireRequest: request)
     }
     
@@ -267,14 +273,12 @@ class FireExecutor: FireExecuting {
             if tabManager.isCurrentTab(viewModel.tab) {
                 tabManager.prepareTab(viewModel.tab)
             }
-            let isLastOpenTab = tabManager.count == 1
 
             // Pass false to clearTabHistory to preserve tab history while burning
             // As tab history is needed by other processes running in parallel
             // didFinishBurning(fireRequest:) manually clears data after burn is complete
-            tabManager.closeTab(viewModel.tab,
-                                shouldCreateEmptyTabAtSamePosition: isLastOpenTab,
-                                clearTabHistory: false)
+            // Close the tab and append a new empty tab, reusing existing one if exists
+            tabManager.closeTabAndNavigateToHomepage(viewModel.tab, clearTabHistory: false)
             
             Favicons.shared.removeTabFavicons(forDomains: domains)
         }
@@ -300,7 +304,7 @@ class FireExecutor: FireExecuting {
 
         switch scope {
         case .tab(let viewModel):
-            await burnTabData(tab: viewModel, domains: domains)
+            await burnTabData(tabViewModel: viewModel, domains: domains)
         case .all:
             await burnAllData()
         }
@@ -333,7 +337,7 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnTabData(tab: TabViewModel, domains: [String]?) async {
+    private func burnTabData(tabViewModel: TabViewModel, domains: [String]?) async {
         guard let domains else {
             Logger.general.error("Expected domains to be present when burning tab scoped data")
             return
@@ -341,12 +345,18 @@ class FireExecutor: FireExecuting {
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
         let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
-        await websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)
         
+        // Async tasks
+        async let websiteDataTask: Void = websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)
+        async let historyTask: Void = historyManager.removeBrowsingHistory(tabID: tabViewModel.tab.uid)
+        async let contextualChatTask: Void = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
+        
+        // Sync tasks
         AutoconsentManagement.shared.clearCache(forDomains: domains)
-        
         forgetTextZoom(forDomains: domains)
-        await historyManager.removeBrowsingHistory(tabID: tab.tab.uid)
+        
+        // Await async tasks
+        _ = await (websiteDataTask, historyTask, contextualChatTask)
     }
     
     private func forgetTextZoom() {
@@ -359,33 +369,58 @@ class FireExecutor: FireExecuting {
         textZoomCoordinator.resetTextZoomLevels(forVisitedDomains: domains, excludingDomains: allowedDomains)
     }
     
+    @MainActor
+    private func deleteContextualChatIfNeeded(tabViewModel: TabViewModel) async {
+        guard appSettings.autoClearAIChatHistory,
+              let contextualChatID = tabViewModel.currentContextualChatId else {
+            return
+        }
+        let result = await deleteChat(chatID: contextualChatID)
+        switch result {
+        case .success:
+            tabManager.controller(for: tabViewModel.tab)?.aiChatContextualSheetCoordinator.clearActiveChat()
+        case .failure:
+            Logger.aiChat.debug("Failed to delete contextual ai chat")
+        }
+    }
+    
     // MARK: - Clear AI History
     
     /// For auto-clear with enhancedDataClearingSettings FF ON:
     /// - User configures what to clear via the enhanced settings UI
     /// For manual fire OR auto-clear with FF OFF (legacy):
     /// - AI chats clear only if autoClearAIChatHistory setting is enabled
+    /// For single chat burning:
+    /// - The user setting autoClearAIChatHistory should be ignored
     /// - Returns: A boolean indicating if we should run the ai chats burn flow
     private func shouldBurnAIHistory(_ request: FireRequest) -> Bool {
         let chosenThroughNewAutoClearUI = featureFlagger.isFeatureOn(.enhancedDataClearingSettings) && request.trigger != .manualFire
-        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI || appSettings.autoClearAIChatHistory
+
+        var singleChatBurn: Bool = false
+        if case .tab = request.scope { singleChatBurn = true }
+
+        let shouldAllowAIChatsBurn = chosenThroughNewAutoClearUI
+        || appSettings.autoClearAIChatHistory
+        || singleChatBurn
+
         return request.options.contains(.aiChats) && shouldAllowAIChatsBurn
     }
     
-    private func burnAIHistory(scope: FireRequest.Scope) async {
-        switch scope {
+    private func burnAIHistory(request: FireRequest) async {
+        switch request.scope {
         case .tab(let viewModel):
-            await burnTabAIHistory(tab: viewModel)
+            await burnTabAIHistory(tabViewModel: viewModel)
         case .all:
-            await burnAllAIHistory()
+            await burnAllAIHistory(trigger: request.trigger)
         }
     }
     
-    private func burnAllAIHistory() async {
-        // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
-        let result = await aiChatHistoryCleaner.cleanAIChatHistory()
+    private func burnAllAIHistory(trigger: FireRequest.Trigger) async {
+        let cleaner = historyCleanerProvider()
+        let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
+            await recordAIChatsClearDate(trigger: trigger)
             DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
@@ -397,7 +432,38 @@ class FireExecutor: FireExecuting {
         }
     }
     
-    private func burnTabAIHistory(tab: TabViewModel) async {
-        // TODO: - Implement tab specific AI chats burning
+    private func burnTabAIHistory(tabViewModel: TabViewModel) async {
+        if let chatID = await tabViewModel.currentAIChatId {
+            await deleteChat(chatID: chatID)
+        } else {
+            Logger.aiChat.debug("No chatID found for tab, skipping single chat deletion")
+        }
+    }
+
+    private func recordAIChatsClearDate(trigger: FireRequest.Trigger) async {
+        switch trigger {
+        case .manualFire:
+            await aiChatSyncCleaner.recordLocalClear(date: Date())
+        case .autoClearOnLaunch, .autoClearOnForeground:
+            await aiChatSyncCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+        }
+    }
+
+    @discardableResult
+    private func deleteChat(chatID: String) async -> Result<Void, Error> {
+        let cleaner = historyCleanerProvider()
+        let result = await cleaner.deleteAIChat(chatID: chatID)
+        switch result {
+        case .success:
+            // TODO: - Add Pixel
+            await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
+        case .failure(let error):
+            // TODO: - Add Pixel
+            Logger.aiChat.debug("Failed to delete AI Chat: \(error.localizedDescription)")
+            if let userScriptError = error as? UserScriptError {
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
+            }
+        }
+        return result
     }
 }

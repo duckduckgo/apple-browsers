@@ -101,9 +101,10 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
     private(set) lazy var isViewExpandedPublisher: AnyPublisher<Bool, Never> = {
         $activeProvider
             .receive(on: DispatchQueue.main)
-            .flatMap { provider in
+            .map { provider in
                 provider.isViewExpandedPublisher
             }
+            .switchToLatest()
             .eraseToAnyPublisher()
     }()
 
@@ -114,9 +115,10 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
     private(set) lazy var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> = {
         $activeProvider
             .receive(on: DispatchQueue.main)
-            .flatMap { provider in
+            .map { provider in
                 provider.cardsPublisher
             }
+            .switchToLatest()
             .eraseToAnyPublisher()
     }()
 

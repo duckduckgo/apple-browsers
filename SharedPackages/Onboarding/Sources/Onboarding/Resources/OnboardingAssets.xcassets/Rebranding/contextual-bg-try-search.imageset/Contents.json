@@ -1,0 +1,39 @@
+{
+  "images" : [
+    {
+      "filename" : "contextual-bg-try-search-iphone-light.pdf",
+      "idiom" : "iphone"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "contextual-bg-try-search-iphone-dark.pdf",
+      "idiom" : "iphone"
+    },
+    {
+      "filename" : "contextual-bg-try-search-ipad-light.pdf",
+      "idiom" : "ipad"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "contextual-bg-try-search-ipad-dark.pdf",
+      "idiom" : "ipad"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
+  }
+}

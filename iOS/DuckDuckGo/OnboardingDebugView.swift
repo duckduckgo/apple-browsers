@@ -128,12 +128,32 @@ final class OnboardingDebugViewModel: ObservableObject {
     }
 }
 
-#Preview {
-    OnboardingDebugView(initialFlow: .legacy, onNewOnboardingIntroStartAction: { _ in })
-}
-
 extension OnboardingUserType: Identifiable {
     var id: OnboardingUserType {
         self
     }
+}
+
+enum OnboardingDebugFlow: String, CaseIterable, CustomStringConvertible, Identifiable {
+    case rebranding
+    case legacy
+
+    var id: OnboardingDebugFlow { self }
+
+    var description: String {
+        switch self {
+        case .rebranding:
+            return "Rebranding"
+        case .legacy:
+            return "Original (Legacy)"
+        }
+    }
+
+    var isRebranding: Bool {
+        self == .rebranding
+    }
+}
+
+#Preview {
+    OnboardingDebugView(initialFlow: .legacy, onNewOnboardingIntroStartAction: { _ in })
 }

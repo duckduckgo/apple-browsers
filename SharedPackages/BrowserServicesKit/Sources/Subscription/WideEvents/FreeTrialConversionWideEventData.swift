@@ -87,8 +87,18 @@ public class FreeTrialConversionWideEventData: WideEventData {
 
 extension FreeTrialConversionWideEventData {
 
+    /// Whether the VPN activation pixel should be fired (i.e., VPN hasn't been activated yet)
+    public var shouldFireVPNActivationPixel: Bool {
+        !vpnActivatedD1 && !vpnActivatedD2ToD7
+    }
+
+    /// Whether the PIR activation pixel should be fired (i.e., PIR hasn't been activated yet)
+    public var shouldFirePIRActivationPixel: Bool {
+        !pirActivatedD1 && !pirActivatedD2ToD7
+    }
+
     public func markVPNActivated() {
-        guard !vpnActivatedD1 && !vpnActivatedD2ToD7 else { return }
+        guard shouldFireVPNActivationPixel else { return }
         if isDay1() {
             vpnActivatedD1 = true
         } else {
@@ -97,7 +107,7 @@ extension FreeTrialConversionWideEventData {
     }
 
     public func markPIRActivated() {
-        guard !pirActivatedD1 && !pirActivatedD2ToD7 else { return }
+        guard shouldFirePIRActivationPixel else { return }
         if isDay1() {
             pirActivatedD1 = true
         } else {
@@ -108,6 +118,11 @@ extension FreeTrialConversionWideEventData {
     private func isDay1() -> Bool {
         let daysSinceStart = Calendar.current.dateComponents([.day], from: trialStartDate, to: Date()).day ?? 0
         return daysSinceStart < 1
+    }
+
+    /// Returns the current activation day for pixel reporting
+    public func activationDay() -> FreeTrialActivationDay {
+        isDay1() ? .d1 : .d2ToD7
     }
 }
 

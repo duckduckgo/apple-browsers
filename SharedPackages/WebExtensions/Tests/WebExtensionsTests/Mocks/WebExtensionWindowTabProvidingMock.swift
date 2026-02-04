@@ -19,7 +19,8 @@
 import WebKit
 @testable import WebExtensions
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
 final class WebExtensionWindowTabProvidingMock: WebExtensionWindowTabProviding {
 
     var openWindowsCalled = false

@@ -27,6 +27,7 @@ import Configuration
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import Subscription
+import WebExtensions
 
 protocol RemoteMessagingDebugHandling {
     func refreshRemoteMessages()
@@ -51,6 +52,7 @@ enum DebugScreen: Identifiable {
         let runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
         let subscriptionDataReporter: SubscriptionDataReporting
         let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
+        let webExtensionManager: WebExtensionManaging?
 
     }
 

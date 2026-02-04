@@ -494,8 +494,6 @@ private final class MockDownloadsDirectoryHandler: DownloadsDirectoryHandling {
     func createDownloadsDirectoryIfNeeded() {
         createDownloadsDirectoryIfNeededCallCount += 1
     }
-    
-    func deleteDownloadsDirectoryIfEmpty() {}
 }
 
 private final class MockAIChatViewControllerManagerDelegate: AIChatViewControllerManagerDelegate {

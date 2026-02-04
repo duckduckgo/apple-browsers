@@ -56,6 +56,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor func burnAll(completion: @escaping @MainActor () -> Void)
     @MainActor func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Set<URL>) -> Void)
     @MainActor func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void)
+    @MainActor func burnVisits(for tabID: String) async throws
 
     @MainActor func resetCookiePopupBlocked(for domains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void)
 
@@ -244,6 +245,37 @@ final public class HistoryCoordinator: HistoryCoordinating {
     public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void) {
         removeVisits(visits) { _ in
             completion()
+        }
+    }
+
+    /// Burns all history visits associated with a specific tab.
+    ///
+    /// This method retrieves visit IDs from the tab history store, maps them to in-memory `Visit` objects,
+    /// and removes them from history. Used when burning a single tab to clear its browsing history.
+    ///
+    /// - Parameter tabID: The unique identifier of the tab whose visits should be removed.
+    /// - Throws: `EntryRemovalError.notAvailable` if history has not yet been loaded.
+    @MainActor
+    public func burnVisits(for tabID: String) async throws {
+        guard let allVisits = allHistoryVisits else {
+            Logger.history.error("burnVisits(for:) called but history not yet loaded")
+            throw EntryRemovalError.notAvailable
+        }
+
+        let visitIDs = try await historyStoring.pageVisitIDs(in: tabID)
+        let visitsAndIDsArray = allVisits.map { ($0.identifier, $0) }
+        let visitByIDsDictionary = Dictionary(visitsAndIDsArray) { existing, _ in
+            existing // Keep the first instance found.
+        }
+        let visits = visitIDs.compactMap { visitByIDsDictionary[$0] }
+
+        assert(visits.count == visitIDs.count,
+               "burnVisits(for:) found \(visitIDs.count) visit IDs but matched only \(visits.count) in memory")
+
+        return await withCheckedContinuation { continuation in
+            burnVisits(visits) {
+                continuation.resume()
+            }
         }
     }
 

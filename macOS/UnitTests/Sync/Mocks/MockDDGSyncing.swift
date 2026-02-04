@@ -45,6 +45,9 @@ class MockDDGSyncing: DDGSyncing {
     func deleteAIChats(until: Date) async throws {
     }
 
+    func deleteAIChats(chatIds: [String]) async throws {
+    }
+
     private(set) var setAIChatHistoryEnabledCalls: [Bool] = []
     func setAIChatHistoryEnabled(_ enabled: Bool) {
         setAIChatHistoryEnabledCalls.append(enabled)

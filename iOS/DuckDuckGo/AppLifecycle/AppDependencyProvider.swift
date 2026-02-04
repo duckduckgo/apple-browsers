@@ -58,7 +58,7 @@ protocol DependencyProvider {
     var vpnSettings: VPNSettings { get }
     var persistentPixel: PersistentPixelFiring { get }
     var wideEvent: WideEventManaging { get }
-    var freeTrialConversionService: FreeTrialConversionWideEventService { get }
+    var freeTrialConversionService: FreeTrialConversionInstrumentationService { get }
     var subscriptionManager: any SubscriptionManager { get }
     var tokenHandlerProvider: any SubscriptionTokenHandling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
@@ -102,7 +102,7 @@ final class AppDependencyProvider: DependencyProvider {
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
     let wideEvent: WideEventManaging
-    let freeTrialConversionService: FreeTrialConversionWideEventService
+    let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     private init() {
         let featureFlagOverrideStore = UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!
@@ -136,8 +136,9 @@ final class AppDependencyProvider: DependencyProvider {
         }
 
         self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
-        self.freeTrialConversionService = DefaultFreeTrialConversionWideEventService(
+        self.freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
             wideEvent: wideEvent,
+            pixelHandler: FreeTrialPixelHandler(),
             isFeatureEnabled: { featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
         )
         self.freeTrialConversionService.startObservingSubscriptionChanges()

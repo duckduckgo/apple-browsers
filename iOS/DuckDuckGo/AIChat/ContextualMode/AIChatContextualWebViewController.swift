@@ -51,9 +51,6 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
-    /// Callback for URL changes.
-    var onContextualChatURLChange: ((URL?) -> Void)?
-
     /// Passthrough delegate for the content handler. Set this to receive navigation callbacks.
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
         get { aiChatContentHandler.delegate }
@@ -73,7 +70,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private var lastKnownKeyboardFrame: CGRect?
 
     /// URL to load on viewDidLoad instead of the default AI chat URL (for cold restore).
-    var initialRestoreURL: URL?
+    var initialURL: URL?
 
     // MARK: - UI Components
 
@@ -146,8 +143,8 @@ final class AIChatContextualWebViewController: UIViewController {
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()
-        if let restoreURL = initialRestoreURL {
-            loadChatURL(restoreURL)
+        if let url = initialURL {
+            loadChatURL(url)
         } else {
             loadAIChat()
         }
@@ -403,7 +400,6 @@ final class AIChatContextualWebViewController: UIViewController {
         lastContextualChatURL = contextualChatURL
 
         delegate?.contextualWebViewController(self, didUpdateContextualChatURL: contextualChatURL)
-        onContextualChatURLChange?(contextualChatURL)
     }
 }
 

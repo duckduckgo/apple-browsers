@@ -172,6 +172,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
     case memoryPressureReporting
 
+    /// Memory Usage Reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
+    case memoryUsageReporting
+
     /// Failsafe flag to bring back keys sorting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
     case crashCollectionDisableKeysSorting

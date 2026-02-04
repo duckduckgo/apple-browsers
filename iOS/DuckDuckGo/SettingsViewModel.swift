@@ -996,6 +996,10 @@ extension SettingsViewModel {
         newBadgeVisibilityManager.shouldShowBadge(for: feature)
     }
 
+    func storeNewBadgeFirstImpressionDateIfNeeded(for feature: NewBadgeFeature) {
+        newBadgeVisibilityManager.storeFirstImpressionDateIfNeeded(for: feature)
+    }
+
     func openOtherPlatforms() {
         urlOpener.open(URL.otherDevices)
     }

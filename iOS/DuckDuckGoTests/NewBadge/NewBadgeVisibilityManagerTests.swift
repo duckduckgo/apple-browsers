@@ -24,10 +24,34 @@ import PersistenceTestingUtils
 
 final class NewBadgeVisibilityManagerTests: XCTestCase {
 
+    private static let firstImpressionDateStorageKey = NewBadgeFeature.personalInformationRemoval.firstImpressionDateStorageKey
+
+    func testShouldNotShowBadgeWhenOutsideReleaseWindow() {
+        let manager = NewBadgeVisibilityManager(
+            keyValueStore: MockThrowingKeyValueStore(),
+            configProvider: MockNewBadgeConfigProvider(isWithinReleaseWindowResult: false),
+            currentAppVersionProvider: { "7.100.0" }
+        )
+
+        XCTAssertFalse(manager.shouldShowBadge(for: .personalInformationRemoval))
+    }
+
+    func testShouldShowBadgeWhenFirstImpressionDateIsNil() throws {
+        let store = MockThrowingKeyValueStore()
+        let manager = NewBadgeVisibilityManager(
+            keyValueStore: store,
+            configProvider: MockNewBadgeConfigProvider(),
+            currentAppVersionProvider: { "7.100.0" }
+        )
+
+        XCTAssertTrue(manager.shouldShowBadge(for: .personalInformationRemoval))
+        XCTAssertNil(try store.object(forKey: Self.firstImpressionDateStorageKey) as? Date)
+    }
+
     func testShouldShowBadgeWhenElapsedDaysIsSix() throws {
         let store = MockThrowingKeyValueStore()
         let firstImpressionDate = Date(timeIntervalSince1970: 1_000_000)
-        try store.set(firstImpressionDate, forKey: NewBadgeFeature.personalInformationRemoval.firstImpressionDateStorageKey)
+        try store.set(firstImpressionDate, forKey: Self.firstImpressionDateStorageKey)
 
         let manager = NewBadgeVisibilityManager(
             keyValueStore: store,
@@ -42,7 +66,7 @@ final class NewBadgeVisibilityManagerTests: XCTestCase {
     func testShouldNotShowBadgeWhenElapsedDaysIsSeven() throws {
         let store = MockThrowingKeyValueStore()
         let firstImpressionDate = Date(timeIntervalSince1970: 1_000_000)
-        try store.set(firstImpressionDate, forKey: NewBadgeFeature.personalInformationRemoval.firstImpressionDateStorageKey)
+        try store.set(firstImpressionDate, forKey: Self.firstImpressionDateStorageKey)
 
         let manager = NewBadgeVisibilityManager(
             keyValueStore: store,
@@ -54,21 +78,22 @@ final class NewBadgeVisibilityManagerTests: XCTestCase {
         XCTAssertFalse(manager.shouldShowBadge(for: .personalInformationRemoval))
     }
 
-    func testShouldNotShowBadgeWhenDisplayDurationIsZero() {
+    func testStoreFirstImpressionDateIfNeededDoesNotStoreWhenOutsideReleaseWindow() throws {
+        let store = MockThrowingKeyValueStore()
         let manager = NewBadgeVisibilityManager(
-            keyValueStore: MockThrowingKeyValueStore(),
-            configProvider: MockNewBadgeConfigProvider(displayDurationDays: 0),
+            keyValueStore: store,
+            configProvider: MockNewBadgeConfigProvider(isWithinReleaseWindowResult: false),
             currentAppVersionProvider: { "7.100.0" }
         )
 
-        XCTAssertFalse(manager.shouldShowBadge(for: .personalInformationRemoval))
+        manager.storeFirstImpressionDateIfNeeded(for: .personalInformationRemoval)
+
+        XCTAssertNil(try store.object(forKey: Self.firstImpressionDateStorageKey) as? Date)
     }
 
-    func testShouldPersistFirstImpressionDateOnlyOnce() throws {
+    func testStoreFirstImpressionDateIfNeededStoresWhenEligibleAndDateIsNil() throws {
         let store = MockThrowingKeyValueStore()
-        var now = Date(timeIntervalSince1970: 1_000_000)
-        let key = NewBadgeFeature.personalInformationRemoval.firstImpressionDateStorageKey
-
+        let now = Date(timeIntervalSince1970: 1_000_000)
         let manager = NewBadgeVisibilityManager(
             keyValueStore: store,
             configProvider: MockNewBadgeConfigProvider(),
@@ -76,14 +101,28 @@ final class NewBadgeVisibilityManagerTests: XCTestCase {
             currentDateProvider: { now }
         )
 
-        XCTAssertTrue(manager.shouldShowBadge(for: .personalInformationRemoval))
-        let firstStoredDate = try XCTUnwrap(try store.object(forKey: key) as? Date)
+        manager.storeFirstImpressionDateIfNeeded(for: .personalInformationRemoval)
 
+        XCTAssertEqual(try store.object(forKey: Self.firstImpressionDateStorageKey) as? Date, now)
+    }
+
+    func testStoreFirstImpressionDateIfNeededDoesNotOverwriteExistingDate() throws {
+        let store = MockThrowingKeyValueStore()
+        let existingDate = Date(timeIntervalSince1970: 1_000_000)
+        try store.set(existingDate, forKey: Self.firstImpressionDateStorageKey)
+        var now = existingDate
+        let manager = NewBadgeVisibilityManager(
+            keyValueStore: store,
+            configProvider: MockNewBadgeConfigProvider(),
+            currentAppVersionProvider: { "7.100.0" },
+            currentDateProvider: { now }
+        )
+
+        manager.storeFirstImpressionDateIfNeeded(for: .personalInformationRemoval)
         now = now.addingTimeInterval(24 * 60 * 60)
-        XCTAssertTrue(manager.shouldShowBadge(for: .personalInformationRemoval))
-        let secondStoredDate = try XCTUnwrap(try store.object(forKey: key) as? Date)
+        manager.storeFirstImpressionDateIfNeeded(for: .personalInformationRemoval)
 
-        XCTAssertEqual(firstStoredDate, secondStoredDate)
+        XCTAssertEqual(try store.object(forKey: Self.firstImpressionDateStorageKey) as? Date, existingDate)
     }
 }
 

@@ -53,6 +53,7 @@ extension NewBadgeConfigProviding {
 
 protocol NewBadgeVisibilityManaging {
     func shouldShowBadge(for feature: NewBadgeFeature) -> Bool
+    func storeFirstImpressionDateIfNeeded(for feature: NewBadgeFeature)
 }
 
 final class NewBadgeVisibilityManager: NewBadgeVisibilityManaging {
@@ -76,33 +77,29 @@ final class NewBadgeVisibilityManager: NewBadgeVisibilityManaging {
     }
 
     func shouldShowBadge(for feature: NewBadgeFeature) -> Bool {
-        guard configProvider.isFeatureOn(feature) else {
-            return false
-        }
-
-        guard configProvider.isWithinReleaseWindow(for: feature, currentAppVersion: currentAppVersionProvider()) else {
-            return false
-        }
-
-        guard let firstDate = persistedFirstImpressionDate(for: feature) ?? persistFirstImpressionDate(for: feature) else {
-            return false
-        }
+        guard configProvider.isFeatureOn(feature) else { return false }
+        guard configProvider.isWithinReleaseWindow(for: feature, currentAppVersion: currentAppVersionProvider()) else { return false }
 
         let displayDurationDays = configProvider.displayDurationDays(for: feature)
+        guard displayDurationDays > 0 else { return false }
+
+        guard let firstDate = firstImpressionDate(for: feature) else { return true }
+
         let elapsedDays = calendar.dateComponents([.day],
                                                   from: calendar.startOfDay(for: firstDate),
                                                   to: calendar.startOfDay(for: currentDateProvider())).day ?? Int.max
-        return elapsedDays < displayDurationDays && displayDurationDays > 0
+        return elapsedDays < displayDurationDays
     }
 
-    private func persistedFirstImpressionDate(for feature: NewBadgeFeature) -> Date? {
+    func storeFirstImpressionDateIfNeeded(for feature: NewBadgeFeature) {
+        guard shouldShowBadge(for: feature) else { return }
+        guard firstImpressionDate(for: feature) == nil else { return }
+
+        try? keyValueStore.set(currentDateProvider(), forKey: feature.firstImpressionDateStorageKey)
+    }
+
+    private func firstImpressionDate(for feature: NewBadgeFeature) -> Date? {
         try? keyValueStore.object(forKey: feature.firstImpressionDateStorageKey) as? Date
-    }
-
-    private func persistFirstImpressionDate(for feature: NewBadgeFeature) -> Date? {
-        let now = currentDateProvider()
-        try? keyValueStore.set(now, forKey: feature.firstImpressionDateStorageKey)
-        return now
     }
 }
 

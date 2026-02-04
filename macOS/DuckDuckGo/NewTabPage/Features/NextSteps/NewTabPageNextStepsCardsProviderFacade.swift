@@ -71,13 +71,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
         self.legacyCardsProvider = legacyCardsProvider
         activeProvider = featureFlagger.isFeatureOn(.nextStepsListWidget) ? singleCardProvider : legacyCardsProvider
 
-
-        featureFlagger.updatesPublisher
-            .sink { [weak self] _ in
-                guard let self else { return }
-                activeProvider = featureFlagger.isFeatureOn(.nextStepsListWidget) ? singleCardProvider : legacyCardsProvider
-            }
-            .store(in: &cancellables)
+        observeFeatureFlagChanges()
     }
 
     var isViewExpanded: Bool {
@@ -124,5 +118,19 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
     @MainActor
     func willDisplayCards(_ cards: [NewTabPageDataModel.CardID]) {
         activeProvider.willDisplayCards(cards)
+    }
+
+    private func observeFeatureFlagChanges() {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in
+                self?.featureFlagger.isFeatureOn(.nextStepsListWidget)
+            }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isFlagEnabled in
+                guard let self else { return }
+                activeProvider = isFlagEnabled ? singleCardProvider : legacyCardsProvider
+            }
+            .store(in: &cancellables)
     }
 }

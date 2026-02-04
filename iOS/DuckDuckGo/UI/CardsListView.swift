@@ -242,7 +242,9 @@ private extension RemoteMessagingUI.CardsListView {
         private var logoImage: some View {
             if let preloadedHeaderImage {
                 Image(uiImage: preloadedHeaderImage)
+                    .resizable()
                     .scaledToFit()
+                    .frame(maxHeight: Metrics.CardsList.headerImageMaxHeight)
             } else if let icon {
                 Image(icon)
                     .scaledToFit()
@@ -389,6 +391,7 @@ private enum Metrics {
         static let cardsVerticalSpacing: CGFloat = 12.0
         @MainActor
         static let buttonBottomPadding: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 12.0, iPad: 24.0).build()
+        static let headerImageMaxHeight: CGFloat = 50.0
     }
 
     enum Section {

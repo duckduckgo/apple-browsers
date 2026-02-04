@@ -102,7 +102,9 @@ struct HomeMessageView: View {
     private var image: some View {
         if let displayImage = loadedImage ?? viewModel.preloadedImage {
             Image(uiImage: displayImage)
+                .resizable()
                 .scaledToFit()
+                .frame(maxHeight: Const.Size.imageMaxHeight)
         } else if let placeholderName = viewModel.image {
             Image(placeholderName)
                     .scaledToFit()
@@ -277,6 +279,7 @@ private enum Const {
     enum Size {
         static let closeButtonWidth: CGFloat = 44
         static let buttonHeight: CGFloat = 40
+        static let imageMaxHeight: CGFloat = 50.0
     }
     
     enum Offset {

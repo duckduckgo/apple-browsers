@@ -132,6 +132,8 @@ final class MainMenu: NSMenu {
     private let configurationURLProvider: CustomConfigurationURLProviding
     private let contentScopePreferences: ContentScopePreferences
     private let quitSurveyPersistor: QuitSurveyPersistor
+    private let pinningManager: PinningManager
+    private let subscriptionManager: any SubscriptionManager
 
     private lazy var webExtensionsMenuItem: NSMenuItem? = {
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
@@ -158,7 +160,9 @@ final class MainMenu: NSMenu {
          isFireWindowDefault: Bool,
          configurationURLProvider: CustomConfigurationURLProviding,
          contentScopePreferences: ContentScopePreferences,
-         quitSurveyPersistor: QuitSurveyPersistor) {
+         quitSurveyPersistor: QuitSurveyPersistor,
+         pinningManager: PinningManager,
+         subscriptionManager: any SubscriptionManager) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -172,6 +176,8 @@ final class MainMenu: NSMenu {
         self.configurationURLProvider = configurationURLProvider
         self.contentScopePreferences = contentScopePreferences
         self.quitSurveyPersistor = quitSurveyPersistor
+        self.pinningManager = pinningManager
+        self.subscriptionManager = subscriptionManager
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -674,7 +680,7 @@ final class MainMenu: NSMenu {
     }
 
     private func updateHomeButtonMenuItem() {
-        guard let homeButtonMenuItem = HomeButtonMenuFactory.replace(homeButtonMenuItem, prefs: appearancePreferences) else {
+        guard let homeButtonMenuItem = HomeButtonMenuFactory.replace(homeButtonMenuItem, prefs: appearancePreferences, pinningManager: pinningManager) else {
             assertionFailure("Could not replace HomeButtonMenuItem")
             return
         }
@@ -698,14 +704,14 @@ final class MainMenu: NSMenu {
 
     private func updateShortcutMenuItems() {
         Task { @MainActor in
-            toggleAutofillShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .autofill)
-            toggleBookmarksShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .bookmarks)
-            toggleDownloadsShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .downloads)
-            toggleShareShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .share)
+            toggleAutofillShortcutMenuItem.title = pinningManager.shortcutTitle(for: .autofill)
+            toggleBookmarksShortcutMenuItem.title = pinningManager.shortcutTitle(for: .bookmarks)
+            toggleDownloadsShortcutMenuItem.title = pinningManager.shortcutTitle(for: .downloads)
+            toggleShareShortcutMenuItem.title = pinningManager.shortcutTitle(for: .share)
 
-            if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager).isVPNVisible() {
+            if DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager).isVPNVisible() {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = false
-                toggleNetworkProtectionShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .networkProtection)
+                toggleNetworkProtectionShortcutMenuItem.title = pinningManager.shortcutTitle(for: .networkProtection)
             } else {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = true
             }
@@ -824,7 +830,7 @@ final class MainMenu: NSMenu {
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")
-                    .submenu(NetworkProtectionDebugMenu())
+                    .submenu(NetworkProtectionDebugMenu(pinningManager: pinningManager))
             }
 
             NSMenuItem(title: "Attributed Metrics")

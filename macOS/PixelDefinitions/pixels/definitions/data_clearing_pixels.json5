@@ -44,6 +44,7 @@
         "description": "Fired when the fire button is triggered again within 20 seconds of a previous fire",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource"]
     },
 
@@ -53,6 +54,7 @@
         "description": "Fired when an error occurs while clearing web cache data",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
@@ -100,6 +102,7 @@
         "description": "Fired when an error occurs while clearing browsing history",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
@@ -130,6 +133,7 @@
         "description": "Fired when an error occurs while clearing chat history",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
@@ -171,6 +175,7 @@
         "description": "Fired when an error occurs while clearing visits data",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
@@ -202,6 +207,7 @@
         "description": "Fired when an error occurs while clearing last session state",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
@@ -233,6 +239,7 @@
         "description": "Fired when an error occurs while clearing tabs",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 
@@ -279,6 +286,7 @@
         "description": "Fired when an error occurs while clearing downloads",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
     },
 

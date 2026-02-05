@@ -965,11 +965,6 @@ final class Fire: FireProtocol {
     }
 }
 
-// MARK: - Instrumentation Helper
-
-private extension Fire {
-}
-
 extension TabCollection {
 
     // Local history of TabCollection instance including history of already closed tabs

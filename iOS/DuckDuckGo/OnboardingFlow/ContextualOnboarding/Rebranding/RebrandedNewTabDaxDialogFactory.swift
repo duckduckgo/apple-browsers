@@ -76,7 +76,6 @@ private extension RebrandedNewTabDaxDialogFactory {
 
         return FadeInView {
             OnboardingRebranding.OnboardingTrySearchDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
-                .onboardingDaxDialogStyle()
         }
         .applyContextualOnboardingBackground(backgroundType: .tryASearch)
         .onFirstAppear { [weak self] in

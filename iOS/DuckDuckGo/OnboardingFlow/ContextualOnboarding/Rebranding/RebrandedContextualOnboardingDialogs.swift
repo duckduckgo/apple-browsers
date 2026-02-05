@@ -19,13 +19,15 @@
 
 import SwiftUI
 import Onboarding
+import MetricBuilder
 
 // MARK: - Try Anonymous Search
 
 extension OnboardingRebranding {
 
     struct OnboardingTrySearchDialog: View {
-        @Environment(\.onboardingTheme) private var onboarding
+        @Environment(\.verticalSizeClass) private var vSizeClass
+        @Environment(\.horizontalSizeClass) private var hSizeClass
 
         var title = UserText.Onboarding.ContextualOnboarding.onboardingTryASearchTitle
         var message = UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage
@@ -35,13 +37,28 @@ extension OnboardingRebranding {
         var body: some View {
             ScrollView(.vertical, showsIndicators: false) {
                 OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                    OnboardingRebranding.ContextualDaxDialogContent(title: title, message: NSAttributedString(string: message)) {
+                    OnboardingRebranding.ContextualDaxDialogContent(
+                        orientation: DynamicMetrics.dialogOrientation.build(v: vSizeClass, h: hSizeClass),
+                        title: title,
+                        message: message.attributed
+                    ) {
                         OnboardingRebranding.ContextualOnboardingListView(list: viewModel.itemsList, action: viewModel.listItemPressed)
                     }
                 }
+                .fixedSize()
                 .padding()
             }
         }
+    }
+
+}
+
+private extension OnboardingRebranding.OnboardingTrySearchDialog {
+
+    enum DynamicMetrics {
+        static let dialogOrientation: MetricBuilder = MetricBuilder<OnboardingRebranding.ContextualDaxDialogOrientation>(default: .verticalStack)
+            .iPhone(portrait: .verticalStack, landscape: .horizontalStack(alignment: .top))
+            .iPad(.horizontalStack(alignment: .top))
     }
 
 }

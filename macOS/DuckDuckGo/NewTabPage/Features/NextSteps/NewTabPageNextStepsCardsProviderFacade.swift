@@ -74,11 +74,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
         self.legacyCardsProvider = legacyCardsProvider
         self.scheduler = scheduler
 
-        func getActiveProvider() -> NewTabPageNextStepsCardsProviding {
-            featureFlagger.isFeatureOn(.nextStepsListWidget) ? singleCardProvider : legacyCardsProvider
-        }
-
-        activeProvider = getActiveProvider()
+        activeProvider = featureFlagger.isFeatureOn(.nextStepsListWidget) ? singleCardProvider : legacyCardsProvider
 
         featureFlagger.updatesPublisher
             .compactMap { [weak self] in
@@ -86,9 +82,9 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
             }
             .removeDuplicates()
             .receive(on: scheduler)
-            .sink { [weak self] _ in
+            .sink { [weak self] isFeatureOn in
                 guard let self else { return }
-                activeProvider = getActiveProvider()
+                activeProvider = isFeatureOn ? singleCardProvider : legacyCardsProvider
             }
             .store(in: &cancellables)
     }

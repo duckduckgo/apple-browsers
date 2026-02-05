@@ -282,7 +282,7 @@ private enum Const {
     enum Size {
         static let closeButtonWidth: CGFloat = 44
         static let buttonHeight: CGFloat = 40
-        static let imageMaxHeight: CGFloat = 50.0
+        static let imageMaxHeight: CGFloat = 48.0
     }
     
     enum Offset {

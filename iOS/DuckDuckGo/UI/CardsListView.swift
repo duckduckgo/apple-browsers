@@ -422,7 +422,7 @@ private enum Metrics {
         static let cardsVerticalSpacing: CGFloat = 12.0
         @MainActor
         static let buttonBottomPadding: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 12.0, iPad: 24.0).build()
-        static let headerImageMaxHeight: CGFloat = 50.0
+        static let headerImageMaxHeight: CGFloat = 48.0
     }
 
     enum Section {

@@ -556,6 +556,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     }
 }
 
+// swiftlint:disable inclusive_language
 final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     var displayMode: AIChatDisplayMode?
 
@@ -587,6 +588,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? { nil }
 }
+// swiftlint:enable inclusive_language
 
 final class MockAIChatDebugSettingsForTests: AIChatDebugSettingsHandling {
     var messagePolicyHostname: String?

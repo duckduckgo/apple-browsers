@@ -160,15 +160,4 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             faviconProvider: faviconProvider ?? { _ in nil }
         )
     }
-
-    private func makeTestContextData(title: String) -> AIChatPageContextData {
-        AIChatPageContextData(
-            title: title,
-            favicon: [],
-            url: "https://example.com",
-            content: "Test content",
-            truncated: false,
-            fullContentLength: 12
-        )
-    }
 }

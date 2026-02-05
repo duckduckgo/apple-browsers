@@ -69,8 +69,6 @@ final class AIChatContextualWebViewController: UIViewController {
     private var webViewBottomConstraint: NSLayoutConstraint?
     private var isMediumDetent = true
     private var lastKnownKeyboardFrame: CGRect?
-    
-    private var didFinishNavigationToMigratedDomain = false
 
     /// URL to load on viewDidLoad instead of the default AI chat URL (for cold restore).
     var initialURL: URL?
@@ -208,8 +206,11 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.url.flatMap { $0.duckAIChatID != nil ? $0 : nil }
     }
 
-    /// Loads a specific chat URL (for cold restore after app restart).
+    /// Loads a specific chat URL (for cold restore after app restart or new chat reset).
     func loadChatURL(_ url: URL) {
+        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting ready flags and loading: \(url.absoluteString)")
+        isPageReady = false
+        isContentHandlerReady = false
         loadingView.startAnimating()
         webView.load(URLRequest(url: url))
     }

@@ -1,14 +1,11 @@
 ---
-title: "Pixel Definitions"
-description: "How to write pixel definitions in the PixelDefinitions directories for iOS and macOS"
 alwaysApply: false
 ---
-
 # Pixel Registry Definitions
 
 ## Overview
 
-Pixel definitions are JSON5 files that document every analytics pixel fired by the iOS and macOS apps. They live in:
+Pixel definitions are JSON5 files that document every pixel fired by the iOS and macOS apps. They live in:
 
 - **iOS:** `iOS/PixelDefinitions/pixels/definitions/*.json5`
 - **macOS:** `macOS/PixelDefinitions/pixels/definitions/*.json5`

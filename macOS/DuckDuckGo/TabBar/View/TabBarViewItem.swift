@@ -1208,7 +1208,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         // Reset tint color to appropriate value for normal favicon display
         let isBurnerTab = isBurner && cell.displaysBurnerHomeTitle
         let tintColor: NSColor? = isBurnerTab ? .textColor : nil
-        
+
         cell.faviconView.displayFavicon(favicon: favicon, url: tabViewModel?.url)
         cell.faviconView.imageTintColor = tintColor
     }

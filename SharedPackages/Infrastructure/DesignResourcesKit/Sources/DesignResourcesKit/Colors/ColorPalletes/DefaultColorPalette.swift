@@ -281,6 +281,8 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater50, darkColor: RebrandingColor.Pondwater.pondwater40)
         case .accentAltPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: Color(0x133E7C))
+        case .backdrop:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x133E7C))
         case .surfaceTertiary:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x011D34))
         case .buttonsPrimaryDefault:

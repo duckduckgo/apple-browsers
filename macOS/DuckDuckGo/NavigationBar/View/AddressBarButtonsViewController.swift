@@ -1287,8 +1287,6 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonVisibility() {
-        let isDuckAIURL = tabViewModel?.tab.url?.isDuckAIURL ?? false
-
         aiChatButton.isHidden = !shouldShowAIChatButton()
         updateAIChatDividerVisibility()
 

@@ -35,24 +35,45 @@ public enum ContextualOnboardingBackgroundType {
             return .center
         }
     }
+
+    var image: Image {
+        switch self {
+        case .tryASearch:
+            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+        case .tryASearchCompleted:
+            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+        case .tryVisitingASite:
+            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+        case .trackers:
+            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+        case .fireDialog:
+            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+        case .endOfJourney:
+            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+        case .privacyProTrial:
+            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+        }
+    }
 }
 
 extension OnboardingRebranding.OnboardingStyles {
 
     struct ContextualBackgroundStyle: ViewModifier {
-        @Environment(\.colorScheme) private var colorScheme
+        @Environment(\.onboardingTheme) private var theme
 
         let backgroundType: ContextualOnboardingBackgroundType
         let imageOffsetY: CGFloat
 
         func body(content: Content) -> some View {
             ZStack {
-                backgroundColor
+                theme.colorPalette.background
                     .ignoresSafeArea()
 
                 VStack {
                     Spacer()
-                    Image.contextualBackgroundTryASearch
+                    backgroundType.image
+                        .resizable()
+                        .scaledToFit()
                         .background(
                             GeometryReader { proxy in
                                 Color.clear
@@ -62,20 +83,10 @@ extension OnboardingRebranding.OnboardingStyles {
                         .offset(y: imageOffsetY)
                 }
                 .frame(maxWidth: .infinity, alignment: backgroundType.alignment)
+                .clipped()
                 .ignoresSafeArea(.container, edges: [.bottom, .horizontal])
 
                 content
-            }
-        }
-
-        private var backgroundColor: Color {
-            switch colorScheme {
-            case .light:
-                Color.white
-            case .dark:
-                Color(red: 19/255, green: 62/255, blue: 124/255)
-            @unknown default:
-                Color.white
             }
         }
     }

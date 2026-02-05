@@ -63,7 +63,3 @@ public extension OnboardingRebranding {
         .padding()
 }
 #endif
-
-public extension Image {
-    static let contextualBackgroundTryASearch = Image("Rebranding/contextual-bg-try-search", bundle: .module)
-}

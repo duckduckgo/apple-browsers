@@ -932,7 +932,8 @@ final class AddressBarButtonsViewController: NSViewController {
         guard let tabViewModel else { return }
 
         let url = tabViewModel.tab.content.userEditableUrl
-        let isNewTabOrOnboarding = [.newtab, .onboarding].contains(tabViewModel.tab.content)
+        let isOnboarding = [.onboarding].contains(tabViewModel.tab.content)
+        let isNewTab = [.newtab].contains(tabViewModel.tab.content)
         let isHypertextUrl = url?.navigationalScheme?.isHypertextScheme == true && url?.isDuckPlayer == false
         let isEditingMode = controllerMode?.isEditing ?? false
         let isTextFieldValueText = textFieldValue?.isText ?? false
@@ -958,9 +959,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
         imageButtonWrapper.isShown = imageButton.image != nil
         && !isInPopUpWindow
-        && (isHypertextUrl || isTextFieldEditorFirstResponder || isEditingMode || isNewTabOrOnboarding)
+        && (isHypertextUrl || isTextFieldEditorFirstResponder || isEditingMode || isNewTab)
         && privacyDashboardButton.isHidden
         && !shouldShowToggle
+        && !isOnboarding
     }
 
     private func updatePrivacyEntryPointIcon() {

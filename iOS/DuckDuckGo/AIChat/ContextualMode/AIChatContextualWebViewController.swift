@@ -208,9 +208,8 @@ final class AIChatContextualWebViewController: UIViewController {
 
     /// Loads a specific chat URL (for cold restore after app restart or new chat reset).
     func loadChatURL(_ url: URL) {
-        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting ready flags and loading: \(url.absoluteString)")
+        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(url.absoluteString)")
         isPageReady = false
-        isContentHandlerReady = false
         loadingView.startAnimating()
         webView.load(URLRequest(url: url))
     }

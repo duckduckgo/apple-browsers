@@ -113,8 +113,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/TrackerRadarKit.git",
       "state" : {
-        "revision" : "a3f0ade39904602aa45874a7d71db4fafa10f7d9",
-        "version" : "3.0.1"
+        "branch" : "jacek/webkit-optimizations",
+        "revision" : "76c5309b09b0f87d754414e9fde47462334a2aea"
       }
     },
     {

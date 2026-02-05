@@ -30,10 +30,17 @@ public struct WideEventMetadata {
     /// Globally unique identifier for the event type.
     public let type: String
 
+    /// The version of the event schema (semantic versioning, e.g., "1.0.0").
+    /// The major version should ONLY be bumped when the base wide event format (`base_event.json`) changes.
+    /// The minor and patch versions should always be incremented when changing an event format, but it's up to the developer to decide which one
+    /// to bump in this case. The PixelDefinition infrastructure will generate a new definition file when the version has changed.
+    public let version: String
+
     public init(pixelName: String,
                 featureName: String,
                 mobileMetaType: String,
-                desktopMetaType: String) {
+                desktopMetaType: String,
+                version: String) {
         #if os(iOS)
         let type = mobileMetaType
         #elseif os(macOS)
@@ -45,6 +52,7 @@ public struct WideEventMetadata {
         self.pixelName = pixelName
         self.featureName = featureName
         self.type = type
+        self.version = version
     }
 }
 
@@ -52,6 +60,7 @@ extension WideEventMetadata: WideEventParameterProviding {
     public func pixelParameters() -> [String: String] {
         Dictionary(compacting: [
             (WideEventParameter.Meta.type, type),
+            (WideEventParameter.Meta.version, version),
         ])
     }
 }

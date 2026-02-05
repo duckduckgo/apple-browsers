@@ -1240,9 +1240,7 @@ class MainViewController: UIViewController {
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAllWithAnimation(request: fireRequest) {}
                 },
-                onCancel: {
-                    // TODO: - Maybe add pixel
-                }
+                onCancel: { }
             )
         }
         
@@ -3905,7 +3903,6 @@ extension MainViewController {
     }
 }
 
-// TODO: - Adjust based on scope
 extension MainViewController: FireExecutorDelegate {
     
     func willStartBurning(fireRequest: FireRequest) {

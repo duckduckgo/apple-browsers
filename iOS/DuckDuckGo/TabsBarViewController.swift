@@ -158,9 +158,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                     guard let self = self else { return }
                     self.delegate?.tabsBarDidRequestForgetAll(self, fireRequest: fireRequest)
                 },
-                onCancel: {
-                    // TODO: - Maybe add pixel
-                }
+                onCancel: { }
             )
         }
 

@@ -117,9 +117,7 @@ extension TabSwitcherViewController {
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAll(fireRequest)
                 },
-                onCancel: {
-                    // TODO: - Maybe add pixel
-                }
+                onCancel: { }
             )
         }
 

@@ -242,8 +242,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let themeManager: ThemeManager
 
-    let displaysTabsProgressIndicator: Bool
-
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     let subscriptionManager: any SubscriptionManager
@@ -543,7 +541,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
         )
         freeTrialConversionService.startObservingSubscriptionChanges()
-        displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
@@ -607,7 +604,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
 
         // Configuring V2 for migration
-        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: .mainApp)
+        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared)
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,

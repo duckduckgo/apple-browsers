@@ -1222,6 +1222,7 @@ extension Pixel {
         case privacyProFreeTrialStart
         case privacyProFreeTrialVPNActivation
         case privacyProFreeTrialPIRActivation
+        case privacyProFreeTrialDuckAIActivation
 
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
@@ -2713,6 +2714,7 @@ extension Pixel.Event {
         case .privacyProFreeTrialStart: return "m_privacy-pro_freetrial_start"
         case .privacyProFreeTrialVPNActivation: return "m_privacy-pro_freetrial_vpn_activation"
         case .privacyProFreeTrialPIRActivation: return "m_privacy-pro_freetrial_pir_activation"
+        case .privacyProFreeTrialDuckAIActivation: return "m_privacy-pro_freetrial_duck_ai_activation"
 
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"

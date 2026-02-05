@@ -146,7 +146,7 @@ final class AppDependencyProvider: DependencyProvider {
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
 
         // Configure Subscription
-        let pixelHandler = SubscriptionPixelHandler(source: .mainApp)
+        let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var tokenHandler: any SubscriptionTokenHandling

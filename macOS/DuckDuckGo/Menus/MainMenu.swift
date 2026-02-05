@@ -31,6 +31,7 @@ import PrivacyConfig
 import Subscription
 import SubscriptionUI
 import Utilities
+import PixelKit
 
 final class MainMenu: NSMenu {
 
@@ -900,8 +901,8 @@ final class MainMenu: NSMenu {
                         let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
                         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
                         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-                        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
-                                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+                        let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: nil)
+                        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults, pixelHandler: pixelHandler)
                         let feature = SubscriptionPagesUseSubscriptionFeature(
                             subscriptionManager: subscriptionManager,
                             stripePurchaseFlow: stripePurchaseFlow,

@@ -1,5 +1,6 @@
 //
 //  SubscriptionPixelHandler.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,28 +19,14 @@
 
 import Foundation
 import Subscription
+import Core
 import PixelKit
 
 public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
 
-    public enum Source {
-        case mainApp
-        case systemExtension
-        case vpnApp
-        case dbp
-
-        var description: String {
-            switch self {
-            case .mainApp:
-                return "MainApp"
-            case .systemExtension:
-                return "SysExt"
-            case .vpnApp:
-                return "VPNApp"
-            case .dbp:
-                return "DBP"
-            }
-        }
+    public enum Source: String {
+        case mainApp = "MainApp"
+        case systemExtension = "SysExt"
     }
 
     let source: Source
@@ -50,7 +37,7 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
         case .invalidRefreshToken:
             pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)
         case .subscriptionIsActive:
-            pixelKit?.fire(SubscriptionPixel.subscriptionActive(AuthVersion.v2), frequency: .legacyDaily)
+            pixelKit?.fire(SubscriptionPixel.subscriptionActive, frequency: .legacyDaily)
         case .getTokensError(let policy, let error):
             pixelKit?.fire(SubscriptionPixel.subscriptionAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
         case .invalidRefreshTokenSignedOut:

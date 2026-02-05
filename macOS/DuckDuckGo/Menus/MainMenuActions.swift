@@ -626,7 +626,7 @@ extension AppDelegate {
     @objc func simulateMemoryUsageReport(_ sender: Any?) {
         let alert = NSAlert()
         alert.messageText = "Simulate Memory Usage Report"
-        alert.informativeText = "Enter memory usage in MB to simulate (e.g., 1024 for 1GB):"
+        alert.informativeText = "Enter memory usage in MB to simulate (e.g., 1024 for 1GB).\n\nThis sends a simulated report through the monitor and also triggers a threshold check."
         alert.alertStyle = .informational
 
         let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
@@ -649,9 +649,23 @@ extension AppDelegate {
                 return
             }
 
+            // Send through monitor publisher (updates debug UI if enabled)
             NSApp.delegateTyped.memoryUsageMonitor.simulateMemoryReport(physFootprintMB: memoryMB)
+            // Trigger threshold check (reporter polls directly, not via publisher)
+            NSApp.delegateTyped.memoryUsageThresholdReporter.checkThresholdNow()
             Logger.memory.info("Simulated memory report: \(memoryMB) MB")
         }
+    }
+
+    @objc func clearSimulatedMemory(_ sender: Any?) {
+        NSApp.delegateTyped.memoryUsageMonitor.clearSimulatedMemoryReport()
+        Logger.memory.info("Cleared simulated memory report, reverting to real system memory")
+
+        let alert = NSAlert()
+        alert.messageText = "Simulation Cleared"
+        alert.informativeText = "Memory readings are now using real system values."
+        alert.alertStyle = .informational
+        alert.runModal()
     }
 
     @objc func startMemoryReporterImmediately(_ sender: Any?) {

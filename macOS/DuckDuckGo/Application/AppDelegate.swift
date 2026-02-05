@@ -1045,7 +1045,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 
-        memoryUsageMonitor = MemoryUsageMonitor(logger: .memory)
+        memoryUsageMonitor = MemoryUsageMonitor(internalUserDecider: internalUserDecider, logger: .memory)
         memoryPressureReporter = MemoryPressureReporter(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared, logger: .memory)
         memoryUsageThresholdReporter = MemoryUsageThresholdReporter(
             memoryUsageMonitor: memoryUsageMonitor,

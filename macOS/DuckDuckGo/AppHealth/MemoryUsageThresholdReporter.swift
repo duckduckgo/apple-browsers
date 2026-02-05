@@ -24,37 +24,47 @@ import PrivacyConfig
 
 /// Reports threshold memory usage pixels when memory enters specific buckets.
 ///
-/// This reporter monitors memory usage from `MemoryUsageMonitor` and fires daily pixels
-/// when memory usage crosses into different threshold buckets. It waits 5 minutes after
+/// This reporter periodically polls memory usage via `getCurrentMemoryUsage()` and fires daily
+/// pixels when memory usage falls into different threshold buckets. It waits 5 minutes after
 /// app launch before starting to monitor, avoiding initialization memory spikes.
 ///
+/// This reporter is fully independent from the `MemoryUsageMonitor` feature flag
+/// (`.memoryUsageMonitor`), which only controls the debug UI display.
+///
 final class MemoryUsageThresholdReporter {
+
+    /// The interval between memory threshold checks, in seconds.
+    static let defaultCheckInterval: TimeInterval = 5
 
     private let memoryUsageMonitor: MemoryUsageMonitoring
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
     private let logger: Logger?
+    private let checkInterval: TimeInterval
     private var featureFlagCancellable: AnyCancellable?
-    private var cancellables: Set<AnyCancellable> = []
+    private var timerCancellable: AnyCancellable?
     private var hasDelayElapsed = false
     private var delayWorkItem: DispatchWorkItem?
 
     /// Creates a new memory usage threshold reporter.
     ///
     /// - Parameters:
-    ///   - memoryUsageMonitor: The monitor that provides memory usage updates
+    ///   - memoryUsageMonitor: The monitor that provides memory usage readings
     ///   - featureFlagger: Feature flag provider to check if reporting is enabled
     ///   - pixelFiring: The pixel firing service for sending analytics
+    ///   - checkInterval: The interval between memory checks. Defaults to 60 seconds.
     ///   - logger: Optional logger for debugging
     init(
         memoryUsageMonitor: MemoryUsageMonitoring,
         featureFlagger: FeatureFlagger,
         pixelFiring: PixelFiring?,
+        checkInterval: TimeInterval = MemoryUsageThresholdReporter.defaultCheckInterval,
         logger: Logger? = nil
     ) {
         self.memoryUsageMonitor = memoryUsageMonitor
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
+        self.checkInterval = checkInterval
         self.logger = logger
         subscribeToFeatureFlagUpdates()
     }
@@ -98,30 +108,34 @@ final class MemoryUsageThresholdReporter {
             guard let self else { return }
             self.hasDelayElapsed = true
             self.logger?.debug("Memory usage threshold reporter delay elapsed, starting monitoring")
-            self.subscribeToMemoryUpdates()
+            self.startThresholdChecking()
         }
 
         delayWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 300, execute: workItem)
     }
 
-    /// Subscribes to memory usage updates from the monitor.
+    /// Starts a repeating timer to periodically check memory thresholds.
     ///
-    /// Checks the threshold on each update and fires the appropriate pixel with daily frequency.
-    private func subscribeToMemoryUpdates() {
-        memoryUsageMonitor.memoryReportPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] report in
-                self?.checkThresholdAndFire(report: report)
+    /// Polls memory usage directly via `getCurrentMemoryUsage()` at regular intervals,
+    /// independent of whether the `MemoryUsageMonitor` is actively publishing.
+    private func startThresholdChecking() {
+        // Fire an initial check immediately
+        checkThresholdAndFire()
+
+        // Set up a repeating timer for subsequent checks
+        timerCancellable = Timer.publish(every: checkInterval, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.checkThresholdAndFire()
             }
-            .store(in: &cancellables)
     }
 
-    /// Checks which threshold bucket the memory usage falls into and fires the pixel.
-    ///
-    /// - Parameter report: The current memory usage report
-    private func checkThresholdAndFire(report: MemoryUsageMonitor.MemoryReport) {
+    /// Checks which threshold bucket the current memory usage falls into and fires the pixel.
+    private func checkThresholdAndFire() {
         guard hasDelayElapsed, featureFlagger.isFeatureOn(.memoryUsageReporting) else { return }
+
+        let report = memoryUsageMonitor.getCurrentMemoryUsage()
 
         // Use physical footprint (matches Activity Monitor)
         let pixel = MemoryUsagePixel.pixel(forMB: report.physFootprintMB)
@@ -138,16 +152,22 @@ final class MemoryUsageThresholdReporter {
     private func stopMonitoring() {
         delayWorkItem?.cancel()
         delayWorkItem = nil
-        cancellables.removeAll()
+        timerCancellable?.cancel()
+        timerCancellable = nil
         hasDelayElapsed = false
         logger?.debug("Memory usage threshold reporter stopped")
     }
 }
 
 extension MemoryUsageThresholdReporter {
-    /// For testing: immediately start monitoring without delay
+    /// For testing and debug menu: immediately start monitoring without delay
     func startMonitoringImmediately() {
         hasDelayElapsed = true
-        subscribeToMemoryUpdates()
+        startThresholdChecking()
+    }
+
+    /// For debug menu: trigger an immediate threshold check
+    func checkThresholdNow() {
+        checkThresholdAndFire()
     }
 }

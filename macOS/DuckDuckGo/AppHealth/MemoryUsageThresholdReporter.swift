@@ -121,7 +121,7 @@ final class MemoryUsageThresholdReporter {
     ///
     /// - Parameter report: The current memory usage report
     private func checkThresholdAndFire(report: MemoryUsageMonitor.MemoryReport) {
-        guard hasDelayElapsed else { return }
+        guard hasDelayElapsed, featureFlagger.isFeatureOn(.memoryUsageReporting) else { return }
 
         // Use physical footprint (matches Activity Monitor)
         let pixel = MemoryUsagePixel.pixel(forMB: report.physFootprintMB)

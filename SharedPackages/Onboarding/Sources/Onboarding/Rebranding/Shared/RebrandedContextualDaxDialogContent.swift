@@ -20,21 +20,21 @@ import SwiftUI
 
 extension OnboardingRebranding {
 
+    public enum ContextualDaxDialogOrientation: Equatable {
+        case verticalStack
+        case horizontalStack(alignment: VerticalAlignment)
+    }
+
     public struct ContextualDaxDialogContent<Content: View>: View {
-        @Environment(\.onboardingTheme) private var theme
+        @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var theme
 
-        public enum Orientation: Equatable {
-            case verticalStack
-            case horizontalStack(alignment: VerticalAlignment)
-        }
-
-        let orientation: Orientation
+        let orientation: ContextualDaxDialogOrientation
         let title: String?
         let message: NSAttributedString
         let content: Content
 
         public init(
-            orientation: Orientation = .verticalStack,
+            orientation: ContextualDaxDialogOrientation = .verticalStack,
             title: String? = nil,
             message: NSAttributedString,
             @ViewBuilder content: () -> Content,
@@ -49,14 +49,14 @@ extension OnboardingRebranding {
             Group {
                 switch orientation {
                 case .verticalStack:
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: theme.contentSpacing) {
                         TitleMessageStack(title: title, message: message.string)
                         content
                     }
                 case let .horizontalStack(alignment):
-                    HStack(alignment: alignment, spacing: 5) {
+                    HStack(alignment: alignment) {
                         TitleMessageStack(title: title, message: message.string)
-                        Spacer()
+                        Spacer(minLength: theme.contentSpacing)
                         content
                     }
                 }
@@ -76,7 +76,7 @@ private extension OnboardingRebranding {
         let message: String
 
         var body: some View {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: theme.contextualOnboardingMetrics.titleBodyVerticalSpacing) {
                 if let title {
                     Text(title)
                         .font(theme.typography.contextualTitle)
@@ -86,7 +86,8 @@ private extension OnboardingRebranding {
                     .font(theme.typography.contextualBody)
                     .multilineTextAlignment(theme.contextualOnboardingMetrics.contextualBodyTextAlignment)
             }
-            .padding(.bottom, 12)
+            .padding(.leading, theme.contextualOnboardingMetrics.titleBodyInset.leading)
+            .padding(.bottom, theme.contextualOnboardingMetrics.titleBodyInset.bottom)
         }
     }
 

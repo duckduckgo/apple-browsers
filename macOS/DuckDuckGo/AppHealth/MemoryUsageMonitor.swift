@@ -22,8 +22,12 @@ import Foundation
 import os.log
 import PrivacyConfig
 
+protocol MemoryUsageMonitoring {
+    var memoryReportPublisher: AnyPublisher<MemoryUsageMonitor.MemoryReport, Never> { get }
+}
+
 /// A monitor that periodically reports the memory usage of the current process.
-final class MemoryUsageMonitor: @unchecked Sendable {
+final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
 
     /// The interval between memory usage reports.
     let interval: TimeInterval

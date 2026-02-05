@@ -98,8 +98,6 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         let cancellable = facade.cardsPublisher.sink { cards in
             receivedCards.append(cards)
         }
-        // Allow subscription to inner publisher
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
         // Trigger change
         provider.continueSetUpModel.featuresMatrix = [[.defaultBrowser]]
@@ -119,8 +117,6 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         let cancellable = facade.isViewExpandedPublisher.sink { value in
             receivedValues.append(value)
         }
-        // Allow subscription to inner publisher
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
         // Trigger change
         provider.isViewExpanded = true
@@ -171,8 +167,6 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         let cancellable = facade.cardsPublisher.sink { cards in
             receivedCards.append(cards)
         }
-        // Allow subscription to inner publisher
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
         // Trigger change
         provider.dismiss(.defaultApp)
@@ -192,8 +186,6 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         let cancellable = facade.isViewExpandedPublisher.sink { value in
             receivedValues.append(value)
         }
-        // Allow subscription to inner publisher
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
         // Trigger change
         provider.isViewExpanded = true
@@ -213,8 +205,6 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
         let cancellable = facade.cardsPublisher.sink { cards in
             receivedCards.append(cards)
         }
-        // Allow subscription to inner publisher
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
         let singleCardProviderExpectation = XCTestExpectation(description: "Active provider was updated to single card provider")
         let legacyProviderExpectation = XCTestExpectation(description: "Active provider was updated to legacy provider")
@@ -283,7 +273,8 @@ private extension NewTabPageNextStepsCardsProviderFacadeTests {
             legacySubscriptionCardPersistor: MockHomePageSubscriptionCardPersisting(),
             persistor: MockNewTabPageNextStepsCardsPersistor(),
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
-            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            scheduler: .immediate
         )
     }
 }

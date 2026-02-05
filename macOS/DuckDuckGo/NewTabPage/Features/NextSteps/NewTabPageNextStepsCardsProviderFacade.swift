@@ -17,6 +17,7 @@
 //
 
 import Combine
+import CombineSchedulers
 import DDGSync
 import FeatureFlags
 import Foundation
@@ -27,6 +28,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
     private let featureFlagger: FeatureFlagger
     private let singleCardProvider: NewTabPageNextStepsSingleCardProvider
     private let legacyCardsProvider: NewTabPageNextStepsCardsProvider
+    private let scheduler: AnySchedulerOf<DispatchQueue>
     private var cancellables: Set<AnyCancellable> = []
     @Published private(set) var activeProvider: NewTabPageNextStepsCardsProviding
 
@@ -40,7 +42,8 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
          legacySubscriptionCardPersistor: HomePageSubscriptionCardPersisting,
          persistor: NewTabPageNextStepsCardsPersisting,
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
-         syncService: DDGSyncing?) {
+         syncService: DDGSyncing?,
+         scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         let singleCardProvider = NewTabPageNextStepsSingleCardProvider(
             cardActionHandler: cardActionsHandler,
             pixelHandler: pixelHandler,
@@ -69,6 +72,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
         self.featureFlagger = featureFlagger
         self.singleCardProvider = singleCardProvider
         self.legacyCardsProvider = legacyCardsProvider
+        self.scheduler = scheduler
 
         func getActiveProvider() -> NewTabPageNextStepsCardsProviding {
             featureFlagger.isFeatureOn(.nextStepsListWidget) ? singleCardProvider : legacyCardsProvider
@@ -81,7 +85,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
                 self?.featureFlagger.isFeatureOn(.nextStepsListWidget)
             }
             .removeDuplicates()
-            .receive(on: DispatchQueue.main)
+            .receive(on: scheduler)
             .sink { [weak self] _ in
                 guard let self else { return }
                 activeProvider = getActiveProvider()
@@ -100,7 +104,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
 
     private(set) lazy var isViewExpandedPublisher: AnyPublisher<Bool, Never> = {
         $activeProvider
-            .receive(on: DispatchQueue.main)
+            .receive(on: scheduler)
             .map { provider in
                 provider.isViewExpandedPublisher
             }
@@ -114,7 +118,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
 
     private(set) lazy var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> = {
         $activeProvider
-            .receive(on: DispatchQueue.main)
+            .receive(on: scheduler)
             .map { provider in
                 provider.cardsPublisher
             }

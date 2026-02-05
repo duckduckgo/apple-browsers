@@ -144,6 +144,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
                 titleText: "PIR Title",
                 descriptionText: "PIR Description",
                 placeholder: .subscription,
+                imageUrl: nil,
                 primaryActionText: "PIR Action",
                 primaryAction: .navigation(value: .personalInformationRemoval)
             ),

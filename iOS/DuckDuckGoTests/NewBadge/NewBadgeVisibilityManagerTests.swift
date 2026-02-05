@@ -148,6 +148,15 @@ final class DefaultNewBadgeConfigProviderTests: XCTestCase {
         XCTAssertFalse(provider.isWithinReleaseWindow(for: .personalInformationRemoval, currentAppVersion: "7.103.0"))
     }
 
+    func testMinSupportedVersionIsReadFromPrivacyConfig() {
+        let appVersion = "7.100.0"
+        let providerMin100 = makeProvider(minSupportedVersion: "7.100.0")
+        let providerMin101 = makeProvider(minSupportedVersion: "7.101.0")
+
+        XCTAssertTrue(providerMin100.isWithinReleaseWindow(for: .personalInformationRemoval, currentAppVersion: appVersion))
+        XCTAssertFalse(providerMin101.isWithinReleaseWindow(for: .personalInformationRemoval, currentAppVersion: appVersion))
+    }
+
     private func makeProvider(minSupportedVersion: String) -> DefaultNewBadgeConfigProvider {
         let privacyConfigurationManager = PrivacyConfigTestsUtils.MockPrivacyConfigurationManager()
         privacyConfigurationManager.currentConfigString = """
@@ -156,7 +165,7 @@ final class DefaultNewBadgeConfigProviderTests: XCTestCase {
                 "dbp": {
                     "state": "enabled",
                     "features": {
-                        "settingsNewBadge": {
+                        "goToMarket": {
                             "state": "enabled",
                             "minSupportedVersion": "\(minSupportedVersion)"
                         }

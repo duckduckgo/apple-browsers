@@ -116,7 +116,7 @@ struct DefaultNewBadgeConfigProvider: NewBadgeConfigProviding {
     func isFeatureOn(_ feature: NewBadgeFeature) -> Bool {
         switch feature {
         case .personalInformationRemoval:
-            return featureFlagger.isFeatureOn(.personalInformationRemoval) && privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.settingsNewBadge)
+            return featureFlagger.isFeatureOn(.personalInformationRemoval) && privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.goToMarket)
         }
     }
 
@@ -127,8 +127,8 @@ struct DefaultNewBadgeConfigProvider: NewBadgeConfigProviding {
 
         switch feature {
         case .personalInformationRemoval:
-            return configurationData.features[DBPSubfeature.settingsNewBadge.parent.rawValue]?
-                .features[DBPSubfeature.settingsNewBadge.rawValue]?
+            return configurationData.features[DBPSubfeature.goToMarket.parent.rawValue]?
+                .features[DBPSubfeature.goToMarket.rawValue]?
                 .minSupportedVersion
         }
     }

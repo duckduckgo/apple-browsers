@@ -102,7 +102,7 @@ final class NewBadgeVisibilityManager: NewBadgeVisibilityManaging {
     }
 }
 
-struct DefaultNewBadgeConfigProvider: NewBadgeConfigProviding {
+struct DefaultNewBadgeConfigProvider: NewBadgeConfigProviding, ReleaseWindowChecking {
 
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -138,43 +138,8 @@ struct DefaultNewBadgeConfigProvider: NewBadgeConfigProviding {
             return false
         }
 
-        let minVersion = parse(versionString: minimumVersion)
-        let currentVersion = parse(versionString: currentAppVersion)
-
-        guard let maxVersion = maximumVersion(from: minVersion, byMinorReleaseOffset: maxMinorReleaseOffset(for: feature)) else {
-            return false
-        }
-
-        return compareVersions(minVersion, currentVersion) != .orderedDescending && compareVersions(currentVersion, maxVersion) == .orderedAscending
-    }
-
-    private func parse(versionString: String) -> [Int] {
-        versionString.split(separator: ".").map { Int($0) ?? 0 }
-    }
-
-    private func compareVersions(_ lhs: [Int], _ rhs: [Int]) -> ComparisonResult {
-        for index in 0..<max(lhs.count, rhs.count) {
-            let lhsSegment = index < lhs.count ? lhs[index] : 0
-            let rhsSegment = index < rhs.count ? rhs[index] : 0
-
-            if lhsSegment < rhsSegment {
-                return .orderedAscending
-            }
-            if lhsSegment > rhsSegment {
-                return .orderedDescending
-            }
-        }
-
-        return .orderedSame
-    }
-
-    private func maximumVersion(from minimumVersion: [Int], byMinorReleaseOffset offset: Int) -> [Int]? {
-        guard minimumVersion.count == 3 else { return nil }
-
-        var result = minimumVersion
-        result[1] += offset
-        result[2] = 0
-
-        return result
+        return isWithinReleaseWindow(minimumVersion: minimumVersion,
+                                     currentAppVersion: currentAppVersion,
+                                     maxMinorReleaseOffset: maxMinorReleaseOffset(for: feature))
     }
 }

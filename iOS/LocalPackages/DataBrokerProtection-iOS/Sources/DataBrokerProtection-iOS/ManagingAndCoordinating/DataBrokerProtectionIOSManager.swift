@@ -564,12 +564,15 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DBPWideEventsDelegate 
     }
 }
 
-extension DataBrokerProtectionIOSManager: DBPIOSInterface.NotificationDelegate {
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.NotificationDelegate, ReleaseWindowChecking {
     func sendGoToMarketFirstScanNotificationIfEligible() async {
-        guard privacyConfigManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.goToMarket) else { return }
-        guard isEligibleForPIR else { return }
-        guard (try? await meetsEntitlementRunPrequisite) == true else { return }
-        guard hasNotRunPIRScan() else { return }
+        guard privacyConfigManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.goToMarket),
+              isEligibleForPIR,
+              isWithinGoToMarketReleaseWindow(currentAppVersion: AppVersion.shared.versionNumber),
+              (try? await meetsEntitlementRunPrequisite) == true,
+              hasNotRunPIRScan() else {
+            return
+        }
 
         await userNotificationService.sendGoToMarketFirstScanNotificationIfPossible()
     }
@@ -721,12 +724,32 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
 }
 
 private extension DataBrokerProtectionIOSManager {
+    enum GoToMarketConstants {
+        static let maxMinorReleaseOffset = 3
+    }
+
     var isEligibleForPIR: Bool {
         #if DEBUG || ALPHA || REVIEW
         return true
         #else
         return (Locale.current.regionCode == "US") || privacyConfigManager.internalUserDecider.isInternalUser
         #endif
+    }
+
+    func isWithinGoToMarketReleaseWindow(currentAppVersion: String) -> Bool {
+        guard let configurationData = try? PrivacyConfigurationData(data: privacyConfigManager.currentConfig) else {
+            return false
+        }
+
+        let minimumVersion = configurationData.features[DBPSubfeature.goToMarket.parent.rawValue]?
+            .features[DBPSubfeature.goToMarket.rawValue]?
+            .minSupportedVersion
+
+        guard let minimumVersion else { return false }
+
+        return isWithinReleaseWindow(minimumVersion: minimumVersion,
+                                     currentAppVersion: currentAppVersion,
+                                     maxMinorReleaseOffset: GoToMarketConstants.maxMinorReleaseOffset)
     }
 
     func hasNotRunPIRScan() -> Bool {

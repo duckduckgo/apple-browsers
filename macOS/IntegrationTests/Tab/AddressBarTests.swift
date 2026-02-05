@@ -1060,14 +1060,6 @@ class AddressBarTests: XCTestCase {
         // THEN
         XCTAssertTrue(reporter.measureAddressBarTypedInCalled)
     }
-
-    private func waitForMainQueueToFlush() {
-        let expectation = XCTestExpectation(description: "Finish tasks in main queue")
-        DispatchQueue.main.async {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 1.0)
-    }
 }
 
 private extension NSWindow {

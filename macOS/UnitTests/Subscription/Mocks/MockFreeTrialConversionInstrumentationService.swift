@@ -1,6 +1,5 @@
 //
 //  MockFreeTrialConversionInstrumentationService.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -27,26 +26,19 @@ final class MockFreeTrialConversionInstrumentationService: FreeTrialConversionIn
     var markPIRActivatedCalled = false
     var markDuckAIActivatedCalled = false
 
-    var markVPNActivatedCallback: (() -> Void)?
-    var markPIRActivatedCallback: (() -> Void)?
-    var markDuckAIActivatedCallback: (() -> Void)?
-
     func startObservingSubscriptionChanges() {
         startObservingSubscriptionChangesCalled = true
     }
 
     func markVPNActivated() {
         markVPNActivatedCalled = true
-        markVPNActivatedCallback?()
     }
 
     func markPIRActivated() {
         markPIRActivatedCalled = true
-        markPIRActivatedCallback?()
     }
 
     func markDuckAIActivated() {
         markDuckAIActivatedCalled = true
-        markDuckAIActivatedCallback?()
     }
 }

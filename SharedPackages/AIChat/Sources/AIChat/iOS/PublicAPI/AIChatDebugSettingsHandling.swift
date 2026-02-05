@@ -24,6 +24,7 @@ public protocol AIChatDebugSettingsHandling {
     var customURL: String? { get set }
     var contextualSessionTimerSeconds: Int? { get set }
     func reset()
+    func matchesCustomURL(_ url: URL) -> Bool
 }
 
 public class AIChatDebugSettings: AIChatDebugSettingsHandling {
@@ -82,6 +83,25 @@ public class AIChatDebugSettings: AIChatDebugSettingsHandling {
         messagePolicyHostname = nil
         customURL = nil
         contextualSessionTimerSeconds = nil
+    }
+
+    /// Checks if the given URL matches the custom debug URL by comparing scheme, host, and path.
+    /// Query parameters and whitespace are ignored in the comparison.
+    /// - Parameter url: The URL to compare against the custom debug URL
+    /// - Returns: `true` if the URLs match (ignoring query params and whitespace), `false` otherwise
+    public func matchesCustomURL(_ url: URL) -> Bool {
+        guard let customURLString = customURL?.trimmingCharacters(in: .whitespaces),
+              let customComponents = URLComponents(string: customURLString),
+              let currentComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return false
+        }
+
+        let customPath = customComponents.path.trimmingCharacters(in: .whitespaces)
+        let currentPath = currentComponents.path.trimmingCharacters(in: .whitespaces)
+
+        return customComponents.scheme == currentComponents.scheme &&
+               customComponents.host == currentComponents.host &&
+               customPath == currentPath
     }
 }
 #endif

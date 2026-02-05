@@ -261,8 +261,9 @@ extension Tab: WKUIDelegate, PrintingSubfeatureDelegate {
     // MARK: - PrintingSubfeatureDelegate
 
     func printingSubfeatureDidRequestPrint(for frameHandle: Any?, in webView: WKWebView?) {
-        guard let webView = webView ?? self.webView else { return }
-        runPrintOperation(for: frameHandle as? FrameHandle, in: webView)
+        // Use provided webView if available, otherwise fall back to self.webView
+        let targetWebView = webView ?? self.webView
+        runPrintOperation(for: frameHandle as? FrameHandle, in: targetWebView)
     }
 
     func runPrintOperation(for frameHandle: FrameHandle?, in webView: WKWebView, completionHandler: ((Bool) -> Void)? = nil) {

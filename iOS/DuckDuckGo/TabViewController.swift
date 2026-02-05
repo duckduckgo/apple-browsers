@@ -3146,10 +3146,18 @@ extension TabViewController: SurrogatesUserScriptDelegate {
 extension TabViewController: PrintingSubfeatureDelegate {
 
     func printingSubfeatureDidRequestPrint(for frameHandle: Any?, in webView: WKWebView?) {
-        let targetWebView = webView ?? self.webView
-        guard let printFormatter = targetWebView?.viewPrintFormatter() else { return }
+        // Use explicit if-let to avoid type inference issues with IUO (WKWebView!)
+        let targetWebView: WKWebView
+        if let providedWebView = webView {
+            targetWebView = providedWebView
+        } else if let ownWebView = self.webView {
+            targetWebView = ownWebView
+        } else {
+            return
+        }
+
         let controller = UIPrintInteractionController.shared
-        controller.printFormatter = printFormatter
+        controller.printFormatter = targetWebView.viewPrintFormatter()
         controller.present(animated: true, completionHandler: nil)
     }
 

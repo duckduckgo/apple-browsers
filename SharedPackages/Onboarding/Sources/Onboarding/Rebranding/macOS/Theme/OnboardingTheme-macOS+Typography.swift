@@ -23,10 +23,10 @@ public extension OnboardingTheme {
 
     /// Typography tokens used by onboarding content.
     struct Typography: Equatable {
-        /// Standard title style.
-        public let title: Font
-        /// Primary body text style.
-        public let body: Font
+        /// Standard title style for contextual Flow.
+        public let contextualTitle: Font
+        /// Standard body style for contextual Flow.
+        public let contextualBody: Font
         /// Small text and button label style.
         public let small: Font
 
@@ -36,8 +36,8 @@ public extension OnboardingTheme {
             body: Font,
             small: Font
         ) {
-            self.title = title
-            self.body = body
+            self.contextualTitle = title
+            self.contextualBody = body
             self.small = small
         }
     }

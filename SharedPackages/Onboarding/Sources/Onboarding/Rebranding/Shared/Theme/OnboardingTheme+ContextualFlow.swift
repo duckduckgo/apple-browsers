@@ -22,6 +22,14 @@ public extension OnboardingTheme {
 
     /// Layout and text-alignment metrics used by contextual onboarding screens.
     struct ContextualOnboardingMetrics: Equatable {
+        /// Spacing between the copy block and CTA content.
+        public let contentSpacing: CGFloat
+
+        /// Vertical spacing between title and body text in the copy block.
+        public let titleBodyVerticalSpacing: CGFloat
+        /// Insets applied to the title/body copy block.
+        public let titleBodyInset: EdgeInsets
+
         /// Text alignment for contextual flow titles.
         public let contextualTitleTextAlignment: TextAlignment
         /// Text alignment for contextual flow body copy.
@@ -34,11 +42,17 @@ public extension OnboardingTheme {
         public let optionsListButtonStyle: OnboardingButtonStyle
 
         public init(
+            contentSpacing: CGFloat,
+            titleBodyVerticalSpacing: CGFloat,
+            titleBodyInset: EdgeInsets,
             contextualTitleTextAlignment: TextAlignment,
             contextualBodyTextAlignment: TextAlignment,
             optionsListMetrics: OptionsListMetrics,
             optionsListButtonStyle: OnboardingButtonStyle
         ) {
+            self.contentSpacing = contentSpacing
+            self.titleBodyVerticalSpacing = titleBodyVerticalSpacing
+            self.titleBodyInset = titleBodyInset
             self.contextualTitleTextAlignment = contextualTitleTextAlignment
             self.contextualBodyTextAlignment = contextualBodyTextAlignment
             self.optionsListMetrics = optionsListMetrics

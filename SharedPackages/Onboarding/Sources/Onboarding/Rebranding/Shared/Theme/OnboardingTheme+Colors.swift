@@ -22,6 +22,8 @@ public extension OnboardingTheme {
 
     /// Color tokens used by onboarding components.
     struct ColorPalette: Equatable {
+        /// Background color used behind onboarding surfaces and contextual illustrations.
+        public let background: Color
         /// Bubble border color.
         public let bubbleBorder: Color
         /// Bubble background color.
@@ -48,6 +50,7 @@ public extension OnboardingTheme {
 
         /// Creates a color palette for onboarding surfaces, text, and controls.
         public init(
+            background: Color,
             bubbleBorder: Color,
             bubbleBackground: Color,
             bubbleShadow: Color,
@@ -59,6 +62,7 @@ public extension OnboardingTheme {
             primaryButtonBackgroundColor: Color,
             primaryButtonTextColor: Color,
         ) {
+            self.background = background
             self.bubbleBorder = bubbleBorder
             self.bubbleBackground = bubbleBackground
             self.bubbleShadow = bubbleShadow

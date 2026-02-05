@@ -30,6 +30,7 @@ public extension OnboardingTheme {
         let typography = Typography.system
 
         let colorPalette = ColorPalette(
+            background: Color(designSystemColor: .surfaceBackdrop),
             bubbleBorder: Color(designSystemColor: .accentAltPrimary),
             bubbleBackground: Color(designSystemColor: .surfaceTertiary),
             bubbleShadow: Color.shade(0.03),
@@ -68,6 +69,9 @@ public extension OnboardingTheme {
             ),
             dismissButtonMetrics: dismissButtonMetrics,
             contextualOnboardingMetrics: OnboardingTheme.ContextualOnboardingMetrics(
+                contentSpacing: 20,
+                titleBodyVerticalSpacing: 10,
+                titleBodyInset: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                 contextualTitleTextAlignment: .leading,
                 contextualBodyTextAlignment: .leading,
                 optionsListMetrics: contextualOptionsListMetrics,

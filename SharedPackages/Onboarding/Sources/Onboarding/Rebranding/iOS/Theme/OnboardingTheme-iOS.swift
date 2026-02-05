@@ -19,9 +19,11 @@
 #if os(iOS)
 import SwiftUI
 import DesignResourcesKit
+import MetricBuilder
 
 // MARK: - Factory Helpers
 
+@MainActor
 public extension OnboardingTheme {
 
     /// Rebranding 2026 default onboarding theme.
@@ -31,6 +33,7 @@ public extension OnboardingTheme {
 
         let typography: OnboardingTheme.Typography = .system
         let colorPalette = ColorPalette(
+            background: Color(singleUseColor: .rebranding(.backdrop)),
             bubbleBorder: Color(singleUseColor: .rebranding(.accentAltPrimary)),
             bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
             bubbleShadow: Color.shade(0.03),
@@ -43,7 +46,7 @@ public extension OnboardingTheme {
             primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText))
         )
         let bubbleMetrics = BubbleMetrics(
-            contentInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
+            contentInsets: bubbleContentInsets,
             cornerRadius: bubbleCornerRadius,
             borderWidth: borderWidth,
             shadowRadius: 6.0,
@@ -68,6 +71,9 @@ public extension OnboardingTheme {
             bubbleMetrics: bubbleMetrics,
             dismissButtonMetrics: dismissButtonMetrics,
             contextualOnboardingMetrics: ContextualOnboardingMetrics(
+                contentSpacing: 20,
+                titleBodyVerticalSpacing: 10,
+                titleBodyInset: contextualTitleBodyContentInsets,
                 contextualTitleTextAlignment: .leading,
                 contextualBodyTextAlignment: .leading,
                 optionsListMetrics: contextualOptionsListMetrics,
@@ -106,5 +112,15 @@ public extension OnboardingTheme {
         )
     }()
 
+    private static let bubbleContentInsets: EdgeInsets = MetricBuilder<EdgeInsets>(
+        iPhone: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
+        iPad: EdgeInsets(top: 24, leading: 40, bottom: 24, trailing: 40)
+    ).build()
+
+    private static let contextualTitleBodyContentInsets: EdgeInsets = MetricBuilder<EdgeInsets>(
+        iPhone: EdgeInsets(top: 0, leading: 8, bottom: 12, trailing: 0),
+        iPad: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+    ).build()
 }
+
 #endif

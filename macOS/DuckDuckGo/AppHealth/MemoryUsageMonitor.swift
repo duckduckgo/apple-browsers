@@ -280,7 +280,6 @@ final class MemoryUsageDisplayer {
     }
 }
 
-#if DEBUG
 extension MemoryUsageMonitor {
     /// Simulates a memory report for testing purposes.
     ///
@@ -302,4 +301,3 @@ extension MemoryUsageMonitor {
         memoryReportSubject.send(report)
     }
 }
-#endif

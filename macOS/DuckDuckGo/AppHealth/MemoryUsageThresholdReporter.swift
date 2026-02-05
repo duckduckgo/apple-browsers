@@ -144,7 +144,6 @@ final class MemoryUsageThresholdReporter {
     }
 }
 
-#if DEBUG
 extension MemoryUsageThresholdReporter {
     /// For testing: immediately start monitoring without delay
     func startMonitoringImmediately() {
@@ -152,4 +151,3 @@ extension MemoryUsageThresholdReporter {
         subscribeToMemoryUpdates()
     }
 }
-#endif

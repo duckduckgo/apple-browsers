@@ -1236,6 +1236,7 @@ class MainViewController: UIViewController {
                 on: self,
                 attachPopoverTo: source,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
+                pixelSource: .browsing,
                 daxDialogsManager: daxDialogsManager,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAllWithAnimation(request: fireRequest) {}
@@ -1266,7 +1267,7 @@ class MainViewController: UIViewController {
 
     func onQuickFirePressed() {
         wakeLazyFireButtonAnimator()
-        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all)
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .quickFire)
         forgetAllWithAnimation(request: request) {}
         dismiss(animated: true)
         if KeyboardSettings().onAppLaunch {
@@ -3722,7 +3723,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
         Task {
-            let request = FireRequest(options: .tabs, trigger: .manualFire, scope: .all)
+            let request = FireRequest(options: .tabs, trigger: .manualFire, scope: .all, source: .tabSwitcher)
             await fireExecutor.burn(request: request, applicationState: .unknown)
             tabSwitcher.dismiss()
         }
@@ -3817,8 +3818,7 @@ extension MainViewController {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabManager.count
-        Pixel.fire(pixel: .forgetAllExecuted)
-        DailyPixel.fire(pixel: .forgetAllExecutedDaily)
+        firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         
         fireExecutor.prepare(for: request)
@@ -3914,6 +3914,22 @@ extension MainViewController: FireExecutorDelegate {
         case .autoClearOnForeground:
             autoClearInProgress = true
             clearNavigationStack()
+        }
+    }
+    
+    private func firePixels(for request: FireRequest) {
+        let tabType = tabManager.viewModelForCurrentTab()?.tab.isAITab == true ? "ai" : "web"
+        let params: [String: String] = [
+            PixelParameters.source: request.source.rawValue,
+            PixelParameters.tabType: tabType
+        ]
+        
+        switch request.scope {
+        case .all:
+            Pixel.fire(pixel: .forgetAllExecuted, withAdditionalParameters: params)
+            DailyPixel.fire(pixel: .forgetAllExecutedDaily, withAdditionalParameters: params)
+        case .tab:
+            DailyPixel.fireDailyAndCount(pixel: .singleTabBurnExecuted, withAdditionalParameters: params)
         }
     }
     

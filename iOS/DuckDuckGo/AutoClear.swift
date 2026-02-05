@@ -59,7 +59,7 @@ final class AutoClear: AutoClearing {
             options.insert(.aiChats)
         }
         let trigger: FireRequest.Trigger = launching ? .autoClearOnLaunch : .autoClearOnForeground
-        let request = FireRequest(options: options, trigger: trigger, scope: .all)
+        let request = FireRequest(options: options, trigger: trigger, scope: .all, source: .autoClear)
         await worker.burn(request: request, applicationState: applicationState)
     }
 

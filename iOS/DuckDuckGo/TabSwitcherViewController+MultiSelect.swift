@@ -113,6 +113,7 @@ extension TabSwitcherViewController {
                 on: self,
                 attachPopoverTo: sender,
                 tabViewModel: nil,
+                pixelSource: .tabSwitcher,
                 daxDialogsManager: daxDialogsManager,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAll(fireRequest)

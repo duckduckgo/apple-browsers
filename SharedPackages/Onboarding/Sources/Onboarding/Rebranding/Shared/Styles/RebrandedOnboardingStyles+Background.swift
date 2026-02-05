@@ -96,8 +96,8 @@ extension OnboardingRebranding.OnboardingStyles {
         @State var imageHeight: CGFloat = 0.0
 
         let backgroundType: ContextualOnboardingBackgroundType
-        var animation: Animation = .easeIn(duration: 0.3)
-        var delay: Double = 0.1
+        let animation: Animation
+        let delay: TimeInterval
 
         func body(content: Content) -> some View {
             content
@@ -107,11 +107,6 @@ extension OnboardingRebranding.OnboardingStyles {
                         imageOffsetY: didAppear ? 0 : imageHeight + 16
                     )
                 )
-                .onAppear {
-                    withAnimation(animation.delay(delay)) {
-                        didAppear = true
-                    }
-                }
                 .onPreferenceChange(BackgroundIllustrationHeightPreferenceKey.self) { imageHeight in
                     guard imageHeight > 0 else { return }
                     self.imageHeight = imageHeight
@@ -136,21 +131,33 @@ private struct BackgroundIllustrationHeightPreferenceKey: PreferenceKey {
 
 // MARK: - Contextual Onboarding + View Extension
 
+/// Animation configuration used when presenting contextual onboarding background illustrations.
 public struct BackgroundAnimationContext {
+    /// Animation curve and duration used for the background entrance.
     let animation: Animation
+    /// Delay, in seconds, applied before starting the background entrance animation.
     let delay: TimeInterval
 
+    /// Creates a background animation context.
+    ///
+    /// - Parameters:
+    ///   - animation: Animation used for the entrance transition.
+    ///   - delay: Delay, in seconds, before the animation starts.
     public init(animation: Animation, delay: TimeInterval) {
         self.animation = animation
         self.delay = delay
     }
 
+    /// Default animation context used by contextual onboarding backgrounds.
     public static let `default` = BackgroundAnimationContext(animation: .easeInOut(duration: 0.3), delay: 0.1)
 }
 
 public extension View {
 
     @ViewBuilder
+    /// Applies the contextual onboarding background illustration.
+    ///
+    /// If an animation context is provided, the illustration animates in from the bottom edge.
     func applyContextualOnboardingBackground(backgroundType: ContextualOnboardingBackgroundType, animationContext: BackgroundAnimationContext? = nil) -> some View {
         if let animationContext {
             self.modifier(OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(backgroundType: backgroundType, animation: animationContext.animation, delay: animationContext.delay))

@@ -2974,8 +2974,8 @@ extension Pixel.Event {
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
         case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
-        case .aiChatSingleDeleteSuccessful: return "m_aichat_single-delete_successful"
-        case .aiChatSingleDeleteFailed: return "m_aichat_single-delete_failed"
+        case .aiChatSingleDeleteSuccessful: return "m_aichat_single_delete_successful"
+        case .aiChatSingleDeleteFailed: return "m_aichat_single_delete_failed"
 
         // MARK: AI Chat Contextual Onboarding
         case .aiChatContextualOnboardingDisplayed: return "m_aichat_contextual_onboarding_displayed"

@@ -110,7 +110,6 @@ final class MemoryUsageThresholdReporter {
     /// Checks the threshold on each update and fires the appropriate pixel with daily frequency.
     private func subscribeToMemoryUpdates() {
         memoryUsageMonitor.memoryReportPublisher
-            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] report in
                 self?.checkThresholdAndFire(report: report)

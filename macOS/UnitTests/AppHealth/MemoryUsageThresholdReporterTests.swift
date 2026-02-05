@@ -147,14 +147,10 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
 
         // When
         sut.startMonitoringImmediately()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1024)
-
-        // Let the main queue process
-        let expectation = XCTestExpectation(description: "Process main queue")
-        DispatchQueue.main.async {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 1.0)
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
 
         // Then
         XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
@@ -172,14 +168,10 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
 
         // When
         sut.startMonitoringImmediately()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1024)
-
-        // Let the main queue process the pixel firing
-        let expectation = XCTestExpectation(description: "Process main queue")
-        DispatchQueue.main.async {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 1.0)
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
 
         // Then
         mockPixelFiring.verifyExpectations()
@@ -197,30 +189,21 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
 
         // When
         sut.startMonitoringImmediately()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1024)
-
-        // Let the main queue process the pixel firing
-        let expectation1 = XCTestExpectation(description: "Process main queue")
-        DispatchQueue.main.async {
-            expectation1.fulfill()
-        }
-        wait(for: [expectation1], timeout: 1.0)
-
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         mockPixelFiring.verifyExpectations()
 
         // When - toggle feature flag off
         mockFeatureFlagger.enabledFeatureFlags = []
         mockFeatureFlagger.triggerUpdate()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
 
         // Send another report
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 2048)
-
-        // Let the main queue process
-        let expectation2 = XCTestExpectation(description: "Process main queue")
-        DispatchQueue.main.async {
-            expectation2.fulfill()
-        }
-        wait(for: [expectation2], timeout: 1.0)
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
 
         // Then - no new pixels fired
         mockPixelFiring.verifyExpectations()
@@ -252,16 +235,12 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
 
         // When
         sut.startMonitoringImmediately()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         for memoryMB in memoryValues {
             mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: memoryMB)
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
         }
-
-        // Let the main queue process all pixel firings
-        let expectation = XCTestExpectation(description: "Process main queue")
-        DispatchQueue.main.async {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 1.0)
 
         // Then
         mockPixelFiring.verifyExpectations()
@@ -284,17 +263,19 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
 
         // When
         sut.startMonitoringImmediately()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1024) // 1-2GB
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1500) // 1-2GB
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1800) // 1-2GB
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1200) // 1-2GB
-
-        // Let the main queue process all pixel firings
-        let expectation = XCTestExpectation(description: "Process main queue")
-        DispatchQueue.main.async {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 1.0)
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
 
         // Then
         mockPixelFiring.verifyExpectations()
@@ -314,17 +295,13 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
 
         // When
         sut.startMonitoringImmediately()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         mockMemoryUsageMonitor.sendMemoryReport(
             residentMB: 2000,  // Would be 2-4GB bucket
             physFootprintMB: 700  // Should be 512-1023 bucket
         )
-
-        // Let the main queue process the pixel firing
-        let expectation = XCTestExpectation(description: "Process main queue")
-        DispatchQueue.main.async {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 1.0)
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
 
         // Then
         mockPixelFiring.verifyExpectations()
@@ -353,16 +330,12 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
 
         // When
         sut.startMonitoringImmediately()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        
         for boundaryMemory in boundaryMemoryValues {
             mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: boundaryMemory)
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
         }
-
-        // Let the main queue process all pixel firings
-        let expectation = XCTestExpectation(description: "Process main queue")
-        DispatchQueue.main.async {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 1.0)
 
         // Then
         mockPixelFiring.verifyExpectations()
@@ -372,9 +345,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
 // MARK: - Mock MemoryUsageMonitor
 
 private class MockMemoryUsageMonitor: MemoryUsageMonitoring {
-    private let memoryReportSubject = CurrentValueSubject<MemoryUsageMonitor.MemoryReport, Never>(
-        MemoryUsageMonitor.MemoryReport(residentBytes: 0, physFootprintBytes: 0)
-    )
+    private let memoryReportSubject = PassthroughSubject<MemoryUsageMonitor.MemoryReport, Never>()
 
     var memoryReportPublisher: AnyPublisher<DuckDuckGo_Privacy_Browser.MemoryUsageMonitor.MemoryReport, Never> {
         return memoryReportSubject.eraseToAnyPublisher()

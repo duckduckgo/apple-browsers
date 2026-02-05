@@ -2874,9 +2874,11 @@ extension MainViewController: OmniBarDelegate {
             }
         }
 
+        let highlightTag = menuHighlightingTag
+
         let controller = browsingMenu
         let presentationCompletion = {
-            guard let highlightTag = self.menuHighlightingTag else { return }
+            guard let highlightTag else { return }
             switch highlightTag {
             case .favorite:
                 browsingMenu.highlightAddFavorite()

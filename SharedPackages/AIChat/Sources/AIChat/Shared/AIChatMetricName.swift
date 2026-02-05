@@ -27,11 +27,21 @@ public enum AIChatMetricName: String, Codable {
     case userDidTapKeyboardReturnKey
 }
 
+// Model tier for AI Chat metrics
+public enum AIChatModelTier: String, Codable {
+    case free
+    case plus
+    case `internal`
+    case unknown
+}
+
 public struct AIChatMetric: Codable {
     public let metricName: AIChatMetricName
+    public let modelTier: AIChatModelTier?
 
-     public init(metricName: AIChatMetricName) {
+     public init(metricName: AIChatMetricName, modelTier: AIChatModelTier? = nil) {
          self.metricName = metricName
+         self.modelTier = modelTier
      }
 }
 

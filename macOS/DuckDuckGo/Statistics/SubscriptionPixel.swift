@@ -124,6 +124,7 @@ enum SubscriptionPixel: PixelKitEvent {
     case freeTrialStart
     case freeTrialVPNActivation(activationDay: FreeTrialActivationDay)
     case freeTrialPIRActivation(activationDay: FreeTrialActivationDay)
+    case freeTrialDuckAIActivation(activationDay: FreeTrialActivationDay)
 
     var name: String {
         switch self {
@@ -221,6 +222,7 @@ enum SubscriptionPixel: PixelKitEvent {
         case .freeTrialStart: return "m_mac_\(appDistribution)_privacy-pro_freetrial_start"
         case .freeTrialVPNActivation: return "m_mac_\(appDistribution)_privacy-pro_freetrial_vpn_activation"
         case .freeTrialPIRActivation: return "m_mac_\(appDistribution)_privacy-pro_freetrial_pir_activation"
+        case .freeTrialDuckAIActivation: return "m_mac_\(appDistribution)_privacy-pro_freetrial_duck_ai_activation"
         }
     }
 
@@ -247,7 +249,8 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionActive(let authVersion):
             return [AuthVersion.key: authVersion.rawValue]
         case .freeTrialVPNActivation(let activationDay),
-             .freeTrialPIRActivation(let activationDay):
+             .freeTrialPIRActivation(let activationDay),
+             .freeTrialDuckAIActivation(let activationDay):
             return [SubscriptionPixelsDefaults.activationDayKey: activationDay.rawValue]
         default:
             return nil
@@ -332,7 +335,8 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionUpgradeClick,
                 .freeTrialStart,
                 .freeTrialVPNActivation,
-                .freeTrialPIRActivation:
+                .freeTrialPIRActivation,
+                .freeTrialDuckAIActivation:
             return [.pixelSource]
         }
     }

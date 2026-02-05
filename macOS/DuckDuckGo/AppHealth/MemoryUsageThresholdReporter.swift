@@ -52,7 +52,7 @@ final class MemoryUsageThresholdReporter {
     ///   - memoryUsageMonitor: The monitor that provides memory usage readings
     ///   - featureFlagger: Feature flag provider to check if reporting is enabled
     ///   - pixelFiring: The pixel firing service for sending analytics
-    ///   - checkInterval: The interval between memory checks. Defaults to 60 seconds.
+    ///   - checkInterval: The interval between memory checks. Defaults to 5 seconds.
     ///   - logger: Optional logger for debugging
     init(
         memoryUsageMonitor: MemoryUsageMonitoring,

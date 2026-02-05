@@ -51,11 +51,15 @@ public class FreeTrialConversionWideEventData: WideEventData {
     public var pirActivatedD1: Bool = false
     public var pirActivatedD2ToD7: Bool = false
 
+    public var duckAIActivatedD1: Bool = false
+    public var duckAIActivatedD2ToD7: Bool = false
+
     private enum CodingKeys: String, CodingKey {
         case globalData, contextData, appData, errorData
         case trialStartDate
         case vpnActivatedD1, vpnActivatedD2ToD7
         case pirActivatedD1, pirActivatedD2ToD7
+        case duckAIActivatedD1, duckAIActivatedD2ToD7
     }
 
     // MARK: - Init
@@ -98,6 +102,11 @@ extension FreeTrialConversionWideEventData {
         !pirActivatedD1 && !pirActivatedD2ToD7
     }
 
+    /// Whether the Duck.ai activation pixel should be fired (i.e., Duck.ai hasn't been activated yet)
+    public var shouldFireDuckAIActivationPixel: Bool {
+        !duckAIActivatedD1 && !duckAIActivatedD2ToD7
+    }
+
     public func markVPNActivated() {
         guard shouldFireVPNActivationPixel else { return }
         if isDay1() {
@@ -113,6 +122,15 @@ extension FreeTrialConversionWideEventData {
             pirActivatedD1 = true
         } else {
             pirActivatedD2ToD7 = true
+        }
+    }
+
+    public func markDuckAIActivated() {
+        guard shouldFireDuckAIActivationPixel else { return }
+        if isDay1() {
+            duckAIActivatedD1 = true
+        } else {
+            duckAIActivatedD2ToD7 = true
         }
     }
 
@@ -137,6 +155,8 @@ extension FreeTrialConversionWideEventData {
             WideEventParameter.FreeTrialConversionFeature.vpnActivatedD2ToD7: String(vpnActivatedD2ToD7),
             WideEventParameter.FreeTrialConversionFeature.pirActivatedD1: String(pirActivatedD1),
             WideEventParameter.FreeTrialConversionFeature.pirActivatedD2ToD7: String(pirActivatedD2ToD7),
+            WideEventParameter.FreeTrialConversionFeature.duckAIActivatedD1: String(duckAIActivatedD1),
+            WideEventParameter.FreeTrialConversionFeature.duckAIActivatedD2ToD7: String(duckAIActivatedD2ToD7),
         ]
     }
 }
@@ -150,5 +170,7 @@ extension WideEventParameter {
         static let vpnActivatedD2ToD7 = "feature.data.ext.step.vpn_activated_d2_to_d7"
         static let pirActivatedD1 = "feature.data.ext.step.pir_activated_d1"
         static let pirActivatedD2ToD7 = "feature.data.ext.step.pir_activated_d2_to_d7"
+        static let duckAIActivatedD1 = "feature.data.ext.step.duck_ai_activated_d1"
+        static let duckAIActivatedD2ToD7 = "feature.data.ext.step.duck_ai_activated_d2_to_d7"
     }
 }

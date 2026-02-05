@@ -22,6 +22,7 @@ import AIChat
 import Foundation
 import BrowserServicesKit
 import PrivacyConfig
+import Subscription
 import WebKit
 import Core
 import SwiftUI
@@ -62,6 +63,7 @@ final class AIChatViewControllerManager {
     private var sessionTimer: AIChatSessionTimer?
     private var pixelMetricHandler: (any AIChatPixelMetricHandling)?
     private var productSurfaceTelemetry: ProductSurfaceTelemetry
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private lazy var statisticsLoader: StatisticsLoader = .shared
 
     // MARK: - Initialization
@@ -75,7 +77,8 @@ final class AIChatViewControllerManager {
          featureDiscovery: FeatureDiscovery,
          aiChatSettings: AIChatSettingsProvider,
          subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler(),
-         productSurfaceTelemetry: ProductSurfaceTelemetry) {
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -87,6 +90,7 @@ final class AIChatViewControllerManager {
         self.aiChatSettings = aiChatSettings
         self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.freeTrialConversionService = freeTrialConversionService
     }
 
     // MARK: - Public Methods
@@ -460,6 +464,10 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
         if metric.metricName == .userDidSubmitPrompt
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+
+            if let tier = metric.modelTier, case .plus = tier {
+                freeTrialConversionService.markDuckAIActivated()
+            }
 
             if featureFlagger.isFeatureOn(.aiChatAtb) {
                 DispatchQueue.main.async {

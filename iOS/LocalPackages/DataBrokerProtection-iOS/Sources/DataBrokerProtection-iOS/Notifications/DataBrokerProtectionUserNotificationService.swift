@@ -29,6 +29,7 @@ public protocol DataBrokerProtectionUserNotificationService {
     func sendFirstRemovedNotificationIfPossible()
     func sendAllInfoRemovedNotificationIfPossible()
     func scheduleCheckInNotificationIfPossible()
+    func sendGoToMarketFirstScanNotificationIfPossible() async
     func resetFirstScanCompletedNotificationState()
 }
 
@@ -100,6 +101,14 @@ public class DefaultDataBrokerProtectionUserNotificationService: DataBrokerProte
         userDefaults[.didSendFirstScanCompletedNotification] = false
     }
 
+    public func sendGoToMarketFirstScanNotificationIfPossible() async {
+        if userDefaults[.didSendGoToMarketFirstScanNotification] != true {
+            sendNotification(.goToMarketFirstScan)
+            userDefaults[.didSendGoToMarketFirstScanNotification] = true
+            pixelHandler.fire(.notificationSentGoToMarketFirstScan)
+        }
+    }
+
     // MARK: - Private Methods
 
     private func requestProvisionalAuthorizationIfNeeded() {
@@ -152,6 +161,7 @@ private extension UserDefaults {
         case didSendFirstRemovedNotification
         case didSendAllInfoRemovedNotification
         case didSendCheckedInNotification
+        case didSendGoToMarketFirstScanNotification
     }
 
     subscript<T>(key: Key) -> T? where T: Any {
@@ -172,6 +182,7 @@ private enum UserNotification {
     case firstProfileRemoved
     case allInfoRemoved
     case oneWeekCheckIn
+    case goToMarketFirstScan
 
     var title: String {
         switch self {
@@ -185,6 +196,8 @@ private enum UserNotification {
             return "Personal info removed!"
         case .oneWeekCheckIn:
             return "We're making progress!"
+        case .goToMarketFirstScan:
+            return "Personal Information Removal"
         }
     }
 
@@ -200,6 +213,8 @@ private enum UserNotification {
             return "See all the records matching your personal info that DuckDuckGo found and removed from the web..."
         case .oneWeekCheckIn:
             return "See the records matching your personal info that DuckDuckGo found and removed from the web so far..."
+        case .goToMarketFirstScan:
+            return "Personal Information Removal is now available on iOS! Start your first scan now."
         }
     }
 
@@ -215,6 +230,8 @@ private enum UserNotification {
             return DataBrokerProtectionNotificationIdentifier.allInfoRemoved.rawValue
         case .oneWeekCheckIn:
             return DataBrokerProtectionNotificationIdentifier.oneWeekCheckIn.rawValue
+        case .goToMarketFirstScan:
+            return DataBrokerProtectionNotificationIdentifier.goToMarketFirstScan.rawValue
         }
     }
 }

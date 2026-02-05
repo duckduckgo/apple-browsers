@@ -1581,6 +1581,7 @@ extension Pixel {
         case dbpNotificationOpenedFirstRemoval
         case dbpNotificationOpenedAllRecordsRemoved
         case dbpNotificationOpened1WeekCheckIn
+        case dbpNotificationOpenedGoToMarketFirstScan
 
         // MARK: - App Intent
         case appIntentPerformed
@@ -3117,11 +3118,12 @@ extension Pixel.Event {
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
 
         // MARK: Data Broker Protection Notifications
-        case .dbpNotificationOpenedFirstScanComplete: return "m_ios_dbp_notification_opened_first_scan_complete"
-        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_ios_dbp_freemium_notification_opened_first_scan_complete"
-        case .dbpNotificationOpenedFirstRemoval: return "m_ios_dbp_notification_opened_first_removal"
-        case .dbpNotificationOpenedAllRecordsRemoved: return "m_ios_dbp_notification_opened_all_records_removed"
-        case .dbpNotificationOpened1WeekCheckIn: return "m_ios_dbp_notification_opened_1_week_check_in"
+        case .dbpNotificationOpenedFirstScanComplete: return "m_dbp_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_dbp_freemium_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstRemoval: return "m_dbp_notification_opened_first_removal"
+        case .dbpNotificationOpenedAllRecordsRemoved: return "m_dbp_notification_opened_all_records_removed"
+        case .dbpNotificationOpened1WeekCheckIn: return "m_dbp_notification_opened_1_week_check_in"
+        case .dbpNotificationOpenedGoToMarketFirstScan: return "m_dbp_notification_opened_go_to_market_first_scan"
 
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"

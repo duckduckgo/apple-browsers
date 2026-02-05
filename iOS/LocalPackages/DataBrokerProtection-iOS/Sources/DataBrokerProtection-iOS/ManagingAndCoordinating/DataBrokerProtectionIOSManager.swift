@@ -123,6 +123,10 @@ public class DBPIOSInterface {
         func sweepWideEvents()
     }
 
+    protocol NotificationDelegate: AnyObject {
+        func sendGoToMarketFirstScanNotificationIfEligible() async
+    }
+
     protocol OptOutEmailConfirmationHandlingDelegate: AnyObject {
         func checkForEmailConfirmationData() async
     }
@@ -145,6 +149,7 @@ public final class DataBrokerProtectionIOSManager {
     private let jobDependencies: BrokerProfileJobDependencyProviding
     public var emailConfirmationDataService: EmailConfirmationDataServiceProvider?
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
+    private let userNotificationService: DataBrokerProtectionUserNotificationService
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository
@@ -201,6 +206,7 @@ public final class DataBrokerProtectionIOSManager {
          jobDependencies: BrokerProfileJobDependencyProviding,
          emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
+         userNotificationService: DataBrokerProtectionUserNotificationService,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          iOSPixelsHandler: EventMapping<IOSPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
@@ -222,6 +228,7 @@ public final class DataBrokerProtectionIOSManager {
         self.jobDependencies = jobDependencies
         self.emailConfirmationDataService = emailConfirmationDataService
         self.authenticationManager = authenticationManager
+        self.userNotificationService = userNotificationService
         self.sharedPixelsHandler = sharedPixelsHandler
         self.iOSPixelsHandler = iOSPixelsHandler
         self.engagementPixelsRepository = engagementPixelsRepository
@@ -257,6 +264,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     public func appDidBecomeActive() async {
         await fireMonitoringPixels()
+        await sendGoToMarketFirstScanNotificationIfEligible()
 
         guard await authenticationManager.isUserAuthenticated else { return }
 
@@ -556,6 +564,17 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DBPWideEventsDelegate 
     }
 }
 
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.NotificationDelegate {
+    func sendGoToMarketFirstScanNotificationIfEligible() async {
+        guard privacyConfigManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.goToMarket) else { return }
+        guard isEligibleForPIR else { return }
+        guard (try? await meetsEntitlementRunPrequisite) == true else { return }
+        guard hasNotRunPIRScan() else { return }
+
+        await userNotificationService.sendGoToMarketFirstScanNotificationIfPossible()
+    }
+}
+
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandlingDelegate {
     func registerBackgroundTaskHandler() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundTaskIdentifier, using: nil) { task in
@@ -698,6 +717,28 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
 
         // Otherwise → clamp to [minBackgroundTaskWaitTime, maxBackgroundTaskWaitTime]
         return min(max(jobDate, minBackgroundTaskWaitDate), maxBackgroundTaskWaitDate)
+    }
+}
+
+private extension DataBrokerProtectionIOSManager {
+    var isEligibleForPIR: Bool {
+        #if DEBUG || ALPHA || REVIEW
+        return true
+        #else
+        return (Locale.current.regionCode == "US") || privacyConfigManager.internalUserDecider.isInternalUser
+        #endif
+    }
+
+    func hasNotRunPIRScan() -> Bool {
+        do {
+            let hasProfile = try database.fetchProfile() != nil
+            let brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+            let hasScansWithLastRunDate = brokerProfileQueryData.contains { $0.scanJobData.lastRunDate != nil }
+            return !hasProfile && !hasScansWithLastRunDate
+        } catch {
+            Logger.dataBrokerProtection.error("Unable to determine scan status for go-to-market notification: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
     }
 }
 

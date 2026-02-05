@@ -11,7 +11,7 @@
     "pixel-lint.fix": "prettier ./PixelDefinitions --write"
   },
   "devDependencies": {
-    "@duckduckgo/pixel-schema": "github:duckduckgo/pixel-schema#v2.0.3",
+    "@duckduckgo/pixel-schema": "github:duckduckgo/pixel-schema#v2.0.4",
     "prettier": "^3.6.2"
   },
   "prettier": {

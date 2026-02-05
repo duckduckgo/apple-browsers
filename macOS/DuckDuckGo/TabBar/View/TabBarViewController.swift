@@ -248,6 +248,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         scrollView.updateScrollElasticity(with: tabMode)
         observeToScrollNotifications()
         subscribeToSelectionIndex()
+        setupConstraints()
         setupFireButton()
         setupPinnedTabsView()
         subscribeToTabModeChanges()
@@ -346,6 +347,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 tabCollectionViewModel.select(at: .pinned(0))
             }
         }
+    }
+
+    private func setupConstraints() {
+        var pinnedTabsLeadingSpace: TabBarViewController.HorizontalSpace = .pinnedTabsScrollViewPadding
+        if #available(macOS 26, *) {
+            pinnedTabsLeadingSpace = .pinnedTabsScrollViewPaddingMacOS26
+        }
+
+        pinnedTabsViewLeadingConstraint.constant = pinnedTabsLeadingSpace.rawValue
     }
 
     private func setupFireButton() {

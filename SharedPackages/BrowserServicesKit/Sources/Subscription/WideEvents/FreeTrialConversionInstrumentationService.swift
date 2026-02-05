@@ -40,6 +40,8 @@ public protocol FreeTrialPixelHandling {
     func fireFreeTrialVPNActivation(activationDay: FreeTrialActivationDay)
     /// Fires when a user activates PIR during a free trial
     func fireFreeTrialPIRActivation(activationDay: FreeTrialActivationDay)
+    /// Fires when a user activates Duck.ai during a free trial
+    func fireFreeTrialDuckAIActivation(activationDay: FreeTrialActivationDay)
 }
 
 // MARK: - Protocol
@@ -55,6 +57,9 @@ public protocol FreeTrialConversionInstrumentationService: AnyObject {
 
     /// Marks PIR as activated for the current free trial flow.
     func markPIRActivated()
+
+    /// Marks Duck.ai as activated for the current free trial flow.
+    func markDuckAIActivated()
 }
 
 /// Default implementation that manages the free trial conversion wide event lifecycle.
@@ -166,5 +171,21 @@ public final class DefaultFreeTrialConversionInstrumentationService: FreeTrialCo
         data.markPIRActivated()
         wideEvent.updateFlow(data)
         Logger.subscription.log("[FreeTrialConversion] PIR activated (D1: \(data.pirActivatedD1), D2-D7: \(data.pirActivatedD2ToD7))")
+    }
+
+    /// Marks Duck.ai as activated for the current free trial flow.
+    public func markDuckAIActivated() {
+        guard isFeatureEnabled(),
+              let data = wideEvent.getAllFlowData(FreeTrialConversionWideEventData.self).first else {
+            return
+        }
+
+        if data.shouldFireDuckAIActivationPixel {
+            pixelHandler?.fireFreeTrialDuckAIActivation(activationDay: data.activationDay())
+        }
+
+        data.markDuckAIActivated()
+        wideEvent.updateFlow(data)
+        Logger.subscription.log("[FreeTrialConversion] Duck.ai activated (D1: \(data.duckAIActivatedD1), D2-D7: \(data.duckAIActivatedD2ToD7))")
     }
 }

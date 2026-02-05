@@ -44,6 +44,16 @@
                 "key": "feature.data.ext.step.pir_activated_d2_to_d7",
                 "type": "boolean",
                 "description": "Whether PIR was activated between Day 2 and Day 7 of the free trial"
+            },
+            {
+                "key": "feature.data.ext.step.duck_ai_activated_d1",
+                "type": "boolean",
+                "description": "Whether Duck.ai was activated on Day 1 of the free trial"
+            },
+            {
+                "key": "feature.data.ext.step.duck_ai_activated_d2_to_d7",
+                "type": "boolean",
+                "description": "Whether Duck.ai was activated between Day 2 and Day 7 of the free trial"
             }
         ]
     }

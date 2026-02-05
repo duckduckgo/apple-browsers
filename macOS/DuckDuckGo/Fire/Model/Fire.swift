@@ -700,7 +700,9 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnAllVisitedLinks() {
+        let startTime = Date()
         getVisitedLinkStore()?.removeAll()
+        dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnVisitedLinksDuration, from: startTime)
     }
 
     @MainActor

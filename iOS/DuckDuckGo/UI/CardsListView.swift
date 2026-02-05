@@ -277,6 +277,8 @@ private extension RemoteMessagingUI.CardsListView {
             do {
                 loadedImage = try await loadHeaderImage(headerImageUrl)
                 onImageLoadSuccess?()
+            } catch is CancellationError {
+                // Task was cancelled - no-op
             } catch {
                 onImageLoadFailed?()
             }

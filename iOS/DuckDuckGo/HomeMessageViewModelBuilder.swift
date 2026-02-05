@@ -58,6 +58,8 @@ struct HomeMessageViewModelBuilder {
                     let image = try await imageLoader.loadImage(from: imageUrl)
                     pixelReporter?.measureRemoteMessageImageLoadSuccess(remoteMessage)
                     return image
+                } catch is CancellationError {
+                    return nil
                 } catch {
                     pixelReporter?.measureRemoteMessageImageLoadFailed(remoteMessage)
                     return nil

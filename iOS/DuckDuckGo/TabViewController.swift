@@ -3147,8 +3147,9 @@ extension TabViewController: PrintingSubfeatureDelegate {
 
     func printingSubfeatureDidRequestPrint(for frameHandle: Any?, in webView: WKWebView?) {
         let targetWebView = webView ?? self.webView
+        guard let printFormatter = targetWebView?.viewPrintFormatter() else { return }
         let controller = UIPrintInteractionController.shared
-        controller.printFormatter = targetWebView.viewPrintFormatter()
+        controller.printFormatter = printFormatter
         controller.present(animated: true, completionHandler: nil)
     }
 

@@ -448,7 +448,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     @ViewBuilder
     private var stepTwoView: some View {
-        let allowEnabled = systemPermissionState == .authorized
+        let isAllowButtonEnabled = systemPermissionState == .authorized
 
         HStack(spacing: 12) {
             stepIndicator(step: 2, isActive: true)
@@ -469,14 +469,14 @@ struct PermissionAuthorizationSwiftUIView: View {
                 Button(action: onAllow) {
                     Text(UserText.permissionPopupAllowButton)
                         .font(.system(size: 13))
-                        .foregroundColor(allowEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
+                        .foregroundColor(isAllowButtonEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
-                        .background(allowEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
+                        .background(isAllowButtonEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .disabled(!allowEnabled)
+                .disabled(!isAllowButtonEnabled)
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.allowButton")
             }
         }

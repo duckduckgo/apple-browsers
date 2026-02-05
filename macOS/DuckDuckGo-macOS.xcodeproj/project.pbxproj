@@ -3593,6 +3593,8 @@
 		BBFEE6CA2E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFEE6C82E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift */; };
 		BBFEE6CD2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFEE6CC2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift */; };
 		BBFEE6CE2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFEE6CC2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift */; };
+		BBFF22F52F3486C60055A710 /* MockFreeTrialConversionInstrumentationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF22F42F3486C60055A710 /* MockFreeTrialConversionInstrumentationService.swift */; };
+		BBFF22F62F3486C60055A710 /* MockFreeTrialConversionInstrumentationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF22F42F3486C60055A710 /* MockFreeTrialConversionInstrumentationService.swift */; };
 		BBFF355D2C4AF26200DA3289 /* BookmarksSortModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF355C2C4AF26200DA3289 /* BookmarksSortModeTests.swift */; };
 		BBFF355E2C4AF26200DA3289 /* BookmarksSortModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF355C2C4AF26200DA3289 /* BookmarksSortModeTests.swift */; };
 		BD384AC92BBC821A00EF3735 /* vpn-dark-mode.json in Resources */ = {isa = PBXBuildFile; fileRef = BD384AC82BBC821100EF3735 /* vpn-dark-mode.json */; };
@@ -6229,6 +6231,7 @@
 		BBFE94EB2E391421000D4920 /* NotificationDotProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDotProviding.swift; sourceTree = "<group>"; };
 		BBFEE6C82E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageWinBackOfferBannerProvider.swift; sourceTree = "<group>"; };
 		BBFEE6CC2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromotionViewCoordinator.swift; sourceTree = "<group>"; };
+		BBFF22F42F3486C60055A710 /* MockFreeTrialConversionInstrumentationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFreeTrialConversionInstrumentationService.swift; sourceTree = "<group>"; };
 		BBFF355C2C4AF26200DA3289 /* BookmarksSortModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksSortModeTests.swift; sourceTree = "<group>"; };
 		BD384AC72BBC821100EF3735 /* vpn-light-mode.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpn-light-mode.json"; sourceTree = "<group>"; };
 		BD384AC82BBC821100EF3735 /* vpn-dark-mode.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpn-dark-mode.json"; sourceTree = "<group>"; };
@@ -12372,6 +12375,7 @@
 		F16F92812C2AC0080007C93E /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
+				BBFF22F42F3486C60055A710 /* MockFreeTrialConversionInstrumentationService.swift */,
 				F1F861142C1B25D4005DB446 /* SubscriptionUIHandlerMock.swift */,
 				56A0FE092DF79FFA00486632 /* SubscriptionFeatureAvailabilityMock.swift */,
 				56504F0E2E0D9A8C00333A1E /* MockSubscriptionTabsShowing.swift */,
@@ -15621,6 +15625,7 @@
 				CC951ADC2EB524930047E245 /* DefaultBrowserAndDockPromptUserActivityManagerTests.swift in Sources */,
 				31DC2F232BD6E028001354EF /* DataBrokerPrerequisitesStatusVerifierTests.swift in Sources */,
 				37EC31502D8C19270026C348 /* CapturingFaviconImageCache.swift in Sources */,
+				BBFF22F62F3486C60055A710 /* MockFreeTrialConversionInstrumentationService.swift in Sources */,
 				3706FE72293F661700E42796 /* ClickToLoadTDSTests.swift in Sources */,
 				9F1556782DDC3B0600A35DBA /* DefaultBrowserAndDockPromptTypeDeciderTests.swift in Sources */,
 				31FBF2322CDD130900626C17 /* AIChatUserScriptTests.swift in Sources */,
@@ -17559,6 +17564,7 @@
 				BBB8191A2EC493DD0064977E /* MockBlackFridayCampaignProvider.swift in Sources */,
 				9FB19C852E94CC6300B651B1 /* RemoteMessagingSurfacesProvider.swift in Sources */,
 				9F5E481A2D5D867600D2396D /* NSPasteboardExtensionTests.swift in Sources */,
+				BBFF22F52F3486C60055A710 /* MockFreeTrialConversionInstrumentationService.swift in Sources */,
 				9F872D9D2B9058D000138637 /* Bookmarks+TabTests.swift in Sources */,
 				7B1522AF2DE9CBE900887371 /* VPNAppEventsHandlerTests.swift in Sources */,
 				BBFF355D2C4AF26200DA3289 /* BookmarksSortModeTests.swift in Sources */,

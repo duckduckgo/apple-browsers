@@ -36,6 +36,16 @@ final class NewBadgeVisibilityManagerTests: XCTestCase {
         XCTAssertFalse(manager.shouldShowBadge(for: .personalInformationRemoval))
     }
 
+    func testShouldNotShowBadgeWhenFeatureIsDisabled() {
+        let manager = NewBadgeVisibilityManager(
+            keyValueStore: MockThrowingKeyValueStore(),
+            configProvider: MockNewBadgeConfigProvider(isFeatureEnabled: false),
+            currentAppVersionProvider: { "7.100.0" }
+        )
+
+        XCTAssertFalse(manager.shouldShowBadge(for: .personalInformationRemoval))
+    }
+
     func testShouldShowBadgeWhenFirstImpressionDateIsNil() throws {
         let store = MockThrowingKeyValueStore()
         let manager = NewBadgeVisibilityManager(
@@ -131,6 +141,7 @@ final class DefaultNewBadgeConfigProviderTests: XCTestCase {
     func testReleaseWindowComparison() {
         let provider = makeProvider(minSupportedVersion: "7.100.0")
 
+        XCTAssertFalse(provider.isWithinReleaseWindow(for: .personalInformationRemoval, currentAppVersion: "7.99.0"))
         XCTAssertTrue(provider.isWithinReleaseWindow(for: .personalInformationRemoval, currentAppVersion: "7.100.0"))
         XCTAssertTrue(provider.isWithinReleaseWindow(for: .personalInformationRemoval, currentAppVersion: "7.100.2"))
         XCTAssertTrue(provider.isWithinReleaseWindow(for: .personalInformationRemoval, currentAppVersion: "7.102.9"))
@@ -166,18 +177,15 @@ final class DefaultNewBadgeConfigProviderTests: XCTestCase {
 private struct MockNewBadgeConfigProvider: NewBadgeConfigProviding {
 
     let isFeatureEnabled: Bool
-    let minSupportedVersion: String
     let isWithinReleaseWindowResult: Bool
     let maxMinorReleaseOffsetValue: Int
     let displayDurationDaysValue: Int
 
     init(isFeatureEnabled: Bool = true,
-         minSupportedVersion: String = "7.100.0",
          isWithinReleaseWindowResult: Bool = true,
          maxMinorReleaseOffset: Int = 3,
          displayDurationDays: Int = 7) {
         self.isFeatureEnabled = isFeatureEnabled
-        self.minSupportedVersion = minSupportedVersion
         self.isWithinReleaseWindowResult = isWithinReleaseWindowResult
         self.maxMinorReleaseOffsetValue = maxMinorReleaseOffset
         self.displayDurationDaysValue = displayDurationDays
@@ -185,10 +193,6 @@ private struct MockNewBadgeConfigProvider: NewBadgeConfigProviding {
 
     func isFeatureOn(_ feature: NewBadgeFeature) -> Bool {
         isFeatureEnabled
-    }
-
-    func minSupportedVersion(for feature: NewBadgeFeature) -> String? {
-        minSupportedVersion
     }
 
     func isWithinReleaseWindow(for feature: NewBadgeFeature, currentAppVersion: String) -> Bool {

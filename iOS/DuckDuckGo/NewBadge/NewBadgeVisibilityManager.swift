@@ -39,7 +39,6 @@ enum NewBadgeFeature: Hashable {
 /// Defaults to 7 days and 3 minor releases
 protocol NewBadgeConfigProviding {
     func isFeatureOn(_ feature: NewBadgeFeature) -> Bool
-    func minSupportedVersion(for feature: NewBadgeFeature) -> String?
     func isWithinReleaseWindow(for feature: NewBadgeFeature, currentAppVersion: String) -> Bool
 
     func maxMinorReleaseOffset(for feature: NewBadgeFeature) -> Int
@@ -121,7 +120,7 @@ struct DefaultNewBadgeConfigProvider: NewBadgeConfigProviding {
         }
     }
 
-    func minSupportedVersion(for feature: NewBadgeFeature) -> String? {
+    private func minSupportedVersion(for feature: NewBadgeFeature) -> String? {
         guard let configurationData = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig) else {
             return nil
         }

@@ -188,11 +188,3 @@ struct MockVariant: Variant {
         self.features = features
     }
 }
-
-private final class MockRemoteMessagingImageLoader: RemoteMessagingImageLoading {
-    func prefetch(_ urls: [URL]) {}
-    func cachedImage(for url: URL) -> RemoteMessagingImage? { nil }
-    func loadImage(from url: URL) async throws -> RemoteMessagingImage {
-        throw RemoteMessagingImageLoadingError.invalidImageData
-    }
-}

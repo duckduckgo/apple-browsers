@@ -116,6 +116,7 @@ struct HomeMessageView: View {
 
     private var title: some View {
         Text(viewModel.title)
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.top, Const.Spacing.imageAndTitle)
             .frame(maxWidth: .infinity)
    }
@@ -124,9 +125,11 @@ struct HomeMessageView: View {
     private var subtitle: some View {
         if let attributed = try? AttributedString(markdown: viewModel.subtitle) {
             Text(attributed)
+                .fixedSize(horizontal: false, vertical: true)
                 .daxBodyRegular()
         } else {
             Text(viewModel.subtitle)
+                .fixedSize(horizontal: false, vertical: true)
                 .daxBodyRegular()
         }
     }

@@ -297,14 +297,6 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     }
 }
 
-private final class MockRemoteMessagingImageLoader: RemoteMessagingImageLoading {
-    func prefetch(_ urls: [URL]) {}
-    func cachedImage(for url: URL) -> RemoteMessagingImage? { nil }
-    func loadImage(from url: URL) async throws -> RemoteMessagingImage {
-        throw RemoteMessagingImageLoadingError.invalidImageData
-    }
-}
-
 extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
 
     func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, presentationStyle: PresentationContext.Style) {

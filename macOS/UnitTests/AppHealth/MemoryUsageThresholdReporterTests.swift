@@ -88,19 +88,19 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
             (100, .less512),
             (511, .less512),
             (511.9, .less512),
-            
+
             // 512-1023MB bucket
             (512, .range512_1023),
             (700, .range512_1023),
             (1023, .range512_1023),
             (1023.9, .range512_1023),
-            
+
             // 1-2GB bucket
             (1024, .range1024_2047),
             (1500, .range1024_2047),
             (2047, .range1024_2047),
             (2047.9, .range1024_2047),
-            
+
             // 2-4GB bucket
             (2048, .range2048_4095),
             (3000, .range2048_4095),
@@ -112,13 +112,13 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
             (6000, .range4096_8191),
             (8191, .range4096_8191),
             (8191.9, .range4096_8191),
-            
+
             // 8-16GB bucket
             (8192, .range8192_16383),
             (12000, .range8192_16383),
             (16383, .range8192_16383),
             (16383.9, .range8192_16383),
-            
+
             // 16GB+ bucket
             (16384, .range16384_more),
             (20000, .range16384_more),
@@ -128,7 +128,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         for (memoryMB, expectedPixel) in testCases {
             // When
             let pixel = MemoryUsagePixel.pixel(forMB: memoryMB)
-            
+
             // Then
             XCTAssertEqual(pixel, expectedPixel, "Memory \(memoryMB) MB should map to \(expectedPixel)")
         }
@@ -148,7 +148,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         // When
         sut.startMonitoringImmediately()
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1024)
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
 
@@ -169,7 +169,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         // When
         sut.startMonitoringImmediately()
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1024)
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
 
@@ -190,10 +190,10 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         // When
         sut.startMonitoringImmediately()
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1024)
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         mockPixelFiring.verifyExpectations()
 
         // When - toggle feature flag off
@@ -236,7 +236,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         // When
         sut.startMonitoringImmediately()
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         for memoryMB in memoryValues {
             mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: memoryMB)
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
@@ -264,16 +264,16 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         // When
         sut.startMonitoringImmediately()
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1024) // 1-2GB
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1500) // 1-2GB
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1800) // 1-2GB
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: 1200) // 1-2GB
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
 
@@ -296,7 +296,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         // When
         sut.startMonitoringImmediately()
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         mockMemoryUsageMonitor.sendMemoryReport(
             residentMB: 2000,  // Would be 2-4GB bucket
             physFootprintMB: 700  // Should be 512-1023 bucket
@@ -331,7 +331,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         // When
         sut.startMonitoringImmediately()
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
-        
+
         for boundaryMemory in boundaryMemoryValues {
             mockMemoryUsageMonitor.sendMemoryReport(physFootprintMB: boundaryMemory)
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))

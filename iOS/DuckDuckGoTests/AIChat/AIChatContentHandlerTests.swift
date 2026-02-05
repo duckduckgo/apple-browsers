@@ -595,6 +595,7 @@ final class MockAIChatDebugSettingsForTests: AIChatDebugSettingsHandling {
     var customURL: String?
     var contextualSessionTimerSeconds: Int?
     func reset() {}
+    func matchesCustomURL(_ url: URL) -> Bool { false }
 }
 
 func makeTestUserScript() -> AIChatUserScript {

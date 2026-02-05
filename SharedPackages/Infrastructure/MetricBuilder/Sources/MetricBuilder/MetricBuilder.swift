@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import SwiftUI
 import class UIKit.UIScreen
 import enum UIKit.UIUserInterfaceIdiom
@@ -401,3 +402,4 @@ private extension UserInterfaceSizeClass {
         }
     }
 }
+#endif

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import SwiftUI
 
 public func isIPhonePortrait(v: UserInterfaceSizeClass?, h: UserInterfaceSizeClass?) -> Bool {
@@ -35,3 +36,4 @@ public func isIPad(v: UserInterfaceSizeClass?, h: UserInterfaceSizeClass?) -> Bo
 public func isIPadLandscape(v: UserInterfaceSizeClass?, h: UserInterfaceSizeClass?, screenSize: CGSize = UIScreen.main.bounds.size) -> Bool {
     isIPad(v: v, h: h) && screenSize.width > screenSize.height
 }
+#endif

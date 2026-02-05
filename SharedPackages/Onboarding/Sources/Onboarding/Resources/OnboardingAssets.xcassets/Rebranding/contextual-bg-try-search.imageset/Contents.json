@@ -1,8 +1,8 @@
 {
   "images" : [
     {
-      "filename" : "contextual-bg-try-search-iphone-light.pdf",
-      "idiom" : "iphone"
+      "filename" : "contextual-bg-try-search-light.pdf",
+      "idiom" : "universal"
     },
     {
       "appearances" : [
@@ -11,22 +11,8 @@
           "value" : "dark"
         }
       ],
-      "filename" : "contextual-bg-try-search-iphone-dark.pdf",
-      "idiom" : "iphone"
-    },
-    {
-      "filename" : "contextual-bg-try-search-ipad-light.pdf",
-      "idiom" : "ipad"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "filename" : "contextual-bg-try-search-ipad-dark.pdf",
-      "idiom" : "ipad"
+      "filename" : "contextual-bg-try-search-dark.pdf",
+      "idiom" : "universal"
     }
   ],
   "info" : {

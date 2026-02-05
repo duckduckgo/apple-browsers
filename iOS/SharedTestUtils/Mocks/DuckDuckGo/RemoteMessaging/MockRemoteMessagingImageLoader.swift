@@ -59,4 +59,3 @@ public final class MockRemoteMessagingImageLoader: RemoteMessagingImageLoading {
         return image
     }
 }
-

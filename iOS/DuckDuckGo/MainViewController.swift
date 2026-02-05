@@ -444,6 +444,14 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let testSource: RemoteMessagingTestSource = .push
+        let testRetryCount = 3
+        Pixel.fire(pixel: .remoteMessageTest(.testSuffix, source: testSource, retryCount: testRetryCount),
+                   withAdditionalParameters: [
+                       "source": testSource.rawValue,
+                       "retryCount": String(testRetryCount)
+                   ])
+
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,

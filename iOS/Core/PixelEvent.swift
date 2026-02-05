@@ -26,6 +26,17 @@ import DDGSync
 import MaliciousSiteProtection
 import PixelKit
 
+public enum RemoteMessagingTestPixelSuffix: String {
+    case testSuffix = "suffix_here"
+    case otherTestSuffix = "other_suffix"
+}
+
+public enum RemoteMessagingTestSource: String {
+    case push = "push"
+    case inApp = "in_app"
+    case scheduled = "scheduled"
+}
+
 extension Pixel {
     
     public enum Event {
@@ -762,6 +773,7 @@ extension Pixel {
         case remoteMessageSheet
         case remoteMessageCardShown
         case remoteMessageCardClicked
+        case remoteMessageTest(RemoteMessagingTestPixelSuffix, source: RemoteMessagingTestSource, retryCount: Int)
 
         // MARK: debug pixels
         case dbCrashDetected(appIdentifier: String?)
@@ -2270,6 +2282,7 @@ extension Pixel.Event {
         case .remoteMessageSheet: return "m_remote_message_sheet"
         case .remoteMessageCardShown: return "m_remote_message_card_shown"
         case .remoteMessageCardClicked: return "m_remote_message_card_clicked"
+        case .remoteMessageTest(let suffix, _, _): return "m_remote_message_test_\(suffix.rawValue)"
 
             // MARK: debug pixels
 

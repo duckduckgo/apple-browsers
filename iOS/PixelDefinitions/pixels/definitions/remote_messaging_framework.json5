@@ -147,5 +147,32 @@
                 "type": "string"
             }
         ]
+    },
+    "m_remote_message_test": {
+        "description": "Triggered as a test pixel for remote messaging",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "The test suffix identifying the type of remote message test",
+                "enum": ["suffix_here", "other_suffix"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The source that triggered the remote message test",
+                "enum": ["push", "in_app", "scheduled"]
+            },
+            {
+                "key": "retryCount",
+                "type": "integer",
+                "description": "The number of retry attempts made"
+            }
+        ]
     }
 }

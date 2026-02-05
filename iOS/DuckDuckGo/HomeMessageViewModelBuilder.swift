@@ -52,19 +52,23 @@ struct HomeMessageViewModelBuilder {
             pixelReporter?.measureRemoteMessageImageLoadSuccess(remoteMessage)
         }
 
-        let loadRemoteImage: (() async -> UIImage?)? = content.imageUrl.map { imageUrl in
-            return {
-                do {
-                    let image = try await imageLoader.loadImage(from: imageUrl)
-                    pixelReporter?.measureRemoteMessageImageLoadSuccess(remoteMessage)
-                    return image
-                } catch is CancellationError {
-                    return nil
-                } catch {
-                    pixelReporter?.measureRemoteMessageImageLoadFailed(remoteMessage)
-                    return nil
+        let loadRemoteImage: (() async -> UIImage?)? = if preloadedImage == nil {
+            content.imageUrl.map { imageUrl in
+                return {
+                    do {
+                        let image = try await imageLoader.loadImage(from: imageUrl)
+                        pixelReporter?.measureRemoteMessageImageLoadSuccess(remoteMessage)
+                        return image
+                    } catch is CancellationError {
+                        return nil
+                    } catch {
+                        pixelReporter?.measureRemoteMessageImageLoadFailed(remoteMessage)
+                        return nil
+                    }
                 }
             }
+        } else {
+            nil
         }
 
         return HomeMessageViewModel(

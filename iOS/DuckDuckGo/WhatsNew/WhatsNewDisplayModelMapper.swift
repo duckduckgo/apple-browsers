@@ -116,8 +116,12 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
             pixelReporter?.measureRemoteMessageImageLoadSuccess(message)
         }
 
-        let loadHeaderImage: ((URL) async throws -> UIImage)? = imageLoader.map { loader in
-            { url in try await loader.loadImage(from: url) }
+        let loadHeaderImage: ((URL) async throws -> UIImage)? = if preloadedHeaderImage == nil {
+            imageLoader.map { loader in
+                { url in try await loader.loadImage(from: url) }
+            }
+        } else {
+            nil
         }
 
         return RemoteMessagingUI.CardsListDisplayModel(
@@ -126,12 +130,12 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
             preloadedHeaderImage: preloadedHeaderImage,
             headerImageUrl: imageUrl,
             loadHeaderImage: loadHeaderImage,
-            onHeaderImageLoadSuccess: { [pixelReporter, message] in
+            onHeaderImageLoadSuccess: preloadedHeaderImage == nil ? { [pixelReporter, message] in
                 pixelReporter?.measureRemoteMessageImageLoadSuccess(message)
-            },
-            onHeaderImageLoadFailed: { [pixelReporter, message] in
+            } : nil,
+            onHeaderImageLoadFailed: preloadedHeaderImage == nil ? { [pixelReporter, message] in
                 pixelReporter?.measureRemoteMessageImageLoadFailed(message)
-            },
+            } : nil,
             items: listItems,
             onAppear: onMessageAppear,
             primaryAction: (

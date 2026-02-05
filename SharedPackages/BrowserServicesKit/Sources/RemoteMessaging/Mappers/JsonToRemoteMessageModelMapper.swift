@@ -202,6 +202,8 @@ struct JsonToRemoteMessageModelMapper {
 
     static func mapToContent(content: RemoteMessageResponse.JsonContent,
                              surveyActionMapper: RemoteMessagingSurveyActionMapping) -> RemoteMessageModelType? {
+        let imageUrl = content.imageUrl.flatMap(URL.init(string:))
+
         switch RemoteMessageResponse.JsonMessageType(rawValue: content.messageType) {
         case .small:
             guard !content.titleText.isEmpty, !content.descriptionText.isEmpty else {
@@ -218,7 +220,7 @@ struct JsonToRemoteMessageModelMapper {
             return .medium(titleText: content.titleText,
                            descriptionText: content.descriptionText,
                            placeholder: mapToPlaceholder(content.placeholder),
-                           imageUrl: content.imageUrl.flatMap(URL.init(string:)))
+                           imageUrl: imageUrl)
         case .bigSingleAction:
             guard let primaryActionText = content.primaryActionText,
                   !primaryActionText.isEmpty,
@@ -230,7 +232,7 @@ struct JsonToRemoteMessageModelMapper {
             return .bigSingleAction(titleText: content.titleText,
                                     descriptionText: content.descriptionText,
                                     placeholder: mapToPlaceholder(content.placeholder),
-                                    imageUrl: content.imageUrl.flatMap(URL.init(string:)),
+                                    imageUrl: imageUrl,
                                     primaryActionText: primaryActionText,
                                     primaryAction: action)
         case .bigTwoAction:
@@ -247,7 +249,7 @@ struct JsonToRemoteMessageModelMapper {
             return .bigTwoAction(titleText: content.titleText,
                                  descriptionText: content.descriptionText,
                                  placeholder: mapToPlaceholder(content.placeholder),
-                                 imageUrl: content.imageUrl.flatMap(URL.init(string:)),
+                                 imageUrl: imageUrl,
                                  primaryActionText: primaryActionText,
                                  primaryAction: primaryAction,
                                  secondaryActionText: secondaryActionText,
@@ -263,7 +265,7 @@ struct JsonToRemoteMessageModelMapper {
             return .promoSingleAction(titleText: content.titleText,
                                       descriptionText: content.descriptionText,
                                       placeholder: mapToPlaceholder(content.placeholder),
-                                      imageUrl: content.imageUrl.flatMap(URL.init(string:)),
+                                      imageUrl: imageUrl,
                                       actionText: actionText,
                                       action: action)
 

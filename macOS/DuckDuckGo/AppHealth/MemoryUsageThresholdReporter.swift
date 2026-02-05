@@ -91,13 +91,13 @@ final class MemoryUsageThresholdReporter {
             return
         }
 
-        logger?.info("Memory usage threshold reporter will start monitoring after 5-minute delay")
+        logger?.debug("Memory usage threshold reporter will start monitoring after 5-minute delay")
 
         // Create work item for cancellation support
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
             self.hasDelayElapsed = true
-            self.logger?.info("Memory usage threshold reporter delay elapsed, starting monitoring")
+            self.logger?.debug("Memory usage threshold reporter delay elapsed, starting monitoring")
             self.subscribeToMemoryUpdates()
         }
 
@@ -140,7 +140,7 @@ final class MemoryUsageThresholdReporter {
         delayWorkItem = nil
         cancellables.removeAll()
         hasDelayElapsed = false
-        logger?.info("Memory usage threshold reporter stopped")
+        logger?.debug("Memory usage threshold reporter stopped")
     }
 }
 

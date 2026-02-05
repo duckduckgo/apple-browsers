@@ -2876,8 +2876,13 @@ extension MainViewController: OmniBarDelegate {
 
         let controller = browsingMenu
         let presentationCompletion = {
-            if self.canDisplayAddFavoriteVisualIndicator {
-                browsingMenu.highlightCell(atIndex: IndexPath(row: tab.favoriteEntryIndex, section: 0))
+            guard let highlightTag = self.menuHighlightingTag else { return }
+            switch highlightTag {
+            case .favorite:
+                browsingMenu.highlightAddFavorite()
+
+            case .fire:
+                browsingMenu.highlightFireButton()
             }
         }
 
@@ -2898,14 +2903,9 @@ extension MainViewController: OmniBarDelegate {
             return
         }
 
-        var highlightTag: BrowsingMenuModel.Entry.Tag?
-        if canDisplayAddFavoriteVisualIndicator {
-            highlightTag = .favorite
-        }
-
         let view = BrowsingMenuSheetView(model: model,
                                          headerDataSource: browsingMenuHeaderDataSource,
-                                         highlightRowWithTag: highlightTag,
+                                         highlightRowWithTag: menuHighlightingTag,
                                          onDismiss: { wasActionSelected in
                                              self.viewCoordinator.menuToolbarButton.isEnabled = true
                                              if !wasActionSelected {

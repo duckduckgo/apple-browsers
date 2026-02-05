@@ -175,7 +175,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             .init(entryBuilder.makeVPNEntry()),
             .init(entryBuilder.makeUseNewDuckAddressEntry()),
             .init(entryBuilder.makeKeepSignInEntry()),
-            .init(entryBuilder.makeClearDataEntry(mobileCustomization: mobileCustomization, clearTabsAndData: clearTabsAndData))
+            .init(entryBuilder.makeClearDataEntry(mobileCustomization: mobileCustomization, clearTabsAndData: clearTabsAndData), tag: .fire)
         ].compactMap { $0 }
 
         if !privacyItems.isEmpty {

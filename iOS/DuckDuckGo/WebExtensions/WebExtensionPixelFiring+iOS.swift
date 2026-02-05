@@ -25,29 +25,49 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
         case .installed:
-            Pixel.fire(pixel: .webExtensionInstalled)
-            Pixel.fire(pixel: .webExtensionInstalledDaily)
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionInstalled,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+            )
         case .installError(let error):
-            Pixel.fire(pixel: .webExtensionInstallError, error: error)
-            Pixel.fire(pixel: .webExtensionInstallErrorDaily, error: error)
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionInstallError,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                error: error
+            )
         case .uninstalled:
-            Pixel.fire(pixel: .webExtensionUninstalled)
-            Pixel.fire(pixel: .webExtensionUninstalledDaily)
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionUninstalled,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+            )
         case .uninstallError(let error):
-            Pixel.fire(pixel: .webExtensionUninstallError, error: error)
-            Pixel.fire(pixel: .webExtensionUninstallErrorDaily, error: error)
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionUninstallError,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                error: error
+            )
         case .uninstalledAll:
-            Pixel.fire(pixel: .webExtensionUninstalledAll)
-            Pixel.fire(pixel: .webExtensionUninstalledAllDaily)
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionUninstalledAll,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+            )
         case .uninstallAllError(let error):
-            Pixel.fire(pixel: .webExtensionUninstallAllError, error: error)
-            Pixel.fire(pixel: .webExtensionUninstallAllErrorDaily, error: error)
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionUninstallAllError,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                error: error
+            )
         case .loaded:
-            Pixel.fire(pixel: .webExtensionLoaded)
-            Pixel.fire(pixel: .webExtensionLoadedDaily)
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionLoaded,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+            )
         case .loadError(let error):
-            Pixel.fire(pixel: .webExtensionLoadError, error: error)
-            Pixel.fire(pixel: .webExtensionLoadErrorDaily, error: error)
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionLoadError,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                error: error
+            )
         }
     }
 }

@@ -862,6 +862,11 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Critical", action: #selector(AppDelegate.simulateMemoryPressureCritical))
             }
 
+            NSMenuItem(title: "Memory Usage Reporting") {
+                NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))
+                NSMenuItem(title: "Start Reporter Immediately (Skip 5min Delay)", action: #selector(AppDelegate.startMemoryReporterImmediately))
+            }
+
             NSMenuItem(title: "Hang Debugging") {
                 toggleWatchdogMenuItem
                 toggleWatchdogCrashMenuItem

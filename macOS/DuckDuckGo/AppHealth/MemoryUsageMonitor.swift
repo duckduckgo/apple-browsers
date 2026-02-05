@@ -279,3 +279,27 @@ final class MemoryUsageDisplayer {
         viewUpdatesCancellable = nil
     }
 }
+
+#if DEBUG
+extension MemoryUsageMonitor {
+    /// Simulates a memory report for testing purposes.
+    ///
+    /// This method is intended **only for use by the Debug menu** to manually trigger
+    /// memory usage reporting without waiting for actual memory changes. It allows developers
+    /// to test threshold pixel firing for specific memory values.
+    ///
+    /// - Parameter physFootprintMB: Memory usage in megabytes to simulate
+    ///
+    /// - Warning: Do not use this method in production code. It is designed exclusively
+    ///   for debugging and testing purposes via the Debug menu.
+    ///
+    func simulateMemoryReport(physFootprintMB: Double) {
+        let physFootprintBytes = UInt64(physFootprintMB * 1_048_576)
+        let report = MemoryReport(
+            residentBytes: physFootprintBytes,
+            physFootprintBytes: physFootprintBytes
+        )
+        memoryReportSubject.send(report)
+    }
+}
+#endif

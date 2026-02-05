@@ -207,6 +207,8 @@ final class AIChatContextualWebViewController: UIViewController {
     func loadChatURL(_ url: URL) {
         Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(url.absoluteString)")
         isPageReady = false
+        pendingPrompt = nil
+        pendingPageContext = nil
         loadingView.startAnimating()
         webView.load(URLRequest(url: url))
     }

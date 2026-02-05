@@ -100,6 +100,7 @@ class AddressBarTests: XCTestCase {
     @MainActor
     override func tearDown() {
         TestRunHelper.allowAppSendUserEvents = false
+        waitForMainQueueToFlush()
 
         autoreleasepool {
             window?.close()
@@ -1058,6 +1059,14 @@ class AddressBarTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(reporter.measureAddressBarTypedInCalled)
+    }
+
+    private func waitForMainQueueToFlush() {
+        let expectation = XCTestExpectation(description: "Finish tasks in main queue")
+        DispatchQueue.main.async {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 }
 

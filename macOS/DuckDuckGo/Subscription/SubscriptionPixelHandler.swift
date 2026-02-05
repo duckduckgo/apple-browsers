@@ -43,36 +43,37 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
     }
 
     let source: Source
+    let pixelKit: PixelKit?
 
     public func handle(pixel: Subscription.SubscriptionPixelType) {
         switch pixel {
         case .invalidRefreshToken:
-            PixelKit.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)
         case .subscriptionIsActive:
-            PixelKit.fire(SubscriptionPixel.subscriptionActive(AuthVersion.v2), frequency: .legacyDaily)
+            pixelKit?.fire(SubscriptionPixel.subscriptionActive(AuthVersion.v2), frequency: .legacyDaily)
         case .getTokensError(let policy, let error):
-            PixelKit.fire(SubscriptionPixel.subscriptionAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
         case .invalidRefreshTokenSignedOut:
-            PixelKit.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
         case .invalidRefreshTokenRecovered:
-            PixelKit.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
         case .purchaseSuccessAfterPendingTransaction:
-            PixelKit.fire(SubscriptionPixel.subscriptionPurchaseSuccessAfterPendingTransaction(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionPurchaseSuccessAfterPendingTransaction(source), frequency: .dailyAndCount)
         case .pendingTransactionApproved:
-            PixelKit.fire(SubscriptionPixel.subscriptionPendingTransactionApproved(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionPendingTransactionApproved(source), frequency: .dailyAndCount)
         }
     }
 
     public func handle(pixel: Subscription.KeychainManager.Pixel) {
         switch pixel {
         case .deallocatedWithBacklog:
-            PixelKit.fire(SubscriptionPixel.subscriptionKeychainManagerDeallocatedWithBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDeallocatedWithBacklog(source), frequency: .dailyAndCount)
         case .dataAddedToTheBacklog:
-            PixelKit.fire(SubscriptionPixel.subscriptionKeychainManagerDataAddedToTheBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataAddedToTheBacklog(source), frequency: .dailyAndCount)
         case .dataWroteFromBacklog:
-            PixelKit.fire(SubscriptionPixel.subscriptionKeychainManagerDataWroteFromBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataWroteFromBacklog(source), frequency: .dailyAndCount)
         case .failedToWriteDataFromBacklog:
-            PixelKit.fire(SubscriptionPixel.subscriptionKeychainManagerFailedToWriteDataFromBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerFailedToWriteDataFromBacklog(source), frequency: .dailyAndCount)
         }
     }
 }

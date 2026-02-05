@@ -48,6 +48,7 @@ final class NavigationBarPopoversTests: XCTestCase {
             networkProtectionPopoverManager: NetPPopoverManagerMock(),
             autofillPopoverPresenter: autofillPopoverPresenter,
             vpnUpsellPopoverPresenter: MockVPNUpsellPopoverPresenter(),
+            pinningManager: MockPinningManager(),
             isBurner: false
         )
     }

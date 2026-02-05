@@ -1,5 +1,5 @@
 //
-//  FreeTrialConversionWideEventService.swift
+//  FreeTrialConversionInstrumentationService.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,8 +21,33 @@ import Common
 import os.log
 import PixelKit
 
+// MARK: - Free Trial Pixel Handling
+
+/// Represents when a feature was activated during a free trial
+public enum FreeTrialActivationDay: String {
+    /// Day 1 of the free trial
+    case d1
+    /// Days 2 through 7 of the free trial
+    case d2ToD7 = "d2_to_d7"
+}
+
+/// Protocol for firing free trial tracking pixels.
+/// Each platform implements this with their own pixel system and naming conventions.
+public protocol FreeTrialPixelHandling {
+    /// Fires when a user starts a free trial
+    func fireFreeTrialStart()
+    /// Fires when a user activates VPN during a free trial
+    func fireFreeTrialVPNActivation(activationDay: FreeTrialActivationDay)
+    /// Fires when a user activates PIR during a free trial
+    func fireFreeTrialPIRActivation(activationDay: FreeTrialActivationDay)
+    /// Fires when a user activates Duck.ai during a free trial
+    func fireFreeTrialDuckAIActivation(activationDay: FreeTrialActivationDay)
+}
+
+// MARK: - Protocol
+
 /// Protocol for managing the free trial conversion wide event lifecycle.
-public protocol FreeTrialConversionWideEventService: AnyObject {
+public protocol FreeTrialConversionInstrumentationService: AnyObject {
     /// Starts observing subscription changes to automatically manage the wide event lifecycle.
     /// Call this once during app initialization.
     func startObservingSubscriptionChanges()
@@ -32,6 +57,9 @@ public protocol FreeTrialConversionWideEventService: AnyObject {
 
     /// Marks PIR as activated for the current free trial flow.
     func markPIRActivated()
+
+    /// Marks Duck.ai as activated for the current free trial flow.
+    func markDuckAIActivated()
 }
 
 /// Default implementation that manages the free trial conversion wide event lifecycle.
@@ -42,20 +70,23 @@ public protocol FreeTrialConversionWideEventService: AnyObject {
 /// - Start tracking when a user begins a free trial
 /// - Complete with success when the user converts to a paid subscription
 /// - Complete with failure when the trial expires without conversion
-public final class DefaultFreeTrialConversionWideEventService: FreeTrialConversionWideEventService {
+public final class DefaultFreeTrialConversionInstrumentationService: FreeTrialConversionInstrumentationService {
 
     private let wideEvent: WideEventManaging
     private let notificationCenter: NotificationCenter
+    private let pixelHandler: FreeTrialPixelHandling?
     private let isFeatureEnabled: () -> Bool
     private var subscriptionObserver: NSObjectProtocol?
 
     public init(
         wideEvent: WideEventManaging,
         notificationCenter: NotificationCenter = .default,
+        pixelHandler: FreeTrialPixelHandling? = nil,
         isFeatureEnabled: @escaping () -> Bool = { true }
     ) {
         self.wideEvent = wideEvent
         self.notificationCenter = notificationCenter
+        self.pixelHandler = pixelHandler
         self.isFeatureEnabled = isFeatureEnabled
     }
 
@@ -97,6 +128,7 @@ public final class DefaultFreeTrialConversionWideEventService: FreeTrialConversi
             guard existingFlow == nil else { return }
             let data = FreeTrialConversionWideEventData()
             wideEvent.startFlow(data)
+            pixelHandler?.fireFreeTrialStart()
             Logger.subscription.log("[FreeTrialConversion] Started flow")
         } else if subscription.isActive, let data = existingFlow {
             // User is active, but not on trial. Mark the existing flow as completed.
@@ -116,6 +148,10 @@ public final class DefaultFreeTrialConversionWideEventService: FreeTrialConversi
             return
         }
 
+        if data.shouldFireVPNActivationPixel {
+            pixelHandler?.fireFreeTrialVPNActivation(activationDay: data.activationDay())
+        }
+
         data.markVPNActivated()
         wideEvent.updateFlow(data)
         Logger.subscription.log("[FreeTrialConversion] VPN activated (D1: \(data.vpnActivatedD1), D2-D7: \(data.vpnActivatedD2ToD7))")
@@ -128,8 +164,28 @@ public final class DefaultFreeTrialConversionWideEventService: FreeTrialConversi
             return
         }
 
+        if data.shouldFirePIRActivationPixel {
+            pixelHandler?.fireFreeTrialPIRActivation(activationDay: data.activationDay())
+        }
+
         data.markPIRActivated()
         wideEvent.updateFlow(data)
         Logger.subscription.log("[FreeTrialConversion] PIR activated (D1: \(data.pirActivatedD1), D2-D7: \(data.pirActivatedD2ToD7))")
+    }
+
+    /// Marks Duck.ai as activated for the current free trial flow.
+    public func markDuckAIActivated() {
+        guard isFeatureEnabled(),
+              let data = wideEvent.getAllFlowData(FreeTrialConversionWideEventData.self).first else {
+            return
+        }
+
+        if data.shouldFireDuckAIActivationPixel {
+            pixelHandler?.fireFreeTrialDuckAIActivation(activationDay: data.activationDay())
+        }
+
+        data.markDuckAIActivated()
+        wideEvent.updateFlow(data)
+        Logger.subscription.log("[FreeTrialConversion] Duck.ai activated (D1: \(data.duckAIActivatedD1), D2-D7: \(data.duckAIActivatedD2ToD7))")
     }
 }

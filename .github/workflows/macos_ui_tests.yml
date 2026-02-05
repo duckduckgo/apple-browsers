@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       all_os_versions:
-        description: "Whether to test all OS versions or only the latest"
+        description: "Test all supported macOS versions (not just the latest)"
         type: boolean
         default: true
       single_test_class:
@@ -18,7 +18,7 @@ on:
   workflow_call:
     inputs:
       all_os_versions:
-        description: "Whether to test all OS versions or only the latest"
+        description: "Test all supported macOS versions (not just the latest)"
         type: boolean
         default: true
       branch:

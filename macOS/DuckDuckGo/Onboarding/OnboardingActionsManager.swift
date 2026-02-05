@@ -150,6 +150,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
         bookmarkManager: BookmarkManager,
+        pinningManager: PinningManager,
         featureFlagger: FeatureFlagger
     ) {
         self.init(
@@ -158,7 +159,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
-            dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager),
+            dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager, pinningManager: pinningManager),
             aiChatPreferencesStorage: DefaultAIChatPreferencesStorage(),
             featureFlagger: featureFlagger
         )

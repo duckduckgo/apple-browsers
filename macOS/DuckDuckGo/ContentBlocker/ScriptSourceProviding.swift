@@ -73,6 +73,7 @@ protocol ScriptSourceProviding {
         startupPreferences: Application.appDelegate.startupPreferences,
         windowControllersManager: Application.appDelegate.windowControllersManager,
         bookmarkManager: Application.appDelegate.bookmarkManager,
+        pinningManager: Application.appDelegate.pinningManager,
         historyCoordinator: Application.appDelegate.historyCoordinator,
         fireproofDomains: Application.appDelegate.fireproofDomains,
         fireCoordinator: Application.appDelegate.fireCoordinator,
@@ -106,6 +107,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
     let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+    let pinningManager: PinningManager
     let historyCoordinator: HistoryDataSource
     let windowControllersManager: WindowControllersManagerProtocol
     let autoconsentManagement: AutoconsentManagement
@@ -128,6 +130,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          startupPreferences: StartupPreferences,
          windowControllersManager: WindowControllersManagerProtocol,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+         pinningManager: PinningManager,
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
@@ -147,6 +150,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.tld = tld
         self.featureFlagger = featureFlagger
         self.bookmarkManager = bookmarkManager
+        self.pinningManager = pinningManager
         self.historyCoordinator = historyCoordinator
         self.windowControllersManager = windowControllersManager
         self.autoconsentManagement = autoconsentManagement
@@ -255,6 +259,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             bookmarkManager: bookmarkManager,
+            pinningManager: pinningManager,
             featureFlagger: featureFlagger
         )
     }

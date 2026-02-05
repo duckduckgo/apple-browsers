@@ -1,5 +1,5 @@
 //
-//  MockFreeTrialConversionWideEventService.swift
+//  MockFreeTrialConversionInstrumentationService.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -20,14 +20,16 @@
 import Foundation
 import Subscription
 
-final class MockFreeTrialConversionWideEventService: FreeTrialConversionWideEventService {
+final class MockFreeTrialConversionInstrumentationService: FreeTrialConversionInstrumentationService {
 
     var startObservingSubscriptionChangesCalled = false
     var markVPNActivatedCalled = false
     var markPIRActivatedCalled = false
+    var markDuckAIActivatedCalled = false
 
     var markVPNActivatedCallback: (() -> Void)?
     var markPIRActivatedCallback: (() -> Void)?
+    var markDuckAIActivatedCallback: (() -> Void)?
 
     func startObservingSubscriptionChanges() {
         startObservingSubscriptionChangesCalled = true
@@ -41,5 +43,10 @@ final class MockFreeTrialConversionWideEventService: FreeTrialConversionWideEven
     func markPIRActivated() {
         markPIRActivatedCalled = true
         markPIRActivatedCallback?()
+    }
+
+    func markDuckAIActivated() {
+        markDuckAIActivatedCalled = true
+        markDuckAIActivatedCallback?()
     }
 }

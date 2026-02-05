@@ -107,11 +107,13 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     init(pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          internalUserDecider: InternalUserDecider,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         pinningManager: PinningManager) {
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.internalUserDecider = internalUserDecider
         self.featureFlagger = featureFlagger
+        self.pinningManager = pinningManager
     }
 
     /**
@@ -127,6 +129,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
     private let featureFlagger: FeatureFlagger
+    private let pinningManager: PinningManager
 
     /// find Main Window Controller being currently interacted with even when ⌘-clicked in background
     func mainWindowController(for sourceWindow: NSWindow?) -> MainWindowController? {
@@ -634,7 +637,7 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     func showImportDataView() {
-        DataImportFlowLauncher().launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false)
     }
 
     @MainActor

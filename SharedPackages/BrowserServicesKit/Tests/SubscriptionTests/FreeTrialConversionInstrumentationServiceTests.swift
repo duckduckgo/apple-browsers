@@ -1,5 +1,5 @@
 //
-//  FreeTrialConversionWideEventServiceTests.swift
+//  FreeTrialConversionInstrumentationServiceTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -22,23 +22,32 @@ import PixelKit
 import PixelKitTestingUtilities
 @testable import Subscription
 
-final class FreeTrialConversionWideEventServiceTests: XCTestCase {
+// MARK: - Service Tests
 
-    private var sut: DefaultFreeTrialConversionWideEventService!
+final class FreeTrialConversionInstrumentationServiceTests: XCTestCase {
+
+    private var sut: DefaultFreeTrialConversionInstrumentationService!
     private var mockWideEvent: WideEventMock!
+    private var mockPixelHandler: MockFreeTrialPixelHandler!
     private var notificationCenter: NotificationCenter!
 
     override func setUp() {
         super.setUp()
         mockWideEvent = WideEventMock()
+        mockPixelHandler = MockFreeTrialPixelHandler()
         notificationCenter = NotificationCenter()
-        sut = DefaultFreeTrialConversionWideEventService(wideEvent: mockWideEvent, notificationCenter: notificationCenter)
+        sut = DefaultFreeTrialConversionInstrumentationService(
+            wideEvent: mockWideEvent,
+            notificationCenter: notificationCenter,
+            pixelHandler: mockPixelHandler
+        )
         sut.startObservingSubscriptionChanges()
     }
 
     override func tearDown() {
         sut = nil
         mockWideEvent = nil
+        mockPixelHandler = nil
         notificationCenter = nil
         super.tearDown()
     }
@@ -207,15 +216,45 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         XCTAssertEqual(mockWideEvent.updates.count, 0)
     }
 
+    func testWhenDuckAIActivated_ItUpdatesTheFlow() {
+        // Given - start a trial flow first
+        let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        let startExpectation = expectation(description: "Flow started")
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        postSubscriptionChange(trialSubscription)
+        wait(for: [startExpectation], timeout: 1.0)
+
+        // When
+        sut.markDuckAIActivated()
+
+        // Then
+        XCTAssertEqual(mockWideEvent.updates.count, 1)
+        let updatedData = mockWideEvent.updates.first as? FreeTrialConversionWideEventData
+        XCTAssertNotNil(updatedData)
+    }
+
+    func testWhenDuckAIActivatedWithNoExistingFlow_ItDoesNotUpdateTheFlow() {
+        // Given - no flow started
+
+        // When
+        sut.markDuckAIActivated()
+
+        // Then
+        XCTAssertEqual(mockWideEvent.updates.count, 0)
+    }
+
     // MARK: - Feature Flag Tests
 
     func testWhenFeatureFlagDisabled_ItDoesNotStartFlow() {
         // Given
         let disabledMockWideEvent = WideEventMock()
+        let disabledPixelHandler = MockFreeTrialPixelHandler()
         let disabledNotificationCenter = NotificationCenter()
-        let disabledSut = DefaultFreeTrialConversionWideEventService(
+        let disabledSut = DefaultFreeTrialConversionInstrumentationService(
             wideEvent: disabledMockWideEvent,
             notificationCenter: disabledNotificationCenter,
+            pixelHandler: disabledPixelHandler,
             isFeatureEnabled: { false }
         )
         disabledSut.startObservingSubscriptionChanges()
@@ -237,6 +276,146 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
         // Then
         wait(for: [startExpectation], timeout: 0.2)
         XCTAssertEqual(disabledMockWideEvent.started.count, 0)
+        XCTAssertEqual(disabledPixelHandler.freeTrialStartCount, 0)
+    }
+
+    // MARK: - Pixel Firing Tests
+
+    func testWhenFlowStarts_ItFiresFreeTrialStartPixel() {
+        // Given
+        let subscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        let expectation = expectation(description: "Flow started")
+        mockWideEvent.onStart = { _ in expectation.fulfill() }
+
+        // When
+        postSubscriptionChange(subscription)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(mockPixelHandler.freeTrialStartCount, 1)
+    }
+
+    func testWhenVPNActivated_ItFiresVPNActivationPixel() {
+        // Given
+        let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        let startExpectation = expectation(description: "Flow started")
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        postSubscriptionChange(trialSubscription)
+        wait(for: [startExpectation], timeout: 1.0)
+
+        // When
+        sut.markVPNActivated()
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.vpnActivations.count, 1)
+    }
+
+    func testWhenPIRActivated_ItFiresPIRActivationPixel() {
+        // Given
+        let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        let startExpectation = expectation(description: "Flow started")
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        postSubscriptionChange(trialSubscription)
+        wait(for: [startExpectation], timeout: 1.0)
+
+        // When
+        sut.markPIRActivated()
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.pirActivations.count, 1)
+    }
+
+    func testWhenVPNActivatedTwice_ItOnlyFiresPixelOnce() {
+        // Given
+        let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        let startExpectation = expectation(description: "Flow started")
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        postSubscriptionChange(trialSubscription)
+        wait(for: [startExpectation], timeout: 1.0)
+
+        // When
+        sut.markVPNActivated()
+        sut.markVPNActivated()
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.vpnActivations.count, 1)
+    }
+
+    func testWhenPIRActivatedTwice_ItOnlyFiresPixelOnce() {
+        // Given
+        let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        let startExpectation = expectation(description: "Flow started")
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        postSubscriptionChange(trialSubscription)
+        wait(for: [startExpectation], timeout: 1.0)
+
+        // When
+        sut.markPIRActivated()
+        sut.markPIRActivated()
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.pirActivations.count, 1)
+    }
+
+    func testWhenVPNActivatedWithNoFlow_ItDoesNotFirePixel() {
+        // When
+        sut.markVPNActivated()
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.vpnActivations.count, 0)
+    }
+
+    func testWhenPIRActivatedWithNoFlow_ItDoesNotFirePixel() {
+        // When
+        sut.markPIRActivated()
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.pirActivations.count, 0)
+    }
+
+    func testWhenDuckAIActivated_ItFiresDuckAIActivationPixel() {
+        // Given
+        let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        let startExpectation = expectation(description: "Flow started")
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        postSubscriptionChange(trialSubscription)
+        wait(for: [startExpectation], timeout: 1.0)
+
+        // When
+        sut.markDuckAIActivated()
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.duckAIActivations.count, 1)
+    }
+
+    func testWhenDuckAIActivatedTwice_ItOnlyFiresPixelOnce() {
+        // Given
+        let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        let startExpectation = expectation(description: "Flow started")
+        mockWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        postSubscriptionChange(trialSubscription)
+        wait(for: [startExpectation], timeout: 1.0)
+
+        // When
+        sut.markDuckAIActivated()
+        sut.markDuckAIActivated()
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.duckAIActivations.count, 1)
+    }
+
+    func testWhenDuckAIActivatedWithNoFlow_ItDoesNotFirePixel() {
+        // When
+        sut.markDuckAIActivated()
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.duckAIActivations.count, 0)
     }
 
     // MARK: - Helpers
@@ -257,5 +436,30 @@ final class FreeTrialConversionWideEventServiceTests: XCTestCase {
             object: nil,
             userInfo: [UserDefaultsCacheKey.subscription: subscription]
         )
+    }
+}
+
+// MARK: - Mocks
+
+private final class MockFreeTrialPixelHandler: FreeTrialPixelHandling {
+    var freeTrialStartCount = 0
+    var vpnActivations: [FreeTrialActivationDay] = []
+    var pirActivations: [FreeTrialActivationDay] = []
+    var duckAIActivations: [FreeTrialActivationDay] = []
+
+    func fireFreeTrialStart() {
+        freeTrialStartCount += 1
+    }
+
+    func fireFreeTrialVPNActivation(activationDay: FreeTrialActivationDay) {
+        vpnActivations.append(activationDay)
+    }
+
+    func fireFreeTrialPIRActivation(activationDay: FreeTrialActivationDay) {
+        pirActivations.append(activationDay)
+    }
+
+    func fireFreeTrialDuckAIActivation(activationDay: FreeTrialActivationDay) {
+        duckAIActivations.append(activationDay)
     }
 }

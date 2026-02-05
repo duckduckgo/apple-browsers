@@ -128,7 +128,7 @@ final class FindInPageTabExtension: TabExtension {
 
         // reset text selection to the selection start so Find In Page finds the same result
         if options.contains(.noIndexChange) {
-            try? await webView?.collapsSelectionToStart()
+            try? await webView?.collapseSelectionToStart()
         }
 
         var options = options.union([.caseInsensitive, .wrapAround, .showFindIndicator])

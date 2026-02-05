@@ -52,7 +52,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   feedbackViewCreator: @escaping () -> (any View),
                                   eventsHandler: EventMapping<JobEvent>,
                                   isWebViewInspectable: Bool = false,
-                                  freeTrialConversionService: FreeTrialConversionWideEventService? = nil) -> DataBrokerProtectionIOSManager? {
+                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 

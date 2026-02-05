@@ -370,13 +370,21 @@ extension WKWebView {
 
     /// Collapses page text selection to the start of the first range in the selection.
     @MainActor
-    func collapsSelectionToStart() async throws {
-        try await evaluateJavaScript("window.getSelection().collapseToStart()") as Void?
+    func collapseSelectionToStart() async throws {
+        try await evaluateJavaScript("""
+            try {
+                window.getSelection().collapseToStart()
+            } catch {}
+        """) as Void?
     }
 
     @MainActor
     func deselectAll() async throws {
-        try await evaluateJavaScript("window.getSelection().removeAllRanges()") as Void?
+        try await evaluateJavaScript("""
+            try {
+                window.getSelection().removeAllRanges()
+            } catch {}
+        """) as Void?
     }
 
     var addsVisitedLinks: Bool {

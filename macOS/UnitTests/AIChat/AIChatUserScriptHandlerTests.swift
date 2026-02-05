@@ -81,8 +81,8 @@ struct AIChatUserScriptHandlerTests {
             statisticsLoader: statisticsLoader,
             syncServiceProvider: { nil },
             featureFlagger: MockFeatureFlagger(),
-            notificationCenter: notificationCenter,
-            freeTrialConversionService: mockFreeTrialConversionService
+            freeTrialConversionService: mockFreeTrialConversionService,
+            notificationCenter: notificationCenter
         )
     }
 
@@ -705,8 +705,7 @@ struct AIChatUserScriptHandlerTests {
 
     @MainActor
     private func makeHandler(featureFlagger: FeatureFlagger,
-                             syncServiceProvider: @escaping () -> DDGSyncing?,
-                             freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> AIChatUserScriptHandler {
+                             syncServiceProvider: @escaping () -> DDGSyncing?) -> AIChatUserScriptHandler {
         AIChatUserScriptHandler(
             storage: storage,
             messageHandling: messageHandler,
@@ -715,8 +714,8 @@ struct AIChatUserScriptHandlerTests {
             statisticsLoader: statisticsLoader,
             syncServiceProvider: syncServiceProvider,
             featureFlagger: featureFlagger,
-            notificationCenter: notificationCenter,
-            freeTrialConversionService: freeTrialConversionService ?? mockFreeTrialConversionService
+            freeTrialConversionService: mockFreeTrialConversionService,
+            notificationCenter: notificationCenter
         )
     }
 

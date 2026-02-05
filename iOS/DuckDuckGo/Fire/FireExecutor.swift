@@ -60,7 +60,7 @@ struct FireRequest {
         case tabSwitcher
         case settings
         case quickFire
-        case shortcut
+        case deeplink
         case autoClear
     }
 }

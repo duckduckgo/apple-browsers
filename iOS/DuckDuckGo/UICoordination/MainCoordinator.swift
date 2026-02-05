@@ -377,7 +377,7 @@ extension MainCoordinator: URLHandling {
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:
-            let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .shortcut)
+            let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .deeplink)
             controller.forgetAllWithAnimation(request: request)
         case .voiceSearch:
             controller.onVoiceSearchPressed()

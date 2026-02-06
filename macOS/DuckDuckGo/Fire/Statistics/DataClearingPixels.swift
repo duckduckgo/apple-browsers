@@ -140,9 +140,6 @@ extension DataClearingPixels: PixelKitEvent {
                 "autoClear": autoClear
             ]
 
-        case .retriggerIn20s:
-            return nil
-
         case .burnWebCacheDuration(let duration),
              .burnChatHistoryDuration(let duration),
              .burnDownloadsDuration(let duration),
@@ -162,7 +159,8 @@ extension DataClearingPixels: PixelKitEvent {
         case .burnWebCacheHasResidue(let steps):
             return ["step": steps]
 
-        case .burnWebCacheError, .burnHistoryError, .burnChatHistoryError,
+        case .retriggerIn20s,
+             .burnWebCacheError, .burnHistoryError, .burnChatHistoryError,
              .burnVisitsError, .burnLastSessionStateError, .burnTabsError, .burnDownloadsError,
              .burnVisitsHasResidue, .burnLastSessionStateHasResidue,
              .burnDownloadsHasResidue, .burnRecentlyClosedHasResidue:

@@ -58,7 +58,7 @@ internal class WebCacheManager {
     }
 
     func clear(baseDomains: Set<String>? = nil) async {
-        let startTime = Date()
+        let startTime = CACurrentMediaTime()
         // first cleanup ~/Library/Caches
         await clearFileCache()
 

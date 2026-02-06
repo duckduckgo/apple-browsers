@@ -312,7 +312,7 @@ final class Fire: FireProtocol {
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
                                                                                  privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
         self.dataClearingPixelsReporter = dataClearingPixelsReporter
-        self.historyCoordinating.dataClearingPixelsHandler = DataClearingPixelsBurnHistoryHandler(dataClearingPixelsReporter)
+        self.historyCoordinating.dataClearingPixelsHandling = DataClearingPixelsBurnHistoryHandler(dataClearingPixelsReporter)
     }
 
     @MainActor
@@ -539,7 +539,7 @@ final class Fire: FireProtocol {
 
     @MainActor
     func burnChatHistory() async {
-        let startTime = Date()
+        let startTime = CACurrentMediaTime()
         await aiChatHistoryCleaner.cleanAIChatHistory()
         dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnChatHistoryDuration, from: startTime)
         if syncService?.authState != .inactive {
@@ -639,7 +639,7 @@ final class Fire: FireProtocol {
     @MainActor
     private func burnHistory(ofEntity entity: BurningEntity, completion: @escaping @MainActor () -> Void) {
         let visits: [Visit]
-        let burnHistoryStartTime = Date()
+        let burnHistoryStartTime = CACurrentMediaTime()
 
         switch entity {
         case .none(selectedDomains: let domains):
@@ -700,7 +700,7 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnAllVisitedLinks() {
-        let startTime = Date()
+        let startTime = CACurrentMediaTime()
         getVisitedLinkStore()?.removeAll()
         dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnVisitedLinksDuration, from: startTime)
     }
@@ -709,7 +709,7 @@ final class Fire: FireProtocol {
     private func burnVisitedLinks(_ visits: [Visit]) {
         guard let visitedLinkStore = getVisitedLinkStore() else { return }
 
-        let startTime = Date()
+        let startTime = CACurrentMediaTime()
         for visit in visits {
             guard let url = visit.historyEntry?.url else { continue }
             visitedLinkStore.removeVisitedLink(with: url)
@@ -721,7 +721,7 @@ final class Fire: FireProtocol {
     private func burnVisitedLinks(_ urls: Set<URL>) {
         guard let visitedLinkStore = getVisitedLinkStore() else { return }
 
-        let startTime = Date()
+        let startTime = CACurrentMediaTime()
         for url in urls {
             visitedLinkStore.removeVisitedLink(with: url)
         }
@@ -752,14 +752,14 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnDownloads() {
-        let startTime = Date()
+        let startTime = CACurrentMediaTime()
         self.downloadListCoordinator.cleanupInactiveDownloads(for: nil)
         dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnDownloadsDuration, from: startTime)
     }
 
     @MainActor
     private func burnDownloads(of baseDomains: Set<String>) {
-        let startTime = Date()
+        let startTime = CACurrentMediaTime()
         self.downloadListCoordinator.cleanupInactiveDownloads(for: baseDomains, tld: tld)
         dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnDownloadsDuration, from: startTime)
     }
@@ -832,7 +832,7 @@ final class Fire: FireProtocol {
                   close: let shouldClose):
             assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
             if shouldClose {
-                let startTime = Date()
+                let startTime = CACurrentMediaTime()
                 let countBeforeBurn = tabCollectionViewModel.tabCollection.tabs.count
                 var expectedCount = countBeforeBurn
 
@@ -860,7 +860,7 @@ final class Fire: FireProtocol {
                      selectedDomains: _,
                      close: let shouldClose):
             if shouldClose {
-                let startTime = Date()
+                let startTime = CACurrentMediaTime()
                 // If closing last Window: Insert a new tab to prevent key window closing:
                 var insertedTabIndex: Int?
                 if windowControllersManager.mainWindowControllers.count == 1 {
@@ -882,7 +882,7 @@ final class Fire: FireProtocol {
                          customURLToOpen: let customURL,
                          close: let shouldClose):
             guard shouldClose else { break }
-            let startTime = Date()
+            let startTime = CACurrentMediaTime()
             for windowController in mainWindowControllers {
                 // If closing all Tabs/Windows: Insert a new tab to prevent key window closing:
                 let insertedTabIndex = insertNewTabIfNeeded(into: windowController, with: customURL)
@@ -944,7 +944,7 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnLastSessionState() {
-        let startTime = Date()
+        let startTime = CACurrentMediaTime()
         stateRestorationManager?.clearLastSessionState()
         dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnLastSessionStateDuration, from: startTime)
     }
@@ -953,7 +953,7 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func burnRecentlyClosed(baseDomains: Set<String>? = nil) {
-        let startTime = Date()
+        let startTime = CACurrentMediaTime()
         recentlyClosedCoordinator?.burnCache(baseDomains: baseDomains, tld: tld)
         dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnRecentlyClosedDuration, from: startTime)
     }

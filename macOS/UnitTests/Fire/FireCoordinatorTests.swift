@@ -62,8 +62,8 @@ struct FireCoordinatorTests {
     @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_IncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = Date()
-        dataClearingPixelsReporter.endDateProvider = { currentTime }
+        let currentTime = CACurrentMediaTime()
+        dataClearingPixelsReporter.timeProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
             option: "current_tab",
@@ -91,8 +91,8 @@ struct FireCoordinatorTests {
     @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = Date()
-        dataClearingPixelsReporter.endDateProvider = { currentTime }
+        let currentTime = CACurrentMediaTime()
+        dataClearingPixelsReporter.timeProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
             option: "current_tab",
@@ -119,8 +119,8 @@ struct FireCoordinatorTests {
     @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentWindow_IncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = Date()
-        dataClearingPixelsReporter.endDateProvider = { currentTime }
+        let currentTime = CACurrentMediaTime()
+        dataClearingPixelsReporter.timeProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
             option: "current_window",
@@ -148,8 +148,8 @@ struct FireCoordinatorTests {
     @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentWindow_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = Date()
-        dataClearingPixelsReporter.endDateProvider = { currentTime }
+        let currentTime = CACurrentMediaTime()
+        dataClearingPixelsReporter.timeProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
             option: "current_window",
@@ -176,8 +176,8 @@ struct FireCoordinatorTests {
     @Test func testHandleDialogResult_FiresExpectedPixels_ForAllData_IncludingChatHistory_WhenAllHistoryIsSelected() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = Date()
-        dataClearingPixelsReporter.endDateProvider = { currentTime }
+        let currentTime = CACurrentMediaTime()
+        dataClearingPixelsReporter.timeProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
             option: "all_data",
@@ -205,8 +205,8 @@ struct FireCoordinatorTests {
     @Test func testHandleDialogResult_FiresExpectedPixels_ForAllData_NotIncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         let dataClearingPixelsReporter = coordinator.dataClearingPixelsReporter
-        let currentTime = Date()
-        dataClearingPixelsReporter.endDateProvider = { currentTime }
+        let currentTime = CACurrentMediaTime()
+        dataClearingPixelsReporter.timeProvider = { currentTime }
         let expectedDataClearingPixel = DataClearingPixels.fireCompletion(
             duration: 0,
             option: "all_data",

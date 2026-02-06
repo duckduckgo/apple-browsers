@@ -282,7 +282,7 @@ extension FireCoordinator {
     }
 
     @MainActor
-    func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool, from startTime: Date = Date()) async {
+    func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool, from startTime: Double = CACurrentMediaTime()) async {
         dataClearingPixelsReporter.fireRetriggerPixelIfNeeded()
 
         if result.includeChatHistory {

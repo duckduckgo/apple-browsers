@@ -28,8 +28,6 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
 
     public init() {}
 
-    public var dataClearingPixelsHandler: (any DataClearingPixelsHandler)?
-
     public func loadHistory(onCleanFinished: @escaping () -> Void) {
         onCleanFinished()
     }
@@ -136,6 +134,8 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
     public func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
         return historySuggestionsStub
     }
+
+    public var dataClearingPixelsHandling: (any DataClearingPixelsHandling)?
 
     @MainActor
     public func delete(_ visits: [History.Visit]) async {

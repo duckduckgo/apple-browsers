@@ -26,22 +26,22 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
     private var mockPixelFiring: PixelKitMock!
     private var sut: DataClearingPixelsReporter!
-    private var currentDate: Date!
+    private var currentTime: CFTimeInterval!
 
     override func setUp() {
         super.setUp()
         mockPixelFiring = PixelKitMock()
-        currentDate = Date()
+        currentTime = CACurrentMediaTime()
         sut = DataClearingPixelsReporter(
             pixelFiring: mockPixelFiring,
-            endDateProvider: { [weak self] in self?.currentDate ?? Date() }
+            timeProvider: { [weak self] in self?.currentTime ?? CACurrentMediaTime() }
         )
     }
 
     override func tearDown() {
         mockPixelFiring = nil
         sut = nil
-        currentDate = nil
+        currentTime = nil
         super.tearDown()
     }
 
@@ -62,7 +62,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded()
 
         // When - second call within 20 seconds
-        currentDate = currentDate.addingTimeInterval(10)
+        currentTime = currentTime + 10
         sut.fireRetriggerPixelIfNeeded()
 
         // Then
@@ -78,7 +78,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded()
 
         // When - exactly at 20 seconds (edge case, <= condition)
-        currentDate = currentDate.addingTimeInterval(20)
+        currentTime = currentTime + 20
         sut.fireRetriggerPixelIfNeeded()
 
         // Then
@@ -94,7 +94,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded()
 
         // When - after 20 seconds
-        currentDate = currentDate.addingTimeInterval(21)
+        currentTime = currentTime + 21
         sut.fireRetriggerPixelIfNeeded()
 
         // Then
@@ -107,13 +107,13 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded()
 
         // When - multiple rapid calls within window
-        currentDate = currentDate.addingTimeInterval(5)
+        currentTime = currentTime + 5
         sut.fireRetriggerPixelIfNeeded()
 
-        currentDate = currentDate.addingTimeInterval(5)
+        currentTime = currentTime + 5
         sut.fireRetriggerPixelIfNeeded()
 
-        currentDate = currentDate.addingTimeInterval(5)
+        currentTime = currentTime + 5
         sut.fireRetriggerPixelIfNeeded()
 
         // Then
@@ -179,8 +179,8 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
     func testWhenFireDurationPixelCalledThenPixelIsFiredWithCorrectDuration() {
         // Given
-        let startTime = currentDate!
-        currentDate = currentDate.addingTimeInterval(1.5) // 1.5 seconds = 1500ms
+        let startTime = currentTime!
+        currentTime = currentTime + 1.5 // 1.5 seconds = 1500ms
 
         // When
         sut.fireDurationPixel(DataClearingPixels.burnWebCacheDuration, from: startTime)
@@ -199,8 +199,8 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
     func testWhenFireDurationPixelWithEntityCalledThenPixelIsFired() {
         // Given
-        let startTime = currentDate!
-        currentDate = currentDate.addingTimeInterval(2.0) // 2 seconds = 2000ms
+        let startTime = currentTime!
+        currentTime = currentTime + 2 // 2 seconds = 2000ms
 
         // When
         sut.fireDurationPixel(DataClearingPixels.burnHistoryDuration, from: startTime, entity: "history")

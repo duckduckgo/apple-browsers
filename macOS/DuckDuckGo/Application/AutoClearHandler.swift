@@ -110,7 +110,7 @@ final class AutoClearHandler: ApplicationTerminationDecider {
                 await aiChatSyncCleaner?.recordLocalClear(date: Date())
             }
         }
-        let startTime = Date()
+        let startTime = CACurrentMediaTime()
         await fireViewModel.fire.burnAll(isBurnOnExit: true, includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
         Self.fireCompletionPixel(from: startTime, isAutoClearAIChatHistoryEnabled: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
         appTerminationHandledCorrectly = true
@@ -168,9 +168,11 @@ final class AutoClearHandler: ApplicationTerminationDecider {
         let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
 
-        let startTime = Date()
-        fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
-        Self.fireCompletionPixel(from: startTime, isAutoClearAIChatHistoryEnabled: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
+        let startTime = CACurrentMediaTime()
+        fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled) { [weak self] in
+            guard let self else { return }
+            Self.fireCompletionPixel(from: startTime, isAutoClearAIChatHistoryEnabled: self.dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
+        }
         return true
     }
 
@@ -179,10 +181,10 @@ final class AutoClearHandler: ApplicationTerminationDecider {
 // MARK: - Instrumentation
 
 extension AutoClearHandler {
-    private static func fireCompletionPixel(from startTime: Date, isAutoClearAIChatHistoryEnabled: Bool) {
+    private static func fireCompletionPixel(from startTime: CFTimeInterval, isAutoClearAIChatHistoryEnabled: Bool) {
         PixelKit.fire(
             DataClearingPixels.fireCompletion(
-                duration: Int(Date().timeIntervalSince(startTime) * 1000),
+                duration: Int((CACurrentMediaTime() - startTime) * 1000),
                 option: "allData",
                 domains: isAutoClearAIChatHistoryEnabled ? "ChatHistory": "",
                 path: "burnAll",

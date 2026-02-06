@@ -1,5 +1,5 @@
 //
-//  DataClearingPixelsHandler.swift
+//  DataClearingPixelsHandling.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import Foundation
 
-public protocol DataClearingPixelsHandler {
+public protocol DataClearingPixelsHandling {
     func fireErrorPixel(_ error: Error)
-    func fireDurationPixel(_ startTime: Date)
+    func fireDurationPixel(_ startTime: CFTimeInterval)
 }

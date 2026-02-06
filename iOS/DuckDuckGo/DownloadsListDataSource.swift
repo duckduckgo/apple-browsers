@@ -66,24 +66,9 @@ class DownloadsListDataSource {
         let downloadsDirectoryFiles = (try? downloadManager.downloadsDirectoryFiles) ?? []
         let ongoingDownloads = downloadManager.downloadList.filter { !$0.temporary }.map { AnyDownloadListRepresentable($0) }
         let completeDownloads = downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) }
-        let temporaryDirectoryURLs = deleteDownloadsHelper.temporaryDirectoryURLs.value
         
         model.update(ongoingDownloads: ongoingDownloads,
                      completeDownloads: completeDownloads)
-
-        deleteDownloadsDirectoryIfNeeded(ongoingDownloads: ongoingDownloads,
-                                         completeDownloads: completeDownloads,
-                                         temporaryDirectoryURLs: temporaryDirectoryURLs)
-    }
-    
-    private func deleteDownloadsDirectoryIfNeeded(ongoingDownloads: [Any],
-                                                  completeDownloads: [Any],
-                                                  temporaryDirectoryURLs: [URL]) {
-        if ongoingDownloads.isEmpty
-            && completeDownloads.isEmpty
-            && temporaryDirectoryURLs.isEmpty {
-            downloadManager.deleteDownloadsDirectoryIfEmpty()
-        }
     }
     
     func cancelDownloadWithIdentifier(_ identifier: String) {

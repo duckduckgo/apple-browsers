@@ -48,11 +48,9 @@ final class AIChatContextualWebViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private var downloadHandler: DownloadHandling
     private let pixelHandler: AIChatContextualModePixelFiring
+    private let debugSettings: AIChatDebugSettingsHandling
 
     private(set) var aiChatContentHandler: AIChatContentHandling
-
-    /// Callback for URL changes.
-    var onContextualChatURLChange: ((URL?) -> Void)?
 
     /// Passthrough delegate for the content handler. Set this to receive navigation callbacks.
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
@@ -73,7 +71,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private var lastKnownKeyboardFrame: CGRect?
 
     /// URL to load on viewDidLoad instead of the default AI chat URL (for cold restore).
-    var initialRestoreURL: URL?
+    var initialURL: URL?
 
     // MARK: - UI Components
 
@@ -113,7 +111,8 @@ final class AIChatContextualWebViewController: UIViewController {
          featureFlagger: FeatureFlagger,
          downloadHandler: DownloadHandling,
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
-         pixelHandler: AIChatContextualModePixelFiring) {
+         pixelHandler: AIChatContextualModePixelFiring,
+         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -121,6 +120,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.downloadHandler = downloadHandler
         self.pixelHandler = pixelHandler
+        self.debugSettings = debugSettings
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
@@ -146,8 +146,8 @@ final class AIChatContextualWebViewController: UIViewController {
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()
-        if let restoreURL = initialRestoreURL {
-            loadChatURL(restoreURL)
+        if let url = initialURL {
+            loadChatURL(url)
         } else {
             loadAIChat()
         }
@@ -195,11 +195,6 @@ final class AIChatContextualWebViewController: UIViewController {
         isPageReady = false
         isContentHandlerReady = false
         webView.reload()
-    }
-
-    /// Returns the current contextual chat URL if one exists, nil otherwise.
-    var currentContextualChatURL: URL? {
-        webView.url.flatMap { $0.duckAIChatID != nil ? $0 : nil }
     }
 
     /// Loads a specific chat URL (for cold restore after app restart).
@@ -403,7 +398,6 @@ final class AIChatContextualWebViewController: UIViewController {
         lastContextualChatURL = contextualChatURL
 
         delegate?.contextualWebViewController(self, didUpdateContextualChatURL: contextualChatURL)
-        onContextualChatURLChange?(contextualChatURL)
     }
 }
 
@@ -434,7 +428,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let url = navigationAction.request.url else { return .allow }
 
-        if url.scheme == "blob" || url.isDuckAIURL || navigationAction.targetFrame?.isMainFrame == false {
+        if url.scheme == "blob" || url.isDuckAIURL || debugSettings.matchesCustomURL(url) || navigationAction.targetFrame?.isMainFrame == false {
             return .allow
         }
 

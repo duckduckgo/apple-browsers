@@ -129,7 +129,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         case .failure(let error):
             switch error {
             case .internalError(let innerError):
-                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(OAuthRequestError(from: .invalidAuthorizationRequest))))
+                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(OAuthRequestError(from: OAuthRequest.BodyError(errorCode: .invalidAuthorizationRequest, tokenStatus: nil)))))
             default:
                 XCTFail("Unexpected error \(error)")
             }
@@ -147,7 +147,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         case .failure(let error):
             switch error {
             case .internalError(let innerError):
-                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(OAuthRequestError(from: .invalidAuthorizationRequest))))
+                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(OAuthRequestError(from: OAuthRequest.BodyError(errorCode: .invalidAuthorizationRequest, tokenStatus: nil)))))
             default:
                 XCTFail("Unexpected error \(error)")
             }
@@ -166,7 +166,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         case .failure(let error):
             switch error {
             case .internalError(let innerError):
-                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(OAuthRequestError(from: .invalidAuthorizationRequest))))
+                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(OAuthRequestError(from: OAuthRequest.BodyError(errorCode: .invalidAuthorizationRequest, tokenStatus: nil)))))
             default:
                 XCTFail("Unexpected error \(error)")
             }

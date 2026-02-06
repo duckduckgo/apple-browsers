@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import VPN
 import NetworkProtectionIPC
@@ -31,7 +32,12 @@ final class TunnelControllerProvider {
             NetworkProtectionKnownFailureStore().lastKnownFailure = KnownFailure(error)
         }
 
-        tunnelController = NetworkProtectionIPCTunnelController(ipcClient: ipcClient)
+        let pinningManager = Application.appDelegate.pinningManager
+        let subscriptionManager = Application.appDelegate.subscriptionManager
+        let vpnUninstaller = VPNUninstaller(pinningManager: pinningManager, ipcClient: ipcClient)
+        let featureGatekeeper = DefaultVPNFeatureGatekeeper(vpnUninstaller: vpnUninstaller, subscriptionManager: subscriptionManager)
+
+        tunnelController = NetworkProtectionIPCTunnelController(featureGatekeeper: featureGatekeeper, ipcClient: ipcClient)
     }
 
 }

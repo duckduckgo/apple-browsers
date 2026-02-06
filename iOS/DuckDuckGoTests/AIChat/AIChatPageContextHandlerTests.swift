@@ -40,60 +40,31 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
     // MARK: - Initial State
 
-    func testInitialStateHasNoContext() {
+    func testInitialStatePublishesNil() {
         let handler = makeHandler()
 
-        XCTAssertNil(handler.latestContext)
-        XCTAssertNil(handler.latestFavicon)
-        XCTAssertFalse(handler.hasContext)
+        var receivedValue: AIChatPageContext??
+        handler.contextPublisher
+            .first()
+            .sink { context in
+                receivedValue = context
+            }
+            .store(in: &cancellables)
+
+        XCTAssertNotNil(receivedValue)
+        XCTAssertNil(receivedValue!)
     }
 
     // MARK: - triggerContextCollection
 
-    func testTriggerContextCollectionDoesNothingWhenUserScriptUnavailable() async {
+    func testTriggerContextCollectionDoesNothingWhenUserScriptUnavailable() {
         let userScriptProvider: UserScriptProvider = { nil }
         let handler = makeHandler(userScriptProvider: userScriptProvider)
 
-        await handler.triggerContextCollection()
+        let didTrigger = handler.triggerContextCollection()
 
-        XCTAssertFalse(handler.hasContext)
-    }
-
-    // MARK: - clear
-
-    func testClearRemovesStoredContext() {
-        let handler = makeHandler()
-
-        // Manually set up context state by calling clear (no change) then verify cleared state
-        handler.clear()
-
-        XCTAssertNil(handler.latestContext)
-        XCTAssertNil(handler.latestFavicon)
-        XCTAssertFalse(handler.hasContext)
-    }
-
-    func testClearPublishesNil() async {
-        let handler = makeHandler()
-
-        let expectation = XCTestExpectation(description: "Nil published")
-        handler.contextPublisher
-            .dropFirst() // Skip initial nil
-            .sink { context in
-                if context == nil {
-                    expectation.fulfill()
-                }
-            }
-            .store(in: &cancellables)
-
-        handler.clear()
-
-        await fulfillment(of: [expectation], timeout: 2)
-    }
-
-    func testContextPublisherInitiallyEmitsNil() {
-        let handler = makeHandler()
-
-        var receivedValue: AIChatPageContextData??
+        XCTAssertFalse(didTrigger)
+        var receivedValue: AIChatPageContext??
         handler.contextPublisher
             .first()
             .sink { context in
@@ -119,14 +90,4 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         )
     }
 
-    private func makePageContext(title: String, url: String) -> AIChatPageContextData {
-        AIChatPageContextData(
-            title: title,
-            favicon: [],
-            url: url,
-            content: "Content",
-            truncated: false,
-            fullContentLength: 7
-        )
-    }
 }

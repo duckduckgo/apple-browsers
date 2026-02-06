@@ -18,6 +18,28 @@
 
 import SwiftUI
 
+/// Identifies which edge of the bubble the arrow should attach to.
+/// Offsets are interpreted relative to the flat edge segment.
+public enum BubbleArrowEdge {
+    /// Arrow on the top edge (offset runs left → right).
+    case top
+    /// Arrow on the right edge (offset runs top → bottom).
+    case right
+    /// Arrow on the bottom edge (offset runs left → right).
+    case bottom
+    /// Arrow on the left edge (offset runs top → bottom).
+    case left
+
+    fileprivate var bubbleEdge: Bubble.Edge {
+        switch self {
+        case .top: return .top
+        case .right: return .right
+        case .bottom: return .bottom
+        case .left: return .left
+        }
+    }
+}
+
 // MARK: - Bubble Shape Definition
 
 /// A shape representing a rectangular bubble with a directional arrow and rounded corners.
@@ -25,14 +47,18 @@ import SwiftUI
 struct Bubble: InsettableShape {
     let arrowLength: CGFloat
     let arrowWidth: CGFloat
-    let arrowPositionPercent: CGFloat
+    let arrowPlacement: ArrowPlacement
     let cornerRadius: CGFloat
     let bend: CGFloat
     let finSideCurve: CGFloat
     let finTipRadius: CGFloat
     let finTipRoundness: CGFloat
 
-    // swiftlint:disable:next cyclomatic_complexity
+    enum ArrowPlacement {
+        case percent(CGFloat)
+        case edge(Edge, offset: CGFloat)
+    }
+
     func path(in rect: CGRect) -> Path {
 
         let radius = max(0, cornerRadius)
@@ -41,58 +67,30 @@ struct Bubble: InsettableShape {
         }
 
         let (minX, minY) = (rect.minX, rect.minY)
-        let (width, height) = (rect.width, rect.height)
         let (maxX, maxY) = (rect.maxX, rect.maxY)
 
-        // Calculate Arrow Position on FLAT Edges
-        let flatWidth = width - 2 * radius
-        let flatHeight = height - 2 * radius
-        // Ensure flat perimeter is positive to avoid division by zero or nonsensical calculations
-        let flatPerimeter = max(0.001, 2 * (flatWidth + flatHeight)) // Use max to prevent division by zero if no flat area
-
-        let adjustedPercent = arrowPositionPercent.truncatingRemainder(dividingBy: 100.0)
-        let effectivePercent = min(99.9, max(0.1, adjustedPercent)) / 100.0
-        let targetFlatDistance = flatPerimeter * effectivePercent
-        let flatEdgeSafeDistance = arrowWidth / 2 + 1.0
-
-        var arrowEdge: Edge = .top
-        var arrowCenterX: CGFloat = 0
-        var arrowCenterY: CGFloat = 0
-
-        // Determine Edge and Center Point ON THE FLAT SECTION
-        if targetFlatDistance <= flatWidth { // Top Flat Edge
-            arrowEdge = .top
-            var centerOnFlat = targetFlatDistance
-            if flatWidth > 0 { // Only clamp if there is a flat edge
-                 centerOnFlat = max(flatEdgeSafeDistance, min(flatWidth - flatEdgeSafeDistance, centerOnFlat))
-            }
-            arrowCenterX = minX + radius + centerOnFlat
-            arrowCenterY = minY
-        } else if targetFlatDistance <= flatWidth + flatHeight { // Right Flat Edge
-            arrowEdge = .right
-            var centerOnFlat = targetFlatDistance - flatWidth
-             if flatHeight > 0 {
-                 centerOnFlat = max(flatEdgeSafeDistance, min(flatHeight - flatEdgeSafeDistance, centerOnFlat))
-            }
-            arrowCenterX = maxX
-            arrowCenterY = minY + radius + centerOnFlat
-        } else if targetFlatDistance <= 2 * flatWidth + flatHeight { // Bottom Flat Edge
-            arrowEdge = .bottom
-            var centerOnFlat = targetFlatDistance - (flatWidth + flatHeight)
-            if flatWidth > 0 {
-                 centerOnFlat = max(flatEdgeSafeDistance, min(flatWidth - flatEdgeSafeDistance, centerOnFlat))
-            }
-            arrowCenterX = maxX - radius - centerOnFlat
-            arrowCenterY = maxY
-        } else { // Left Flat Edge
-            arrowEdge = .left
-            var centerOnFlat = targetFlatDistance - (flatWidth + flatHeight + flatWidth)
-            if flatHeight > 0 {
-                 centerOnFlat = max(flatEdgeSafeDistance, min(flatHeight - flatEdgeSafeDistance, centerOnFlat))
-            }
-            arrowCenterX = minX
-            arrowCenterY = maxY - radius - centerOnFlat
+        let arrowPositionPercent: CGFloat
+        switch arrowPlacement {
+        case let .percent(value):
+            arrowPositionPercent = value
+        case let .edge(edge, offset):
+            arrowPositionPercent = Bubble.arrowPositionPercent(
+                edge: edge,
+                offset: offset,
+                rect: rect,
+                radius: radius,
+                arrowWidth: arrowWidth
+            )
         }
+
+        let (arrowEdge, arrowCenter) = Bubble.arrowPlacement(
+            in: rect,
+            radius: radius,
+            arrowWidth: arrowWidth,
+            arrowPositionPercent: arrowPositionPercent
+        )
+        let arrowCenterX = arrowCenter.x
+        let arrowCenterY = arrowCenter.y
 
         // Calculate Arrow Base Points (p1, p2)
         let halfArrowWidth = arrowWidth / 2
@@ -162,6 +160,139 @@ struct Bubble: InsettableShape {
 
     // Make Edge internal (default) so BubbleView can access it
     enum Edge { case top, right, bottom, left }
+
+    private static func arrowPlacement(
+        in rect: CGRect,
+        radius: CGFloat,
+        arrowWidth: CGFloat,
+        arrowPositionPercent: CGFloat
+    ) -> (edge: Edge, center: CGPoint) {
+        let (minX, minY) = (rect.minX, rect.minY)
+        let (maxX, maxY) = (rect.maxX, rect.maxY)
+
+        let metrics = flatMetrics(rect: rect, radius: radius, arrowWidth: arrowWidth)
+        let adjustedPercent = arrowPositionPercent.truncatingRemainder(dividingBy: 100.0)
+        let effectivePercent = min(99.9, max(0.1, adjustedPercent)) / 100.0
+        let targetFlatDistance = metrics.flatPerimeter * effectivePercent
+
+        var arrowEdge: Edge = .top
+        var arrowCenterX: CGFloat = 0
+        var arrowCenterY: CGFloat = 0
+
+        // Determine Edge and Center Point ON THE FLAT SECTION
+        if targetFlatDistance <= metrics.flatWidth { // Top Flat Edge
+            arrowEdge = .top
+            var centerOnFlat = targetFlatDistance
+            if metrics.flatWidth > 0 { // Only clamp if there is a flat edge
+                centerOnFlat = clampToSafeDistance(
+                    centerOnFlat,
+                    length: metrics.flatWidth,
+                    safeDistance: metrics.safeDistance
+                )
+            }
+            arrowCenterX = minX + radius + centerOnFlat
+            arrowCenterY = minY
+        } else if targetFlatDistance <= metrics.flatWidth + metrics.flatHeight { // Right Flat Edge
+            arrowEdge = .right
+            var centerOnFlat = targetFlatDistance - metrics.flatWidth
+            if metrics.flatHeight > 0 {
+                centerOnFlat = clampToSafeDistance(
+                    centerOnFlat,
+                    length: metrics.flatHeight,
+                    safeDistance: metrics.safeDistance
+                )
+            }
+            arrowCenterX = maxX
+            arrowCenterY = minY + radius + centerOnFlat
+        } else if targetFlatDistance <= 2 * metrics.flatWidth + metrics.flatHeight { // Bottom Flat Edge
+            arrowEdge = .bottom
+            var centerOnFlat = targetFlatDistance - (metrics.flatWidth + metrics.flatHeight)
+            if metrics.flatWidth > 0 {
+                centerOnFlat = clampToSafeDistance(
+                    centerOnFlat,
+                    length: metrics.flatWidth,
+                    safeDistance: metrics.safeDistance
+                )
+            }
+            arrowCenterX = maxX - radius - centerOnFlat
+            arrowCenterY = maxY
+        } else { // Left Flat Edge
+            arrowEdge = .left
+            var centerOnFlat = targetFlatDistance - (metrics.flatWidth + metrics.flatHeight + metrics.flatWidth)
+            if metrics.flatHeight > 0 {
+                centerOnFlat = clampToSafeDistance(
+                    centerOnFlat,
+                    length: metrics.flatHeight,
+                    safeDistance: metrics.safeDistance
+                )
+            }
+            arrowCenterX = minX
+            arrowCenterY = maxY - radius - centerOnFlat
+        }
+
+        return (arrowEdge, CGPoint(x: arrowCenterX, y: arrowCenterY))
+    }
+
+    private static func arrowPositionPercent(
+        edge: Edge,
+        offset: CGFloat,
+        rect: CGRect,
+        radius: CGFloat,
+        arrowWidth: CGFloat
+    ) -> CGFloat {
+        // BubbleView positions the arrow center along the flat perimeter, clockwise:
+        // Top → Right → Bottom → Left. Offsets here are local:
+        // - top/bottom: left → right
+        // - left/right: top → bottom
+        let metrics = flatMetrics(rect: rect, radius: radius, arrowWidth: arrowWidth)
+        let o = max(0.0, min(1.0, offset))
+
+        func offsetDistance(_ length: CGFloat) -> CGFloat {
+            let clamped = clampToSafeDistance(
+                metrics.safeDistance + o * max(0.0, length - 2 * metrics.safeDistance),
+                length: length,
+                safeDistance: metrics.safeDistance
+            )
+            return clamped
+        }
+
+        let target: CGFloat
+        switch edge {
+        case .top:
+            target = offsetDistance(metrics.flatWidth)
+        case .right:
+            target = metrics.flatWidth + offsetDistance(metrics.flatHeight)
+        case .bottom:
+            target = metrics.flatWidth + metrics.flatHeight + (metrics.flatWidth - offsetDistance(metrics.flatWidth))
+        case .left:
+            target = metrics.flatWidth + metrics.flatHeight + metrics.flatWidth + (metrics.flatHeight - offsetDistance(metrics.flatHeight))
+        }
+
+        let percent = (target / metrics.flatPerimeter) * 100
+        return max(0.1, min(99.9, percent))
+    }
+
+    private static func flatMetrics(
+        rect: CGRect,
+        radius: CGFloat,
+        arrowWidth: CGFloat
+    ) -> (flatWidth: CGFloat, flatHeight: CGFloat, flatPerimeter: CGFloat, safeDistance: CGFloat) {
+        let flatWidth = rect.width - 2 * radius
+        let flatHeight = rect.height - 2 * radius
+        let flatPerimeter = max(0.001, 2 * (flatWidth + flatHeight))
+        let safeDistance = arrowWidth / 2 + 1.0
+        return (flatWidth, flatHeight, flatPerimeter, safeDistance)
+    }
+
+    private static func clampToSafeDistance(
+        _ value: CGFloat,
+        length: CGFloat,
+        safeDistance: CGFloat
+    ) -> CGFloat {
+        guard length > 0 else { return 0 }
+        let safe = min(length / 2, safeDistance)
+        return max(safe, min(length - safe, value))
+    }
 
     private static func outwardNormal(for edge: Edge) -> CGPoint {
         switch edge {
@@ -320,7 +451,7 @@ public struct BubbleView<Content: View>: View {
     // Bubble styling parameters
     let arrowLength: CGFloat
     let arrowWidth: CGFloat
-    let arrowPositionPercent: CGFloat // 0-100, position along FLAT edges
+    let arrowPlacement: Bubble.ArrowPlacement
     let cornerRadius: CGFloat
     let bend: CGFloat
     let finSideCurve: CGFloat
@@ -329,13 +460,13 @@ public struct BubbleView<Content: View>: View {
     let fillColor: Color
     let borderColor: Color
     let borderWidth: CGFloat
-    let paddingAmount: CGFloat // Padding around the content
+    let contentPadding: EdgeInsets // Padding around the content
 
     // Internal bubble shape instance
     private var bubbleShape: Bubble {
         Bubble(arrowLength: arrowLength,
                arrowWidth: arrowWidth,
-               arrowPositionPercent: arrowPositionPercent,
+               arrowPlacement: arrowPlacement,
                cornerRadius: cornerRadius,
                bend: bend,
                finSideCurve: finSideCurve,
@@ -346,7 +477,7 @@ public struct BubbleView<Content: View>: View {
     public var body: some View {
         content
             // Add padding around the content BEFORE applying background/overlay
-            .padding(paddingAmount)
+            .padding(contentPadding)
             // Apply the bubble shape as the background (fill)
             .background(
                 bubbleShape.fill(fillColor)
@@ -365,28 +496,33 @@ public struct BubbleView<Content: View>: View {
     // Helper to determine which edge the arrow is on based on parameters
     // Needed for final padding adjustment
     private var arrowEdge: Bubble.Edge {
-        let radius = max(0, cornerRadius)
-        // Estimate width/height (we don't have the final rect here,
-        // but we only need rough estimates for edge calculation)
-        // A small non-zero value is assumed if radius is large relative to arrowWidth/Height
-        let estWidth = max(0.1, 100 - 2 * radius) // Assume a nominal size
-        let estHeight = max(0.1, 50 - 2 * radius)
-        let flatWidth = estWidth - 2 * radius
-        let flatHeight = estHeight - 2 * radius
-        let flatPerimeter = max(0.001, 2 * (flatWidth + flatHeight))
+        switch arrowPlacement {
+        case let .edge(edge, _):
+            return edge
+        case let .percent(arrowPositionPercent):
+            let radius = max(0, cornerRadius)
+            // Estimate width/height (we don't have the final rect here,
+            // but we only need rough estimates for edge calculation)
+            // A small non-zero value is assumed if radius is large relative to arrowWidth/Height
+            let estWidth = max(0.1, 100 - 2 * radius) // Assume a nominal size
+            let estHeight = max(0.1, 50 - 2 * radius)
+            let flatWidth = estWidth - 2 * radius
+            let flatHeight = estHeight - 2 * radius
+            let flatPerimeter = max(0.001, 2 * (flatWidth + flatHeight))
 
-        let adjustedPercent = arrowPositionPercent.truncatingRemainder(dividingBy: 100.0)
-        let effectivePercent = min(99.9, max(0.1, adjustedPercent)) / 100.0
-        let targetFlatDistance = flatPerimeter * effectivePercent
+            let adjustedPercent = arrowPositionPercent.truncatingRemainder(dividingBy: 100.0)
+            let effectivePercent = min(99.9, max(0.1, adjustedPercent)) / 100.0
+            let targetFlatDistance = flatPerimeter * effectivePercent
 
-        if targetFlatDistance <= flatWidth {
-            return .top
-        } else if targetFlatDistance <= flatWidth + flatHeight {
-            return .right
-        } else if targetFlatDistance <= 2 * flatWidth + flatHeight {
-            return .bottom
-        } else {
-            return .left
+            if targetFlatDistance <= flatWidth {
+                return .top
+            } else if targetFlatDistance <= flatWidth + flatHeight {
+                return .right
+            } else if targetFlatDistance <= 2 * flatWidth + flatHeight {
+                return .bottom
+            } else {
+                return .left
+            }
         }
     }
 
@@ -408,7 +544,7 @@ public struct BubbleView<Content: View>: View {
      ///   - fillColor: Background color of the bubble.
      ///   - borderColor: Color of the bubble's border.
      ///   - borderWidth: Width of the bubble's border.
-     ///   - paddingAmount: Padding between the content and the bubble edge. Defaults to 10.
+     ///   - contentPadding: Padding between the content and the bubble edge. Defaults to 10 on all edges.
      ///   - content: A closure returning the View to display inside the bubble.
      public init(
          arrowLength: CGFloat = 15,
@@ -422,12 +558,12 @@ public struct BubbleView<Content: View>: View {
          fillColor: Color = .blue,
          borderColor: Color = .clear,
          borderWidth: CGFloat = 0,
-         paddingAmount: CGFloat = 10,
+         contentPadding: EdgeInsets = EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10),
          @ViewBuilder content: () -> Content
      ) {
          self.arrowLength = arrowLength
          self.arrowWidth = arrowWidth
-         self.arrowPositionPercent = arrowPositionPercent
+         self.arrowPlacement = .percent(arrowPositionPercent)
          self.cornerRadius = cornerRadius
          self.bend = bend
          self.finSideCurve = finSideCurve
@@ -436,7 +572,55 @@ public struct BubbleView<Content: View>: View {
          self.fillColor = fillColor
          self.borderColor = borderColor
          self.borderWidth = borderWidth
-         self.paddingAmount = paddingAmount
+         self.contentPadding = contentPadding
+         self.content = content()
+     }
+
+     /// Initializer with explicit parameters.
+     ///
+     /// - Parameters:
+     ///   - arrowLength: Length of the arrow pointer.
+     ///   - arrowWidth: Width of the arrow pointer's base.
+     ///   - arrowEdge: Edge where the arrow should appear.
+     ///   - arrowOffset: Position along the edge (0.0 = start, 0.5 = center, 1.0 = end).
+     ///   - cornerRadius: Radius for the bubble's corners.
+     ///   - bend: Amount of fin bend. `0` is straight; positive bends right when the arrow is on top (clockwise), negative bends left. Values beyond `1` push the tip further along the edge.
+     ///   - finSideCurve: Curvature for fin sides. `0` keeps sides straight; higher values curve the long side outward and short side inward.
+     ///   - finTipRadius: Radius for rounding the fin tip.
+     ///   - finTipRoundness: 0-1 multiplier for tip rounding to avoid distortion. Default: 0 (sharp).
+     ///   - fillColor: Background color of the bubble.
+     ///   - borderColor: Color of the bubble's border.
+     ///   - borderWidth: Width of the bubble's border.
+     ///   - contentPadding: Padding between the content and the bubble edge. Defaults to 10 on all edges.
+     ///   - content: A closure returning the View to display inside the bubble.
+     public init(
+         arrowLength: CGFloat = 15,
+         arrowWidth: CGFloat = 30,
+         arrowEdge: BubbleArrowEdge,
+         arrowOffset: CGFloat,
+         cornerRadius: CGFloat = 10,
+         bend: CGFloat = 0,
+         finSideCurve: CGFloat = 0,
+         finTipRadius: CGFloat = .greatestFiniteMagnitude,
+         finTipRoundness: CGFloat = 0,
+         fillColor: Color = .blue,
+         borderColor: Color = .clear,
+         borderWidth: CGFloat = 0,
+         contentPadding: EdgeInsets = EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10),
+         @ViewBuilder content: () -> Content
+     ) {
+         self.arrowLength = arrowLength
+         self.arrowWidth = arrowWidth
+         self.arrowPlacement = .edge(arrowEdge.bubbleEdge, offset: arrowOffset)
+         self.cornerRadius = cornerRadius
+         self.bend = bend
+         self.finSideCurve = finSideCurve
+         self.finTipRadius = finTipRadius
+         self.finTipRoundness = finTipRoundness
+         self.fillColor = fillColor
+         self.borderColor = borderColor
+         self.borderWidth = borderWidth
+         self.contentPadding = contentPadding
          self.content = content()
      }
 }
@@ -452,7 +636,7 @@ struct BubbleView_Previews: PreviewProvider {
                 fillColor: .green,
                 borderColor: .black,
                 borderWidth: 1,
-                paddingAmount: 15
+                contentPadding: EdgeInsets(top: 15, leading: 15, bottom: 15, trailing: 15)
             ) {
                 Text("Hello, auto-sizing bubble!")
                     .foregroundColor(.white)

@@ -35,7 +35,7 @@ struct AutoClearSettingsView: View {
                 timingSection
             }
         }
-        .applySettingsListModifiers(title: UserText.settingsAutomaticDataClearing,
+        .applySettingsListModifiers(title: UserText.settingsAutomaticallyDeleteData,
                                     displayMode: .inline,
                                     viewModel: settingsViewModel)
         .modifier(ScrollBounceBehaviorModifier())
@@ -51,7 +51,7 @@ struct AutoClearSettingsView: View {
     
     private var autoClearToggleSection: some View {
         Section {
-            SettingsCellView(label: UserText.settingsClearData,
+            SettingsCellView(label: UserText.settingsAutomaticallyDeleteData,
                              accessory: .toggle(isOn: viewModel.autoClearEnabledBinding))
         } footer: {
             Text(UserText.settingsAutoClearToggleFooter)
@@ -80,7 +80,7 @@ struct AutoClearSettingsView: View {
                                  accessory: .toggle(isOn: viewModel.clearDuckAIChatsBinding))
             }
         } header: {
-            Text(UserText.settingsAutoClearSectionHeader)
+            Text(UserText.settingsAutomaticDataClearingDeleteSectionTitle)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
         }
     }

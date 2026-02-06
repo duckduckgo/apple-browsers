@@ -83,15 +83,6 @@ final class NewTabPageMessagesModel: ObservableObject {
         self.homeMessageViewModels = homePageMessagesConfiguration.homeMessages.compactMap(self.homeMessageViewModel(for:))
     }
 
-    private static let placeholderMessage = RemoteMessageModel(
-        id: "",
-        surfaces: .newTabPage,
-        content: nil,
-        matchingRules: [],
-        exclusionRules: [],
-        isMetricsEnabled: false
-    )
-
     private func homeMessageViewModel(for message: HomeMessage) -> HomeMessageViewModel? {
         switch message {
         case .placeholder:

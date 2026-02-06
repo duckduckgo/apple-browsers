@@ -18,6 +18,13 @@
 
 import AppKit
 
+/// An image view that doesn't intercept mouse events, allowing its superview to handle them.
+private final class NonInteractiveImageView: NSImageView {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil  // Pass all hits to superview
+    }
+}
+
 /// A reusable toolbar button for the AI Chat omnibar with circular hover background effect.
 final class AIChatOmnibarToolButton: NSView {
 
@@ -26,37 +33,41 @@ final class AIChatOmnibarToolButton: NSView {
         static let iconSize: CGFloat = 16
     }
 
-    private let button = MouseOverButton()
-    private let hoverBackgroundView = NSView()
+    private let iconImageView: NonInteractiveImageView = {
+        let imageView = NonInteractiveImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyDown
+        return imageView
+    }()
 
-    var target: AnyObject? {
-        get { button.target }
-        set { button.target = newValue }
-    }
+    private let backgroundLayer = CALayer()
 
-    var action: Selector? {
-        get { button.action }
-        set { button.action = newValue }
-    }
+    weak var target: AnyObject?
+    var action: Selector?
 
     var image: NSImage? {
-        get { button.image }
-        set { button.image = newValue }
-    }
-
-    override var toolTip: String? {
-        get { button.toolTip }
-        set { button.toolTip = newValue }
+        get { iconImageView.image }
+        set { iconImageView.image = newValue }
     }
 
     var tintColor: NSColor? {
-        get { button.normalTintColor }
-        set { button.normalTintColor = newValue }
+        didSet {
+            iconImageView.contentTintColor = tintColor
+        }
     }
 
-    var hoverBackgroundColor: NSColor = NSColor(designSystemColor: .surfacePrimary) {
+    var hoverBackgroundColor: NSColor = NSColor(designSystemColor: .containerFillSecondary)
+    var pressedBackgroundColor: NSColor = NSColor(designSystemColor: .containerFillTertiary)
+
+    private var isHovered = false {
         didSet {
-            updateHoverBackground()
+            updateAppearance()
+        }
+    }
+
+    private var isMouseDown = false {
+        didSet {
+            updateAppearance()
         }
     }
 
@@ -75,70 +86,116 @@ final class AIChatOmnibarToolButton: NSView {
     }
 
     private func setupView() {
-        // Setup hover background view (circular)
-        hoverBackgroundView.translatesAutoresizingMaskIntoConstraints = false
-        hoverBackgroundView.wantsLayer = true
-        hoverBackgroundView.layer?.cornerRadius = Constants.buttonSize / 2
-        hoverBackgroundView.alphaValue = 0
-        addSubview(hoverBackgroundView)
+        wantsLayer = true
+        layer?.masksToBounds = true
 
-        // Setup button
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.title = ""
-        button.bezelStyle = .shadowlessSquare
-        button.isBordered = false
-        button.wantsLayer = true
-        button.imagePosition = .imageOnly
-        addSubview(button)
+        // Setup background layer (circular)
+        backgroundLayer.cornerRadius = Constants.buttonSize / 2
+        backgroundLayer.opacity = 0
+        layer?.insertSublayer(backgroundLayer, at: 0)
+
+        // Setup icon image view
+        addSubview(iconImageView)
 
         NSLayoutConstraint.activate([
-            hoverBackgroundView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            hoverBackgroundView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            hoverBackgroundView.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            hoverBackgroundView.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
-
-            button.centerXAnchor.constraint(equalTo: centerXAnchor),
-            button.centerYAnchor.constraint(equalTo: centerYAnchor),
-            button.widthAnchor.constraint(equalToConstant: Constants.iconSize),
-            button.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+            iconImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
         ])
 
-        updateHoverBackground()
+        updateAppearance()
         setupHoverTracking()
     }
 
-    private func updateHoverBackground() {
-        hoverBackgroundView.layer?.backgroundColor = hoverBackgroundColor.cgColor
+    override func layout() {
+        super.layout()
+        // Center the background layer
+        let layerSize = CGSize(width: Constants.buttonSize, height: Constants.buttonSize)
+        backgroundLayer.frame = CGRect(
+            x: (bounds.width - layerSize.width) / 2,
+            y: (bounds.height - layerSize.height) / 2,
+            width: layerSize.width,
+            height: layerSize.height
+        )
     }
 
+    private func updateAppearance() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+
+        if isMouseDown {
+            backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
+            backgroundLayer.opacity = 1
+        } else if isHovered {
+            backgroundLayer.backgroundColor = hoverBackgroundColor.cgColor
+            backgroundLayer.opacity = 1
+        } else {
+            backgroundLayer.opacity = 0
+        }
+
+        CATransaction.commit()
+    }
+
+    private var trackingArea: NSTrackingArea?
+
     private func setupHoverTracking() {
-        let trackingArea = NSTrackingArea(
-            rect: .zero,
-            options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+        updateTrackingAreas()
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+
+        if let existingArea = trackingArea {
+            removeTrackingArea(existingArea)
+        }
+
+        let newTrackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeInKeyWindow],
             owner: self,
             userInfo: nil
         )
-        addTrackingArea(trackingArea)
+        addTrackingArea(newTrackingArea)
+        trackingArea = newTrackingArea
     }
 
     override func mouseEntered(with event: NSEvent) {
-        super.mouseEntered(with: event)
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.15
-            hoverBackgroundView.animator().alphaValue = 1
-        }
+        isHovered = true
     }
 
     override func mouseExited(with event: NSEvent) {
-        super.mouseExited(with: event)
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.15
-            hoverBackgroundView.animator().alphaValue = 0
+        isHovered = false
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        isMouseDown = true
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        let locationInView = convert(event.locationInWindow, from: nil)
+        isMouseDown = bounds.contains(locationInView)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        let locationInView = convert(event.locationInWindow, from: nil)
+        if bounds.contains(locationInView) && isMouseDown {
+            if let action, let target {
+                NSApp.sendAction(action, to: target, from: self)
+            }
         }
+        isMouseDown = false
     }
 
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
-        updateHoverBackground()
+        updateAppearance()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // hitTest receives point in superview's coordinate system
+        // Return self for the entire button area to capture all mouse events
+        guard !isHidden, frame.contains(point) else { return nil }
+        return self
     }
 }

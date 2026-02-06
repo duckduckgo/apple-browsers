@@ -23,6 +23,25 @@ import DesignResourcesKitIcons
 import AIChat
 import PixelKit
 
+/// A container view that properly handles hit testing when used with MouseBlockingBackgroundView.
+/// Since this view is at origin (0,0) in its superview, point coordinates are equivalent in both systems.
+private final class HitTestableContainerView: NSView {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard !isHidden, bounds.contains(point) else { return nil }
+
+        // Iterate subviews in reverse order (front to back)
+        for subview in subviews.reversed() where !subview.isHidden {
+            if subview.frame.contains(point) {
+                if let hitView = subview.hitTest(point) {
+                    return hitView
+                }
+            }
+        }
+
+        return self
+    }
+}
+
 final class AIChatOmnibarContainerViewController: NSViewController {
 
     private enum Constants {
@@ -42,7 +61,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let backgroundView = MouseBlockingBackgroundView()
     private let shadowView = ShadowView()
     private let innerBorderView = ColorView(frame: .zero)
-    private let containerView = NSView()
+    private let containerView = HitTestableContainerView()
     private let submitButton = MouseOverButton()
     private let customizeButton = AIChatOmnibarToolButton()
     private let searchToggleButton = AIChatOmnibarToolButton()
@@ -68,6 +87,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// Callback when the suggestions height changes, used for layout updates
     var onSuggestionsHeightChanged: ((CGFloat) -> Void)?
+
+    /// Callback when the passthrough height needs to be recalculated (e.g., when tools visibility changes)
+    var onPassthroughHeightNeedsUpdate: (() -> Void)?
+
+    /// Calculates the total height that should be passthrough for the text container view.
+    /// This includes the suggestions area and the tool buttons area (when enabled).
+    var totalPassthroughHeight: CGFloat {
+        var height = suggestionsHeight
+        if suggestionsHeight > 0 {
+            // Add bottom padding when there are suggestions
+            height += Constants.suggestionsBottomPadding
+        }
+        if omnibarController.isOmnibarToolsEnabled {
+            // Add tool buttons area: button size + spacing above suggestions
+            height += Constants.toolButtonSize + Constants.toolButtonBottomInset
+        }
+        return height
+    }
 
     required init?(coder: NSCoder) {
         fatalError("AIChatOmnibarContainerViewController: Bad initializer")
@@ -139,6 +176,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         customizeButton.isHidden = !isEnabled
         searchToggleButton.isHidden = !isEnabled
         imageUploadButton.isHidden = !isEnabled
+        // Notify that passthrough height needs recalculation since tools area changed
+        onPassthroughHeightNeedsUpdate?()
     }
 
     private func applyTopClipMask() {

@@ -3920,7 +3920,7 @@ extension MainViewController: FireExecutorDelegate {
     private func firePixels(for request: FireRequest) {
         let tabType = tabManager.viewModelForCurrentTab()?.tab.isAITab == true ? "ai" : "web"
         let params: [String: String] = [
-            PixelParameters.source: request.source.rawValue,
+            PixelParameters.burnSource: request.source.rawValue,
             PixelParameters.tabType: tabType
         ]
         

@@ -27,18 +27,8 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            {
-                "key": "source",
-                "type": "string",
-                "description": "Source of the burn action",
-                "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "shortcut", "autoClear"]
-            },
-            {
-                "key": "tabType",
-                "type": "string",
-                "description": "Type of tab when burn was initiated",
-                "enum": ["web", "ai", "unknown"]
-            }
+            "burnSource",
+            "tabType"
         ]
     },
     "mf_dc": {
@@ -81,18 +71,8 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            {
-                "key": "source",
-                "type": "string",
-                "description": "Source of the burn action",
-                "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "shortcut", "autoClear"]
-            },
-            {
-                "key": "tabType",
-                "type": "string",
-                "description": "Type of tab when burn was initiated",
-                "enum": ["web", "ai", "unknown"]
-            }
+            "burnSource",
+            "tabType"
         ]
     },
     "m_automatic_data_clearing_options_updated": {
@@ -129,18 +109,8 @@
         "suffixes": ["daily_standard", "platform", "form_factor"],
         "parameters": [
             "appVersion",
-            {
-                "key": "source",
-                "type": "string",
-                "description": "Source of the burn action",
-                "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "shortcut", "autoClear"]
-            },
-            {
-                "key": "tabType",
-                "type": "string",
-                "description": "Type of tab burned",
-                "enum": ["web", "ai"]
-            }
+            "burnSource",
+            "tabType"
         ]
     },
     "m_single-tab-data_cleared": {
@@ -150,16 +120,11 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
+            "tabType",
             {
                 "key": "dur",
                 "type": "string",
                 "description": "Duration in seconds (as a floating-point string)"
-            },
-            {
-                "key": "tabType",
-                "type": "string",
-                "description": "Type of tab burned",
-                "enum": ["web", "ai"]
             },
             {
                 "key": "domainsCount",

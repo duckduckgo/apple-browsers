@@ -311,10 +311,12 @@ private extension NewTabPageNextStepsSingleCardProvider {
     }
 
     func observeKeyWindowChanges() {
+        // We schedule this async (not receiving it directly on the main queue) to avoid a retain cycle
         NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.refreshCardList()
+            .sink { _ in
+                DispatchQueue.main.async { [weak self] in
+                    self?.refreshCardList()
+                }
             }
             .store(in: &cancellables)
     }

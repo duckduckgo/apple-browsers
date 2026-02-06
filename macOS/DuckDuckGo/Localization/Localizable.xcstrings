@@ -24211,6 +24211,18 @@
         }
       }
     },
+    "duckai.automatically-send-page-content.toggle-setting" : {
+      "comment" : "Settings option to automatically send page content to the sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Automatically send page content to the sidebar"
+          }
+        }
+      }
+    },
     "duckai.description" : {
       "comment" : "Description of Duck.ai feature in settings",
       "extractionState" : "extracted_with_value",

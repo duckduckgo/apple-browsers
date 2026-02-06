@@ -993,11 +993,20 @@ extension SettingsViewModel {
     }
 
     func shouldShowNewBadge(for feature: NewBadgeFeature) -> Bool {
-        newBadgeVisibilityManager.shouldShowBadge(for: feature)
+        guard isFeatureAvailableForNewBadge(feature) else { return false }
+        return newBadgeVisibilityManager.shouldShowBadge(for: feature)
     }
 
     func storeNewBadgeFirstImpressionDateIfNeeded(for feature: NewBadgeFeature) {
+        guard isFeatureAvailableForNewBadge(feature) else { return }
         newBadgeVisibilityManager.storeFirstImpressionDateIfNeeded(for: feature)
+    }
+
+    private func isFeatureAvailableForNewBadge(_ feature: NewBadgeFeature) -> Bool {
+        switch feature {
+        case .personalInformationRemoval:
+            return isPIREnabled && dataBrokerProtectionViewControllerProvider != nil
+        }
     }
 
     func openOtherPlatforms() {

@@ -33,7 +33,7 @@ struct NetworkProtectionStatusView: View {
     @ObservedObject
     public var statusModel: NetworkProtectionStatusViewModel
 
-    @StateObject
+    @ObservedObject
     public var feedbackFormModel: UnifiedFeedbackFormViewModel
 
     var tipsModel: VPNTipsModel {

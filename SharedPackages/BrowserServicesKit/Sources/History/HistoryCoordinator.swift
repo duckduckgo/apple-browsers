@@ -345,13 +345,11 @@ final public class HistoryCoordinator: HistoryCoordinating {
                               completionHandler: (@MainActor (Error?) -> Void)? = nil) {
         var entriesToRemove = Set<HistoryEntry>()
         var entriesToSave = Set<HistoryEntry>()
-        var localVisitsToRemove = Set<Visit>()
 
         // Remove from the local memory
         visits.forEach { visit in
             if let historyEntry = visit.historyEntry {
                 historyEntry.visits.remove(visit)
-                localVisitsToRemove.insert(visit)
 
                 if historyEntry.visits.count > 0 {
                     if let newLastVisit = historyEntry.visits.map({ $0.date }).max() {

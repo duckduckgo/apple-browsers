@@ -185,8 +185,8 @@ extension AutoClearHandler {
         PixelKit.fire(
             DataClearingPixels.fireCompletion(
                 duration: Int((CACurrentMediaTime() - startTime) * 1000),
-                option: "allData",
-                domains: isAutoClearAIChatHistoryEnabled ? "ChatHistory": "",
+                option: "all_data",
+                domains: isAutoClearAIChatHistoryEnabled ? "CookiesAndSiteData,ChatHistory": "CookiesAndSiteData",
                 path: "burnAll",
                 autoClear: "true"
             ),

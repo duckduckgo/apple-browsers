@@ -70,6 +70,14 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         cancellables.removeAll()
     }
 
+    private func waitForMainQueueToFlush(for timeout: TimeInterval) {
+        let e = expectation(description: "Main Queue flushed")
+        DispatchQueue.main.async {
+            e.fulfill()
+        }
+        wait(for: [e], timeout: timeout)
+    }
+
     // MARK: - Tests
 
     @MainActor

@@ -70,12 +70,4 @@ extension XCTestCase {
         testRun.perform(recordIssueSelector, with: issue)
     }
 
-    public func waitForMainQueueToFlush(for timeout: TimeInterval = 1.0) {
-        let e = expectation(description: "Finish tasks in main queue")
-        DispatchQueue.main.async {
-            e.fulfill()
-        }
-        wait(for: [e], timeout: timeout)
-    }
-
 }

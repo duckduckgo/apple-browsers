@@ -43,7 +43,6 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
 
     @MainActor
     override func tearDown() {
-        waitForMainQueueToFlush()
         autoreleasepool {
             clearSharedPinnedTabs()
             provider = nil

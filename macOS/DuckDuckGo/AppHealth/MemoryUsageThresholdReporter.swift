@@ -24,9 +24,13 @@ import PrivacyConfig
 
 /// Reports threshold memory usage pixels when memory enters specific buckets.
 ///
-/// This reporter periodically polls memory usage via `getCurrentMemoryUsage()` and fires daily
-/// pixels when memory usage falls into different threshold buckets. It waits 5 minutes after
-/// app launch before starting to monitor, avoiding initialization memory spikes.
+/// This reporter periodically polls memory usage via `getCurrentMemoryUsage()` on a background
+/// thread and fires daily pixels when memory usage falls into different threshold buckets.
+/// It waits 5 minutes after app launch before starting to monitor, avoiding initialization
+/// memory spikes.
+///
+/// Client-side deduplication tracks which pixel names have been fired today. The set resets
+/// on day change. PixelKit's `.daily` frequency remains as a server-side safety net.
 ///
 /// This reporter is fully independent from the `MemoryUsageMonitor` feature flag
 /// (`.memoryUsageMonitor`), which only controls the debug UI display.
@@ -34,7 +38,7 @@ import PrivacyConfig
 final class MemoryUsageThresholdReporter {
 
     /// The interval between memory threshold checks, in seconds.
-    static let defaultCheckInterval: TimeInterval = 5
+    static let defaultCheckInterval: TimeInterval = 30
 
     private let memoryUsageMonitor: MemoryUsageMonitoring
     private let featureFlagger: FeatureFlagger
@@ -43,8 +47,18 @@ final class MemoryUsageThresholdReporter {
     private let checkInterval: TimeInterval
     private var featureFlagCancellable: AnyCancellable?
     private var monitoringTask: Task<Void, Never>?
-    private var hasDelayElapsed = false
     private var delayWorkItem: DispatchWorkItem?
+
+    // MARK: - Thread-safe state
+
+    /// Lock protecting mutable state accessed from both the main thread and the background task.
+    private let lock = NSLock()
+    private var hasDelayElapsed = false
+    /// Tracks which pixel names have already been fired today to avoid redundant fire calls.
+    /// Persists across feature flag toggles; only resets on day change.
+    private var firedPixelNames: Set<String> = []
+    /// The date of the last threshold check, used to detect day changes and reset `firedPixelNames`.
+    private var lastCheckDate = Date()
 
     /// Creates a new memory usage threshold reporter.
     ///
@@ -52,7 +66,7 @@ final class MemoryUsageThresholdReporter {
     ///   - memoryUsageMonitor: The monitor that provides memory usage readings
     ///   - featureFlagger: Feature flag provider to check if reporting is enabled
     ///   - pixelFiring: The pixel firing service for sending analytics
-    ///   - checkInterval: The interval between memory checks. Defaults to 5 seconds.
+    ///   - checkInterval: The interval between memory checks. Defaults to 30 seconds.
     ///   - logger: Optional logger for debugging
     init(
         memoryUsageMonitor: MemoryUsageMonitoring,
@@ -97,7 +111,8 @@ final class MemoryUsageThresholdReporter {
     /// The delay helps avoid capturing memory spikes during app initialization.
     /// Only starts if the feature flag is enabled and monitoring hasn't already started.
     private func startMonitoring() {
-        guard !hasDelayElapsed, featureFlagger.isFeatureOn(.memoryUsageReporting) else {
+        let alreadyStarted = lock.withLock { hasDelayElapsed }
+        guard !alreadyStarted, featureFlagger.isFeatureOn(.memoryUsageReporting) else {
             return
         }
 
@@ -106,7 +121,7 @@ final class MemoryUsageThresholdReporter {
         // Create work item for cancellation support
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            self.hasDelayElapsed = true
+            self.lock.withLock { self.hasDelayElapsed = true }
             self.logger?.debug("Memory usage threshold reporter delay elapsed, starting monitoring")
             self.startThresholdChecking()
         }
@@ -115,7 +130,7 @@ final class MemoryUsageThresholdReporter {
         DispatchQueue.main.asyncAfter(deadline: .now() + 300, execute: workItem)
     }
 
-    /// Starts a repeating task to periodically check memory thresholds.
+    /// Starts a repeating task to periodically check memory thresholds on a background thread.
     ///
     /// Polls memory usage directly via `getCurrentMemoryUsage()` at regular intervals,
     /// independent of whether the `MemoryUsageMonitor` is actively publishing.
@@ -123,7 +138,7 @@ final class MemoryUsageThresholdReporter {
         // Fire an initial check immediately
         checkThresholdAndFire()
 
-        // Set up a repeating task for subsequent checks
+        // Set up a repeating background task for subsequent checks
         let interval = checkInterval
         monitoringTask = Task.detached(priority: .utility) { [weak self] in
             while !Task.isCancelled {
@@ -134,29 +149,44 @@ final class MemoryUsageThresholdReporter {
     }
 
     /// Checks which threshold bucket the current memory usage falls into and fires the pixel.
+    ///
+    /// Thread-safe: can be called from both the main thread and the background monitoring task.
+    /// Skips firing if the pixel has already been fired today. Resets the fired set on day change.
     private func checkThresholdAndFire() {
-        guard hasDelayElapsed, featureFlagger.isFeatureOn(.memoryUsageReporting) else { return }
+        let shouldProceed = lock.withLock { hasDelayElapsed }
+        guard shouldProceed, featureFlagger.isFeatureOn(.memoryUsageReporting) else { return }
 
         let report = memoryUsageMonitor.getCurrentMemoryUsage()
-
-        // Use physical footprint (matches Activity Monitor)
         let pixel = MemoryUsagePixel.pixel(forMB: report.physFootprintMB)
 
-        logger?.debug("Memory threshold check: \(report.physFootprintMB) MB -> \(pixel.name)")
+        let shouldFire: Bool = lock.withLock {
+            let now = Date()
+            if !Calendar.current.isDate(now, inSameDayAs: lastCheckDate) {
+                firedPixelNames.removeAll()
+                lastCheckDate = now
+            }
 
-        // Fire with .daily frequency (PixelKit handles once-per-day logic per pixel name)
+            guard !firedPixelNames.contains(pixel.name) else { return false }
+            firedPixelNames.insert(pixel.name)
+            return true
+        }
+
+        guard shouldFire else { return }
+
+        logger?.debug("Memory threshold firing: \(report.physFootprintMB, privacy: .public) MB -> \(pixel.name, privacy: .public)")
         pixelFiring?.fire(pixel, frequency: .daily)
     }
 
     /// Stops monitoring memory usage.
     ///
-    /// Cancels the monitoring task, clears the delay flag, and cancels any pending delay work.
+    /// Cancels the monitoring task and delay work. The `firedPixelNames` set is intentionally
+    /// preserved across stop/start cycles to avoid re-firing pixels within the same day.
     private func stopMonitoring() {
         delayWorkItem?.cancel()
         delayWorkItem = nil
         monitoringTask?.cancel()
         monitoringTask = nil
-        hasDelayElapsed = false
+        lock.withLock { hasDelayElapsed = false }
         logger?.debug("Memory usage threshold reporter stopped")
     }
 }
@@ -164,12 +194,18 @@ final class MemoryUsageThresholdReporter {
 extension MemoryUsageThresholdReporter {
     /// For testing and debug menu: immediately start monitoring without delay
     func startMonitoringImmediately() {
-        hasDelayElapsed = true
+        lock.withLock { hasDelayElapsed = true }
         startThresholdChecking()
     }
 
-    /// For debug menu: trigger an immediate threshold check
+    /// For debug menu and testing: trigger an immediate threshold check.
     func checkThresholdNow() {
         checkThresholdAndFire()
+    }
+
+    /// Clears the client-side deduplication set, allowing all pixels to fire again.
+    /// Used by the debug menu before triggering a simulated check.
+    func resetFiredPixels() {
+        lock.withLock { firedPixelNames.removeAll() }
     }
 }

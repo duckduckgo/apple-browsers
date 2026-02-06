@@ -651,7 +651,8 @@ extension AppDelegate {
 
             // Send through monitor publisher (updates debug UI if enabled)
             memoryUsageMonitor.simulateMemoryReport(physFootprintMB: memoryMB)
-            // Trigger threshold check (reporter polls directly, not via publisher)
+            // Clear deduplication set and trigger threshold check
+            memoryUsageThresholdReporter.resetFiredPixels()
             memoryUsageThresholdReporter.checkThresholdNow()
             Logger.memory.info("Simulated memory report: \(memoryMB) MB")
         }

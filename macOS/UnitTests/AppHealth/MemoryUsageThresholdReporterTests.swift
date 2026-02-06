@@ -257,6 +257,80 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         mockPixelFiring.verifyExpectations()
     }
 
+    // MARK: - Deduplication Tests
+
+    func testWhenSamePixelFiredTwice_ThenOnlyFiresOnce() {
+        // Given
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 1024
+        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.range1024_2047, frequency: .daily)]
+        mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
+        sut = MemoryUsageThresholdReporter(
+            memoryUsageMonitor: mockMemoryUsageMonitor,
+            featureFlagger: mockFeatureFlagger,
+            pixelFiring: mockPixelFiring
+        )
+
+        // When - start and then trigger additional checks in the same bucket
+        sut.startMonitoringImmediately()
+        sut.checkThresholdNow()
+        sut.checkThresholdNow()
+        sut.checkThresholdNow()
+
+        // Then - pixel fired exactly once
+        mockPixelFiring.verifyExpectations()
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1)
+    }
+
+    func testWhenMemoryChangesBucket_ThenFiresNewPixel() {
+        // Given
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 400
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: MemoryUsagePixel.less512, frequency: .daily),
+            .init(pixel: MemoryUsagePixel.range1024_2047, frequency: .daily)
+        ]
+        mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
+        sut = MemoryUsageThresholdReporter(
+            memoryUsageMonitor: mockMemoryUsageMonitor,
+            featureFlagger: mockFeatureFlagger,
+            pixelFiring: mockPixelFiring
+        )
+
+        // When - start in <512 bucket, then move to 1-2GB bucket
+        sut.startMonitoringImmediately()
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 1500
+        sut.checkThresholdNow()
+
+        // Then - both pixels fired
+        mockPixelFiring.verifyExpectations()
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 2)
+    }
+
+    func testWhenMemoryReturnsToPreviousBucket_ThenDoesNotFireAgain() {
+        // Given
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 400
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: MemoryUsagePixel.less512, frequency: .daily),
+            .init(pixel: MemoryUsagePixel.range1024_2047, frequency: .daily)
+        ]
+        mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
+        sut = MemoryUsageThresholdReporter(
+            memoryUsageMonitor: mockMemoryUsageMonitor,
+            featureFlagger: mockFeatureFlagger,
+            pixelFiring: mockPixelFiring
+        )
+
+        // When - go through <512 -> 1-2GB -> back to <512
+        sut.startMonitoringImmediately()
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 1500
+        sut.checkThresholdNow()
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 300
+        sut.checkThresholdNow()
+
+        // Then - only 2 pixels fired (less512 not fired again)
+        mockPixelFiring.verifyExpectations()
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 2)
+    }
+
     // MARK: - Boundary Tests
 
     func testBucketBoundaries_ExactValues() {

@@ -106,6 +106,7 @@ final class AIChatOmnibarToolButton: NSView {
     private func setupView() {
         wantsLayer = true
         layer?.masksToBounds = true
+        setAccessibilityRole(.button)
 
         // Setup background layer (circular)
         backgroundLayer.cornerRadius = Constants.buttonSize / 2
@@ -182,7 +183,7 @@ final class AIChatOmnibarToolButton: NSView {
 
         let newTrackingArea = NSTrackingArea(
             rect: bounds,
-            options: [.mouseEnteredAndExited, .activeInKeyWindow],
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow],
             owner: self,
             userInfo: nil
         )
@@ -192,6 +193,11 @@ final class AIChatOmnibarToolButton: NSView {
 
     override func mouseEntered(with event: NSEvent) {
         isHovered = true
+        NSCursor.arrow.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        NSCursor.arrow.set()
     }
 
     override func mouseExited(with event: NSEvent) {
@@ -230,5 +236,9 @@ final class AIChatOmnibarToolButton: NSView {
         // Return self for the entire button area to capture all mouse events
         guard !isHidden, frame.contains(point) else { return nil }
         return self
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .arrow)
     }
 }

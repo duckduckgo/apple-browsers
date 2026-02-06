@@ -2300,6 +2300,30 @@
         }
       }
     },
+    "aichat.customize-button.tooltip" : {
+      "comment" : "Tooltip for the customize button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize responses"
+          }
+        }
+      }
+    },
+    "aichat.image-upload-button.tooltip" : {
+      "comment" : "Tooltip for the image upload button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Attach image"
+          }
+        }
+      }
+    },
     "aichat.omnibar.placeholder" : {
       "comment" : "Placeholder text shown in the Duck.ai chat input field",
       "extractionState" : "extracted_with_value",
@@ -2416,6 +2440,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Конфиденциальный поиск"
+          }
+        }
+      }
+    },
+    "aichat.search-toggle-button.tooltip" : {
+      "comment" : "Tooltip for the search toggle button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search the web"
           }
         }
       }

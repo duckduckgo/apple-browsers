@@ -230,6 +230,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         customizeButton.target = self
         customizeButton.action = #selector(customizeButtonClicked)
         customizeButton.image = DesignSystemImages.Glyphs.Size16.options
+        customizeButton.toolTip = UserText.aiChatCustomizeButtonTooltip
+        customizeButton.setAccessibilityLabel(UserText.aiChatCustomizeButtonTooltip)
         containerView.addSubview(customizeButton)
 
         searchToggleButton.translatesAutoresizingMaskIntoConstraints = false
@@ -237,12 +239,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         searchToggleButton.action = #selector(searchToggleButtonClicked)
         searchToggleButton.image = DesignSystemImages.Glyphs.Size16.globe
         searchToggleButton.togglesOnClick = true
+        searchToggleButton.toolTip = UserText.aiChatSearchToggleButtonTooltip
+        searchToggleButton.setAccessibilityLabel(UserText.aiChatSearchToggleButtonTooltip)
         containerView.addSubview(searchToggleButton)
 
         imageUploadButton.translatesAutoresizingMaskIntoConstraints = false
         imageUploadButton.target = self
         imageUploadButton.action = #selector(imageUploadButtonClicked)
         imageUploadButton.image = DesignSystemImages.Glyphs.Size16.image
+        imageUploadButton.toolTip = UserText.aiChatImageUploadButtonTooltip
+        imageUploadButton.setAccessibilityLabel(UserText.aiChatImageUploadButtonTooltip)
         containerView.addSubview(imageUploadButton)
 
         NSLayoutConstraint.activate([

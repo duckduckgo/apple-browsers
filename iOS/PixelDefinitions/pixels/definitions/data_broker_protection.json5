@@ -1064,7 +1064,7 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "m_dbp_notification_scheduled_1_week_check_in_ios_phone": {
+    "m_ios_dbp_notification_scheduled_1_week_check_in": {
         "description": "Fires when the one-week check-in notification is scheduled.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],

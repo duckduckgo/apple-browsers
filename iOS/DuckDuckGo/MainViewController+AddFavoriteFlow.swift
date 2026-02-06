@@ -55,7 +55,7 @@ extension MainViewController {
     func showMenuHighlighterIfNeeded() {
         guard menuHighlightingTag != nil,
               let window = view.window,
-              (presentedViewController == nil || presentedViewController?.isBeingDismissed == true)
+              presentedViewController?.isBeingDismissed ?? true
         else { return }
 
         ViewHighlighter.hideAll()

@@ -17,6 +17,7 @@
 //
 
 import Combine
+import CombineSchedulers
 import DDGSync
 import FeatureFlags
 import Foundation
@@ -24,6 +25,10 @@ import NewTabPage
 import PrivacyConfig
 
 final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProviding {
+    private let featureFlagger: FeatureFlagger
+    private let singleCardProvider: NewTabPageNextStepsSingleCardProvider
+    private let legacyCardsProvider: NewTabPageNextStepsCardsProvider
+    private let scheduler: AnySchedulerOf<DispatchQueue>
     private var cancellables: Set<AnyCancellable> = []
     @Published private(set) var activeProvider: NewTabPageNextStepsCardsProviding
 
@@ -37,45 +42,49 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
          legacySubscriptionCardPersistor: HomePageSubscriptionCardPersisting,
          persistor: NewTabPageNextStepsCardsPersisting,
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
-         syncService: DDGSyncing?) {
+         syncService: DDGSyncing?,
+         scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
+        let singleCardProvider = NewTabPageNextStepsSingleCardProvider(
+            cardActionHandler: cardActionsHandler,
+            pixelHandler: pixelHandler,
+            persistor: persistor,
+            legacyPersistor: legacyPersistor,
+            legacySubscriptionCardPersistor: legacySubscriptionCardPersistor,
+            appearancePreferences: appearancePreferences,
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
+            dockCustomizer: DockCustomizer(),
+            dataImportProvider: dataImportProvider,
+            duckPlayerPreferences: duckPlayerPreferences,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            syncService: syncService
+        )
+        let legacyCardsProvider = NewTabPageNextStepsCardsProvider(
+            continueSetUpModel: HomePage.Models.ContinueSetUpModel(
+                dataImportProvider: dataImportProvider,
+                subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+                persistor: legacyPersistor,
+                pixelHandler: pixelHandler,
+                cardActionsHandler: cardActionsHandler
+            ),
+            appearancePreferences: appearancePreferences,
+            pixelHandler: pixelHandler
+        )
+        self.featureFlagger = featureFlagger
+        self.singleCardProvider = singleCardProvider
+        self.legacyCardsProvider = legacyCardsProvider
+        self.scheduler = scheduler
 
-        func getActiveProvider() -> NewTabPageNextStepsCardsProviding {
-            if featureFlagger.isFeatureOn(.nextStepsListWidget) {
-                return NewTabPageNextStepsSingleCardProvider(
-                    cardActionHandler: cardActionsHandler,
-                    pixelHandler: pixelHandler,
-                    persistor: persistor,
-                    legacyPersistor: legacyPersistor,
-                    legacySubscriptionCardPersistor: legacySubscriptionCardPersistor,
-                    appearancePreferences: appearancePreferences,
-                    defaultBrowserProvider: SystemDefaultBrowserProvider(),
-                    dockCustomizer: DockCustomizer(),
-                    dataImportProvider: dataImportProvider,
-                    duckPlayerPreferences: duckPlayerPreferences,
-                    subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-                    syncService: syncService
-                )
-            } else {
-                return NewTabPageNextStepsCardsProvider(
-                    continueSetUpModel: HomePage.Models.ContinueSetUpModel(
-                        dataImportProvider: dataImportProvider,
-                        subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
-                        persistor: legacyPersistor,
-                        pixelHandler: pixelHandler,
-                        cardActionsHandler: cardActionsHandler
-                    ),
-                    appearancePreferences: appearancePreferences,
-                    pixelHandler: pixelHandler
-                )
-            }
-        }
-
-        activeProvider = getActiveProvider()
+        activeProvider = featureFlagger.isFeatureOn(.nextStepsListWidget) ? singleCardProvider : legacyCardsProvider
 
         featureFlagger.updatesPublisher
-            .sink { [weak self] _ in
+            .compactMap { [weak self] in
+                self?.featureFlagger.isFeatureOn(.nextStepsListWidget)
+            }
+            .removeDuplicates()
+            .receive(on: scheduler)
+            .sink { [weak self] isFeatureOn in
                 guard let self else { return }
-                activeProvider = getActiveProvider()
+                activeProvider = isFeatureOn ? singleCardProvider : legacyCardsProvider
             }
             .store(in: &cancellables)
     }
@@ -89,25 +98,29 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
         }
     }
 
-    var isViewExpandedPublisher: AnyPublisher<Bool, Never> {
+    private(set) lazy var isViewExpandedPublisher: AnyPublisher<Bool, Never> = {
         $activeProvider
-            .flatMap { provider in
+            .receive(on: scheduler)
+            .map { provider in
                 provider.isViewExpandedPublisher
             }
+            .switchToLatest()
             .eraseToAnyPublisher()
-    }
+    }()
 
     var cards: [NewTabPageDataModel.CardID] {
         activeProvider.cards
     }
 
-    var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> {
+    private(set) lazy var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> = {
         $activeProvider
-            .flatMap { provider in
+            .receive(on: scheduler)
+            .map { provider in
                 provider.cardsPublisher
             }
+            .switchToLatest()
             .eraseToAnyPublisher()
-    }
+    }()
 
     @MainActor
     func handleAction(for card: NewTabPageDataModel.CardID) {

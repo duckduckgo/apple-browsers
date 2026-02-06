@@ -197,9 +197,10 @@ final class FireExecutorTests: XCTestCase {
     private func makeFireRequest(
         options: FireRequest.Options,
         trigger: FireRequest.Trigger = .manualFire,
-        scope: FireRequest.Scope = .all
+        scope: FireRequest.Scope = .all,
+        source: FireRequest.Source = .browsing
     ) -> FireRequest {
-        FireRequest(options: options, trigger: trigger, scope: scope)
+        FireRequest(options: options, trigger: trigger, scope: scope, source: source)
     }
     
     private func makeTabViewModel() -> TabViewModel {

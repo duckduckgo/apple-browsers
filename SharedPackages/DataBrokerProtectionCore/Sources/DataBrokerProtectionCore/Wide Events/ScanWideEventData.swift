@@ -24,7 +24,8 @@ public final class ScanWideEventData: WideEventData {
         pixelName: "pir_scan_attempt",
         featureName: "pir-scan-attempt",
         mobileMetaType: "ios-pir-scan-attempt",
-        desktopMetaType: "macos-pir-scan-attempt"
+        desktopMetaType: "macos-pir-scan-attempt",
+        version: "1.0.0"
     )
 
     public enum AttemptType: String, Codable {

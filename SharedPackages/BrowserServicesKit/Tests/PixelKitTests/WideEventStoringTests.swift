@@ -112,7 +112,8 @@ private final class StorageTestWideEventData: WideEventData {
         pixelName: "storage_test_event",
         featureName: "storage_test_event",
         mobileMetaType: "ios-storage-test-event",
-        desktopMetaType: "macos-storage-test-event"
+        desktopMetaType: "macos-storage-test-event",
+        version: "1.0.0"
     )
 
     var errorData: WideEventErrorData?
@@ -120,9 +121,7 @@ private final class StorageTestWideEventData: WideEventData {
     var appData: WideEventAppData
     var globalData: WideEventGlobalData
 
-    init(
-        globalData: WideEventGlobalData = WideEventGlobalData(platform: "macOS", sampleRate: 1.0)
-    ) {
+    init(globalData: WideEventGlobalData = WideEventGlobalData(platform: "macOS", sampleRate: 1.0)) {
         self.contextData = WideEventContextData()
         self.appData = WideEventAppData()
         self.globalData = globalData

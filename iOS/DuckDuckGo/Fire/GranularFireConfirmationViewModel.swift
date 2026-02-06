@@ -121,7 +121,7 @@ class GranularFireConfirmationViewModel: ObservableObject {
             settingsStore.clearAIChats = clearAIChats
         }
         
-        let request = FireRequest(options: fireOptions, trigger: .manualFire, scope: .all)
+        let request = FireRequest(options: fireOptions, trigger: .manualFire, scope: .all, source: .browsing)
         onConfirm(request)
     }
     

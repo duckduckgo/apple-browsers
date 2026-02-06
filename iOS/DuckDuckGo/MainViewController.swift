@@ -1247,13 +1247,12 @@ class MainViewController: UIViewController {
                 on: self,
                 attachPopoverTo: source,
                 tabViewModel: tabManager.viewModelForCurrentTab(),
+                pixelSource: .browsing,
                 daxDialogsManager: daxDialogsManager,
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAllWithAnimation(request: fireRequest) {}
                 },
-                onCancel: {
-                    // TODO: - Maybe add pixel
-                }
+                onCancel: { }
             )
         }
         
@@ -1279,7 +1278,7 @@ class MainViewController: UIViewController {
 
     func onQuickFirePressed() {
         wakeLazyFireButtonAnimator()
-        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all)
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .quickFire)
         forgetAllWithAnimation(request: request) {}
         dismiss(animated: true)
         if KeyboardSettings().onAppLaunch {
@@ -2885,10 +2884,17 @@ extension MainViewController: OmniBarDelegate {
             }
         }
 
+        let highlightTag = menuHighlightingTag
+
         let controller = browsingMenu
         let presentationCompletion = {
-            if self.canDisplayAddFavoriteVisualIndicator {
-                browsingMenu.highlightCell(atIndex: IndexPath(row: tab.favoriteEntryIndex, section: 0))
+            guard let highlightTag else { return }
+            switch highlightTag {
+            case .favorite:
+                browsingMenu.highlightAddFavorite()
+
+            case .fire:
+                browsingMenu.highlightFireButton()
             }
         }
 
@@ -2909,14 +2915,9 @@ extension MainViewController: OmniBarDelegate {
             return
         }
 
-        var highlightTag: BrowsingMenuModel.Entry.Tag?
-        if canDisplayAddFavoriteVisualIndicator {
-            highlightTag = .favorite
-        }
-
         let view = BrowsingMenuSheetView(model: model,
                                          headerDataSource: browsingMenuHeaderDataSource,
-                                         highlightRowWithTag: highlightTag,
+                                         highlightRowWithTag: menuHighlightingTag,
                                          onDismiss: { wasActionSelected in
                                              self.viewCoordinator.menuToolbarButton.isEnabled = true
                                              if !wasActionSelected {
@@ -3357,10 +3358,10 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestClose(_ tab: Tab,
-                            shouldCreateEmptyTabAtSamePosition: Bool,
+                            behavior: TabClosingBehavior,
                             clearTabHistory: Bool) {
         closeTab(tab,
-                 andOpenEmptyOneAtSamePosition: shouldCreateEmptyTabAtSamePosition,
+                 behavior: behavior,
                  clearTabHistory: clearTabHistory)
     }
 
@@ -3700,7 +3701,7 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func closeTab(_ tab: Tab,
-                  andOpenEmptyOneAtSamePosition shouldOpen: Bool = false,
+                  behavior: TabClosingBehavior = .onlyClose,
                   clearTabHistory: Bool = true) {
         guard let index = tabManager.model.indexOf(tab: tab) else { return }
 
@@ -3714,12 +3715,21 @@ extension MainViewController: TabSwitcherDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         themeColorManager.updateThemeColor()
 
-        if shouldOpen {
+        switch behavior {
+        case .createEmptyTabAtSamePosition:
             let newTab = Tab()
             tabManager.replaceTab(at: index, withNewTab: newTab, clearTabHistory: clearTabHistory)
             tabManager.selectTab(newTab)
             showBars() // In case the browser chrome bars are hidden when calling this method
-        } else {
+        case .createOrReuseEmptyTab:
+            tabManager.remove(at: index, clearTabHistory: clearTabHistory)
+            if let existing = tabManager.firstHomeTab() {
+                tabManager.selectTab(existing)
+            } else {
+                tabManager.addHomeTab()
+            }
+            showBars() // In case the browser chrome bars are hidden when calling this method
+        case .onlyClose:
             tabManager.remove(at: index, clearTabHistory: clearTabHistory)
         }
 
@@ -3735,7 +3745,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
         Task {
-            let request = FireRequest(options: .tabs, trigger: .manualFire, scope: .all)
+            let request = FireRequest(options: .tabs, trigger: .manualFire, scope: .all, source: .tabSwitcher)
             await fireExecutor.burn(request: request, applicationState: .unknown)
             tabSwitcher.dismiss()
         }
@@ -3830,8 +3840,7 @@ extension MainViewController {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabManager.count
-        Pixel.fire(pixel: .forgetAllExecuted)
-        DailyPixel.fire(pixel: .forgetAllExecutedDaily)
+        firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         
         fireExecutor.prepare(for: request)
@@ -3893,10 +3902,10 @@ extension MainViewController {
         guard let window = view.window else { return }
         
         let fireButtonView: UIView?
-        if viewCoordinator.toolbar.isHidden {
+        if viewCoordinator.toolbar.isHidden { // This is the iPad case
             fireButtonView = tabsBarController?.fireButton
         } else {
-            fireButtonView = viewCoordinator.toolbarFireBarButtonItem.value(forKey: "view") as? UIView
+            fireButtonView = findFireButton()
         }
         guard let view = fireButtonView else { return }
         
@@ -3904,6 +3913,19 @@ extension MainViewController {
             ViewHighlighter.hideAll()
             ViewHighlighter.showIn(window, focussedOnView: view)
         }
+    }
+
+    private func findFireButton() -> UIView? {
+        let state = mobileCustomization.state
+
+        if state.currentToolbarButton == .fire {
+            return viewCoordinator.toolbarFireBarButtonItem.customView
+        } else if state.currentAddressBarButton == .fire {
+            return viewCoordinator.omniBar.barView.customizableButton
+        } else {
+            return viewCoordinator.menuToolbarButton.customView
+        }
+
     }
 
     private func showPrivacyDashboardButtonPulse() {
@@ -3916,7 +3938,6 @@ extension MainViewController {
     }
 }
 
-// TODO: - Adjust based on scope
 extension MainViewController: FireExecutorDelegate {
     
     func willStartBurning(fireRequest: FireRequest) {
@@ -3928,6 +3949,22 @@ extension MainViewController: FireExecutorDelegate {
         case .autoClearOnForeground:
             autoClearInProgress = true
             clearNavigationStack()
+        }
+    }
+    
+    private func firePixels(for request: FireRequest) {
+        let tabType = tabManager.viewModelForCurrentTab()?.tab.isAITab == true ? "ai" : "web"
+        let params: [String: String] = [
+            PixelParameters.source: request.source.rawValue,
+            PixelParameters.tabType: tabType
+        ]
+        
+        switch request.scope {
+        case .all:
+            Pixel.fire(pixel: .forgetAllExecuted, withAdditionalParameters: params)
+            DailyPixel.fire(pixel: .forgetAllExecutedDaily, withAdditionalParameters: params)
+        case .tab:
+            DailyPixel.fireDailyAndCount(pixel: .singleTabBurnExecuted, withAdditionalParameters: params)
         }
     }
     
@@ -4235,7 +4272,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:
                                                         AIChatContentHandling) {
         guard let tab = self.currentTab?.tabModel else { return }
-        self.closeTab(tab, andOpenEmptyOneAtSamePosition: false)
+        self.closeTab(tab)
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
@@ -4443,7 +4480,7 @@ extension MainViewController {
         switch button {
         case .home:
             guard let tab = self.currentTab?.tabModel else { return }
-            self.closeTab(tab, andOpenEmptyOneAtSamePosition: true)
+            self.closeTab(tab, behavior: .createEmptyTabAtSamePosition)
 
         case .newTab:
             self.newTab()

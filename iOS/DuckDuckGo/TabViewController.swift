@@ -3035,7 +3035,8 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.webView = webView
         
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
-        
+        aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
+
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
             daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
@@ -3940,7 +3941,8 @@ extension WKWebView {
 extension TabViewController: SpecialErrorPageNavigationDelegate {
 
     func closeSpecialErrorPageTab(shouldCreateNewEmptyTab: Bool) {
-        delegate?.tabDidRequestClose(tabModel, shouldCreateEmptyTabAtSamePosition: shouldCreateNewEmptyTab, clearTabHistory: true)
+        let behavior: TabClosingBehavior = shouldCreateNewEmptyTab ? .createEmptyTabAtSamePosition : .onlyClose
+        delegate?.tabDidRequestClose(tabModel, behavior: behavior, clearTabHistory: true)
     }
 
 }

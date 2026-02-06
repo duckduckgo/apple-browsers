@@ -25,7 +25,8 @@ public class FreeTrialConversionWideEventData: WideEventData {
         pixelName: "free_trial_conversion",
         featureName: "free-trial-conversion",
         mobileMetaType: "ios-free-trial-conversion",
-        desktopMetaType: "macos-free-trial-conversion"
+        desktopMetaType: "macos-free-trial-conversion",
+        version: "1.0.0"
     )
 
     /// 8 days = 7-day trial + 1-day buffer

@@ -212,6 +212,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
 
+    case iPadDuckaiOnTab
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039
     case fadeOutOnToggle
 
@@ -408,6 +410,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .forgetAllInSettings,
              .onboardingSearchExperience,
              .fullDuckAIMode,
+             .iPadDuckaiOnTab,
              .fadeOutOnToggle,
              .attributedMetrics,
              .storeSerpSettings,
@@ -610,6 +613,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
+        case .iPadDuckaiOnTab:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.iPadDuckaiOnTab))
         case .fadeOutOnToggle:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
         case .attributedMetrics:

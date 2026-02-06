@@ -58,7 +58,8 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     ]
     
     func allowsNavigatingTo(url: URL) -> Bool {
-        if url.isDuckAIURL && !aichatFullModeFeature.isAvailable {
+        let iPadDuckaiOnTab = featureFlagger.isFeatureOn(.iPadDuckaiOnTab) && !DevicePlatform.isIphone
+        if url.isDuckAIURL && !aichatFullModeFeature.isAvailable && !iPadDuckaiOnTab {
             return handleURLInterception(interceptedURLType: .aiChat, interceptedURL: url)
         }
 

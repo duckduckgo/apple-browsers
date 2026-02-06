@@ -1426,9 +1426,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Αποστέλλεται με το μήνυμά σας στο Duck.ai";
 
-/* Subtitle shown on the context chip indicating page content is attached */
-"duckai.context.chip.subtitle" = "Περιεχόμενο σελίδας";
-
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
 "duckai.contextual.onboarding.body" = "Το Duck.ai μπορεί τώρα να σας βοηθήσει να απαντάτε σε ερωτήσεις σχετικά με τη σελίδα που βλέπετε.\n\nΤο περιεχόμενο της σελίδας περιλαμβάνεται μόνο όταν το επισυνάπτετε. Μπορείτε να το αλλάξετε αυτό οποιαδήποτε στιγμή από τις Ρυθμίσεις.";
 
@@ -1443,6 +1440,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Επισύναψη περιεχομένου σελίδας";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Συνοψίστε αυτήν τη σελίδα";

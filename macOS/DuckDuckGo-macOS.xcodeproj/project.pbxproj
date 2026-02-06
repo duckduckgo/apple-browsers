@@ -3864,6 +3864,8 @@
 		CCF40A722ED7529D00CBF271 /* UserChurnPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A702ED7529D00CBF271 /* UserChurnPixel.swift */; };
 		CCF40A782ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A772ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift */; };
 		CCF40A792ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A772ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift */; };
+		CCF78AD62F34996900263097 /* CombineSchedulers in Frameworks */ = {isa = PBXBuildFile; productRef = CCF78AD52F34996900263097 /* CombineSchedulers */; };
+		CCF78AD82F34997400263097 /* CombineSchedulers in Frameworks */ = {isa = PBXBuildFile; productRef = CCF78AD72F34997400263097 /* CombineSchedulers */; };
 		CD2AB5BF2C8222F20019EB49 /* MaliciousSiteProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE248A42C821FFE00F9399D /* MaliciousSiteProtectionManager.swift */; };
 		CD2AB5C02C8222F20019EB49 /* MaliciousSiteProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE248A42C821FFE00F9399D /* MaliciousSiteProtectionManager.swift */; };
 		CD2AB5C12C8222F40019EB49 /* MaliciousSiteProtectionPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE248A52C821FFE00F9399D /* MaliciousSiteProtectionPreferences.swift */; };
@@ -6511,6 +6513,7 @@
 				37DF37072CF38B9F005ED34B /* PrivacyStats in Frameworks */,
 				4BF97AD32B43C43F00EB4240 /* NetworkProtectionUI in Frameworks */,
 				7B1459572B7D43E500047F2C /* NetworkProtectionProxy in Frameworks */,
+				CCF78AD82F34997400263097 /* CombineSchedulers in Frameworks */,
 				BBD9C39B2E9D73880060A6E8 /* SERPSettings in Frameworks */,
 				B6F7128229F6820A00594A45 /* QuickLookUI.framework in Frameworks */,
 				85F592DE2DE1E9FE00117D5E /* DesignResourcesKitIcons in Frameworks */,
@@ -6883,6 +6886,7 @@
 				4B9EE31E2D76C81E00DDC75C /* ContentBlocking in Frameworks */,
 				378F44E429B4BDE900899924 /* SwiftUIExtensions in Frameworks */,
 				4B9EE3262D76C85100DDC75C /* MaliciousSiteProtection in Frameworks */,
+				CCF78AD62F34996900263097 /* CombineSchedulers in Frameworks */,
 				4B9EE3342D76C89D00DDC75C /* RemoteMessaging in Frameworks */,
 				31B6493A2DB289A600A7AEE0 /* AIChat in Frameworks */,
 				37DF37052CF38B96005ED34B /* PrivacyStats in Frameworks */,
@@ -12480,6 +12484,7 @@
 				37EACB052EF4C3BD002C06F9 /* PrivacyConfig */,
 				37EACB172EF5422C002C06F9 /* PrivacyConfigTestsUtils */,
 				1E7D3C312F2232690099611C /* WebExtensions */,
+				CCF78AD72F34997400263097 /* CombineSchedulers */,
 			);
 			productName = DuckDuckGo;
 			productReference = 3706FD05293F65D500E42796 /* DuckDuckGo App Store.app */;
@@ -13054,6 +13059,7 @@
 				37EACB032EF4C3B6002C06F9 /* PrivacyConfig */,
 				37EACB152EF54224002C06F9 /* PrivacyConfigTestsUtils */,
 				1E7D3C2F2F2232620099611C /* WebExtensions */,
+				CCF78AD52F34996900263097 /* CombineSchedulers */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -13245,6 +13251,7 @@
 				84C1764C2DF044D5001DEEC7 /* XCLocalSwiftPackageReference "LocalPackages/LetsMove" */,
 				844801682E3BA41000E8A2C1 /* XCRemoteSwiftPackageReference "swift-clocks" */,
 				84DD63EA2E9792E50043A25E /* XCLocalSwiftPackageReference "LocalPackages/TestUtilities" */,
+				CCF78AD42F34996900263097 /* XCRemoteSwiftPackageReference "combine-schedulers" */,
 			);
 			productRefGroup = AA585D7F248FD31100E9A3E2 /* Products */;
 			projectDirPath = "";
@@ -19167,6 +19174,14 @@
 				version = 3.2.1;
 			};
 		};
+		CCF78AD42F34996900263097 /* XCRemoteSwiftPackageReference "combine-schedulers" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/combine-schedulers.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.1.0;
+			};
+		};
 		F1D43AF12B98E47800BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/BareBonesBrowser.git";
@@ -20400,6 +20415,16 @@
 		CCC403452ED5E00400381DBB /* Utilities */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Utilities;
+		};
+		CCF78AD52F34996900263097 /* CombineSchedulers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CCF78AD42F34996900263097 /* XCRemoteSwiftPackageReference "combine-schedulers" */;
+			productName = CombineSchedulers;
+		};
+		CCF78AD72F34997400263097 /* CombineSchedulers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CCF78AD42F34996900263097 /* XCRemoteSwiftPackageReference "combine-schedulers" */;
+			productName = CombineSchedulers;
 		};
 		D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */ = {
 			isa = XCSwiftPackageProductDependency;

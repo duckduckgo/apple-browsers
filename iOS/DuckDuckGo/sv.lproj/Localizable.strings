@@ -1426,9 +1426,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Skickat med ditt meddelande till Duck.ai";
 
-/* Subtitle shown on the context chip indicating page content is attached */
-"duckai.context.chip.subtitle" = "Sidans innehåll";
-
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
 "duckai.contextual.onboarding.body" = "Duck.ai kan nu hjälpa till att svara på frågor om sidan du tittar på.\n\nSidinnehåll inkluderas bara när du bifogar det. Du kan när som helst ändra detta i Inställningar.";
 
@@ -1443,6 +1440,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGos AI-funktioner är privata och valfria. Dina data används inte för att träna AI.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Bifoga sidans innehåll";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Sammanfatta denna sida";

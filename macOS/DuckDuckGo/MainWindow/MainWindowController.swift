@@ -73,7 +73,6 @@ final class MainWindowController: NSWindowController {
 
         setupWindow(window)
         setupToolbar()
-        subscribeToTrafficLightsAlpha()
         subscribeToBurningData()
         subscribeToResolutionChange()
         subscribeToFullScreenToolbarChanges()
@@ -189,23 +188,6 @@ final class MainWindowController: NSWindowController {
         window?.toolbar?.showsBaselineSeparator = true
         window?.toolbarStyle = .unifiedCompact
         moveTabBarView(toTitlebarView: true)
-    }
-
-    private var trafficLightsAlphaCancellable: AnyCancellable?
-    private func subscribeToTrafficLightsAlpha() {
-        let tabBarViewController = mainViewController.tabBarViewController
-
-        // slide tabs to the left in full screen
-        trafficLightsAlphaCancellable = window?.standardWindowButton(.closeButton)?
-            .publisher(for: \.alphaValue)
-            .map { alphaValue in
-                if #available(macOS 26, *) {
-                    return TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPaddingMacOS26.rawValue * alphaValue
-                } else {
-                    return TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPadding.rawValue * alphaValue
-                }
-            }
-            .assign(to: \.constant, onWeaklyHeld: tabBarViewController.pinnedTabsViewLeadingConstraint)
     }
 
     private var burningDataCancellable: AnyCancellable?

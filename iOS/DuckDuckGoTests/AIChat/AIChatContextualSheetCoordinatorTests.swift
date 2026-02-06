@@ -33,6 +33,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var triggerContextCollectionCallCount = 0
         var triggerContextCollectionReturnValue = true
         var clearCallCount = 0
+        var resubscribeCallCount = 0
 
         private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
         var contextPublisher: AnyPublisher<AIChatPageContext?, Never> {
@@ -47,6 +48,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func clear() {
             clearCallCount += 1
             contextSubject.send(nil)
+        }
+
+        func resubscribe() {
+            resubscribeCallCount += 1
         }
     }
 

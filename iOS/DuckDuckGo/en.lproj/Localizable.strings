@@ -2783,7 +2783,7 @@ https://duckduckgo.com/mac";
 "scoped.fire.confirmation.downloads.warning" = "This will cancel downloads in progress.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "New tabs you create also can be deleted individually.";
+"scoped.fire.confirmation.new.tabs.info" = "New tabs you created can also be deleted individually.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Deleting site data can sign you out of accounts.";

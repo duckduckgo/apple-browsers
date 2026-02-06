@@ -52,12 +52,30 @@ final class AIChatOmnibarToolButton: NSView {
 
     var tintColor: NSColor? {
         didSet {
-            iconImageView.contentTintColor = tintColor
+            updateAppearance()
         }
     }
 
     var hoverBackgroundColor: NSColor = .clear
     var pressedBackgroundColor: NSColor = .clear
+
+    // MARK: - Toggle State Properties
+
+    /// When true, the button automatically toggles `isToggled` on each click
+    var togglesOnClick: Bool = false
+
+    /// Whether the button is in a toggled-on state (e.g., for search toggle)
+    var isToggled: Bool = false {
+        didSet {
+            updateAppearance()
+        }
+    }
+
+    /// Background color when toggled on (uses accent color)
+    var toggledBackgroundColor: NSColor = .clear
+
+    /// Tint color for the icon when toggled on (uses accent color)
+    var toggledTintColor: NSColor = .clear
 
     private var isHovered = false {
         didSet {
@@ -125,14 +143,24 @@ final class AIChatOmnibarToolButton: NSView {
         CATransaction.setDisableActions(true)
 
         NSAppearance.withAppAppearance {
-            if isMouseDown {
+            // For toggle buttons, skip the pressed effect - just show toggled or normal state
+            let showPressedEffect = isMouseDown && !togglesOnClick
+
+            if showPressedEffect {
                 backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
                 backgroundLayer.opacity = 1
+                iconImageView.contentTintColor = isToggled ? toggledTintColor : tintColor
+            } else if isToggled {
+                backgroundLayer.backgroundColor = toggledBackgroundColor.cgColor
+                backgroundLayer.opacity = 1
+                iconImageView.contentTintColor = toggledTintColor
             } else if isHovered {
                 backgroundLayer.backgroundColor = hoverBackgroundColor.cgColor
                 backgroundLayer.opacity = 1
+                iconImageView.contentTintColor = tintColor
             } else {
                 backgroundLayer.opacity = 0
+                iconImageView.contentTintColor = tintColor
             }
         }
 
@@ -182,6 +210,9 @@ final class AIChatOmnibarToolButton: NSView {
     override func mouseUp(with event: NSEvent) {
         let locationInView = convert(event.locationInWindow, from: nil)
         if bounds.contains(locationInView) && isMouseDown {
+            if togglesOnClick {
+                isToggled.toggle()
+            }
             if let action, let target {
                 NSApp.sendAction(action, to: target, from: self)
             }

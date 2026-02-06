@@ -236,6 +236,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         searchToggleButton.target = self
         searchToggleButton.action = #selector(searchToggleButtonClicked)
         searchToggleButton.image = DesignSystemImages.Glyphs.Size16.globe
+        searchToggleButton.togglesOnClick = true
         containerView.addSubview(searchToggleButton)
 
         imageUploadButton.translatesAutoresizingMaskIntoConstraints = false
@@ -437,6 +438,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             customizeButton.pressedBackgroundColor = .buttonMouseDown
             searchToggleButton.hoverBackgroundColor = .buttonMouseOver
             searchToggleButton.pressedBackgroundColor = .buttonMouseDown
+            searchToggleButton.toggledBackgroundColor = NSColor(designSystemColor: .accentPrimary)
+            searchToggleButton.toggledTintColor = .selectedSuggestionTint
             imageUploadButton.hoverBackgroundColor = .buttonMouseOver
             imageUploadButton.pressedBackgroundColor = .buttonMouseDown
         }

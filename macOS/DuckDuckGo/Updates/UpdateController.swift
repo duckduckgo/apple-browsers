@@ -181,12 +181,13 @@ protocol UpdateController: AnyObject {
 }
 
 extension UpdateController {
-    private var shouldShowUpdateNotification: Bool {
-        Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
+
+    private var isUpdateNotificationAllowed: Bool {
+        OnboardingActionsManager.isOnboardingFinished && Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
     }
 
     func showUpdateNotificationIfNeeded() {
-        guard let latestUpdate, hasPendingUpdate, shouldShowUpdateNotification else { return }
+        guard let latestUpdate, hasPendingUpdate, isUpdateNotificationAllowed else { return }
 
         let manualActionText: String
         #if APPSTORE

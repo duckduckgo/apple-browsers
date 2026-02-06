@@ -650,9 +650,9 @@ extension AppDelegate {
             }
 
             // Send through monitor publisher (updates debug UI if enabled)
-            NSApp.delegateTyped.memoryUsageMonitor.simulateMemoryReport(physFootprintMB: memoryMB)
+            memoryUsageMonitor.simulateMemoryReport(physFootprintMB: memoryMB)
             // Trigger threshold check (reporter polls directly, not via publisher)
-            NSApp.delegateTyped.memoryUsageThresholdReporter.checkThresholdNow()
+            memoryUsageThresholdReporter.checkThresholdNow()
             Logger.memory.info("Simulated memory report: \(memoryMB) MB")
         }
     }

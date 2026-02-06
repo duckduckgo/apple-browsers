@@ -311,7 +311,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
     }
 
     func observeKeyWindowChanges() {
-        // We schedule this async (not receiving it directly on the main queue) to avoid a retain cycle
+        // Async dispatch allows the default browser setting to propagate after being changed in the system dialog.
+        // We schedule this in the sink block (not receiving it directly on the main queue) to avoid the main queue
+        // holding a reference to the block and preventing full deallocation in integration tests that end immediately
+        // after opening the New Tab Page, which would require flushing the queue.
         NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
             .sink { _ in
                 DispatchQueue.main.async { [weak self] in

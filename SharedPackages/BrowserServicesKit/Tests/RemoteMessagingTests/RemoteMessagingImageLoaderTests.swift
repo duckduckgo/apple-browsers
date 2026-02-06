@@ -21,6 +21,11 @@ import XCTest
 
 final class RemoteMessagingImageLoaderTests: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        URLCache.shared.removeAllCachedResponses()
+    }
+
     func testLoadImageReturnsImageOnSuccess() async throws {
         let mockProvider = MockRemoteMessagingImageDataProvider()
         mockProvider.mockData = createValidImageData()

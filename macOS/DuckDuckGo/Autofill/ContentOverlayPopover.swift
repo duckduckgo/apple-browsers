@@ -31,12 +31,13 @@ public final class ContentOverlayPopover: NSObject {
     public var viewController: ContentOverlayViewController
     public var windowController: NSWindowController
 
-    public init(
+    init(
         currentTabView: NSView,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         featureFlagger: FeatureFlagger,
-        tld: TLD
+        tld: TLD,
+        pinningManager: PinningManager
     ) {
         let storyboard = NSStoryboard(name: "ContentOverlay", bundle: Bundle.main)
         viewController = storyboard.instantiateController(identifier: "ContentOverlayViewController") { coder in
@@ -45,7 +46,8 @@ public final class ContentOverlayPopover: NSObject {
                 privacyConfigurationManager: privacyConfigurationManager,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 featureFlagger: featureFlagger,
-                tld: tld
+                tld: tld,
+                pinningManager: pinningManager
             )
         }
         windowController = storyboard.instantiateController(identifier: "ContentOverlayWindowController")

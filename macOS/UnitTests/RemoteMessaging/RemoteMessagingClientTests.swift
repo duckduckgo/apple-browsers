@@ -135,7 +135,7 @@ final class RemoteMessagingClientTests: XCTestCase {
             configMatcherProvider: RemoteMessagingConfigMatcherProvider(
                 bookmarksDatabase: bookmarksDatabase,
                 appearancePreferences: appearancePreferences,
-                startupPreferences: StartupPreferences(persistor: StartupPreferencesPersistorMock(), appearancePreferences: appearancePreferences),
+                startupPreferences: StartupPreferences(pinningManager: MockPinningManager(), persistor: StartupPreferencesPersistorMock(), appearancePreferences: appearancePreferences),
                 pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
                 internalUserDecider: MockInternalUserDecider(),
                 statisticsStore: MockStatisticsStore(),

@@ -2874,10 +2874,17 @@ extension MainViewController: OmniBarDelegate {
             }
         }
 
+        let highlightTag = menuHighlightingTag
+
         let controller = browsingMenu
         let presentationCompletion = {
-            if self.canDisplayAddFavoriteVisualIndicator {
-                browsingMenu.highlightCell(atIndex: IndexPath(row: tab.favoriteEntryIndex, section: 0))
+            guard let highlightTag else { return }
+            switch highlightTag {
+            case .favorite:
+                browsingMenu.highlightAddFavorite()
+
+            case .fire:
+                browsingMenu.highlightFireButton()
             }
         }
 
@@ -2898,14 +2905,9 @@ extension MainViewController: OmniBarDelegate {
             return
         }
 
-        var highlightTag: BrowsingMenuModel.Entry.Tag?
-        if canDisplayAddFavoriteVisualIndicator {
-            highlightTag = .favorite
-        }
-
         let view = BrowsingMenuSheetView(model: model,
                                          headerDataSource: browsingMenuHeaderDataSource,
-                                         highlightRowWithTag: highlightTag,
+                                         highlightRowWithTag: menuHighlightingTag,
                                          onDismiss: { wasActionSelected in
                                              self.viewCoordinator.menuToolbarButton.isEnabled = true
                                              if !wasActionSelected {
@@ -3882,10 +3884,10 @@ extension MainViewController {
         guard let window = view.window else { return }
         
         let fireButtonView: UIView?
-        if viewCoordinator.toolbar.isHidden {
+        if viewCoordinator.toolbar.isHidden { // This is the iPad case
             fireButtonView = tabsBarController?.fireButton
         } else {
-            fireButtonView = viewCoordinator.toolbarFireBarButtonItem.value(forKey: "view") as? UIView
+            fireButtonView = findFireButton()
         }
         guard let view = fireButtonView else { return }
         
@@ -3893,6 +3895,19 @@ extension MainViewController {
             ViewHighlighter.hideAll()
             ViewHighlighter.showIn(window, focussedOnView: view)
         }
+    }
+
+    private func findFireButton() -> UIView? {
+        let state = mobileCustomization.state
+
+        if state.currentToolbarButton == .fire {
+            return viewCoordinator.toolbarFireBarButtonItem.customView
+        } else if state.currentAddressBarButton == .fire {
+            return viewCoordinator.omniBar.barView.customizableButton
+        } else {
+            return viewCoordinator.menuToolbarButton.customView
+        }
+
     }
 
     private func showPrivacyDashboardButtonPulse() {

@@ -42,7 +42,7 @@ final class MemoryUsageThresholdReporter {
     private let logger: Logger?
     private let checkInterval: TimeInterval
     private var featureFlagCancellable: AnyCancellable?
-    private var timerCancellable: AnyCancellable?
+    private var monitoringTask: Task<Void, Never>?
     private var hasDelayElapsed = false
     private var delayWorkItem: DispatchWorkItem?
 
@@ -115,7 +115,7 @@ final class MemoryUsageThresholdReporter {
         DispatchQueue.main.asyncAfter(deadline: .now() + 300, execute: workItem)
     }
 
-    /// Starts a repeating timer to periodically check memory thresholds.
+    /// Starts a repeating task to periodically check memory thresholds.
     ///
     /// Polls memory usage directly via `getCurrentMemoryUsage()` at regular intervals,
     /// independent of whether the `MemoryUsageMonitor` is actively publishing.
@@ -123,12 +123,14 @@ final class MemoryUsageThresholdReporter {
         // Fire an initial check immediately
         checkThresholdAndFire()
 
-        // Set up a repeating timer for subsequent checks
-        timerCancellable = Timer.publish(every: checkInterval, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
+        // Set up a repeating task for subsequent checks
+        let interval = checkInterval
+        monitoringTask = Task.detached(priority: .utility) { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: NSEC_PER_SEC * UInt64(interval))
                 self?.checkThresholdAndFire()
             }
+        }
     }
 
     /// Checks which threshold bucket the current memory usage falls into and fires the pixel.
@@ -148,12 +150,12 @@ final class MemoryUsageThresholdReporter {
 
     /// Stops monitoring memory usage.
     ///
-    /// Cancels all subscriptions, clears the delay flag, and cancels any pending delay work.
+    /// Cancels the monitoring task, clears the delay flag, and cancels any pending delay work.
     private func stopMonitoring() {
         delayWorkItem?.cancel()
         delayWorkItem = nil
-        timerCancellable?.cancel()
-        timerCancellable = nil
+        monitoringTask?.cancel()
+        monitoringTask = nil
         hasDelayElapsed = false
         logger?.debug("Memory usage threshold reporter stopped")
     }

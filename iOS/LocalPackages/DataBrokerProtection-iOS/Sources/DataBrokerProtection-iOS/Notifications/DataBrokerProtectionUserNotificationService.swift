@@ -31,6 +31,8 @@ public protocol DataBrokerProtectionUserNotificationService {
     func scheduleCheckInNotificationIfPossible()
     func sendGoToMarketFirstScanNotificationIfPossible() async
     func resetFirstScanCompletedNotificationState()
+    
+    func resetAllNotificationStatesForDebug()
 }
 
 public class DefaultDataBrokerProtectionUserNotificationService: DataBrokerProtectionUserNotificationService {
@@ -101,6 +103,12 @@ public class DefaultDataBrokerProtectionUserNotificationService: DataBrokerProte
         userDefaults[.didSendFirstScanCompletedNotification] = false
     }
 
+    public func resetAllNotificationStatesForDebug() {
+        UserDefaults.Key.allCases.forEach { key in
+            userDefaults.removeObject(forKey: key.rawValue)
+        }
+    }
+
     public func sendGoToMarketFirstScanNotificationIfPossible() async {
         if userDefaults[.didSendGoToMarketFirstScanNotification] != true {
             sendNotification(.goToMarketFirstScan)
@@ -156,7 +164,7 @@ public class DefaultDataBrokerProtectionUserNotificationService: DataBrokerProte
 // MARK: - UserDefaults Keys
 
 private extension UserDefaults {
-    enum Key: String {
+    enum Key: String, CaseIterable {
         case didSendFirstScanCompletedNotification
         case didSendFirstRemovedNotification
         case didSendAllInfoRemovedNotification

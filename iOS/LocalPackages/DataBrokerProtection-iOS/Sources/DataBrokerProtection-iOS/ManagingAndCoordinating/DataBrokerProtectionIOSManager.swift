@@ -77,6 +77,8 @@ public class DBPIOSInterface {
                               completionHandler: (() -> Void)?)
         func runEmailConfirmationJobs() async throws
         func fireWeeklyPixels() async
+
+        func resetAllNotificationStatesForDebug()
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -466,6 +468,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
             handler: jobDependencies.pixelHandler
         )
         eventPixels.fireWeeklyReportPixels(isAuthenticated: isAuthenticated)
+    }
+
+    public func resetAllNotificationStatesForDebug() {
+        userNotificationService.resetAllNotificationStatesForDebug()
     }
 }
 

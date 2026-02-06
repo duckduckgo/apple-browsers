@@ -82,6 +82,9 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
                     return
                 }
 
+                /// During the Onboarding sequence we'll set `enabled = false`.
+                /// We'll avoid displaying the Update Notification, in this scenario, as users won't be able to interact with the More Options Menu anyways.
+                ///
                 let requiresBadge = (hasPendingUpdate && needsNotificationDot) || shouldNotificationForAddToDock
                 self.isNotificationVisible = requiresBadge && isEnabled
             }

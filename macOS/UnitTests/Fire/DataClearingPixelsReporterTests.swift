@@ -62,7 +62,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded()
 
         // When - second call within 20 seconds
-        currentTime = currentTime + 10
+        currentTime += 10
         sut.fireRetriggerPixelIfNeeded()
 
         // Then
@@ -78,7 +78,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded()
 
         // When - exactly at 20 seconds (edge case, <= condition)
-        currentTime = currentTime + 20
+        currentTime += 20
         sut.fireRetriggerPixelIfNeeded()
 
         // Then
@@ -94,7 +94,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded()
 
         // When - after 20 seconds
-        currentTime = currentTime + 21
+        currentTime += 21
         sut.fireRetriggerPixelIfNeeded()
 
         // Then
@@ -107,13 +107,13 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded()
 
         // When - multiple rapid calls within window
-        currentTime = currentTime + 5
+        currentTime += 5
         sut.fireRetriggerPixelIfNeeded()
 
-        currentTime = currentTime + 5
+        currentTime += 5
         sut.fireRetriggerPixelIfNeeded()
 
-        currentTime = currentTime + 5
+        currentTime += 5
         sut.fireRetriggerPixelIfNeeded()
 
         // Then
@@ -180,7 +180,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     func testWhenFireDurationPixelCalledThenPixelIsFiredWithCorrectDuration() {
         // Given
         let startTime = currentTime!
-        currentTime = currentTime + 1.5 // 1.5 seconds = 1500ms
+        currentTime += 1.5 // 1.5 seconds = 1500ms
 
         // When
         sut.fireDurationPixel(DataClearingPixels.burnWebCacheDuration, from: startTime)
@@ -200,7 +200,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     func testWhenFireDurationPixelWithEntityCalledThenPixelIsFired() {
         // Given
         let startTime = currentTime!
-        currentTime = currentTime + 2 // 2 seconds = 2000ms
+        currentTime += 2 // 2 seconds = 2000ms
 
         // When
         sut.fireDurationPixel(DataClearingPixels.burnHistoryDuration, from: startTime, entity: "history")

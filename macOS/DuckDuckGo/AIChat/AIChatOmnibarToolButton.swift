@@ -56,8 +56,8 @@ final class AIChatOmnibarToolButton: NSView {
         }
     }
 
-    var hoverBackgroundColor: NSColor = NSColor(designSystemColor: .containerFillSecondary)
-    var pressedBackgroundColor: NSColor = NSColor(designSystemColor: .containerFillTertiary)
+    var hoverBackgroundColor: NSColor = .clear
+    var pressedBackgroundColor: NSColor = .clear
 
     private var isHovered = false {
         didSet {
@@ -124,14 +124,16 @@ final class AIChatOmnibarToolButton: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 
-        if isMouseDown {
-            backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
-            backgroundLayer.opacity = 1
-        } else if isHovered {
-            backgroundLayer.backgroundColor = hoverBackgroundColor.cgColor
-            backgroundLayer.opacity = 1
-        } else {
-            backgroundLayer.opacity = 0
+        NSAppearance.withAppAppearance {
+            if isMouseDown {
+                backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
+                backgroundLayer.opacity = 1
+            } else if isHovered {
+                backgroundLayer.backgroundColor = hoverBackgroundColor.cgColor
+                backgroundLayer.opacity = 1
+            } else {
+                backgroundLayer.opacity = 0
+            }
         }
 
         CATransaction.commit()

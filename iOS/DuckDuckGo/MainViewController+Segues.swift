@@ -200,6 +200,13 @@ extension MainViewController {
 
     func segueToTabSwitcher() async {
         Logger.lifecycle.debug(#function)
+
+        // Guard against concurrent presentations
+        guard tabSwitcherController == nil else {
+            Logger.lifecycle.debug("Tab switcher presentation already in progress or active")
+            return
+        }
+
         hideAllHighlightsIfNeeded()
 
         // Calculate the initial tracker count state before creating the view controller
@@ -209,6 +216,12 @@ extension MainViewController {
             settings: DefaultTabSwitcherSettings(),
             privacyStats: privacyStats
         )
+
+        // Check again after async work in case another presentation started
+        guard tabSwitcherController == nil else {
+            Logger.lifecycle.debug("Tab switcher presentation already in progress")
+            return
+        }
 
         let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
         guard let controller = storyboard.instantiateInitialViewController(creator: { coder in

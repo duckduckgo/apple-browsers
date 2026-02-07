@@ -2561,15 +2561,17 @@ extension MainViewController: BrowserChromeDelegate {
 
     // 1.0 - full size, 0.0 - hidden
     private func updateToolbarConstant(_ ratio: CGFloat) {
-        var bottomHeight = toolbarHeight
-        if viewCoordinator.addressBarPosition.isBottom {
-            // When position is set to bottom, contentContainer is pinned to top
-            // of navigationBarContainer, hence the adjustment.
-            bottomHeight += viewCoordinator.navigationBarContainer.frame.height
-        }
-        bottomHeight += view.safeAreaInsets.bottom
+        let bottomHeight = toolbarHeight + view.safeAreaInsets.bottom
         let multiplier = viewCoordinator.toolbar.isHidden ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
+
+        if viewCoordinator.addressBarPosition.isBottom {
+            // Push the navigation bar down independently so the content container
+            // (which is pinned to toolbar.top) doesn't extend past the screen bottom.
+            let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
+            viewCoordinator.constraints.navigationBarContainerBottom.constant = navBarHeight * (1.0 - ratio)
+        }
+
         findInPageHeightLayoutConstraint.constant = findInPageView.container.frame.height + view.safeAreaInsets.bottom
     }
 

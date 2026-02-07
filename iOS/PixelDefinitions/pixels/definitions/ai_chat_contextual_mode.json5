@@ -126,7 +126,7 @@
         "parameters": ["appVersion"]
     },
     "m_aichat_contextual_page_context_collection_empty": {
-        "description": "Fired when page context collection runs but returns no usable content (empty title, content, and favicon)",
+        "description": "Fired when page context collection runs but returns no usable content (empty title, content, favicon, and fullContentLength)",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

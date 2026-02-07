@@ -45,8 +45,19 @@ struct AIChatPageContext: Equatable {
 // MARK: - Provider Typealiases
 
 typealias WebViewProvider = () -> WKWebView?
-typealias UserScriptProvider = () -> PageContextUserScript?
+typealias UserScriptProvider = () -> PageContextCollecting?
 typealias FaviconProvider = (URL) -> String?
+
+// MARK: - Page Context Collection Protocol
+
+/// Protocol for page context collection, enabling dependency injection and testing.
+protocol PageContextCollecting: AnyObject {
+    var collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
+    var webView: WKWebView? { get set }
+    func collect()
+}
+
+extension PageContextUserScript: PageContextCollecting {}
 
 // MARK: - Protocols
 
@@ -162,8 +173,14 @@ private extension AIChatPageContextHandler {
             .sink { [weak self] pageContext in
                 guard let self else { return }
 
-                guard let pageContext, !pageContext.isEmpty() else {
-                    Logger.aiChat.debug("[PageContext] Context collection returned nil - publishing nil to subscribers")
+                guard let pageContext else {
+                    Logger.aiChat.debug("[PageContext] Context collection returned nil - decode failure, publishing nil to subscribers")
+                    self.contextSubject.send(nil)
+                    return
+                }
+
+                guard !pageContext.isEmpty() else {
+                    Logger.aiChat.debug("[PageContext] Context collection returned empty content - publishing nil to subscribers")
                     self.pixelHandler.firePageContextCollectionEmpty()
                     self.contextSubject.send(nil)
                     return

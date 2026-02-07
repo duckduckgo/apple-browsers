@@ -3098,6 +3098,19 @@ extension MainViewController: OmniBarDelegate {
         themeColorManager.updateThemeColor()
     }
 
+    func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
+        guard let currentTab,
+              currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
+              let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
+            completion()
+            return
+        }
+
+        sheetVC.dismiss(animated: true) {
+            completion()
+        }
+    }
+
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
 
         let selectQueryText = !(isSERPPresented && !skipSERPFlow)

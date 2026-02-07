@@ -1703,7 +1703,8 @@ class MainViewController: UIViewController {
         viewCoordinator.tabBarContainer.isHidden = false
         viewCoordinator.toolbar.isHidden = true
         viewCoordinator.omniBar.enterPadState()
-        
+        viewCoordinator.moveAddressBarToPosition(.top)
+
         swipeTabsCoordinator?.isEnabled = false
     }
 
@@ -1711,7 +1712,8 @@ class MainViewController: UIViewController {
         viewCoordinator.tabBarContainer.isHidden = true
         viewCoordinator.toolbar.isHidden = false
         viewCoordinator.omniBar.enterPhoneState()
-        
+        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+
         swipeTabsCoordinator?.isEnabled = true
     }
 
@@ -2556,7 +2558,10 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     var barsMaxHeight: CGFloat {
-        max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
+        if viewCoordinator.toolbar.isHidden {
+            return viewCoordinator.omniBar.barView.expectedHeight
+        }
+        return max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
     }
 
     // 1.0 - full size, 0.0 - hidden

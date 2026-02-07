@@ -198,9 +198,17 @@ extension MainViewController {
         present(controller, animated: true)
     }
 
-    func segueToTabSwitcher() {
+    func segueToTabSwitcher() async {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
+
+        // Calculate the initial tracker count state before creating the view controller
+        // to ensure correct header sizing during the transition
+        let initialTrackerCountState = await TabSwitcherTrackerCountViewModel.calculateInitialState(
+            featureFlagger: featureFlagger,
+            settings: DefaultTabSwitcherSettings(),
+            privacyStats: privacyStats
+        )
 
         let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
         guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
@@ -216,7 +224,8 @@ extension MainViewController {
                                       historyManager: self.historyManager,
                                       fireproofing: self.fireproofing,
                                       keyValueStore: self.keyValueStore,
-                                      daxDialogsManager: self.daxDialogsManager)
+                                      daxDialogsManager: self.daxDialogsManager,
+                                      initialTrackerCountState: initialTrackerCountState)
         }) else {
             assertionFailure()
             return

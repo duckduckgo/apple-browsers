@@ -34,7 +34,7 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
         static let hidden = State(isVisible: false, title: "", subtitle: "")
     }
 
-    @Published private(set) var state: State = .hidden
+    @Published private(set) var state: State
 
     private var settings: TabSwitcherSettings
     private let privacyStats: PrivacyStatsProviding
@@ -42,10 +42,38 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
     private var refreshTask: Task<Void, Never>?
     private var countAnimationTask: Task<Void, Never>?
 
-    init(settings: TabSwitcherSettings, privacyStats: PrivacyStatsProviding, featureFlagger: FeatureFlagger) {
+    init(settings: TabSwitcherSettings, privacyStats: PrivacyStatsProviding, featureFlagger: FeatureFlagger, initialState: State) {
+        self.state = initialState
         self.settings = settings
         self.privacyStats = privacyStats
         self.featureFlagger = featureFlagger
+    }
+
+    /// Returns whether the tracker count feature should be visible based on feature flag and settings.
+    /// This is synchronous and can be used to provide initial state before async data is fetched.
+    private var shouldShowTrackerCount: Bool {
+        return featureFlagger.isFeatureOn(.tabSwitcherTrackerCount) &&
+               settings.showTrackerCountInTabSwitcher
+    }
+
+    /// Calculates the initial state synchronously based on feature flags and settings.
+    /// This should be called before presenting the tab switcher to ensure correct header sizing during transitions.
+    static func calculateInitialState(featureFlagger: FeatureFlagger, settings: TabSwitcherSettings, privacyStats: PrivacyStatsProviding) async -> State {
+        guard featureFlagger.isFeatureOn(.tabSwitcherTrackerCount),
+              settings.showTrackerCountInTabSwitcher else {
+            return .hidden
+        }
+
+        let count = await privacyStats.fetchPrivacyStatsTotalCount()
+        guard count > 0 else {
+            return .hidden
+        }
+
+        return State(
+            isVisible: true,
+            title: UserText.tabSwitcherTrackerCountTitle(count),
+            subtitle: UserText.tabSwitcherTrackerCountSubtitle
+        )
     }
 
     private func fetchAndUpdateState(shouldAnimate: Bool) async {
@@ -62,8 +90,7 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
     }
 
     func refresh() {
-        guard featureFlagger.isFeatureOn(.tabSwitcherTrackerCount),
-              settings.showTrackerCountInTabSwitcher else {
+        guard shouldShowTrackerCount else {
             refreshTask?.cancel()
             refreshTask = nil
             cancelCountAnimation()
@@ -79,8 +106,7 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
 
     @discardableResult
     func refreshAsync() async -> State {
-        guard featureFlagger.isFeatureOn(.tabSwitcherTrackerCount),
-              settings.showTrackerCountInTabSwitcher else {
+        guard shouldShowTrackerCount else {
             refreshTask?.cancel()
             refreshTask = nil
             cancelCountAnimation()

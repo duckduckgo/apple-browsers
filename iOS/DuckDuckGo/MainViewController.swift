@@ -3802,7 +3802,9 @@ extension MainViewController: TabSwitcherButtonDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()
-            self.segueToTabSwitcher()
+            Task { @MainActor in
+                await self.segueToTabSwitcher()
+            }
         }
     }
 }

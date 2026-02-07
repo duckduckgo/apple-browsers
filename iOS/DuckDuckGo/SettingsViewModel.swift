@@ -155,6 +155,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
     }
 
+    var meetsLocaleRequirement: Bool {
+        runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
+    }
+
     var dbpMeetsProfileRunPrequisite: Bool {
         get {
             (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
@@ -1005,7 +1009,7 @@ extension SettingsViewModel {
     private func isFeatureAvailableForNewBadge(_ feature: NewBadgeFeature) -> Bool {
         switch feature {
         case .personalInformationRemoval:
-            return isPIREnabled && dataBrokerProtectionViewControllerProvider != nil
+            return isPIREnabled && meetsLocaleRequirement && dataBrokerProtectionViewControllerProvider != nil
         }
     }
 

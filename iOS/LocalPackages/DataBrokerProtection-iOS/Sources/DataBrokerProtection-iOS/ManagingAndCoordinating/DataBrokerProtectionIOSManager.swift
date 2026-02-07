@@ -88,6 +88,7 @@ public class DBPIOSInterface {
     public protocol RunPrerequisitesDelegate: AnyObject, AuthenticationDelegate {
         var meetsProfileRunPrequisite: Bool { get throws }
         var meetsEntitlementRunPrequisite: Bool { get async throws }
+        var meetsLocaleRequirement: Bool { get }
         func validateRunPrerequisites() async -> Bool
     }
 
@@ -494,6 +495,14 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
         }
     }
 
+    public var meetsLocaleRequirement: Bool {
+        #if DEBUG || ALPHA || REVIEW
+        return true
+        #else
+        return (Locale.current.regionCode == "US") || privacyConfigManager.internalUserDecider.isInternalUser
+        #endif
+    }
+
     public func validateRunPrerequisites() async -> Bool {
         do {
             guard try meetsProfileRunPrequisite else {
@@ -573,7 +582,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DBPWideEventsDelegate 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.NotificationDelegate, ReleaseWindowChecking {
     func sendGoToMarketFirstScanNotificationIfEligible() async {
         guard privacyConfigManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.goToMarket),
-              isEligibleForPIR,
+              meetsLocaleRequirement,
               isWithinGoToMarketReleaseWindow(currentAppVersion: AppVersion.shared.versionNumber),
               (try? await meetsEntitlementRunPrequisite) == true,
               hasNotRunPIRScan() else {
@@ -732,14 +741,6 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
 private extension DataBrokerProtectionIOSManager {
     enum GoToMarketConstants {
         static let maxMinorReleaseOffset = 3
-    }
-
-    var isEligibleForPIR: Bool {
-        #if DEBUG || ALPHA || REVIEW
-        return true
-        #else
-        return (Locale.current.regionCode == "US") || privacyConfigManager.internalUserDecider.isInternalUser
-        #endif
     }
 
     func isWithinGoToMarketReleaseWindow(currentAppVersion: String) -> Bool {

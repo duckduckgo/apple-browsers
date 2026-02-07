@@ -78,6 +78,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     private let webViewProvider: WebViewProvider
     private let userScriptProvider: UserScriptProvider
     private let faviconProvider: FaviconProvider
+    private let pixelHandler: AIChatContextualModePixelFiring
 
     private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
     private var updatesCancellable: AnyCancellable?
@@ -92,10 +93,12 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
     init(webViewProvider: @escaping WebViewProvider,
          userScriptProvider: @escaping UserScriptProvider,
-         faviconProvider: @escaping FaviconProvider) {
+         faviconProvider: @escaping FaviconProvider,
+         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
         self.webViewProvider = webViewProvider
         self.userScriptProvider = userScriptProvider
         self.faviconProvider = faviconProvider
+        self.pixelHandler = pixelHandler
     }
 
     @discardableResult
@@ -159,8 +162,9 @@ private extension AIChatPageContextHandler {
             .sink { [weak self] pageContext in
                 guard let self else { return }
 
-                guard let pageContext else {
+                guard let pageContext, !pageContext.isEmpty() else {
                     Logger.aiChat.debug("[PageContext] Context collection returned nil - publishing nil to subscribers")
+                    self.pixelHandler.firePageContextCollectionEmpty()
                     self.contextSubject.send(nil)
                     return
                 }

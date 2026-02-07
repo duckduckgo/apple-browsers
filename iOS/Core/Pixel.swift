@@ -50,6 +50,8 @@ public struct PixelParameters {
     static let coreDataErrorAttribute = "coreDataAttribute"
 
     public static let tabCount = "tc"
+    public static let tabType = "tabType"
+    public static let domainsCount = "domainsCount"
 
     public static let widgetSmall = "ws"
     public static let widgetMedium = "wm"

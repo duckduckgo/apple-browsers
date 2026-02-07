@@ -77,6 +77,7 @@ private extension RemoteMessageModel {
         case .bigSingleAction(let titleText,
                               let descriptionText,
                               _,
+                              _,
                               let primaryActionText,
                               let primaryAction):
 

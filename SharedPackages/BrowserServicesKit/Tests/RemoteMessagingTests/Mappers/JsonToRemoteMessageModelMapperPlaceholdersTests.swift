@@ -102,7 +102,7 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
         let message = try #require(config.messages.first(where: { $0.id == id }))
 
         // WHEN
-        guard case let .medium(_, _, placeholder) = message.content else {
+        guard case let .medium(_, _, placeholder, _) = message.content else {
             Issue.record("Expected medium content type")
             return
         }

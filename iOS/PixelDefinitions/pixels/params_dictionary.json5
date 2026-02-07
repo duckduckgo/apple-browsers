@@ -271,5 +271,17 @@
         "type": "string",
         "description": "Location selection for the VPN latency test",
         "enum": ["nearest", "custom"]
+    },
+    "burnSource": {
+        "key": "source",
+        "type": "string",
+        "description": "Source of the burn action",
+        "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear"]
+    },
+    "tabType": {
+        "key": "tabType",
+        "type": "string",
+        "description": "Type of tab when burn was initiated",
+        "enum": ["web", "ai", "unknown"]
     }
 }

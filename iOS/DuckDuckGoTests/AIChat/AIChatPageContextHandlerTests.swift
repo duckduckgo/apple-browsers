@@ -153,7 +153,9 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         // Given: Handler with a mock pixel handler
         let mockPixelHandler = MockContextualModePixelHandler()
         let mockScript = MockPageContextCollecting()
+        let webView = WKWebView()
         let handler = makeHandler(
+            webViewProvider: { webView },
             userScriptProvider: { mockScript },
             pixelHandler: mockPixelHandler
         )
@@ -185,7 +187,9 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         // Given: Handler with a mock pixel handler
         let mockPixelHandler = MockContextualModePixelHandler()
         let mockScript = MockPageContextCollecting()
+        let webView = WKWebView()
         let handler = makeHandler(
+            webViewProvider: { webView },
             userScriptProvider: { mockScript },
             pixelHandler: mockPixelHandler
         )
@@ -217,7 +221,9 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         // Given: Handler with a mock pixel handler
         let mockPixelHandler = MockContextualModePixelHandler()
         let mockScript = MockPageContextCollecting()
+        let webView = WKWebView()
         let handler = makeHandler(
+            webViewProvider: { webView },
             userScriptProvider: { mockScript },
             pixelHandler: mockPixelHandler
         )

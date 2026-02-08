@@ -1,5 +1,6 @@
 ---
 alwaysApply: false
+description: Pattern for abstracting pixel and wide event instrumentation behind domain-specific protocols.
 ---
 # Instrumentation Facades
 
@@ -200,4 +201,3 @@ Skip this pattern for:
 ## Related Documentation
 
 - `pixels.mdc` - One-off instrumentation events
-- `wide-events.mdc` - Instrumentation for user journeys

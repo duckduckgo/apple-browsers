@@ -26,17 +26,6 @@ import DDGSync
 import MaliciousSiteProtection
 import PixelKit
 
-public enum RemoteMessagingTestPixelSuffix: String {
-    case testSuffix = "suffix_here"
-    case otherTestSuffix = "other_suffix"
-}
-
-public enum RemoteMessagingTestSource: String {
-    case push = "push"
-    case inApp = "in_app"
-    case scheduled = "scheduled"
-}
-
 extension Pixel {
     
     public enum Event {

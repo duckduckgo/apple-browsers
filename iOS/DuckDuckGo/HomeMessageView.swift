@@ -175,10 +175,6 @@ private struct HomeMessageButtonStyle: ButtonStyle {
     let buttonModel: HomeMessageButtonViewModel
 
     var foregroundColor: Color {
-        if case .promoSingleAction = viewModel.modelType {
-            return .cancelButtonForeground
-        }
-
         if case .cancel = buttonModel.actionStyle {
             return .cancelButtonForeground
         }
@@ -187,10 +183,6 @@ private struct HomeMessageButtonStyle: ButtonStyle {
     }
 
     var backgroundColor: Color {
-        if case .promoSingleAction = viewModel.modelType {
-            return .cancelButtonBackground
-        }
-
         if case .cancel = buttonModel.actionStyle {
             return .cancelButtonBackground
         }

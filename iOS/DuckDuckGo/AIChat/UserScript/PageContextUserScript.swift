@@ -21,6 +21,7 @@ import AIChat
 import Combine
 import Common
 import Foundation
+import os.log
 import UserScript
 import WebKit
 
@@ -56,9 +57,15 @@ final class PageContextUserScript: NSObject, Subfeature {
 
     /// Requests collecting page context
     func collect() {
-        guard let webView, let broker else {
+        guard let webView else {
+            Logger.aiChat.debug("[PageContextUserScript] collect() failed - webView is nil")
             return
         }
+        guard let broker else {
+            Logger.aiChat.debug("[PageContextUserScript] collect() failed - broker is nil")
+            return
+        }
+        Logger.aiChat.debug("[PageContextUserScript] collect() - pushing message to webView")
         broker.push(method: MessageName.collect.rawValue, params: nil, for: self, into: webView)
     }
 
@@ -73,13 +80,16 @@ final class PageContextUserScript: NSObject, Subfeature {
 
     /// Receives collected page context
     private func collectionResult(params: Any, message: UserScriptMessage) async -> Encodable? {
+        Logger.aiChat.debug("[PageContextUserScript] collectionResult received")
         guard let payload: PageContextCollectionPayload = DecodableHelper.decode(from: params),
               let jsonString = payload.serializedPageData,
               let jsonData = jsonString.data(using: .utf8) else {
+            Logger.aiChat.debug("[PageContextUserScript] collectionResult - failed to decode payload")
             return nil
         }
 
         let pageContextData: AIChatPageContextData? = DecodableHelper.decode(jsonData: jsonData)
+        Logger.aiChat.debug("[PageContextUserScript] collectionResult - decoded context: \(pageContextData != nil ? "success" : "nil")")
         collectionResultSubject.send(pageContextData)
 
         return nil

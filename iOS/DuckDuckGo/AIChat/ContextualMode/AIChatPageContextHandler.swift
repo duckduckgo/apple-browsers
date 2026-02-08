@@ -63,6 +63,9 @@ protocol AIChatPageContextHandling: AnyObject {
 
     /// Clears stored context and cancels active subscriptions.
     func clear()
+
+    /// Resubscribes to the current script's publisher after content blocking assets are reinstalled.
+    func resubscribe()
 }
 
 // MARK: - Implementation
@@ -125,6 +128,15 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
             script.webView = nil
         }
     }
+
+    /// Resubscribes to the current PageContextUserScript's publisher.
+    /// Call when content blocking assets are reinstalled and a new script instance is created.
+    func resubscribe() {
+        Logger.aiChat.debug("[PageContext] Resubscribe called - cancelling existing subscription")
+        updatesCancellable?.cancel()
+        updatesCancellable = nil
+        startObservingUpdates()
+    }
 }
 
 // MARK: - Private Methods
@@ -132,9 +144,16 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 private extension AIChatPageContextHandler {
 
     func startObservingUpdates() {
-        guard updatesCancellable == nil,
-              let script = userScriptProvider() else { return }
+        guard updatesCancellable == nil else {
+            Logger.aiChat.debug("[PageContext] startObservingUpdates skipped - already subscribed")
+            return
+        }
+        guard let script = userScriptProvider() else {
+            Logger.aiChat.debug("[PageContext] startObservingUpdates skipped - no script available")
+            return
+        }
 
+        Logger.aiChat.debug("[PageContext] startObservingUpdates - subscribing to new script instance")
         updatesCancellable = script.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in

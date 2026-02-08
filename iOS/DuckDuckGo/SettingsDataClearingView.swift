@@ -144,10 +144,10 @@ private struct DataClearingHeaderView: View {
         VStack(spacing: Constants.outerStackSpacing) {
             VStack(spacing: Constants.innerStackSpacing) {
                 // Fire illustration
-                Image(uiImage: DesignSystemImages.Color.Size72.fire)
+                Image(uiImage: DesignSystemImages.Color.Size128.fire)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: Constants.iconSize, height: Constants.iconSize)
+                    .frame(width: Constants.iconSize.width, height: Constants.iconSize.height)
                 
                 // Title
                 Text(UserText.dataClearing)
@@ -171,7 +171,7 @@ private struct DataClearingHeaderView: View {
     enum Constants {
         static let outerStackSpacing: CGFloat = 12
         static let innerStackSpacing: CGFloat = 8
-        static let iconSize: CGFloat = 64
+        static let iconSize: CGSize = .init(width: 128, height: 96)
         static let padding: EdgeInsets = .init(top: 0, leading: 16, bottom: 8, trailing: 16)
     }
 }

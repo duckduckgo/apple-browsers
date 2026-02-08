@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import Onboarding
 
 extension OnboardingRebranding.OnboardingView {
 

@@ -26,7 +26,8 @@ public class AuthV2TokenAdoptionWideEventData: WideEventData {
         pixelName: "auth_v2_token_adoption",
         featureName: "authv2-token-adoption",
         mobileMetaType: "ios-authv2-token-adoption",
-        desktopMetaType: "macos-authv2-token-adoption"
+        desktopMetaType: "macos-authv2-token-adoption",
+        version: "1.0.0"
     )
 
     public enum FailingStep: String, Codable, CaseIterable {

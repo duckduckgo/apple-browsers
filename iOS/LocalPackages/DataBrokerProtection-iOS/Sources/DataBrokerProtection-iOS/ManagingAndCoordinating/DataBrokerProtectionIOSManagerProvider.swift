@@ -45,13 +45,15 @@ public class DataBrokerProtectionIOSManagerProvider {
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                   featureFlagger: DBPFeatureFlagging,
+                                  userNotificationService: DataBrokerProtectionUserNotificationService,
                                   pixelKit: PixelKit,
                                   wideEvent: WideEventManaging,
                                   subscriptionManager: DataBrokerProtectionSubscriptionManaging,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View),
                                   eventsHandler: EventMapping<JobEvent>,
-                                  isWebViewInspectable: Bool = false) -> DataBrokerProtectionIOSManager? {
+                                  isWebViewInspectable: Bool = false,
+                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -147,6 +149,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             jobDependencies: jobDependencies,
             emailConfirmationDataService: emailConfirmationDataService,
             authenticationManager: authenticationManager,
+            userNotificationService: userNotificationService,
             sharedPixelsHandler: sharedPixelsHandler,
             iOSPixelsHandler: iOSPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
@@ -158,7 +161,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             subscriptionManager: subscriptionManager,
             wideEvent: wideEvent,
             eventsHandler: eventsHandler,
-            isWebViewInspectable: isWebViewInspectable
+            isWebViewInspectable: isWebViewInspectable,
+            freeTrialConversionService: freeTrialConversionService
         )
     }
 }

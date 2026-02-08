@@ -27,16 +27,18 @@ public struct OnboardingTheme: Equatable {
     public let colorPalette: ColorPalette
     /// Layout and visual metrics for the onboarding bubble container.
     public let bubbleMetrics: BubbleMetrics
+    /// Layout metrics for positioning and sizing the dismiss button.
+    public let dismissButtonMetrics: DismissButtonMetrics
+    /// Layout metrics for the contextual onboarding flow.
+    public let contextualOnboardingMetrics: ContextualOnboardingMetrics
     /// Text alignment for linear flow titles.
     public let linearTitleTextAlignment: TextAlignment
     /// Text alignment for linear flow body copy.
     public let linearBodyTextAlignment: TextAlignment
-    /// Text alignment for contextual flow titles.
-    public let contextualTitleTextAlignment: TextAlignment
-    /// Text alignment for contextual flow body copy.
-    public let contextualBodyTextAlignment: TextAlignment
     /// Style used by the primary onboarding button.
     public let primaryButtonStyle: OnboardingButtonStyle
+    /// Style used by the dismiss onboarding button.
+    public let dismissButtonStyle: OnboardingButtonStyle
 
     /// Creates a new onboarding theme.
     ///
@@ -44,29 +46,33 @@ public struct OnboardingTheme: Equatable {
     ///   - typography: Typography to use throughout the onboarding flow.
     ///   - colorPalette: Color palette to use throughout the onboarding flow.
     ///   - bubbleMetrics: Bubble layout and visual metrics.
+    ///   - dismissButtonMetrics: Dismiss button layout and positioning metrics.
     ///   - linearTitleTextAlignment: Title alignment for linear flows.
     ///   - linearBodyTextAlignment: Body alignment for linear flows.
     ///   - contextualTitleTextAlignment: Title alignment for contextual flows.
     ///   - contextualBodyTextAlignment: Body alignment for contextual flows.
     ///   - primaryButtonStyle: Primary button style.
+    ///   - dismissButtonStyle: Dismiss button style.
     public init(
         typography: Typography,
         colorPalette: ColorPalette,
         bubbleMetrics: BubbleMetrics,
+        dismissButtonMetrics: DismissButtonMetrics,
+        contextualOnboardingMetrics: ContextualOnboardingMetrics,
         linearTitleTextAlignment: TextAlignment,
         linearBodyTextAlignment: TextAlignment,
-        contextualTitleTextAlignment: TextAlignment,
-        contextualBodyTextAlignment: TextAlignment,
-        primaryButtonStyle: OnboardingButtonStyle
+        primaryButtonStyle: OnboardingButtonStyle,
+        dismissButtonStyle: OnboardingButtonStyle,
     ){
         self.typography = typography
         self.colorPalette = colorPalette
         self.bubbleMetrics = bubbleMetrics
+        self.dismissButtonMetrics = dismissButtonMetrics
+        self.contextualOnboardingMetrics = contextualOnboardingMetrics
         self.linearTitleTextAlignment = linearTitleTextAlignment
         self.linearBodyTextAlignment = linearBodyTextAlignment
-        self.contextualTitleTextAlignment = contextualTitleTextAlignment
-        self.contextualBodyTextAlignment = contextualBodyTextAlignment
         self.primaryButtonStyle = primaryButtonStyle
+        self.dismissButtonStyle = dismissButtonStyle
     }
 
 }

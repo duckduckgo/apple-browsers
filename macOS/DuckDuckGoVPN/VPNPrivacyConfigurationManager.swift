@@ -31,23 +31,22 @@ public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging 
         self.internalUserDecider = internalUserDecider
     }
 
+    private var _embeddedConfigData: Data?
     var embeddedConfigData: Data {
-        let configString = """
-    {
-            "readme": "https://github.com/duckduckgo/privacy-configuration",
-            "version": 1693838894358,
-            "features": {
-                "networkProtection": {
-                    "state": "enabled",
-                    "exceptions": [],
-                    "settings": {}
-                }
-            },
-            "unprotectedTemporary": []
+        lock.lock()
+        defer { lock.unlock() }
+
+        if let data = _embeddedConfigData {
+            return data
         }
-    """
-        let data = configString.data(using: .utf8)
-        return data!
+
+        guard let url = Bundle.main.url(forResource: "macos-config", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            fatalError("Could not load macos-config.json from bundle")
+        }
+
+        _embeddedConfigData = data
+        return data
     }
 
     private var _fetchedConfigData: PrivacyConfigurationManager.ConfigurationData?

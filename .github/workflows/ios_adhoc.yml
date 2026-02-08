@@ -52,6 +52,8 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
+        with:
+          xcode-version: ${{ github.event.inputs.build-type == 'Experimental' && '26.2' || '' }}
 
       - name: Add commit SHA to plist
         run: |

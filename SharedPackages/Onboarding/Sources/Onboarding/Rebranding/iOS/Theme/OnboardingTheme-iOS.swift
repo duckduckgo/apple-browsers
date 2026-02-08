@@ -19,9 +19,11 @@
 #if os(iOS)
 import SwiftUI
 import DesignResourcesKit
+import MetricBuilder
 
 // MARK: - Factory Helpers
 
+@MainActor
 public extension OnboardingTheme {
 
     /// Rebranding 2026 default onboarding theme.
@@ -29,34 +31,96 @@ public extension OnboardingTheme {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
 
+        let typography: OnboardingTheme.Typography = .system
+        let colorPalette = ColorPalette(
+            background: Color(singleUseColor: .rebranding(.backdrop)),
+            bubbleBorder: Color(singleUseColor: .rebranding(.accentAltPrimary)),
+            bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
+            bubbleShadow: Color.shade(0.03),
+            textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
+            textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
+            optionsListBorderColor: Color(singleUseColor: .rebranding(.accentPrimary)),
+            optionsListIconColor: Color(singleUseColor: .rebranding(.accentPrimary)),
+            optionsListTextColor: Color(singleUseColor: .rebranding(.textLink)),
+            primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
+            primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText))
+        )
+        let bubbleMetrics = BubbleMetrics(
+            contentInsets: bubbleContentInsets,
+            cornerRadius: bubbleCornerRadius,
+            borderWidth: borderWidth,
+            shadowRadius: 6.0,
+            shadowPosition: CGPoint(x: 0, y: 7)
+        )
+        let dismissButtonMetrics = DismissButtonMetrics(
+            buttonSize: CGSize(width: 44, height: 44),
+            offsetRelativeToBubble: CGPoint(x: 4, y: 4),
+            contentPadding: 8
+        )
+        let contextualOptionsListMetrics = ContextualOnboardingMetrics.OptionsListMetrics(
+            cornerRadius: 32,
+            borderWidth: 1,
+            borderInset: 0.5,
+            iconSize: CGSize(width: 16, height: 16),
+            itemMaxHeight: 40
+        )
+
         return OnboardingTheme(
-            typography: .system,
-            colorPalette: ColorPalette(
-                bubbleBorder: Color(singleUseColor: .rebranding(.accentAltPrimary)),
-                bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
-                bubbleShadow: Color.shade(0.03),
-                textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),
-                textSecondary: Color(singleUseColor: .rebranding(.textSecondary)),
-                primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
-                primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText))
-            ),
-            bubbleMetrics: BubbleMetrics(
-                contentInsets: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
-                cornerRadius: bubbleCornerRadius,
-                borderWidth: borderWidth,
-                shadowRadius: 6.0,
-                shadowPosition: CGPoint(x: 0, y: 7)
+            typography: typography,
+            colorPalette: colorPalette,
+            bubbleMetrics: bubbleMetrics,
+            dismissButtonMetrics: dismissButtonMetrics,
+            contextualOnboardingMetrics: ContextualOnboardingMetrics(
+                contentSpacing: 20,
+                titleBodyVerticalSpacing: 10,
+                titleBodyInset: contextualTitleBodyContentInsets,
+                contextualTitleTextAlignment: .leading,
+                contextualBodyTextAlignment: .leading,
+                optionsListMetrics: contextualOptionsListMetrics,
+                optionsListButtonStyle: OnboardingButtonStyle(
+                    id: .list,
+                    style: AnyButtonStyle(
+                        OnboardingRebranding.OnboardingStyles.ListButtonStyle(
+                            typography: typography,
+                            colorPalette: colorPalette,
+                            optionsListMetrics: contextualOptionsListMetrics
+                        )
+                    )
+                )
             ),
             linearTitleTextAlignment: .center,
             linearBodyTextAlignment: .center,
-            contextualTitleTextAlignment: .leading,
-            contextualBodyTextAlignment: .leading,
             primaryButtonStyle: OnboardingButtonStyle(
                 id: .primary,
-                style: AnyButtonStyle(OnboardingPrimaryButtonStyle())
+                style: AnyButtonStyle(OnboardingPrimaryButtonStyle(
+                    typography: typography,
+                    colorPalette: colorPalette
+                ))
+            ),
+            dismissButtonStyle: OnboardingButtonStyle(
+                id: .dismiss,
+                style: AnyButtonStyle(
+                    OnboardingRebranding.OnboardingStyles.BubbleDismissButtonStyle(
+                        contentPadding: dismissButtonMetrics.contentPadding,
+                        backgroundColor: colorPalette.bubbleBackground,
+                        borderColor: colorPalette.bubbleBorder,
+                        borderWidth: borderWidth,
+                        buttonSize: dismissButtonMetrics.buttonSize
+                    )
+                )
             )
         )
     }()
 
+    private static let bubbleContentInsets: EdgeInsets = MetricBuilder<EdgeInsets>(
+        iPhone: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
+        iPad: EdgeInsets(top: 24, leading: 40, bottom: 24, trailing: 40)
+    ).build()
+
+    private static let contextualTitleBodyContentInsets: EdgeInsets = MetricBuilder<EdgeInsets>(
+        iPhone: EdgeInsets(top: 0, leading: 8, bottom: 12, trailing: 0),
+        iPad: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+    ).build()
 }
+
 #endif

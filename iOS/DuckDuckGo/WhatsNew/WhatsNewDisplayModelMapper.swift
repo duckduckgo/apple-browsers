@@ -34,6 +34,14 @@ protocol WhatsNewDisplayModelMapping {
 
 struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
+    let imageLoader: RemoteMessagingImageLoading?
+    let pixelReporter: RemoteMessagingPixelReporting?
+
+    init(imageLoader: RemoteMessagingImageLoading? = nil, pixelReporter: RemoteMessagingPixelReporting? = nil) {
+        self.imageLoader = imageLoader
+        self.pixelReporter = pixelReporter
+    }
+
     /// Maps a RemoteMessageModel to CardsListDisplayModel
     /// Returns nil if message is not a cardsList type
     /// - Parameters:
@@ -95,16 +103,39 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
         guard
             let contentType = message.content,
-            case let .cardsList(mainTitleText, placeholder, items, primaryActionText, primaryAction) = contentType
+            case let .cardsList(mainTitleText, placeholder, imageUrl, items, primaryActionText, primaryAction) = contentType
         else {
             return nil
         }
 
         let listItems = mapRemoteListItems(items)
 
+        let preloadedHeaderImage: UIImage? = imageUrl.flatMap { imageLoader?.cachedImage(for: $0) }
+
+        if preloadedHeaderImage != nil {
+            pixelReporter?.measureRemoteMessageImageLoadSuccess(message)
+        }
+
+        let loadHeaderImage: ((URL) async throws -> UIImage)? = if preloadedHeaderImage == nil {
+            imageLoader.map { loader in
+                { url in try await loader.loadImage(from: url) }
+            }
+        } else {
+            nil
+        }
+
         return RemoteMessagingUI.CardsListDisplayModel(
             screenTitle: mainTitleText,
             icon: placeholder?.rawValue,
+            preloadedHeaderImage: preloadedHeaderImage,
+            headerImageUrl: imageUrl,
+            loadHeaderImage: loadHeaderImage,
+            onHeaderImageLoadSuccess: preloadedHeaderImage == nil ? { [pixelReporter, message] in
+                pixelReporter?.measureRemoteMessageImageLoadSuccess(message)
+            } : nil,
+            onHeaderImageLoadFailed: preloadedHeaderImage == nil ? { [pixelReporter, message] in
+                pixelReporter?.measureRemoteMessageImageLoadFailed(message)
+            } : nil,
             items: listItems,
             onAppear: onMessageAppear,
             primaryAction: (

@@ -56,7 +56,7 @@ struct DuckPlayerView: View {
         static let grabHandlePadding: CGFloat = 8
         static let videoContainerPadding: CGFloat = 20
         static let welcomeMessageSpacing: CGFloat = 16
-        static let welcomeMessageInternalPadding: CGFloat = 10
+        static let welcomeMessageInternalPadding = EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
         static let welcomeMessageCornerRadius: CGFloat = 12
         static let welcomeMessagePadding: CGFloat = 16
         static let welcomeMessageExternalPadding: CGFloat = 5
@@ -345,7 +345,7 @@ struct DuckPlayerView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: LayoutConstants.duckPlayerLogoSize, height: LayoutConstants.duckPlayerLogoSize, alignment: .leading)
-                            .padding(.leading, LayoutConstants.welcomeMessageInternalPadding)
+                            .padding(.leading, LayoutConstants.welcomeMessageInternalPadding.leading)
                     }
 
                   BubbleView(
@@ -353,7 +353,7 @@ struct DuckPlayerView: View {
                       arrowWidth: 25,
                       arrowPositionPercent: 1,
                       fillColor: Constants.uiElementsBackground,
-                      paddingAmount: LayoutConstants.welcomeMessageInternalPadding
+                      contentPadding: LayoutConstants.welcomeMessageInternalPadding
                   ) {
                       bubbleContent
                         .padding(LayoutConstants.welcomeMessageInternalPadding)

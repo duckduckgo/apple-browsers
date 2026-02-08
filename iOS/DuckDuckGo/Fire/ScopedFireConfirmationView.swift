@@ -70,11 +70,20 @@ struct ScopedFireConfirmationView: View {
         VStack(spacing: Constants.headerSectionSpacing) {
             animation
             
-            Text(UserText.scopedFireConfirmationAlertTitle)
-                .daxTitle3()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: Constants.headlineTextSpacing) {
+                Text(viewModel.headerTitle)
+                    .daxTitle3()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let subtitle = viewModel.subtitle {
+                    Text(subtitle)
+                        .daxSubheadRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
         .padding(Constants.headerSectionPadding)
     }
@@ -107,7 +116,7 @@ struct ScopedFireConfirmationView: View {
     @ViewBuilder
     private var animation: some View {
         Lottie.LottieView(animation: .named("fire-icon"))
-            .playbackMode(isAnimating ? .playing(.fromProgress(0, toProgress: 1, loopMode: .repeat(2))) : .paused(at: .progress(0)))
+            .playbackMode(isAnimating ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)) : .paused(at: .progress(0)))
             .resizable()
             .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
             .onAppear {
@@ -126,6 +135,7 @@ private extension ScopedFireConfirmationView {
         static let headerSectionSpacing: CGFloat = 8
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96
+        static let headlineTextSpacing: CGFloat = 4
         static let buttonSpacing: CGFloat = 16
         static let closeButtonPadding: CGFloat = 8
         static let animationDelay: Double = 0.5

@@ -38,7 +38,9 @@ let package = Package(
     dependencies: [
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Infrastructure/DesignResourcesKit"),
-        .package(path: "../Infrastructure/DesignResourcesKitIcons")
+        .package(path: "../Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../UIComponents"),
+        .package(path: "../Infrastructure/MetricBuilder"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -49,7 +51,9 @@ let package = Package(
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
                 "DesignResourcesKit",
-                "DesignResourcesKitIcons"
+                "DesignResourcesKitIcons",
+                "UIComponents",
+                .product(name: "MetricBuilder", package: "MetricBuilder", condition: .when(platforms: [.iOS])),
             ],
             resources: [
                 .process("Resources")

@@ -379,6 +379,7 @@ extension SuggestionJsonScenarioTests {
         
         var history: [History.HistoryEntry]?
         var allHistoryVisits: [History.Visit]?
+        var dataClearingPixelsHandling: (any DataClearingPixelsHandling)?
 
         @Published var historyDictionary: [URL: History.HistoryEntry]?
         var historyDictionaryPublisher: Published<[URL: History.HistoryEntry]?>.Publisher {
@@ -437,6 +438,9 @@ extension SuggestionJsonScenarioTests {
             }
         }
         
+        func burnVisits(for tabID: String) async throws {
+        }
+        
         func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
             MainActor.assumeMainThread {
                 completion?(nil)
@@ -490,6 +494,9 @@ extension SuggestionJsonScenarioTests {
         }
         
         func removeTabHistory(for tabIDs: [String]) async {
+        }
+
+        func removeBrowsingHistory(tabID: String) async {
         }
     }
 }

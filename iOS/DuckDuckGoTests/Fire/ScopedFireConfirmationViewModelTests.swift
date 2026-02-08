@@ -18,23 +18,39 @@
 //
 
 import XCTest
+import Core
+import Persistence
 @testable import DuckDuckGo
 
 @MainActor
 final class ScopedFireConfirmationViewModelTests: XCTestCase {
+    
+    private var mockDownloadManager: SpyDownloadManager!
+    private var mockKeyValueStore: MockKeyValueStore!
+    private var mockHistoryManager: MockHistoryManager!
+    
+    override func setUp() {
+        super.setUp()
+        mockDownloadManager = SpyDownloadManager()
+        mockKeyValueStore = MockKeyValueStore()
+        mockHistoryManager = MockHistoryManager()
+    }
+    
+    override func tearDown() {
+        mockDownloadManager = nil
+        mockKeyValueStore = nil
+        mockHistoryManager = nil
+        super.tearDown()
+    }
     
     // MARK: - burnAllTabs Tests
     
     func testWhenBurnAllTabsCalledThenOnConfirmIsCalledWithCorrectRequest() {
         // Given
         var capturedRequest: FireRequest?
-        let sut = ScopedFireConfirmationViewModel(
-            tabViewModel: nil,
-            onConfirm: { request in
-                capturedRequest = request
-            },
-            onCancel: { }
-        )
+        let sut = makeSUT(tabViewModel: nil, onConfirm: { request in
+            capturedRequest = request
+        })
         
         // When
         sut.burnAllTabs()
@@ -50,18 +66,38 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         }
     }
     
+    // MARK: - burnThisTab Tests
+    
+    func testWhenBurnThisTabCalledWithTabViewModelThenOnConfirmIsCalledWithCorrectRequest() {
+        // Given
+        var capturedRequest: FireRequest?
+        let tabViewModel = createTabViewModel()
+        let sut = makeSUT(tabViewModel: tabViewModel, onConfirm: { request in
+            capturedRequest = request
+        })
+        
+        // When
+        sut.burnThisTab()
+        
+        // Then
+        XCTAssertNotNil(capturedRequest)
+        XCTAssertEqual(capturedRequest?.options, .all)
+        XCTAssertEqual(capturedRequest?.trigger, .manualFire)
+        if case .tab(let vm) = capturedRequest?.scope {
+            XCTAssertTrue(vm.tab == tabViewModel.tab)
+        } else {
+            XCTFail("Expected scope to be .tab with the correct view model")
+        }
+    }
+    
     // MARK: - cancel Tests
     
     func testWhenCancelCalledThenOnCancelIsCalled() {
         // Given
         var cancelCalled = false
-        let sut = ScopedFireConfirmationViewModel(
-            tabViewModel: nil,
-            onConfirm: { _ in },
-            onCancel: {
-                cancelCalled = true
-            }
-        )
+        let sut = makeSUT(tabViewModel: nil, onCancel: {
+            cancelCalled = true
+        })
         
         // When
         sut.cancel()
@@ -74,33 +110,216 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     
     func testWhenTabViewModelIsNilThenCanBurnSingleTabReturnsFalse() {
         // Given
-        let sut = ScopedFireConfirmationViewModel(
-            tabViewModel: nil,
-            onConfirm: { _ in },
-            onCancel: { }
-        )
+        let sut = makeSUT(tabViewModel: nil)
         
         // Then
         XCTAssertFalse(sut.canBurnSingleTab)
     }
     
-    func testWhenTabViewModelIsNotNilThenCanBurnSingleTabReturnsTrue() {
+    func testWhenTabSupportsTabHistoryThenCanBurnSingleTabReturnsTrue() {
         // Given
-        let sut = ScopedFireConfirmationViewModel(
-            tabViewModel: createTabViewModel(),
-            onConfirm: { _ in },
-            onCancel: { }
-        )
+        let sut = makeSUT(tabViewModel: createTabViewModel())
         
         // Then
         XCTAssertTrue(sut.canBurnSingleTab)
     }
     
+    func testWhenTabDoesNotSupportTabHistoryThenCanBurnSingleTabReturnsFalse() {
+        // Given
+        let legacyTab = Tab(supportsTabHistory: false)
+        let tabViewModel = TabViewModel(tab: legacyTab, historyManager: mockHistoryManager)
+        let sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then
+        XCTAssertFalse(sut.canBurnSingleTab)
+    }
+    
+    // MARK: - subtitle Tests - Ongoing Downloads
+    
+    func testWhenOngoingDownloadsExistThenSubtitleIsDownloadsWarning() {
+        // Given
+        let runningDownload = createRunningDownload()
+        mockDownloadManager.downloadList = [runningDownload]
+        
+        // When
+        let sut = makeSUT(tabViewModel: createTabViewModel())
+        
+        // Then
+        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDownloadsWarning)
+    }
+    
+    // MARK: - subtitle Tests - No Tab View Model
+    
+    func testWhenNoTabViewModelThenSubtitleIsNil() {
+        // Given/When
+        let sut = makeSUT(tabViewModel: nil)
+        
+        // Then
+        XCTAssertNil(sut.subtitle)
+    }
+    
+    // MARK: - subtitle Tests - Tab Without History Support
+    
+    func testWhenTabDoesNotSupportTabHistoryThenSubtitleIsNewTabsInfo() {
+        // Given
+        let legacyTab = Tab(supportsTabHistory: false)
+        let tabViewModel = TabViewModel(tab: legacyTab, historyManager: mockHistoryManager)
+        
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then
+        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationNewTabsInfo)
+    }
+    
+    // MARK: - subtitle Tests - AI Tab
+    
+    func testWhenAITabFirstTimeThenSubtitleIsAIDescription() {
+        // Given
+        let aiTab = createAITab()
+        let tabViewModel = TabViewModel(tab: aiTab, historyManager: mockHistoryManager)
+        
+        // When first time
+        var sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then show subtitle
+        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDeleteThisTabDescription)
+        
+        // When second time
+        sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then show subtitle
+        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDeleteThisTabDescription)
+        
+        // When more than two times
+        sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then don't show subtitle
+        XCTAssertNil(sut.subtitle)
+    }
+    
+    // MARK: - subtitle Tests - Web Tab
+    
+    func testWhenWebTabFirstTimeThenSubtitleIsSignOutWarning() {
+        // Given
+        let tabViewModel = createTabViewModel()
+        
+        // When first time
+        var sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then show subtitle
+        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationSignOutWarning)
+        
+        // When second time
+        sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then show subtitle
+        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationSignOutWarning)
+        
+        // When more than two times
+        sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then don't show subtitle
+        XCTAssertNil(sut.subtitle)
+    }
+    
+    // MARK: - subtitle Tests - Dax Dialogs (Onboarding)
+    
+    func testWhenDaxDialogsIsShowingFireDialogThenSubtitleIsNil() {
+        // Given
+        let mockDaxDialogsManager = DummyDaxDialogsManager()
+        mockDaxDialogsManager.isShowingFireDialog = true
+        let tabViewModel = createTabViewModel()
+        
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel, daxDialogsManager: mockDaxDialogsManager)
+        
+        // Then - subtitle is nil even though it would normally show sign out warning
+        XCTAssertNil(sut.subtitle)
+    }
+    
+    // MARK: - subtitle Tests - Priority
+    
+    func testWhenOngoingDownloadsExistEvenForAITabThenSubtitleIsDownloadsWarning() {
+        // Given
+        let runningDownload = createRunningDownload()
+        mockDownloadManager.downloadList = [runningDownload]
+        let aiTab = createAITab()
+        let tabViewModel = TabViewModel(tab: aiTab, historyManager: mockHistoryManager)
+        
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then - downloads warning takes priority over AI description
+        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDownloadsWarning)
+    }
+    
+    func testWhenLegacyTabWithOngoingDownloadsThenSubtitleIsDownloadsWarning() {
+        // Given
+        let runningDownload = createRunningDownload()
+        mockDownloadManager.downloadList = [runningDownload]
+        let legacyTab = Tab(supportsTabHistory: false)
+        let tabViewModel = TabViewModel(tab: legacyTab, historyManager: mockHistoryManager)
+        
+        // When
+        let sut = makeSUT(tabViewModel: tabViewModel)
+        
+        // Then - downloads warning takes priority
+        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDownloadsWarning)
+    }
+    
     // MARK: - Helpers
     
+    private func makeSUT(tabViewModel: TabViewModel?,
+                         source: FireRequest.Source = .browsing,
+                         daxDialogsManager: DaxDialogsManaging = DummyDaxDialogsManager(),
+                         onConfirm: @escaping (FireRequest) -> Void = { _ in },
+                         onCancel: @escaping () -> Void = { }) -> ScopedFireConfirmationViewModel {
+        return ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
+                                               source: source,
+                                               downloadManager: mockDownloadManager,
+                                               keyValueStore: mockKeyValueStore,
+                                               daxDialogsManager: daxDialogsManager,
+                                               onConfirm: onConfirm,
+                                               onCancel: onCancel)
+    }
+    
     private func createTabViewModel() -> TabViewModel {
-        let mockHistoryManager = MockHistoryManager()
         let tab = Tab()
         return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+    
+    private func createAITab() -> Tab {
+        let aiChatURL = URL(string: "https://duckduckgo.com/?ia=chat")!
+        let link = Link(title: "AI Chat", url: aiChatURL)
+        return Tab(link: link)
+    }
+    
+    private func createRunningDownload(temporary: Bool = false) -> Download {
+        let mockSession = MockDownloadSession()
+        mockSession.isRunning = true
+        return Download(url: URL(string: "https://example.com/file.zip")!,
+                        filename: "file.zip",
+                        mimeType: .unknown,
+                        temporary: temporary,
+                        downloadSession: mockSession)
+    }
+}
+
+// MARK: - MockKeyValueStore
+
+private class MockKeyValueStore: KeyValueStoring {
+    private var storage: [String: Any] = [:]
+    
+    func object(forKey defaultName: String) -> Any? {
+        storage[defaultName]
+    }
+    
+    func set(_ value: Any?, forKey defaultName: String) {
+        storage[defaultName] = value
+    }
+    
+    func removeObject(forKey defaultName: String) {
+        storage.removeValue(forKey: defaultName)
     }
 }

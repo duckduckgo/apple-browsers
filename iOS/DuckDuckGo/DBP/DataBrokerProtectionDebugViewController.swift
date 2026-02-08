@@ -102,6 +102,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case runPendingOptOuts
         case runAllPendingJobs
         case fireWeeklyPixel
+        case resetAllPIRNotifications
 
         var title: String {
             switch self {
@@ -119,6 +120,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Run All Pending Jobs"
             case .fireWeeklyPixel:
                 return "Test Firing Weekly Pixels"
+            case .resetAllPIRNotifications:
+                return "Reset All PIR Notifications"
             }
         }
     }
@@ -631,6 +634,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 await debuggingDelegate?.fireWeeklyPixels()
                 presentAlert(message: "Weekly pixels fired.")
             }
+        case .resetAllPIRNotifications:
+            debuggingDelegate?.resetAllNotificationStatesForDebug()
+            presentAlert(message: "All PIR notification states reset.")
         }
     }
     

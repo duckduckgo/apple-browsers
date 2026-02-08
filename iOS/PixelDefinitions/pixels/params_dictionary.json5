@@ -85,6 +85,12 @@
         "type": "number",
         "description": "Sample rate for this pixel, between 0 and 1"
     },
+    "wideEventMetaVersion": {
+        "key": "meta.version",
+        "type": "string",
+        "description": "Schema version of the wide event (MAJOR.MINOR.PATCH format)",
+        "pattern": "^[1-9]\\d*\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+    },
     "wideEventIsFirstDailyOccurrence": {
         "key": "global.is_first_daily_occurrence",
         "type": "boolean",
@@ -265,5 +271,17 @@
         "type": "string",
         "description": "Location selection for the VPN latency test",
         "enum": ["nearest", "custom"]
+    },
+    "burnSource": {
+        "key": "source",
+        "type": "string",
+        "description": "Source of the burn action",
+        "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear"]
+    },
+    "tabType": {
+        "key": "tabType",
+        "type": "string",
+        "description": "Type of tab when burn was initiated",
+        "enum": ["web", "ai", "unknown"]
     }
 }

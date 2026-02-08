@@ -23,6 +23,25 @@ import os.log
 import UIKit
 import WebKit
 
+// MARK: - Page Context DTO
+
+/// Page context wrapper for UI display.
+struct AIChatPageContext: Equatable {
+    let title: String
+    let favicon: UIImage?
+    let contextData: AIChatPageContextData
+
+    init(contextData: AIChatPageContextData, favicon: UIImage?) {
+        self.title = contextData.title
+        self.favicon = favicon
+        self.contextData = contextData
+    }
+
+    static func == (lhs: AIChatPageContext, rhs: AIChatPageContext) -> Bool {
+        lhs.contextData == rhs.contextData
+    }
+}
+
 // MARK: - Provider Typealiases
 
 typealias WebViewProvider = () -> WKWebView?
@@ -34,25 +53,19 @@ typealias FaviconProvider = (URL) -> String?
 /// Interface for page context handling (collection, storage, updates).
 /// Only the coordinator should access this type directly. Other components receive closures.
 protocol AIChatPageContextHandling: AnyObject {
-    /// The latest page context collected from the current tab.
-    var latestContext: AIChatPageContextData? { get }
-
-    /// Decoded favicon image from the latest context, cached for chip display.
-    var latestFavicon: UIImage? { get }
-
-    /// Returns whether there is context available.
-    var hasContext: Bool { get }
-
     /// Publisher for context updates. Subscribe to receive results after triggering collection.
-    var contextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
+    var contextPublisher: AnyPublisher<AIChatPageContext?, Never> { get }
 
     /// Triggers context collection from JS. Does not return the result directly.
     /// Callers should subscribe to `contextPublisher` for results.
     /// Note: First call also starts observing auto-updates from the page.
-    func triggerContextCollection() async
+    @discardableResult func triggerContextCollection() -> Bool
 
-    /// Clear stored context and stop observing updates.
+    /// Clears stored context and cancels active subscriptions.
     func clear()
+
+    /// Resubscribes to the current script's publisher after content blocking assets are reinstalled.
+    func resubscribe()
 }
 
 // MARK: - Implementation
@@ -60,38 +73,18 @@ protocol AIChatPageContextHandling: AnyObject {
 @MainActor
 final class AIChatPageContextHandler: AIChatPageContextHandling {
 
-    // MARK: - Constants
-
-    private enum Constants {
-        static let collectionTimeout: TimeInterval = 2
-    }
-
     // MARK: - Properties
 
     private let webViewProvider: WebViewProvider
     private let userScriptProvider: UserScriptProvider
     private let faviconProvider: FaviconProvider
 
-    private var storedContext: AIChatPageContextData?
-    private var storedFavicon: UIImage?
-    private let contextSubject = CurrentValueSubject<AIChatPageContextData?, Never>(nil)
+    private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
     private var updatesCancellable: AnyCancellable?
 
     // MARK: - AIChatPageContextHandling
 
-    var latestContext: AIChatPageContextData? {
-        storedContext
-    }
-
-    var latestFavicon: UIImage? {
-        storedFavicon
-    }
-
-    var hasContext: Bool {
-        storedContext != nil
-    }
-
-    var contextPublisher: AnyPublisher<AIChatPageContextData?, Never> {
+    var contextPublisher: AnyPublisher<AIChatPageContext?, Never> {
         contextSubject.eraseToAnyPublisher()
     }
 
@@ -105,91 +98,87 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         self.faviconProvider = faviconProvider
     }
 
-    func triggerContextCollection() async {
+    @discardableResult
+    func triggerContextCollection() -> Bool {
         Logger.aiChat.debug("[PageContext] Collection triggered")
 
         guard let script = userScriptProvider() else {
             Logger.aiChat.debug("[PageContext] Collection skipped - no user script available")
-            return
+            return false
         }
+        
+        guard let webView = webViewProvider() else {
+           Logger.aiChat.debug("[PageContext] Collection skipped - no web view available")
+           return false
+       }
 
-        script.webView = webViewProvider()
-
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            var cancellable: AnyCancellable?
-            var didResume = false
-
-            cancellable = script.collectionResultPublisher
-                .first()
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] pageContext in
-                    guard !didResume else { return }
-                    didResume = true
-                    cancellable?.cancel()
-
-                    let enriched = self?.enrichWithFavicon(pageContext)
-                    if let enriched {
-                        self?.updateInternal(enriched)
-                    }
-                    continuation.resume()
-                }
-
-            script.collect()
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.collectionTimeout) {
-                guard !didResume else { return }
-                didResume = true
-                cancellable?.cancel()
-                continuation.resume()
-            }
-        }
-
+        script.webView = webView
         startObservingUpdates()
+        script.collect()
+        return true
     }
 
     func clear() {
-        Logger.aiChat.debug("[PageContext] Context cleared")
-        stopObservingUpdates()
-        storedContext = nil
-        storedFavicon = nil
+        Logger.aiChat.debug("[PageContext] Clearing stored context and cancelling subscriptions")
+        updatesCancellable?.cancel()
+        updatesCancellable = nil
         contextSubject.send(nil)
+
+        if let script = userScriptProvider() {
+            script.webView = nil
+        }
     }
 
-    // MARK: - Private Methods
+    /// Resubscribes to the current PageContextUserScript's publisher.
+    /// Call when content blocking assets are reinstalled and a new script instance is created.
+    func resubscribe() {
+        Logger.aiChat.debug("[PageContext] Resubscribe called - cancelling existing subscription")
+        updatesCancellable?.cancel()
+        updatesCancellable = nil
+        startObservingUpdates()
+    }
+}
 
-    private func startObservingUpdates() {
-        guard updatesCancellable == nil,
-              let script = userScriptProvider() else { return }
+// MARK: - Private Methods
 
+private extension AIChatPageContextHandler {
+
+    func startObservingUpdates() {
+        guard updatesCancellable == nil else {
+            Logger.aiChat.debug("[PageContext] startObservingUpdates skipped - already subscribed")
+            return
+        }
+        guard let script = userScriptProvider() else {
+            Logger.aiChat.debug("[PageContext] startObservingUpdates skipped - no script available")
+            return
+        }
+
+        Logger.aiChat.debug("[PageContext] startObservingUpdates - subscribing to new script instance")
         updatesCancellable = script.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
-                guard let self, let pageContext else { return }
+                guard let self else { return }
 
-                let enriched = self.enrichWithFavicon(pageContext)
-                if let enriched {
-                    self.updateInternal(enriched)
+                guard let pageContext else {
+                    Logger.aiChat.debug("[PageContext] Context collection returned nil - publishing nil to subscribers")
+                    self.contextSubject.send(nil)
+                    return
                 }
+
+                self.publishContextUpdate(pageContext)
             }
     }
 
-    private func stopObservingUpdates() {
-        updatesCancellable?.cancel()
-        updatesCancellable = nil
+    func publishContextUpdate(_ context: AIChatPageContextData) {
+        Logger.aiChat.debug("[PageContext] Context received - title: \(context.title.prefix(50)), content: \(context.content.count) chars, truncated: \(context.truncated)")
+        let enriched = self.enrichWithFavicon(context)
+        let favicon = decodeFaviconImage(from: enriched.favicon)
+        let pageContextWrapper = AIChatPageContext(contextData: enriched, favicon: favicon)
+        contextSubject.send(pageContextWrapper)
     }
 
-    private func updateInternal(_ context: AIChatPageContextData?) {
-        if let context {
-            Logger.aiChat.debug("[PageContext] Context received - title: \(context.title.prefix(50)), content: \(context.content.count) chars, truncated: \(context.truncated)")
-        }
-        storedContext = context
-        storedFavicon = context.flatMap { decodeFaviconImage(from: $0.favicon) }
-        contextSubject.send(context)
-    }
-
-    private func enrichWithFavicon(_ context: AIChatPageContextData?) -> AIChatPageContextData? {
-        guard let context = context,
-              let url = URL(string: context.url) else {
+    func enrichWithFavicon(_ context: AIChatPageContextData) -> AIChatPageContextData {
+        guard let url = URL(string: context.url) else {
             return context
         }
 
@@ -208,7 +197,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         )
     }
 
-    private func decodeFaviconImage(from favicons: [AIChatPageContextData.PageContextFavicon]) -> UIImage? {
+    func decodeFaviconImage(from favicons: [AIChatPageContextData.PageContextFavicon]) -> UIImage? {
         guard let favicon = favicons.first,
               favicon.href.hasPrefix("data:image"),
               let dataRange = favicon.href.range(of: "base64,"),

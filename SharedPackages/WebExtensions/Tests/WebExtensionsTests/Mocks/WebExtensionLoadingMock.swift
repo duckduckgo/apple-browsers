@@ -20,14 +20,14 @@ import WebKit
 import Foundation
 @testable import WebExtensions
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionLoadingMock: WebExtensionLoading {
 
     var loadWebExtensionCalled = false
     var loadWebExtensionsCalled = false
     var unloadExtensionCalled = false
-    var loadedPaths: [String] = []
-    var unloadedPath: String?
+    var loadedIdentifiers: [String] = []
+    var unloadedIdentifier: String?
     var mockLoadResult: WebExtensionLoadResult?
     var mockLoadResults: [Result<WebExtensionLoadResult, Error>] = []
     var mockError: Error?
@@ -36,9 +36,9 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     private var createdTestExtensions: [URL] = []
 
     @discardableResult
-    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+    func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
         loadWebExtensionCalled = true
-        loadedPaths.append(path)
+        loadedIdentifiers.append(identifier)
 
         if let mockError = mockError {
             throw mockError
@@ -48,21 +48,21 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
             let testExtensionURL = try createTestWebExtension()
             let mockExtension = try await WKWebExtension(resourceBaseURL: testExtensionURL)
             let mockContext = await WKWebExtensionContext(for: mockExtension)
-            return WebExtensionLoadResult(context: mockContext, path: path)
+            return WebExtensionLoadResult(context: mockContext, identifier: identifier)
         }
 
         return mockLoadResult
     }
 
-    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
+    func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
         loadWebExtensionsCalled = true
-        loadedPaths = paths
+        loadedIdentifiers = identifiers
         return mockLoadResults
     }
 
-    func unloadExtension(at path: String, from controller: WKWebExtensionController) throws {
+    func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {
         unloadExtensionCalled = true
-        unloadedPath = path
+        unloadedIdentifier = identifier
 
         if let mockUnloadError = mockUnloadError {
             throw mockUnloadError

@@ -77,6 +77,8 @@ public class DBPIOSInterface {
                               completionHandler: (() -> Void)?)
         func runEmailConfirmationJobs() async throws
         func fireWeeklyPixels() async
+
+        func resetAllNotificationStatesForDebug()
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -86,6 +88,7 @@ public class DBPIOSInterface {
     public protocol RunPrerequisitesDelegate: AnyObject, AuthenticationDelegate {
         var meetsProfileRunPrequisite: Bool { get throws }
         var meetsEntitlementRunPrequisite: Bool { get async throws }
+        var meetsLocaleRequirement: Bool { get }
         func validateRunPrerequisites() async -> Bool
     }
 
@@ -123,6 +126,10 @@ public class DBPIOSInterface {
         func sweepWideEvents()
     }
 
+    protocol NotificationDelegate: AnyObject {
+        func sendGoToMarketFirstScanNotificationIfEligible() async
+    }
+
     protocol OptOutEmailConfirmationHandlingDelegate: AnyObject {
         func checkForEmailConfirmationData() async
     }
@@ -145,6 +152,7 @@ public final class DataBrokerProtectionIOSManager {
     private let jobDependencies: BrokerProfileJobDependencyProviding
     public var emailConfirmationDataService: EmailConfirmationDataServiceProvider?
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
+    private let userNotificationService: DataBrokerProtectionUserNotificationService
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository
@@ -159,6 +167,7 @@ public final class DataBrokerProtectionIOSManager {
     private let wideEventSweeper: DBPWideEventSweeper?
     private let eventsHandler: EventMapping<JobEvent>
     private let isWebViewInspectable: Bool
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService?
 
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
@@ -200,6 +209,7 @@ public final class DataBrokerProtectionIOSManager {
          jobDependencies: BrokerProfileJobDependencyProviding,
          emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
+         userNotificationService: DataBrokerProtectionUserNotificationService,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          iOSPixelsHandler: EventMapping<IOSPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
@@ -214,12 +224,14 @@ public final class DataBrokerProtectionIOSManager {
          wideEvent: WideEventManaging?,
          eventsHandler: EventMapping<JobEvent>,
          engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp),
-         isWebViewInspectable: Bool = false
+         isWebViewInspectable: Bool = false,
+         freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
         self.emailConfirmationDataService = emailConfirmationDataService
         self.authenticationManager = authenticationManager
+        self.userNotificationService = userNotificationService
         self.sharedPixelsHandler = sharedPixelsHandler
         self.iOSPixelsHandler = iOSPixelsHandler
         self.engagementPixelsRepository = engagementPixelsRepository
@@ -235,6 +247,7 @@ public final class DataBrokerProtectionIOSManager {
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
         self.eventsHandler = eventsHandler
         self.isWebViewInspectable = isWebViewInspectable
+        self.freeTrialConversionService = freeTrialConversionService
 
         self.queueManager.delegate = self
 
@@ -254,6 +267,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     public func appDidBecomeActive() async {
         await fireMonitoringPixels()
+        await sendGoToMarketFirstScanNotificationIfEligible()
 
         guard await authenticationManager.isUserAuthenticated else { return }
 
@@ -343,6 +357,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
         }
         eventPixels.markInitialScansStarted()
         eventsHandler.fire(.profileSaved)
+        freeTrialConversionService?.markPIRActivated()
 
         await startImmediateScanOperations()
     }
@@ -455,6 +470,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         )
         eventPixels.fireWeeklyReportPixels(isAuthenticated: isAuthenticated)
     }
+
+    public func resetAllNotificationStatesForDebug() {
+        userNotificationService.resetAllNotificationStatesForDebug()
+    }
 }
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelegate {
@@ -474,6 +493,14 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
         get async throws {
             return try await authenticationManager.hasValidEntitlement()
         }
+    }
+
+    public var meetsLocaleRequirement: Bool {
+        #if DEBUG || ALPHA || REVIEW
+        return true
+        #else
+        return (Locale.current.regionCode == "US") || privacyConfigManager.internalUserDecider.isInternalUser
+        #endif
     }
 
     public func validateRunPrerequisites() async -> Bool {
@@ -549,6 +576,20 @@ private extension DataBrokerProtectionIOSManager {
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.DBPWideEventsDelegate {
     func sweepWideEvents() {
         wideEventSweeper?.sweep()
+    }
+}
+
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.NotificationDelegate, ReleaseWindowChecking {
+    func sendGoToMarketFirstScanNotificationIfEligible() async {
+        guard privacyConfigManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.goToMarket),
+              meetsLocaleRequirement,
+              isWithinGoToMarketReleaseWindow(currentAppVersion: AppVersion.shared.versionNumber),
+              (try? await meetsEntitlementRunPrequisite) == true,
+              hasNotRunPIRScan() else {
+            return
+        }
+
+        await userNotificationService.sendGoToMarketFirstScanNotificationIfPossible()
     }
 }
 
@@ -694,6 +735,40 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
 
         // Otherwise → clamp to [minBackgroundTaskWaitTime, maxBackgroundTaskWaitTime]
         return min(max(jobDate, minBackgroundTaskWaitDate), maxBackgroundTaskWaitDate)
+    }
+}
+
+private extension DataBrokerProtectionIOSManager {
+    enum GoToMarketConstants {
+        static let maxMinorReleaseOffset = 3
+    }
+
+    func isWithinGoToMarketReleaseWindow(currentAppVersion: String) -> Bool {
+        guard let configurationData = try? PrivacyConfigurationData(data: privacyConfigManager.currentConfig) else {
+            return false
+        }
+
+        let minimumVersion = configurationData.features[DBPSubfeature.goToMarket.parent.rawValue]?
+            .features[DBPSubfeature.goToMarket.rawValue]?
+            .minSupportedVersion
+
+        guard let minimumVersion else { return false }
+
+        return isWithinReleaseWindow(minimumVersion: minimumVersion,
+                                     currentAppVersion: currentAppVersion,
+                                     maxMinorReleaseOffset: GoToMarketConstants.maxMinorReleaseOffset)
+    }
+
+    func hasNotRunPIRScan() -> Bool {
+        do {
+            let hasProfile = try database.fetchProfile() != nil
+            let brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+            let hasScansWithLastRunDate = brokerProfileQueryData.contains { $0.scanJobData.lastRunDate != nil }
+            return !hasProfile && !hasScansWithLastRunDate
+        } catch {
+            Logger.dataBrokerProtection.error("Unable to determine scan status for go-to-market notification: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
     }
 }
 

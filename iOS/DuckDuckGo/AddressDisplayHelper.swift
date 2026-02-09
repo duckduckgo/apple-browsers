@@ -19,14 +19,25 @@
 
 import Foundation
 import DuckPlayer
+import AIChat
+import Common
+import Core
+import PrivacyConfig
 
 struct AddressDisplayHelper {
 
-    static func addressForDisplay(url: URL, showsFullURL: Bool) -> NSAttributedString {
+    static func addressForDisplay(url: URL, showsFullURL: Bool, featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) -> NSAttributedString {
 
         if url.isDuckPlayer,
            let playerURL = getDuckPlayerURL(url: url, showsFullURL: showsFullURL) {
             return playerURL
+        }
+
+        if url.isDuckAIURL, !showsFullURL,
+           featureFlagger.isFeatureOn(.iPadDuckaiOnTab), !DevicePlatform.isIphone {
+            return NSAttributedString(
+                string: UserText.duckAiFeatureName,
+                attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])
         }
 
         if !showsFullURL, let shortAddress = shortURLString(url) {

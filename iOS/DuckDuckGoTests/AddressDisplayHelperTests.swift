@@ -98,4 +98,41 @@ class AddressDisplayHelperTests: XCTestCase {
 
         XCTAssertEqual(addressForDisplay.string, "file:///some/path")
     }
+
+    // MARK: - Duck.ai Address Bar Display
+
+    func testShowsDuckAINameForDuckAIURLWhenFlagIsOn() {
+        let url = URL(string: "https://duck.ai")!
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger)
+        XCTAssertEqual(result.string, UserText.duckAiFeatureName)
+    }
+
+    func testShowsDuckAINameForDuckAIURLWithPathWhenFlagIsOn() {
+        let url = URL(string: "https://duck.ai/?chatID=abc123")!
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger)
+        XCTAssertEqual(result.string, UserText.duckAiFeatureName)
+    }
+
+    func testShowsFullURLForDuckAIWhenEditing() {
+        let url = URL(string: "https://duck.ai/?chatID=abc123")!
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: true, featureFlagger: featureFlagger)
+        XCTAssertEqual(result.string, url.absoluteString)
+    }
+
+    func testDoesNotShowDuckAINameWhenFlagIsOff() {
+        let url = URL(string: "https://duck.ai")!
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger)
+        XCTAssertEqual(result.string, "duck.ai")
+    }
+
+    func testDoesNotShowDuckAINameForNonDuckAIURL() {
+        let url = URL(string: "https://example.com")!
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger)
+        XCTAssertEqual(result.string, "example.com")
+    }
 }

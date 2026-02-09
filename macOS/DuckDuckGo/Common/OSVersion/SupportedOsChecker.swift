@@ -38,11 +38,18 @@ protocol SupportedOSChecking {
     /// to let the user know it will soon be.
     ///
     var supportWarning: OSSupportWarning? { get }
+
+    /// Whether the hardware supports a macOS version newer than the currently running one.
+    ///
+    var hardwareSupportsNewerOS: Bool { get }
 }
 
 extension SupportedOSChecking {
     var showsSupportWarning: Bool {
         supportWarning != nil
+    }
+    var hardwareSupportsNewerOS: Bool {
+        false
     }
 }
 
@@ -71,6 +78,20 @@ final class SupportedOSChecker {
     static let ddgMinMonterreyVersion = OperatingSystemVersion(majorVersion: 12,
                                                                minorVersion: 3,
                                                                patchVersion: 0)
+
+    /// Lookup table mapping hardware model identifiers to the major component of the maximum macOS version they support.
+    ///
+    static let maxSupportedMacOSVersionByModel: [String: Int] = [
+        "iMac14,4": 11,
+        "iMac15,1": 11,
+        "MacBook8,1": 11,
+        "MacBookAir6,1": 11,
+        "MacBookAir6,2": 11,
+        "MacBookPro11,1": 11,
+        "MacBookPro11,2": 11,
+        "MacBookPro11,3": 11
+    ]
+
     private var currentOSVersion: OperatingSystemVersion {
         if let currentOSVersionOverride {
             return currentOSVersionOverride
@@ -81,6 +102,8 @@ final class SupportedOSChecker {
     private var currentOSVersionOverride: OperatingSystemVersion?
     private var minSupportedOSVersionOverride: OperatingSystemVersion?
     private var upcomingMinSupportedOSVersionOverride: OperatingSystemVersion?
+    private var hardwareModelOverride: String?
+    private var maxSupportedVersionByModelOverride: [String: OperatingSystemVersion]?
     private let featureFlagger: FeatureFlagger
 
     var minSupportedOSVersion: OperatingSystemVersion {
@@ -103,14 +126,26 @@ final class SupportedOSChecker {
         return Self.ddgMinMonterreyVersion
     }
 
+    private var hardwareModel: String? {
+        hardwareModelOverride ?? HardwareModel.model
+    }
+
+    private var maxSupportedVersionByModel: [String: OperatingSystemVersion] {
+        maxSupportedVersionByModelOverride ?? Self.maxSupportedMacOSVersionByModel
+    }
+
     init(featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          currentOSVersionOverride: OperatingSystemVersion? = nil,
          minSupportedOSVersionOverride: OperatingSystemVersion? = nil,
-         upcomingMinSupportedOSVersionOverride: OperatingSystemVersion? = nil) {
+         upcomingMinSupportedOSVersionOverride: OperatingSystemVersion? = nil,
+         hardwareModelOverride: String? = nil,
+         maxSupportedVersionByModelOverride: [String: OperatingSystemVersion]? = nil) {
 
         self.currentOSVersionOverride = currentOSVersionOverride
         self.minSupportedOSVersionOverride = minSupportedOSVersionOverride
         self.upcomingMinSupportedOSVersionOverride = upcomingMinSupportedOSVersionOverride
+        self.hardwareModelOverride = hardwareModelOverride
+        self.maxSupportedVersionByModelOverride = maxSupportedVersionByModelOverride
         self.featureFlagger = featureFlagger
     }
 
@@ -146,5 +181,19 @@ extension SupportedOSChecker: SupportedOSChecking {
         }
 
         return nil
+    }
+
+    var hardwareSupportsNewerOS: Bool {
+        guard let model = hardwareModel else {
+            return false
+        }
+
+        guard let maxSupportedOS = maxSupportedVersionByModel[model] else {
+            return false
+        }
+
+        let maxVersion = maxSupportedOS.majorVersion
+        let currentVersion = currentOSVersion.majorVersion
+        return maxVersion > currentVersion
     }
 }

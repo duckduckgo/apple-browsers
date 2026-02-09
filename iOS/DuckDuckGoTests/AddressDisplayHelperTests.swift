@@ -25,6 +25,14 @@ class AddressDisplayHelperTests: XCTestCase {
 
     private typealias AddressHelper = AddressDisplayHelper
 
+    private final class MockDevicePlatform: DevicePlatformProviding {
+        var mockIsIphone: Bool = false
+        static var isIphone: Bool {
+            shared.mockIsIphone
+        }
+        static let shared = MockDevicePlatform()
+    }
+
     func testDeemphasisePathDoesNotCrash() {
         
         _ = AddressHelper.deemphasisePath(forUrl: URL(string: "example.com")!)
@@ -101,38 +109,51 @@ class AddressDisplayHelperTests: XCTestCase {
 
     // MARK: - Duck.ai Address Bar Display
 
-    func testShowsDuckAINameForDuckAIURLWhenFlagIsOn() {
+    func testWhenDuckAIURLAndFlagIsOnAndIPadThenShowsFeatureName() {
+        MockDevicePlatform.shared.mockIsIphone = false
         let url = URL(string: "https://duck.ai")!
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
-        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger, devicePlatform: MockDevicePlatform.self)
         XCTAssertEqual(result.string, UserText.duckAiFeatureName)
     }
 
-    func testShowsDuckAINameForDuckAIURLWithPathWhenFlagIsOn() {
+    func testWhenDuckAIURLWithChatIDAndFlagIsOnAndIPadThenShowsFeatureName() {
+        MockDevicePlatform.shared.mockIsIphone = false
         let url = URL(string: "https://duck.ai/?chatID=abc123")!
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
-        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger, devicePlatform: MockDevicePlatform.self)
         XCTAssertEqual(result.string, UserText.duckAiFeatureName)
     }
 
-    func testShowsFullURLForDuckAIWhenEditing() {
+    func testWhenDuckAIURLAndShowsFullURLThenShowsActualURL() {
+        MockDevicePlatform.shared.mockIsIphone = false
         let url = URL(string: "https://duck.ai/?chatID=abc123")!
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
-        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: true, featureFlagger: featureFlagger)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: true, featureFlagger: featureFlagger, devicePlatform: MockDevicePlatform.self)
         XCTAssertEqual(result.string, url.absoluteString)
     }
 
-    func testDoesNotShowDuckAINameWhenFlagIsOff() {
+    func testWhenDuckAIURLAndFlagIsOffThenShowsDomain() {
+        MockDevicePlatform.shared.mockIsIphone = false
         let url = URL(string: "https://duck.ai")!
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger, devicePlatform: MockDevicePlatform.self)
         XCTAssertEqual(result.string, "duck.ai")
     }
 
-    func testDoesNotShowDuckAINameForNonDuckAIURL() {
+    func testWhenDuckAIURLAndFlagIsOnAndIPhoneThenShowsDomain() {
+        MockDevicePlatform.shared.mockIsIphone = true
+        let url = URL(string: "https://duck.ai")!
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger, devicePlatform: MockDevicePlatform.self)
+        XCTAssertEqual(result.string, "duck.ai")
+    }
+
+    func testWhenNonDuckAIURLAndFlagIsOnThenShowsDomain() {
+        MockDevicePlatform.shared.mockIsIphone = false
         let url = URL(string: "https://example.com")!
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
-        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, featureFlagger: featureFlagger, devicePlatform: MockDevicePlatform.self)
         XCTAssertEqual(result.string, "example.com")
     }
 }

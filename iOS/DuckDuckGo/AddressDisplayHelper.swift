@@ -26,7 +26,10 @@ import PrivacyConfig
 
 struct AddressDisplayHelper {
 
-    static func addressForDisplay(url: URL, showsFullURL: Bool, featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) -> NSAttributedString {
+    static func addressForDisplay(url: URL,
+                                  showsFullURL: Bool,
+                                  featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+                                  devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) -> NSAttributedString {
 
         if url.isDuckPlayer,
            let playerURL = getDuckPlayerURL(url: url, showsFullURL: showsFullURL) {
@@ -34,7 +37,7 @@ struct AddressDisplayHelper {
         }
 
         if url.isDuckAIURL, !showsFullURL,
-           featureFlagger.isFeatureOn(.iPadDuckaiOnTab), !DevicePlatform.isIphone {
+           featureFlagger.isFeatureOn(.iPadDuckaiOnTab), !devicePlatform.isIphone {
             return NSAttributedString(
                 string: UserText.duckAiFeatureName,
                 attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])

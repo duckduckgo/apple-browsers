@@ -52,7 +52,6 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     @Published private(set) var shouldShowNotificationDot: Bool = false
 
     // MARK: - Dependencies
-    private let isFirstLaunch: Bool
     private let isNewUser: Bool
     private let subscriptionManager: any SubscriptionManager
     private let defaultBrowserProvider: DefaultBrowserProvider
@@ -70,8 +69,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private var timer: Timer?
     private var defaultBrowserPollingCount = 0
 
-    init(isFirstLaunch: Bool,
-         isNewUser: Bool,
+    init(isNewUser: Bool,
          subscriptionManager: any SubscriptionManager,
          defaultBrowserProvider: DefaultBrowserProvider,
          contextualOnboardingPublisher: AnyPublisher<Bool, Never>,
@@ -79,7 +77,6 @@ final class VPNUpsellVisibilityManager: ObservableObject {
          timerDuration: TimeInterval = Constants.timeIntervalBeforeShowingUpsell,
          autoDismissDays: Int = Constants.autoDismissDays,
          pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
-        self.isFirstLaunch = isFirstLaunch
         self.isNewUser = isNewUser
         self.subscriptionManager = subscriptionManager
         self.defaultBrowserProvider = defaultBrowserProvider

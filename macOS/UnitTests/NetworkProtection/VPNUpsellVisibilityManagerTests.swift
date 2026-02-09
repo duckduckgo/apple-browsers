@@ -230,7 +230,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         // When
         sut = VPNUpsellVisibilityManager(
-            isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -261,7 +260,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockDefaultBrowserProvider.isDefault = true
 
         sut = VPNUpsellVisibilityManager(
-            isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -298,7 +296,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockDefaultBrowserProvider.isDefault = true
 
         sut = VPNUpsellVisibilityManager(
-            isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -356,7 +353,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockDefaultBrowserProvider.isDefault = true
 
         sut = VPNUpsellVisibilityManager(
-            isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -427,7 +423,6 @@ extension VPNUpsellVisibilityManagerTests {
         pixelHandler: @escaping (SubscriptionPixel) -> Void = { _ in }
     ) -> VPNUpsellVisibilityManager {
         let manager = VPNUpsellVisibilityManager(
-            isFirstLaunch: isFirstLaunch,
             isNewUser: isNewUser,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,

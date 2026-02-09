@@ -48,7 +48,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
 
         vpnUpsellVisibilityManager = VPNUpsellVisibilityManager(
-            isFirstLaunch: false,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,

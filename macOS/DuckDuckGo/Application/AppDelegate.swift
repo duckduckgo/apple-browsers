@@ -277,7 +277,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = {
         return VPNUpsellVisibilityManager(
-            isFirstLaunch: false,
             isNewUser: AppDelegate.isNewUser,
             subscriptionManager: subscriptionManager,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),

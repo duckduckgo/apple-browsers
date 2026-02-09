@@ -44,7 +44,6 @@ final class VPNPopoverPresenterTests: XCTestCase {
         firedPixels = []
 
         vpnUpsellVisibilityManager = VPNUpsellVisibilityManager(
-            isFirstLaunch: false,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,

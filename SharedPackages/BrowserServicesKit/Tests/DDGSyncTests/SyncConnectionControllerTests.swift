@@ -684,7 +684,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         performing action: () async throws -> Void,
         file: StaticString = #filePath,
         line: UInt = #line
-    ) async throws -> SyncConnectionError? {
+    ) async throws -> SyncConnectionError {
         let errorExpectation = expectation(description: "didError called")
         delegate.didErrorCalled = {
             errorExpectation.fulfill()

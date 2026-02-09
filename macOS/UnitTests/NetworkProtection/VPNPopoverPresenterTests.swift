@@ -54,7 +54,7 @@ final class VPNPopoverPresenterTests: XCTestCase {
             autoDismissDays: 7,
             pixelHandler: { _ in }
         )
-        vpnUpsellVisibilityManager.setup(isFirstLaunch: false)
+        vpnUpsellVisibilityManager.setup(isFirstLaunch: false, isOnboardingFinished: true)
 
         sut = DefaultVPNUpsellPopoverPresenter(
             subscriptionManager: mockSubscriptionManager,

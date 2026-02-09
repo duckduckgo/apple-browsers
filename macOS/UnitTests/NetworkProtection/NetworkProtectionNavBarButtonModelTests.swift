@@ -244,7 +244,7 @@ extension NetworkProtectionNavBarButtonModelTests {
             timerDuration: 0.01
         )
 
-        manager.setup(isFirstLaunch: false)
+        manager.setup(isFirstLaunch: false, isOnboardingFinished: true)
 
         return manager
     }

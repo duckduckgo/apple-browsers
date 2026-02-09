@@ -327,7 +327,8 @@ final class StatisticsLoader {
 
         DispatchQueue.global().asyncAfter(deadline: .now() + randomDelay) {
             PixelKit.fire(GeneralPixel.dailyOsVersionCounter,
-                          frequency: .legacyDailyNoSuffix)
+                          frequency: .legacyDailyNoSuffix,
+                          withAdditionalParameters: ["can_update": String(SupportedOSChecker().hardwareSupportsNewerOS)])
         }
     }
 

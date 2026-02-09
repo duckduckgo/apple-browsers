@@ -112,6 +112,15 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         XCTAssertFalse(featureFlagger.isFeatureOn(for: FeatureFlagSource.disabled))
     }
 
+    func testWhenEnabled_sourceEnabled_returnsTrue() {
+        let featureFlagger = createFeatureFlagger()
+        internalUserDeciderStore.isInternalUser = false
+        XCTAssertTrue(featureFlagger.isFeatureOn(for: FeatureFlagSource.enabled))
+
+        internalUserDeciderStore.isInternalUser = true
+        XCTAssertTrue(featureFlagger.isFeatureOn(for: FeatureFlagSource.enabled))
+    }
+
     func testWhenInternalOnly_returnsIsInternalUserValue() {
         let featureFlagger = createFeatureFlagger()
         internalUserDeciderStore.isInternalUser = false
@@ -270,6 +279,12 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         let featureFlagger = createFeatureFlagger()
         let flag = FakeExperimentFlags.disabledFlag
         let cohort = featureFlagger.resolveCohort(for: flag, allowOverride: true)
+        XCTAssertNil(cohort)
+    }
+
+    func testWhenResolveCohort_andSourceEnabled_returnsNil() {
+        let featureFlagger = createFeatureFlagger()
+        let cohort = featureFlagger.resolveCohort(for: FeatureFlagSource.enabled, allowOverride: true)
         XCTAssertNil(cohort)
     }
 

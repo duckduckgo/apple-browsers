@@ -627,7 +627,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .browsingMenuSheetPresentation:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.experimentalBrowsingMenu))
         case .browsingMenuSheetEnabledByDefault:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.browsingMenuSheetEnabledByDefault))
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -659,7 +659,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAtb:
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
-            return .disabled
+            return .internalOnly()
         case .webViewFlashPrevention:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
         case .wideEventPostEndpoint:
@@ -673,7 +673,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabSwitcherTrackerCount:
             return .internalOnly()
         case .burnSingleTab:
-            return .disabled
+            return .internalOnly()
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionDisableKeysSorting:

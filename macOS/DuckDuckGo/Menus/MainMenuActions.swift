@@ -623,6 +623,63 @@ extension AppDelegate {
         memoryPressureReporter.simulateMemoryPressureEvent(level: .critical)
     }
 
+    @objc func simulateMemoryUsageReport(_ sender: Any?) {
+        let alert = NSAlert()
+        alert.messageText = "Simulate Memory Usage Report"
+        alert.informativeText = "Enter memory usage in MB to simulate (e.g., 1024 for 1GB).\n\nThis sends a simulated report through the monitor and also triggers a threshold check."
+        alert.alertStyle = .informational
+
+        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+        textField.placeholderString = "Memory in MB (e.g., 1024)"
+        textField.stringValue = "1024"
+        alert.accessoryView = textField
+
+        alert.addButton(withTitle: "Fire Report")
+        alert.addButton(withTitle: "Cancel")
+
+        let response = alert.runModal()
+
+        if response == .alertFirstButtonReturn {
+            guard let memoryMB = Double(textField.stringValue), memoryMB >= 0, memoryMB <= 100000 else {
+                let errorAlert = NSAlert()
+                errorAlert.messageText = "Invalid Input"
+                errorAlert.informativeText = "Please enter a valid number between 0 and 100000 MB."
+                errorAlert.alertStyle = .warning
+                errorAlert.runModal()
+                return
+            }
+
+            // Send through monitor publisher (updates debug UI if enabled)
+            memoryUsageMonitor.simulateMemoryReport(physFootprintMB: memoryMB)
+            // Clear deduplication set and trigger threshold check
+            memoryUsageThresholdReporter.resetFiredPixels()
+            memoryUsageThresholdReporter.checkThresholdNow()
+            Logger.memory.info("Simulated memory report: \(memoryMB) MB")
+        }
+    }
+
+    @objc func clearSimulatedMemory(_ sender: Any?) {
+        NSApp.delegateTyped.memoryUsageMonitor.clearSimulatedMemoryReport()
+        Logger.memory.info("Cleared simulated memory report, reverting to real system memory")
+
+        let alert = NSAlert()
+        alert.messageText = "Simulation Cleared"
+        alert.informativeText = "Memory readings are now using real system values."
+        alert.alertStyle = .informational
+        alert.runModal()
+    }
+
+    @objc func startMemoryReporterImmediately(_ sender: Any?) {
+        NSApp.delegateTyped.memoryUsageThresholdReporter.startMonitoringImmediately()
+        Logger.memory.info("Memory usage threshold reporter started immediately (skipped 5-minute delay)")
+
+        let alert = NSAlert()
+        alert.messageText = "Reporter Started"
+        alert.informativeText = "Memory usage threshold reporter is now monitoring (5-minute delay skipped)."
+        alert.alertStyle = .informational
+        alert.runModal()
+    }
+
     @objc func resetSecureVaultData(_ sender: Any?) {
         let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared)
 

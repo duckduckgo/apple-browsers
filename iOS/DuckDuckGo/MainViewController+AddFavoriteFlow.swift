@@ -31,28 +31,35 @@ extension MainViewController {
             self?.hideMenuHighlighter()
         }
     }
-    
-    var canDisplayAddFavoriteVisualIndicator: Bool {
-        
-        guard daxDialogsManager.isAddFavoriteFlow,
-              let tab = currentTab, !tab.isError, let url = tab.url else { return false }
-        
-        return !url.isDuckDuckGo
+
+    var menuHighlightingTag: BrowsingMenuModel.Entry.Tag? {
+        if daxDialogsManager.isAddFavoriteFlow,
+           let tab = currentTab, !tab.isError, let url = tab.url,
+           !url.isDuckDuckGo {
+            return .favorite
+        }
+
+        if daxDialogsManager.isShowingFireDialog,
+           currentTab?.daxContextualOnboardingController != nil,
+           !mobileCustomization.hasFireButton {
+            return .fire
+        }
+
+        return nil
     }
-    
+
     func hideMenuHighlighter() {
         ViewHighlighter.hideAll()
     }
     
     func showMenuHighlighterIfNeeded() {
-        guard canDisplayAddFavoriteVisualIndicator, let window = view.window, presentedViewController == nil else { return }
+        guard menuHighlightingTag != nil,
+              let window = view.window,
+              presentedViewController?.isBeingDismissed ?? true
+        else { return }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            guard self.canDisplayAddFavoriteVisualIndicator else { return }
-            ViewHighlighter.hideAll()
-            ViewHighlighter.showIn(window, focussedOnButton: self.viewCoordinator.menuToolbarButton)
-        }
-
+        ViewHighlighter.hideAll()
+        ViewHighlighter.showIn(window, focussedOnButton: self.viewCoordinator.menuToolbarButton)
     }
     
 }

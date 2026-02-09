@@ -28,6 +28,7 @@ struct HomeMessageView: View {
     let viewModel: HomeMessageViewModel
 
     @State var activityItem: TitleValueShareItem?
+    @State private var loadedImage: UIImage?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -97,19 +98,25 @@ struct HomeMessageView: View {
         .contentShape(Rectangle())
     }
     
+    @ViewBuilder
     private var image: some View {
-        Group {
-            if let image = viewModel.image {
-                Image(image)
+        if let displayImage = loadedImage ?? viewModel.preloadedImage {
+            Image(uiImage: displayImage)
+                .resizable()
+                .scaledToFit()
+                .frame(maxHeight: Const.Size.imageMaxHeight)
+        } else if let placeholderName = viewModel.image {
+            Image(placeholderName)
                     .scaledToFit()
-            } else {
-                EmptyView()
+                .task {
+                    loadedImage = await viewModel.loadRemoteImage?()
             }
         }
     }
 
     private var title: some View {
         Text(viewModel.title)
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.top, Const.Spacing.imageAndTitle)
             .frame(maxWidth: .infinity)
    }
@@ -118,9 +125,11 @@ struct HomeMessageView: View {
     private var subtitle: some View {
         if let attributed = try? AttributedString(markdown: viewModel.subtitle) {
             Text(attributed)
+                .fixedSize(horizontal: false, vertical: true)
                 .daxBodyRegular()
         } else {
             Text(viewModel.subtitle)
+                .fixedSize(horizontal: false, vertical: true)
                 .daxBodyRegular()
         }
     }
@@ -273,6 +282,7 @@ private enum Const {
     enum Size {
         static let closeButtonWidth: CGFloat = 44
         static let buttonHeight: CGFloat = 40
+        static let imageMaxHeight: CGFloat = 48.0
     }
     
     enum Offset {
@@ -290,12 +300,14 @@ struct HomeMessageView_Previews: PreviewProvider {
     static let critical: HomeSupportedMessageDisplayType =
         .medium(titleText: "Critical",
                 descriptionText: "Description text",
-                placeholder: .criticalUpdate)
+                placeholder: .criticalUpdate,
+                imageUrl: nil)
 
     static let bigSingle: HomeSupportedMessageDisplayType =
         .bigSingleAction(titleText: "Big Single",
                          descriptionText: "This is a description",
                          placeholder: .ddgAnnounce,
+                         imageUrl: nil,
                          primaryActionText: "Primary",
                          primaryAction: .dismiss)
 
@@ -303,6 +315,7 @@ struct HomeMessageView_Previews: PreviewProvider {
         .bigTwoAction(titleText: "Big Two",
                       descriptionText: "This is a <b>big</b> two style",
                       placeholder: .macComputer,
+                      imageUrl: nil,
                       primaryActionText: "App Store",
                       primaryAction: .appStore,
                       secondaryActionText: "Dismiss",
@@ -312,39 +325,45 @@ struct HomeMessageView_Previews: PreviewProvider {
         .promoSingleAction(titleText: "Promotional",
                            descriptionText: "Description <b>with bold</b> to make a statement.",
                            placeholder: .newForMacAndWindows,
+                           imageUrl: nil,
                            actionText: "Share",
                            action: .share(value: "value", title: "title"))
 
     static var previews: some View {
         Group {
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Small",
-                                                            sendPixels: false,
                                                             modelType: small,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
+                                                            preloadedImage: nil,
+                                                            loadRemoteImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Critical",
-                                                            sendPixels: false,
                                                             modelType: critical,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
+                                                            preloadedImage: nil,
+                                                            loadRemoteImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Single",
-                                                            sendPixels: false,
                                                             modelType: bigSingle,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
+                                                            preloadedImage: nil,
+                                                            loadRemoteImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Two",
-                                                            sendPixels: false,
                                                             modelType: bigTwo,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
+                                                            preloadedImage: nil,
+                                                            loadRemoteImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Promo",
-                                                            sendPixels: false,
                                                             modelType: promo,
                                                             messageActionHandler: RemoteMessagingActionHandler(),
+                                                            preloadedImage: nil,
+                                                            loadRemoteImage: nil,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
         }
         .frame(height: 200)

@@ -22,8 +22,12 @@ import Foundation
 import os.log
 import PrivacyConfig
 
+protocol MemoryUsageMonitoring {
+    func getCurrentMemoryUsage() -> MemoryUsageMonitor.MemoryReport
+}
+
 /// A monitor that periodically reports the memory usage of the current process.
-final class MemoryUsageMonitor: @unchecked Sendable {
+final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
 
     /// The interval between memory usage reports.
     let interval: TimeInterval
@@ -33,8 +37,13 @@ final class MemoryUsageMonitor: @unchecked Sendable {
 
     private var monitoringTask: Task<Void, Never>?
     private let logger: Logger?
+    private let internalUserDecider: InternalUserDecider
     private let memoryReportSubject = PassthroughSubject<MemoryReport, Never>()
     private var cancellables: Set<AnyCancellable> = []
+
+    /// When set and the user is an internal user, `getCurrentMemoryUsage()` returns this value
+    /// instead of real system memory. Used for testing threshold pixels via the Debug menu.
+    private var simulatedReport: MemoryReport?
 
     /// Represents a snapshot of memory usage.
     struct MemoryReport: Sendable {
@@ -95,9 +104,13 @@ final class MemoryUsageMonitor: @unchecked Sendable {
     }
 
     /// Creates a new memory usage monitor.
-    /// - Parameter interval: The interval between reports. Defaults to 3 seconds.
-    init(interval: TimeInterval = 3.0, logger: Logger? = nil) {
+    /// - Parameters:
+    ///   - interval: The interval between reports. Defaults to 3 seconds.
+    ///   - internalUserDecider: Used to gate simulated memory reports to internal users only.
+    ///   - logger: Optional logger for debugging.
+    init(interval: TimeInterval = 3.0, internalUserDecider: InternalUserDecider, logger: Logger? = nil) {
         self.interval = interval
+        self.internalUserDecider = internalUserDecider
         self.logger = logger
         self.memoryReportPublisher = memoryReportSubject.eraseToAnyPublisher()
     }
@@ -147,7 +160,14 @@ final class MemoryUsageMonitor: @unchecked Sendable {
     }
 
     /// Returns the current memory usage of the process.
+    ///
+    /// For internal users, if a simulated report has been set via `simulateMemoryReport`,
+    /// that value is returned instead of the real system memory.
     func getCurrentMemoryUsage() -> MemoryReport {
+        if internalUserDecider.isInternalUser, let simulatedReport {
+            return simulatedReport
+        }
+
         // Get resident_size from mach_task_basic_info
         var basicInfo = mach_task_basic_info()
         var basicCount = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
@@ -273,5 +293,30 @@ final class MemoryUsageDisplayer {
         memoryUsageMonitorView = nil
         viewUpdatesCancellable?.cancel()
         viewUpdatesCancellable = nil
+    }
+}
+
+extension MemoryUsageMonitor {
+    /// Simulates a memory report for testing purposes (internal users only).
+    ///
+    /// Sets a simulated memory value that `getCurrentMemoryUsage()` will return instead
+    /// of real system memory. Only takes effect for internal users.
+    /// Used via the Debug menu to test threshold pixel firing for specific memory values.
+    ///
+    /// - Parameter physFootprintMB: Memory usage in megabytes to simulate
+    func simulateMemoryReport(physFootprintMB: Double) {
+        guard internalUserDecider.isInternalUser else { return }
+        let physFootprintBytes = UInt64(physFootprintMB * 1_048_576)
+        let report = MemoryReport(
+            residentBytes: physFootprintBytes,
+            physFootprintBytes: physFootprintBytes
+        )
+        simulatedReport = report
+        memoryReportSubject.send(report)
+    }
+
+    /// Clears any simulated memory report, reverting `getCurrentMemoryUsage()` to real system values.
+    func clearSimulatedMemoryReport() {
+        simulatedReport = nil
     }
 }

@@ -19,6 +19,7 @@
 
 import SwiftUI
 import Lottie
+import Onboarding
 
 extension OnboardingRebranding.OnboardingView {
 

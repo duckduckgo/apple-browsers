@@ -1,6 +1,5 @@
 //
 //  MetricBuilder.swift
-//  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -17,6 +16,7 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import SwiftUI
 import class UIKit.UIScreen
 import enum UIKit.UIUserInterfaceIdiom
@@ -401,3 +401,4 @@ private extension UserInterfaceSizeClass {
         }
     }
 }
+#endif

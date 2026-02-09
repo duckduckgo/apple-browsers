@@ -103,7 +103,7 @@ final class SupportedOSChecker {
     private var minSupportedOSVersionOverride: OperatingSystemVersion?
     private var upcomingMinSupportedOSVersionOverride: OperatingSystemVersion?
     private var hardwareModelOverride: String?
-    private var maxSupportedVersionByModelOverride: [String: OperatingSystemVersion]?
+    private var maxSupportedVersionByModelOverride: [String: Int]?
     private let featureFlagger: FeatureFlagger
 
     var minSupportedOSVersion: OperatingSystemVersion {
@@ -130,7 +130,7 @@ final class SupportedOSChecker {
         hardwareModelOverride ?? HardwareModel.model
     }
 
-    private var maxSupportedVersionByModel: [String: OperatingSystemVersion] {
+    private var maxSupportedVersionByModel: [String: Int] {
         maxSupportedVersionByModelOverride ?? Self.maxSupportedMacOSVersionByModel
     }
 
@@ -139,7 +139,7 @@ final class SupportedOSChecker {
          minSupportedOSVersionOverride: OperatingSystemVersion? = nil,
          upcomingMinSupportedOSVersionOverride: OperatingSystemVersion? = nil,
          hardwareModelOverride: String? = nil,
-         maxSupportedVersionByModelOverride: [String: OperatingSystemVersion]? = nil) {
+         maxSupportedVersionByModelOverride: [String: Int]? = nil) {
 
         self.currentOSVersionOverride = currentOSVersionOverride
         self.minSupportedOSVersionOverride = minSupportedOSVersionOverride
@@ -192,7 +192,7 @@ extension SupportedOSChecker: SupportedOSChecking {
             return false
         }
 
-        let maxVersion = maxSupportedOS.majorVersion
+        let maxVersion = maxSupportedOS
         let currentVersion = currentOSVersion.majorVersion
         return maxVersion > currentVersion
     }

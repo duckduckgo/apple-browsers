@@ -40,6 +40,7 @@ extension MainViewController {
         }
 
         if daxDialogsManager.isShowingFireDialog,
+           currentTab?.daxContextualOnboardingController != nil,
            !mobileCustomization.hasFireButton {
             return .fire
         }
@@ -52,13 +53,13 @@ extension MainViewController {
     }
     
     func showMenuHighlighterIfNeeded() {
-        guard menuHighlightingTag != nil, let window = view.window, presentedViewController == nil else { return }
+        guard menuHighlightingTag != nil,
+              let window = view.window,
+              presentedViewController?.isBeingDismissed ?? true
+        else { return }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            guard self.menuHighlightingTag != nil else { return }
-            ViewHighlighter.hideAll()
-            ViewHighlighter.showIn(window, focussedOnButton: self.viewCoordinator.menuToolbarButton)
-        }
+        ViewHighlighter.hideAll()
+        ViewHighlighter.showIn(window, focussedOnButton: self.viewCoordinator.menuToolbarButton)
     }
     
 }

@@ -748,6 +748,8 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextManuallyAttachedFrontend() { pageContextManuallyAttachedFrontendFired = true }
     func firePageContextRemovedNative() { pageContextRemovedNativeFired = true }
     func firePageContextRemovedFrontend() { pageContextRemovedFrontendFired = true }
+    func firePageContextCollectionEmpty() {}
+    func firePageContextCollectionUnavailable() {}
     func firePromptSubmittedWithContext() { promptSubmittedWithContextFired = true }
     func firePromptSubmittedWithoutContext() { promptSubmittedWithoutContextFired = true }
     func beginManualAttach() { manualAttachBegan = true; isManualAttachInProgress = true }

@@ -84,7 +84,7 @@
                                 </connections>
                             </button>
                             <customView verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YdB-zl-3Cf">
-                                <rect key="frame" x="178" y="4" width="65" height="24"/>
+                                <rect key="frame" x="178" y="4" width="86" height="24"/>
                                 <subviews>
                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="gwe-JW-nZ6">
                                         <rect key="frame" x="4" y="1" width="16.5" height="24"/>
@@ -104,8 +104,37 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
+                                    <box clipsToBounds="YES" horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="tlX-YG-tFm" userLabel="Import Button Divider">
+                                        <rect key="frame" x="59" y="4" width="5" height="16"/>
+                                    </box>
+                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ovV-Pp-olq" userLabel="Import Dismiss Button" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="62" y="0.0" width="24" height="24"/>
+                                        <buttonCell key="cell" type="bevel" bezelStyle="rounded" image="Close-16" imagePosition="overlaps" alignment="center" imageScaling="proportionallyDown" inset="2" id="U35-kW-Vhp">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="TextPrimary"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="24" id="Dog-97-ggv"/>
+                                            <constraint firstAttribute="height" constant="24" id="RPp-1f-3ZL"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="4"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="dismissImportBookmarksClicked:" target="JFF-Nj-8om" id="Ld0-X1-3CX"/>
+                                        </connections>
+                                    </button>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="Nr2-47-6rU" customClass="MouseOverView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="65" height="24"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="86" height="24"/>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
                                                 <color key="value" name="ButtonMouseOverColor"/>
@@ -125,14 +154,19 @@
                                 <constraints>
                                     <constraint firstItem="Nr2-47-6rU" firstAttribute="leading" secondItem="YdB-zl-3Cf" secondAttribute="leading" id="0bx-A0-2hv"/>
                                     <constraint firstItem="gwe-JW-nZ6" firstAttribute="centerY" secondItem="YdB-zl-3Cf" secondAttribute="centerY" id="4th-lJ-sVJ"/>
+                                    <constraint firstItem="ovV-Pp-olq" firstAttribute="leading" secondItem="tlX-YG-tFm" secondAttribute="trailing" id="58E-if-CeI"/>
                                     <constraint firstAttribute="trailing" secondItem="Nr2-47-6rU" secondAttribute="trailing" id="68B-Qb-2Cy"/>
+                                    <constraint firstAttribute="trailing" secondItem="ovV-Pp-olq" secondAttribute="trailing" id="EdO-gm-7fv"/>
                                     <constraint firstItem="jeg-Iv-FxB" firstAttribute="leading" secondItem="gwe-JW-nZ6" secondAttribute="trailing" constant="4" id="Hte-Hn-pTm"/>
                                     <constraint firstAttribute="height" constant="24" id="IWa-7p-Qsd"/>
-                                    <constraint firstAttribute="trailing" secondItem="jeg-Iv-FxB" secondAttribute="trailing" constant="8" id="d8s-mn-8EF"/>
+                                    <constraint firstItem="tlX-YG-tFm" firstAttribute="centerY" secondItem="YdB-zl-3Cf" secondAttribute="centerY" id="KNl-7x-Thu"/>
+                                    <constraint firstItem="gwe-JW-nZ6" firstAttribute="centerY" secondItem="ovV-Pp-olq" secondAttribute="centerY" id="VFI-K2-JKp"/>
                                     <constraint firstItem="Nr2-47-6rU" firstAttribute="top" secondItem="YdB-zl-3Cf" secondAttribute="top" id="e7t-is-nFh"/>
                                     <constraint firstItem="jeg-Iv-FxB" firstAttribute="centerY" secondItem="YdB-zl-3Cf" secondAttribute="centerY" id="eKI-2A-AvJ"/>
                                     <constraint firstItem="gwe-JW-nZ6" firstAttribute="leading" secondItem="YdB-zl-3Cf" secondAttribute="leading" constant="4" id="fZU-zg-CEj"/>
                                     <constraint firstAttribute="bottom" secondItem="Nr2-47-6rU" secondAttribute="bottom" id="hrd-Jq-Mcf"/>
+                                    <constraint firstItem="jeg-Iv-FxB" firstAttribute="trailing" secondItem="tlX-YG-tFm" secondAttribute="leading" constant="-4" id="iNm-zH-9kc"/>
+                                    <constraint firstItem="tlX-YG-tFm" firstAttribute="height" secondItem="YdB-zl-3Cf" secondAttribute="height" constant="-8" id="r9S-wC-EDS"/>
                                 </constraints>
                             </customView>
                             <customView verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5Hg-Gg-2dA" userLabel="Sync Button">
@@ -256,6 +290,8 @@
                         <outlet property="bookmarksBarCollectionView" destination="vwg-NL-UPk" id="1LG-QE-Dgd"/>
                         <outlet property="clippedItemsIndicator" destination="Mgr-xJ-Pl5" id="4ww-Po-dNb"/>
                         <outlet property="importBookmarksButton" destination="YdB-zl-3Cf" id="phi-lN-qHs"/>
+                        <outlet property="importBookmarksDismissButton" destination="ovV-Pp-olq" id="c07-k5-j8g"/>
+                        <outlet property="importBookmarksDivider" destination="tlX-YG-tFm" id="jE6-MB-GfI"/>
                         <outlet property="importBookmarksIcon" destination="gwe-JW-nZ6" id="fsM-2E-Q5V"/>
                         <outlet property="importBookmarksLabel" destination="jeg-Iv-FxB" id="p0A-Bi-qZg"/>
                         <outlet property="importBookmarksMouseOverView" destination="Nr2-47-6rU" id="rCq-gq-9C4"/>

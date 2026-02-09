@@ -393,8 +393,10 @@ final class TabViewModel: NSObject {
     private func updatePassiveAddressBarString(showFullURL: Bool? = nil) {
         let showFullURL = showFullURL ?? appearancePreferences.showFullURL
         passiveAddressBarAttributedString = switch tab.content {
-        case .newtab, .onboarding, .none:
+        case .newtab, .none:
             .init() // empty
+        case .onboarding:
+            .onboardingTrustedIndicator
         case .settings:
             .settingsTrustedIndicator
         case .bookmarks:
@@ -600,6 +602,8 @@ private extension NSAttributedString {
             Component(string: title)
         }
     }
+
+    static let onboardingTrustedIndicator = NSAttributedString(string: UserText.tabOnboardingTitle)
 
     static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: .settingsMulticolor16,
                                                                            title: UserText.settings)

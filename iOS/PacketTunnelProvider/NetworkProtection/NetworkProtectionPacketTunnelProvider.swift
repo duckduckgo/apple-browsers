@@ -23,6 +23,7 @@ import Common
 import Configuration
 import Core
 import Foundation
+import UIKit
 import NetworkExtension
 import Networking
 import os.log
@@ -667,7 +668,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         PixelKit.setUp(
             dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
             appVersion: AppVersion.shared.versionNumber,
-            source: "vpnExtension",
+            source: (UIDevice.current.userInterfaceIdiom == .phone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS).rawValue,
             defaultHeaders: [:],
             defaults: .networkProtectionGroupDefaults
         ) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in

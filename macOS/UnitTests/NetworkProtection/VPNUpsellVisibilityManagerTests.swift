@@ -62,7 +62,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenUserIsEligible_ItShowsTheUpsellOnSecondLaunch() {
         // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: false)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
 
         // Then
         XCTAssertEqual(sut.state, .visible)
@@ -70,7 +70,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenOnboardingIsPending_ItDoesNotShowTheUpsell() {
         // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: false)
 
         // Then
         XCTAssertEqual(sut.state, .waitingForConditions)

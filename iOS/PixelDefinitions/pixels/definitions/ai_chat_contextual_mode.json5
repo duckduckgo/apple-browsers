@@ -124,5 +124,19 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_collection_empty": {
+        "description": "Fired when page context collection runs but returns no usable content (empty title, content, favicon, and fullContentLength)",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_collection_unavailable": {
+        "description": "Fired when page context collection cannot proceed because the user script is not available",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

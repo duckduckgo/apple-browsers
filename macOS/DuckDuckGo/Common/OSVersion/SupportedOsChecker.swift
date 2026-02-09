@@ -82,6 +82,7 @@ final class SupportedOSChecker {
     /// Lookup table mapping hardware model identifiers to the major component of the maximum macOS version they support.
     ///
     static let maxSupportedMacOSVersionByModel: [String: Int] = [
+        // Big Sur (11)
         "iMac14,4": 11,
         "iMac15,1": 11,
         "MacBook8,1": 11,
@@ -89,7 +90,18 @@ final class SupportedOSChecker {
         "MacBookAir6,2": 11,
         "MacBookPro11,1": 11,
         "MacBookPro11,2": 11,
-        "MacBookPro11,3": 11
+        "MacBookPro11,3": 11,
+        // Monterey (12)
+        "MacBook9,1": 12,
+        "MacBookAir7,1": 12,
+        "MacBookAir7,2": 12,
+        "MacBookPro11,4": 12,
+        "MacBookPro11,5": 12,
+        "MacBookPro12,1": 12,
+        "MacBookPro13,1": 12,
+        "MacBookPro13,2": 12,
+        "MacBookPro13,3": 12,
+        "Macmini7,1": 12,
     ]
 
     private var currentOSVersion: OperatingSystemVersion {

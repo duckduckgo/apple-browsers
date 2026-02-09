@@ -41,6 +41,8 @@ protocol SupportedOSChecking {
 
     /// Whether the hardware supports a macOS version newer than the currently running one.
     ///
+    /// This defaults to `true` when the limitation cannot be determined (HW model not present in the hardcoded mapping).
+    ///
     var hardwareSupportsNewerOS: Bool { get }
 }
 
@@ -80,6 +82,8 @@ final class SupportedOSChecker {
                                                                patchVersion: 0)
 
     /// Lookup table mapping hardware model identifiers to the major component of the maximum macOS version they support.
+    ///
+    /// Data sourced from https://everymac.com/systems/by_capability/maximum-macos-supported.html
     ///
     static let maxSupportedMacOSVersionByModel: [String: Int] = [
         // Big Sur (11)
@@ -162,7 +166,7 @@ final class SupportedOSChecker {
         maxSupportedVersionByModelOverride ?? Self.maxSupportedMacOSVersionByModel
     }
 
-    init(featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+    init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          currentOSVersionOverride: OperatingSystemVersion? = nil,
          minSupportedOSVersionOverride: OperatingSystemVersion? = nil,
          upcomingMinSupportedOSVersionOverride: OperatingSystemVersion? = nil,
@@ -217,7 +221,8 @@ extension SupportedOSChecker: SupportedOSChecking {
         }
 
         guard let maxSupportedOS = maxSupportedVersionByModel[model] else {
-            return false
+            /// Given model is not on the list so we assume hardware supports newer OS versions
+            return true
         }
 
         let maxVersion = maxSupportedOS

@@ -32,13 +32,13 @@
                                 </constraints>
                             </customView>
                             <scrollView wantsLayer="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="0.0" horizontalPageScroll="0.0" verticalLineScroll="0.0" verticalPageScroll="0.0" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="D39-Of-BIh">
-                                <rect key="frame" x="176" y="4" width="500" height="24"/>
+                                <rect key="frame" x="155" y="4" width="521" height="24"/>
                                 <clipView key="contentView" drawsBackground="NO" id="yvk-6W-sd0">
-                                    <rect key="frame" x="0.0" y="0.0" width="500" height="24"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="521" height="24"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <collectionView selectable="YES" id="vwg-NL-UPk" customClass="BookmarksBarCollectionView" customModule="DuckDuckGo_Privacy_Browser">
-                                            <rect key="frame" x="0.0" y="0.0" width="500" height="24"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="521" height="24"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES"/>
                                             <collectionViewLayout key="collectionViewLayout" id="YNm-eM-CbC"/>
                                             <color key="primaryBackgroundColor" name="NavigationBarBackgroundColor"/>
@@ -84,7 +84,7 @@
                                 </connections>
                             </button>
                             <customView verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YdB-zl-3Cf">
-                                <rect key="frame" x="178" y="4" width="65" height="24"/>
+                                <rect key="frame" x="157" y="4" width="65" height="24"/>
                                 <subviews>
                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="gwe-JW-nZ6">
                                         <rect key="frame" x="4" y="1" width="16.5" height="24"/>
@@ -136,7 +136,7 @@
                                 </constraints>
                             </customView>
                             <customView verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5Hg-Gg-2dA" userLabel="Sync Button">
-                                <rect key="frame" x="8" y="4" width="168" height="24"/>
+                                <rect key="frame" x="8" y="4" width="147" height="24"/>
                                 <subviews>
                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="LYf-UU-FXO">
                                         <rect key="frame" x="6" y="4" width="16" height="16"/>
@@ -156,37 +156,8 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <box clipsToBounds="YES" horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="Rv3-Ka-5rz">
-                                        <rect key="frame" x="141" y="4" width="5" height="16"/>
-                                    </box>
-                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2sg-KO-1Lc" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="144" y="0.0" width="24" height="24"/>
-                                        <buttonCell key="cell" type="bevel" bezelStyle="rounded" image="Close-16" imagePosition="overlaps" alignment="center" imageScaling="proportionallyDown" inset="2" id="uNL-jD-6uA">
-                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                            <font key="font" metaFont="system"/>
-                                        </buttonCell>
-                                        <color key="contentTintColor" name="TextPrimary"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="24" id="jjL-ZS-utl"/>
-                                            <constraint firstAttribute="width" constant="24" id="lA7-wg-t05"/>
-                                        </constraints>
-                                        <userDefinedRuntimeAttributes>
-                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
-                                                <color key="value" name="ButtonMouseOverColor"/>
-                                            </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
-                                                <color key="value" name="ButtonMouseDownColor"/>
-                                            </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                                <real key="value" value="4"/>
-                                            </userDefinedRuntimeAttribute>
-                                        </userDefinedRuntimeAttributes>
-                                        <connections>
-                                            <action selector="dismissSyncClicked:" target="JFF-Nj-8om" id="m2c-fD-inE"/>
-                                        </connections>
-                                    </button>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="mPS-TE-78s" customClass="MouseOverView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="168" height="24"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="147" height="24"/>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
                                                 <color key="value" name="ButtonMouseOverColor"/>
@@ -208,19 +179,14 @@
                                     <constraint firstItem="q2n-v7-67h" firstAttribute="leading" secondItem="LYf-UU-FXO" secondAttribute="trailing" priority="750" constant="4" id="2bE-wf-5qA"/>
                                     <constraint firstAttribute="height" priority="750" constant="24" id="3Jg-7j-886"/>
                                     <constraint firstItem="q2n-v7-67h" firstAttribute="centerY" secondItem="5Hg-Gg-2dA" secondAttribute="centerY" priority="750" id="DLO-sI-8KT"/>
-                                    <constraint firstItem="q2n-v7-67h" firstAttribute="trailing" secondItem="Rv3-Ka-5rz" secondAttribute="leading" constant="-4" id="KlU-hx-9xs"/>
                                     <constraint firstItem="LYf-UU-FXO" firstAttribute="centerY" secondItem="5Hg-Gg-2dA" secondAttribute="centerY" priority="750" id="LKL-bO-INh"/>
-                                    <constraint firstItem="Rv3-Ka-5rz" firstAttribute="centerY" secondItem="5Hg-Gg-2dA" secondAttribute="centerY" id="SvL-pD-Ci0"/>
+                                    <constraint firstAttribute="trailing" secondItem="q2n-v7-67h" secondAttribute="trailing" constant="8" id="UPa-b1-tMO"/>
                                     <constraint firstItem="LYf-UU-FXO" firstAttribute="leading" secondItem="5Hg-Gg-2dA" secondAttribute="leading" priority="750" constant="6" id="Wx8-ed-mWR"/>
-                                    <constraint firstItem="2sg-KO-1Lc" firstAttribute="centerY" secondItem="LYf-UU-FXO" secondAttribute="centerY" priority="750" id="ZTH-G6-ZjR"/>
                                     <constraint firstAttribute="width" priority="250" id="bux-Bx-dHX"/>
                                     <constraint firstAttribute="trailing" secondItem="mPS-TE-78s" secondAttribute="trailing" priority="750" id="ff1-CS-Bpa"/>
                                     <constraint firstItem="mPS-TE-78s" firstAttribute="leading" secondItem="5Hg-Gg-2dA" secondAttribute="leading" priority="750" id="iFh-7H-I99"/>
-                                    <constraint firstAttribute="trailing" secondItem="2sg-KO-1Lc" secondAttribute="trailing" priority="750" id="kbh-qM-mLm"/>
-                                    <constraint firstItem="Rv3-Ka-5rz" firstAttribute="height" secondItem="5Hg-Gg-2dA" secondAttribute="height" constant="-8" id="leE-YK-JdN"/>
                                     <constraint firstItem="mPS-TE-78s" firstAttribute="top" secondItem="5Hg-Gg-2dA" secondAttribute="top" priority="750" id="lyJ-iR-qLK"/>
                                     <constraint firstAttribute="bottom" secondItem="mPS-TE-78s" secondAttribute="bottom" priority="750" id="mRk-hF-6T0"/>
-                                    <constraint firstItem="Rv3-Ka-5rz" firstAttribute="trailing" secondItem="2sg-KO-1Lc" secondAttribute="leading" id="r9I-0g-gNJ"/>
                                 </constraints>
                             </customView>
                         </subviews>
@@ -262,11 +228,9 @@
                         <outlet property="promptAnchor" destination="cjE-4p-vxI" id="IGH-2v-PGD"/>
                         <outlet property="separatorColorView" destination="mmP-dx-GCb" id="M61-ek-hgZ"/>
                         <outlet property="syncButton" destination="5Hg-Gg-2dA" id="uLx-cZ-zqR"/>
-                        <outlet property="syncButtonDivider" destination="Rv3-Ka-5rz" id="YXc-tn-qYk"/>
                         <outlet property="syncButtonIcon" destination="LYf-UU-FXO" id="UQI-0S-jDR"/>
                         <outlet property="syncButtonLabel" destination="q2n-v7-67h" id="Htt-mi-e2H"/>
                         <outlet property="syncButtonZeroWidthConstraint" destination="bux-Bx-dHX" id="nAr-fl-0dX"/>
-                        <outlet property="syncDismissButton" destination="2sg-KO-1Lc" id="WMi-m1-wLX"/>
                         <outlet property="syncMouseOverView" destination="mPS-TE-78s" id="LnR-Iu-qol"/>
                     </connections>
                 </viewController>
@@ -277,7 +241,6 @@
     </scenes>
     <resources>
         <image name="Chevron-Double-Right-16" width="16" height="16"/>
-        <image name="Close-16" width="16" height="16"/>
         <image name="Sync-16" width="16" height="16"/>
         <image name="square.and.arrow.down" catalog="system" width="15" height="17"/>
         <namedColor name="BookmarkBarBackgroundColor">
@@ -291,9 +254,6 @@
         </namedColor>
         <namedColor name="NavigationBarBackgroundColor">
             <color red="0.98039215686274506" green="0.98039215686274506" blue="0.98039215686274506" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
-        <namedColor name="TextPrimary">
-            <color red="0.0" green="0.0" blue="0.0" alpha="0.8399999737739563" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
     </resources>
 </document>

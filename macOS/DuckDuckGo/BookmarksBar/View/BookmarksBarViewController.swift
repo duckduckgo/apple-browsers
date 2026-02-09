@@ -40,10 +40,7 @@ final class BookmarksBarViewController: NSViewController {
     @IBOutlet weak var syncButton: NSView!
     @IBOutlet weak var syncMouseOverView: MouseOverView!
     @IBOutlet weak var syncButtonIcon: NSImageView!
-    @IBOutlet weak var syncButtonDivider: NSBox!
-
     @IBOutlet weak var syncButtonLabel: NSTextField!
-    @IBOutlet weak var syncDismissButton: MouseOverButton!
 
     private var bookmarkMenuPopover: BookmarksBarMenuPopover?
 
@@ -153,10 +150,6 @@ final class BookmarksBarViewController: NSViewController {
         syncButtonIcon.contentTintColor = .textPrimary
         syncButtonLabel.stringValue = UserText.bookmarksEmptyStateSyncButtonTitle
         syncButtonLabel.font = .systemFont(ofSize: 11, weight: .regular)
-        syncButtonDivider.boxType = .separator
-        syncButtonDivider.fillColor = .textPrimary
-        syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
-        syncDismissButton.contentTintColor = .textPrimary
     }
 
     private func setUpImportBookmarksButton() {
@@ -334,10 +327,6 @@ final class BookmarksBarViewController: NSViewController {
 
     @IBAction func syncClicked(_ sender: Any) {
         syncButtonModel.syncButtonAction()
-    }
-
-    @IBAction func dismissSyncClicked(_ sender: Any) {
-        syncButtonModel.dismissSyncButtonAction()
     }
 
     @IBAction private func clippedItemsIndicatorClicked(_ sender: NSButton) {

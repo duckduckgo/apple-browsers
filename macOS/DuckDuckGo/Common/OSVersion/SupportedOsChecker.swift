@@ -102,6 +102,26 @@ final class SupportedOSChecker {
         "MacBookPro13,2": 12,
         "MacBookPro13,3": 12,
         "Macmini7,1": 12,
+        // Ventura (13)
+        "iMac18,1": 13,
+        "iMac18,2": 13,
+        "iMac18,3": 13,
+        "MacBookPro14,1": 13,
+        "MacBookPro14,2": 13,
+        "MacBookPro14,3": 13,
+        // Sonoma (14)
+        "MacBookAir8,1": 14,
+        // Sequoia (15)
+        "iMac19,1": 15,
+        "iMac19,2": 15,
+        "iMacPro1,1": 15,
+        "MacBookAir9,1": 15,
+        "MacBookPro15,1": 15,
+        "MacBookPro15,2": 15,
+        "MacBookPro15,3": 15,
+        "MacBookPro15,4": 15,
+        "MacBookPro16,3": 15,
+        "Macmini8,1": 15,
     ]
 
     private var currentOSVersion: OperatingSystemVersion {

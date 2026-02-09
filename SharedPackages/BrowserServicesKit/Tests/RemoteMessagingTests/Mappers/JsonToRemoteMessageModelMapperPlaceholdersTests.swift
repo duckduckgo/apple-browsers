@@ -139,7 +139,7 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
     )
     func placeholderIsMappedCorrectlyForItemsInList(itemId: String, expectedDomainValue: RemotePlaceholder) throws {
         // GIVEN
-        let messageId = "18"
+        let messageId = "19"
         let message = try #require(config.messages.first(where: { $0.id == messageId }))
         let listItems = try #require(message.content?.listItems)
 

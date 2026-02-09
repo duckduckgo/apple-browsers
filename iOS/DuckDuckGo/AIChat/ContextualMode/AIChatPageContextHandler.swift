@@ -118,9 +118,10 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
         guard let script = userScriptProvider() else {
             Logger.aiChat.debug("[PageContext] Collection skipped - no user script available")
+            pixelHandler.firePageContextCollectionUnavailable()
             return false
         }
-        
+
         guard let webView = webViewProvider() else {
            Logger.aiChat.debug("[PageContext] Collection skipped - no web view available")
            return false

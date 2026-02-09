@@ -251,6 +251,21 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertNotNil(receivedContext!)
     }
 
+    // MARK: - Unavailable Pixel Tests
+
+    func testUnavailablePixelFiresWhenNoUserScript() {
+        let mockPixelHandler = MockContextualModePixelHandler()
+        let handler = makeHandler(
+            userScriptProvider: { nil },
+            pixelHandler: mockPixelHandler
+        )
+
+        let didTrigger = handler.triggerContextCollection()
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertEqual(mockPixelHandler.pageContextCollectionUnavailableCount, 1)
+    }
+
     // MARK: - Helpers
 
     private func makeHandler(
@@ -272,6 +287,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
 private final class MockContextualModePixelHandler: AIChatContextualModePixelFiring {
     var pageContextCollectionEmptyCount = 0
+    var pageContextCollectionUnavailableCount = 0
 
     func fireSheetOpened() {}
     func fireSheetDismissed() {}
@@ -289,6 +305,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextRemovedFrontend() {}
     func firePageContextCollectionEmpty() {
         pageContextCollectionEmptyCount += 1
+    }
+    func firePageContextCollectionUnavailable() {
+        pageContextCollectionUnavailableCount += 1
     }
     func firePromptSubmittedWithContext() {}
     func firePromptSubmittedWithoutContext() {}

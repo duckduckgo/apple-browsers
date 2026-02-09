@@ -46,6 +46,7 @@ protocol AIChatContextualModePixelFiring {
 
     // MARK: - Page Context Collection
     func firePageContextCollectionEmpty()
+    func firePageContextCollectionUnavailable()
 
     // MARK: - Prompt Submission
     func firePromptSubmittedWithContext()
@@ -158,6 +159,10 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func firePageContextCollectionEmpty() {
         firePixel(.aiChatContextualPageContextCollectionEmpty)
+    }
+
+    func firePageContextCollectionUnavailable() {
+        firePixel(.aiChatContextualPageContextCollectionUnavailable)
     }
 
     // MARK: - Prompt Submission

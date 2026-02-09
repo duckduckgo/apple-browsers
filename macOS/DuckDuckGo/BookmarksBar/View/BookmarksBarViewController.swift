@@ -29,9 +29,6 @@ final class BookmarksBarViewController: NSViewController {
     @IBOutlet weak var importBookmarksMouseOverView: MouseOverView!
     @IBOutlet weak var importBookmarksLabel: NSTextField!
     @IBOutlet weak var importBookmarksIcon: NSImageView!
-    @IBOutlet weak var importBookmarksDivider: NSBox!
-    @IBOutlet weak var importBookmarksDismissButton: MouseOverButton!
-
     @IBOutlet private var bookmarksBarCollectionView: NSCollectionView!
     @IBOutlet private var clippedItemsIndicator: MouseOverButton!
     @IBOutlet private var promptAnchor: NSView!
@@ -42,9 +39,10 @@ final class BookmarksBarViewController: NSViewController {
 
     @IBOutlet weak var syncButton: NSView!
     @IBOutlet weak var syncMouseOverView: MouseOverView!
-    @IBOutlet weak var syncButtonLabel: NSTextField!
     @IBOutlet weak var syncButtonIcon: NSImageView!
     @IBOutlet weak var syncButtonDivider: NSBox!
+
+    @IBOutlet weak var syncButtonLabel: NSTextField!
     @IBOutlet weak var syncDismissButton: MouseOverButton!
 
     private var bookmarkMenuPopover: BookmarksBarMenuPopover?
@@ -167,10 +165,6 @@ final class BookmarksBarViewController: NSViewController {
         importBookmarksButton.isHidden = true
         importBookmarksButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
         importBookmarksMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
-        importBookmarksDivider.boxType = .separator
-        importBookmarksDivider.fillColor = .textPrimary
-        importBookmarksDismissButton.image = DesignSystemImages.Glyphs.Size16.close
-        importBookmarksDismissButton.contentTintColor = .textPrimary
     }
 
     private func addContextMenu() {
@@ -344,10 +338,6 @@ final class BookmarksBarViewController: NSViewController {
 
     @IBAction func dismissSyncClicked(_ sender: Any) {
         syncButtonModel.dismissSyncButtonAction()
-    }
-
-    @IBAction func dismissImportBookmarksClicked(_ sender: Any) {
-        
     }
 
     @IBAction private func clippedItemsIndicatorClicked(_ sender: NSButton) {

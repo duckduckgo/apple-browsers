@@ -671,7 +671,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .uiTestExperiment:
             return .disabled
         case .tabSwitcherTrackerCount:
-            return .enabled
+            return .internalOnly()
         case .burnSingleTab:
             return .internalOnly()
         case .genericBackgroundTask:

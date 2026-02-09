@@ -151,9 +151,6 @@ public extension FeatureFlagCohortDescribing {
 }
 
 public enum FeatureFlagSource {
-    /// Always enabled in all configurations. Cannot be toggled remotely.
-    case enabled
-
     /// Completely disabled in all configurations
     case disabled
 
@@ -390,8 +387,6 @@ public class DefaultFeatureFlagger: FeatureFlagger {
             return localOverride
         }
         switch featureFlag.source {
-        case .enabled:
-            return true
         case .disabled:
             return false
         case .internalOnly:
@@ -437,8 +432,6 @@ public class DefaultFeatureFlagger: FeatureFlagger {
     private func handleCohortResolutionBasedOnSources<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowCohortAssignment: Bool) -> (any FeatureFlagCohortDescribing)? {
         // Handle feature cohort sources
         switch featureFlag.source {
-        case .enabled:
-            return nil
         case .disabled:
             return nil
         case .internalOnly(let cohort):

@@ -82,6 +82,7 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
 
         guard count > 0 else {
             cancelCountAnimation()
+            settings.lastTrackerCountInTabSwitcher = nil
             state = .hidden
             return
         }

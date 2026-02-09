@@ -38,13 +38,15 @@ struct LegacyDataImportView: ModalView {
     let internalUserDecider: InternalUserDecider = Application.appDelegate.internalUserDecider
 
     private let syncFeatureVisibility: SyncFeatureVisibility
+    private let pinningManager: PinningManager
 
-    init(model: LegacyDataImportViewModel = LegacyDataImportViewModel(), importFlowLauncher: LegacyDataImportFlowRelaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility) {
+    init(model: LegacyDataImportViewModel = LegacyDataImportViewModel(), importFlowLauncher: LegacyDataImportFlowRelaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility, pinningManager: PinningManager) {
         self._model = State(initialValue: model)
         self.importFlowLauncher = importFlowLauncher
         self.title = title
         self.isDataTypePickerExpanded = isDataTypePickerExpanded
         self.syncFeatureVisibility = syncFeatureVisibility
+        self.pinningManager = pinningManager
     }
 
     struct ProgressState {
@@ -185,7 +187,7 @@ struct LegacyDataImportView: ModalView {
             case .feedback:
                 feedbackBody
             case .shortcuts(let dataTypes):
-                DataImportShortcutsView(dataTypes: dataTypes)
+                DataImportShortcutsView(dataTypes: dataTypes, pinningManager: pinningManager)
             }
         }
     }

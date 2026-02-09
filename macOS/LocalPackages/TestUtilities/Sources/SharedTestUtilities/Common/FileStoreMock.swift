@@ -97,6 +97,13 @@ public final class FileStoreMock: NSObject {
         storage[url.lastPathComponent] = nil
     }
 
+    public func removeOrThrow(fileAtURL url: URL) throws {
+        if let failWithError {
+            throw failWithError
+        }
+        storage[url.lastPathComponent] = nil
+    }
+
     public func move(fileAt from: URL, to: URL) {
         guard storage[to.lastPathComponent] == nil,
               let data = storage.removeValue(forKey: from.lastPathComponent) else { return }

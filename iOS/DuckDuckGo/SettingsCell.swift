@@ -155,7 +155,7 @@ struct SettingsCellView: View, Identifiable {
                             }
                         }
                         VStack(alignment: .leading) {
-                            HStack {
+                            HStack(alignment: .top) {
                                 // Title
                                 Text(label)
                                     .daxBodyRegular()

@@ -74,6 +74,7 @@ let package = Package(
                 "Freemium",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "FeatureFlags", package: "FeatureFlags"),
             ]
         )

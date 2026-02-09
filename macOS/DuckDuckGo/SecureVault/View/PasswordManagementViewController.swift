@@ -38,14 +38,17 @@ protocol PasswordManagementDelegate: AnyObject {
 
 final class PasswordManagementViewController: NSViewController {
 
-    static func create() -> Self {
+    static func create(pinningManager: PinningManager) -> Self {
         let storyboard = NSStoryboard(name: "PasswordManager", bundle: nil)
         // swiftlint:disable force_cast
         let controller: Self = storyboard.instantiateController(withIdentifier: "PasswordManagement") as! Self
+        controller.pinningManager = pinningManager
         controller.loadView()
         // swiftlint:enable force_cast
         return controller
     }
+
+    var pinningManager: PinningManager!
 
     weak var delegate: PasswordManagementDelegate?
 
@@ -414,7 +417,7 @@ final class PasswordManagementViewController: NSViewController {
 
     @IBAction func openImportBrowserDataWindow(_ sender: Any?) {
         self.dismiss()
-        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
     }
 
     @IBAction func openExportLogins(_ sender: Any) {
@@ -424,7 +427,7 @@ final class PasswordManagementViewController: NSViewController {
 
     @IBAction func onImportClicked(_ sender: NSButton) {
         self.dismiss()
-        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
     }
 
     @IBAction func onSyncClicked(_ sender: Any) {

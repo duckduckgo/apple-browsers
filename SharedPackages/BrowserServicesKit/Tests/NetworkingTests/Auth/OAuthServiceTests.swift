@@ -61,8 +61,8 @@ final class AuthServiceTests: XCTestCase {
         } catch {
             switch error {
             case OAuthServiceError.authAPIError(let apiError):
-                XCTAssertEqual(apiError.bodyErrorCode.rawValue, "invalid_authorization_request")
-                XCTAssertEqual(apiError.bodyErrorCode.description, "One or more of the required parameters are missing or any provided parameters have invalid values")
+                XCTAssertEqual(apiError.bodyError.errorCode.rawValue, "invalid_authorization_request")
+                XCTAssertEqual(apiError.bodyError.errorCode.description, "One or more of the required parameters are missing or any provided parameters have invalid values")
             default:
                 XCTFail("Wrong error")
             }
@@ -78,5 +78,34 @@ final class AuthServiceTests: XCTestCase {
         } catch {
             XCTAssertNotNil(error)
         }
+    }
+
+    func testBodyErrorDecodingIncludesTokenStatus() throws {
+        // Decoding should map error to errorCode and error_code to tokenStatus.
+        let json = """
+        {
+          "error": "invalid_token_request",
+          "error_code": 2
+        }
+        """
+        let data = Data(json.utf8)
+        let bodyError = try JSONDecoder().decode(OAuthRequest.BodyError.self, from: data)
+
+        XCTAssertEqual(bodyError.errorCode, .invalidTokenRequest)
+        XCTAssertEqual(bodyError.tokenStatus, .reused)
+    }
+
+    func testBodyErrorDecodingWithoutTokenStatus() throws {
+        // When error_code is missing, tokenStatus should be nil.
+        let json = """
+        {
+          "error": "invalid_authorization_request"
+        }
+        """
+        let data = Data(json.utf8)
+        let bodyError = try JSONDecoder().decode(OAuthRequest.BodyError.self, from: data)
+
+        XCTAssertEqual(bodyError.errorCode, .invalidAuthorizationRequest)
+        XCTAssertNil(bodyError.tokenStatus)
     }
 }

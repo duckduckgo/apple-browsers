@@ -179,7 +179,8 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -203,7 +204,8 @@ private struct Metrics {
                     )
                 ]
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -216,7 +218,8 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -229,7 +232,8 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -252,5 +256,13 @@ private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration 
 
     func dismissHomeMessage(_ homeMessage: HomeMessage) {
         homeMessages = homeMessages.dropLast()
+    }
+}
+
+private final class PreviewImageLoader: RemoteMessagingImageLoading {
+    func prefetch(_ urls: [URL]) {}
+    func cachedImage(for url: URL) -> RemoteMessagingImage? { nil }
+    func loadImage(from url: URL) async throws -> RemoteMessagingImage {
+        throw RemoteMessagingImageLoadingError.invalidImageData
     }
 }

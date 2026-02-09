@@ -45,6 +45,7 @@ public class DataBrokerProtectionIOSManagerProvider {
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                   featureFlagger: DBPFeatureFlagging,
+                                  userNotificationService: DataBrokerProtectionUserNotificationService,
                                   pixelKit: PixelKit,
                                   wideEvent: WideEventManaging,
                                   subscriptionManager: DataBrokerProtectionSubscriptionManaging,
@@ -52,7 +53,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   feedbackViewCreator: @escaping () -> (any View),
                                   eventsHandler: EventMapping<JobEvent>,
                                   isWebViewInspectable: Bool = false,
-                                  freeTrialConversionService: FreeTrialConversionWideEventService? = nil) -> DataBrokerProtectionIOSManager? {
+                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -148,6 +149,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             jobDependencies: jobDependencies,
             emailConfirmationDataService: emailConfirmationDataService,
             authenticationManager: authenticationManager,
+            userNotificationService: userNotificationService,
             sharedPixelsHandler: sharedPixelsHandler,
             iOSPixelsHandler: iOSPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,

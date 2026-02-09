@@ -86,7 +86,15 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
             return
         }
 
-        updateState(for: count, shouldAnimate: shouldAnimate)
+        // Failure modes:
+        // - Repeated fetches can happen while opening/returning to tab switcher.
+        // - If count is unchanged, replaying the animation creates noisy UI updates.
+        // - Count can still change between refreshes, which should keep animation enabled.
+        let shouldAnimateForCount = shouldAnimate
+            && settings.lastTrackerCountInTabSwitcher != count
+
+        updateState(for: count, shouldAnimate: shouldAnimateForCount)
+        settings.lastTrackerCountInTabSwitcher = count
     }
 
     func refresh() {

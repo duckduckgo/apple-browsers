@@ -98,7 +98,7 @@ struct ScopedFireConfirmationView: View {
                 Text(UserText.scopedFireConfirmationDeleteAllButton)
             }
             .buttonStyle(PrimaryDestructiveButtonStyle())
-            .accessibilityIdentifier("Fire.Confirmation.Button.AllTabs")
+            .accessibilityIdentifier("alert.forget-data.confirm")
             
             // This Tab button - Secondary Destructive (outline)
             if viewModel.canBurnSingleTab {
@@ -116,7 +116,7 @@ struct ScopedFireConfirmationView: View {
     @ViewBuilder
     private var animation: some View {
         Lottie.LottieView(animation: .named("fire-icon"))
-            .playbackMode(isAnimating ? .playing(.fromProgress(0, toProgress: 1, loopMode: .repeat(2))) : .paused(at: .progress(0)))
+            .playbackMode(isAnimating ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)) : .paused(at: .progress(0)))
             .resizable()
             .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
             .onAppear {

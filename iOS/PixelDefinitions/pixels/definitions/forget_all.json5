@@ -25,7 +25,7 @@
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "burnSource", "tabType"]
     },
     "mf_dc": {
         "description": "Fired when data clearing is completed after Fire button action, includes timing information",
@@ -65,7 +65,7 @@
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "burnSource", "tabType"]
     },
     "m_automatic_data_clearing_options_updated": {
         "description": "Fired when user updates the automatic data clearing options (tabs, data, chats toggles) in Settings",
@@ -91,6 +91,33 @@
                 "description": "Whether Duck.ai chats clearing is enabled",
                 "type": "string",
                 "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_single-tab-burn_executed": {
+        "description": "Fired when single tab burn is executed",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "parameters": ["appVersion", "burnSource", "tabType"]
+    },
+    "m_single-tab-data_cleared": {
+        "description": "Fired when single tab data clearing completes, includes timing information",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "tabType",
+            {
+                "key": "dur",
+                "type": "string",
+                "description": "Duration in seconds (as a floating-point string)"
+            },
+            {
+                "key": "domainsCount",
+                "type": "string",
+                "description": "Number of domains cleared"
             }
         ]
     }

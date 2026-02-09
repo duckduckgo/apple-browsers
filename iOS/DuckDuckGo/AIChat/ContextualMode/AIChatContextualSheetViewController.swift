@@ -102,14 +102,11 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
     private var cancellables = Set<AnyCancellable>()
 
-    /// Existing web view controller passed in for an active chat session
-    private var existingWebViewController: AIChatContextualWebViewController?
+    /// The single web view controller for this sheet, created once and reused
+    private var webViewController: AIChatContextualWebViewController?
 
-    /// Preloaded web view controller, created when sheet opens to reduce loading time on submit
-    private var preloadedWebViewController: AIChatContextualWebViewController?
-
-    /// The current active web view controller showing the chat
-    private weak var currentWebViewController: AIChatContextualWebViewController?
+    /// Whether the web view is currently visible (vs native input being visible)
+    private var isWebViewVisible = false
 
     /// Tracks the current sheet detent for syncing with web view
     private var isCurrentlyMediumDetent = true
@@ -227,14 +224,12 @@ final class AIChatContextualSheetViewController: UIViewController {
          aiChatSettings: AIChatSettingsProvider,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          webViewControllerFactory: @escaping WebViewControllerFactory,
-         existingWebViewController: AIChatContextualWebViewController? = nil,
          onOpenSettings: @escaping () -> Void,
          pixelHandler: AIChatContextualModePixelFiring) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.webViewControllerFactory = webViewControllerFactory
-        self.existingWebViewController = existingWebViewController
         self.onOpenSettings = onOpenSettings
         self.pixelHandler = pixelHandler
         super.init(nibName: nil, bundle: nil)
@@ -250,7 +245,32 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        createAndConfigureWebViewController(restoreURL: sessionState.contextualChatURL)
         bindViewModel()
+    }
+
+    /// Creates a web VC and starts loading the appropriate URL.
+    /// - Parameter restoreURL: If provided, loads this URL (for restoring an existing chat). If nil, loads the default contextual URL.
+    private func createAndConfigureWebViewController(restoreURL: URL? = nil) {
+        guard let webVC = webViewControllerFactory() else {
+            Logger.aiChat.debug("[SheetVC] Failed to create web VC from factory")
+            return
+        }
+
+        webVC.delegate = self
+        webVC.aiChatContentHandlingDelegate = self
+
+        // Use provided restore URL, or default contextual URL for new chat
+        webVC.initialURL = restoreURL ?? aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+
+        webViewController = webVC
+        webVC.loadViewIfNeeded()
+
+        if restoreURL != nil {
+            pixelHandler.fireSessionRestored()
+        }
+
+        Logger.aiChat.debug("[SheetVC] Web VC created with URL: \(webVC.initialURL?.absoluteString ?? "nil")")
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -298,17 +318,6 @@ final class AIChatContextualSheetViewController: UIViewController {
 
 private extension AIChatContextualSheetViewController {
 
-    func configureWebViewController(_ webVC: AIChatContextualWebViewController, restoreURL: URL?, isNew: Bool) {
-        webVC.delegate = self
-        webVC.aiChatContentHandlingDelegate = self
-        webVC.initialURL = restoreURL ?? aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
-        transitionToWebView(webVC)
-        
-        if restoreURL != nil {
-            pixelHandler.fireSessionRestored()
-        }
-    }
-
     func showContextualInput() {
         contextualInputViewController.delegate = self
         embedChildViewController(contextualInputViewController)
@@ -317,9 +326,7 @@ private extension AIChatContextualSheetViewController {
     func showNativeInputUI() {
         removeCurrentChildViewController()
         showContextualInput()
-
         updateChipUI(chipState: sessionState.chipState)
-        preloadWebViewController()
     }
 
     func embedChildViewController(_ childVC: UIViewController) {
@@ -345,31 +352,26 @@ private extension AIChatContextualSheetViewController {
         }
     }
 
-    func preloadWebViewController() {
-        guard let webVC = webViewControllerFactory() else { return }
-        webVC.delegate = self
-        webVC.aiChatContentHandlingDelegate = self
-        preloadedWebViewController = webVC
-        webVC.loadViewIfNeeded()
-    }
-
-    func transitionToWebView(_ webVC: AIChatContextualWebViewController) {
+    func transitionToWebView() {
+        guard let webVC = webViewController else { return }
         removeCurrentChildViewController()
         embedChildViewController(webVC)
-        currentWebViewController = webVC
-        existingWebViewController = nil
+        isWebViewVisible = true
         webVC.setMediumDetent(isCurrentlyMediumDetent)
     }
 
     func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
-        let webVC = preloadedWebViewController ?? webViewControllerFactory()
-        guard let webVC else { return }
+        Logger.aiChat.debug("[SheetVC] showWebViewWithPrompt called")
 
-        configureWebViewController(webVC, restoreURL: nil, isNew: true)
+        guard let webVC = webViewController else {
+            Logger.aiChat.debug("[SheetVC] showWebViewWithPrompt - no web VC available")
+            return
+        }
+
+        // Don't transition immediately - wait for delegate callback after prompt is submitted
+        // This prevents showing the initial duck.ai page before the prompt navigates it
         webVC.submitPrompt(prompt, pageContext: pageContext)
         expandToLargeDetent()
-
-        preloadedWebViewController = nil
     }
 
     func expandToLargeDetent() {
@@ -547,16 +549,21 @@ private extension AIChatContextualSheetViewController {
 
         switch viewState.content {
         case .nativeInput:
+            // When returning to native input (new chat), reload the default URL on existing web VC
+            if isWebViewVisible, let webVC = webViewController {
+                let defaultURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+                webVC.loadChatURL(defaultURL)
+                isWebViewVisible = false
+            }
             if contextualInputViewController.parent != nil {
                 updateChipUI(chipState: viewState.chipState)
             } else {
                 showNativeInputUI()
             }
-        case .webView(let restoreURL):
-            if currentWebViewController == nil {
-                if let webVC = webViewControllerFactory() {
-                    configureWebViewController(webVC, restoreURL: restoreURL, isNew: true)
-                }
+        case .webView:
+            // Web VC was created in viewDidLoad, just show it if not already visible
+            if !isWebViewVisible {
+                transitionToWebView()
             }
         }
 
@@ -569,9 +576,9 @@ private extension AIChatContextualSheetViewController {
         case .submitPrompt(let prompt, let context):
             showWebViewWithPrompt(prompt, pageContext: context)
         case .reloadWebView:
-            currentWebViewController?.reload()
+            webViewController?.reload()
         case .pushContextToFrontend(let context):
-            currentWebViewController?.pushPageContext(context)
+            webViewController?.pushPageContext(context)
         case .clearPrompt:
             contextualInputViewController.setText("")
         }
@@ -707,7 +714,7 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
     func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
         let isMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
         isCurrentlyMediumDetent = isMediumDetent
-        currentWebViewController?.setMediumDetent(isMediumDetent)
+        webViewController?.setMediumDetent(isMediumDetent)
     }
 
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {

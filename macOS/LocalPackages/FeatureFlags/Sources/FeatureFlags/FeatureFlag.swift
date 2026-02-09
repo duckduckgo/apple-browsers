@@ -112,6 +112,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211654922002904
+    case aiChatOmnibarTools
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
     case aiChatOmnibarOnboarding
 
@@ -186,9 +189,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721275379
     case scheduledDefaultBrowserAndDockPromptsInactiveUser
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
-    case tabProgressIndicator
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
@@ -312,7 +312,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .popupPermissionButtonPersistence,
                 .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
-                .tabProgressIndicator,
                 .firstTimeQuitSurvey,
                 .aiChatOmnibarOnboarding,
                 .terminationDeciderSequence,
@@ -367,6 +366,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
                 .aiChatSuggestions,
+                .aiChatOmnibarTools,
                 .aiChatOmnibarOnboarding,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
@@ -389,7 +389,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
-                .tabProgressIndicator,
                 .attributedMetrics,
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
@@ -493,6 +492,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
         case .aiChatSuggestions:
             return .remoteReleasable(.feature(.duckAiChatHistory))
+        case .aiChatOmnibarTools:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarTools))
         case .aiChatOmnibarOnboarding:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarOnboarding))
         case .osSupportForceUnsupportedMessage:
@@ -539,8 +540,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience))
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
-        case .tabProgressIndicator:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabProgressIndicator))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .showHideAIGeneratedImagesSection:

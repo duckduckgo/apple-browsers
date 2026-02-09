@@ -44,7 +44,7 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         // WHEN
         let firstMessage = try #require(config.messages.first(where: { $0.id == "whats_new_v1" }))
 
-        guard case let .cardsList(titleText, placeholder, items, primaryActionText, primaryAction) = firstMessage.content else {
+        guard case let .cardsList(titleText, placeholder, _, items, primaryActionText, primaryAction) = firstMessage.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -87,7 +87,7 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_duplicate_ids" }))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -102,7 +102,7 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_invalid_items" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -145,7 +145,7 @@ struct JsonToRemoteMessageModelMapperCardsListIntegrationTests {
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_all_placeholders" }))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -195,7 +195,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_item_rules" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -234,7 +234,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_null_rules" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -253,7 +253,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_missing_rules" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -272,7 +272,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_invalid_items_with_rules" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -327,7 +327,7 @@ struct JsonToRemoteMessageModelMapperCardsListWithSectionsIntegrationTests {
         // WHEN
         let firstMessage = try #require(config.messages.first(where: { $0.id == "cards_list_with_sections" }))
 
-        guard case let .cardsList(titleText, placeholder, items, primaryActionText, primaryAction) = firstMessage.content else {
+        guard case let .cardsList(titleText, placeholder, _, items, primaryActionText, primaryAction) = firstMessage.content else {
             Issue.record("Expected cardsList content type")
             return
         }
@@ -382,7 +382,7 @@ struct JsonToRemoteMessageModelMapperCardsListWithSectionsIntegrationTests {
         // WHEN
         let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_sections_and_empty_ids" }))
 
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
             return
         }

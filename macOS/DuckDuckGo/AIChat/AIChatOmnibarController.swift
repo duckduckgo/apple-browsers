@@ -58,6 +58,22 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatSuggestions) && searchPreferencesPersistor.showAutocompleteSuggestions
     }
 
+    /// Whether the omnibar tools (customize, search toggle, image upload) are enabled.
+    var isOmnibarToolsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarTools)
+    }
+
+    /// Publisher that emits when the omnibar tools enabled state changes.
+    var isOmnibarToolsEnabledPublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in
+                self?.isOmnibarToolsEnabled
+            }
+            .prepend(isOmnibarToolsEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     /// Gets the shared text state from the current tab's view model
     private var sharedTextState: AddressBarSharedTextState? {
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState

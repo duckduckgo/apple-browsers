@@ -242,8 +242,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let themeManager: ThemeManager
 
-    let displaysTabsProgressIndicator: Bool
-
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     let subscriptionManager: any SubscriptionManager
@@ -385,6 +383,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let memoryUsageMonitor: MemoryUsageMonitor
     let memoryPressureReporter: MemoryPressureReporter
+    let memoryUsageThresholdReporter: MemoryUsageThresholdReporter
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
@@ -543,7 +542,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
         )
         freeTrialConversionService.startObservingSubscriptionChanges()
-        displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
@@ -1047,8 +1045,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 
-        memoryUsageMonitor = MemoryUsageMonitor(logger: .memory)
+        memoryUsageMonitor = MemoryUsageMonitor(internalUserDecider: internalUserDecider, logger: .memory)
         memoryPressureReporter = MemoryPressureReporter(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared, logger: .memory)
+        memoryUsageThresholdReporter = MemoryUsageThresholdReporter(
+            memoryUsageMonitor: memoryUsageMonitor,
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            logger: .memory
+        )
 
         super.init()
 

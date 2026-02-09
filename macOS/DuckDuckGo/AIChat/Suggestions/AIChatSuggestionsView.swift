@@ -28,8 +28,8 @@ final class AIChatSuggestionsView: NSView {
     private enum Constants {
         static let rowHeight: CGFloat = 32
         static let separatorHeight: CGFloat = 1
-        static let separatorTopPadding: CGFloat = 8
-        static let separatorBottomPadding: CGFloat = 4
+        static let separatorTopPadding: CGFloat = 0
+        static let separatorBottomPadding: CGFloat = 8
         static let separatorHorizontalInset: CGFloat = 12
         static let rowsHorizontalPadding: CGFloat = 4
         static let bottomPadding: CGFloat = 4

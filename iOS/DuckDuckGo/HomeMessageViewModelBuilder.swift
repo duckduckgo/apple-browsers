@@ -35,6 +35,8 @@ struct HomeMessageViewModelBuilder {
     static func build(for remoteMessage: RemoteMessageModel,
                       with subscriptionDataReporter: SubscriptionDataReporting?,
                       messageActionHandler: RemoteMessagingActionHandling,
+                      imageLoader: RemoteMessagingImageLoading,
+                      pixelReporter: RemoteMessagingPixelReporting?,
                       onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void,
                       onDidAppear: @escaping () -> Void) -> HomeMessageViewModel? {
         guard
@@ -44,11 +46,37 @@ struct HomeMessageViewModelBuilder {
             return nil
         }
 
+        let preloadedImage: UIImage? = content.imageUrl.flatMap { imageLoader.cachedImage(for: $0) }
+
+        if preloadedImage != nil {
+            pixelReporter?.measureRemoteMessageImageLoadSuccess(remoteMessage)
+        }
+
+        let loadRemoteImage: (() async -> UIImage?)? = if preloadedImage == nil {
+            content.imageUrl.map { imageUrl in
+                return {
+                    do {
+                        let image = try await imageLoader.loadImage(from: imageUrl)
+                        pixelReporter?.measureRemoteMessageImageLoadSuccess(remoteMessage)
+                        return image
+                    } catch is CancellationError {
+                        return nil
+                    } catch {
+                        pixelReporter?.measureRemoteMessageImageLoadFailed(remoteMessage)
+                        return nil
+                    }
+                }
+            }
+        } else {
+            nil
+        }
+
         return HomeMessageViewModel(
             messageId: remoteMessage.id,
-            sendPixels: remoteMessage.isMetricsEnabled,
             modelType: homeSupportedMessageDisplayType,
             messageActionHandler: messageActionHandler,
+            preloadedImage: preloadedImage,
+            loadRemoteImage: loadRemoteImage,
             onDidClose: onDidClose,
             onDidAppear: onDidAppear,
             onAttachAdditionalParameters: { useCase, params in
@@ -84,15 +112,36 @@ private extension HomeSupportedMessageDisplayType {
     init?(_ remoteType: RemoteMessageModelType) {
         switch remoteType {
         case let .small(titleText, descriptionText):
-            self = .small(titleText: titleText, descriptionText: descriptionText)
-        case let .medium(titleText, descriptionText, placeholder):
-            self = .medium(titleText: titleText, descriptionText: descriptionText, placeholder: placeholder)
-        case let .bigSingleAction(titleText, descriptionText, placeholder, primaryActionText, primaryAction):
-            self = .bigSingleAction(titleText: titleText, descriptionText: descriptionText, placeholder: placeholder, primaryActionText: primaryActionText, primaryAction: primaryAction)
-        case let .bigTwoAction(titleText, descriptionText, placeholder, primaryActionText, primaryAction, secondaryActionText, secondaryAction):
-            self = .bigTwoAction(titleText: titleText, descriptionText: descriptionText, placeholder: placeholder, primaryActionText: primaryActionText, primaryAction: primaryAction, secondaryActionText: secondaryActionText, secondaryAction: secondaryAction)
-        case let .promoSingleAction(titleText, descriptionText, placeholder, actionText, action):
-            self = .promoSingleAction(titleText: titleText, descriptionText: descriptionText, placeholder: placeholder, actionText: actionText, action: action)
+            self = .small(titleText: titleText,
+                          descriptionText: descriptionText)
+        case let .medium(titleText, descriptionText, placeholder, imageUrl):
+            self = .medium(titleText: titleText,
+                           descriptionText: descriptionText,
+                           placeholder: placeholder,
+                           imageUrl: imageUrl)
+        case let .bigSingleAction(titleText, descriptionText, placeholder, imageUrl, primaryActionText, primaryAction):
+            self = .bigSingleAction(titleText: titleText,
+                                    descriptionText: descriptionText,
+                                    placeholder: placeholder,
+                                    imageUrl: imageUrl,
+                                    primaryActionText: primaryActionText,
+                                    primaryAction: primaryAction)
+        case let .bigTwoAction(titleText, descriptionText, placeholder, imageUrl, primaryActionText, primaryAction, secondaryActionText, secondaryAction):
+            self = .bigTwoAction(titleText: titleText,
+                                 descriptionText: descriptionText,
+                                 placeholder: placeholder,
+                                 imageUrl: imageUrl,
+                                 primaryActionText: primaryActionText,
+                                 primaryAction: primaryAction,
+                                 secondaryActionText: secondaryActionText,
+                                 secondaryAction: secondaryAction)
+        case let .promoSingleAction(titleText, descriptionText, placeholder, imageUrl, actionText, action):
+            self = .promoSingleAction(titleText: titleText,
+                                      descriptionText: descriptionText,
+                                      placeholder: placeholder,
+                                      imageUrl: imageUrl,
+                                      actionText: actionText,
+                                      action: action)
         case .cardsList:
             return nil
         }

@@ -271,10 +271,12 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     // MARK: - Helpers
     
     private func makeSUT(tabViewModel: TabViewModel?,
+                         source: FireRequest.Source = .browsing,
                          daxDialogsManager: DaxDialogsManaging = DummyDaxDialogsManager(),
                          onConfirm: @escaping (FireRequest) -> Void = { _ in },
                          onCancel: @escaping () -> Void = { }) -> ScopedFireConfirmationViewModel {
         return ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
+                                               source: source,
                                                downloadManager: mockDownloadManager,
                                                keyValueStore: mockKeyValueStore,
                                                daxDialogsManager: daxDialogsManager,

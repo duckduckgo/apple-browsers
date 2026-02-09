@@ -1,7 +1,7 @@
 {
   "name": "mylife",
   "url": "mylife.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "addedDatetime": 1715797497496,
   "optOutUrl": "https://www.mylife.com/ccpa/index.pubview",
   "steps": [
@@ -13,6 +13,16 @@
           "actionType": "navigate",
           "id": "31285970-27bd-4ec6-a4c1-afc5fb501624",
           "url": "https://www.mylife.com/pub-multisearch.pubview?searchFirstName=${firstName}&searchLastName=${lastName}&searchLocation=${city}%2C+${state|upcase}&whyReg=peoplesearch&whySub=Member+Profile+Sub&pageType=ps"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".container"
+            }
+          ],
+          "id": "0d1a75e9-74c0-4602-acc1-0038bb087ef9"
         },
         {
           "actionType": "extract",

@@ -298,7 +298,7 @@ class HistoryCoordinatorTests: XCTestCase {
         let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL(string: "https://duckduckgo.com")!
-        let firstSaveExpectation = expectation(description: "Changes committed")
+        let firstSaveExpectation = expectation(description: "Visit added")
         historyStoringMock.saveCompletion = {
             firstSaveExpectation.fulfill()
         }

@@ -102,7 +102,7 @@ final class SupportedOSChecker {
     private var currentOSVersionOverride: OperatingSystemVersion?
     private var minSupportedOSVersionOverride: OperatingSystemVersion?
     private var upcomingMinSupportedOSVersionOverride: OperatingSystemVersion?
-    private var hardwareModelOverride: String?
+    private let hardwareModel: String?
     private var maxSupportedVersionByModelOverride: [String: Int]?
     private let featureFlagger: FeatureFlagger
 
@@ -126,10 +126,6 @@ final class SupportedOSChecker {
         return Self.ddgMinMonterreyVersion
     }
 
-    private var hardwareModel: String? {
-        hardwareModelOverride ?? HardwareModel.model
-    }
-
     private var maxSupportedVersionByModel: [String: Int] {
         maxSupportedVersionByModelOverride ?? Self.maxSupportedMacOSVersionByModel
     }
@@ -144,7 +140,7 @@ final class SupportedOSChecker {
         self.currentOSVersionOverride = currentOSVersionOverride
         self.minSupportedOSVersionOverride = minSupportedOSVersionOverride
         self.upcomingMinSupportedOSVersionOverride = upcomingMinSupportedOSVersionOverride
-        self.hardwareModelOverride = hardwareModelOverride
+        self.hardwareModel = hardwareModelOverride ?? HardwareModel.model
         self.maxSupportedVersionByModelOverride = maxSupportedVersionByModelOverride
         self.featureFlagger = featureFlagger
     }

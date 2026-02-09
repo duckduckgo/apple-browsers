@@ -724,6 +724,7 @@ extension AppDelegate {
             UserDefaultsWrapper<Bool>(key: .bookmarksBarPromptShown, defaultValue: false).clear()
             UserDefaultsWrapper<Bool>(key: .centerAlignedBookmarksBar, defaultValue: false).clear()
             UserDefaultsWrapper<Bool>(key: .showTabsAndBookmarksBarOnFullScreen, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .bookmarksBarImportDismissed, defaultValue: false).clear()
 
             self.appearancePreferences.reload()
         }

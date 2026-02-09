@@ -152,6 +152,7 @@ extension UserDefaults {
         case emailKeychainMigration = "email.keychain.migration"
 
         case bookmarksBarPromptShown = "bookmarks.bar.prompt.shown"
+        case bookmarksBarImportDismissed = "bookmarks.bar.import-button.dismissed"
         case showBookmarksBar = "bookmarks.bar.show"
         case centerAlignedBookmarksBar = "bookmarks.bar.center.aligned"
         case lastBookmarksBarUsagePixelSendDate = "bookmarks.bar.last-usage-pixel-send-date"

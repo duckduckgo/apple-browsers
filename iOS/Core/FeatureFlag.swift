@@ -297,7 +297,8 @@ public enum FeatureFlag: String {
     case freeTrialConversionWideEvent
 
     /// Shows tracker count banner in Tab Switcher and related settings item
-    case tabSwitcherTrackerCount = "trackercount.tabmanager"
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
+    case tabSwitcherTrackerCount
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
     case burnSingleTab
@@ -671,7 +672,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .uiTestExperiment:
             return .disabled
         case .tabSwitcherTrackerCount:
-            return .remoteReleasable(.feature(.tabManager))
+            return .remoteReleasable(.feature(.tabSwitcherTrackerCount))
         case .burnSingleTab:
             return .internalOnly()
         case .genericBackgroundTask:

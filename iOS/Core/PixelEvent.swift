@@ -766,6 +766,8 @@ extension Pixel {
         case remoteMessageSheet
         case remoteMessageCardShown
         case remoteMessageCardClicked
+        case remoteMessageImageLoadSuccess
+        case remoteMessageImageLoadFailed
 
         // MARK: debug pixels
         case dbCrashDetected(appIdentifier: String?)
@@ -1511,6 +1513,8 @@ extension Pixel {
         case aiChatContextualPromptSubmittedWithContextNative
         case aiChatContextualPromptSubmittedWithoutContextNative
         case aiChatContextualSessionRestored
+        case aiChatContextualPageContextCollectionEmpty
+        case aiChatContextualPageContextCollectionUnavailable
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -1587,6 +1591,7 @@ extension Pixel {
         case dbpNotificationOpenedFirstRemoval
         case dbpNotificationOpenedAllRecordsRemoved
         case dbpNotificationOpened1WeekCheckIn
+        case dbpNotificationOpenedGoToMarketFirstScan
 
         // MARK: - App Intent
         case appIntentPerformed
@@ -2280,6 +2285,8 @@ extension Pixel.Event {
         case .remoteMessageSheet: return "m_remote_message_sheet"
         case .remoteMessageCardShown: return "m_remote_message_card_shown"
         case .remoteMessageCardClicked: return "m_remote_message_card_clicked"
+        case .remoteMessageImageLoadSuccess: return "m_remote_message_image_load_success"
+        case .remoteMessageImageLoadFailed: return "m_remote_message_image_load_failed"
 
             // MARK: debug pixels
 
@@ -3005,6 +3012,8 @@ extension Pixel.Event {
         case .aiChatContextualPromptSubmittedWithContextNative: return "m_aichat_contextual_prompt_submitted_with_context_native"
         case .aiChatContextualPromptSubmittedWithoutContextNative: return "m_aichat_contextual_prompt_submitted_without_context_native"
         case .aiChatContextualSessionRestored: return "m_aichat_contextual_session_restored"
+        case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
+        case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
 
         // MARK: AI Chat Sync
 
@@ -3129,11 +3138,12 @@ extension Pixel.Event {
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
 
         // MARK: Data Broker Protection Notifications
-        case .dbpNotificationOpenedFirstScanComplete: return "m_ios_dbp_notification_opened_first_scan_complete"
-        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_ios_dbp_freemium_notification_opened_first_scan_complete"
-        case .dbpNotificationOpenedFirstRemoval: return "m_ios_dbp_notification_opened_first_removal"
-        case .dbpNotificationOpenedAllRecordsRemoved: return "m_ios_dbp_notification_opened_all_records_removed"
-        case .dbpNotificationOpened1WeekCheckIn: return "m_ios_dbp_notification_opened_1_week_check_in"
+        case .dbpNotificationOpenedFirstScanComplete: return "m_dbp_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_dbp_freemium_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstRemoval: return "m_dbp_notification_opened_first_removal"
+        case .dbpNotificationOpenedAllRecordsRemoved: return "m_dbp_notification_opened_all_records_removed"
+        case .dbpNotificationOpened1WeekCheckIn: return "m_dbp_notification_opened_1_week_check_in"
+        case .dbpNotificationOpenedGoToMarketFirstScan: return "m_dbp_notification_opened_go_to_market_first_scan"
 
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"

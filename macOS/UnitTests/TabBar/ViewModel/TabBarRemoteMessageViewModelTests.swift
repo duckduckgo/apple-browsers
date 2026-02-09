@@ -123,6 +123,7 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         let tabBarRemoteMessageContent: RemoteMessageModelType = .bigSingleAction(titleText: "Help Us Improve",
                                                                                   descriptionText: "We really want to know which features would make our browser better.",
                                                                                   placeholder: .announce,
+                                                                                  imageUrl: nil,
                                                                                   primaryActionText: "Tell Us What You Think",
                                                                                   primaryAction: .survey(value: "www.survey.com"))
         return RemoteMessageModel(id: "tab_bar_message",
@@ -137,6 +138,7 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         let tabBarRemoteMessageContent: RemoteMessageModelType = .bigSingleAction(titleText: "Help Us Improve",
                                                                                   descriptionText: "We really want to know which features would make our browser better.",
                                                                                   placeholder: .announce,
+                                                                                  imageUrl: nil,
                                                                                   primaryActionText: "Tell Us What You Think",
                                                                                   primaryAction: .appStore)
         return RemoteMessageModel(id: "tab_bar_message",
@@ -151,6 +153,7 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         let tabBarRemoteMessageContent: RemoteMessageModelType = .bigSingleAction(titleText: "Some title!",
                                                                                   descriptionText: "Some description",
                                                                                   placeholder: .announce,
+                                                                                  imageUrl: nil,
                                                                                   primaryActionText: "Primary!",
                                                                                   primaryAction: .survey(value: "www.survey.com"))
         return RemoteMessageModel(id: "other_id",

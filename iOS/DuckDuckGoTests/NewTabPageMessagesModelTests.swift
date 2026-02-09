@@ -292,7 +292,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         return NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
-                                messageActionHandler: remoteMessageActionHandler)
+                                messageActionHandler: remoteMessageActionHandler,
+                                imageLoader: MockRemoteMessagingImageLoader())
     }
 }
 

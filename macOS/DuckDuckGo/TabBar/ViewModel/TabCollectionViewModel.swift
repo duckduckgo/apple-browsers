@@ -155,6 +155,13 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
+    private enum TabCollectionViewModelError: Error {
+        case tabCollectionAtIndexNotFound(String)
+        case noTabSelected
+    }
+
+    private let dataClearingPixelsReporter: DataClearingPixelsReporter
+
     init(
         tabCollection: TabCollection,
         selectionIndex: TabIndex = .unpinned(0),
@@ -163,7 +170,8 @@ final class TabCollectionViewModel: NSObject {
         startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
         tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences,
         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
-        windowControllersManager: WindowControllersManagerProtocol? = nil
+        windowControllersManager: WindowControllersManagerProtocol? = nil,
+        dataClearingPixelsReporter: DataClearingPixelsReporter = .init()
     ) {
         assert(!tabCollection.isPopup || windowControllersManager != nil, "Cannot create TabCollectionViewModel with a popup tab collection without a window controllers manager")
         self.tabCollection = tabCollection
@@ -173,6 +181,7 @@ final class TabCollectionViewModel: NSObject {
         self.tabsPreferences = tabsPreferences
         self.accessibilityPreferences = accessibilityPreferences
         self.windowControllersManager = windowControllersManager
+        self.dataClearingPixelsReporter = DataClearingPixelsReporter()
         super.init()
 
         self.pinnedTabsManager = pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: false, tabCollectionViewModel: self, forceActive: nil)
@@ -694,6 +703,7 @@ final class TabCollectionViewModel: NSObject {
         guard changesEnabled || forceChange else { return }
 
         guard let selectionIndex else {
+            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnTabsError(TabCollectionViewModelError.noTabSelected))
             Logger.tabLazyLoading.error("TabCollectionViewModel: No tab selected")
             return
         }
@@ -782,6 +792,7 @@ final class TabCollectionViewModel: NSObject {
     func replaceTab(at index: TabIndex, with tab: Tab, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
         guard let tabCollection = tabCollection(for: index) else {
+            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnTabsError(TabCollectionViewModelError.tabCollectionAtIndexNotFound(String(describing: index))))
             Logger.tabLazyLoading.error("TabCollectionViewModel: Tab collection for index \(String(describing: index)) not found")
             return
         }
@@ -789,6 +800,7 @@ final class TabCollectionViewModel: NSObject {
         tabCollection.replaceTab(at: index.item, with: tab)
 
         guard let selectionIndex else {
+            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnTabsError(TabCollectionViewModelError.noTabSelected))
             Logger.tabLazyLoading.error("TabCollectionViewModel: No tab selected")
             return
         }

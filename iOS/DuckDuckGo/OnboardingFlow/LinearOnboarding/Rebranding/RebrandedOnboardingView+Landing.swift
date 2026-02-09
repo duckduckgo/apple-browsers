@@ -19,6 +19,7 @@
 
 import SwiftUI
 import MetricBuilder
+import Onboarding
 
 extension OnboardingRebranding.OnboardingView {
 

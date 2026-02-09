@@ -45,10 +45,13 @@ public extension SingleUseColor {
     enum Rebranding {
         case textPrimary
         case textSecondary
+        case textLink
 
         case accentPrimary
 
         case accentAltPrimary
+
+        case backdrop
 
         case surfaceTertiary
 

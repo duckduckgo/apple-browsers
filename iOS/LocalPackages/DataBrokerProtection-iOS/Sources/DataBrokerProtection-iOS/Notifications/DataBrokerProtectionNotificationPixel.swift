@@ -27,6 +27,7 @@ public enum DataBrokerProtectionNotificationPixel {
     case notificationSentFirstRemoval
     case notificationSentAllRecordsRemoved
     case notificationScheduled1WeekCheckIn
+    case notificationSentGoToMarketFirstScan
 }
 
 extension DataBrokerProtectionNotificationPixel: PixelKitEvent {
@@ -42,6 +43,8 @@ extension DataBrokerProtectionNotificationPixel: PixelKitEvent {
             return "m_ios_dbp_notification_sent_all_records_removed"
         case .notificationScheduled1WeekCheckIn:
             return "m_ios_dbp_notification_scheduled_1_week_check_in"
+        case .notificationSentGoToMarketFirstScan:
+            return "m_ios_dbp_notification_sent_go_to_market_first_scan"
         }
     }
 

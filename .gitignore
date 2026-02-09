@@ -67,7 +67,8 @@ default.profraw
 CLAUDE.md
 
 # Cursor
-.cursor/
+.cursor/*
+!.cursor/rules/
 
 # AI assistants
 AGENTS.md

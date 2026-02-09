@@ -142,6 +142,8 @@ class TabSwitcherViewController: UIViewController {
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
     private var trackerInfoModel: InfoPanelView.Model?
 
+    private let initialTrackerCountState: TabSwitcherTrackerCountViewModel.State
+    
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
 
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
@@ -161,7 +163,8 @@ class TabSwitcherViewController: UIViewController {
                    fireproofing: Fireproofing,
                    keyValueStore: ThrowingKeyValueStoring,
                    tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
-                   daxDialogsManager: DaxDialogsManaging) {
+                   daxDialogsManager: DaxDialogsManaging,
+                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -177,6 +180,7 @@ class TabSwitcherViewController: UIViewController {
         self.fireproofing = fireproofing
         self.tabSwitcherSettings = tabSwitcherSettings
         self.daxDialogsManager = daxDialogsManager
+        self.initialTrackerCountState = initialTrackerCountState
         super.init(coder: coder)
     }
 
@@ -311,7 +315,8 @@ class TabSwitcherViewController: UIViewController {
         let viewModel = TabSwitcherTrackerCountViewModel(
             settings: tabSwitcherSettings,
             privacyStats: privacyStats,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            initialState: initialTrackerCountState
         )
         trackerCountViewModel = viewModel
         trackerCountCancellable = viewModel.$state

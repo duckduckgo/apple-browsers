@@ -142,6 +142,8 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
         return historySuggestionsStub
     }
 
+    public var dataClearingPixelsHandling: (any DataClearingPixelsHandling)?
+
     @MainActor
     public func delete(_ visits: [History.Visit]) async {
         await withCheckedContinuation { continuation in

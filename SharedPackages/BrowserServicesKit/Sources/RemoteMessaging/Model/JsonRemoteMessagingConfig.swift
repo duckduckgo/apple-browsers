@@ -58,6 +58,7 @@ public enum RemoteMessageResponse {
         let descriptionText: String
         let listItems: [JsonListItem]?
         let placeholder: String?
+        let imageUrl: String?
         let actionText: String?
         let action: JsonMessageAction?
         let primaryActionText: String?

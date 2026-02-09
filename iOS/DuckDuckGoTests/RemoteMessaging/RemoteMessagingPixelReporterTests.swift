@@ -329,6 +329,41 @@ final class RemoteMessagingPixelReporterTests {
         #expect(PixelFiringMock.allPixelsFired.isEmpty)
         #expect(PixelFiringMock.lastParams == nil)
     }
+
+    @Test("Check Image Load Success Pixel Fires")
+    func whenImageLoadSuccessThenPixelFires() {
+        let message = makeRemoteMessage(id: "test-message-1", isMetricsEnabled: true)
+        mockParameterRandomiser.parametersToReturn = [PixelParameters.message: "randomised-parameter-1"]
+
+        sut.measureRemoteMessageImageLoadSuccess(message)
+
+        #expect(PixelFiringMock.allPixelsFired.count == 1)
+        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageImageLoadSuccess.name)
+        #expect(PixelFiringMock.lastParams?[PixelParameters.message] == "randomised-parameter-1")
+    }
+
+    @Test("Check Image Load Failed Pixel Fires")
+    func whenImageLoadFailedThenPixelFires() {
+        let message = makeRemoteMessage(id: "test-message-1", isMetricsEnabled: true)
+        mockParameterRandomiser.parametersToReturn = [PixelParameters.message: "randomised-parameter-1"]
+
+        sut.measureRemoteMessageImageLoadFailed(message)
+
+        #expect(PixelFiringMock.allPixelsFired.count == 1)
+        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageImageLoadFailed.name)
+        #expect(PixelFiringMock.lastParams?[PixelParameters.message] == "randomised-parameter-1")
+    }
+
+    @Test("Check No Image Pixel Fires When Metrics Disabled")
+    func whenMetricsDisabledThenImagePixelsDoNotFire() {
+        let message = makeRemoteMessage(id: "test-message-1", isMetricsEnabled: false)
+
+        sut.measureRemoteMessageImageLoadSuccess(message)
+        sut.measureRemoteMessageImageLoadFailed(message)
+
+        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(PixelFiringMock.lastParams == nil)
+    }
 }
 
 // MARK: - Helper Methods

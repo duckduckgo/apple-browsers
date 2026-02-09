@@ -90,7 +90,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         self.pixelHandler = pixelHandler
     }
 
-    public func setup(isFirstLaunch: Bool) {
+    public func setup(isFirstLaunch: Bool, isOnboardingFinished: Bool) {
         guard state == .uninitialized else {
             return
         }
@@ -109,15 +109,15 @@ final class VPNUpsellVisibilityManager: ObservableObject {
                     return
                 }
 
-                self.start(isFirstLaunch: isFirstLaunch)
+                self.start(isFirstLaunch: isFirstLaunch, isOnboardingFinished: isOnboardingFinished)
             }
             .store(in: &cancellables)
 
         checkPurchaseEligibility()
     }
 
-    private func start(isFirstLaunch: Bool) {
-        if isFirstLaunch {
+    private func start(isFirstLaunch: Bool, isOnboardingFinished: Bool) {
+        if isFirstLaunch || !isOnboardingFinished {
             monitorFirstLaunchConditions()
         } else {
             updateState(.visible)

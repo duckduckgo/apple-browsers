@@ -23,6 +23,7 @@ import Common
 import Configuration
 import Core
 import Foundation
+import UIKit
 import NetworkExtension
 import Networking
 import os.log
@@ -502,6 +503,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     @MainActor
     @objc init() {
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
+        Self.setupPixelKit()
 
         let settings = VPNSettings(defaults: .networkProtectionGroupDefaults)
 
@@ -660,6 +662,32 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             UserDefaults.networkProtectionGroupDefaults.set(location, forKey: NetworkProtectionUserDefaultKeys.lastSelectedServerCity)
         }
         .store(in: &cancellables)
+    }
+
+    private static func setupPixelKit() {
+        PixelKit.setUp(
+            dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
+            appVersion: AppVersion.shared.versionNumber,
+            source: (UIDevice.current.userInterfaceIdiom == .phone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS).rawValue,
+            defaultHeaders: [:],
+            defaults: .networkProtectionGroupDefaults
+        ) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
+            let url = URL.pixelUrl(forPixelNamed: pixelName)
+            let apiHeaders = APIRequestV2.HeadersV2(userAgent: Pixel.defaultPixelUserAgent, additionalHeaders: headers)
+            guard let request = APIRequestV2(url: url, method: .get, queryItems: parameters.toQueryItems(), headers: apiHeaders) else {
+                onComplete(false, nil)
+                return
+            }
+
+            Task {
+                do {
+                    _ = try await DefaultAPIService().fetch(request: request)
+                    onComplete(true, nil)
+                } catch {
+                    onComplete(false, error)
+                }
+            }
+        }
     }
 
     private let activationDateStore = DefaultVPNActivationDateStore()

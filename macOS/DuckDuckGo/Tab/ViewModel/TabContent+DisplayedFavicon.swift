@@ -61,6 +61,9 @@ extension TabContent {
         case .bookmarks:
             return .bookmarksFolder
 
+        case .onboarding:
+            return .onboardingDax
+
         case .history:
             return .historyFavicon
 
@@ -91,7 +94,7 @@ extension TabContent {
             // For regular URLs, return the actual favicon if available
             return actualFavicon
 
-        case .onboarding, .webExtensionUrl, .none:
+        case .webExtensionUrl, .none:
             return actualFavicon
         }
     }

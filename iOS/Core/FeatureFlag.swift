@@ -659,7 +659,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAtb:
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
-            return .disabled
+            return .internalOnly()
         case .webViewFlashPrevention:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
         case .wideEventPostEndpoint:
@@ -673,7 +673,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabSwitcherTrackerCount:
             return .internalOnly()
         case .burnSingleTab:
-            return .disabled
+            return .internalOnly()
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionDisableKeysSorting:

@@ -252,10 +252,12 @@ final class BookmarksBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.$shouldShowImportBookmarksButton
+        viewModel.$bookmarksBarItems
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] shouldShow in
-                self?.importBookmarksButton.isHidden = !shouldShow
+            .sink { [weak self] items in
+                if self?.bookmarkManager.list != nil {
+                    self?.importBookmarksButton.isHidden = !items.isEmpty
+                }
             }
             .store(in: &cancellables)
 
@@ -345,7 +347,7 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     @IBAction func dismissImportBookmarksClicked(_ sender: Any) {
-        viewModel.dismissImportBookmarks()
+        
     }
 
     @IBAction private func clippedItemsIndicatorClicked(_ sender: NSButton) {

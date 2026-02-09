@@ -94,18 +94,11 @@ final class BookmarksBarViewModel: NSObject {
             }
 
             self.bookmarksBarItemsTotalWidth = itemsWidth
-            refreshShowImportButtonVisibility()
         }
     }
 
     @Published
     private(set) var clippedItems: [BookmarkViewModel] = []
-
-    @Published
-    private(set) var shouldShowImportBookmarksButton: Bool = false
-
-    @UserDefaultsWrapper(key: .bookmarksBarImportDismissed, defaultValue: false)
-    private var bookmarksBarImportDismissed: Bool
 
     var cellSizes: [CGSize] {
         let widths = bookmarksBarItems.map { item in
@@ -138,15 +131,6 @@ final class BookmarksBarViewModel: NSObject {
     }
 
     // MARK: - Functions
-
-    func dismissImportBookmarks() {
-        bookmarksBarImportDismissed = true
-        refreshShowImportButtonVisibility()
-    }
-
-    private func refreshShowImportButtonVisibility() {
-        shouldShowImportBookmarksButton = bookmarksBarItems.isEmpty && bookmarksBarImportDismissed == false
-    }
 
     func update(from bookmarkEntities: [BaseBookmarkEntity], containerWidth: CGFloat) {
         clippedItems = []

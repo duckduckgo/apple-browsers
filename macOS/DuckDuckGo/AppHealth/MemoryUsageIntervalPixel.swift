@@ -30,14 +30,12 @@ enum MemoryUsageIntervalPixel: PixelKitEvent {
 
     /// The trigger that caused this pixel to fire.
     enum Trigger: String, CaseIterable {
-        // swiftlint:disable identifier_name
         case startup
         case h1 = "1h"
         case h2 = "2h"
         case h4 = "4h"
         case h8 = "8h"
         case h24 = "24h"
-        // swiftlint:enable identifier_name
 
         /// The elapsed time threshold in seconds for this trigger. `nil` for startup.
         var elapsedSeconds: TimeInterval? {

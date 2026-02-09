@@ -673,7 +673,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .uiTestExperiment:
             return .disabled
         case .tabSwitcherTrackerCount:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.tabManager))
         case .burnSingleTab:
             return .disabled
         case .genericBackgroundTask:

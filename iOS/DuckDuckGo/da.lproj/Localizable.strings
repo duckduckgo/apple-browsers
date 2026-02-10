@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Slet alle";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Slet denne chat";
+"scoped.fire.confirmation.delete.this.chat.description" = "\"Slet alle\" sletter ikke din Duck.ai-chathistorik.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Slet denne fane";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "\"Slet denne fane\" rydder denne Duck.ai-chat og alle websitedata fra de websites, der er besøgt i denne fane.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Dette annullerer igangværende downloads.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "Nye faner, du opretter, kan også slettes enkeltvis.";
+"scoped.fire.confirmation.new.tabs.info" = "Nye faner, du har oprettet, kan også slettes enkeltvis.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Sletning af webstedsdata kan logge dig ud af konti.";

@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Șterge toate";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Șterge acest chat";
+"scoped.fire.confirmation.delete.this.chat.description" = "„Șterge tot” nu va șterge istoricul chaturilor tale Duck.ai.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Șterge această filă";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "„Șterge această filă” va șterge acest chat Duck.ai și toate datele de pe site-urile vizitate în această filă.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Aceasta va anula descărcările în desfășurare.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "Filele noi pe care le creezi pot fi, de asemenea, șterse individual.";
+"scoped.fire.confirmation.new.tabs.info" = "Filele noi pe care le-ai creat pot fi, de asemenea, șterse individual.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Ștergerea datelor de pe site te poate deconecta de la conturi.";

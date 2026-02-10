@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Tümünü Sil";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Bu Sohbeti Sil";
+"scoped.fire.confirmation.delete.this.chat.description" = "\"Tümünü Sil\" seçeneği Duck.ai sohbet geçmişini silmeyecek.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Bu Sekmeyi Sil";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "\"Bu sekmeyi sil\" seçeneği, bu Duck.ai sohbetini ve bu sekmede ziyaret edilen sitelere ait tüm site verilerini siler.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Bu işlem devam eden indirmeleri iptal edecektir.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "Oluşturduğunuz yeni sekmeleri tek tek silebilirsiniz.";
+"scoped.fire.confirmation.new.tabs.info" = "Oluşturduğunuz yeni sekmeleri tek tek de silebilirsiniz.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Site verilerini silmek, hesaplarınızdan çıkış yapmanıza neden olabilir.";

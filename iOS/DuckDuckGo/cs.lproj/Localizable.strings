@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Smazat vše";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Smazat tento chat";
+"scoped.fire.confirmation.delete.this.chat.description" = "Příkaz „Smazat vše“ nesmaže tvoji historii chatu na Duck.ai.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Vymazat tuto kartu";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "Možností „Vymazat tuto kartu“ smažeš tento chat Duck.ai i všechna data o stránkách navštívených v této kartě.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Tím se zruší probíhající stahování.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "Nově vytvořené karty se dají mazat i jednotlivě.";
+"scoped.fire.confirmation.new.tabs.info" = "Nově vytvořené karty můžeš smazat také jednotlivě.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Když vymažeš data stránek, může dojít ke tvému odhlášení z účtů.";

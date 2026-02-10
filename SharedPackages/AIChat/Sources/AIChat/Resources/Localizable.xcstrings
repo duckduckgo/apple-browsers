@@ -531,7 +531,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seiteninhalt anhängen"
+            "value" : "Attach Page Content"
           }
         },
         "el" : {
@@ -549,7 +549,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adjuntar contenido de la página"
+            "value" : "Attach Page Content"
           }
         },
         "et" : {
@@ -567,7 +567,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Joindre le contenu de la page"
+            "value" : "Attach Page Content"
           }
         },
         "hr" : {
@@ -585,7 +585,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allega il contenuto della pagina"
+            "value" : "Attach Page Content"
           }
         },
         "ja" : {
@@ -615,19 +615,19 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pagina-inhoud bijvoegen"
+            "value" : "Attach Page Content"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dołącz zawartość strony"
+            "value" : "Attach Page Content"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Anexar contexto da página"
+            "value" : "Attach Page Content"
           }
         },
         "ro" : {
@@ -639,7 +639,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить содержимое страницы"
+            "value" : "Attach Page Content"
           }
         },
         "sk" : {

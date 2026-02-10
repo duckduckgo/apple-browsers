@@ -57,6 +57,7 @@ class StatisticsLoaderTests: XCTestCase {
         mockStatisticsStore.variant = "ru"
         mockStatisticsStore.atb = "v101-1"
 
+        loadSuccessfulAtbStub(version: "v101-1")
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
@@ -304,8 +305,13 @@ class StatisticsLoaderTests: XCTestCase {
         XCTAssertEqual(mockPixelFiring.lastPixelName, Pixel.Event.appInstall.name)
     }
 
-    func loadSuccessfulAtbStub() {
+    func loadSuccessfulAtbStub(version: String? = nil) {
         stub(condition: isHost(URL.atb.host!)) { _ in
+            if let version {
+                let json = "{\"version\":\"\(version)\"}".data(using: .utf8)!
+                return HTTPStubsResponse(data: json, statusCode: 200, headers: nil)
+            }
+
             let path = OHPathForFile("MockFiles/atb.json", type(of: self))!
             return fixture(filePath: path, status: 200, headers: nil)
         }

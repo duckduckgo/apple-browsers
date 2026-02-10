@@ -1617,6 +1617,10 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
+
+            if tab.url?.isDuckAIURL == true, aichatIPadTabFeature.isAvailable {
+                viewCoordinator.omniBar.barView.isAIChatButtonHidden = true
+            }
         }
 
         updateBrowsingMenuHeaderDataSource()

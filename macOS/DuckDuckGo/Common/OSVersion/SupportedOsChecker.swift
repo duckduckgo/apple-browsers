@@ -27,9 +27,9 @@ enum OSSupportWarning {
 }
 
 enum OSUpgradeCapability: String {
-    case capable = "capable"
-    case incapable = "incapable"
-    case unknown = "unknown"
+    case capable
+    case incapable
+    case unknown
 
     /// Converts capability to pixel-friendly value for the boolean-style "can_update" parameter
     var pixelValue: String {

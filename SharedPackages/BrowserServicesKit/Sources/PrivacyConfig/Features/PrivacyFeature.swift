@@ -87,6 +87,7 @@ public enum PrivacyFeature: String {
     case serp
     case popupBlocking
     case combinedPermissionView
+    case pageContext
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

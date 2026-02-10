@@ -690,14 +690,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
 extension FeatureFlagger {
     public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {
-        switch featureFlag {
-        case .enhancedDataClearingSettings:
-            // Enhanced data clearing is only enabled with burnSingleTab. But can be disabled on its own.
-            // This supports dependant gradual rollout (Rolling out two features to the same cohort of users.
-            // enhancedDataClearingSettings rollouted out 100%, while burnSingleTab rolloutout to x%.
-            return isFeatureOn(for: featureFlag) && isFeatureOn(for: FeatureFlag.burnSingleTab)
-        default:
-            return isFeatureOn(for: featureFlag)
-        }
+        isFeatureOn(for: featureFlag)
     }
 }

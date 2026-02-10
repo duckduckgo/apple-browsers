@@ -77,7 +77,7 @@ final class MemoryUsageIntervalReporter {
         featureFlagger: FeatureFlagger,
         pixelFiring: PixelFiring?,
         windowContext: @autoclosure @escaping () -> WindowContext?,
-        isSyncEnabled: @autoclosure @escaping () -> Bool?,
+        isSyncEnabled: @escaping () -> Bool?,
         checkInterval: TimeInterval = MemoryUsageIntervalReporter.defaultCheckInterval,
         logger: Logger? = nil
     ) {

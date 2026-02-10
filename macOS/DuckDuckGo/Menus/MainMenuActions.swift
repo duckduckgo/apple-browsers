@@ -619,8 +619,8 @@ extension AppDelegate {
         throwTestCppException()
     }
 
-    @objc func simulateMemoryPressureCritical(_ sender: Any?) {
-        memoryPressureReporter.simulateMemoryPressureEvent(level: .critical)
+    @MainActor @objc func simulateMemoryPressureCritical(_ sender: Any?) {
+        memoryPressureReporter?.simulateMemoryPressureEvent(level: .critical)
     }
 
     @objc func simulateMemoryUsageReport(_ sender: Any?) {

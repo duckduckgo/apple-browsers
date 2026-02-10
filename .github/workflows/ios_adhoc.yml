@@ -163,11 +163,34 @@ jobs:
           )
           echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
 
-      - name: Upload IPA to Asana
+      - name: Upload IPA to S3
+        if: inputs.asana-task-url
+        id: upload-ipa-to-s3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+          RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
+          RELEASE_BUCKET_PREFIX: ${{ vars.RELEASE_BUCKET_PREFIX }}
+          REVIEW_BUILDS_BUCKET_PREFIX: ${{ vars.REVIEW_BUILDS_BUCKET_PREFIX }}
+          IPA_URL_ROOT: ${{ vars.DMG_URL_ROOT }}
+        run: |
+          ref_sha="$(git rev-parse --short HEAD)"
+          ipa_s3_path="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/${REVIEW_BUILDS_BUCKET_PREFIX}/${ref_sha}/${{ env.ipa_filename }}"
+
+          s3_bucket_url="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/"
+          ipa_url="${ipa_s3_path/#${s3_bucket_url}/${IPA_URL_ROOT}}"
+          echo "ipa-url=${ipa_url}" >> $GITHUB_OUTPUT
+
+          aws s3 cp "${{ env.ipa_path }}" "$ipa_s3_path" --acl public-read
+
+      - name: Post IPA link to Asana
         if: inputs.asana-task-url
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          IPA_URL: ${{ steps.upload-ipa-to-s3.outputs.ipa-url }}
         run: |
-          curl -s "https://app.asana.com/api/1.0/tasks/${{ steps.get-task-id.outputs.task_id }}/attachments" \
+          curl -s "https://app.asana.com/api/1.0/tasks/${{ steps.get-task-id.outputs.task_id }}/stories" \
             -H "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
-            --form "file=@${{ env.ipa_path }};type=application/zip"
+            -H "Content-Type: application/json" \
+            --data "{\"data\":{\"text\":\"IPA build is available at ${IPA_URL}\"}}"

@@ -214,8 +214,6 @@ final class MainWindowController: NSWindowController {
     func userInteraction(prevented: Bool, forBurning: Bool = false) {
         mainViewController.userInteraction(prevented: prevented)
 
-
-        NSApplication.shared.mainMenuTyped.autoupdatingMenusForUserPrevention.forEach { $0.autoenablesItems = !prevented }
         NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !prevented }
 
         guard forBurning else { return }
@@ -546,14 +544,6 @@ fileprivate extension MainMenu {
             preferencesMenuItem
         ]
     }
-
-    var autoupdatingMenusForUserPrevention: [NSMenu] {
-        return [
-            preferencesMenuItem.menu,
-            manageBookmarksMenuItem.menu
-        ].compactMap { $0 }
-    }
-
 }
 
 extension NSWindow {

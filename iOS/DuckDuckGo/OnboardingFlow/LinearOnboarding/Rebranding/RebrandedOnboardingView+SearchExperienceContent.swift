@@ -24,6 +24,8 @@ import Onboarding
 extension OnboardingRebranding.OnboardingView {
 
     struct SearchExperienceContent: View {
+        @Environment(\.onboardingTheme) private var onboardingTheme
+
         private var animateTitle: Binding<Bool>
         private var isSkipped: Binding<Bool>
         private let action: () -> Void
@@ -40,14 +42,14 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         var body: some View {
-            VStack(spacing: 16.0) {
+            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
                 AnimatableTypingText(UserText.Onboarding.SearchExperience.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
                     showContent = true
                 }
                 .foregroundColor(.primary)
                 .font(SearchExperienceContentMetrics.titleFont)
 
-                VStack(spacing: 24.0) {
+                VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     RebrandedOnboardingView.OnboardingSearchExperiencePicker(viewModel: viewModel)
 
                     Text(AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()))
@@ -74,4 +76,5 @@ extension OnboardingRebranding.OnboardingView {
 private enum SearchExperienceContentMetrics {
     static let titleFont = Font.system(size: 20, weight: .semibold)
     static let messageFont = Font.system(size: 16)
+    static let additionalTopMargin: CGFloat = 0
 }

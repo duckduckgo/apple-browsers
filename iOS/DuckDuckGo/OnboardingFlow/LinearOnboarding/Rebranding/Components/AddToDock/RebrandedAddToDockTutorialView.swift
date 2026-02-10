@@ -24,6 +24,8 @@ import DuckUI
 extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockTutorialView: View {
+        @Environment(\.onboardingTheme) private var onboardingTheme
+
         private static let videoSize = CGSize(width: 898.0, height: 680.0)
         private static let videoURL = Bundle.main.url(forResource: "add-to-dock-demo", withExtension: "mp4")!
 
@@ -54,7 +56,7 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         var body: some View {
-            VStack(spacing: 24.0) {
+            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
                 AnimatableTypingText(title, startAnimating: $animateTitle, skipAnimation: isSkipped) {
                     withAnimation {
                         animateMessage = true

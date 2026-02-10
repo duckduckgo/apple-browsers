@@ -140,7 +140,7 @@ struct OnboardingView: View {
         }
 
         return IntroDialogContent(
-            title: model.copy.introTitle,
+            title: model.copy.introTitle + "\n\n" + model.copy.introMessage,
             skipOnboardingView: skipOnboardingView,
             animateText: $model.introState.animateIntroText,
             showCTA: $model.introState.showIntroButton,

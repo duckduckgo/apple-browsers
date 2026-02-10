@@ -27,16 +27,22 @@ public struct OnboardingTheme: Equatable {
     public let colorPalette: ColorPalette
     /// Layout and visual metrics for the onboarding bubble container.
     public let bubbleMetrics: BubbleMetrics
+    /// Content insets for bubbles in the linear onboarding flow.
+    public let linearBubbleMetrics: LinearBubbleMetrics
     /// Layout metrics for positioning and sizing the dismiss button.
     public let dismissButtonMetrics: DismissButtonMetrics
     /// Layout metrics for the contextual onboarding flow.
     public let contextualOnboardingMetrics: ContextualOnboardingMetrics
+    /// Layout metrics for the linear onboarding flow.
+    public let linearOnboardingMetrics: LinearOnboardingMetrics
     /// Text alignment for linear flow titles.
     public let linearTitleTextAlignment: TextAlignment
     /// Text alignment for linear flow body copy.
     public let linearBodyTextAlignment: TextAlignment
     /// Style used by the primary onboarding button.
     public let primaryButtonStyle: OnboardingButtonStyle
+    /// Style used by the secondary onboarding button.
+    public let secondaryButtonStyle: OnboardingButtonStyle
     /// Style used by the dismiss onboarding button.
     public let dismissButtonStyle: OnboardingButtonStyle
 
@@ -52,27 +58,64 @@ public struct OnboardingTheme: Equatable {
     ///   - contextualTitleTextAlignment: Title alignment for contextual flows.
     ///   - contextualBodyTextAlignment: Body alignment for contextual flows.
     ///   - primaryButtonStyle: Primary button style.
+    ///   - secondaryButtonStyle: Secondary button style.
     ///   - dismissButtonStyle: Dismiss button style.
     public init(
         typography: Typography,
         colorPalette: ColorPalette,
         bubbleMetrics: BubbleMetrics,
+        linearBubbleMetrics: LinearBubbleMetrics,
         dismissButtonMetrics: DismissButtonMetrics,
         contextualOnboardingMetrics: ContextualOnboardingMetrics,
+        linearOnboardingMetrics: LinearOnboardingMetrics,
         linearTitleTextAlignment: TextAlignment,
         linearBodyTextAlignment: TextAlignment,
         primaryButtonStyle: OnboardingButtonStyle,
+        secondaryButtonStyle: OnboardingButtonStyle,
         dismissButtonStyle: OnboardingButtonStyle,
     ){
         self.typography = typography
         self.colorPalette = colorPalette
         self.bubbleMetrics = bubbleMetrics
+        self.linearBubbleMetrics = linearBubbleMetrics
         self.dismissButtonMetrics = dismissButtonMetrics
         self.contextualOnboardingMetrics = contextualOnboardingMetrics
+        self.linearOnboardingMetrics = linearOnboardingMetrics
         self.linearTitleTextAlignment = linearTitleTextAlignment
         self.linearBodyTextAlignment = linearBodyTextAlignment
         self.primaryButtonStyle = primaryButtonStyle
+        self.secondaryButtonStyle = secondaryButtonStyle
         self.dismissButtonStyle = dismissButtonStyle
+    }
+
+    /// Backward-compatible initializer for themes that only define a single button style.
+    public init(
+        typography: Typography,
+        colorPalette: ColorPalette,
+        bubbleMetrics: BubbleMetrics,
+        linearBubbleMetrics: LinearBubbleMetrics,
+        dismissButtonMetrics: DismissButtonMetrics,
+        contextualOnboardingMetrics: ContextualOnboardingMetrics,
+        linearOnboardingMetrics: LinearOnboardingMetrics,
+        linearTitleTextAlignment: TextAlignment,
+        linearBodyTextAlignment: TextAlignment,
+        primaryButtonStyle: OnboardingButtonStyle,
+        dismissButtonStyle: OnboardingButtonStyle,
+    ){
+        self.init(
+            typography: typography,
+            colorPalette: colorPalette,
+            bubbleMetrics: bubbleMetrics,
+            linearBubbleMetrics: linearBubbleMetrics,
+            dismissButtonMetrics: dismissButtonMetrics,
+            contextualOnboardingMetrics: contextualOnboardingMetrics,
+            linearOnboardingMetrics: linearOnboardingMetrics,
+            linearTitleTextAlignment: linearTitleTextAlignment,
+            linearBodyTextAlignment: linearBodyTextAlignment,
+            primaryButtonStyle: primaryButtonStyle,
+            secondaryButtonStyle: primaryButtonStyle,
+            dismissButtonStyle: dismissButtonStyle
+        )
     }
 
 }

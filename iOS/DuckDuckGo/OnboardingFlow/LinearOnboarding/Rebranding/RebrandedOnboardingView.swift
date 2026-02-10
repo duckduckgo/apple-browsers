@@ -22,6 +22,65 @@ import Onboarding
 import DuckUI
 import MetricBuilder
 
+private enum OnboardingViewMetrics {
+    static let landingScreenDuration = 2.0
+}
+
+extension OnboardingRebranding.OnboardingView {
+
+    struct LinearDialogContentContainer<Title: View, Actions: View>: View {
+
+        struct Metrics {
+            let outerSpacing: CGFloat
+            let textSpacing: CGFloat
+            let contentSpacing: CGFloat
+            let actionsSpacing: CGFloat
+        }
+
+        private let metrics: Metrics
+        private let message: AnyView?
+        private let content: AnyView?
+        private let title: Title
+        private let actions: Actions
+
+        init(
+            metrics: Metrics,
+            message: AnyView? = nil,
+            content: AnyView? = nil,
+            @ViewBuilder title: () -> Title,
+            @ViewBuilder actions: () -> Actions
+        ) {
+            self.metrics = metrics
+            self.message = message
+            self.content = content
+            self.title = title()
+            self.actions = actions()
+        }
+
+        var body: some View {
+            VStack(spacing: metrics.outerSpacing) {
+                VStack(spacing: metrics.textSpacing) {
+                    title
+
+                    if let message {
+                        message
+                    }
+                }
+
+                VStack(spacing: metrics.contentSpacing) {
+                    if let content {
+                        content
+                    }
+
+                    actions.padding(.top, metrics.actionsSpacing)
+                }
+            }
+        }
+
+    }
+
+}
+
 // MARK: - Main View
 
 extension OnboardingRebranding {
@@ -45,7 +104,8 @@ extension OnboardingRebranding {
 
         var body: some View {
             ZStack(alignment: .topTrailing) {
-                OnboardingBackground()
+                OnboardingTheme.rebranding2026.colorPalette.background
+                    .ignoresSafeArea()
 
                 switch model.state {
                 case .landing:
@@ -66,8 +126,8 @@ extension OnboardingRebranding {
             }
             .overlay(alignment: .topLeading) {
                 RebrandingBadge()
-                    .padding(.leading, 12)
-                    .padding(.top, 12)
+                    .padding(.leading, OnboardingTheme.rebranding2026.linearOnboardingMetrics.rebrandingBadgeLeadingPadding)
+                    .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.rebrandingBadgeTopPadding)
             }
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
         }
@@ -75,22 +135,26 @@ extension OnboardingRebranding {
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
             GeometryReader { geometry in
                 VStack(alignment: .center) {
-                    DaxDialogView(
-                        logoPosition: .top,
-                        matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
-                        showDialogBox: $model.introState.showDaxDialogBox,
-                        onTapGesture: {
-                            withAnimation {
+                    switch state.type {
+                    case .startOnboardingDialog(let shouldShowSkipOnboardingButton):
+                        introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
+                            .frame(width: geometry.size.width, alignment: .center)
+                    case .browsersComparisonDialog:
+                        browsersComparisonView
+                            .frame(width: geometry.size.width, alignment: .center)
+                            .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.minTopMargin + BrowsersComparisonContentMetrics.additionalTopMargin)
+                    default:
+                        DaxDialogView(
+                            logoPosition: .top,
+                            matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
+                            showDialogBox: $model.introState.showDaxDialogBox,
+                            onTapGesture: {
                                 model.tapped()
-                            }
-                        },
-                        content: {
-                            VStack {
+                            },
+                            content: {
                                 switch state.type {
-                                case .startOnboardingDialog(let shouldShowSkipOnboardingButton):
-                                    introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
                                 case .browsersComparisonDialog:
-                                    browsersComparisonView
+                                    EmptyView()
                                 case .addToDockPromoDialog:
                                     addToDockPromoView
                                 case .chooseAppIconDialog:
@@ -99,18 +163,20 @@ extension OnboardingRebranding {
                                     addressBarPreferenceSelectionView
                                 case .chooseSearchExperienceDialog:
                                     searchExperienceSelectionView
+                                default:
+                                    EmptyView()
                                 }
                             }
+                        )
+                        .onboardingProgressIndicator(
+                            currentStep: state.step.currentStep,
+                            totalSteps: 0
+                        )
+                        .frame(width: geometry.size.width, alignment: .center)
+                        .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.minTopMargin)
+                        .onAppear {
+                            model.introState.showDaxDialogBox = true
                         }
-                    )
-                    .onboardingProgressIndicator(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
-                }
-                .frame(width: geometry.size.width, alignment: .center)
-                .offset(y: geometry.size.height * OnboardingViewMetrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass))
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingViewMetrics.daxDialogVisibilityDelay) {
-                        model.introState.showDaxDialogBox = true
-                        model.introState.animateIntroText = true
                     }
                 }
             }
@@ -120,12 +186,10 @@ extension OnboardingRebranding {
         private var landingView: some View {
             LandingView(animationNamespace: animationNamespace)
                 .ignoresSafeArea(edges: .bottom)
-                .frame(maxHeight: .infinity, alignment: .bottom)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingViewMetrics.daxDialogDelay) {
-                        withAnimation {
-                            model.onAppear()
-                        }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingViewMetrics.landingScreenDuration) {
+                        model.onAppear()
                     }
                 }
         }
@@ -150,8 +214,8 @@ extension OnboardingRebranding {
 
             return IntroDialogContent(
                 title: model.copy.introTitle,
+                message: model.copy.introMessage,
                 skipOnboardingView: skipOnboardingView,
-                animateText: $model.introState.animateIntroText,
                 showCTA: $model.introState.showIntroButton,
                 isSkipped: $model.isSkipped,
                 continueAction: {
@@ -166,13 +230,10 @@ extension OnboardingRebranding {
         private var browsersComparisonView: some View {
             BrowsersComparisonContent(
                 title: model.copy.browserComparisonTitle,
-                animateText: $model.browserComparisonState.animateComparisonText,
-                showContent: $model.browserComparisonState.showComparisonButton,
                 isSkipped: $model.isSkipped,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
                 cancelAction: model.cancelSetDefaultBrowserAction
             )
-            .onboardingDaxDialogStyle()
         }
 
         private var addToDockPromoView: some View {
@@ -219,29 +280,9 @@ extension OnboardingRebranding {
         }
 
         private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
-            // Hide content of Intro dialog before animating
-            model.introState.showIntroViewContent = false
-
-            // Animation with small delay for a better effect when intro content disappear
-            let animationDuration = OnboardingViewMetrics.comparisonChartAnimationDuration
-            let animation = Animation
-                .linear(duration: animationDuration)
-                .delay(0.2)
-
-            if #available(iOS 17, *) {
-                withAnimation(animation) {
-                    model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
-                } completion: {
-                    model.browserComparisonState.animateComparisonText = true
-                }
-            } else {
-                withAnimation(animation) {
-                    model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
-                    model.browserComparisonState.animateComparisonText = true
-                }
-            }
+            model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
+            model.browserComparisonState.showComparisonButton = true
+            model.browserComparisonState.animateComparisonText = true
         }
 
     }
@@ -264,27 +305,30 @@ private struct RebrandingBadge: View {
     }
 }
 
-private enum OnboardingViewMetrics {
-    static let daxDialogDelay: TimeInterval = 2.0
-    static let daxDialogVisibilityDelay: TimeInterval = 0.5
-    static let comparisonChartAnimationDuration = 0.25
-    static let dialogVerticalOffsetPercentage = MetricBuilder<CGFloat>(default: 0.1).iPhoneSmallScreen(0.01)
-    static let progressBarTrailingPadding: CGFloat = 16.0
-    static let progressBarTopPadding: CGFloat = 12.0
+private struct OnboardingProgressIndicatorModifier: ViewModifier {
+    @Environment(\.onboardingTheme) private var onboardingTheme
+
+    let currentStep: Int
+    let totalSteps: Int
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .topTrailing) {
+                RebrandedOnboardingView.OnboardingProgressIndicator(
+                    stepInfo: .init(currentStep: currentStep, totalSteps: totalSteps)
+                )
+                .padding(.trailing, onboardingTheme.linearOnboardingMetrics.progressBarTrailingPadding)
+                .padding(.top, onboardingTheme.linearOnboardingMetrics.progressBarTopPadding)
+                .transition(.identity)
+                .visibility(totalSteps == 0 ? .invisible : .visible)
+            }
+    }
 }
 
 private extension View {
 
     func onboardingProgressIndicator(currentStep: Int, totalSteps: Int) -> some View {
-        overlay(alignment: .topTrailing) {
-            RebrandedOnboardingView.OnboardingProgressIndicator(
-                stepInfo: .init(currentStep: currentStep, totalSteps: totalSteps)
-            )
-            .padding(.trailing, OnboardingViewMetrics.progressBarTrailingPadding)
-            .padding(.top, OnboardingViewMetrics.progressBarTopPadding)
-            .transition(.identity)
-            .visibility(totalSteps == 0 ? .invisible : .visible)
-        }
+        modifier(OnboardingProgressIndicatorModifier(currentStep: currentStep, totalSteps: totalSteps))
     }
 
 }

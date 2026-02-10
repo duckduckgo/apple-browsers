@@ -100,7 +100,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
 
-    convenience init(pixelReporter: LinearOnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging, daxDialogsManager: ContextualDaxDialogDisabling) {
+    convenience init(pixelReporter: LinearOnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging, daxDialogsManager: ContextualDaxDialogDisabling, copy: Copy = .default) {
         let onboardingManager = OnboardingManager()
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
@@ -115,7 +115,8 @@ final class OnboardingIntroViewModel: ObservableObject {
             currentOnboardingStep: onboardingManager.onboardingSteps.first ?? .introDialog(isReturningUser: false),
             onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: { AppIconManager.shared.appIcon },
-            addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition }
+            addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition },
+            copy: copy
         )
     }
 
@@ -128,7 +129,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         currentOnboardingStep: OnboardingIntroStep,
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider,
         appIconProvider: @escaping () -> AppIcon,
-        addressBarPositionProvider: @escaping () -> AddressBarPosition
+        addressBarPositionProvider: @escaping () -> AddressBarPosition,
+        copy: Copy = .default
     ) {
         self.defaultBrowserManager = defaultBrowserManager
         self.contextualDaxDialogs = contextualDaxDialogs
@@ -140,7 +142,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.addressBarPositionProvider = addressBarPositionProvider
 
         currentIntroStep = currentOnboardingStep
-        copy = .default
+        self.copy = copy
     }
 
     func onAppear() {

@@ -21,12 +21,21 @@ import SwiftUI
 import DuckUI
 import Onboarding
 
+private enum SkipOnboardingContentMetrics {
+    static let titleFont = Font.system(size: 20, weight: .bold)
+    static let messageFont = Font.system(size: 16)
+    static let buttonMaxHeight: CGFloat = 50.0
+    static let additionalTopMargin: CGFloat = 0
+}
+
 extension OnboardingRebranding.OnboardingView {
 
     struct SkipOnboardingContent: View {
         private static let fireButtonCopy = "Fire Button"
 
         typealias Copy = UserText.Onboarding.Skip
+
+        @Environment(\.onboardingTheme) private var onboardingTheme
 
         private var animateTitle: Binding<Bool>
         private var animateMessage: Binding<Bool>
@@ -52,39 +61,49 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         var body: some View {
-            VStack(spacing: 24.0) {
-                AnimatableTypingText(Copy.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    withAnimation {
-                        animateMessage.wrappedValue = true
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing,
+                    contentSpacing: 0,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    AnimatableTypingText(Copy.message.attributed.withFont(.daxBodyBold(), forText: Self.fireButtonCopy), startAnimating: animateMessage, skipAnimation: isSkipped) {
+                        withAnimation {
+                            showCTA.wrappedValue = true
+                        }
                     }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 20, weight: .bold))
-
-                AnimatableTypingText(Copy.message.attributed.withFont(.daxBodyBold(), forText: Self.fireButtonCopy), startAnimating: animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showCTA.wrappedValue = true
+                    .foregroundColor(.primary)
+                    .font(SkipOnboardingContentMetrics.messageFont)
+                ),
+                title: {
+                    AnimatableTypingText(Copy.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
+                        withAnimation {
+                            animateMessage.wrappedValue = true
+                        }
                     }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 16))
+                    .foregroundColor(.primary)
+                    .font(SkipOnboardingContentMetrics.titleFont)
+                },
+                actions: {
+                    VStack {
+                        Button(action: startBrowsingAction) {
+                            Text(Copy.confirmSkipOnboardingCTA)
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
 
-                VStack {
-                    Button(action: startBrowsingAction) {
-                        Text(Copy.confirmSkipOnboardingCTA)
+                        OnboardingBorderedButton(
+                            maxHeight: SkipOnboardingContentMetrics.buttonMaxHeight,
+                            content: {
+                                Text(Copy.resumeOnboardingCTA)
+                            },
+                            action: resumeOnboardingAction
+                        )
                     }
-                    .buttonStyle(PrimaryButtonStyle())
-
-                    OnboardingBorderedButton(
-                        maxHeight: 50.0,
-                        content: {
-                            Text(Copy.resumeOnboardingCTA)
-                        },
-                        action: resumeOnboardingAction
-                    )
+                    .visibility(showCTA.wrappedValue ? .visible : .invisible)
                 }
-                .visibility(showCTA.wrappedValue ? .visible : .invisible)
-            }
+            )
         }
 
     }

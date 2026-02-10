@@ -75,7 +75,7 @@ public extension OnboardingTheme.Typography {
 
     /// Typography preset using DuckSans families.
     static let duckSans = OnboardingTheme.Typography(
-        largeTitle: makeFont(size: 44, family: .duckSansDisplay, weight: .bold),
+        largeTitle: makeFont(size: 44, family: .duckSansDisplay, weight: .medium),
         title: makeFont(size: 24, family: .duckSansDisplay, weight: .bold),
         body: makeFont(size: 18, family: .duckSansProduct, weight: .regular),
         contextualTitle: makeFont(size: 20, family: .duckSansDisplay, weight: .bold),
@@ -88,7 +88,7 @@ public extension OnboardingTheme.Typography {
 
     /// System font fallback preset, useful for testing and previews.
     static let system = OnboardingTheme.Typography(
-        largeTitle: .system(size: 44, weight: .bold),
+        largeTitle: .system(size: 44, weight: .medium),
         title: .system(size: 24, weight: .bold),
         body: .system(size: 18, weight: .regular),
         contextualTitle: .system(size: 20, weight: .bold),

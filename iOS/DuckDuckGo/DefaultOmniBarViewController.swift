@@ -192,14 +192,14 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         if let omniDelegate {
             omniDelegate.dismissContextualSheetIfNeeded { [weak self] in
                 guard let self else { return }
-                self.doPresent(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
+                self.present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
             }
         } else {
-            doPresent(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
+            present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
         }
     }
 
-    private func doPresent(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
+    private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
         guard editingStateViewController == nil else { return }
 
         let switchBarHandler = createSwitchBarHandler(for: textField)

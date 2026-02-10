@@ -142,14 +142,13 @@
     "m_aichat_contextual_auto_attach_is_enabled_daily": {
         "description": "Daily pixel capturing the current state of the contextual auto-attach setting",
         "owners": ["aataraxiaa"],
-        "triggers": ["other"],
-        "suffixes": [],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
                 "key": "is_enabled",
-                "type": "string",
-                "enum": ["true", "false"],
+                "type": "boolean",
                 "description": "Whether the automatic context attachment setting is currently enabled"
             }
         ]

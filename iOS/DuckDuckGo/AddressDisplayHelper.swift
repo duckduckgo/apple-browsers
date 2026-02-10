@@ -36,7 +36,7 @@ struct AddressDisplayHelper {
         if url.isDuckAIURL, !showsFullURL,
            aichatIPadTabFeature.isAvailable {
             return NSAttributedString(
-                string: UserText.duckAiFeatureName,
+                string: UserText.omnibarFullAIChatModeDisplayTitle,
                 attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])
         }
 

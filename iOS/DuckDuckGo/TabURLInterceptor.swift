@@ -48,12 +48,12 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     init(featureFlagger: FeatureFlagger,
          canPurchase: @escaping CanPurchaseUpdater,
          aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-         aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature()
+         aichatIPadTabFeature: AIChatIPadTabFeatureProviding? = nil
     ) {
         self.canPurchase = canPurchase
         self.featureFlagger = featureFlagger
         self.aichatFullModeFeature = aichatFullModeFeature
-        self.aichatIPadTabFeature = aichatIPadTabFeature
+        self.aichatIPadTabFeature = aichatIPadTabFeature ?? AIChatIPadTabFeature(featureFlagger: featureFlagger)
     }
 
     static let interceptedURLs: [InterceptedURLInfo] = [

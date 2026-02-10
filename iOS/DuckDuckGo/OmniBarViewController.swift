@@ -20,7 +20,6 @@
 import UIKit
 import PrivacyDashboard
 import AIChat
-import Common
 import Core
 import Kingfisher
 import DesignResourcesKitIcons

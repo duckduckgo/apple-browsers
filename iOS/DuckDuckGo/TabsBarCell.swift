@@ -110,7 +110,7 @@ class TabsBarCell: UICollectionViewCell {
             label.accessibilityLabel = UserText.openHomeTab
             removeButton.accessibilityLabel = UserText.closeHomeTab
         } else if model.isAITab {
-            let aiChatTitle = UserText.duckAiFeatureName
+            let aiChatTitle = UserText.omnibarFullAIChatModeDisplayTitle
             faviconImage.image = DesignSystemImages.Color.Size24.aiChatGradient
             label.text = aiChatTitle
             label.accessibilityLabel = UserText.openTab(withTitle: aiChatTitle, atAddress: "")

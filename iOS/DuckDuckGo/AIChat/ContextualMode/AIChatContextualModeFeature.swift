@@ -43,7 +43,7 @@ struct AIChatContextualModeFeature: AIChatContextualModeFeatureProviding {
 
     init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
-         aiChatURLProvider: @escaping () -> URL = { AIChatSettings().aiChatURL }) {
+         aiChatURLProvider: @escaping () -> URL = { [settings = AIChatSettings()] in settings.aiChatURL }) {
         self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
         self.aiChatURLProvider = aiChatURLProvider

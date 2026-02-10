@@ -1668,7 +1668,7 @@ extension MainViewController: NSMenuItemValidation {
             return activeTabViewModel?.canSaveContent == true
 
         // Preferences:
-        case #selector(AppDelegate.openPreferences):
+        case #selector(MainViewController.openPreferences(_:)):
             return allowsUserInteraction
 
         // Printing
@@ -1728,7 +1728,9 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.newBurnerWindow(_:)),
             #selector(AppDelegate.newAIChat(_:)),
             #selector(AppDelegate.openFile(_:)),
-            #selector(AppDelegate.openLocation(_:)):
+            #selector(AppDelegate.openLocation(_:)),
+            #selector(AppDelegate.openPreferences),
+            #selector(AppDelegate.showManageBookmarks(_:)):
             return isUserInteractionAllowed
 
         // Reopen Last Removed Tab

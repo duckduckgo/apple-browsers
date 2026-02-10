@@ -113,9 +113,7 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
-        if let pageContextUserScript {
-            contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
-        }
+        contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()

@@ -221,7 +221,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     // MARK: - Hardware OS Support Tests
 
-    func testWhenModelSupportsNewerOSThanCurrentThenHardwareSupportsNewerOS() {
+    func testWhenModelSupportsNewerOSThanCurrentThenCapable() {
         // Given
         let mockFeatureFlagger = MockFeatureFlagger()
         let sequoiaVersion = 15
@@ -232,10 +232,10 @@ final class SupportedOSCheckerTests: XCTestCase {
             maxSupportedVersionByModelOverride: ["MacBookPro18,3": sequoiaVersion])
 
         // Then
-        XCTAssertTrue(checker.hardwareSupportsNewerOS)
+        XCTAssertEqual(checker.osUpgradeCapability, .capable)
     }
 
-    func testWhenModelMaxVersionEqualsCurrentThenHardwareDoesNotSupportNewerOS() {
+    func testWhenModelMaxVersionEqualsCurrentThenIncapable() {
         // Given
         let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
@@ -245,10 +245,10 @@ final class SupportedOSCheckerTests: XCTestCase {
             maxSupportedVersionByModelOverride: ["MacBookPro18,3": Self.venturaVersion.majorVersion])
 
         // Then
-        XCTAssertFalse(checker.hardwareSupportsNewerOS)
+        XCTAssertEqual(checker.osUpgradeCapability, .incapable)
     }
 
-    func testWhenModelMaxVersionIsLowerThanCurrentThenHardwareDoesNotSupportNewerOS() {
+    func testWhenModelMaxVersionIsLowerThanCurrentThenIncapable() {
         // Given
         let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
@@ -258,10 +258,10 @@ final class SupportedOSCheckerTests: XCTestCase {
             maxSupportedVersionByModelOverride: ["MacBookPro18,3": Self.montereyVersion.majorVersion])
 
         // Then
-        XCTAssertFalse(checker.hardwareSupportsNewerOS)
+        XCTAssertEqual(checker.osUpgradeCapability, .incapable)
     }
 
-    func testWhenModelNotInLookupTableThenHardwareDoesNotSupportNewerOS() {
+    func testWhenModelNotInLookupTableThenCapable() {
         // Given
         let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
@@ -271,10 +271,10 @@ final class SupportedOSCheckerTests: XCTestCase {
             maxSupportedVersionByModelOverride: [:])
 
         // Then
-        XCTAssertFalse(checker.hardwareSupportsNewerOS)
+        XCTAssertEqual(checker.osUpgradeCapability, .capable)
     }
 
-    func testWhenNoHardwareModelOverrideAndEmptyLookupTableThenHardwareDoesNotSupportNewerOS() {
+    func testWhenNoHardwareModelThenUnknown() {
         // Given
         let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
@@ -283,6 +283,6 @@ final class SupportedOSCheckerTests: XCTestCase {
             maxSupportedVersionByModelOverride: [:])
 
         // Then
-        XCTAssertFalse(checker.hardwareSupportsNewerOS)
+        XCTAssertEqual(checker.osUpgradeCapability, .unknown)
     }
 }

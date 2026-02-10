@@ -26,6 +26,21 @@ enum OSSupportWarning {
     case willDropSupportSoon(_ upcomingMinVersion: String)
 }
 
+enum OSUpgradeCapability: String {
+    case capable = "capable"
+    case incapable = "incapable"
+    case unknown = "unknown"
+
+    /// Converts capability to pixel-friendly value for the boolean-style "can_update" parameter
+    var pixelValue: String {
+        switch self {
+        case .capable: return "yes"
+        case .incapable: return "no"
+        case .unknown: return "unknown"
+        }
+    }
+}
+
 protocol SupportedOSChecking {
 
     /// Whether a OS-support warning should be shown to the user.
@@ -39,19 +54,22 @@ protocol SupportedOSChecking {
     ///
     var supportWarning: OSSupportWarning? { get }
 
-    /// Whether the hardware supports a macOS version newer than the currently running one.
+    /// The hardware's capability to upgrade to a macOS version newer than the currently running one.
     ///
-    /// This defaults to `true` when the limitation cannot be determined (HW model not present in the hardcoded mapping).
+    /// Returns `.capable` when the hardware can upgrade, `.incapable` when it cannot, or `.unknown` when
+    /// the capability cannot be determined (e.g., hardware model unavailable).
     ///
-    var hardwareSupportsNewerOS: Bool { get }
+    /// For models not present in the hardcoded mapping, this returns `.capable`, assuming newer hardware.
+    ///
+    var osUpgradeCapability: OSUpgradeCapability { get }
 }
 
 extension SupportedOSChecking {
     var showsSupportWarning: Bool {
         supportWarning != nil
     }
-    var hardwareSupportsNewerOS: Bool {
-        false
+    var osUpgradeCapability: OSUpgradeCapability {
+        .incapable
     }
 }
 
@@ -215,18 +233,18 @@ extension SupportedOSChecker: SupportedOSChecking {
         return nil
     }
 
-    var hardwareSupportsNewerOS: Bool {
+    var osUpgradeCapability: OSUpgradeCapability {
         guard let model = hardwareModel else {
-            return false
+            return .unknown
         }
 
         guard let maxSupportedOS = maxSupportedVersionByModel[model] else {
             /// Given model is not on the list so we assume hardware supports newer OS versions
-            return true
+            return .capable
         }
 
         let maxVersion = maxSupportedOS
         let currentVersion = currentOSVersion.majorVersion
-        return maxVersion > currentVersion
+        return maxVersion > currentVersion ? .capable : .incapable
     }
 }

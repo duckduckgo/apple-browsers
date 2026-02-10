@@ -228,7 +228,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.venturaVersion,
-            hardwareModelOverride: "MacBookPro18,3",
+            hardwareModel: "MacBookPro18,3",
             maxSupportedVersionByModelOverride: ["MacBookPro18,3": sequoiaVersion])
 
         // Then
@@ -241,7 +241,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.venturaVersion,
-            hardwareModelOverride: "MacBookPro18,3",
+            hardwareModel: "MacBookPro18,3",
             maxSupportedVersionByModelOverride: ["MacBookPro18,3": Self.venturaVersion.majorVersion])
 
         // Then
@@ -254,7 +254,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.venturaVersion,
-            hardwareModelOverride: "MacBookPro18,3",
+            hardwareModel: "MacBookPro18,3",
             maxSupportedVersionByModelOverride: ["MacBookPro18,3": Self.montereyVersion.majorVersion])
 
         // Then
@@ -267,7 +267,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.venturaVersion,
-            hardwareModelOverride: "UnknownModel",
+            hardwareModel: "UnknownModel",
             maxSupportedVersionByModelOverride: [:])
 
         // Then
@@ -280,7 +280,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.venturaVersion,
-            hardwareModelOverride: nil,
+            hardwareModel: nil,
             maxSupportedVersionByModelOverride: [:])
 
         // Then

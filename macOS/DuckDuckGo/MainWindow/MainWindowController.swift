@@ -129,10 +129,19 @@ final class MainWindowController: NSWindowController {
 
     private func setupWindow(_ window: NSWindow) {
         window.delegate = self
+        startOnboardingIfNeeded()
+    }
 
-        if shouldShowOnboarding {
-            mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.startOnboarding()
+    private func startOnboardingIfNeeded() {
+        guard shouldShowOnboarding, let selectedTab = mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab else {
+            return
         }
+
+        // During Onboarding, several UI elements get disabled. In order to prevent flickering, we'll disable them right after kicking off Onboarding.
+        // Locking up UI via `OnboardingUserScript.setInit` has a noticeable delay, where elements may flash.
+        //
+        selectedTab.startOnboarding()
+        userInteraction(prevented: true)
     }
 
     private func subscribeToResolutionChange() {

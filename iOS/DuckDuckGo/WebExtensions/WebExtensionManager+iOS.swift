@@ -31,7 +31,8 @@ public enum WebExtensionManagerFactory {
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),
-            storageProvider: WebExtensionStorageProvider()
+            storageProvider: WebExtensionStorageProvider(),
+            pixelFiring: iOSWebExtensionPixelFiring()
         )
 
         return manager

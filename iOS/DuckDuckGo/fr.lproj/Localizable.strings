@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Tout supprimer";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Supprimer cette discussion";
+"scoped.fire.confirmation.delete.this.chat.description" = "« Tout supprimer » ne supprimera pas l'historique de vos discussions Duck.ai.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Supprimer cet onglet";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "« Supprimer cet onglet » efface ce chat Duck.ai ainsi que toutes les données des sites visités dans cet onglet.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Cela annulera les téléchargements en cours.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "Les nouveaux onglets que vous créez peuvent aussi être supprimés individuellement.";
+"scoped.fire.confirmation.new.tabs.info" = "Les nouveaux onglets que vous avez créés peuvent aussi être supprimés individuellement.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "La suppression des données de site peut vous déconnecter des comptes.";

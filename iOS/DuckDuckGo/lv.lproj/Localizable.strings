@@ -2942,10 +2942,10 @@
 "scoped.fire.confirmation.delete.all.button" = "Dzēst visus";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Dzēst šo tērzēšanas sarunu";
+"scoped.fire.confirmation.delete.this.chat.description" = "\"Dzēst visu\" neizdzēsīs tavu Duck.ai tērzēšanas vēsturi.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Dzēst šo cilni";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "\"Dzēst šo cilni\" notīra šo Duck.ai tērzēšanu un visus vietnes datus no šajā cilnē apmeklētajām vietnēm.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Tas atcels notiekošās lejupielādes.";

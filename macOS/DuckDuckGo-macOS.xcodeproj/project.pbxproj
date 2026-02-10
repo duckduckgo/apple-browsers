@@ -154,6 +154,8 @@
 		1D8C2FF12B70F751005E4BBD /* MockTabSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */; };
 		1D9297BF2C1B062900A38521 /* ApplicationUpdateDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9297BE2C1B062900A38521 /* ApplicationUpdateDetector.swift */; };
 		1D9297C02C1B062900A38521 /* ApplicationUpdateDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9297BE2C1B062900A38521 /* ApplicationUpdateDetector.swift */; };
+		1D94E7A02F33AA2E008315A2 /* MacOSWebExtensionPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */; };
+		1D94E7A12F33AA2E008315A2 /* MacOSWebExtensionPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */; };
 		1D94E7992F333CA1008315A2 /* AIChatOmnibarToolButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */; };
 		1D94E79A2F333CA1008315A2 /* AIChatOmnibarToolButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */; };
 		1D99CDDB2D929EC900656A84 /* PinnedTabsPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D99CDDA2D929EBE00656A84 /* PinnedTabsPixel.swift */; };
@@ -4545,6 +4547,7 @@
 		1D8C2FEC2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockViewSnapshotRenderer.swift; sourceTree = "<group>"; };
 		1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockTabSnapshotStore.swift; sourceTree = "<group>"; };
 		1D9297BE2C1B062900A38521 /* ApplicationUpdateDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationUpdateDetector.swift; sourceTree = "<group>"; };
+		1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSWebExtensionPixelFiring.swift; sourceTree = "<group>"; };
 		1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatOmnibarToolButton.swift; sourceTree = "<group>"; };
 		1D99CDDA2D929EBE00656A84 /* PinnedTabsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsPixel.swift; sourceTree = "<group>"; };
 		1D9A37662BD8EA8800EBC58D /* DockPositionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockPositionProvider.swift; sourceTree = "<group>"; };
@@ -7038,6 +7041,7 @@
 		1D2DB9A22CE26B7A00F73E96 /* WebExtensions */ = {
 			isa = PBXGroup;
 			children = (
+				1D94E79E2F33AA20008315A2 /* Pixels */,
 				1D6860512D36BD38006FC53E /* View */,
 				1DF78E0E2CE6197200AB898E /* Tab+WKWebExtensionTab.swift */,
 				1DF78E112CE61DB000AB898E /* MainWindowController+WKWebExtensionWindow.swift */,
@@ -7229,6 +7233,14 @@
 				1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */,
 			);
 			path = Mocks;
+			sourceTree = "<group>";
+		};
+		1D94E79E2F33AA20008315A2 /* Pixels */ = {
+			isa = PBXGroup;
+			children = (
+				1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */,
+			);
+			path = Pixels;
 			sourceTree = "<group>";
 		};
 		1DB67F272B6FE21D003DF243 /* Model */ = {
@@ -14227,6 +14239,7 @@
 				3706FABB293F65D500E42796 /* PasswordManagementBitwardenItemView.swift in Sources */,
 				CD2AB5CB2C8225E70019EB49 /* URLTokenValidator.swift in Sources */,
 				BB6B4EE82EE7483D00FE23E2 /* QuitSurveyView.swift in Sources */,
+				1D94E7A12F33AA2E008315A2 /* MacOSWebExtensionPixelFiring.swift in Sources */,
 				BB6B4EE92EE7483D00FE23E2 /* QuitSurveyViewModel.swift in Sources */,
 				1D220BF92B86192200F8BBC6 /* PreferencesEmailProtectionView.swift in Sources */,
 				9FA173E42B7A12B600EE4E6E /* BookmarkDialogFolderManagementView.swift in Sources */,
@@ -17218,6 +17231,7 @@
 				1DF78E132CE61DB700AB898E /* MainWindowController+WKWebExtensionWindow.swift in Sources */,
 				376705AF27EB488600DD8D76 /* RoundedSelectionRowView.swift in Sources */,
 				311309752ECE71B600FCD220 /* AddressBarSharedTextState.swift in Sources */,
+				1D94E7A02F33AA2E008315A2 /* MacOSWebExtensionPixelFiring.swift in Sources */,
 				B69B503F2726A12500758A2B /* LocalStatisticsStore.swift in Sources */,
 				B69B50572727D16900758A2B /* AtbAndVariantCleanup.swift in Sources */,
 				EEEFA3462D145328006A3F8A /* SyncPixels.swift in Sources */,

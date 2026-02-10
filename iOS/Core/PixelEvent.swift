@@ -1626,6 +1626,16 @@ extension Pixel {
         case productTelemeterySurfaceUsageSettings
         case productTelemeterySurfaceUsageBookmarksPage
         case productTelemeterySurfaceUsagePasswordsPage
+
+        // MARK: - Web Extensions
+        case webExtensionInstalled
+        case webExtensionInstallError
+        case webExtensionUninstalled
+        case webExtensionUninstallError
+        case webExtensionUninstalledAll
+        case webExtensionUninstallAllError
+        case webExtensionLoaded
+        case webExtensionLoadError
     }
 
 }
@@ -3184,12 +3194,22 @@ extension Pixel.Event {
         case .productTelemeterySurfaceUsageSettings: return "m_product_telemetry_surface_usage_settings"
         case .productTelemeterySurfaceUsageBookmarksPage: return "m_product_telemetry_surface_usage_bookmarks_page"
         case .productTelemeterySurfaceUsagePasswordsPage: return "m_product_telemetry_surface_usage_passwords_page"
+
+        // MARK: - Web Extensions
+        case .webExtensionInstalled: return "m_web_extension_installed"
+        case .webExtensionInstallError: return "m_web_extension_install_error"
+        case .webExtensionUninstalled: return "m_web_extension_uninstalled"
+        case .webExtensionUninstallError: return "m_web_extension_uninstall_error"
+        case .webExtensionUninstalledAll: return "m_web_extension_uninstalled_all"
+        case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
+        case .webExtensionLoaded: return "m_web_extension_loaded"
+        case .webExtensionLoadError: return "m_web_extension_load_error"
         }
     }
 }
 
 extension Pixel.Event {
-    
+
     public enum BucketAggregation: String, CustomStringConvertible {
 
         public var description: String { rawValue }

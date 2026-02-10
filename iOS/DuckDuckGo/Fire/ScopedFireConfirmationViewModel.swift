@@ -47,10 +47,12 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     private let keyValueStore: KeyValueStoring
     private let appSettings: AppSettings
     private let daxDialogsManager: DaxDialogsManaging
+    private let source: FireRequest.Source
     
     // MARK: - Initializer
     
     init(tabViewModel: TabViewModel?,
+         source: FireRequest.Source,
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          keyValueStore: KeyValueStoring = UserDefaults.standard,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
@@ -58,6 +60,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
          onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
         self.tabViewModel = tabViewModel
+        self.source = source
         self.downloadManager = downloadManager
         self.keyValueStore = keyValueStore
         self.appSettings = appSettings
@@ -86,7 +89,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     // MARK: - Public Functions
     
     func burnAllTabs() {
-        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all)
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: source)
         onConfirm(request)
     }
     
@@ -94,7 +97,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         guard let tabViewModel else {
             return
         }
-        let request = FireRequest(options: .all, trigger: .manualFire, scope: .tab(viewModel: tabViewModel))
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .tab(viewModel: tabViewModel), source: source)
         onConfirm(request)
     }
     

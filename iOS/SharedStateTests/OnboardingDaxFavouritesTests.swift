@@ -169,6 +169,8 @@ import AIChatTestingUtilities
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            remoteMessagingPixelReporter: MockRemoteMessagingPixelReporter(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),

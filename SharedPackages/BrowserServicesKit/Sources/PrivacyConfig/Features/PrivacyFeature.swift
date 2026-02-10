@@ -65,6 +65,7 @@ public enum PrivacyFeature: String {
     case forceOldAppDelegate
     case htmlHistoryPage
     case tabManager
+    case tabSwitcherTrackerCount
     case webViewStateRestoration
     case experimentalTheming
     case setAsDefaultAndAddToDock
@@ -143,10 +144,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Tab closing event recreation feature flag (failsafe for removing private API)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
-
-    /// Feature Flag for the Tab Spinner
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
-    case tabProgressIndicator
 
     /// Feature flag for Themes
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
@@ -234,6 +231,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
+    case browsingMenuSheetEnabledByDefault
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -288,6 +288,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case foregroundRunningWhenDashboardOpen
     case clickActionDelayReductionOptimization
     case pirRollout
+    case goToMarket
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -352,6 +353,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar cluster for AI Chat
     case omnibarCluster
 
+    /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
+    case omnibarTools
+
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
@@ -366,6 +370,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls whether automatic page context attachment defaults to enabled
     case autoAttachContextByDefault
+
+    /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
+    case iPadDuckaiOnTab
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

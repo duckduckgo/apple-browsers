@@ -67,6 +67,10 @@ extension Pixel {
         case forgetAllPressedBrowsingDaily
         case forgetAllPressedTabSwitcherDaily
         case forgetAllExecutedDaily
+
+        // MARK: Single Tab Burn
+        case singleTabBurnExecuted
+        case singleTabDataCleared
         
         case privacyDashboardOpened
         case privacyDashboardFirstTimeOpenedUnique
@@ -762,6 +766,8 @@ extension Pixel {
         case remoteMessageSheet
         case remoteMessageCardShown
         case remoteMessageCardClicked
+        case remoteMessageImageLoadSuccess
+        case remoteMessageImageLoadFailed
 
         // MARK: debug pixels
         case dbCrashDetected(appIdentifier: String?)
@@ -1222,6 +1228,7 @@ extension Pixel {
         case privacyProFreeTrialStart
         case privacyProFreeTrialVPNActivation
         case privacyProFreeTrialPIRActivation
+        case privacyProFreeTrialDuckAIActivation
 
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
@@ -1477,6 +1484,8 @@ extension Pixel {
         // MARK: AI Chat History Deletion
         case aiChatHistoryDeleteSuccessful
         case aiChatHistoryDeleteFailed
+        case aiChatSingleDeleteSuccessful
+        case aiChatSingleDeleteFailed
 
         // MARK: AI Chat Contextual Onboarding
         case aiChatContextualOnboardingDisplayed
@@ -1504,6 +1513,8 @@ extension Pixel {
         case aiChatContextualPromptSubmittedWithContextNative
         case aiChatContextualPromptSubmittedWithoutContextNative
         case aiChatContextualSessionRestored
+        case aiChatContextualPageContextCollectionEmpty
+        case aiChatContextualPageContextCollectionUnavailable
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -1580,6 +1591,7 @@ extension Pixel {
         case dbpNotificationOpenedFirstRemoval
         case dbpNotificationOpenedAllRecordsRemoved
         case dbpNotificationOpened1WeekCheckIn
+        case dbpNotificationOpenedGoToMarketFirstScan
 
         // MARK: - App Intent
         case appIntentPerformed
@@ -1614,6 +1626,16 @@ extension Pixel {
         case productTelemeterySurfaceUsageSettings
         case productTelemeterySurfaceUsageBookmarksPage
         case productTelemeterySurfaceUsagePasswordsPage
+
+        // MARK: - Web Extensions
+        case webExtensionInstalled
+        case webExtensionInstallError
+        case webExtensionUninstalled
+        case webExtensionUninstallError
+        case webExtensionUninstalledAll
+        case webExtensionUninstallAllError
+        case webExtensionLoaded
+        case webExtensionLoadError
     }
 
 }
@@ -1653,6 +1675,10 @@ extension Pixel.Event {
         case .forgetAllPressedBrowsingDaily: return "m_forget-all-pressed_browsing_daily"
         case .forgetAllPressedTabSwitcherDaily: return "m_forget-all-pressed_tab-switcher_daily"
         case .forgetAllExecutedDaily: return "m_forget-all-executed_daily"
+
+        // MARK: Single Tab Burn
+        case .singleTabBurnExecuted: return "m_single-tab-burn_executed"
+        case .singleTabDataCleared: return "m_single-tab-data_cleared"
             
         case .privacyDashboardOpened: return "mp"
         case .privacyDashboardFirstTimeOpenedUnique: return "m_privacy_dashboard_first_time_used_unique"
@@ -2269,6 +2295,8 @@ extension Pixel.Event {
         case .remoteMessageSheet: return "m_remote_message_sheet"
         case .remoteMessageCardShown: return "m_remote_message_card_shown"
         case .remoteMessageCardClicked: return "m_remote_message_card_clicked"
+        case .remoteMessageImageLoadSuccess: return "m_remote_message_image_load_success"
+        case .remoteMessageImageLoadFailed: return "m_remote_message_image_load_failed"
 
             // MARK: debug pixels
 
@@ -2713,6 +2741,7 @@ extension Pixel.Event {
         case .privacyProFreeTrialStart: return "m_privacy-pro_freetrial_start"
         case .privacyProFreeTrialVPNActivation: return "m_privacy-pro_freetrial_vpn_activation"
         case .privacyProFreeTrialPIRActivation: return "m_privacy-pro_freetrial_pir_activation"
+        case .privacyProFreeTrialDuckAIActivation: return "m_privacy-pro_freetrial_duck_ai_activation"
 
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"
@@ -2964,6 +2993,8 @@ extension Pixel.Event {
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
         case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
+        case .aiChatSingleDeleteSuccessful: return "m_aichat_single_delete_successful"
+        case .aiChatSingleDeleteFailed: return "m_aichat_single_delete_failed"
 
         // MARK: AI Chat Contextual Onboarding
         case .aiChatContextualOnboardingDisplayed: return "m_aichat_contextual_onboarding_displayed"
@@ -2991,6 +3022,8 @@ extension Pixel.Event {
         case .aiChatContextualPromptSubmittedWithContextNative: return "m_aichat_contextual_prompt_submitted_with_context_native"
         case .aiChatContextualPromptSubmittedWithoutContextNative: return "m_aichat_contextual_prompt_submitted_without_context_native"
         case .aiChatContextualSessionRestored: return "m_aichat_contextual_session_restored"
+        case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
+        case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
 
         // MARK: AI Chat Sync
 
@@ -3115,11 +3148,12 @@ extension Pixel.Event {
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
 
         // MARK: Data Broker Protection Notifications
-        case .dbpNotificationOpenedFirstScanComplete: return "m_ios_dbp_notification_opened_first_scan_complete"
-        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_ios_dbp_freemium_notification_opened_first_scan_complete"
-        case .dbpNotificationOpenedFirstRemoval: return "m_ios_dbp_notification_opened_first_removal"
-        case .dbpNotificationOpenedAllRecordsRemoved: return "m_ios_dbp_notification_opened_all_records_removed"
-        case .dbpNotificationOpened1WeekCheckIn: return "m_ios_dbp_notification_opened_1_week_check_in"
+        case .dbpNotificationOpenedFirstScanComplete: return "m_dbp_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_dbp_freemium_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstRemoval: return "m_dbp_notification_opened_first_removal"
+        case .dbpNotificationOpenedAllRecordsRemoved: return "m_dbp_notification_opened_all_records_removed"
+        case .dbpNotificationOpened1WeekCheckIn: return "m_dbp_notification_opened_1_week_check_in"
+        case .dbpNotificationOpenedGoToMarketFirstScan: return "m_dbp_notification_opened_go_to_market_first_scan"
 
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"
@@ -3160,12 +3194,22 @@ extension Pixel.Event {
         case .productTelemeterySurfaceUsageSettings: return "m_product_telemetry_surface_usage_settings"
         case .productTelemeterySurfaceUsageBookmarksPage: return "m_product_telemetry_surface_usage_bookmarks_page"
         case .productTelemeterySurfaceUsagePasswordsPage: return "m_product_telemetry_surface_usage_passwords_page"
+
+        // MARK: - Web Extensions
+        case .webExtensionInstalled: return "m_web_extension_installed"
+        case .webExtensionInstallError: return "m_web_extension_install_error"
+        case .webExtensionUninstalled: return "m_web_extension_uninstalled"
+        case .webExtensionUninstallError: return "m_web_extension_uninstall_error"
+        case .webExtensionUninstalledAll: return "m_web_extension_uninstalled_all"
+        case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
+        case .webExtensionLoaded: return "m_web_extension_loaded"
+        case .webExtensionLoadError: return "m_web_extension_load_error"
         }
     }
 }
 
 extension Pixel.Event {
-    
+
     public enum BucketAggregation: String, CustomStringConvertible {
 
         public var description: String { rawValue }

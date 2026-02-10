@@ -187,6 +187,21 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
 
+        let capturedTextEntryMode = textEntryMode
+
+        if let omniDelegate {
+            omniDelegate.dismissContextualSheetIfNeeded { [weak self] in
+                guard let self else { return }
+                self.present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
+            }
+        } else {
+            present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
+        }
+    }
+
+    private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
+        guard editingStateViewController == nil else { return }
+
         let switchBarHandler = createSwitchBarHandler(for: textField)
         switchBarHandler.setToggleState(textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
@@ -206,7 +221,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                 self?.omniDelegate?.onExperimentalAddressBarClearPressed()
             }
             .store(in: &cancellables)
-        
+
         self.editingStateViewController = editingStateViewController
 
         present(editingStateViewController, animated: animated)

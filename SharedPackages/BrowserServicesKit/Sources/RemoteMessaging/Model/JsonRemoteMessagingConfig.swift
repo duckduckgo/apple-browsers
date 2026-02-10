@@ -58,6 +58,7 @@ public enum RemoteMessageResponse {
         let descriptionText: String
         let listItems: [JsonListItem]?
         let placeholder: String?
+        let imageUrl: String?
         let actionText: String?
         let action: JsonMessageAction?
         let primaryActionText: String?
@@ -154,6 +155,7 @@ public enum RemoteMessageResponse {
         case appUpdate = "AppUpdate"
         case macComputer = "MacComputer"
         case newForMacAndWindows = "NewForMacAndWindows"
+        case macAndWindows = "MacAndWindows"
         case privacyShield = "PrivacyShield"
         case aiChat = "Duck.ai"
         case visualDesignUpdate = "VisualDesignUpdate"

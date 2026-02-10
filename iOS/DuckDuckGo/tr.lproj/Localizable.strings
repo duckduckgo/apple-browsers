@@ -1426,9 +1426,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Duck.ai'a mesajınızla gönderildi";
 
-/* Subtitle shown on the context chip indicating page content is attached */
-"duckai.context.chip.subtitle" = "Sayfa İçeriği";
-
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
 "duckai.contextual.onboarding.body" = "Duck.ai artık görüntülediğiniz sayfayla ilgili soruları yanıtlamanıza yardımcı olabilir.\n\nSayfa içeriği yalnızca eklediğinizde dahil edilir. Bunu istediğiniz zaman Ayarlar'dan değiştirebilirsiniz.";
 
@@ -1443,6 +1440,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI özellikleri gizli ve isteğe bağlıdır. Verileriniz yapay zekayı eğitmek için kullanılmaz.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Sayfa İçeriğini Ekle";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Bu Sayfayı Özetle";

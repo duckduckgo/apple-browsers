@@ -202,6 +202,8 @@ struct JsonToRemoteMessageModelMapper {
 
     static func mapToContent(content: RemoteMessageResponse.JsonContent,
                              surveyActionMapper: RemoteMessagingSurveyActionMapping) -> RemoteMessageModelType? {
+        let imageUrl = content.imageUrl.flatMap(URL.init(string:))
+
         switch RemoteMessageResponse.JsonMessageType(rawValue: content.messageType) {
         case .small:
             guard !content.titleText.isEmpty, !content.descriptionText.isEmpty else {
@@ -217,7 +219,8 @@ struct JsonToRemoteMessageModelMapper {
 
             return .medium(titleText: content.titleText,
                            descriptionText: content.descriptionText,
-                           placeholder: mapToPlaceholder(content.placeholder))
+                           placeholder: mapToPlaceholder(content.placeholder),
+                           imageUrl: imageUrl)
         case .bigSingleAction:
             guard let primaryActionText = content.primaryActionText,
                   !primaryActionText.isEmpty,
@@ -229,6 +232,7 @@ struct JsonToRemoteMessageModelMapper {
             return .bigSingleAction(titleText: content.titleText,
                                     descriptionText: content.descriptionText,
                                     placeholder: mapToPlaceholder(content.placeholder),
+                                    imageUrl: imageUrl,
                                     primaryActionText: primaryActionText,
                                     primaryAction: action)
         case .bigTwoAction:
@@ -245,6 +249,7 @@ struct JsonToRemoteMessageModelMapper {
             return .bigTwoAction(titleText: content.titleText,
                                  descriptionText: content.descriptionText,
                                  placeholder: mapToPlaceholder(content.placeholder),
+                                 imageUrl: imageUrl,
                                  primaryActionText: primaryActionText,
                                  primaryAction: primaryAction,
                                  secondaryActionText: secondaryActionText,
@@ -260,6 +265,7 @@ struct JsonToRemoteMessageModelMapper {
             return .promoSingleAction(titleText: content.titleText,
                                       descriptionText: content.descriptionText,
                                       placeholder: mapToPlaceholder(content.placeholder),
+                                      imageUrl: imageUrl,
                                       actionText: actionText,
                                       action: action)
 
@@ -338,6 +344,8 @@ struct JsonToRemoteMessageModelMapper {
             return .macComputer
         case .newForMacAndWindows:
             return .newForMacAndWindows
+        case .macAndWindows:
+            return .macAndWindows
         case .privacyShield:
             return .subscription
         case .aiChat:
@@ -421,6 +429,7 @@ private extension JsonToRemoteMessageModelMapper {
         } else {
             nil
         }
+        let imageUrl = jsonContent.imageUrl.flatMap(URL.init(string:))
         let listItems = try validator.mapRequired(\.listItems) { items throws(MappingError) in
             let mappedItems = try mapToListItems(items, surveyActionMapper: surveyActionMapper)
             return try validator.notEmpty(mappedItems, keyPath: \RemoteMessageResponse.JsonContent.listItems)
@@ -429,7 +438,7 @@ private extension JsonToRemoteMessageModelMapper {
         let primaryAction = try validator.mapRequired(\.primaryAction) { action in
             mapToAction(action, surveyActionMapper: surveyActionMapper)
         }
-        return .cardsList(titleText: titleText, placeholder: placeHolderImage, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        return .cardsList(titleText: titleText, placeholder: placeHolderImage, imageUrl: imageUrl, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
     }
 
     static func mapToListItems(_ jsonListItems: [RemoteMessageResponse.JsonListItem], surveyActionMapper: RemoteMessagingSurveyActionMapping) throws(MappingError) -> [RemoteMessageModelType.ListItem] {

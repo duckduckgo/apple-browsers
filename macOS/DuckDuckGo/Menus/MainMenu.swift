@@ -31,6 +31,7 @@ import PrivacyConfig
 import Subscription
 import SubscriptionUI
 import Utilities
+import PixelKit
 
 final class MainMenu: NSMenu {
 
@@ -861,6 +862,12 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Critical", action: #selector(AppDelegate.simulateMemoryPressureCritical))
             }
 
+            NSMenuItem(title: "Memory Usage Reporting") {
+                NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))
+                NSMenuItem(title: "Clear Simulated Memory", action: #selector(AppDelegate.clearSimulatedMemory))
+                NSMenuItem(title: "Start Reporter Immediately (Skip 5min Delay)", action: #selector(AppDelegate.startMemoryReporterImmediately))
+            }
+
             NSMenuItem(title: "Hang Debugging") {
                 toggleWatchdogMenuItem
                 toggleWatchdogCrashMenuItem
@@ -900,8 +907,8 @@ final class MainMenu: NSMenu {
                         let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
                         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
                         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-                        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
-                                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+                        let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: nil)
+                        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults, pixelHandler: pixelHandler)
                         let feature = SubscriptionPagesUseSubscriptionFeature(
                             subscriptionManager: subscriptionManager,
                             stripePurchaseFlow: stripePurchaseFlow,

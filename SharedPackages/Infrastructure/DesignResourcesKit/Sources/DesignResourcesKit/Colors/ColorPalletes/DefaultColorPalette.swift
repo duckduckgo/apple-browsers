@@ -275,10 +275,14 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
         case .textSecondary:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell70, darkColor: RebrandingColor.Eggshell.eggshell30)
+        case .textLink:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
         case .accentPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater50, darkColor: RebrandingColor.Pondwater.pondwater40)
         case .accentAltPrimary:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: Color(0x133E7C))
+        case .backdrop:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x133E7C))
         case .surfaceTertiary:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x011D34))
         case .buttonsPrimaryDefault:

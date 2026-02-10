@@ -1,0 +1,338 @@
+// Data Clearing (Fire) pixels for tracking fire button performance and quality metrics
+{
+    // ==================== Overall Flow Metrics ====================
+
+    "m_mac_fire_completion": {
+        "description": "Fired when the fire (data clearing) operation completes successfully",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Total duration of the fire operation in milliseconds"
+            },
+            {
+                "key": "clearing_option",
+                "type": "string",
+                "description": "The clearing option selected by the user",
+                "enum": ["current_tab", "current_window", "all_data"]
+            },
+            {
+                "key": "domains",
+                "type": "string",
+                "description": "Information about domains affected by the clearing operation",
+                "examples": ["History", "History,TabsAndWindows", "CookiesAndSiteData", "History,TabsAndWindows,ChatHistory"]
+            },
+            {
+                "key": "path",
+                "type": "string",
+                "description": "The clearing path of the operation",
+                "enum": ["burn_entity", "burn_all", "burn_visits"]
+            },
+            {
+                "key": "autoClear",
+                "type": "boolean",
+                "description": "Whether this was an automatic clear operation"
+            }
+        ]
+    },
+
+    "m_mac_fire_retrigger_in_20s": {
+        "description": "Fired when the fire button is triggered again within 20 seconds of a previous fire",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    // ==================== Web Cache Metrics ====================
+
+    "m_mac_fire_burn_web_cache_error": {
+        "description": "Fired when an error occurs while clearing web cache data",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+
+    "m_mac_fire_burn_web_cache_duration": {
+        "description": "Fired to report the duration of web cache clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Duration of web cache clearing in milliseconds"
+            }
+        ]
+    },
+
+    "m_mac_fire_burn_web_cache_has_residue": {
+        "description": "Fired when residual web cache data is detected after clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "step",
+                "type": "string",
+                "description": "The clearing step where residue was detected",
+                "enum": [
+                    "clear_file_cache",
+                    "clear_device_hash_salts",
+                    "clear_safely_removable_data_types",
+                    "clear_local_storage_and_indexed_db_for_non_fireproof_domains",
+                    "clear_cookies",
+                    "clear_resource_load_statistics_database"
+                ]
+            }
+        ]
+    },
+
+    // ==================== History Metrics ====================
+
+    "m_mac_fire_burn_history_error": {
+        "description": "Fired when an error occurs while clearing browsing history",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+
+    "m_mac_fire_burn_history_duration": {
+        "description": "Fired to report the duration of history clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entity",
+                "type": "string",
+                "description": "The history entity type being cleared",
+                "enum": ["none", "tab", "window", "all_windows"]
+            },
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Duration of history clearing in milliseconds"
+            }
+        ]
+    },
+
+    // ==================== Chat History Metrics ====================
+
+    "m_mac_fire_burn_chat_history_error": {
+        "description": "Fired when an error occurs while clearing chat history",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+
+    "m_mac_fire_burn_chat_history_duration": {
+        "description": "Fired to report the duration of chat history clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Duration of chat history clearing in milliseconds"
+            }
+        ]
+    },
+
+    // ==================== Visited Links Metrics ====================
+
+    "m_mac_fire_burn_visited_links_duration": {
+        "description": "Fired to report the duration of visited links clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Duration of visited links clearing in milliseconds"
+            }
+        ]
+    },
+
+    // ==================== Visits Metrics ====================
+
+    "m_mac_fire_burn_visits_error": {
+        "description": "Fired when an error occurs while clearing visits data",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+
+    "m_mac_fire_burn_visits_duration": {
+        "description": "Fired to report the duration of visits clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Duration of visits clearing in milliseconds"
+            }
+        ]
+    },
+
+    "m_mac_fire_burn_visits_has_residue": {
+        "description": "Fired when residual visits data is detected after clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    // ==================== Last Session State Metrics ====================
+
+    "m_mac_fire_burn_last_session_state_error": {
+        "description": "Fired when an error occurs while clearing last session state",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+
+    "m_mac_fire_burn_last_session_state_duration": {
+        "description": "Fired to report the duration of last session state clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Duration of last session state clearing in milliseconds"
+            }
+        ]
+    },
+
+    "m_mac_fire_burn_last_session_state_has_residue": {
+        "description": "Fired when residual last session state data is detected after clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    // ==================== Tabs Metrics ====================
+
+    "m_mac_fire_burn_tabs_error": {
+        "description": "Fired when an error occurs while clearing tabs",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+
+    "m_mac_fire_burn_tabs_duration": {
+        "description": "Fired to report the duration of tabs clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entity",
+                "type": "string",
+                "description": "The tab entity type being cleared",
+                "enum": ["none", "tab", "window", "all_windows"]
+            },
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Duration of tabs clearing in milliseconds"
+            }
+        ]
+    },
+
+    "m_mac_fire_burn_tabs_has_residue": {
+        "description": "Fired when residual tab data is detected after clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entity",
+                "type": "string",
+                "description": "The tab entity type where residue was detected",
+                "enum": ["none", "tab", "window", "all_windows"]
+            }
+        ]
+    },
+
+    // ==================== Downloads Metrics ====================
+
+    "m_mac_fire_burn_downloads_error": {
+        "description": "Fired when an error occurs while clearing downloads",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+
+    "m_mac_fire_burn_downloads_duration": {
+        "description": "Fired to report the duration of downloads clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Duration of downloads clearing in milliseconds"
+            }
+        ]
+    },
+
+    "m_mac_fire_burn_downloads_has_residue": {
+        "description": "Fired when residual downloads data is detected after clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    // ==================== Recently Closed Metrics ====================
+
+    "m_mac_fire_burn_recently_closed_duration": {
+        "description": "Fired to report the duration of recently closed tabs clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "duration",
+                "type": "integer",
+                "description": "Duration of recently closed tabs clearing in milliseconds"
+            }
+        ]
+    },
+
+    "m_mac_fire_burn_recently_closed_has_residue": {
+        "description": "Fired when residual recently closed data is detected after clearing",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

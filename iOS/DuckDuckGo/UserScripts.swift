@@ -43,7 +43,7 @@ final class UserScripts: UserScriptsProvider {
     let subscriptionUserScript: SubscriptionUserScript
     let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
     let serpSettingsUserScript: SERPSettingsUserScript
-    let pageContextUserScript: PageContextUserScript?
+    let pageContextUserScript: PageContextUserScript
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -99,11 +99,7 @@ final class UserScripts: UserScriptsProvider {
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
 
-        if featureFlagger.isFeatureOn(.contextualDuckAIMode) {
-            pageContextUserScript = PageContextUserScript()
-        } else {
-            pageContextUserScript = nil
-        }
+        pageContextUserScript = PageContextUserScript()
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)

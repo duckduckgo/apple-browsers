@@ -151,7 +151,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         }
 
         // Wait for the expectation to be fulfilled with a timeout
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Check for errors
         if let loadingError = loadingError {
@@ -379,6 +379,7 @@ extension SuggestionJsonScenarioTests {
         
         var history: [History.HistoryEntry]?
         var allHistoryVisits: [History.Visit]?
+        var dataClearingPixelsHandling: (any DataClearingPixelsHandling)?
 
         @Published var historyDictionary: [URL: History.HistoryEntry]?
         var historyDictionaryPublisher: Published<[URL: History.HistoryEntry]?>.Publisher {

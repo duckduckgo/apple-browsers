@@ -1426,9 +1426,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Inviato con il tuo messaggio a Duck.ai";
 
-/* Subtitle shown on the context chip indicating page content is attached */
-"duckai.context.chip.subtitle" = "Contenuto della pagina";
-
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
 "duckai.contextual.onboarding.body" = "Da oggi, Duck.ai può aiutarti a rispondere alle domande sulla pagina che stai visualizzando.\n\nLe informazioni contenute nella pagina vengono incluse solo quando vengono allegate. Puoi modificare questa opzione in qualsiasi momento in Impostazioni.";
 
@@ -1443,6 +1440,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Le funzionalità AI di DuckDuckGo sono private e opzionali. I tuoi dati non vengono usati per addestrare l'IA.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Allega il contenuto della pagina";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Riassumi questa pagina";

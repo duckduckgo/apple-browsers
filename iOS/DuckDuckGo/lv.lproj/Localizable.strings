@@ -1426,9 +1426,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Nosūtīts kopā ar tavu ziņojumu uz Duck.ai";
 
-/* Subtitle shown on the context chip indicating page content is attached */
-"duckai.context.chip.subtitle" = "Lapas saturs";
-
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
 "duckai.contextual.onboarding.body" = "Duck.ai tagad var palīdzēt atbildēt uz jautājumiem par to lapu, kuru pašlaik skaties.\n\nLapas saturs tiek iekļauts tikai tad, kad Tu to pievieno. To vari jebkurā laikā mainīt iestatījumos.";
 
@@ -1443,6 +1440,9 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo MI funkcijas ir privātas un nav obligātas. Tavi dati netiek izmantoti mākslīgā intelekta apmācībai.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Pievienot lapas saturu";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Apkopot šo lapu";

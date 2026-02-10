@@ -132,8 +132,8 @@ open class TabBarCollectionView: NSCollectionView {
         if #available(macOS 13.0, *) {
             animator().performBatchUpdates(updates, completionHandler: completionHandler)
         } else {
+            collectionViewLayout?.invalidateLayout()
             NSAnimationContext.runAnimationGroup { _ in
-                collectionViewLayout?.invalidateLayout()
                 updates()
             } completionHandler: {
                 completionHandler?(true)

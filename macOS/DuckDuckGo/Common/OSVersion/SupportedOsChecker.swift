@@ -111,6 +111,9 @@ final class SupportedOSChecker {
         "MacBookPro11,2": 11,
         "MacBookPro11,3": 11,
         // Monterey (12)
+        "iMac16,1": 12,
+        "iMac16,2": 12,
+        "iMac17,1": 12,
         "MacBook9,1": 12,
         "MacBookAir7,1": 12,
         "MacBookAir7,2": 12,
@@ -130,6 +133,7 @@ final class SupportedOSChecker {
         "MacBookPro14,3": 13,
         // Sonoma (14)
         "MacBookAir8,1": 14,
+        "MacBookAir8,2": 14,
         // Sequoia (15)
         "iMac19,1": 15,
         "iMac19,2": 15,

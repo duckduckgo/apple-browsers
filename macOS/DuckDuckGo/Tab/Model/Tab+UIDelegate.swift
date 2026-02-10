@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import Foundation
@@ -27,7 +26,7 @@ import WebKit
 import PDFKit
 import CommonObjCExtensions
 
-extension Tab: WKUIDelegate, PrintingSubfeatureDelegate {
+extension Tab: WKUIDelegate {
 
     // "protected" delegate property
     private var delegate: TabDelegate? {
@@ -256,14 +255,6 @@ extension Tab: WKUIDelegate, PrintingSubfeatureDelegate {
 
     func webViewDidClose(_ webView: WKWebView) {
         delegate?.closeTab(self)
-    }
-
-    // MARK: - PrintingSubfeatureDelegate
-
-    func printingSubfeatureDidRequestPrint(for frameHandle: Any?, in webView: WKWebView?) {
-        // Use provided webView if available, otherwise fall back to self.webView
-        let targetWebView = webView ?? self.webView
-        runPrintOperation(for: frameHandle as? FrameHandle, in: targetWebView)
     }
 
     func runPrintOperation(for frameHandle: FrameHandle?, in webView: WKWebView, completionHandler: ((Bool) -> Void)? = nil) {

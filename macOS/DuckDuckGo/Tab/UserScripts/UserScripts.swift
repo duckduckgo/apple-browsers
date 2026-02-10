@@ -34,7 +34,6 @@ final class UserScripts: UserScriptsProvider {
 
     let pageObserverScript = PageObserverUserScript()
     let contextMenuScript = ContextMenuUserScript()
-    let printingSubfeature = PrintingSubfeature()
     let hoverUserScript = HoverUserScript()
     let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
@@ -109,7 +108,7 @@ final class UserScripts: UserScriptsProvider {
                                            currentCohorts: currentCohorts,
                                            themeVariant: themeVariant)
         do {
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", PrintingSubfeature.featureNameValue], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
             if let error = error as? UserScriptError {
@@ -181,7 +180,6 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         }
 
-        contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
         if let pageContextUserScript {
             contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         }

@@ -89,7 +89,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenEnhancedDataClearingSettingsFlagIsOnThenNewUIEnabledIsTrue() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings, .burnSingleTab]
 
         // When
         let viewModel = makeViewModel()
@@ -137,7 +137,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenNoFireproofedSitesThenSubtitleShowsZeroCount() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings, .burnSingleTab]
         mockFireproofing.fireproofedDomains = []
 
         // When
@@ -149,7 +149,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenFireproofedSitesExistThenSubtitleShowsCount() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings, .burnSingleTab]
         mockFireproofing.fireproofedDomains = ["example.com"]
 
         // When

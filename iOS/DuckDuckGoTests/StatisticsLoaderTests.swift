@@ -56,7 +56,8 @@ class StatisticsLoaderTests: XCTestCase {
     func testWhenAppRefreshHappensButNotInstalledAndReturningUser_ThenRetentionSegmentationNotified() {
         mockStatisticsStore.variant = "ru"
         mockStatisticsStore.atb = "v101-1"
-        
+
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
@@ -84,6 +85,7 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func testWhenSearchRefreshHappensButNotInstalled_ThenRetentionSegmentationNotified() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
@@ -96,6 +98,7 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func testWhenAppRefreshHappensButNotInstalled_ThenRetentionSegmentationNotified() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
@@ -108,6 +111,7 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func testWhenStatisticsInstalled_ThenRetentionSegmentationNotNotified() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "install complete")
@@ -288,6 +292,7 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func testWhenInstallStatisticsRequestedThenInstallPixelIsFired() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
@@ -402,6 +407,7 @@ class StatisticsLoaderTests: XCTestCase {
 
     func testWhenDuckAIRefreshHappensButNotInstalledThenRetentionSegmentationNotified() {
         // When
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")

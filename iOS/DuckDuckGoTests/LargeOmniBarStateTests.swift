@@ -567,6 +567,24 @@ class LargeOmniBarStateTests: XCTestCase {
 
     // MARK: - AI Chat Mode State Tests
 
+    func testWhenInAIChatModeStateAndFeatureEnabledThenAIChatButtonIsHidden() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger, aichatIPadTabFeature: MockAIChatIPadTabFeature(isAvailable: true))
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+
+        XCTAssertFalse(testee.showAIChatButton)
+        XCTAssertTrue(testee.showRefresh)
+        XCTAssertTrue(testee.showCustomizableButton)
+    }
+
+    func testWhenInAIChatModeStateAndFeatureDisabledThenAIChatButtonIsHidden() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger, aichatIPadTabFeature: MockAIChatIPadTabFeature(isAvailable: false))
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+
+        XCTAssertFalse(testee.showAIChatButton)
+        XCTAssertTrue(testee.showRefresh)
+        XCTAssertTrue(testee.showCustomizableButton)
+    }
+
     func testWhenInAIChatModeStateThenCorrectButtonsAreShown() {
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
         let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
@@ -585,12 +603,29 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showSearchLoupe)
         XCTAssertFalse(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
-        XCTAssertFalse(testee.showRefresh)
-        XCTAssertFalse(testee.showCustomizableButton)
+        XCTAssertTrue(testee.showRefresh)
+        XCTAssertTrue(testee.showCustomizableButton)
         XCTAssertFalse(testee.showDismiss)
         XCTAssertFalse(testee.allowsTrackersAnimation)
-        XCTAssertFalse(testee.allowCustomization)
         XCTAssertTrue(testee.isBrowsing)
+    }
+
+    func testWhenInAIChatModeStateAndLoadingThenShowsAbortNotRefresh() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: true)
+
+        XCTAssertTrue(testee.showAbort)
+        XCTAssertFalse(testee.showRefresh)
+    }
+
+    func testWhenInAIChatModeStateAndRefreshDisabledThenRefreshIsHidden() {
+        let appSettings = AppSettingsMock()
+        appSettings.currentRefreshButtonPosition = .menu
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger, appSettings: appSettings)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+
+        XCTAssertFalse(testee.showAbort)
+        XCTAssertFalse(testee.showRefresh)
     }
 
     func testWhenInAIChatModeStateThenTextIsNotCleared() {

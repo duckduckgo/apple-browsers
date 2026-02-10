@@ -19,6 +19,7 @@
 
 import UIKit
 import PrivacyDashboard
+import AIChat
 import Core
 import Kingfisher
 import DesignResourcesKitIcons
@@ -64,6 +65,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     var isUsingUnifiedPredictor: Bool {
         dependencies.featureFlagger.isFeatureOn(.unifiedURLPredictor)
     }
+
     var dismissButtonAnimator: UIViewPropertyAnimator?
     private var notificationAnimator = OmniBarNotificationAnimator()
     private let privacyIconContextualOnboardingAnimator = PrivacyIconContextualOnboardingAnimator()
@@ -469,6 +471,11 @@ class OmniBarViewController: UIViewController, OmniBar {
 
         if privacyInfo.url.isDuckPlayer {
             showCustomIcon(icon: .duckPlayer)
+            return
+        }
+
+        if privacyInfo.url.isDuckAIURL, dependencies.aichatIPadTabFeature.isAvailable {
+            showCustomIcon(icon: .duckAI)
             return
         }
 

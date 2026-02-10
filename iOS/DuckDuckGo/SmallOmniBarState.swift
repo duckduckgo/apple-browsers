@@ -331,14 +331,14 @@ struct SmallOmniBarState {
         var onTextEnteredState: any OmniBarState { HomeTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onBrowsingStartedState: any OmniBarState { BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onBrowsingStoppedState: any OmniBarState { HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
-        var onEnterPadState: any OmniBarState { self }
+        var onEnterPadState: any OmniBarState { LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
         var onEnterPhoneState: any OmniBarState { self }
         var onReloadState: any OmniBarState { self }
         var onEnterAIChatState: OmniBarState { self }
 
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool
-        
+
         init(dependencies: any OmnibarDependencyProvider, isLoading: Bool) {
             self.dependencies = dependencies
             self.isLoading = isLoading

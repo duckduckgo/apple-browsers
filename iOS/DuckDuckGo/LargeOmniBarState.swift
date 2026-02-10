@@ -50,7 +50,7 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
-        var onEnterAIChatState: OmniBarState { self }
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
 
         var showSearchLoupe: Bool { !dependencies.voiceSearchHelper.isVoiceSearchEnabled }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
@@ -97,7 +97,7 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.HomeTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return HomeTextEditingState(dependencies: dependencies, isLoading: isLoading) }
-        var onEnterAIChatState: OmniBarState { self }
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
 
         var showSearchLoupe: Bool { !dependencies.voiceSearchHelper.isVoiceSearchEnabled }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
@@ -137,7 +137,7 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
-        var onEnterAIChatState: OmniBarState { self }
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
 
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
 
@@ -175,7 +175,7 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
-        var onEnterAIChatState: OmniBarState { self }
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
 
         var showSearchLoupe: Bool { !dependencies.voiceSearchHelper.isVoiceSearchEnabled }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
@@ -214,7 +214,7 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
-        var onEnterAIChatState: OmniBarState { self }
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
 
         let showSearchLoupe = false
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
@@ -255,10 +255,51 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
-        var onEnterAIChatState: OmniBarState { self }
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
 
 
         let isBrowsing = true
+
+        let dependencies: OmnibarDependencyProvider
+        let isLoading: Bool
+    }
+
+    /// OmniBarState used when displaying AI Chat in a tab on iPad
+    struct AIChatModeState: OmniBarState, OmniBarLoadingBearerStateCreating {
+        let hasLargeWidth = true
+        let showBackButton = true
+        let showForwardButton = true
+        let showBookmarksButton = true
+        let showAIChatButton = false
+        let clearTextOnStart = false
+        let allowsTrackersAnimation = false
+        let showSearchLoupe = false
+        let showPrivacyIcon = true
+        let showBackground = true
+        let showClear = false
+        let showAbort = false
+        let showRefresh = false
+        let showCustomizableButton = false
+        let showMenu = true
+        let showSettings = false
+        let showCancel = false
+        let showDismiss = false
+        let showVoiceSearch = false
+        let isBrowsing = true
+        let allowCustomization = false
+
+        var name: String { "Pad" + Type.name(self) }
+
+        var onEditingStoppedState: OmniBarState { self }
+        var onEditingStartedState: OmniBarState { BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onTextClearedState: OmniBarState { BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onTextEnteredState: OmniBarState { BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onBrowsingStartedState: OmniBarState { self }
+        var onBrowsingStoppedState: OmniBarState { HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterPadState: OmniBarState { self }
+        var onEnterPhoneState: OmniBarState { SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
+        var onReloadState: OmniBarState { self }
+        var onEnterAIChatState: OmniBarState { self }
 
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool

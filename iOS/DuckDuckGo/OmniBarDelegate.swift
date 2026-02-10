@@ -102,10 +102,11 @@ protocol OmniBarDelegate: AnyObject {
     /// Called when user selects a chat from the AI Chat history list
     func onChatHistorySelected(url: URL)
 
-    // MARK: - Experimental Address Bar (pixels only)
+    // MARK: - Experimental Address Bar
     func onExperimentalAddressBarTapped()
     func onExperimentalAddressBarClearPressed()
     func onExperimentalAddressBarCancelPressed()
+    func dismissContextualSheetIfNeeded(completion: @escaping () -> Void)
 }
 
 extension OmniBarDelegate {
@@ -175,4 +176,8 @@ extension OmniBarDelegate {
     func onExperimentalAddressBarTapped() {}
     func onExperimentalAddressBarClearPressed() {}
     func onExperimentalAddressBarCancelPressed() {}
+
+    func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
+        completion()
+    }
 }

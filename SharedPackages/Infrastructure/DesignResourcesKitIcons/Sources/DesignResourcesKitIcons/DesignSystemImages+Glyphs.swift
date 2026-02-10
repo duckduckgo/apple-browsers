@@ -180,6 +180,7 @@ public extension DesignSystemImages {
             public static var home: DesignSystemImage { .init(resource: .home16) }
             public static var hourglass: DesignSystemImage { .init(resource: .hourglass16) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestoration16) }
+            public static var image: DesignSystemImage { .init(resource: .image16) }
             public static var imageCopy: DesignSystemImage { .init(resource: .imageCopy16) }
             public static var imageLink: DesignSystemImage { .init(resource: .imageLink16) }
             public static var `import`: DesignSystemImage { .init(resource: .import16) }

@@ -212,6 +212,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
 
+    case iPadDuckaiOnTab
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039
     case fadeOutOnToggle
 
@@ -297,6 +299,7 @@ public enum FeatureFlag: String {
     case freeTrialConversionWideEvent
 
     /// Shows tracker count banner in Tab Switcher and related settings item
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
     case tabSwitcherTrackerCount
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
@@ -408,6 +411,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .forgetAllInSettings,
              .onboardingSearchExperience,
              .fullDuckAIMode,
+             .iPadDuckaiOnTab,
              .fadeOutOnToggle,
              .attributedMetrics,
              .storeSerpSettings,
@@ -610,6 +614,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
+        case .iPadDuckaiOnTab:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.iPadDuckaiOnTab))
         case .fadeOutOnToggle:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
         case .attributedMetrics:
@@ -659,7 +665,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAtb:
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
-            return .disabled
+            return .internalOnly()
         case .webViewFlashPrevention:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
         case .wideEventPostEndpoint:
@@ -671,9 +677,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .uiTestExperiment:
             return .disabled
         case .tabSwitcherTrackerCount:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.tabSwitcherTrackerCount))
         case .burnSingleTab:
-            return .disabled
+            return .internalOnly()
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionDisableKeysSorting:

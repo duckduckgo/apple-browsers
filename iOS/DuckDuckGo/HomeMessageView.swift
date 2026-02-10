@@ -151,7 +151,7 @@ struct HomeMessageView: View {
                         .daxButton()
                 }
             }
-            .buttonStyle(HomeMessageButtonStyle(viewModel: viewModel, buttonModel: buttonModel))
+            .buttonStyle(HomeMessageButtonStyle(buttonModel: buttonModel))
             .padding([.bottom], Const.Padding.buttonVerticalInset)
             .sheet(item: $activityItem) { activityItem in
                 ActivityViewController(activityItems: [activityItem.item]) { _, result, _, _ in
@@ -171,14 +171,9 @@ struct HomeMessageView: View {
 
 private struct HomeMessageButtonStyle: ButtonStyle {
 
-    let viewModel: HomeMessageViewModel
     let buttonModel: HomeMessageButtonViewModel
 
     var foregroundColor: Color {
-        if case .promoSingleAction = viewModel.modelType {
-            return .cancelButtonForeground
-        }
-
         if case .cancel = buttonModel.actionStyle {
             return .cancelButtonForeground
         }
@@ -187,10 +182,6 @@ private struct HomeMessageButtonStyle: ButtonStyle {
     }
 
     var backgroundColor: Color {
-        if case .promoSingleAction = viewModel.modelType {
-            return .cancelButtonBackground
-        }
-
         if case .cancel = buttonModel.actionStyle {
             return .cancelButtonBackground
         }

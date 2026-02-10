@@ -312,9 +312,9 @@ final class MainView: NSView {
         aiChatOmnibarTextContainerBottomConstraint.constant = -5
     }
 
-    /// Updates the text container view's passthrough region to allow clicks to reach suggestions.
-    func updateAIChatOmnibarTextContainerPassthrough(_ suggestionsHeight: CGFloat) {
-        aiChatOmnibarTextContainerView.passthroughBottomHeight = suggestionsHeight
+    /// Updates the text container view's passthrough region to allow clicks to reach suggestions and tool buttons.
+    func updateAIChatOmnibarTextContainerPassthrough(_ passthroughHeight: CGFloat) {
+        aiChatOmnibarTextContainerView.passthroughBottomHeight = passthroughHeight
     }
 
     /// Updates the text container's height based on text content.

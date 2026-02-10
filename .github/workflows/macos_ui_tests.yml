@@ -232,7 +232,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        max_attempts=3
+        max_attempts=5
         retry_delay=10
 
         for attempt in $(seq 1 $max_attempts); do

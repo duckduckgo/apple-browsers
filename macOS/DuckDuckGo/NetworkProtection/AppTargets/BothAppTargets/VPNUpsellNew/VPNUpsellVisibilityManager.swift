@@ -114,12 +114,13 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     }
 
     private func start(isFirstLaunch: Bool, isOnboardingFinished: Bool) {
-        if isFirstLaunch || !isOnboardingFinished {
+        if isFirstLaunch {
             monitorFirstLaunchConditions()
+        } else if !isOnboardingFinished {
+            monitorOnboardingOnly()
         } else {
             updateState(.visible)
         }
-
         monitorSubscriptionChanges()
     }
 
@@ -180,6 +181,21 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
         updateState(.waitingForConditions)
         monitorDefaultBrowserChanges()
+    }
+
+    private func monitorOnboardingOnly() {
+        updateState(.waitingForConditions)
+
+        contextualOnboardingPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] onboardingDone in
+                guard let self, onboardingDone else {
+                    return
+                }
+
+                self.updateState(.visible)
+            }
+            .store(in: &cancellables)
     }
 
     private func monitorSubscriptionChanges() {

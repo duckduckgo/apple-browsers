@@ -121,6 +121,19 @@ final class OnboardingUITests: UITestCase {
         XCTAssertTrue(ddgLogo.waitForExistence(timeout: UITests.Timeouts.elementExistence) || tooltip.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
+    func testDuckAIIsUnavailableDuringOnboarding() throws {
+        let button = app.windows.buttons[XCUIApplication.AccessibilityIdentifiers.aiChatButton]
+
+        XCTAssertFalse(button.exists, "AIChat Button should NOT be visible during onboarding")
+    }
+
+    func testPassiveAddressBarShowsWelcomeMessage() throws {
+        let passiveTextField = app.staticTexts[XCUIApplication.AccessibilityIdentifiers.addressBarPassiveTextField]
+
+        XCTAssertTrue(passiveTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence), "(Passive) AddressBar TextField should be visible")
+        XCTAssertEqual(passiveTextField.value as? String, "Welcome")
+    }
+
     func resetApplicationData() throws {
         let commands = [
             "/usr/bin/defaults delete com.duckduckgo.macos.browser.review",

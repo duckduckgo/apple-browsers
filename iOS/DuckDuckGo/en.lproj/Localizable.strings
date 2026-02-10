@@ -2773,17 +2773,20 @@ https://duckduckgo.com/mac";
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Delete All";
 
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Delete This Chat";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "\"Delete All\" will not delete your Duck.ai chat history.";
+
 /* Button to delete only the current tab in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.tab.button" = "Delete This Tab";
-
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "\"Delete This Tab\" clears this Duck.ai chat, and any site data from the sites visited in this tab.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "This will cancel downloads in progress.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "New tabs you create also can be deleted individually.";
+"scoped.fire.confirmation.new.tabs.info" = "New tabs you created can also be deleted individually.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Deleting site data can sign you out of accounts.";

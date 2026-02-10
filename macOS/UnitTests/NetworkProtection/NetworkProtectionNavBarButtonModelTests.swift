@@ -235,7 +235,6 @@ extension NetworkProtectionNavBarButtonModelTests {
         mockDefaultBrowserProvider.isDefault = true
 
         let manager = VPNUpsellVisibilityManager(
-            isFirstLaunch: false,
             isNewUser: shouldShowUpsell,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -244,7 +243,7 @@ extension NetworkProtectionNavBarButtonModelTests {
             timerDuration: 0.01
         )
 
-        manager.setup(isFirstLaunch: false)
+        manager.setup(isFirstLaunch: false, isOnboardingFinished: true)
 
         return manager
     }

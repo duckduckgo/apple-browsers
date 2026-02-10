@@ -1,0 +1,58 @@
+{
+    "m_mac_web_extension_installed": {
+        "description": "Fires when a web extension is successfully installed.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_install_error": {
+        "description": "Fires when a web extension installation fails.",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_uninstalled": {
+        "description": "Fires when a web extension is successfully uninstalled.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_uninstall_error": {
+        "description": "Fires when a web extension uninstallation fails.",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_uninstalled_all": {
+        "description": "Fires when all web extensions are successfully uninstalled.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_uninstall_all_error": {
+        "description": "Fires when uninstalling all web extensions fails (at least one extension failed to uninstall).",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_loaded": {
+        "description": "Fires during app startup when installed web extensions are successfully loaded.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_load_error": {
+        "description": "Fires during app startup when loading installed web extensions fails (at least one extension failed to load).",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    }
+}

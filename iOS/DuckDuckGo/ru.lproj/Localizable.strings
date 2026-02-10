@@ -2942,10 +2942,10 @@
 "scoped.fire.confirmation.delete.all.button" = "Удалить все";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Удалить этот чат";
+"scoped.fire.confirmation.delete.this.chat.description" = "Функция «Удалить все» не стирает историю чатов с Duck.ai.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Удалить эту вкладку";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "После нажатия кнопки «Удалить вкладку» мы сотрем этот чат Duck.ai и данные всех сайтов, открывавшихся в данной вкладке.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Текущие загрузки будут отменены.";

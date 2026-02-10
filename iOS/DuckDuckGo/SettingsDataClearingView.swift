@@ -42,11 +42,11 @@ struct SettingsDataClearingView: View {
         List {
             // Header section
             if viewModel.newUIEnabled {
-                Section {
-                    DataClearingHeaderView()
-                }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
+                let description = SettingsDescription(image: DesignSystemImages.Color.Size128.fire,
+                                                      title: UserText.dataClearing,
+                                                      status: nil,
+                                                      explanation: UserText.settingsDataClearingDescription)
+                SettingsDescriptionView(content: description)
             }
 
             Section {
@@ -136,42 +136,5 @@ struct SettingsDataClearingView: View {
         } footer: {
             Text(UserText.settingsClearAIChatHistoryFooter)
         }
-    }
-}
-
-private struct DataClearingHeaderView: View {
-    var body: some View {
-        VStack(spacing: Constants.outerStackSpacing) {
-            VStack(spacing: Constants.innerStackSpacing) {
-                // Fire illustration
-                Image(uiImage: DesignSystemImages.Color.Size128.fire)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: Constants.iconSize.width, height: Constants.iconSize.height)
-                
-                // Title
-                Text(UserText.dataClearing)
-                    .daxTitle2()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .multilineTextAlignment(.center)
-            }
-            
-            // Description
-            Text(UserText.settingsDataClearingDescription)
-                .daxBodyRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(Constants.padding)
-        .frame(maxWidth: .infinity)
-        .background(.clear)
-    }
-    
-    enum Constants {
-        static let outerStackSpacing: CGFloat = 12
-        static let innerStackSpacing: CGFloat = 8
-        static let iconSize: CGSize = .init(width: 128, height: 96)
-        static let padding: EdgeInsets = .init(top: 0, leading: 16, bottom: 8, trailing: 16)
     }
 }

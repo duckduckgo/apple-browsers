@@ -103,12 +103,18 @@ class TabsBarCell: UICollectionViewCell {
     }
     
     private func applyModel(_ model: Tab) {
-        
+
         if model.link == nil {
             faviconImage.loadFavicon(forDomain: URL.ddg.host, usingCache: .tabs)
             label.text = UserText.homeTabTitle
             label.accessibilityLabel = UserText.openHomeTab
             removeButton.accessibilityLabel = UserText.closeHomeTab
+        } else if model.isAITab {
+            let aiChatTitle = UserText.omnibarFullAIChatModeDisplayTitle
+            faviconImage.image = DesignSystemImages.Color.Size24.aiChatGradient
+            label.text = aiChatTitle
+            label.accessibilityLabel = UserText.openTab(withTitle: aiChatTitle, atAddress: "")
+            removeButton.accessibilityLabel = UserText.closeTab(withTitle: aiChatTitle, atAddress: "")
         } else {
             faviconImage.loadFavicon(forDomain: model.link?.url.host, usingCache: .tabs)
             label.text = model.link?.displayTitle ?? model.link?.url.host?.droppingWwwPrefix()

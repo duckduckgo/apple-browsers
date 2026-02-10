@@ -25,6 +25,7 @@ protocol TabSwitcherSettings: AnyObject {
     var isGridViewEnabled: Bool { get set }
     var hasSeenNewLayout: Bool { get set }
     var showTrackerCountInTabSwitcher: Bool { get set }
+    var lastTrackerCountInTabSwitcher: Int64? { get set }
 
 }
 
@@ -34,6 +35,7 @@ final class DefaultTabSwitcherSettings: TabSwitcherSettings {
         case gridViewEnabled = "com.duckduckgo.ios.tabs.grid"
         case gridViewSeen = "com.duckduckgo.ios.tabs.seen"
         case showTrackerCount = "com.duckduckgo.ios.tabswitcher.showTrackerCount"
+        case lastTrackerCount = "com.duckduckgo.ios.tabswitcher.lastTrackerCount"
     }
 
     private let keyValueStore: KeyValueStoring
@@ -55,6 +57,11 @@ final class DefaultTabSwitcherSettings: TabSwitcherSettings {
     var showTrackerCountInTabSwitcher: Bool {
         get { keyValueStore.object(forKey: Key.showTrackerCount.rawValue) as? Bool ?? true }
         set { keyValueStore.set(newValue, forKey: Key.showTrackerCount.rawValue) }
+    }
+
+    var lastTrackerCountInTabSwitcher: Int64? {
+        get { keyValueStore.object(forKey: Key.lastTrackerCount.rawValue) as? Int64 }
+        set { keyValueStore.set(newValue, forKey: Key.lastTrackerCount.rawValue) }
     }
 
 }

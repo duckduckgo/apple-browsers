@@ -3495,6 +3495,9 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
+        if aichatIPadTabFeature.isAvailable {
+            newTab(allowingKeyboard: false)
+        }
         openAIChat()
     }
 

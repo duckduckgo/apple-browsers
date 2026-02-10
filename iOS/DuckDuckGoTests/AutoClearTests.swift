@@ -53,7 +53,7 @@ class AutoClearTests: XCTestCase {
         appSettings = AppSettingsMock()
         mockFeatureFlagger = MockFeatureFlagger()
         // Enable enhanced UI by default to prevent auto-injection of AI chats
-        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings, .burnSingleTab]
     }
 
     override func tearDown() {

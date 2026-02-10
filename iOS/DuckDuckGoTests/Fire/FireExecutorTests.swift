@@ -145,7 +145,7 @@ final class FireExecutorTests: XCTestCase {
         mockDelegate = MockFireExecutorDelegate()
         mockAppSettings = AppSettingsMock()
         mockAppSettings.autoClearAIChatHistory = true
-        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings, .burnSingleTab]
         mockAIChatSyncCleaner = MockAIChatSyncCleaning()
     }
     

@@ -280,6 +280,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.venturaVersion,
+            hardwareModelOverride: nil,
             maxSupportedVersionByModelOverride: [:])
 
         // Then

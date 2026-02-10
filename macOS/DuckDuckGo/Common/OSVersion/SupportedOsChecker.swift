@@ -185,13 +185,13 @@ final class SupportedOSChecker {
          currentOSVersionOverride: OperatingSystemVersion? = nil,
          minSupportedOSVersionOverride: OperatingSystemVersion? = nil,
          upcomingMinSupportedOSVersionOverride: OperatingSystemVersion? = nil,
-         hardwareModelOverride: String? = nil,
+         hardwareModelOverride: String? = HardwareModel.model,
          maxSupportedVersionByModelOverride: [String: Int]? = nil) {
 
         self.currentOSVersionOverride = currentOSVersionOverride
         self.minSupportedOSVersionOverride = minSupportedOSVersionOverride
         self.upcomingMinSupportedOSVersionOverride = upcomingMinSupportedOSVersionOverride
-        self.hardwareModel = hardwareModelOverride ?? HardwareModel.model
+        self.hardwareModel = hardwareModelOverride
         self.maxSupportedVersionByModelOverride = maxSupportedVersionByModelOverride
         self.featureFlagger = featureFlagger
     }

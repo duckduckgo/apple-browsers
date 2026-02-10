@@ -236,7 +236,7 @@ extension SupportedOSChecker: SupportedOSChecking {
         }
 
         guard let maxSupportedOS = maxSupportedVersionByModel[model] else {
-            /// Given model is not on the list so we assume hardware supports newer OS versions
+            // Given model is not on the list so we assume hardware supports newer OS versions
             return .capable
         }
 

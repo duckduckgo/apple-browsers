@@ -133,7 +133,7 @@ extension Preferences {
                     .padding(.leading, 19)
 
                     if model.shouldShowPageContextToggle {
-                        ToggleMenuItem("Automatically send page context to the sidebar",
+                        ToggleMenuItem(UserText.aiChatAutomaticallySendPageContentToggle,
                                        isOn: $model.shouldAutomaticallySendPageContext)
                         .accessibilityIdentifier("Preferences.AIChat.shouldAutomaticallySendPageContextToggle")
                         .disabled(!model.showShortcutInAddressBar || !model.openAIChatInSidebar)

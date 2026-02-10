@@ -1432,7 +1432,8 @@ extension Pixel {
         case aiChatMetricDuckAIKeyboardReturnPressed
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
-        case aiChatContextualAutoAttachIsEnabledDaily
+        case aiChatContextualAutoAttachDAUEnabled
+        case aiChatContextualAutoAttachDAUDisabled
 
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
@@ -2939,7 +2940,8 @@ extension Pixel.Event {
         case .aiChatMetricDuckAIKeyboardReturnPressed: return "m_aichat_duckai_keyboard_return_pressed"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
-        case .aiChatContextualAutoAttachIsEnabledDaily: return "m_aichat_contextual_auto_attach_is_enabled_daily"
+        case .aiChatContextualAutoAttachDAUEnabled: return "m_aichat_contextual_auto_attach_dau_enabled"
+        case .aiChatContextualAutoAttachDAUDisabled: return "m_aichat_contextual_auto_attach_dau_disabled"
 
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"

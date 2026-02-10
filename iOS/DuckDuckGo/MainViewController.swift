@@ -568,11 +568,10 @@ class MainViewController: UIViewController {
     }
 
     private func fireContextualAutoAttachPixel() {
-        let isEnabledParam = "is_enabled"
-        let isEnabledValue = "\(aiChatSettings.isAutomaticContextAttachmentEnabled)"
-
-        DailyPixel.fireDaily(.aiChatContextualAutoAttachIsEnabledDaily,
-                             withAdditionalParameters: [isEnabledParam: isEnabledValue])
+        let pixel: Pixel.Event = aiChatSettings.isAutomaticContextAttachmentEnabled
+            ? .aiChatContextualAutoAttachDAUEnabled
+            : .aiChatContextualAutoAttachDAUDisabled
+        DailyPixel.fireDaily(pixel)
     }
     
     private func fireKeyboardSettingsPixels() {

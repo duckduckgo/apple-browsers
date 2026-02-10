@@ -25,25 +25,27 @@ import Networking
 
 struct NetworkProtectionRootView: View {
 
-    let statusViewModel: NetworkProtectionStatusViewModel
-    let feedbackFormModel: UnifiedFeedbackFormViewModel
+    @StateObject var statusViewModel: NetworkProtectionStatusViewModel
+    @StateObject var feedbackFormModel: UnifiedFeedbackFormViewModel
 
     init() {
         let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
         let locationListRepository = NetworkProtectionLocationListCompositeRepository()
-        statusViewModel = NetworkProtectionStatusViewModel(tunnelController: AppDependencyProvider.shared.networkProtectionTunnelController,
-                                                           settings: AppDependencyProvider.shared.vpnSettings,
-                                                           statusObserver: AppDependencyProvider.shared.connectionObserver,
-                                                           serverInfoObserver: AppDependencyProvider.shared.serverInfoObserver,
-                                                           locationListRepository: locationListRepository,
-                                                           enablesUnifiedFeedbackForm: subscriptionManager.isUserAuthenticated)
+        _statusViewModel = StateObject(wrappedValue: NetworkProtectionStatusViewModel(
+            tunnelController: AppDependencyProvider.shared.networkProtectionTunnelController,
+            settings: AppDependencyProvider.shared.vpnSettings,
+            statusObserver: AppDependencyProvider.shared.connectionObserver,
+            serverInfoObserver: AppDependencyProvider.shared.serverInfoObserver,
+            locationListRepository: locationListRepository,
+            enablesUnifiedFeedbackForm: subscriptionManager.isUserAuthenticated))
 
-        feedbackFormModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
-                                                         vpnMetadataCollector: DefaultVPNMetadataCollector(),
-                                                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
-                                                         isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
-                                                         isProTierPurchaseEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) },
-                                                         source: .vpn)
+        _feedbackFormModel = StateObject(wrappedValue: UnifiedFeedbackFormViewModel(
+            subscriptionManager: subscriptionManager,
+            vpnMetadataCollector: DefaultVPNMetadataCollector(),
+            dbpMetadataCollector: DefaultDBPMetadataCollector(),
+            isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
+            isProTierPurchaseEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) },
+            source: .vpn))
     }
 
     var body: some View {

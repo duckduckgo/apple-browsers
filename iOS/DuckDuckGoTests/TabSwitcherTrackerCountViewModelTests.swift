@@ -48,6 +48,7 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         var isGridViewEnabled: Bool = true
         var hasSeenNewLayout: Bool = false
         var showTrackerCountInTabSwitcher: Bool = true
+        var lastTrackerCountInTabSwitcher: Int64?
     }
 
     func testRefreshHiddenWhenSettingDisabled() async {

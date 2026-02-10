@@ -108,6 +108,78 @@ final class AIChatHistoryManagerTests: XCTestCase {
         XCTAssertTrue(mockSuggestionsReader.tearDownCalled)
     }
 
+    // MARK: - hasSuggestions Tests
+
+    func testWhenNoSuggestionsThenHasSuggestionsIsFalse() {
+        XCTAssertFalse(sut.hasSuggestions)
+    }
+
+    func testWhenSuggestionsExistThenHasSuggestionsIsTrue() {
+        viewModel.setChats(pinned: [], recent: [
+            AIChatSuggestion(id: "1", title: "Chat", isPinned: false, chatId: "c1")
+        ])
+
+        XCTAssertTrue(sut.hasSuggestions)
+    }
+
+    func testWhenSuggestionsClearedThenHasSuggestionsReturnsFalse() {
+        viewModel.setChats(pinned: [], recent: [
+            AIChatSuggestion(id: "1", title: "Chat", isPinned: false, chatId: "c1")
+        ])
+        XCTAssertTrue(sut.hasSuggestions)
+
+        viewModel.clearAllChats()
+
+        XCTAssertFalse(sut.hasSuggestions)
+    }
+
+    // MARK: - hasSuggestionsPublisher Tests
+
+    func testWhenSuggestionsChangeThenPublisherEmitsExpectedValues() {
+        var emittedValues: [Bool] = []
+        let cancellable = sut.hasSuggestionsPublisher
+            .sink { emittedValues.append($0) }
+
+        viewModel.setChats(pinned: [], recent: [
+            AIChatSuggestion(id: "1", title: "Chat", isPinned: false, chatId: "c1")
+        ])
+        viewModel.clearAllChats()
+
+        XCTAssertEqual(emittedValues, [false, true, false])
+        cancellable.cancel()
+    }
+
+    func testWhenSuggestionsRemainEmptyThenPublisherDeduplicates() {
+        var emittedValues: [Bool] = []
+        let cancellable = sut.hasSuggestionsPublisher
+            .sink { emittedValues.append($0) }
+
+        // Multiple updates that keep suggestions empty
+        viewModel.setChats(pinned: [], recent: [])
+        viewModel.setChats(pinned: [], recent: [])
+
+        // Should only get the initial false, duplicates removed
+        XCTAssertEqual(emittedValues, [false])
+        cancellable.cancel()
+    }
+
+    func testWhenSuggestionsRemainNonEmptyThenPublisherDeduplicates() {
+        var emittedValues: [Bool] = []
+        let cancellable = sut.hasSuggestionsPublisher
+            .sink { emittedValues.append($0) }
+
+        viewModel.setChats(pinned: [], recent: [
+            AIChatSuggestion(id: "1", title: "Chat 1", isPinned: false, chatId: "c1")
+        ])
+        viewModel.setChats(pinned: [], recent: [
+            AIChatSuggestion(id: "2", title: "Chat 2", isPinned: false, chatId: "c2")
+        ])
+
+        // initial false, then true — second true is deduplicated
+        XCTAssertEqual(emittedValues, [false, true])
+        cancellable.cancel()
+    }
+
     // MARK: - Installation Tests
 
     func testInstallInContainerView_AddsViewControllerAsChild() {

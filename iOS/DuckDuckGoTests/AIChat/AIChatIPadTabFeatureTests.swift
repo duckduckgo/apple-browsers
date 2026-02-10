@@ -26,11 +26,7 @@ final class AIChatIPadTabFeatureTests: XCTestCase {
     // MARK: - Mocks
 
     private final class MockDevicePlatform: DevicePlatformProviding {
-        var mockIsIphone: Bool = false
-        static var isIphone: Bool {
-            shared.mockIsIphone
-        }
-        static let shared = MockDevicePlatform()
+        static var isIphone: Bool = false
     }
 
     // MARK: - Tests
@@ -38,7 +34,7 @@ final class AIChatIPadTabFeatureTests: XCTestCase {
     func testWhenFeatureOnAndNotIphoneThenIsAvailable() {
         // Given
         let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
-        MockDevicePlatform.shared.mockIsIphone = false
+        MockDevicePlatform.isIphone = false
 
         // When
         let feature = AIChatIPadTabFeature(
@@ -53,7 +49,7 @@ final class AIChatIPadTabFeatureTests: XCTestCase {
     func testWhenFeatureOnAndIphoneThenIsNotAvailable() {
         // Given
         let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckaiOnTab])
-        MockDevicePlatform.shared.mockIsIphone = true
+        MockDevicePlatform.isIphone = true
 
         // When
         let feature = AIChatIPadTabFeature(
@@ -68,7 +64,7 @@ final class AIChatIPadTabFeatureTests: XCTestCase {
     func testWhenFeatureOffAndNotIphoneThenIsNotAvailable() {
         // Given
         let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        MockDevicePlatform.shared.mockIsIphone = false
+        MockDevicePlatform.isIphone = false
 
         // When
         let feature = AIChatIPadTabFeature(
@@ -83,7 +79,7 @@ final class AIChatIPadTabFeatureTests: XCTestCase {
     func testWhenFeatureOffAndIphoneThenIsNotAvailable() {
         // Given
         let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        MockDevicePlatform.shared.mockIsIphone = true
+        MockDevicePlatform.isIphone = true
 
         // When
         let feature = AIChatIPadTabFeature(

@@ -261,10 +261,11 @@ Wide events sent as standard pixels (in `pixels/definitions/`) use `wideEvent*` 
 
 ## File Organization
 
-Group related pixels into a single definition file named after the feature area:
+Group related pixels into a single definition file named after the feature area, for example:
 
+- `navigation.json5` — Browser navigation pixels
+- `onboarding.json5` — Onboarding pixels
 - `vpn_latency.json5` — VPN latency measurement pixels
-- `debug_pixels.json5` — Debug/diagnostic pixels
 
 See existing files in the `definitions/` directory for naming patterns.
 
@@ -288,8 +289,6 @@ npm run pixel-lint
 # Auto-fix formatting
 npm run pixel-lint.fix
 ```
-
-Validation uses the `@duckduckgo/pixel-schema` package (AJV-based JSON schema validation). Formatting uses Prettier with 4-space indentation and the JSON parser for `.json5` files.
 
 **Always run `npm run validate-pixel-defs`** from the relevant platform directory after making changes.
 

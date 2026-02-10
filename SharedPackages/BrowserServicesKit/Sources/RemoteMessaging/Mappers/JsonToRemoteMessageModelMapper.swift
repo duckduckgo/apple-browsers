@@ -344,6 +344,8 @@ struct JsonToRemoteMessageModelMapper {
             return .macComputer
         case .newForMacAndWindows:
             return .newForMacAndWindows
+        case .macAndWindows:
+            return .macAndWindows
         case .privacyShield:
             return .subscription
         case .aiChat:

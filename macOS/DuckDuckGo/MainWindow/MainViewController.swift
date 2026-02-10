@@ -493,9 +493,10 @@ final class MainViewController: NSViewController {
             let suggestionsHeight = aiChatOmnibarContainerViewController.suggestionsHeight
             let totalHeight = desiredHeight + suggestionsHeight
             mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
-            // Allow clicks to pass through text container to reach suggestions
-            mainView.updateAIChatOmnibarTextContainerPassthrough(suggestionsHeight)
-            aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(suggestionsHeight)
+            // Allow clicks to pass through text container to reach suggestions and tool buttons
+            let passthroughHeight = aiChatOmnibarContainerViewController.totalPassthroughHeight
+            mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
+            aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
         }
 
         mainView.isAIChatOmnibarContainerShown = visible
@@ -559,12 +560,21 @@ final class MainViewController: NSViewController {
 
             self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
 
-            // Allow clicks to pass through text container to reach suggestions
-            self.mainView.updateAIChatOmnibarTextContainerPassthrough(suggestionsHeight)
-            self.aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(suggestionsHeight)
+            // Allow clicks to pass through text container to reach suggestions and tool buttons
+            let passthroughHeight = self.aiChatOmnibarContainerViewController.totalPassthroughHeight
+            self.mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
+            self.aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
 
             let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
             self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+        }
+
+        // Wire up passthrough height updates when tools visibility changes
+        aiChatOmnibarContainerViewController.onPassthroughHeightNeedsUpdate = { [weak self] in
+            guard let self, self.mainView.isAIChatOmnibarContainerShown else { return }
+            let passthroughHeight = self.aiChatOmnibarContainerViewController.totalPassthroughHeight
+            self.mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
+            self.aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
         }
 
         NotificationCenter.default.addObserver(

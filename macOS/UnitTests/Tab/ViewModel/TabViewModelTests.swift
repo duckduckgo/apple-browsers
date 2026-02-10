@@ -452,13 +452,14 @@ final class TabViewModelTests: XCTestCase {
 
     @MainActor
     func testDisplayedFaviconForOnboardingWithActualFavicon() {
+        let expectedFavicon = NSImage.onboardingDax
         let actualFavicon = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)!
 
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.setContent(.onboarding)
         tabViewModel.tab.favicon = actualFavicon
 
-        XCTAssertImagesEqual(tabViewModel.favicon, actualFavicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, expectedFavicon)
     }
 
     @MainActor

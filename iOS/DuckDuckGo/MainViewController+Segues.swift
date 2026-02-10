@@ -198,9 +198,30 @@ extension MainViewController {
         present(controller, animated: true)
     }
 
-    func segueToTabSwitcher() {
+    func segueToTabSwitcher() async {
         Logger.lifecycle.debug(#function)
+
+        // Guard against concurrent presentations
+        guard tabSwitcherController == nil else {
+            Logger.lifecycle.debug("Tab switcher presentation already in progress or active")
+            return
+        }
+
         hideAllHighlightsIfNeeded()
+
+        // Calculate the initial tracker count state before creating the view controller
+        // to ensure correct header sizing during the transition
+        let initialTrackerCountState = await TabSwitcherTrackerCountViewModel.calculateInitialState(
+            featureFlagger: featureFlagger,
+            settings: DefaultTabSwitcherSettings(),
+            privacyStats: privacyStats
+        )
+
+        // Check again after async work in case another presentation started
+        guard tabSwitcherController == nil else {
+            Logger.lifecycle.debug("Tab switcher presentation already in progress")
+            return
+        }
 
         let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
         guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
@@ -216,7 +237,8 @@ extension MainViewController {
                                       historyManager: self.historyManager,
                                       fireproofing: self.fireproofing,
                                       keyValueStore: self.keyValueStore,
-                                      daxDialogsManager: self.daxDialogsManager)
+                                      daxDialogsManager: self.daxDialogsManager,
+                                      initialTrackerCountState: initialTrackerCountState)
         }) else {
             assertionFailure()
             return

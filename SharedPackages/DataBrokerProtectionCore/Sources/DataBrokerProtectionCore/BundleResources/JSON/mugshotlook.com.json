@@ -1,7 +1,7 @@
 {
   "name": "MugshotLook",
   "url": "mugshotlook.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.mugshotlook.com/optOut/name/landingPage",
   "steps": [
@@ -136,6 +136,54 @@
             }
           ],
           "id": "6096cc3f-ec69-4e35-928e-bf242483b8de"
+        },
+        {
+          "actionType": "expectation",
+          "_comment": "add a bit more wait time for the captchas to complete",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".container"
+            }
+          ],
+          "id": "b08aad4c-0e80-4a8b-88a4-b1392b3a8d66"
+        },
+        {
+          "actionType": "condition",
+          "_comment": "captcha is not always present at this stage",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#svg-captcha-rendering svg",
+              "failSilently": true
+            }
+          ],
+          "actions": [
+            {
+              "actionType": "getCaptchaInfo",
+              "captchaType": "image",
+              "selector": "#svg-captcha-rendering svg",
+              "id": "33f06cab-1bc8-41d6-a77e-e89b0b9d68ba"
+            },
+            {
+              "actionType": "solveCaptcha",
+              "captchaType": "image",
+              "selector": "#svgCaptchaInputId",
+              "id": "28e0695b-d3cd-475d-b1bb-4b693124cb9d"
+            },
+            {
+              "actionType": "click",
+              "failSilently": true,
+              "elements": [
+                {
+                  "type": "button",
+                  "selector": "#svgCaptchaButtonId"
+                }
+              ],
+              "id": "3f577c07-7934-4272-9fe8-65102e6f65ba"
+            }
+          ],
+          "id": "e087bcd6-3c92-45bf-92a8-96197252cec6"
         },
         {
           "actionType": "expectation",

@@ -1,7 +1,7 @@
 {
   "name": "TruthRecord",
   "url": "truthrecord.org",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.truthrecord.org/opt_out/name/landing_page",
   "steps": [
@@ -136,6 +136,54 @@
             }
           ],
           "id": "4b9ffa94-51a9-4fc8-954b-18853b9f6824"
+        },
+        {
+          "actionType": "expectation",
+          "_comment": "add a bit more wait time for the captchas to complete",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".container"
+            }
+          ],
+          "id": "c4e2dd85-36b6-48b6-8226-b58c99bde850"
+        },
+        {
+          "actionType": "condition",
+          "_comment": "captcha is not always present at this stage",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#svg-captcha-rendering svg",
+              "failSilently": true
+            }
+          ],
+          "actions": [
+            {
+              "actionType": "getCaptchaInfo",
+              "captchaType": "image",
+              "selector": "#svg-captcha-rendering svg",
+              "id": "1f1fb68f-9bf5-44d5-a3fa-54043d67e780"
+            },
+            {
+              "actionType": "solveCaptcha",
+              "captchaType": "image",
+              "selector": "#svgCaptchaInputId",
+              "id": "4e0eabf5-f1d0-4102-a60b-9904da93efe9"
+            },
+            {
+              "actionType": "click",
+              "failSilently": true,
+              "elements": [
+                {
+                  "type": "button",
+                  "selector": "#svgCaptchaButtonId"
+                }
+              ],
+              "id": "23cd35e7-29a8-4ad2-9ba5-c936893aeb12"
+            }
+          ],
+          "id": "5c3b80a2-ee41-4494-b3e5-d92dc88091b0"
         },
         {
           "actionType": "expectation",

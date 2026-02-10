@@ -1,7 +1,7 @@
 {
   "name": "PeopleSearcher",
   "url": "peoplesearcher.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.peoplesearcher.com/optOut/name/landing",
   "steps": [
@@ -136,6 +136,54 @@
             }
           ],
           "id": "9595db45-4344-4848-a41c-e1dea31c64d4"
+        },
+        {
+          "actionType": "expectation",
+          "_comment": "add a bit more wait time for the captchas to complete",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".container"
+            }
+          ],
+          "id": "b2f63b8b-108d-49a0-a762-3fa7fef404a5"
+        },
+        {
+          "actionType": "condition",
+          "_comment": "captcha is not always present at this stage",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#svg-captcha-rendering svg",
+              "failSilently": true
+            }
+          ],
+          "actions": [
+            {
+              "actionType": "getCaptchaInfo",
+              "captchaType": "image",
+              "selector": "#svg-captcha-rendering svg",
+              "id": "7d1d8b27-5fe5-4499-afa3-a3aa57290c9d"
+            },
+            {
+              "actionType": "solveCaptcha",
+              "captchaType": "image",
+              "selector": "#svgCaptchaInputId",
+              "id": "a0008990-20c2-4fb3-a29c-63027f54b671"
+            },
+            {
+              "actionType": "click",
+              "failSilently": true,
+              "elements": [
+                {
+                  "type": "button",
+                  "selector": "#svgCaptchaButtonId"
+                }
+              ],
+              "id": "847e5445-bd68-4ea4-b52f-6356b9d6b753"
+            }
+          ],
+          "id": "f5c7f68f-6c3d-4724-af31-ec1679c90da5"
         },
         {
           "actionType": "expectation",

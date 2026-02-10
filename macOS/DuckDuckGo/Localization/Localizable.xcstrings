@@ -24220,7 +24220,6 @@
             "state" : "new",
             "value" : "Automatically send page content to the sidebar"
           }
-        }
         },
         "es" : {
           "stringUnit" : {
@@ -24263,6 +24262,7 @@
             "state" : "translated",
             "value" : "Автоматически отправлять содержимое страницы на боковую панель"
           }
+        }
       }
     },
     "duckai.description" : {

@@ -68,9 +68,6 @@ extension SupportedOSChecking {
     var showsSupportWarning: Bool {
         supportWarning != nil
     }
-    var osUpgradeCapability: OSUpgradeCapability {
-        .incapable
-    }
 }
 
 extension OperatingSystemVersion: @retroactive Comparable {

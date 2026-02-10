@@ -57,7 +57,6 @@ class StatisticsLoaderTests: XCTestCase {
         mockStatisticsStore.variant = "ru"
         mockStatisticsStore.atb = "v101-1"
 
-        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")

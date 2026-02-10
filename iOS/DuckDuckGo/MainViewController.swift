@@ -564,7 +564,15 @@ class MainViewController: UIViewController {
 
         DailyPixel.fireDaily(.aiChatExperimentalAddressBarIsEnabledDaily,
                              withAdditionalParameters: [isEnabledParam: isEnableValue])
-        
+
+    }
+
+    private func fireContextualAutoAttachPixel() {
+        let isEnabledParam = "is_enabled"
+        let isEnabledValue = "\(aiChatSettings.isAutomaticContextAttachmentEnabled)"
+
+        DailyPixel.fireDaily(.aiChatContextualAutoAttachIsEnabledDaily,
+                             withAdditionalParameters: [isEnabledParam: isEnabledValue])
     }
     
     private func fireKeyboardSettingsPixels() {
@@ -1309,6 +1317,7 @@ class MainViewController: UIViewController {
     
     func onForeground() {
         fireExperimentalAddressBarPixel()
+        fireContextualAutoAttachPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
         skipSERPFlow = true

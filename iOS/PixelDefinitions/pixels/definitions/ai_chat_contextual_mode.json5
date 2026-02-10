@@ -138,5 +138,20 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_auto_attach_is_enabled_daily": {
+        "description": "Daily pixel capturing the current state of the contextual auto-attach setting",
+        "owners": ["aataraxiaa"],
+        "triggers": ["daily"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "is_enabled",
+                "type": "string",
+                "enum": ["true", "false"],
+                "description": "Whether the automatic context attachment setting is currently enabled"
+            }
+        ]
     }
 }

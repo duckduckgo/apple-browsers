@@ -1615,12 +1615,10 @@ class MainViewController: UIViewController {
 
         if tab.isAITab && aichatFullModeFeature.isAvailable {
             viewCoordinator.omniBar.enterAIChatMode()
+        } else if tab.url?.isDuckAIURL == true, aichatIPadTabFeature.isAvailable {
+            viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
-
-            if tab.url?.isDuckAIURL == true, aichatIPadTabFeature.isAvailable {
-                viewCoordinator.omniBar.barView.isAIChatButtonHidden = true
-            }
         }
 
         updateBrowsingMenuHeaderDataSource()

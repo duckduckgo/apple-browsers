@@ -277,16 +277,15 @@ struct LargeOmniBarState {
         let showPrivacyIcon = true
         let showBackground = true
         let showClear = false
-        let showAbort = false
-        let showRefresh = false
-        let showCustomizableButton = false
+        var showAbort: Bool { isLoading }
+        var showRefresh: Bool { !isLoading && dependencies.isRefreshButtonEnabled }
+        let showCustomizableButton = true
         let showMenu = true
         let showSettings = false
         let showCancel = false
         let showDismiss = false
         let showVoiceSearch = false
         let isBrowsing = true
-        let allowCustomization = false
 
         var name: String { "Pad" + Type.name(self) }
 

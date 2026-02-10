@@ -213,6 +213,16 @@
                ReferencedContainer = "container:../SharedPackages/Infrastructure/SystemFrameworksExtensions">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MetricBuilderTests"
+               BuildableName = "MetricBuilderTests"
+               BlueprintName = "MetricBuilderTests"
+               ReferencedContainer = "container:../SharedPackages/Infrastructure/MetricBuilder">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

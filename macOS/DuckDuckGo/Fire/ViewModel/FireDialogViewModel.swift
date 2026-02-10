@@ -57,6 +57,14 @@ final class FireDialogViewModel: ObservableObject {
             }
         }
 
+        var description: String {
+            switch self {
+            case .currentTab: return "current_tab"
+            case .currentWindow: return "current_window"
+            case .allData: return "all_data"
+            }
+        }
+
     }
 
     enum Mode: Equatable {

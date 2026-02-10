@@ -92,7 +92,9 @@ final class MouseBlockingBackgroundView: ColorView {
                 }
             }
 
-            if let hitView = self.hitTest(locationInView), hitView != self {
+            let hitView = self.hitTest(locationInView)
+
+            if let hitView = hitView, hitView != self {
                 switch event.type {
                 case .leftMouseDown:
                     if hitView.acceptsFirstResponder {
@@ -166,24 +168,29 @@ final class MouseBlockingBackgroundView: ColorView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
+        // Note: When called from our event monitor, point is already in our coordinate system.
+        // When called normally (e.g., from contentView.hitTest), point is in superview's coords.
+        // Since this view fills its superview at origin (0,0), both are equivalent.
+
         // Check if point is in passthrough region (bottom of view)
         // In AppKit, y=0 is at the bottom, so we check if y < passthroughBottomHeight
         if passthroughBottomHeight > 0 && point.y < passthroughBottomHeight {
-            // Return nil to let events pass through to views behind us
             return nil
         }
 
+        guard bounds.contains(point) else {
+            return nil
+        }
+
+        // Iterate subviews in reverse order (front to back)
         for subview in subviews.reversed() where !subview.isHidden {
-            let pointInSubview = subview.convert(point, from: self)
-            if let hitView = subview.hitTest(pointInSubview) {
-                return hitView
+            if subview.frame.contains(point) {
+                if let hitView = subview.hitTest(point) {
+                    return hitView
+                }
             }
         }
 
-        if bounds.contains(point) {
-            return self
-        }
-
-        return nil
+        return self
     }
 }

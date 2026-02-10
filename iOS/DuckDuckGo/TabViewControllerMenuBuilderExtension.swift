@@ -73,8 +73,6 @@ extension TabViewController {
         return entries
     }
 
-    var favoriteEntryIndex: Int { 1 }
-
     func buildShortcutsMenu() -> [BrowsingMenuEntry] {
         buildShortcutsEntries(state: .newTab)
     }
@@ -289,7 +287,6 @@ extension TabViewController {
 
         let bookmarkEntries = buildBookmarkEntries(for: link, with: bookmarksInterface)
         entries.append(bookmarkEntries.bookmark)
-        assert(self.favoriteEntryIndex == entries.count, "Entry index should be in sync with entry placement")
         entries.append(bookmarkEntries.favorite)
 
         entries.append(.separator)
@@ -435,6 +432,7 @@ extension TabViewController {
         return BrowsingMenuEntry.regular(name: title,
                                          accessibilityLabel: title,
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireSolid,
+                                         tag: .fire,
                                          action: clearTabsAndData)
     }
     
@@ -553,6 +551,7 @@ extension TabViewController {
 
         let entry = BrowsingMenuEntry.regular(name: UserText.actionSaveFavorite,
                                               image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.favorite : DesignSystemImages.Glyphs.Size24.favorite,
+                                              tag: .favorite,
                                               action: { [weak self] in
             Pixel.fire(pixel: addToFavoriteFlow ? .browsingMenuAddToFavoritesAddFavoriteFlow : .browsingMenuAddToFavorites)
             DailyPixel.fire(pixel: .addFavoriteDaily)

@@ -41,6 +41,7 @@
             "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",

@@ -22,8 +22,12 @@ import Foundation
 import os.log
 import PrivacyConfig
 
+protocol MemoryUsageMonitoring {
+    func getCurrentMemoryUsage() -> MemoryUsageMonitor.MemoryReport
+}
+
 /// A monitor that periodically reports the memory usage of the current process.
-final class MemoryUsageMonitor: @unchecked Sendable {
+final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
 
     /// The interval between memory usage reports.
     let interval: TimeInterval
@@ -33,25 +37,52 @@ final class MemoryUsageMonitor: @unchecked Sendable {
 
     private var monitoringTask: Task<Void, Never>?
     private let logger: Logger?
+    private let internalUserDecider: InternalUserDecider
     private let memoryReportSubject = PassthroughSubject<MemoryReport, Never>()
     private var cancellables: Set<AnyCancellable> = []
 
+    /// When set and the user is an internal user, `getCurrentMemoryUsage()` returns this value
+    /// instead of real system memory. Used for testing threshold pixels via the Debug menu.
+    private var simulatedReport: MemoryReport?
+
     /// Represents a snapshot of memory usage.
     struct MemoryReport: Sendable {
-        /// Memory used by the process in bytes.
-        let usedBytes: UInt64
-        /// Memory used by the process in megabytes.
-        var usedMB: Double { Double(usedBytes) / Double(Self.oneMB) }
-        /// Memory used by the process in gigabytes.
-        var usedGB: Double { Double(usedBytes) / Double(Self.oneGB) }
+        /// Resident memory size in bytes (includes shared libraries at full size).
+        let residentBytes: UInt64
+        /// Physical footprint in bytes (memory process is responsible for, matches Activity Monitor).
+        let physFootprintBytes: UInt64
 
-        var usedMemoryString: String {
-            if usedBytes > Self.oneGB {
-                let formattedValue = Self.gbFormatter.string(from: NSNumber(value: usedGB)) ?? String(usedGB)
+        /// Resident memory in megabytes.
+        var residentMB: Double { Double(residentBytes) / Double(Self.oneMB) }
+        /// Resident memory in gigabytes.
+        var residentGB: Double { Double(residentBytes) / Double(Self.oneGB) }
+
+        /// Physical footprint in megabytes.
+        var physFootprintMB: Double { Double(physFootprintBytes) / Double(Self.oneMB) }
+        /// Physical footprint in gigabytes.
+        var physFootprintGB: Double { Double(physFootprintBytes) / Double(Self.oneGB) }
+
+        var residentMemoryString: String {
+            if residentBytes > Self.oneGB {
+                let formattedValue = Self.gbFormatter.string(from: NSNumber(value: residentGB)) ?? String(residentGB)
                 return "\(formattedValue) GB"
             }
-            let formattedValue = Self.mbFormatter.string(from: NSNumber(value: usedMB)) ?? String(usedMB)
+            let formattedValue = Self.mbFormatter.string(from: NSNumber(value: residentMB)) ?? String(residentMB)
             return "\(formattedValue) MB"
+        }
+
+        var footprintMemoryString: String {
+            if physFootprintBytes > Self.oneGB {
+                let formattedValue = Self.gbFormatter.string(from: NSNumber(value: physFootprintGB)) ?? String(physFootprintGB)
+                return "\(formattedValue) GB"
+            }
+            let formattedValue = Self.mbFormatter.string(from: NSNumber(value: physFootprintMB)) ?? String(physFootprintMB)
+            return "\(formattedValue) MB"
+        }
+
+        /// Comparison string showing both resident and physical footprint values.
+        var comparisonString: String {
+            return "R:\(residentMemoryString) | F:\(footprintMemoryString)"
         }
 
         private static let oneMB: UInt64 = 1_048_576
@@ -73,9 +104,13 @@ final class MemoryUsageMonitor: @unchecked Sendable {
     }
 
     /// Creates a new memory usage monitor.
-    /// - Parameter interval: The interval between reports. Defaults to 3 seconds.
-    init(interval: TimeInterval = 3.0, logger: Logger? = nil) {
+    /// - Parameters:
+    ///   - interval: The interval between reports. Defaults to 3 seconds.
+    ///   - internalUserDecider: Used to gate simulated memory reports to internal users only.
+    ///   - logger: Optional logger for debugging.
+    init(interval: TimeInterval = 3.0, internalUserDecider: InternalUserDecider, logger: Logger? = nil) {
         self.interval = interval
+        self.internalUserDecider = internalUserDecider
         self.logger = logger
         self.memoryReportPublisher = memoryReportSubject.eraseToAnyPublisher()
     }
@@ -108,7 +143,7 @@ final class MemoryUsageMonitor: @unchecked Sendable {
             while !Task.isCancelled {
                 let report = self.getCurrentMemoryUsage()
 
-                self.logger?.info("Memory usage: \(report.usedMemoryString)")
+                self.logger?.info("Memory usage - resident: \(report.residentMemoryString), footprint: \(report.footprintMemoryString)")
                 await MainActor.run {
                     self.memoryReportSubject.send(report)
                 }
@@ -125,24 +160,51 @@ final class MemoryUsageMonitor: @unchecked Sendable {
     }
 
     /// Returns the current memory usage of the process.
+    ///
+    /// For internal users, if a simulated report has been set via `simulateMemoryReport`,
+    /// that value is returned instead of the real system memory.
     func getCurrentMemoryUsage() -> MemoryReport {
-        var info = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+        if internalUserDecider.isInternalUser, let simulatedReport {
+            return simulatedReport
+        }
 
-        let result = withUnsafeMutablePointer(to: &info) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+        // Get resident_size from mach_task_basic_info
+        var basicInfo = mach_task_basic_info()
+        var basicCount = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+
+        let basicResult = withUnsafeMutablePointer(to: &basicInfo) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(basicCount)) {
+                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &basicCount)
             }
         }
 
-        let usedBytes: UInt64
-        if result == KERN_SUCCESS {
-            usedBytes = UInt64(info.resident_size)
+        let residentBytes: UInt64
+        if basicResult == KERN_SUCCESS {
+            residentBytes = UInt64(basicInfo.resident_size)
         } else {
-            logger?.warning("Failed to get memory info: \(result)")
-            usedBytes = 0
+            logger?.warning("Failed to get basic memory info: \(basicResult)")
+            residentBytes = 0
         }
-        return MemoryReport(usedBytes: usedBytes)
+
+        // Get phys_footprint from task_vm_info
+        var vmInfo = task_vm_info_data_t()
+        var vmCount = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size) / 4
+
+        let vmResult = withUnsafeMutablePointer(to: &vmInfo) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(vmCount)) {
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &vmCount)
+            }
+        }
+
+        let physFootprintBytes: UInt64
+        if vmResult == KERN_SUCCESS {
+            physFootprintBytes = UInt64(vmInfo.phys_footprint)
+        } else {
+            logger?.warning("Failed to get VM info: \(vmResult)")
+            physFootprintBytes = 0
+        }
+
+        return MemoryReport(residentBytes: residentBytes, physFootprintBytes: physFootprintBytes)
     }
 
     deinit {
@@ -220,7 +282,7 @@ final class MemoryUsageDisplayer {
         viewUpdatesCancellable = memoryUsageMonitor.memoryReportPublisher
             .prepend(memoryUsageMonitor.getCurrentMemoryUsage())
             .sink { [weak label] report in
-                label?.stringValue = report.usedMemoryString
+                label?.stringValue = report.comparisonString
                 label?.sizeToFit()
             }
     }
@@ -231,5 +293,30 @@ final class MemoryUsageDisplayer {
         memoryUsageMonitorView = nil
         viewUpdatesCancellable?.cancel()
         viewUpdatesCancellable = nil
+    }
+}
+
+extension MemoryUsageMonitor {
+    /// Simulates a memory report for testing purposes (internal users only).
+    ///
+    /// Sets a simulated memory value that `getCurrentMemoryUsage()` will return instead
+    /// of real system memory. Only takes effect for internal users.
+    /// Used via the Debug menu to test threshold pixel firing for specific memory values.
+    ///
+    /// - Parameter physFootprintMB: Memory usage in megabytes to simulate
+    func simulateMemoryReport(physFootprintMB: Double) {
+        guard internalUserDecider.isInternalUser else { return }
+        let physFootprintBytes = UInt64(physFootprintMB * 1_048_576)
+        let report = MemoryReport(
+            residentBytes: physFootprintBytes,
+            physFootprintBytes: physFootprintBytes
+        )
+        simulatedReport = report
+        memoryReportSubject.send(report)
+    }
+
+    /// Clears any simulated memory report, reverting `getCurrentMemoryUsage()` to real system values.
+    func clearSimulatedMemoryReport() {
+        simulatedReport = nil
     }
 }

@@ -313,11 +313,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
 
-    /// Failsafe flag to bring back keys sorting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
     case crashCollectionDisableKeysSorting
 
-    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
 
@@ -629,7 +627,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .browsingMenuSheetPresentation:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.experimentalBrowsingMenu))
         case .browsingMenuSheetEnabledByDefault:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.browsingMenuSheetEnabledByDefault))
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -661,7 +659,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAtb:
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
-            return .disabled
+            return .internalOnly()
         case .webViewFlashPrevention:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
         case .wideEventPostEndpoint:
@@ -675,7 +673,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabSwitcherTrackerCount:
             return .internalOnly()
         case .burnSingleTab:
-            return .disabled
+            return .internalOnly()
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionDisableKeysSorting:

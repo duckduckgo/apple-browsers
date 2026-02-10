@@ -50,6 +50,8 @@ public struct PixelParameters {
     static let coreDataErrorAttribute = "coreDataAttribute"
 
     public static let tabCount = "tc"
+    public static let tabType = "tabType"
+    public static let domainsCount = "domainsCount"
 
     public static let widgetSmall = "ws"
     public static let widgetMedium = "wm"
@@ -286,6 +288,11 @@ public class Pixel {
 
         guard !isDryRun else {
             Logger.pixels.debug("Pixel fired \(pixelName.replacingOccurrences(of: "_", with: "."), privacy: .public) \(params.count > 0 ? "\(params)" : "", privacy: .public)")
+
+            #if DEBUG
+            Self.writeValidationPixel(pixelName: pixelName, deviceType: deviceType, parameters: newParams)
+            #endif
+
             // simulate server response time for Dry Run mode
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 onComplete(nil)
@@ -386,3 +393,70 @@ extension Dictionary where Key == String, Value == String {
     }
 
 }
+
+// MARK: - Local Pixel Validation
+
+#if DEBUG
+extension Pixel {
+
+    private static let validationLogQueue = DispatchQueue(label: "Debug Pixel Validation")
+    private static var validationLogCleared = false
+
+    private static var validationLogURL: URL {
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        return cacheDir.appendingPathComponent("pixel-validation-log.txt")
+    }
+
+    private static func pixelURI(name: String, parameters: [String: String]) -> String {
+        guard !parameters.isEmpty else {
+            return name
+        }
+
+        let sortedParams = parameters.sorted { $0.key < $1.key }
+        let queryString = sortedParams
+            .map { "\($0.key)=\($0.value)" }
+            .joined(separator: "&")
+        return "\(name)?\(queryString)"
+    }
+
+    /// Writes pixel calls to a file in the Caches directory, so that we can validate the pixels against the JSON definitions before they go to production.
+    /// To use this, trigger your pixel in the iOS Simulator, and then run `./iOS/scripts/validate_pixels.sh`.
+    static func writeValidationPixel(pixelName: String, deviceType: UIUserInterfaceIdiom?, parameters: [String: String]) {
+        let formFactor: String
+        if let deviceType = deviceType {
+            formFactor = deviceType == .pad ? Constants.tablet : Constants.phone
+        } else {
+            formFactor = Constants.phone
+        }
+        let fullPixelName = "\(pixelName)_ios_\(formFactor)"
+        let pixelURI = pixelURI(name: fullPixelName, parameters: parameters)
+
+        writeToValidationLog("Pixel fired: \(pixelURI)")
+    }
+
+    private static func writeToValidationLog(_ message: String) {
+        validationLogQueue.async {
+            let fileURL = validationLogURL
+
+            // Clear the log file on first write of each session
+            if !validationLogCleared {
+                try? FileManager.default.removeItem(at: fileURL)
+                validationLogCleared = true
+            }
+
+            let entry = message + "\n"
+            if let data = entry.data(using: .utf8) {
+                if FileManager.default.fileExists(atPath: fileURL.path) {
+                    if let handle = try? FileHandle(forWritingTo: fileURL) {
+                        handle.seekToEndOfFile()
+                        handle.write(data)
+                        handle.closeFile()
+                    }
+                } else {
+                    try? data.write(to: fileURL)
+                }
+            }
+        }
+    }
+}
+#endif

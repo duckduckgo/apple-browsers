@@ -62,6 +62,7 @@ final class MainViewController: NSViewController {
     let fireproofDomains: FireproofDomains
     let downloadManager: FileDownloadManagerProtocol
     let isBurner: Bool
+    let pinningManager: PinningManager
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
@@ -132,6 +133,7 @@ final class MainViewController: NSViewController {
          vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
          sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator,
          winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter,
+         pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
          memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor
     ) {
 
@@ -149,6 +151,7 @@ final class MainViewController: NSViewController {
         self.winBackOfferPromptPresenting = winBackOfferPromptPresenting
         self.tabsPreferences = tabsPreferences
         self.duckPlayer = duckPlayer
+        self.pinningManager = pinningManager
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
@@ -172,7 +175,7 @@ final class MainViewController: NSViewController {
                 NetworkProtectionKnownFailureStore().lastKnownFailure = KnownFailure(error)
             }
 
-            let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
+            let vpnUninstaller = VPNUninstaller(pinningManager: pinningManager, ipcClient: vpnXPCClient)
 
             return NetworkProtectionNavBarPopoverManager(
                 ipcClient: vpnXPCClient,
@@ -216,7 +219,8 @@ final class MainViewController: NSViewController {
             aiChatPreferences: aiChatPreferences,
             aboutPreferences: aboutPreferences,
             accessibilityPreferences: accessibilityPreferences,
-            duckPlayer: duckPlayer
+            duckPlayer: duckPlayer,
+            pinningManager: pinningManager
         )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
@@ -263,6 +267,7 @@ final class MainViewController: NSViewController {
                                                                          downloadsPreferences: downloadsPreferences,
                                                                          tabsPreferences: tabsPreferences,
                                                                          accessibilityPreferences: accessibilityPreferences,
+                                                                         pinningManager: pinningManager,
                                                                          memoryUsageMonitor: memoryUsageMonitor)
 
         findInPageViewController = FindInPageViewController.create()
@@ -270,7 +275,8 @@ final class MainViewController: NSViewController {
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
-            dragDropManager: bookmarkDragDropManager
+            dragDropManager: bookmarkDragDropManager,
+            pinningManager: pinningManager
         )
 
         // Create the shared AI Chat omnibar controller
@@ -487,9 +493,10 @@ final class MainViewController: NSViewController {
             let suggestionsHeight = aiChatOmnibarContainerViewController.suggestionsHeight
             let totalHeight = desiredHeight + suggestionsHeight
             mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
-            // Allow clicks to pass through text container to reach suggestions
-            mainView.updateAIChatOmnibarTextContainerPassthrough(suggestionsHeight)
-            aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(suggestionsHeight)
+            // Allow clicks to pass through text container to reach suggestions and tool buttons
+            let passthroughHeight = aiChatOmnibarContainerViewController.totalPassthroughHeight
+            mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
+            aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
         }
 
         mainView.isAIChatOmnibarContainerShown = visible
@@ -553,12 +560,21 @@ final class MainViewController: NSViewController {
 
             self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
 
-            // Allow clicks to pass through text container to reach suggestions
-            self.mainView.updateAIChatOmnibarTextContainerPassthrough(suggestionsHeight)
-            self.aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(suggestionsHeight)
+            // Allow clicks to pass through text container to reach suggestions and tool buttons
+            let passthroughHeight = self.aiChatOmnibarContainerViewController.totalPassthroughHeight
+            self.mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
+            self.aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
 
             let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
             self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+        }
+
+        // Wire up passthrough height updates when tools visibility changes
+        aiChatOmnibarContainerViewController.onPassthroughHeightNeedsUpdate = { [weak self] in
+            guard let self, self.mainView.isAIChatOmnibarContainerShown else { return }
+            let passthroughHeight = self.aiChatOmnibarContainerViewController.totalPassthroughHeight
+            self.mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
+            self.aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
         }
 
         NotificationCenter.default.addObserver(
@@ -1286,7 +1302,7 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
     )
     bkman.loadBookmarks()
 
-    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()))
+    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: Application.appDelegate.pinningManager), aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()))
     var c: AnyCancellable!
     c = vc.publisher(for: \.view.window).sink { window in
         window?.titlebarAppearsTransparent = true

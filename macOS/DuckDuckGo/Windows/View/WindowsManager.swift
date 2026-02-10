@@ -37,7 +37,7 @@ final class WindowsManager {
     }
 
     // Shared type to enable managing `PasswordManagementPopover`s in multiple windows
-    private static let autofillPopoverPresenter: AutofillPopoverPresenter = DefaultAutofillPopoverPresenter()
+    private static let autofillPopoverPresenter: AutofillPopoverPresenter = DefaultAutofillPopoverPresenter(pinningManager: Application.appDelegate.pinningManager)
 
     class func closeWindows(except windows: [NSWindow] = []) {
         for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {

@@ -112,6 +112,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211654922002904
+    case aiChatOmnibarTools
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
     case aiChatOmnibarOnboarding
 
@@ -187,9 +190,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721275379
     case scheduledDefaultBrowserAndDockPromptsInactiveUser
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
-    case tabProgressIndicator
-
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
 
@@ -261,6 +261,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212783502979551?focus=true
     case memoryPressureReporting
 
+    /// Memory Usage Reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
+    case memoryUsageReporting
+
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
     case aiChatSync
 
@@ -275,6 +279,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
+    case crashCollectionLimitCallStackTreeDepth
 
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
@@ -302,7 +312,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .popupPermissionButtonPersistence,
                 .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
-                .tabProgressIndicator,
                 .firstTimeQuitSurvey,
                 .aiChatOmnibarOnboarding,
                 .terminationDeciderSequence,
@@ -310,7 +319,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .warnBeforeQuit,
                 .wideEventPostEndpoint,
                 .memoryPressureReporting,
-                .themes:
+                .themes,
+                .crashCollectionDisableKeysSorting,
+                .crashCollectionLimitCallStackTreeDepth,
+                .memoryUsageReporting:
             true
         default:
             false
@@ -354,6 +366,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
                 .aiChatSuggestions,
+                .aiChatOmnibarTools,
                 .aiChatOmnibarOnboarding,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
@@ -376,7 +389,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
-                .tabProgressIndicator,
                 .attributedMetrics,
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
@@ -396,6 +408,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
                 .memoryPressureReporting,
+                .memoryUsageReporting,
                 .aiChatSync,
                 .heuristicAction,
                 .nextStepsListWidget,
@@ -408,7 +421,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledDefaultBrowserAndDockPromptsInactiveUser,
                 .tabClosingEventRecreation,
-                .terminationDeciderSequence:
+                .terminationDeciderSequence,
+                .crashCollectionDisableKeysSorting,
+                .crashCollectionLimitCallStackTreeDepth:
             return false
         }
     }
@@ -477,6 +492,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
         case .aiChatSuggestions:
             return .remoteReleasable(.feature(.duckAiChatHistory))
+        case .aiChatOmnibarTools:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarTools))
         case .aiChatOmnibarOnboarding:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarOnboarding))
         case .osSupportForceUnsupportedMessage:
@@ -523,8 +540,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience))
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
-        case .tabProgressIndicator:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabProgressIndicator))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .showHideAIGeneratedImagesSection:
@@ -565,6 +580,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .memoryPressureReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryPressureReporting))
+        case .memoryUsageReporting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryUsageReporting))
         case .aiChatSync:
             return .disabled
         case .heuristicAction:
@@ -573,6 +590,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
+        case .crashCollectionDisableKeysSorting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionDisableKeysSorting))
+        case .crashCollectionLimitCallStackTreeDepth:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
         case .freeTrialConversionWideEvent:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
         }

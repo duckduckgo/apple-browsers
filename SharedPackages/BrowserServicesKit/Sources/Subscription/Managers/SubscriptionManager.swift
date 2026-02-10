@@ -461,19 +461,15 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             throw SubscriptionManagerError.noTokenAvailable
         } catch {
             pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, error))
+            Logger.subscription.error("Getting token \(policy, privacy: .public) failed: \(error, privacy: .public)")
 
             switch error {
-
             case OAuthClientError.unknownAccount:
-
-                Logger.subscription.error("Refresh failed, the account is unknown. Logging out...")
                 await signOut(notifyUI: true, userInitiated: false)
                 throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.invalidTokenRequest:
-
                 pixelHandler.handle(pixel: .invalidRefreshToken)
-                Logger.subscription.error("Refresh failed, invalid token request")
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)

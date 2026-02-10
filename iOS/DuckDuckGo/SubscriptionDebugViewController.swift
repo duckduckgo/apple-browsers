@@ -622,7 +622,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
             let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
-                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: nil))
             // Create the flows and feature
             let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(
                 subscriptionManager: subscriptionManager,

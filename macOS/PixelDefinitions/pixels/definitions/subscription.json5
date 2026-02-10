@@ -292,6 +292,7 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -386,6 +387,7 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -466,6 +468,7 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -528,6 +531,7 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -618,6 +622,7 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -704,6 +709,20 @@
             }
         ]
     },
+    "m_mac_store_privacy-pro_freetrial_duck_ai_activation": {
+        "description": "Fired when a user activates Duck.ai for the first time during a free trial (App Store distribution). Includes activation day to distinguish D1 vs D2-D7 activators.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "activation_day",
+                "type": "string",
+                "description": "When Duck.ai was activated during the free trial",
+                "enum": ["d1", "d2_to_d7"]
+            }
+        ]
+    },
 
     // Free Trial Journey Pixels - Direct Distribution
     "m_mac_direct_privacy-pro_freetrial_start": {
@@ -736,6 +755,20 @@
                 "key": "activation_day",
                 "type": "string",
                 "description": "When PIR was activated during the free trial",
+                "enum": ["d1", "d2_to_d7"]
+            }
+        ]
+    },
+    "m_mac_direct_privacy-pro_freetrial_duck_ai_activation": {
+        "description": "Fired when a user activates Duck.ai for the first time during a free trial (direct distribution). Includes activation day to distinguish D1 vs D2-D7 activators.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "activation_day",
+                "type": "string",
+                "description": "When Duck.ai was activated during the free trial",
                 "enum": ["d1", "d2_to_d7"]
             }
         ]

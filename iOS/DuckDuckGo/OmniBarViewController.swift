@@ -475,8 +475,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             return
         }
 
-        if privacyInfo.url.isDuckAIURL,
-           dependencies.featureFlagger.isFeatureOn(.iPadDuckaiOnTab), !DevicePlatform.isIphone {
+        if privacyInfo.url.isDuckAIURL, dependencies.aichatIPadTabFeature.isAvailable {
             showCustomIcon(icon: .duckAI)
             return
         }

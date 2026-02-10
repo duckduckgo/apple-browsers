@@ -20,16 +20,13 @@
 import Foundation
 import DuckPlayer
 import AIChat
-import Common
 import Core
-import PrivacyConfig
 
 struct AddressDisplayHelper {
 
     static func addressForDisplay(url: URL,
                                   showsFullURL: Bool,
-                                  featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-                                  devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) -> NSAttributedString {
+                                  aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature()) -> NSAttributedString {
 
         if url.isDuckPlayer,
            let playerURL = getDuckPlayerURL(url: url, showsFullURL: showsFullURL) {
@@ -37,7 +34,7 @@ struct AddressDisplayHelper {
         }
 
         if url.isDuckAIURL, !showsFullURL,
-           featureFlagger.isFeatureOn(.iPadDuckaiOnTab), !devicePlatform.isIphone {
+           aichatIPadTabFeature.isAvailable {
             return NSAttributedString(
                 string: UserText.duckAiFeatureName,
                 attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])

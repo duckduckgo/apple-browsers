@@ -932,7 +932,8 @@ final class AddressBarButtonsViewController: NSViewController {
         guard let tabViewModel else { return }
 
         let url = tabViewModel.tab.content.userEditableUrl
-        let isNewTabOrOnboarding = [.newtab, .onboarding].contains(tabViewModel.tab.content)
+        let isOnboarding = [.onboarding].contains(tabViewModel.tab.content)
+        let isNewTab = [.newtab].contains(tabViewModel.tab.content)
         let isHypertextUrl = url?.navigationalScheme?.isHypertextScheme == true && url?.isDuckPlayer == false
         let isEditingMode = controllerMode?.isEditing ?? false
         let isTextFieldValueText = textFieldValue?.isText ?? false
@@ -958,9 +959,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
         imageButtonWrapper.isShown = imageButton.image != nil
         && !isInPopUpWindow
-        && (isHypertextUrl || isTextFieldEditorFirstResponder || isEditingMode || isNewTabOrOnboarding)
+        && (isHypertextUrl || isTextFieldEditorFirstResponder || isEditingMode || isNewTab)
         && privacyDashboardButton.isHidden
         && !shouldShowToggle
+        && !isOnboarding
     }
 
     private func updatePrivacyEntryPointIcon() {
@@ -1287,15 +1289,13 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonVisibility() {
-        let isDuckAIURL = tabViewModel?.tab.url?.isDuckAIURL ?? false
-
         aiChatButton.isHidden = !shouldShowAIChatButton()
         updateAIChatDividerVisibility()
 
-        // Check if the current tab is in the onboarding state and disable the AI chat button if it is
+        // Check if the current tab is in the onboarding state and hide the AI chat button if it is
         guard let tabViewModel else { return }
         let isOnboarding = [.onboarding].contains(tabViewModel.tab.content)
-        aiChatButton.isEnabled = !isOnboarding
+        aiChatButton.isHidden = isOnboarding
     }
 
     private var isAskAIChatButtonExpanded: Bool = false

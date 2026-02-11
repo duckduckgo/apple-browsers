@@ -1432,7 +1432,8 @@ extension Pixel {
         case aiChatMetricDuckAIKeyboardReturnPressed
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
-        
+        case aiChatContextualAutoAttachDAU
+
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
         
@@ -1513,6 +1514,8 @@ extension Pixel {
         case aiChatContextualPromptSubmittedWithContextNative
         case aiChatContextualPromptSubmittedWithoutContextNative
         case aiChatContextualSessionRestored
+        case aiChatContextualPageContextCollectionEmpty
+        case aiChatContextualPageContextCollectionUnavailable
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -1624,6 +1627,16 @@ extension Pixel {
         case productTelemeterySurfaceUsageSettings
         case productTelemeterySurfaceUsageBookmarksPage
         case productTelemeterySurfaceUsagePasswordsPage
+
+        // MARK: - Web Extensions
+        case webExtensionInstalled
+        case webExtensionInstallError
+        case webExtensionUninstalled
+        case webExtensionUninstallError
+        case webExtensionUninstalledAll
+        case webExtensionUninstallAllError
+        case webExtensionLoaded
+        case webExtensionLoadError
     }
 
 }
@@ -2936,6 +2949,7 @@ extension Pixel.Event {
         case .aiChatMetricDuckAIKeyboardReturnPressed: return "m_aichat_duckai_keyboard_return_pressed"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
+        case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
 
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
@@ -3010,6 +3024,8 @@ extension Pixel.Event {
         case .aiChatContextualPromptSubmittedWithContextNative: return "m_aichat_contextual_prompt_submitted_with_context_native"
         case .aiChatContextualPromptSubmittedWithoutContextNative: return "m_aichat_contextual_prompt_submitted_without_context_native"
         case .aiChatContextualSessionRestored: return "m_aichat_contextual_session_restored"
+        case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
+        case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
 
         // MARK: AI Chat Sync
 
@@ -3180,12 +3196,22 @@ extension Pixel.Event {
         case .productTelemeterySurfaceUsageSettings: return "m_product_telemetry_surface_usage_settings"
         case .productTelemeterySurfaceUsageBookmarksPage: return "m_product_telemetry_surface_usage_bookmarks_page"
         case .productTelemeterySurfaceUsagePasswordsPage: return "m_product_telemetry_surface_usage_passwords_page"
+
+        // MARK: - Web Extensions
+        case .webExtensionInstalled: return "m_web_extension_installed"
+        case .webExtensionInstallError: return "m_web_extension_install_error"
+        case .webExtensionUninstalled: return "m_web_extension_uninstalled"
+        case .webExtensionUninstallError: return "m_web_extension_uninstall_error"
+        case .webExtensionUninstalledAll: return "m_web_extension_uninstalled_all"
+        case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
+        case .webExtensionLoaded: return "m_web_extension_loaded"
+        case .webExtensionLoadError: return "m_web_extension_load_error"
         }
     }
 }
 
 extension Pixel.Event {
-    
+
     public enum BucketAggregation: String, CustomStringConvertible {
 
         public var description: String { rawValue }

@@ -1,0 +1,24 @@
+// Daily OS version tracking pixels
+{
+    "m_mac_daily-os-version-counter": {
+        "description": "Daily pixel reporting the macOS version and hardware upgrade capability",
+        "owners": ["tomasstrba"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            {
+                "key": "osMajorVersion",
+                "type": "string",
+                "description": "Current macOS major version",
+                "pattern": "^[0-9]{1,2}$"
+            },
+            {
+                "key": "can_update",
+                "type": "string",
+                "description": "Hardware upgrade capability",
+                "enum": ["yes", "no", "unknown"]
+            },
+            "appVersion",
+            "pixelSource"
+        ]
+    }
+}

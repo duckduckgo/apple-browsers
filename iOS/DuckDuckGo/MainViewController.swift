@@ -263,6 +263,7 @@ class MainViewController: UIViewController {
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
 
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
@@ -316,6 +317,7 @@ class MainViewController: UIViewController {
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+        aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature(),
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         remoteMessagingImageLoader: RemoteMessagingImageLoading,
@@ -373,6 +375,7 @@ class MainViewController: UIViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.privacyStats = privacyStats
@@ -551,7 +554,6 @@ class MainViewController: UIViewController {
         }
 
         presentSyncRecoveryPromptIfNeeded()
-
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -565,7 +567,13 @@ class MainViewController: UIViewController {
 
         DailyPixel.fireDaily(.aiChatExperimentalAddressBarIsEnabledDaily,
                              withAdditionalParameters: [isEnabledParam: isEnableValue])
-        
+
+    }
+
+    private func fireContextualAutoAttachPixel() {
+        let isEnabled = "\(aiChatSettings.isAutomaticContextAttachmentEnabled)"
+        DailyPixel.fireDaily(.aiChatContextualAutoAttachDAU,
+                             withAdditionalParameters: ["is_enabled": isEnabled])
     }
     
     private func fireKeyboardSettingsPixels() {
@@ -586,6 +594,7 @@ class MainViewController: UIViewController {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
+                                                      aichatIPadTabFeature: aichatIPadTabFeature,
                                                       aiChatSettings: aiChatSettings,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
@@ -1310,6 +1319,7 @@ class MainViewController: UIViewController {
     
     func onForeground() {
         fireExperimentalAddressBarPixel()
+        fireContextualAutoAttachPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
         skipSERPFlow = true
@@ -1610,7 +1620,7 @@ class MainViewController: UIViewController {
         let logoURL = logoURLForCurrentPage(tab: tab)
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
-        if aichatFullModeFeature.isAvailable && tab.isAITab {
+        if tab.isAITab && (aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable) {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
@@ -1753,7 +1763,8 @@ class MainViewController: UIViewController {
         viewCoordinator.tabBarContainer.isHidden = false
         viewCoordinator.toolbar.isHidden = true
         viewCoordinator.omniBar.enterPadState()
-        
+        viewCoordinator.moveAddressBarToPosition(.top)
+
         swipeTabsCoordinator?.isEnabled = false
     }
 
@@ -1761,7 +1772,8 @@ class MainViewController: UIViewController {
         viewCoordinator.tabBarContainer.isHidden = true
         viewCoordinator.toolbar.isHidden = false
         viewCoordinator.omniBar.enterPhoneState()
-        
+        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+
         swipeTabsCoordinator?.isEnabled = true
     }
 
@@ -2458,8 +2470,8 @@ class MainViewController: UIViewController {
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
-        
-        if aichatFullModeFeature.isAvailable {
+
+        if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
             openAIChatInTab(query, autoSend: autoSend, payload: payload, tools: tools)
         } else {
             aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: self)
@@ -2606,20 +2618,25 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     var barsMaxHeight: CGFloat {
-        max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
+        if viewCoordinator.toolbar.isHidden {
+            return viewCoordinator.omniBar.barView.expectedHeight
+        }
+        return max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
     }
 
     // 1.0 - full size, 0.0 - hidden
     private func updateToolbarConstant(_ ratio: CGFloat) {
-        var bottomHeight = toolbarHeight
-        if viewCoordinator.addressBarPosition.isBottom {
-            // When position is set to bottom, contentContainer is pinned to top
-            // of navigationBarContainer, hence the adjustment.
-            bottomHeight += viewCoordinator.navigationBarContainer.frame.height
-        }
-        bottomHeight += view.safeAreaInsets.bottom
+        let bottomHeight = toolbarHeight + view.safeAreaInsets.bottom
         let multiplier = viewCoordinator.toolbar.isHidden ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
+
+        if viewCoordinator.addressBarPosition.isBottom {
+            // Push the navigation bar down independently so the content container
+            // (which is pinned to toolbar.top) doesn't extend past the screen bottom.
+            let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
+            viewCoordinator.constraints.navigationBarContainerBottom.constant = navBarHeight * (1.0 - ratio)
+        }
+
         findInPageHeightLayoutConstraint.constant = findInPageView.container.frame.height + view.safeAreaInsets.bottom
     }
 
@@ -2824,6 +2841,9 @@ extension MainViewController: OmniBarDelegate {
             launchDefaultBrowsingMenu(in: context, tabController: tab)
         }
 
+        // Remove view highlighter in this run loop. Menu items will be highlighted after presentation
+        ViewHighlighter.hideAll()
+
         tab.didLaunchBrowsingMenu()
 
         switch context {
@@ -2878,6 +2898,7 @@ extension MainViewController: OmniBarDelegate {
                                                daxDialogsManager: daxDialogsManager,
                                                productSurfaceTelemetry: productSurfaceTelemetry)
         browsingMenu.onDismiss = { wasActionSelected in
+            self.showMenuHighlighterIfNeeded()
             self.viewCoordinator.menuToolbarButton.isEnabled = true
             if !wasActionSelected {
                 Pixel.fire(pixel: .browsingMenuDismissed)
@@ -2919,6 +2940,7 @@ extension MainViewController: OmniBarDelegate {
                                          headerDataSource: browsingMenuHeaderDataSource,
                                          highlightRowWithTag: menuHighlightingTag,
                                          onDismiss: { wasActionSelected in
+                                             self.showMenuHighlighterIfNeeded()
                                              self.viewCoordinator.menuToolbarButton.isEnabled = true
                                              if !wasActionSelected {
                                                  Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
@@ -3096,6 +3118,19 @@ extension MainViewController: OmniBarDelegate {
             tryToShowSuggestionTray(.favorites)
         }
         themeColorManager.updateThemeColor()
+    }
+
+    func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
+        guard let currentTab,
+              currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
+              let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
+            completion()
+            return
+        }
+
+        sheetVC.dismiss(animated: true) {
+            completion()
+        }
     }
 
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
@@ -3467,6 +3502,9 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
+        if aichatIPadTabFeature.isAvailable {
+            newTab(allowingKeyboard: false)
+        }
         openAIChat()
     }
 
@@ -3636,6 +3674,10 @@ extension MainViewController: TabDelegate {
 
 extension MainViewController: TabSwitcherDelegate {
 
+    func tabSwitcherDidDismiss(tabSwitcher: TabSwitcherViewController) {
+        showMenuHighlighterIfNeeded()
+    }
+
     private func animateLogoAppearance() {
         newTabPageViewController?.view.transform = CGAffineTransform().scaledBy(x: 0.5, y: 0.5)
         newTabPageViewController?.view.alpha = 0.0
@@ -3802,7 +3844,9 @@ extension MainViewController: TabSwitcherButtonDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()
-            self.segueToTabSwitcher()
+            Task { @MainActor in
+                await self.segueToTabSwitcher()
+            }
         }
     }
 }

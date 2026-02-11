@@ -280,7 +280,7 @@ private struct MenuRowButton: View {
                         if isHighlighted {
                             LottieView(lottieFile: "view_highlight", loopMode: .mode(.loop), isAnimating: .constant(true))
                                 .scaledToFill()
-                                .scaleEffect(1.3)
+                                .scaleEffect(2.0)
                         }
                     }
 

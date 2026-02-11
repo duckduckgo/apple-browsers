@@ -28,7 +28,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     
     private enum Keys {
         static let signOutWarningShowCount = "com.duckduckgo.fire.signOutWarningShowCount"
-        static let aiTabDescriptionShowCount = "com.duckduckgo.fire.aiTabDescriptionShowCount"
     }
     
     private static let maxSubtitleShowCount = 2
@@ -84,6 +83,13 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     var headerTitle: String {
         let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
         return shouldIncludeAIChat ? UserText.scopedFireConfirmationAlertTitleWithAIChat : UserText.scopedFireConfirmationAlertTitle
+    }
+    
+    var tabScopeButtonTitle: String {
+        guard let tab = tabViewModel?.tab, tab.isAITab else {
+            return UserText.scopedFireConfirmationDeleteThisTabButton
+        }
+        return UserText.scopedFireConfirmationDeleteThisChatButton
     }
     
     // MARK: - Public Functions
@@ -163,13 +169,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     }
     
     private func aiTabSubtitle() -> String? {
-        let showCount = keyValueStore.object(forKey: Keys.aiTabDescriptionShowCount) as? Int ?? 0
-        
-        guard showCount < Self.maxSubtitleShowCount else {
-            return nil
-        }
-        
-        keyValueStore.set(showCount + 1, forKey: Keys.aiTabDescriptionShowCount)
-        return UserText.scopedFireConfirmationDeleteThisTabDescription
+        return appSettings.autoClearAIChatHistory ? nil : UserText.scopedFireConfirmationDeleteThisChatDescription
     }
 }

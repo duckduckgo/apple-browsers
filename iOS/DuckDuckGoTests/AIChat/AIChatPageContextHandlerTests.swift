@@ -147,17 +147,216 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertTrue(true, "Multiple resubscribe calls should not crash")
     }
 
+    // MARK: - Pixel Firing Tests
+
+    func testEmptyPageContextFiresPixel() {
+        // Given: Handler with a mock pixel handler
+        let mockPixelHandler = MockContextualModePixelHandler()
+        let mockScript = MockPageContextCollecting()
+        let webView = WKWebView()
+        let handler = makeHandler(
+            webViewProvider: { webView },
+            userScriptProvider: { mockScript },
+            pixelHandler: mockPixelHandler
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        var receivedContext: AIChatPageContext??
+        handler.contextPublisher
+            .dropFirst() // Skip initial nil
+            .first()
+            .sink { context in
+                receivedContext = context
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When: Script publishes empty context (valid but no content)
+        handler.triggerContextCollection()
+        mockScript.simulateEmptyContext()
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then: Pixel should fire and context should be nil
+        XCTAssertEqual(mockPixelHandler.pageContextCollectionEmptyCount, 1)
+        XCTAssertNotNil(receivedContext)
+        XCTAssertNil(receivedContext!)
+    }
+
+    func testNilPageContextDoesNotFirePixel() {
+        // Given: Handler with a mock pixel handler
+        let mockPixelHandler = MockContextualModePixelHandler()
+        let mockScript = MockPageContextCollecting()
+        let webView = WKWebView()
+        let handler = makeHandler(
+            webViewProvider: { webView },
+            userScriptProvider: { mockScript },
+            pixelHandler: mockPixelHandler
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        var receivedContext: AIChatPageContext??
+        handler.contextPublisher
+            .dropFirst() // Skip initial nil
+            .first()
+            .sink { context in
+                receivedContext = context
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When: Script publishes nil (decode failure)
+        handler.triggerContextCollection()
+        mockScript.simulateNilContext()
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then: Pixel should NOT fire (nil means decode failure, not empty content)
+        XCTAssertEqual(mockPixelHandler.pageContextCollectionEmptyCount, 0)
+        XCTAssertNotNil(receivedContext)
+        XCTAssertNil(receivedContext!)
+    }
+
+    func testValidPageContextDoesNotFirePixel() {
+        // Given: Handler with a mock pixel handler
+        let mockPixelHandler = MockContextualModePixelHandler()
+        let mockScript = MockPageContextCollecting()
+        let webView = WKWebView()
+        let handler = makeHandler(
+            webViewProvider: { webView },
+            userScriptProvider: { mockScript },
+            pixelHandler: mockPixelHandler
+        )
+
+        let expectation = XCTestExpectation(description: "Context published")
+        var receivedContext: AIChatPageContext??
+        handler.contextPublisher
+            .dropFirst() // Skip initial nil
+            .first()
+            .sink { context in
+                receivedContext = context
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When: Script publishes valid context with content
+        handler.triggerContextCollection()
+        mockScript.simulateValidContext()
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then: Pixel should NOT fire and context should be non-nil
+        XCTAssertEqual(mockPixelHandler.pageContextCollectionEmptyCount, 0)
+        XCTAssertNotNil(receivedContext)
+        XCTAssertNotNil(receivedContext!)
+    }
+
+    // MARK: - Unavailable Pixel Tests
+
+    func testUnavailablePixelFiresWhenNoUserScript() {
+        let mockPixelHandler = MockContextualModePixelHandler()
+        let handler = makeHandler(
+            userScriptProvider: { nil },
+            pixelHandler: mockPixelHandler
+        )
+
+        let didTrigger = handler.triggerContextCollection()
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertEqual(mockPixelHandler.pageContextCollectionUnavailableCount, 1)
+    }
+
     // MARK: - Helpers
 
     private func makeHandler(
         webViewProvider: WebViewProvider? = nil,
         userScriptProvider: UserScriptProvider? = nil,
-        faviconProvider: FaviconProvider? = nil
+        faviconProvider: FaviconProvider? = nil,
+        pixelHandler: AIChatContextualModePixelFiring? = nil
     ) -> DuckDuckGo.AIChatPageContextHandler {
         DuckDuckGo.AIChatPageContextHandler(
             webViewProvider: webViewProvider ?? { nil },
             userScriptProvider: userScriptProvider ?? { nil },
-            faviconProvider: faviconProvider ?? { _ in nil }
+            faviconProvider: faviconProvider ?? { _ in nil },
+            pixelHandler: pixelHandler ?? MockContextualModePixelHandler()
         )
+    }
+}
+
+// MARK: - Mock Pixel Handler
+
+private final class MockContextualModePixelHandler: AIChatContextualModePixelFiring {
+    var pageContextCollectionEmptyCount = 0
+    var pageContextCollectionUnavailableCount = 0
+
+    func fireSheetOpened() {}
+    func fireSheetDismissed() {}
+    func fireSessionRestored() {}
+    func fireExpandButtonTapped() {}
+    func fireNewChatButtonTapped() {}
+    func fireQuickActionSummarizeSelected() {}
+    func firePageContextPlaceholderShown() {}
+    func firePageContextPlaceholderTapped() {}
+    func firePageContextAutoAttached() {}
+    func firePageContextUpdatedOnNavigation(url: String) {}
+    func firePageContextManuallyAttachedNative() {}
+    func firePageContextManuallyAttachedFrontend() {}
+    func firePageContextRemovedNative() {}
+    func firePageContextRemovedFrontend() {}
+    func firePageContextCollectionEmpty() {
+        pageContextCollectionEmptyCount += 1
+    }
+    func firePageContextCollectionUnavailable() {
+        pageContextCollectionUnavailableCount += 1
+    }
+    func firePromptSubmittedWithContext() {}
+    func firePromptSubmittedWithoutContext() {}
+    func beginManualAttach() {}
+    func endManualAttach() {}
+    var isManualAttachInProgress: Bool { false }
+    func reset() {}
+}
+
+// MARK: - Mock Page Context Collecting
+
+private final class MockPageContextCollecting: PageContextCollecting {
+    private let mockSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+
+    var collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never> {
+        mockSubject.eraseToAnyPublisher()
+    }
+
+    weak var webView: WKWebView?
+
+    func collect() {
+        // No-op for testing - we'll manually send values via simulate methods
+    }
+
+    func simulateNilContext() {
+        mockSubject.send(nil)
+    }
+
+    func simulateEmptyContext() {
+        let emptyContext = AIChatPageContextData(
+            title: "",
+            favicon: [],
+            url: "",
+            content: "",
+            truncated: false,
+            fullContentLength: 0
+        )
+        mockSubject.send(emptyContext)
+    }
+
+    func simulateValidContext() {
+        let validContext = AIChatPageContextData(
+            title: "Test Page",
+            favicon: [],
+            url: "https://example.com",
+            content: "This is some page content for testing.",
+            truncated: false,
+            fullContentLength: 39
+        )
+        mockSubject.send(validContext)
     }
 }

@@ -29,17 +29,23 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var theme
 
         let orientation: ContextualDaxDialogOrientation
+        let animationDelay: CGFloat
         let title: String?
         let message: NSAttributedString
         let content: Content
 
+        @State private var shouldShowContent = false
+
         public init(
             orientation: ContextualDaxDialogOrientation = .verticalStack,
+            animationDelay: CGFloat = 0.3,
+            showContent: Bool = true,
             title: String? = nil,
             message: NSAttributedString,
             @ViewBuilder content: () -> Content,
         ) {
             self.orientation = orientation
+            self.animationDelay = animationDelay
             self.title = title
             self.message = message
             self.content = content()
@@ -59,6 +65,12 @@ extension OnboardingRebranding {
                         Spacer(minLength: theme.contentSpacing)
                         content
                     }
+                }
+            }
+            .visibility(shouldShowContent ? .visible : .invisible)
+            .onAppear {
+                withAnimation(.default.delay(animationDelay)) {
+                    shouldShowContent = true
                 }
             }
         }

@@ -567,17 +567,8 @@ class LargeOmniBarStateTests: XCTestCase {
 
     // MARK: - AI Chat Mode State Tests
 
-    func testWhenInAIChatModeStateAndFeatureEnabledThenAIChatButtonIsHidden() {
-        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger, aichatIPadTabFeature: MockAIChatIPadTabFeature(isAvailable: true))
-        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
-
-        XCTAssertFalse(testee.showAIChatButton)
-        XCTAssertTrue(testee.showRefresh)
-        XCTAssertTrue(testee.showCustomizableButton)
-    }
-
-    func testWhenInAIChatModeStateAndFeatureDisabledThenAIChatButtonIsHidden() {
-        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger, aichatIPadTabFeature: MockAIChatIPadTabFeature(isAvailable: false))
+    func testWhenInAIChatModeStateThenAIChatButtonIsAlwaysHidden() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
         let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         XCTAssertFalse(testee.showAIChatButton)

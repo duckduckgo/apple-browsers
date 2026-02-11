@@ -74,6 +74,7 @@ protocol ThemePopoverPersistor {
 final class ThemePopoverUserDefaultsPersistor: ThemePopoverPersistor {
 
     private enum Key {
+        // Key preserved as "shown" for backwards compatibility with existing persisted values
         static let themePopoverDismissed = "theme-popover.shown"
     }
 

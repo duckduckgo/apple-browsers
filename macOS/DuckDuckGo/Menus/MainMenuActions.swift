@@ -794,7 +794,7 @@ extension AppDelegate {
 
     @objc func resetThemesPopoverWasShown(_ sender: Any?) {
         let persistor = ThemePopoverUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
-        persistor.themePopoverShown = false
+        persistor.themePopoverDismissed = false
     }
 
     @objc func resetTipKit(_ sender: Any?) {

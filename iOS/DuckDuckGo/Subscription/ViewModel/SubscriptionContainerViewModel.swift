@@ -26,6 +26,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
 
     let userScript: SubscriptionPagesUserScript
     let subFeature: any SubscriptionPagesUseSubscriptionFeature
+    private let instrumentation: SubscriptionInstrumentation
 
     let flow: SubscriptionFlowViewModel
     let restore: SubscriptionRestoreViewModel
@@ -38,12 +39,14 @@ final class SubscriptionContainerViewModel: ObservableObject {
          userScript: SubscriptionPagesUserScript,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
+         instrumentation: SubscriptionInstrumentation,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
 
         self.userScript = userScript
 
         subFeature.cleanup()
         self.subFeature = subFeature
+        self.instrumentation = instrumentation
 
         self.flow = SubscriptionFlowViewModel(purchaseURL: redirectPurchaseURL ?? subscriptionManager.url(for: .purchase),
                                               flowType: flowType,
@@ -52,14 +55,17 @@ final class SubscriptionContainerViewModel: ObservableObject {
                                               userScriptsDependencies: userScriptsDependencies,
                                               subFeature: subFeature,
                                               subscriptionManager: subscriptionManager,
+                                              instrumentation: instrumentation,
                                               dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
         self.restore = SubscriptionRestoreViewModel(userScript: userScript,
-                                                    subFeature: subFeature)
+                                                    subFeature: subFeature,
+                                                    instrumentation: instrumentation)
         self.email = SubscriptionEmailViewModel(isInternalUser: isInternalUser,
                                                 userScript: userScript,
                                                 userScriptsDependencies: userScriptsDependencies,
                                                 subFeature: subFeature,
                                                 subscriptionManager: subscriptionManager,
+                                                instrumentation: instrumentation,
                                                 dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
     }
 

@@ -61,6 +61,7 @@ protocol DependencyProvider {
     var freeTrialConversionService: FreeTrialConversionInstrumentationService { get }
     var subscriptionManager: any SubscriptionManager { get }
     var tokenHandlerProvider: any SubscriptionTokenHandling { get }
+    var subscriptionInstrumentation: SubscriptionInstrumentation { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
 }
 
@@ -89,6 +90,10 @@ final class AppDependencyProvider: DependencyProvider {
     // Subscription
     var subscriptionManager: any SubscriptionManager
     var tokenHandlerProvider: any SubscriptionTokenHandling
+    lazy var subscriptionInstrumentation: SubscriptionInstrumentation = {
+        let pixelHandler = SubscriptionInstrumentationPixelHandler()
+        return DefaultSubscriptionInstrumentation(wideEvent: wideEvent, pixelHandler: pixelHandler.makeEventMapping())
+    }()
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility

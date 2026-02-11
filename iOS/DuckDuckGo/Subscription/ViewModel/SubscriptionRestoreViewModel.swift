@@ -54,15 +54,15 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     // Read only View State - Should only be modified from the VM
     @Published private(set) var state = State()
 
-    private let wideEvent: WideEventManaging
+    private let instrumentation: SubscriptionInstrumentation
 
     init(userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          isAddingDevice: Bool = false,
-         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent) {
+         instrumentation: SubscriptionInstrumentation = AppDependencyProvider.shared.subscriptionInstrumentation) {
         self.userScript = userScript
         self.subFeature = subFeature
-        self.wideEvent = wideEvent
+        self.instrumentation = instrumentation
     }
     
     func onAppear() {
@@ -113,17 +113,16 @@ final class SubscriptionRestoreViewModel: ObservableObject {
         default:
             state.activationResult = .error
         }
+    }
 
-        switch state.activationResult {
-        case .expired,
-             .notFound:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreFailureNotFound,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-        case .error:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreFailureOther,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+    private func mapToRestoreFlowError(_ error: UseSubscriptionError) -> AppStoreRestoreFlowError {
+        switch error {
+        case .restoreFailedDueToExpiredSubscription:
+            return .subscriptionExpired
+        case .restoreFailedDueToNoSubscription:
+            return .missingAccountOrTransactions
         default:
-            break
+            return .failedToFetchAccountDetails
         }
     }
     
@@ -134,41 +133,25 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     
     @MainActor
     func restoreAppstoreTransaction() {
-        DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreStart,
-                                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-        
-        let data = SubscriptionRestoreWideEventData(
-            restorePlatform: .appleAccount,
-            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
-        )
+        instrumentation.restoreStoreStarted(origin: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
         
         Task {
-            data.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
-            wideEvent.startFlow(data)
-            
             state.transactionStatus = .restoring
             state.activationResult = .unknown
             do {
                 try await subFeature.restoreAccountFromAppStorePurchase()
                 
-                DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseStoreSuccess,
-                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+                instrumentation.restoreStoreSucceeded()
                 state.activationResult = .activated
-                
-                data.appleAccountRestoreDuration?.complete()
-                wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
-    
                 state.transactionStatus = .idle
             } catch let error {
                 if let specificError = error as? UseSubscriptionError {
                     handleRestoreError(error: specificError)
-                    data.errorData = .init(error: specificError)
+                    instrumentation.restoreStoreFailed(error: mapToRestoreFlowError(specificError))
                 } else {
-                    data.errorData = .init(error: error)
+                    state.activationResult = .error
+                    instrumentation.restoreStoreFailed(error: .failedToFetchAccountDetails)
                 }
-                
-                data.appleAccountRestoreDuration?.complete()
-                wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
                 
                 state.transactionStatus = .idle
             }

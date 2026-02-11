@@ -17,15 +17,16 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Core
 import Foundation
-import SwiftUI
+import Networking
+import os.log
+import Persistence
+import PrivacyConfig
 import StoreKit
 import Subscription
-import Core
-import os.log
-import PrivacyConfig
-import Networking
-import Persistence
+import SwiftUI
 
 final class SubscriptionSettingsViewModel: ObservableObject {
 
@@ -34,6 +35,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private var signOutObserver: Any?
     private var subscriptionChangeObserver: Any?
     private let featureFlagger: FeatureFlagger
+    private let instrumentation: SubscriptionInstrumentation
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -139,7 +141,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     func navigateToPlans(tier: String? = nil) {
         guard let platform = state.subscriptionInfo?.platform else { return }
 
-        // Fire appropriate pixel
         if tier != nil {
             Pixel.fire(pixel: .subscriptionUpgradeClick)
         } else {
@@ -174,10 +175,12 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     init(subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
-         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         instrumentation: SubscriptionInstrumentation = AppDependencyProvider.shared.subscriptionInstrumentation) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
+        self.instrumentation = instrumentation
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies, featureFlagger: featureFlagger)

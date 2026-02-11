@@ -87,9 +87,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private let featureFlagger: FeatureFlagger
     
-    // Wide Pixel
-    private let wideEvent: WideEventManaging
-    private var restoreWideEventData: SubscriptionRestoreWideEventData?
+    private let instrumentation: SubscriptionInstrumentation
 
     init(isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
@@ -98,7 +96,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
          subscriptionManager: any SubscriptionManager,
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
+         instrumentation: SubscriptionInstrumentation = AppDependencyProvider.shared.subscriptionInstrumentation,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.userScript = userScript
         self.userScriptsDependencies = userScriptsDependencies
@@ -106,7 +104,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.urlOpener = urlOpener
         self.featureFlagger = featureFlagger
-        self.wideEvent = wideEvent
+        self.instrumentation = instrumentation
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
@@ -179,8 +177,6 @@ final class SubscriptionEmailViewModel: ObservableObject {
         
         // Feature Callback
         subFeature.onSetSubscription = {
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseEmailSuccess,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             UniquePixel.fire(pixel: .subscriptionActivated)
             DispatchQueue.main.async {
                 self.state.subscriptionActive = true
@@ -246,9 +242,8 @@ final class SubscriptionEmailViewModel: ObservableObject {
                 if self?.isCurrentURL(matching: .welcome) ?? false {
                     self?.state.viewTitle = UserText.subscriptionTitle
                 }
-                if let data = self?.restoreWideEventData, let currentURL = self?.webViewModel.url, let emailRestoreURL = SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(currentURL) {
-                    data.emailAddressRestoreLastURL = emailRestoreURL
-                    self?.wideEvent.updateFlow(data)
+                if let currentURL = self?.webViewModel.url, let emailRestoreURL = SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(currentURL) {
+                    self?.instrumentation.updateEmailRestoreURL(emailRestoreURL)
                 }
             }
         
@@ -289,32 +284,32 @@ final class SubscriptionEmailViewModel: ObservableObject {
     
     private func setupSubscriptionRestoreWideEventData() {
         guard state.currentFlow == .restoreFlow else { return }
-        let data = SubscriptionRestoreWideEventData(
-            restorePlatform: .emailAddress,
-            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
-        )
-        self.restoreWideEventData = data
-        if let subFeatureV2 = subFeature as? DefaultSubscriptionPagesUseSubscriptionFeature {
-            subFeatureV2.subscriptionRestoreEmailAddressWideEventData = data
-        }
-        data.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()
-        wideEvent.startFlow(data)
+        instrumentation.beginRestoreEmailAttempt(origin: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
     }
     
     func dismissView() {
         DispatchQueue.main.async {
+            if self.state.currentFlow == .restoreFlow {
+                self.instrumentation.endRestoreEmailAttempt()
+            }
             self.state.shouldDismissView = true
         }
     }
     
     func backToSubscriptionSettings() {
         DispatchQueue.main.async {
+            if self.state.currentFlow == .restoreFlow {
+                self.instrumentation.endRestoreEmailAttempt()
+            }
             self.state.shouldPopToSubscriptionSettings = true
         }
     }
     
     func backToAppSettings() {
         DispatchQueue.main.async {
+            if self.state.currentFlow == .restoreFlow {
+                self.instrumentation.endRestoreEmailAttempt()
+            }
             self.state.shouldPopToAppSettings = true
         }
     }

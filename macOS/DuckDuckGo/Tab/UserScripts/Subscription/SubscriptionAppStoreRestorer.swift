@@ -37,8 +37,8 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     private let featureFlagger: FeatureFlagger
 
     // Wide Event
-    private let wideEvent: WideEventManaging
-    private let subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
+    private let instrumentation: SubscriptionInstrumentation
+    private let restoreOrigin: String
 
     let uiHandler: SubscriptionUIHandling
 
@@ -46,27 +46,24 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
                 subscriptionErrorReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
                 appStoreRestoreFlow: AppStoreRestoreFlow,
                 uiHandler: SubscriptionUIHandling,
-                subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData? = nil,
-                featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
-                wideEvent: WideEventManaging = Application.appDelegate.wideEvent
+                restoreOrigin: String,
+                instrumentation: SubscriptionInstrumentation = Application.appDelegate.subscriptionInstrumentation,
+                featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionErrorReporter = subscriptionErrorReporter
         self.appStoreRestoreFlow = appStoreRestoreFlow
         self.uiHandler = uiHandler
-        self.subscriptionRestoreWideEventData = subscriptionRestoreWideEventData
+        self.restoreOrigin = restoreOrigin
+        self.instrumentation = instrumentation
         self.featureFlagger = featureFlagger
-        self.wideEvent = wideEvent
     }
 
     func restoreAppStoreSubscription() async {
         await uiHandler.presentProgressViewController(withTitle: UserText.restoringSubscriptionTitle)
 
         do {
-            if let data = subscriptionRestoreWideEventData {
-                data.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
-                wideEvent.startFlow(data)
-            }
+            instrumentation.restoreStoreStarted(origin: restoreOrigin)
             try await subscriptionManager.storePurchaseManager().syncAppleIDAccount()
             await continueRestore()
         } catch {
@@ -74,17 +71,15 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
 
             switch error as? StoreKitError {
             case .some(.userCancelled):
-                if let data = subscriptionRestoreWideEventData {
-                    wideEvent.discardFlow(data)
-                }
+                instrumentation.restoreStoreCancelled()
             default:
                 let alertResponse = await uiHandler.show(alertType: .appleIDSyncFailed, text: error.localizedDescription)
                 if alertResponse == .alertFirstButtonReturn {
                     await uiHandler.presentProgressViewController(withTitle: UserText.restoringSubscriptionTitle)
                     await continueRestore()
-                } else if let data = subscriptionRestoreWideEventData {
+                } else {
                     // User clicked cancel on the alert
-                    wideEvent.discardFlow(data)
+                    instrumentation.restoreStoreCancelled()
                 }
             }
         }
@@ -96,27 +91,24 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
         switch result {
         case .success:
             PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
-            if let data = subscriptionRestoreWideEventData {
-                data.appleAccountRestoreDuration?.complete()
-                wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
-            }
+            instrumentation.restoreStoreSucceeded()
         case .failure(let error):
             switch error {
             case .missingAccountOrTransactions:
                 subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToNoSubscription)
-                markSubscriptionRestoreWideEventAsFailure(with: error)
+                instrumentation.restoreStoreFailed(error: error)
                 await showSubscriptionNotFoundAlert()
             case .subscriptionExpired:
                 subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToExpiredSubscription)
-                markSubscriptionRestoreWideEventAsFailure(with: error)
+                instrumentation.restoreStoreFailed(error: error)
                 await showSubscriptionInactiveAlert()
             case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
                 subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
-                markSubscriptionRestoreWideEventAsFailure(with: error)
+                instrumentation.restoreStoreFailed(error: error)
                 await showSomethingWentWrongAlert()
             case .pastTransactionAuthenticationError:
                 subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
-                markSubscriptionRestoreWideEventAsFailure(with: error)
+                instrumentation.restoreStoreFailed(error: error)
                 await showSubscriptionNotFoundAlert()
             }
         }
@@ -148,12 +140,4 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
         }
     }
 
-    // MARK: - Wide Pixel Helper
-
-    private func markSubscriptionRestoreWideEventAsFailure(with error: Error) {
-        guard let data = subscriptionRestoreWideEventData else { return }
-        data.appleAccountRestoreDuration?.complete()
-        data.errorData = .init(error: error)
-        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-    }
 }

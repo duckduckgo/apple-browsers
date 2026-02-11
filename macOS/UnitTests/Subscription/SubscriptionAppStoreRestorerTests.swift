@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import BrowserServicesKit
 @testable import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
@@ -42,7 +43,7 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
     var appStoreRestoreFlow: AppStoreRestoreFlowMock!
     var subscriptionEventReporter: MockSubscriptionEventReporter!
     var featureFlagger: MockFeatureFlagger!
-    var wideEvent: WideEventMock!
+    var instrumentation: SubscriptionInstrumentation!
 
     var subscriptionAppStoreRestorer: DefaultSubscriptionAppStoreRestorerV2!
 
@@ -77,16 +78,16 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         appStoreRestoreFlow = AppStoreRestoreFlowMock()
         subscriptionEventReporter = MockSubscriptionEventReporter()
         featureFlagger = MockFeatureFlagger()
-        wideEvent = WideEventMock()
+        instrumentation = MockSubscriptionInstrumentation()
 
         subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(
             subscriptionManager: subscriptionManager,
             subscriptionErrorReporter: subscriptionEventReporter,
             appStoreRestoreFlow: appStoreRestoreFlow,
             uiHandler: uiHandler,
-            subscriptionRestoreWideEventData: nil,
-            featureFlagger: featureFlagger,
-            wideEvent: wideEvent
+            restoreOrigin: SubscriptionRestoreFunnelOrigin.appSettings.rawValue,
+            instrumentation: instrumentation,
+            featureFlagger: featureFlagger
         )
     }
 
@@ -104,7 +105,7 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         appStoreRestoreFlow = nil
         subscriptionEventReporter = nil
         featureFlagger = nil
-        wideEvent = nil
+        instrumentation = nil
         uiHandler = nil
 
         subscriptionAppStoreRestorer = nil
@@ -331,4 +332,42 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         let otherPixels = pixelsFired.subtracting(expectedPixels)
         return !otherPixels.contains { $0.hasPrefix(subscriptionPixelPrefix) }
     }
+}
+
+private final class MockSubscriptionInstrumentation: SubscriptionInstrumentation {
+    func purchaseAttempted() {}
+    func purchaseFlowStarted(subscriptionId: String?,
+                             freeTrialEligible: Bool,
+                             origin: String?,
+                             purchasePlatform: SubscriptionPurchaseWideEventData.PurchasePlatform) {}
+    func purchaseSucceeded(origin: String?) {}
+    func purchaseSucceededStripe(origin: String?) {}
+    func purchaseFailed(error: Error, step: SubscriptionPurchaseWideEventData.FailingStep) {}
+    func purchaseCancelled() {}
+    func purchasePendingTransaction() {}
+    func existingSubscriptionFoundDuringPurchase() {}
+    func restoreStoreStarted(origin: String) {}
+    func restoreStoreSucceeded() {}
+    func restoreStoreFailed(error: AppStoreRestoreFlowError) {}
+    func restoreStoreCancelled() {}
+    func beginRestoreEmailAttempt(origin: String?) {}
+    func endRestoreEmailAttempt() {}
+    func restoreEmailSucceeded() {}
+    func restoreEmailFailed(error: Error?) {}
+    func restoreBackgroundCheckStarted(origin: String) {}
+    func restoreBackgroundCheckSucceeded() {}
+    func restoreBackgroundCheckFailed(error: Error) {}
+    func planChangeStarted(from: String,
+                           to: String,
+                           changeType: SubscriptionPlanChangeWideEventData.ChangeType?,
+                           origin: String?,
+                           purchasePlatform: SubscriptionPlanChangeWideEventData.PurchasePlatform) {}
+    func planChangePaymentSucceeded() {}
+    func planChangeSucceeded() {}
+    func planChangeFailed(error: Error, step: SubscriptionPlanChangeWideEventData.FailingStep) {}
+    func planChangeCancelled() {}
+    func updatePurchaseAccountCreationDuration(_ duration: WideEvent.MeasuredInterval) {}
+    func startPurchaseActivationTiming() {}
+    func updateEmailRestoreURL(_ url: SubscriptionRestoreWideEventData.EmailAddressRestoreURL) {}
+    func discardPurchaseFlow() {}
 }

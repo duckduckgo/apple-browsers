@@ -243,6 +243,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let themeManager: ThemeManager
 
     let wideEvent: WideEventManaging
+    lazy var subscriptionInstrumentation: SubscriptionInstrumentation = {
+        let pixelHandler = SubscriptionInstrumentationPixelHandler()
+        return DefaultSubscriptionInstrumentation(wideEvent: wideEvent, pixelHandler: pixelHandler.makeEventMapping())
+    }()
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     let subscriptionManager: any SubscriptionManager
     static let deadTokenRecoverer = DeadTokenRecoverer()

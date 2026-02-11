@@ -17,15 +17,22 @@
 //  limitations under the License.
 //
 
+import SwiftUI
 import Onboarding
 import MetricBuilder
 
 extension OnboardingRebranding {
 
     enum ContextualDynamicMetrics {
-        static let dialogOrientation: MetricBuilder = MetricBuilder<OnboardingRebranding.ContextualDaxDialogOrientation>(default: .verticalStack)
-            .iPhone(portrait: .verticalStack, landscape: .horizontalStack(alignment: .top))
-            .iPad(.horizontalStack(alignment: .top))
+        /// Builds a device-specific dialog orientation, using `horizontalAlignment` only when the layout is horizontal.
+        /// - Parameter horizontalAlignment: Alignment for the horizontal stack (used on iPhone landscape and iPad).
+        static func dialogOrientation(
+            horizontalAlignment: VerticalAlignment = .top
+        ) -> MetricBuilder<OnboardingRebranding.ContextualDaxDialogOrientation> {
+            MetricBuilder<OnboardingRebranding.ContextualDaxDialogOrientation>(default: .verticalStack)
+                .iPhone(portrait: .verticalStack, landscape: .horizontalStack(alignment: horizontalAlignment))
+                .iPad(.horizontalStack(alignment: horizontalAlignment))
+        }
     }
 
 }

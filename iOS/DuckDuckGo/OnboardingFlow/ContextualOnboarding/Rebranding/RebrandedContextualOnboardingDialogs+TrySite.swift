@@ -51,7 +51,7 @@ extension OnboardingRebranding {
 
         var body: some View {
             OnboardingRebranding.ContextualDaxDialogContent(
-                orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation.build(v: vSizeClass, h: hSizeClass),
+                orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation().build(v: vSizeClass, h: hSizeClass),
                 title: viewModel.title,
                 message: message.attributed
             ) {

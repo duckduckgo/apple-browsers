@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import MetricBuilder
 
 public enum ContextualOnboardingBackgroundType {
     case tryASearch
@@ -30,7 +31,7 @@ public enum ContextualOnboardingBackgroundType {
     var alignment: Alignment {
         switch self {
         case .tryASearch, .tryASearchCompleted, .tryVisitingASite, .trackers, .fireDialog, .endOfJourney:
-            return .trailing
+            return .bottomTrailing
         case .privacyProTrial:
             return .center
         }
@@ -59,6 +60,8 @@ public enum ContextualOnboardingBackgroundType {
 extension OnboardingRebranding.OnboardingStyles {
 
     struct ContextualBackgroundStyle: ViewModifier {
+        @Environment(\.horizontalSizeClass) private var hSizeClass
+        @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.onboardingTheme) private var theme
 
         let backgroundType: ContextualOnboardingBackgroundType
@@ -74,6 +77,7 @@ extension OnboardingRebranding.OnboardingStyles {
                     backgroundType.image
                         .resizable()
                         .scaledToFit()
+                        .frame(maxHeight: Self.maxHeightMetrics.build(v: vSizeClass, h: hSizeClass))
                         .background(
                             GeometryReader { proxy in
                                 Color.clear
@@ -89,6 +93,8 @@ extension OnboardingRebranding.OnboardingStyles {
                 content
             }
         }
+
+        static let maxHeightMetrics = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200)
     }
 
     struct AnimatedContextualBackgroundStyle: ViewModifier {

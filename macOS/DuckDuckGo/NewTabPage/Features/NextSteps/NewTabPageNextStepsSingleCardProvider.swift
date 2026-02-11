@@ -90,7 +90,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private(set) var standardCards: [NewTabPageDataModel.CardID]
 
     /// Cards sorted in default order, for standard ordering.
-    let defaultStandardCards: [NewTabPageDataModel.CardID] = [
+    private let defaultStandardCards: [NewTabPageDataModel.CardID] = [
         .duckplayer,
         .emailProtection,
         .defaultApp,
@@ -104,7 +104,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     /// Cards for the card list sorted in default order, grouped according to their level.
     ///
     /// This is used for advanced card ordering with the feature flag `nextStepsListAdvancedCardOrdering`.
-    let defaultAdvancedCards = [
+    private let defaultAdvancedCards = [
         LeveledCard(cardID: .personalizeBrowser, level: .level1),
         LeveledCard(cardID: .sync, level: .level1),
         LeveledCard(cardID: .emailProtection, level: .level1),

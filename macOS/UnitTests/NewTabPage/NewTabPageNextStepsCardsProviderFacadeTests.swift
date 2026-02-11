@@ -253,7 +253,7 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
 
 private extension NewTabPageNextStepsCardsProviderFacadeTests {
     func defaultCards(for provider: NewTabPageNextStepsSingleCardProvider) -> [NewTabPageDataModel.CardID] {
-        let cards = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) ? provider.defaultAdvancedCards.map { $0.cardID } : provider.defaultStandardCards
+        let cards = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) ? NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards : NewTabPageNextStepsSingleCardProvider.defaultStandardCards
 #if APPSTORE
         return cards.filter { $0 != .addAppToDockMac }
 #else

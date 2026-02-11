@@ -104,9 +104,9 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testProvider = createProvider()
 
 #if !APPSTORE
-        let expectedCards = testProvider.defaultStandardCards
+        let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultStandardCards
 #else
-        let expectedCards = testProvider.defaultStandardCards.filter { $0 != .addAppToDockMac }
+        let expectedCards =  NewTabPageNextStepsSingleCardProvider.defaultStandardCards.filter { $0 != .addAppToDockMac }
 #endif
 
         XCTAssertEqual(testProvider.cards, expectedCards)
@@ -663,9 +663,9 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
 
 #if !APPSTORE
-        let expectedCards = testProvider.defaultAdvancedCards.map { $0.cardID }
+        let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards
 #else
-        let expectedCards = testProvider.defaultAdvancedCards.map { $0.cardID }.filter { $0 != .addAppToDockMac }
+        let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards.filter { $0 != .addAppToDockMac }
 #endif
 
         XCTAssertEqual(testProvider.cards, expectedCards)
@@ -774,7 +774,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         _ = testProvider.cards
 
-        let expectedCards = testProvider.defaultAdvancedCards.map { $0.cardID }
+        let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards
 
         XCTAssertEqual(testPersistor.orderedCardIDs, expectedCards, "Default order should be persisted on first use")
     }
@@ -1022,4 +1022,10 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             aiChatMenuConfig: MockAIChatConfig()
         )
     }
+}
+
+extension NewTabPageNextStepsSingleCardProvider {
+    static let defaultStandardCards: [NewTabPageDataModel.CardID] = [.duckplayer, .emailProtection, .defaultApp, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .sync]
+
+    static let defaultAdvancedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection, .defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription]
 }

@@ -21,6 +21,7 @@ import Combine
 import Common
 import Foundation
 import Navigation
+import Persistence
 import PixelKit
 import WebKit
 
@@ -148,7 +149,7 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: any SparkleUpdateControllerProtocol, pixelKit: PixelKit? = PixelKit.shared) {
+    init(from updateController: any SparkleUpdateControllerProtocol, keyValueStore: ThrowingKeyValueStoring, pixelKit: PixelKit? = PixelKit.shared) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
@@ -156,9 +157,8 @@ extension ReleaseNotesValues {
         // This happens when there's no connectivity,
         // or when the appcast hasn't finished loading by the time the Release Notes screen shows up
         guard let latestUpdate = updateController.latestUpdate else {
-            let keyValueStore = Application.appDelegate.keyValueStore
-            if let data = try? keyValueStore.object(forKey: SparkleUpdateController.Constants.pendingUpdateInfoKey) as? Data,
-               let cached = try? JSONDecoder().decode(SparkleUpdateController.PendingUpdateInfo.self, from: data) {
+            let settings = keyValueStore.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
+            if let cached = try? settings.pendingUpdateInfo {
                 let releaseTitle = Update.releaseDateFormatter().string(from: cached.date)
 
                 let cachedVersion = "\(cached.version) (\(cached.build))"

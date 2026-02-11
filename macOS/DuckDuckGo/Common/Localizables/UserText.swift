@@ -610,6 +610,7 @@ struct UserText {
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show Duck.ai shortcuts in menus", comment: "Show Duck.ai in application menus")
     static let aiChatOpenInSidebarToggle = NSLocalizedString("duckai.open-in-sidebar.toggle-setting", value: "Open Duck.ai in the sidebar", comment: "Settings option to open Duck.ai in the sidebar")
     static let aiChatOpenSidebarWhenViewingWebsitesToggle = NSLocalizedString("duckai.open-sidebar-when-viewing-websites.toggle-setting", value: "Toggle Duck.ai in sidebar when viewing websites", comment: "Settings option to toggle Duck.ai in sidebar when viewing websites")
+    static let aiChatAutomaticallySendPageContentToggle = NSLocalizedString("duckai.automatically-send-page-content.toggle-setting", value: "Automatically send page content to the sidebar", comment: "Settings option to automatically send page content to the sidebar")
     static let aiChatPreferencesCaption = NSLocalizedString("ai-features.preferences.caption", value: "DuckDuckGo AI features are private and optional. Your data is not used to train AI.", comment: "Ai Chat preferences explanation")
     static let aiChatPreferencesLearnMoreButton = NSLocalizedString("ai-chat.preferences.learn-more", value: "Learn More", comment: "AI Chat preferences button to learn more about it")
     static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New Duck.ai Chat", comment: "Menu item to launch AI Chat")

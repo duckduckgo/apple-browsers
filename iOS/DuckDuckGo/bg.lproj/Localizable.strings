@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Изтриване на всички";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Изтриване на този чат";
+"scoped.fire.confirmation.delete.this.chat.description" = "„Изтриване на всички“ няма да изтрие историята на чатовете в Duck.ai.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Изтриване на този раздел";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "„Изтрий този раздел“ изчиства този Duck.ai чат и всички данни от сайтовете, посетени в този раздел.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Това ще отмени текущите изтегляния.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "Новите раздели, които създаваш, също могат да бъдат изтрити поотделно.";
+"scoped.fire.confirmation.new.tabs.info" = "Новите раздели, които сте създали, могат да бъдат изтривани и поотделно.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Изтриването на данни от сайта може да те отпише от акаунтите.";

@@ -42,6 +42,7 @@ final class SettingsViewModel: ObservableObject {
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
     lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private lazy var dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: featureFlagger)
     private lazy var animator: FireButtonAnimator = FireButtonAnimator(appSettings: AppUserDefaults())
     private var legacyViewProvider: SettingsLegacyViewProvider
     private lazy var versionProvider: AppVersion = AppVersion.shared
@@ -1516,7 +1517,7 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
     }
 
     func navigateToAutoClearData() {
-        if featureFlagger.isFeatureOn(.enhancedDataClearingSettings) {
+        if dataClearingCapability.isEnhancedDataClearingEnabled {
             let viewModel = AutoClearSettingsViewModel(
                 appSettings: appSettings,
                 aiChatSettings: aiChatSettings

@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Radera allt";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Radera den här chatten";
+"scoped.fire.confirmation.delete.this.chat.description" = "Din Duck.ai-chatthistorik raderas inte om du väljer Radera alla.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Ta bort denna flik";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "”Ta bort denna flik” rensar den här Duck.ai-chatten och all webbplatsdata från webbplatser som besökts i den här fliken.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Detta kommer att avbryta pågående nerladdningar.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "Nya flikar du skapar kan också raderas individuellt.";
+"scoped.fire.confirmation.new.tabs.info" = "Nya flikar som du har skapat kan också raderas individuellt.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Om du tar bort webbplatsdata kan du loggas ut från konton.";

@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Izbriši vse";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Izbriši ta klepet";
+"scoped.fire.confirmation.delete.this.chat.description" = "»Izbriši vse« ne bo izbrisalo vaše zgodovine klepetov na Duck.ai.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Izbriši ta zavihek";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "»Izbriši ta zavihek« počisti ta klepet Duck.ai in vse podatke o spletnih mestih, obiskanih na tem zavihku.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "S tem boste preklicali prenose v teku.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "Nove zavihke, ki jih ustvarite, lahko tudi posamično izbrišete.";
+"scoped.fire.confirmation.new.tabs.info" = "Nove zavihke, ki ste jih ustvarili, lahko tudi posamično izbrišete.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Brisanje podatkov o spletnem mestu vas lahko odjavi iz računov.";

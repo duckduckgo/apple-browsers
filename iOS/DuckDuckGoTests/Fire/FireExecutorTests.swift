@@ -121,6 +121,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockTextZoomCoordinator: MockTextZoomCoordinator!
     private var mockHistoryManager: MockHistoryManager!
     private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockDataClearingCapability: MockDataClearingCapability!
     private var mockPrivacyConfigurationManager: PrivacyConfigurationManagerMock!
     private var mockHistoryCleaner: MockHistoryCleaner!
     private var mockBookmarkDatabaseCleaner: MockBookmarkDatabaseCleaner!
@@ -139,13 +140,16 @@ final class FireExecutorTests: XCTestCase {
         mockTextZoomCoordinator = MockTextZoomCoordinator()
         mockHistoryManager = MockHistoryManager()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockDataClearingCapability = MockDataClearingCapability()
         mockPrivacyConfigurationManager = PrivacyConfigurationManagerMock()
         mockHistoryCleaner = MockHistoryCleaner()
         mockBookmarkDatabaseCleaner = MockBookmarkDatabaseCleaner()
         mockDelegate = MockFireExecutorDelegate()
         mockAppSettings = AppSettingsMock()
         mockAppSettings.autoClearAIChatHistory = true
-        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        // Enable enhanced data clearing by default
+        mockDataClearingCapability.isEnhancedDataClearingEnabled = true
+        mockDataClearingCapability.isBurnSingleTabEnabled = true
         mockAIChatSyncCleaner = MockAIChatSyncCleaning()
     }
     
@@ -159,6 +163,7 @@ final class FireExecutorTests: XCTestCase {
         mockTextZoomCoordinator = nil
         mockHistoryManager = nil
         mockFeatureFlagger = nil
+        mockDataClearingCapability = nil
         mockPrivacyConfigurationManager = nil
         mockHistoryCleaner = nil
         mockBookmarkDatabaseCleaner = nil
@@ -184,6 +189,7 @@ final class FireExecutorTests: XCTestCase {
             textZoomCoordinator: mockTextZoomCoordinator,
             historyManager: mockHistoryManager,
             featureFlagger: mockFeatureFlagger,
+            dataClearingCapability: mockDataClearingCapability,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             dataStore: MockWebsiteDataStore(),
             historyCleanerProvider: { self.mockHistoryCleaner },
@@ -597,7 +603,7 @@ final class FireExecutorTests: XCTestCase {
     
     func testAIChatsNotClearedOnLegacyUIAndDisabledByUser() async {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [] // enhancedDataClearingSettings disabled
+        mockDataClearingCapability.isEnhancedDataClearingEnabled = false // enhancedDataClearingSettings disabled
         mockAppSettings.autoClearAIChatHistory = false
         let executor = makeFireExecutor()
         
@@ -612,7 +618,7 @@ final class FireExecutorTests: XCTestCase {
     
     func testWhenScopeIsTabThenAIChatsAreClearedRegardlessOfUserSetting() async {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [] // enhancedDataClearingSettings disabled
+        mockDataClearingCapability.isEnhancedDataClearingEnabled = false // enhancedDataClearingSettings disabled
         mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
         let executor = makeFireExecutor()
         let chatID = "test-chat-id-123"

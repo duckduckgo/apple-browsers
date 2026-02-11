@@ -2942,10 +2942,10 @@
 "scoped.fire.confirmation.delete.all.button" = "Alle löschen";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Diesen Chat löschen";
+"scoped.fire.confirmation.delete.this.chat.description" = "Mit „Alle löschen“ wird dein Duck.ai-Chatverlauf nicht gelöscht.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Diesen Tab löschen";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "Mit „Diesen Tab löschen“ werden dieser Duck.ai-Chat und alle Website-Daten der in diesem Tab besuchten Websites gelöscht.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Dadurch werden bereits gestartete Downloads abgebrochen.";

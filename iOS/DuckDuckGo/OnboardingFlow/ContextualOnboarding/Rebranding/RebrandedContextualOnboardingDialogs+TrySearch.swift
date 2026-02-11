@@ -28,6 +28,7 @@ extension OnboardingRebranding {
     struct OnboardingTrySearchDialog: View {
         @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.horizontalSizeClass) private var hSizeClass
+        @Environment(\.onboardingTheme) private var theme
 
         var title = UserText.Onboarding.ContextualOnboarding.onboardingTryASearchTitle
         var message = UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage
@@ -38,14 +39,13 @@ extension OnboardingRebranding {
             ScrollView(.vertical, showsIndicators: false) {
                 OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
                     OnboardingRebranding.ContextualDaxDialogContent(
-                        orientation: DynamicMetrics.dialogOrientation.build(v: vSizeClass, h: hSizeClass),
+                        orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation.build(v: vSizeClass, h: hSizeClass),
                         title: title,
                         message: message.attributed
                     ) {
                         OnboardingRebranding.ContextualOnboardingListView(list: viewModel.itemsList, action: viewModel.listItemPressed)
                     }
                 }
-                .fixedSize()
                 .padding()
             }
         }
@@ -53,15 +53,6 @@ extension OnboardingRebranding {
 
 }
 
-private extension OnboardingRebranding.OnboardingTrySearchDialog {
-
-    enum DynamicMetrics {
-        static let dialogOrientation: MetricBuilder = MetricBuilder<OnboardingRebranding.ContextualDaxDialogOrientation>(default: .verticalStack)
-            .iPhone(portrait: .verticalStack, landscape: .horizontalStack(alignment: .top))
-            .iPad(.horizontalStack(alignment: .top))
-    }
-
-}
 
 // MARK: - Previews
 

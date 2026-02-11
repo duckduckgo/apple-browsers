@@ -72,7 +72,8 @@ public class MockUpdateController: UpdateController {
                          notificationPresenter: UpdateNotificationPresenting,
                          keyValueStore: ThrowingKeyValueStoring,
                          buildType: ApplicationBuildType?,
-                         wideEvent: WideEventManaging?) {
+                         wideEvent: WideEventManaging?,
+                         isOnboardingFinished: @escaping () -> Bool) {
         fatalError("Use init() for testing")
     }
 

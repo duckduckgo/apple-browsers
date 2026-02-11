@@ -69,14 +69,16 @@ public enum UpdateControllerFactoryMethodType {
     case appStore((_ internalUserDecider: InternalUserDecider,
                    _ featureFlagger: FeatureFlagger,
                    _ pixelFiring: PixelFiring?,
-                   _ notificationPresenter: any UpdateNotificationPresenting) -> any UpdateController)
+                   _ notificationPresenter: any UpdateNotificationPresenting,
+                   _ isOnboardingFinished: @escaping () -> Bool) -> any UpdateController)
     case sparkle((_ internalUserDecider: InternalUserDecider,
                   _ featureFlagger: FeatureFlagger,
                   _ pixelFiring: PixelFiring?,
                   _ notificationPresenter: any UpdateNotificationPresenting,
                   _ keyValueStore: any Persistence.ThrowingKeyValueStoring,
                   _ buildType: ApplicationBuildType,
-                  _ wideEvent: WideEventManaging) -> any UpdateController)
+                  _ wideEvent: WideEventManaging,
+                  _ isOnboardingFinished: @escaping () -> Bool) -> any UpdateController)
 }
 
 /// Protocol that concrete updater packages conform to for the factory pattern.
@@ -110,9 +112,9 @@ public protocol UpdateControllerFactoryMethodGetter {
 /// let controller: any UpdateController
 /// switch factoryMethod {
 /// case .appStore(let makeController):
-///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter)
+///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, isOnboardingFinished)
 /// case .sparkle(let makeController):
-///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, keyValueStore, buildType, wideEvent)
+///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, keyValueStore, buildType, wideEvent, isOnboardingFinished)
 /// }
 /// ```
 public struct UpdateControllerFactory {
@@ -377,12 +379,8 @@ public protocol UpdateController: UpdateControllerObjC {
 }
 
 extension UpdateController {
-
-    private var isUpdateNotificationAllowed: Bool {
-        OnboardingActionsManager.isOnboardingFinished && Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
-    }
-
-    public func showUpdateNotificationIfNeeded() {
+    public func showUpdateNotificationIfNeeded(isOnboardingFinished: () -> Bool) {
+        let isUpdateNotificationAllowed = isOnboardingFinished() && Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
         guard let latestUpdate, hasPendingUpdate, isUpdateNotificationAllowed else { return }
 
         notificationPresenter.showUpdateNotification(for: latestUpdate.type, areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)

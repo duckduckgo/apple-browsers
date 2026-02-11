@@ -233,6 +233,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     private let featureFlagger: FeatureFlagger
     private let buildType: ApplicationBuildType
     private let pixelFiring: PixelFiring?
+    private let isOnboardingFinished: () -> Bool
 
     /// Computes whether automatic downloads should be enabled.
     /// Static for testability - no controller state needed.
@@ -267,7 +268,8 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
                 notificationPresenter: UpdateNotificationPresenting,
                 keyValueStore: ThrowingKeyValueStoring,
                 buildType: ApplicationBuildType,
-                wideEvent: WideEventManaging) {
+                wideEvent: WideEventManaging,
+                isOnboardingFinished: @escaping () -> Bool) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
@@ -275,6 +277,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
         self.internalUserDecider = internalUserDecider
         self.notificationPresenter = notificationPresenter
         self.pixelFiring = pixelFiring
+        self.isOnboardingFinished = isOnboardingFinished
         self.settings = keyValueStore.throwingKeyedStoring()
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
 
@@ -380,7 +383,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     private func showUpdateIndicators() {
         mustShowUpdateIndicators = true
         needsNotificationDot = true
-        showUpdateNotificationIfNeeded()
+        showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
     }
 
     /// Hides update UI: cancels pending task, hides blue dot, and disables menu item visibility.

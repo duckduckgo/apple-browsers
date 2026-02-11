@@ -1380,10 +1380,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch updateControllerFactory.factoryMethod {
         case .appStore(let makeController):
             assert(buildType.isAppStoreBuild)
-            updateController = makeController(internalUserDecider, featureFlagger, PixelKit.shared, notificationPresenter)
+            updateController = makeController(
+                internalUserDecider,
+                featureFlagger,
+                PixelKit.shared,
+                notificationPresenter,
+                { OnboardingActionsManager.isOnboardingFinished }
+            )
         case .sparkle(let makeController):
             assert(buildType.isSparkleBuild)
-            updateController = makeController(internalUserDecider, featureFlagger, PixelKit.shared, notificationPresenter, UserDefaults.standard, buildType, wideEvent)
+            updateController = makeController(
+                internalUserDecider,
+                featureFlagger,
+                PixelKit.shared,
+                notificationPresenter,
+                UserDefaults.standard,
+                buildType,
+                wideEvent,
+                { OnboardingActionsManager.isOnboardingFinished }
+            )
         case .none:
             assertionFailure("Failed to instantiate update controller")
             return

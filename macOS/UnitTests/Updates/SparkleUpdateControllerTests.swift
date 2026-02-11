@@ -44,7 +44,8 @@ final class SparkleUpdateControllerTests: XCTestCase {
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
             buildType: ApplicationBuildTypeMock(),
-            wideEvent: mockWideEventManager
+            wideEvent: mockWideEventManager,
+            isOnboardingFinished: { true }
         )
 
         XCTAssertEqual(updateController.sparkleUpdaterErrorReason(from: "Package installer failed to launch."), "Package installer failed to launch." )
@@ -83,7 +84,8 @@ final class SparkleUpdateControllerTests: XCTestCase {
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
             buildType: ApplicationBuildTypeMock(),
-            wideEvent: mockWideEventManager
+            wideEvent: mockWideEventManager,
+            isOnboardingFinished: { true }
         )
 
         // Start a flow and simulate finding an update
@@ -135,7 +137,8 @@ final class SparkleUpdateControllerTests: XCTestCase {
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
             buildType: ApplicationBuildTypeMock(),
-            wideEvent: mockWideEventManager
+            wideEvent: mockWideEventManager,
+            isOnboardingFinished: { true }
         )
 
         // Start a flow through the controller's public interface

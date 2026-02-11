@@ -141,7 +141,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
                 refreshUpdateFromCache(cachedUpdateResult)
                 needsNotificationDot = hasPendingUpdate
             }
-            showUpdateNotificationIfNeeded()
+            showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
 
             // Dismiss stale "update available" popover when download begins
             if case .downloadDidStart = updateProgress {
@@ -275,6 +275,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
+    private let isOnboardingFinished: () -> Bool
 
     var useLegacyAutoRestartLogic: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
@@ -293,12 +294,14 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
                 notificationPresenter: any UpdateNotificationPresenting,
                 keyValueStore: any Persistence.ThrowingKeyValueStoring,
                 buildType: ApplicationBuildType,
-                wideEvent: WideEventManaging) {
+                wideEvent: WideEventManaging,
+                isOnboardingFinished: @escaping () -> Bool) {
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.notificationPresenter = notificationPresenter
         self.internalUserDecider = internalUserDecider
+        self.isOnboardingFinished = isOnboardingFinished
         self.updateCheckState = UpdateCheckState()
         self.settings = keyValueStore.throwingKeyedStoring()
         self.buildType = buildType

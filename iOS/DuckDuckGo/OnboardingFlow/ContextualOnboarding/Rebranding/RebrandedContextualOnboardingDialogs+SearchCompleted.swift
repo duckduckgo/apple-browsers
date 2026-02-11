@@ -30,9 +30,9 @@ extension OnboardingRebranding {
         @Environment(\.horizontalSizeClass) private var hSizeClass
         @Environment(\.onboardingTheme) private var theme
 
-        var cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
         var title = "That’s DuckDuckGo Search!"
         var message = "Private. Fast. Fewer ads."
+        var cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
 
         @State private var showNextScreen: Bool = false
 
@@ -56,6 +56,7 @@ extension OnboardingRebranding {
         private var searchDoneContent: some View {
             OnboardingRebranding.ContextualDaxDialogContent(
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation.build(v: vSizeClass, h: hSizeClass),
+                title: title,
                 message: message.attributed
             ) {
                 Button {

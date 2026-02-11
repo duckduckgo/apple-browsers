@@ -293,7 +293,7 @@ struct LargeOmniBarState {
         var onEditingStartedState: OmniBarState { BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onTextClearedState: OmniBarState { BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onTextEnteredState: OmniBarState { BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
-        var onBrowsingStartedState: OmniBarState { self }
+        var onBrowsingStartedState: OmniBarState { BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onBrowsingStoppedState: OmniBarState { HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEnterPadState: OmniBarState { self }
         var onEnterPhoneState: OmniBarState { SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: isLoading) }

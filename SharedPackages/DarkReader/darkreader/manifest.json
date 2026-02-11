@@ -1,11 +1,11 @@
 {
     "manifest_version": 3,
     "name": "Dark Reader",
-    "version": "1",
+    "version": "4.9.121",
     "author": "Alexander Shutau",
     "description": "Dark mode for every website.",
     "background": {
-        "service_worker": "background/index.js"
+        "service_worker": "background.js"
     },
     "content_scripts": [
         {
@@ -13,45 +13,16 @@
                 "<all_urls>"
             ],
             "js": [
-                "inject/proxy.js"
+                "darkreader-api.js",
+                "content-script.js"
             ],
-            "run_at": "document_start",
+            "run_at": "document_end",
             "all_frames": true,
-            "match_about_blank": true,
-            "world": "MAIN"
-        },
-        {
-            "matches": [
-                "<all_urls>"
-            ],
-            "js": [
-                "inject/fallback.js",
-                "inject/index.js"
-            ],
-            "run_at": "document_start",
-            "all_frames": true,
-            "match_about_blank": true,
-            "world": "ISOLATED"
-        },
-        {
-            "matches": [
-                "<all_urls>"
-            ],
-            "js": [
-                "inject/color-scheme-watcher.js"
-            ],
-            "run_at": "document_idle",
-            "all_frames": false,
-            "match_about_blank": false,
-            "world": "ISOLATED"
+            "match_about_blank": true
         }
     ],
     "permissions": [
-        "alarms",
-        "fontSettings",
-        "scripting",
-        "storage",
-        "tabs"
+        "scripting"
     ],
     "host_permissions": [
         "*://*/*"

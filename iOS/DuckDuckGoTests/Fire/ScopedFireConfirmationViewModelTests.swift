@@ -28,18 +28,21 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     private var mockDownloadManager: SpyDownloadManager!
     private var mockKeyValueStore: MockKeyValueStore!
     private var mockHistoryManager: MockHistoryManager!
-    
+    private var mockAppSettings: AppSettingsMock!
+
     override func setUp() {
         super.setUp()
         mockDownloadManager = SpyDownloadManager()
         mockKeyValueStore = MockKeyValueStore()
         mockHistoryManager = MockHistoryManager()
+        mockAppSettings = AppSettingsMock()
     }
     
     override func tearDown() {
         mockDownloadManager = nil
         mockKeyValueStore = nil
         mockHistoryManager = nil
+        mockAppSettings = nil
         super.tearDown()
     }
     
@@ -174,28 +177,24 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     
     // MARK: - subtitle Tests - AI Tab
     
-    func testWhenAITabFirstTimeThenSubtitleIsAIDescription() {
+    func testAITabSubtitle() {
         // Given
         let aiTab = createAITab()
         let tabViewModel = TabViewModel(tab: aiTab, historyManager: mockHistoryManager)
         
-        // When first time
+        // When ai clearing enabled
+        mockAppSettings.autoClearAIChatHistory = true
         var sut = makeSUT(tabViewModel: tabViewModel)
-        
-        // Then show subtitle
-        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDeleteThisTabDescription)
-        
-        // When second time
-        sut = makeSUT(tabViewModel: tabViewModel)
-        
-        // Then show subtitle
-        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDeleteThisTabDescription)
-        
-        // When more than two times
-        sut = makeSUT(tabViewModel: tabViewModel)
         
         // Then don't show subtitle
         XCTAssertNil(sut.subtitle)
+
+        // When ai clearing disabled
+        mockAppSettings.autoClearAIChatHistory = false
+        sut = makeSUT(tabViewModel: tabViewModel)
+
+        // Then show subtitle
+        XCTAssertEqual(sut.subtitle, UserText.scopedFireConfirmationDeleteThisChatDescription)
     }
     
     // MARK: - subtitle Tests - Web Tab
@@ -279,6 +278,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
                                                source: source,
                                                downloadManager: mockDownloadManager,
                                                keyValueStore: mockKeyValueStore,
+                                               appSettings: mockAppSettings,
                                                daxDialogsManager: daxDialogsManager,
                                                onConfirm: onConfirm,
                                                onCancel: onCancel)

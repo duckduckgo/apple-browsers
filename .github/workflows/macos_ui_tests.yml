@@ -229,9 +229,25 @@ jobs:
         bundle exec fastlane sync_signing_ci
 
     - name: Download and unzip artifact
-      uses: actions/download-artifact@v4
-      with:
-        path: macOS
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        max_attempts=5
+        retry_delay=10
+
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Attempt $attempt of $max_attempts"
+          if gh run download "${{ github.run_id }}" --dir .; then
+            echo "Download successful"
+            exit 0
+          fi
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Download failed, retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "All download attempts failed"
+        exit 1
 
     - name: Set cache key hash
       run: |

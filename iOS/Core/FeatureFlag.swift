@@ -212,6 +212,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213227027157584
     case iPadDuckaiOnTab
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039
@@ -355,7 +356,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .crashCollectionDisableKeysSorting,
              .freeTrialConversionWideEvent,
              .crashCollectionLimitCallStackTreeDepth,
-             .tabSwitcherTrackerCount:
+             .tabSwitcherTrackerCount,
+             .iPadDuckaiOnTab:
             true
         default:
             false

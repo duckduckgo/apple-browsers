@@ -128,6 +128,8 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var duckPlayerNativeUISettingsMapped: Bool { get set }
 
     var autoClearAIChatHistory: Bool { get set }
+
+    var isAdaptiveDarkModeEnabled: Bool { get set }
 }
 
 // MARK: - AppSettings + OnboardingDebugSettings

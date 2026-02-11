@@ -24,6 +24,7 @@ import Foundation
 final class WebExtensionLoadingMock: WebExtensionLoading {
 
     var loadWebExtensionCalled = false
+    var loadBundledWebExtensionCalled = false
     var loadWebExtensionsCalled = false
     var unloadExtensionCalled = false
     var loadedIdentifiers: [String] = []
@@ -38,6 +39,25 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     @discardableResult
     func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
         loadWebExtensionCalled = true
+        loadedIdentifiers.append(identifier)
+
+        if let mockError = mockError {
+            throw mockError
+        }
+
+        guard let mockLoadResult = mockLoadResult else {
+            let testExtensionURL = try createTestWebExtension()
+            let mockExtension = try await WKWebExtension(resourceBaseURL: testExtensionURL)
+            let mockContext = await WKWebExtensionContext(for: mockExtension)
+            return WebExtensionLoadResult(context: mockContext, identifier: identifier)
+        }
+
+        return mockLoadResult
+    }
+
+    @discardableResult
+    func loadBundledWebExtension(from resourceURL: URL, identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+        loadBundledWebExtensionCalled = true
         loadedIdentifiers.append(identifier)
 
         if let mockError = mockError {

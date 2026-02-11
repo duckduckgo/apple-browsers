@@ -43,6 +43,7 @@ public class AppUserDefaults: AppSettings {
         public static let contentScopeDebugStateToggled = Notification.Name("com.duckduckgo.app.DidToggleContentScopeDebugState")
         public static let duckPlayerSettingsUpdated = Notification.Name("com.duckduckgo.app.DuckPlayerSettingsUpdated")
         public static let appDataClearingUpdated = Notification.Name("com.duckduckgo.app.dataClearingUpdates")
+        public static let adaptiveDarkModeChanged = Notification.Name("com.duckduckgo.app.AdaptiveDarkModeChanged")
     }
 
     private let groupName: String
@@ -631,6 +632,9 @@ public class AppUserDefaults: AppSettings {
 
     @UserDefaultsWrapper(key: .autoClearAIChatHistory, defaultValue: false)
     var autoClearAIChatHistory: Bool
+
+    @UserDefaultsWrapper(key: .adaptiveDarkModeEnabled, defaultValue: false)
+    var isAdaptiveDarkModeEnabled: Bool
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

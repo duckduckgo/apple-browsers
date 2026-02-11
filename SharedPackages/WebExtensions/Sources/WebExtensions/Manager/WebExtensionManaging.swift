@@ -76,4 +76,18 @@ public protocol WebExtensionManaging: AnyObject {
     /// Returns the extension context for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
     func context(for identifier: String) -> WKWebExtensionContext?
+
+    // MARK: - Bundled Extensions
+
+    /// Installs a bundled extension directly from a resource URL without copying to storage.
+    @available(macOS 15.4, iOS 18.4, *)
+    func installBundledExtension(resourceURL: URL) async throws
+
+    /// Uninstalls a previously installed bundled extension.
+    @available(macOS 15.4, iOS 18.4, *)
+    func uninstallBundledExtension(resourceURL: URL) throws
+
+    /// Returns whether the given extension context is a bundled extension.
+    @available(macOS 15.4, iOS 18.4, *)
+    func isBundledExtension(_ context: WKWebExtensionContext) -> Bool
 }

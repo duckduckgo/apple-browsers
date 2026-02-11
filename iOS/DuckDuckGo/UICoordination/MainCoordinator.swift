@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import os.log
 import Core
 import Combine
 import BrowserServicesKit
@@ -65,6 +66,7 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var adaptiveDarkModeObserver: Any?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -241,15 +243,42 @@ final class MainCoordinator {
 
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
+                await self.updateBundledDarkReader(manager: webExtensionManager)
             }
+
+            adaptiveDarkModeObserver = NotificationCenter.default.addObserver(
+                forName: AppUserDefaults.Notifications.adaptiveDarkModeChanged,
+                object: nil,
+                queue: .main) { [weak self] _ in
+                    guard let self, let manager = self.webExtensionManager else { return }
+                    Task { @MainActor in
+                        await self.updateBundledDarkReader(manager: manager)
+                    }
+                }
         } else {
             clearWebExtensionReferences()
+        }
+    }
+
+    private func updateBundledDarkReader(manager: WebExtensionManaging) async {
+        guard #available(iOS 18.4, *) else { return }
+        guard let darkReaderURL = Bundle.main.url(forResource: "darkreader", withExtension: nil) else {
+            Logger.webExtensions.error("❌ Dark Reader bundle not found")
+            return
+        }
+
+        let appSettings = AppDependencyProvider.shared.appSettings
+        if appSettings.isAdaptiveDarkModeEnabled {
+            try? await manager.installBundledExtension(resourceURL: darkReaderURL)
+        } else {
+            try? manager.uninstallBundledExtension(resourceURL: darkReaderURL)
         }
     }
 
     private func clearWebExtensionReferences() {
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
+        adaptiveDarkModeObserver = nil
         tabManager.setWebExtensionManager(nil)
         controller.setWebExtensionEventsCoordinator(nil)
         controller.setWebExtensionManager(nil)

@@ -578,6 +578,16 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var adaptiveDarkModeBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.appSettings.isAdaptiveDarkModeEnabled },
+            set: {
+                self.appSettings.isAdaptiveDarkModeEnabled = $0
+                NotificationCenter.default.post(name: AppUserDefaults.Notifications.adaptiveDarkModeChanged, object: nil)
+            }
+        )
+    }
+
     var universalLinksBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.allowUniversalLinks },

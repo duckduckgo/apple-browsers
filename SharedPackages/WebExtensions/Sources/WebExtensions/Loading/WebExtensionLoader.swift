@@ -23,6 +23,8 @@ import WebKit
 public protocol WebExtensionLoading: AnyObject {
     @discardableResult
     func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
+    @discardableResult
+    func loadBundledWebExtension(from resourceURL: URL, identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
     func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws
 }
@@ -52,6 +54,14 @@ public final class WebExtensionLoader: WebExtensionLoading {
         let context = makeContext(for: webExtension, identifier: identifier)
         try controller.load(context)
 
+        return WebExtensionLoadResult(context: context, identifier: identifier)
+    }
+
+    @MainActor
+    public func loadBundledWebExtension(from resourceURL: URL, identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+        let webExtension = try await WKWebExtension(resourceBaseURL: resourceURL)
+        let context = makeContext(for: webExtension, identifier: identifier)
+        try controller.load(context)
         return WebExtensionLoadResult(context: context, identifier: identifier)
     }
 

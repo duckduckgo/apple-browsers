@@ -26,6 +26,12 @@ private enum OnboardingViewMetrics {
     static let landingScreenDuration = 2.0
 }
 
+private enum OnboardingViewCopy {
+    static let introTitle = "Hi There!"
+    static let introMessage = "Ready for a faster browser that keeps you protected?"
+    static let browsersComparisonTitle = "Protections activated!"
+}
+
 extension OnboardingRebranding.OnboardingView {
 
     struct LinearDialogContentContainer<Title: View, Actions: View>: View {
@@ -140,7 +146,7 @@ extension OnboardingRebranding {
                         introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
                             .frame(width: geometry.size.width, alignment: .center)
                     case .browsersComparisonDialog:
-                        browsersComparisonView
+                        browsersComparisonView(step: state.step)
                             .frame(width: geometry.size.width, alignment: .center)
                             .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.minTopMargin + BrowsersComparisonContentMetrics.additionalTopMargin)
                     default:
@@ -213,11 +219,10 @@ extension OnboardingRebranding {
             }
 
             return IntroDialogContent(
-                title: model.copy.introTitle,
-                message: model.copy.introMessage,
+                title: OnboardingViewCopy.introTitle,
+                message: OnboardingViewCopy.introMessage,
                 skipOnboardingView: skipOnboardingView,
                 showCTA: $model.introState.showIntroButton,
-                isSkipped: $model.isSkipped,
                 continueAction: {
                     animateBrowserComparisonViewState(isResumingOnboarding: false)
                 },
@@ -227,10 +232,11 @@ extension OnboardingRebranding {
             .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
         }
 
-        private var browsersComparisonView: some View {
+        private func browsersComparisonView(step: ViewState.Intro.StepInfo) -> some View {
             BrowsersComparisonContent(
-                title: model.copy.browserComparisonTitle,
-                isSkipped: $model.isSkipped,
+                title: OnboardingViewCopy.browsersComparisonTitle,
+                currentStep: step.currentStep,
+                totalSteps: step.totalSteps,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
                 cancelAction: model.cancelSetDefaultBrowserAction
             )

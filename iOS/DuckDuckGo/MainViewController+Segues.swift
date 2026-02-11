@@ -53,12 +53,19 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        // Temporarily force rebranding for testing
-        let controller: Onboarding = OnboardingIntroViewController.rebranded(
-            onboardingPixelReporter: contextualOnboardingPixelReporter,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-            daxDialogsManager: daxDialogsManager
-        )
+        let controller: Onboarding = if featureFlagger.isFeatureOn(.onboardingRebranding) {
+            OnboardingIntroViewController.rebranded(
+                onboardingPixelReporter: contextualOnboardingPixelReporter,
+                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                daxDialogsManager: daxDialogsManager
+            )
+        } else {
+            OnboardingIntroViewController.legacy(
+                onboardingPixelReporter: contextualOnboardingPixelReporter,
+                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                daxDialogsManager: daxDialogsManager
+            )
+        }
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)

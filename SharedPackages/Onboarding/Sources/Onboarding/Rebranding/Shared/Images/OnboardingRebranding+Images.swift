@@ -37,7 +37,7 @@ public enum OnboardingRebrandingImages {
         public static let eraseDataIcon = Image("Rebranding/Comparison-EraseData", bundle: .module)
     }
 
-    public enum Rebranding {
+    public enum Branding {
         public static let duckDuckGoLogo = Image("Rebranding/DuckDuckGoLogo", bundle: .module)
     }
 
@@ -51,8 +51,8 @@ extension OnboardingRebranding {
             static let tryASearchBackground = OnboardingRebrandingImages.Contextual.tryASearchBackground
         }
 
-        enum Rebranding {
-            static let duckDuckGoLogo = OnboardingRebrandingImages.Rebranding.duckDuckGoLogo
+        enum Branding {
+            static let duckDuckGoLogo = OnboardingRebrandingImages.Branding.duckDuckGoLogo
         }
 
     }

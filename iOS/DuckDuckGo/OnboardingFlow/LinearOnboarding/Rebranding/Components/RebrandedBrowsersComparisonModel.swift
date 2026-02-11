@@ -18,15 +18,15 @@ struct RebrandedBrowsersComparisonModel {
             var title: String {
                 switch self {
                 case .privateSearch:
-                    return UserText.RebrandedOnboarding.BrowsersComparison.privateSearch
+                    return "Search privately by default"
                 case .blockTrackers:
-                    return UserText.RebrandedOnboarding.BrowsersComparison.blockTrackers
+                    return "Block 3rd-party trackers"
                 case .blockCookies:
-                    return UserText.RebrandedOnboarding.BrowsersComparison.blockCookies
+                    return "Block cookie requests & pop-ups"
                 case .blockAds:
-                    return UserText.RebrandedOnboarding.BrowsersComparison.blockAds
+                    return "Block targeted ads"
                 case .eraseData:
-                    return UserText.RebrandedOnboarding.BrowsersComparison.eraseData
+                    return "Erase browsing data swiftly"
                 }
             }
 

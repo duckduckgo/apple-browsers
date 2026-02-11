@@ -25,6 +25,11 @@ private enum IntroDialogContentMetrics {
     static let additionalTopMargin: CGFloat = 40
 }
 
+private enum IntroDialogContentCopy {
+    static let continueCTA = "Let's do it!"
+    static let skipCTA = "I've been here before"
+}
+
 extension OnboardingRebranding.OnboardingView {
 
     struct IntroDialogContent: View {
@@ -34,7 +39,6 @@ extension OnboardingRebranding.OnboardingView {
         private let message: String
         private let skipOnboardingView: AnyView?
         private var showCTA: Binding<Bool>
-        private var isSkipped: Binding<Bool>
         private let continueAction: () -> Void
         private let skipAction: () -> Void
 
@@ -45,7 +49,6 @@ extension OnboardingRebranding.OnboardingView {
             message: String,
             skipOnboardingView: AnyView?,
             showCTA: Binding<Bool> = .constant(false),
-            isSkipped: Binding<Bool>,
             continueAction: @escaping () -> Void,
             skipAction: @escaping () -> Void
         ) {
@@ -53,7 +56,6 @@ extension OnboardingRebranding.OnboardingView {
             self.message = message
             self.skipOnboardingView = skipOnboardingView
             self.showCTA = showCTA
-            self.isSkipped = isSkipped
             self.continueAction = continueAction
             self.skipAction = skipAction
         }
@@ -109,17 +111,16 @@ extension OnboardingRebranding.OnboardingView {
                     actions: {
                         VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                             Button(action: continueAction) {
-                                Text(UserText.RebrandedOnboarding.Intro.continueCTA)
+                                Text(IntroDialogContentCopy.continueCTA)
                             }
                             .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                             if skipOnboardingView != nil {
                                 Button(action: {
-                                    isSkipped.wrappedValue = false
                                     showSkipOnboarding = true
                                     skipAction()
                                 }) {
-                                    Text(UserText.RebrandedOnboarding.Intro.skipCTA)
+                                    Text(IntroDialogContentCopy.skipCTA)
                                 }
                                 .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                             }

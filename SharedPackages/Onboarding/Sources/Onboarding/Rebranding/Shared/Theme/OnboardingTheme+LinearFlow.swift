@@ -27,6 +27,10 @@ public extension OnboardingTheme {
     /// Layout metrics used by the linear onboarding flow.
     struct LinearOnboardingMetrics: Equatable {
         public static func == (lhs: LinearOnboardingMetrics, rhs: LinearOnboardingMetrics) -> Bool {
+            #if os(iOS)
+            // `dialogVerticalOffsetPercentage` is intentionally excluded from equality.
+            // MetricBuilder is a reference type and does not conform to Equatable.
+            #endif
             lhs.contentOuterSpacing == rhs.contentOuterSpacing &&
             lhs.contentInnerSpacing == rhs.contentInnerSpacing &&
             lhs.buttonSpacing == rhs.buttonSpacing &&

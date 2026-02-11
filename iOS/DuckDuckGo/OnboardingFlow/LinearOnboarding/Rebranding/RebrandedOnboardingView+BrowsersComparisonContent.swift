@@ -25,24 +25,32 @@ enum BrowsersComparisonContentMetrics {
     static let additionalTopMargin: CGFloat = 0
 }
 
+private enum BrowsersComparisonContentCopy {
+    static let setAsDefaultBrowserCTA = "Choose Your Browser"
+    static let skipCTA = "Skip"
+}
+
 extension OnboardingRebranding.OnboardingView {
 
     struct BrowsersComparisonContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         private let title: String
+        private let currentStep: Int
+        private let totalSteps: Int
         private let setAsDefaultBrowserAction: () -> Void
         private let cancelAction: () -> Void
-        private var isSkipped: Binding<Bool>
 
         init(
-            title: String, 
-            isSkipped: Binding<Bool>,
+            title: String,
+            currentStep: Int,
+            totalSteps: Int,
             setAsDefaultBrowserAction: @escaping () -> Void,
             cancelAction: @escaping () -> Void
         ) {
             self.title = title
-            self.isSkipped = isSkipped
+            self.currentStep = currentStep
+            self.totalSteps = totalSteps
             self.setAsDefaultBrowserAction = setAsDefaultBrowserAction
             self.cancelAction = cancelAction
         }
@@ -50,8 +58,8 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             OnboardingBubbleView.withStepProgressIndicator(
                 tailPosition: .bottom(offset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset, direction: .leading),
-                currentStep: 1,
-                totalSteps: 5
+                currentStep: currentStep,
+                totalSteps: totalSteps
             ) {
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     Text(title)
@@ -64,12 +72,12 @@ extension OnboardingRebranding.OnboardingView {
 
                         VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                             Button(action: setAsDefaultBrowserAction) {
-                                Text(UserText.RebrandedOnboarding.BrowsersComparison.cta)
+                                Text(BrowsersComparisonContentCopy.setAsDefaultBrowserCTA)
                             }
                             .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                             Button(action: cancelAction) {
-                                Text(UserText.RebrandedOnboarding.skip)
+                                Text(BrowsersComparisonContentCopy.skipCTA)
                             }
                             .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                         }

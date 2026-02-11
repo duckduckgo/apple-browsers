@@ -22,7 +22,7 @@ private enum ComparisonTableMetrics {
     static let statusColumnSpacing: CGFloat = 8
 
     // Separator
-    static let separatorColor = Color(singleUseColor: .rebranding(.comparisonSeparator))
+    static let separatorColor = Color(singleUseColor: .rebranding(.decorationPrimary))
     static let separatorWidth: CGFloat = 1
 }
 

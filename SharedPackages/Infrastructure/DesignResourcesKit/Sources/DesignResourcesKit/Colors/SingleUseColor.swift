@@ -62,7 +62,7 @@ public extension SingleUseColor {
         case buttonsSecondaryDefault
         case buttonsSecondaryText
 
-        case comparisonSeparator
+        case decorationPrimary
     }
 
 }

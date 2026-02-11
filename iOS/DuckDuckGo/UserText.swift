@@ -2043,8 +2043,7 @@ public struct UserText {
     public enum Onboarding {
 
         public enum Intro {
-            public static let title = NSLocalizedString("onboarding.highlights.intro.title", value: "Hi there.", comment: "The title of the onboarding dialog popup")
-            public static let message = NSLocalizedString("onboarding.highlights.intro.message", value: "Ready for a faster browser that keeps you protected?", comment: "The subtitle message of the onboarding dialog popup")
+            public static let title = NSLocalizedString("onboarding.highlights.intro.title", value: "Hi there.\n\nReady for a faster browser that keeps you protected?", comment: "The title of the onboarding dialog popup")
             public static let continueCTA = NSLocalizedString("onboarding.intro.cta", value: "Let’s do it!", comment: "Button to continue the onboarding process")
             public static let skipCTA = NSLocalizedString("onboarding.intro.cta.skip", value: "I’ve been here before", comment: "Button to skip the onboarding process")
 
@@ -2162,30 +2161,6 @@ public struct UserText {
             static let skip = NSLocalizedString("contextual.onboarding.addToDock.buttons.skip", value: "Skip", comment: "Button to continue the onboarding process")
             static let gotIt =  NSLocalizedString("onboarding.addToDock.buttons.gotIt", value: "Got It", comment: "Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding.")
         }
-    }
-
-    // MARK: - Rebranded Onboarding
-
-    public enum RebrandedOnboarding {
-
-        public enum Intro {
-            public static let title = NSLocalizedString("rebranded.onboarding.intro.title", value: "Hi There!", comment: "The title of the rebranded onboarding intro dialog popup")
-            public static let message = NSLocalizedString("rebranded.onboarding.intro.message", value: "Ready for a faster browser that keeps you protected?", comment: "The subtitle message of the rebranded onboarding intro dialog popup")
-            public static let continueCTA = NSLocalizedString("rebranded.onboarding.intro.cta", value: "Let's do it!", comment: "Button to continue the rebranded onboarding process")
-            public static let skipCTA = NSLocalizedString("rebranded.onboarding.intro.cta.skip", value: "I've been here before", comment: "Button to skip the rebranded onboarding process")
-        }
-
-        public enum BrowsersComparison {
-            public static let title = NSLocalizedString("rebranded.onboarding.browsers.title", value: "Protections activated!", comment: "The title of the rebranded onboarding privacy protections comparison dialog")
-            public static let cta = NSLocalizedString("rebranded.onboarding.browsers.cta", value: "Choose Your Browser", comment: "Button to change the default browser in rebranded onboarding")
-            public static let privateSearch = NSLocalizedString("rebranded.onboarding.browsers.feature.privateSearch", value: "Search privately by default", comment: "Comparison table feature: private search")
-            public static let blockTrackers = NSLocalizedString("rebranded.onboarding.browsers.feature.blockTrackers", value: "Block 3rd-party trackers", comment: "Comparison table feature: block trackers")
-            public static let blockCookies = NSLocalizedString("rebranded.onboarding.browsers.feature.blockCookies", value: "Block cookie requests & pop-ups", comment: "Comparison table feature: block cookies")
-            public static let blockAds = NSLocalizedString("rebranded.onboarding.browsers.feature.blockAds", value: "Block targeted ads", comment: "Comparison table feature: block ads")
-            public static let eraseData = NSLocalizedString("rebranded.onboarding.browsers.feature.eraseData", value: "Erase browsing data swiftly", comment: "Comparison table feature: erase data")
-        }
-
-        public static let skip = NSLocalizedString("rebranded.onboarding.skip", value: "Skip", comment: "Button to skip a step in the rebranded onboarding process")
     }
 
     // MARK :- Data Import

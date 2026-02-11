@@ -75,7 +75,7 @@ public extension OnboardingBubbleView {
         totalSteps: Int,
         @ViewBuilder content: @escaping () -> Content
     ) -> some View {
-        _LinearBubbleWrapper(tailPosition: tailPosition, content: content)
+        LinearBubbleWrapper(tailPosition: tailPosition, content: content)
             .onboardingStepProgress(currentStep: currentStep, totalSteps: totalSteps)
     }
     #endif
@@ -95,7 +95,7 @@ public extension OnboardingBubbleView {
 
 #if os(iOS)
 /// Internal wrapper that reads the theme to pass linear bubble metrics.
-private struct _LinearBubbleWrapper<Content: View>: View {
+private struct LinearBubbleWrapper<Content: View>: View {
     @Environment(\.onboardingTheme) private var onboardingTheme
 
     let tailPosition: OnboardingBubbleView<Content>.TailPosition

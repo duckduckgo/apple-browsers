@@ -86,8 +86,7 @@ extension OnboardingIntroViewController where Content == RebrandedOnboardingView
         let viewModel = OnboardingIntroViewModel(
             pixelReporter: onboardingPixelReporter,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-            daxDialogsManager: daxDialogsManager,
-            copy: .rebranded
+            daxDialogsManager: daxDialogsManager
         )
         let rootView = RebrandedOnboardingView(model: viewModel)
         return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)

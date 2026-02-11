@@ -2479,11 +2479,8 @@ https://duckduckgo.com/mac";
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Skip";
 
-/* The subtitle message of the onboarding dialog popup */
-"onboarding.highlights.intro.message" = "Ready for a faster browser that keeps you protected?";
-
 /* The title of the onboarding dialog popup */
-"onboarding.highlights.intro.title" = "Hi there.";
+"onboarding.highlights.intro.title" = "Hi there.\n\nReady for a faster browser that keeps you protected?";
 
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.searchExperience.cta" = "Next";
@@ -2766,27 +2763,6 @@ https://duckduckgo.com/mac";
 
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Open in Another App?";
-
-/* Button to change the default browser in rebranded onboarding */
-"rebranded.onboarding.browsers.cta" = "Choose Your Browser";
-
-/* The title of the rebranded onboarding privacy protections comparison dialog */
-"rebranded.onboarding.browsers.title" = "Protections activated!";
-
-/* Button to continue the rebranded onboarding process */
-"rebranded.onboarding.intro.cta" = "Let's do it!";
-
-/* Button to skip the rebranded onboarding process */
-"rebranded.onboarding.intro.cta.skip" = "I've been here before";
-
-/* The subtitle message of the rebranded onboarding intro dialog popup */
-"rebranded.onboarding.intro.message" = "Ready for a faster browser that keeps you protected?";
-
-/* The title of the rebranded onboarding intro dialog popup */
-"rebranded.onboarding.intro.title" = "Hi There!";
-
-/* Button to skip a step in the rebranded onboarding process */
-"rebranded.onboarding.skip" = "Skip";
 
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Delete tabs and site data?";

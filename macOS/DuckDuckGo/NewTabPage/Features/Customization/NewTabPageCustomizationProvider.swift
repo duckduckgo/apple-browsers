@@ -130,7 +130,7 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
 
     @MainActor
     func dismissedThemePopover() {
-        themePopoverDecider.markPopoverDismissed()
+        dismissThemePopoverAndStopListeningToEvents()
     }
 
     @MainActor

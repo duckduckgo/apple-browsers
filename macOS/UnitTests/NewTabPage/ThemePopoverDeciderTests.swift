@@ -119,4 +119,8 @@ struct MockThemePopoverDecider: ThemePopoverDeciding {
     func markPopoverDismissed() {
         // No-op for mock
     }
+
+    func shouldDismissPopover(newTabPageDidAppearCount: Int) -> Bool {
+        false
+    }
 }

@@ -26,6 +26,8 @@ import os.log
 ///
 protocol ThemePopoverDeciding {
     var shouldShowPopover: Bool { get }
+
+    func shouldDismissPopover(newTabPageDidAppearCount: Int) -> Bool
     func markPopoverDismissed()
 }
 
@@ -57,11 +59,15 @@ final class ThemePopoverDecider: ThemePopoverDeciding {
     }
 
     func markPopoverDismissed() {
-        guard shouldShowPopover, persistor.themePopoverDismissed == false else {
+        guard persistor.themePopoverDismissed == false else {
             return
         }
 
         persistor.themePopoverDismissed = true
+    }
+
+    func shouldDismissPopover(newTabPageDidAppearCount: Int) -> Bool {
+        newTabPageDidAppearCount >= 4
     }
 }
 

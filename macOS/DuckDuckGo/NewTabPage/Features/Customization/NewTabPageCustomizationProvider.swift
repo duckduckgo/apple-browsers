@@ -24,7 +24,6 @@ import SwiftUI
 final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding {
     private var newTabPageDidAppearCancellable: AnyCancellable?
     private var newTabPageDidAppearCount: Int = 0
-    private var newTabPageInitialized = false
 
     @Published private var themePopoverVisible: Bool
 
@@ -152,11 +151,6 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
             await deleteImage(with: imageID)
         }
     }
-
-    func processNewTabPageInitialized() {
-        newTabPageInitialized = true
-        dismissThemePopoverAndStopListeningToEventsIfNeeded()
-    }
 }
 
 private extension NewTabPageCustomizationProvider {
@@ -175,25 +169,15 @@ private extension NewTabPageCustomizationProvider {
 
     func processNewTabPageAppeared() {
         newTabPageDidAppearCount += 1
-        dismissThemePopoverAndStopListeningToEventsIfNeeded()
-    }
 
-    var shouldDismissThemePopover: Bool {
-        /// Why this is required:
-        ///     1.  NTP doesn't relay `Themes Popover appeared`, as Native has ownership of whenever NTP is rendered, and how
-        ///     2.  FE's `initialSetup` invocation may be executed, under certain circumstances, without the actual WebView ever becoming present
-        ///     3.`newTabPageWebViewDidAppear` gets posted before `initialSetup`, risking a race condition
-        ///
-        /// We must only track "Themes Popover Show" whenever both, the NTP is known to be visible, and the NTP Initialization came thru.
-        ///
-        themePopoverVisible && newTabPageInitialized && newTabPageDidAppearCount >= 4
-    }
-
-    func dismissThemePopoverAndStopListeningToEventsIfNeeded() {
-        guard shouldDismissThemePopover else {
+        guard themePopoverDecider.shouldDismissPopover(newTabPageDidAppearCount: newTabPageDidAppearCount) else {
             return
         }
 
+        dismissThemePopoverAndStopListeningToEvents()
+    }
+
+    func dismissThemePopoverAndStopListeningToEvents() {
         themePopoverDecider.markPopoverDismissed()
         themePopoverVisible = false
         newTabPageDidAppearCancellable = nil

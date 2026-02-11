@@ -53,7 +53,7 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             pixelFiring: mockPixelFiring,
             windowContext: nil,
-            isSyncEnabled: nil,
+            isSyncEnabled: { nil },
             checkInterval: checkInterval
         )
     }

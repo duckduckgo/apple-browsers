@@ -56,7 +56,7 @@ final class MemoryPressureReporterTests: XCTestCase {
             pixelFiring: mockPixelFiring,
             memoryUsageMonitor: mockMemoryUsageMonitor,
             windowContext: nil,
-            isSyncEnabled: { nil }(),
+            isSyncEnabled: { nil },
             notificationCenter: notificationCenter
         )
     }

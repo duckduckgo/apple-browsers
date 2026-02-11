@@ -43,6 +43,7 @@ final class ThemePopoverDecider: ThemePopoverDeciding {
     private let featureFlagger: FeatureFlagger
     private let firstLaunchDate: Date
     private var persistor: ThemePopoverPersistor
+    let numberOfNTPDidAppearThreshold = 3
 
     var shouldShowPopover: Bool {
         featureFlagger.isFeatureOn(.themes)
@@ -67,7 +68,7 @@ final class ThemePopoverDecider: ThemePopoverDeciding {
     }
 
     func shouldDismissPopover(newTabPageDidAppearCount: Int) -> Bool {
-        newTabPageDidAppearCount >= 4
+        newTabPageDidAppearCount > numberOfNTPDidAppearThreshold
     }
 }
 

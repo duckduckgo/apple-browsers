@@ -244,7 +244,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
     // MARK: - Bundled Extension Management
 
-    public func installBundledExtension(resourceURL: URL) async throws {
+    public func installBundledExtension(resourceURL: URL, blockedDomains: Set<String> = []) async throws {
         let identifier = Self.bundledExtensionIdentifier(for: resourceURL)
         Logger.webExtensions.debug("🔄 Installing bundled extension from: \(resourceURL.path) with identifier: \(identifier)")
 
@@ -254,7 +254,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         }
 
         do {
-            try await loader.loadBundledWebExtension(from: resourceURL, identifier: identifier, into: controller)
+            try await loader.loadBundledWebExtension(from: resourceURL, identifier: identifier, blockedDomains: blockedDomains, into: controller)
             bundledExtensionIdentifiers.insert(identifier)
             Logger.webExtensions.info("✅ Successfully installed bundled extension (\(identifier))")
         } catch {

@@ -24,7 +24,7 @@ public protocol WebExtensionLoading: AnyObject {
     @discardableResult
     func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
     @discardableResult
-    func loadBundledWebExtension(from resourceURL: URL, identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
+    func loadBundledWebExtension(from resourceURL: URL, identifier: String, blockedDomains: Set<String>, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
     func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws
 }
@@ -58,9 +58,23 @@ public final class WebExtensionLoader: WebExtensionLoading {
     }
 
     @MainActor
-    public func loadBundledWebExtension(from resourceURL: URL, identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+    public func loadBundledWebExtension(from resourceURL: URL, identifier: String, blockedDomains: Set<String>, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
         let webExtension = try await WKWebExtension(resourceBaseURL: resourceURL)
         let context = makeContext(for: webExtension, identifier: identifier)
+
+        for domain in blockedDomains {
+            // Match the exact domain
+            if let exact = try? WKWebExtension.MatchPattern(string: "*://\(domain)/*") {
+                context.setPermissionStatus(.deniedExplicitly, for: exact, expirationDate: nil)
+            }
+            // Match all subdomains (eTLD+1 coverage)
+            if !domain.hasPrefix("*.") {
+                if let wildcard = try? WKWebExtension.MatchPattern(string: "*://*.\(domain)/*") {
+                    context.setPermissionStatus(.deniedExplicitly, for: wildcard, expirationDate: nil)
+                }
+            }
+        }
+
         try controller.load(context)
         return WebExtensionLoadResult(context: context, identifier: identifier)
     }

@@ -260,6 +260,11 @@ final class MainCoordinator {
         }
     }
 
+    private static let darkReaderBlockedDomains: Set<String> = [
+        "duckduckgo.com",
+        "apple.com",
+    ]
+
     private func updateBundledDarkReader(manager: WebExtensionManaging) async {
         guard #available(iOS 18.4, *) else { return }
         guard let darkReaderURL = Bundle.main.url(forResource: "darkreader", withExtension: nil) else {
@@ -269,7 +274,8 @@ final class MainCoordinator {
 
         let appSettings = AppDependencyProvider.shared.appSettings
         if appSettings.isAdaptiveDarkModeEnabled {
-            try? await manager.installBundledExtension(resourceURL: darkReaderURL)
+            try? await manager.installBundledExtension(resourceURL: darkReaderURL,
+                                                       blockedDomains: Self.darkReaderBlockedDomains)
         } else {
             try? manager.uninstallBundledExtension(resourceURL: darkReaderURL)
         }

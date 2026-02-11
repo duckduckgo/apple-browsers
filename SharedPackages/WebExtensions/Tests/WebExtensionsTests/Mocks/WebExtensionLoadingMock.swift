@@ -56,7 +56,7 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     }
 
     @discardableResult
-    func loadBundledWebExtension(from resourceURL: URL, identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+    func loadBundledWebExtension(from resourceURL: URL, identifier: String, blockedDomains: Set<String>, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
         loadBundledWebExtensionCalled = true
         loadedIdentifiers.append(identifier)
 

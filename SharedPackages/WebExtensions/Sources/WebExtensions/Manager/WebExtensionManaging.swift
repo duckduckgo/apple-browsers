@@ -80,8 +80,11 @@ public protocol WebExtensionManaging: AnyObject {
     // MARK: - Bundled Extensions
 
     /// Installs a bundled extension directly from a resource URL without copying to storage.
+    /// - Parameters:
+    ///   - resourceURL: The URL of the extension's resource directory.
+    ///   - blockedDomains: Domains where the extension will be denied access (e.g. `["duckduckgo.com", "*.example.com"]`).
     @available(macOS 15.4, iOS 18.4, *)
-    func installBundledExtension(resourceURL: URL) async throws
+    func installBundledExtension(resourceURL: URL, blockedDomains: Set<String>) async throws
 
     /// Uninstalls a previously installed bundled extension.
     @available(macOS 15.4, iOS 18.4, *)

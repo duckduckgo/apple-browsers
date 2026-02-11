@@ -139,7 +139,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     func extensionName(for identifier: String) -> String? { nil }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
-    func installBundledExtension(resourceURL: URL) async throws {}
+    func installBundledExtension(resourceURL: URL, blockedDomains: Set<String>) async throws {}
     func uninstallBundledExtension(resourceURL: URL) throws {}
     func isBundledExtension(_ context: WKWebExtensionContext) -> Bool { false }
 }

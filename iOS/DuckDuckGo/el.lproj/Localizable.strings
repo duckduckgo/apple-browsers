@@ -1,4 +1,13 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
+"-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
+
+/* No comment provided by engineer. */
+"-ff.<flagRawValue> true/false" = "-ff.<flagRawValue> true/false";
+
+/* No comment provided by engineer. */
 "(%@)" = "(%@)";
 
 /* No comment provided by engineer. */
@@ -8,7 +17,13 @@
 "%@ " = "%@ ";
 
 /* No comment provided by engineer. */
+"%@ items" = "%@ items";
+
+/* No comment provided by engineer. */
 "%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"%@s" = "%@s";
 
 /* No comment provided by engineer. */
 "Account" = "λογαριασμό";
@@ -1055,6 +1070,9 @@
 "Cohorts:" = "Cohorts:";
 
 /* No comment provided by engineer. */
+"Config Rollout:" = "Config Rollout:";
+
+/* No comment provided by engineer. */
 "Configuration" = "Διαμόρφωση";
 
 /* No comment provided by engineer. */
@@ -1062,6 +1080,9 @@
 
 /* No comment provided by engineer. */
 "Contextual Onboarding" = "Προσθήκη με βάση το περιεχόμενο";
+
+/* No comment provided by engineer. */
+"Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Παράλειψη";
@@ -1182,6 +1203,12 @@
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "ΠΡΟΣΑΡΜΟΣΜΕΝΟ ΠΕΡΙΕΧΟΜΕΝΟ ΚΕΛΙΟΥ";
+
+/* No comment provided by engineer. */
+"Custom Duration" = "Custom Duration";
+
+/* No comment provided by engineer. */
+"Custom Session Timer Duration" = "Custom Session Timer Duration";
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Προσαρμοσμένη διεύθυνση URL: %@";
@@ -1706,6 +1733,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1739,6 +1769,12 @@
 "error.unknown.try.again" = "Έχει προκύψει κάποιο άγνωστο σφάλμα";
 
 /* No comment provided by engineer. */
+"Experiment:" = "Experiment:";
+
+/* No comment provided by engineer. */
+"Experiment: %@" = "Experiment: %@";
+
+/* No comment provided by engineer. */
 "External ID: %@" = "Εξωτερικό αναγνωριστικό: %@";
 
 /* No comment provided by engineer. */
@@ -1761,6 +1797,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Αγαπημένα μόνο για κινητά";
+
+/* No comment provided by engineer. */
+"Feature Flag:" = "Feature Flag:";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Αποκλεισμός διαφημίσεων και αναδυόμενων παραθύρων";
@@ -2041,6 +2080,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.waterSwirl.name" = "Δίνη νερού";
 
+/* No comment provided by engineer. */
+"Flag: %@" = "Flag: %@";
+
 /* Description text above the Share Link button */
 "get.browser.on-your-desktop-go-to" = "Στον υπολογιστή σας, μεταβείτε στη διεύθυνση:";
 
@@ -2088,6 +2130,12 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Ρωτήστε ιδιωτικά";
+
+/* No comment provided by engineer. */
+"Install Extension" = "Εγκατάσταση επέκτασης";
+
+/* No comment provided by engineer. */
+"Installed Extensions (%@)" = "Εγκατεστημένες επεκτάσεις (%@)";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Πρέπει να ενεργοποιήσετε το VPN από την εφαρμογή DuckDuckGo.";
@@ -2208,6 +2256,15 @@
 
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "Εφαρμογή DuckDuckGo για Mac";
+
+/* No comment provided by engineer. */
+"Maestro Launch Arguments:" = "Maestro Launch Arguments:";
+
+/* No comment provided by engineer. */
+"Maestro: -experiment.uiTestExperiment control|treatment" = "Maestro: -experiment.uiTestExperiment control|treatment";
+
+/* No comment provided by engineer. */
+"Maestro: -ff.%@ true" = "Maestro: -ff.%@ true";
 
 /* Text explaining what happens when Malicious Site Protection is enabled */
 "malicious-site-protection-with-scam.settings.toggle.message" = "Να λαμβάνω προειδοποίηση για ιστότοπους που έχουν επισημανθεί για απάτες, ηλεκτρονικό ψάρεμα ή κακόβουλο λογισμικό";
@@ -2526,6 +2583,9 @@
 
 /* No comment provided by engineer. */
 "No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
+"No extensions installed" = "Δεν έχουν εγκατασταθεί επεκτάσεις";
 
 /* No comment provided by engineer. */
 "No Logs" = "Δεν υπάρχουν αρχεία καταγραφής";
@@ -2912,6 +2972,9 @@
 "prompt.custom.url.scheme.title" = "Άνοιγμα σε άλλη εφαρμογή;";
 
 /* No comment provided by engineer. */
+"REBRANDED" = "ΕΓΙΝΕ ΑΝΑΝΕΩΣΗ ΕΤΑΙΡΙΚΗΣ ΤΑΥΤΟΤΗΤΑΣ";
+
+/* No comment provided by engineer. */
 "Recent Processing Logs" = "Πρόσφατα αρχεία καταγραφής επεξεργασίας";
 
 /* No comment provided by engineer. */
@@ -2927,10 +2990,19 @@
 "Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
+"Reset to Default" = "Reset to Default";
+
+/* No comment provided by engineer. */
 "Results" = "Αποτελέσματα";
 
 /* No comment provided by engineer. */
 "Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
+"Save" = "Save";
+
+/* No comment provided by engineer. */
+"Scanning..." = "Σάρωση...";
 
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Διαγραφή καρτελών και δεδομένων ιστότοπου;";
@@ -3049,10 +3121,10 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Ρυθμίσεις αναζήτησης Assist";
 
-/* Settings screen cell subtitle for enabling automatic page context */
+/* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Αυτόματη αποστολή περιεχομένου σελίδας στο Duck.ai";
 
-/* Settings screen cell title for enabling automatic page context */
+/* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Αυτόματη αποστολή περιεχομένου";
 
 /* Title of hide AI-generated images settings link */
@@ -3563,6 +3635,9 @@
 "Status" = "Κατάσταση";
 
 /* No comment provided by engineer. */
+"Status:" = "Status:";
+
+/* No comment provided by engineer. */
 "Status: Invalidated" = "Κατάσταση: Καταστάθηκε μη έγκυρο";
 
 /* No comment provided by engineer. */
@@ -3956,7 +4031,7 @@
 "tab.switcher.tracker.count.keep.action" = "Διατήρηση";
 
 /* Subtitle for tracker count banner indicating time window */
-"tab.switcher.tracker.count.subtitle" = "τις τελευταίες 7 ημέρες";
+"tab.switcher.tracker.count.subtitle" = "in last 7 days";
 
 /* Do not translate - stringsdict entry */
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
@@ -3999,6 +4074,9 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Η Προστασία προσωπικών δεδομένων ενεργοποιήθηκε για το %@";
+
+/* No comment provided by engineer. */
+"Total stored: %@" = "Total stored: %@";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
@@ -4242,6 +4320,9 @@
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Έχετε προσκληθεί!";
+
+/* No comment provided by engineer. */
+"Web Extensions not available" = "Οι επεκτάσεις ιστού δεν είναι διαθέσιμες";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Το Αγαπημένο αφαιρέθηκε";

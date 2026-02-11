@@ -67,6 +67,11 @@ public extension OnboardingTheme {
                 shadowRadius: 6.0,
                 shadowPosition: CGPoint(x: 0, y: 7)
             ),
+            linearBubbleMetrics: LinearBubbleMetrics(
+                contentInsets: EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20),
+                arrowLength: 50,
+                arrowWidth: 36
+            ),
             dismissButtonMetrics: dismissButtonMetrics,
             contextualOnboardingMetrics: OnboardingTheme.ContextualOnboardingMetrics(
                 contentSpacing: 20,
@@ -85,6 +90,20 @@ public extension OnboardingTheme {
                         )
                     )
                 )
+            ),
+            linearOnboardingMetrics: LinearOnboardingMetrics(
+                contentOuterSpacing: 16.0,
+                contentInnerSpacing: 20,
+                buttonSpacing: 12,
+                bubbleMaxWidth: 340,
+                bubbleTailOffset: 0.2,
+                topMarginRatio: 0.18,
+                minTopMargin: 32,
+                maxTopMargin: 32,
+                progressBarTrailingPadding: 16.0,
+                progressBarTopPadding: 12.0,
+                rebrandingBadgeLeadingPadding: 12.0,
+                rebrandingBadgeTopPadding: 12.0
             ),
             linearTitleTextAlignment: .center,
             linearBodyTextAlignment: .center,

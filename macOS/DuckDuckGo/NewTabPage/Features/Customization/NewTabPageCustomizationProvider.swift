@@ -150,7 +150,7 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
 
     func processNewTabPageInitialized() {
         newTabPageInitialized = true
-        markThemePopoverDismissed()
+        dismissThemePopoverAndStopListeningToEventsIfNeeded()
     }
 }
 
@@ -168,22 +168,12 @@ private extension NewTabPageCustomizationProvider {
             }
     }
 
-    func stopListeningToNewTabPageEvents() {
-        newTabPageDidAppearCancellable = nil
-    }
-
     func processNewTabPageAppeared() {
         newTabPageDidAppearCount += 1
-
-        if shouldDismissPopover {
-            return
-        }
-
-        markThemePopoverDismissed()
-        stopListeningToNewTabPageEvents()
+        dismissThemePopoverAndStopListeningToEventsIfNeeded()
     }
 
-    var shouldDismissPopover: Bool {
+    var shouldDismissThemePopover: Bool {
         /// Why this is required:
         ///     1.  NTP doesn't relay `Themes Popover appeared`, as Native has ownership of whenever NTP is rendered, and how
         ///     2.  FE's `initialSetup` invocation may be executed, under certain circumstances, without the actual WebView ever becoming present
@@ -194,9 +184,14 @@ private extension NewTabPageCustomizationProvider {
         themePopoverVisible && newTabPageInitialized && newTabPageDidAppearCount >= 4
     }
 
-    func markThemePopoverDismissed() {
+    func dismissThemePopoverAndStopListeningToEventsIfNeeded() {
+        guard shouldDismissThemePopover else {
+            return
+        }
+
         themePopoverDecider.markPopoverDismissed()
         themePopoverVisible = false
+        newTabPageDidAppearCancellable = nil
     }
 }
 

@@ -25,27 +25,27 @@ import XCTest
 final class ThemePopoverDeciderTests: XCTestCase {
 
     func testWhenAllConditionsMetThenShouldShowPopoverIsTrue() {
-        let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: 3)
+        let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverDismissed: false, firstLaunchElapsedDays: 3)
         featureFlagger.enabledFeatureFlags = [.themes]
 
         XCTAssertTrue(decider.shouldShowPopover)
     }
 
     func testWhenThemesFeatureFlagDisabledThenShouldShowPopoverIsFalse() {
-        let (decider, _, _) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: 3)
+        let (decider, _, _) = buildThemePopoverDecider(initialTheme: .default, themePopoverDismissed: false, firstLaunchElapsedDays: 3)
 
         XCTAssertFalse(decider.shouldShowPopover)
     }
 
     func testWhenPopoverAlreadyShownThenShouldShowPopoverIsFalse() {
-        let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: true, firstLaunchElapsedDays: 3)
+        let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverDismissed: true, firstLaunchElapsedDays: 3)
         featureFlagger.enabledFeatureFlags = [.themes]
 
         XCTAssertFalse(decider.shouldShowPopover)
     }
 
     func testWhenThemeIsNotDefaultThenShouldShowPopoverIsFalse() {
-        let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .violet, themePopoverShown: false, firstLaunchElapsedDays: 3)
+        let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .violet, themePopoverDismissed: false, firstLaunchElapsedDays: 3)
         featureFlagger.enabledFeatureFlags = [.themes]
 
         XCTAssertFalse(decider.shouldShowPopover)
@@ -53,7 +53,7 @@ final class ThemePopoverDeciderTests: XCTestCase {
 
     func testWhenLessThanTwoDaysSinceFirstLaunchThenShouldShowPopoverIsFalse() {
         for daysAgo in [0, 1] {
-            let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: UInt(daysAgo))
+            let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverDismissed: false, firstLaunchElapsedDays: UInt(daysAgo))
             featureFlagger.enabledFeatureFlags = [.themes]
 
             XCTAssertFalse(decider.shouldShowPopover)
@@ -61,12 +61,12 @@ final class ThemePopoverDeciderTests: XCTestCase {
     }
 
     func testMarkPopoverShownWhenShouldShowPopoverThenSetsThemePopoverShownPersistorFlag() {
-        let (decider, persistor, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: 3)
+        let (decider, persistor, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverDismissed: false, firstLaunchElapsedDays: 3)
         featureFlagger.enabledFeatureFlags = [.themes]
 
-        decider.markPopoverShown()
+        decider.markPopoverDismissed()
 
-        XCTAssertTrue(persistor.themePopoverShown)
+        XCTAssertTrue(persistor.themePopoverDismissed)
     }
 }
 
@@ -74,7 +74,7 @@ final class ThemePopoverDeciderTests: XCTestCase {
 
 private extension ThemePopoverDeciderTests {
 
-    func buildThemePopoverDecider(initialTheme: ThemeName, themePopoverShown: Bool, firstLaunchElapsedDays: UInt) -> (ThemePopoverDeciding, ThemePopoverPersistor, MockFeatureFlagger) {
+    func buildThemePopoverDecider(initialTheme: ThemeName, themePopoverDismissed: Bool, firstLaunchElapsedDays: UInt) -> (ThemePopoverDeciding, ThemePopoverPersistor, MockFeatureFlagger) {
         let featureFlagger = MockFeatureFlagger()
         let firstLaunchDate = buildDate(daysAgo: firstLaunchElapsedDays)
 
@@ -86,7 +86,7 @@ private extension ThemePopoverDeciderTests {
             aiChatMenuConfig: MockAIChatConfig()
         )
 
-        let popoverPersistor = MockThemePopoverPersistor(themePopoverShown: themePopoverShown)
+        let popoverPersistor = MockThemePopoverPersistor(themePopoverDismissed: themePopoverDismissed)
         let popoverDecider = ThemePopoverDecider(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger, firstLaunchDate: firstLaunchDate, persistor: popoverPersistor)
 
         return (popoverDecider, popoverPersistor, featureFlagger)
@@ -100,10 +100,10 @@ private extension ThemePopoverDeciderTests {
 // MARK: - MockThemePopoverPersistor
 
 final class MockThemePopoverPersistor: ThemePopoverPersistor {
-    var themePopoverShown: Bool
+    var themePopoverDismissed: Bool
 
-    init(themePopoverShown: Bool = false) {
-        self.themePopoverShown = themePopoverShown
+    init(themePopoverDismissed: Bool = false) {
+        self.themePopoverDismissed = themePopoverDismissed
     }
 }
 
@@ -116,7 +116,7 @@ struct MockThemePopoverDecider: ThemePopoverDeciding {
         self.shouldShowPopover = shouldShowPopover
     }
 
-    func markPopoverShown() {
+    func markPopoverDismissed() {
         // No-op for mock
     }
 }

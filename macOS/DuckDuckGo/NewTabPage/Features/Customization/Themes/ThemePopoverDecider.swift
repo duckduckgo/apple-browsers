@@ -26,7 +26,7 @@ import os.log
 ///
 protocol ThemePopoverDeciding {
     var shouldShowPopover: Bool { get }
-    func markPopoverShown()
+    func markPopoverDismissed()
 }
 
 /// Determines when the Themes Popover should be rendered:
@@ -45,7 +45,7 @@ final class ThemePopoverDecider: ThemePopoverDeciding {
     var shouldShowPopover: Bool {
         featureFlagger.isFeatureOn(.themes)
             && appearancePreferences.themeName == .default
-            && persistor.themePopoverShown == false
+            && persistor.themePopoverDismissed == false
             && firstLaunchDate.daysSinceNow() >= 2
     }
 
@@ -56,25 +56,25 @@ final class ThemePopoverDecider: ThemePopoverDeciding {
         self.persistor = persistor
     }
 
-    func markPopoverShown() {
-        guard shouldShowPopover, persistor.themePopoverShown == false else {
+    func markPopoverDismissed() {
+        guard shouldShowPopover, persistor.themePopoverDismissed == false else {
             return
         }
 
-        persistor.themePopoverShown = true
+        persistor.themePopoverDismissed = true
     }
 }
 
 // MARK: - Persistor
 
 protocol ThemePopoverPersistor {
-    var themePopoverShown: Bool { get set }
+    var themePopoverDismissed: Bool { get set }
 }
 
 final class ThemePopoverUserDefaultsPersistor: ThemePopoverPersistor {
 
     private enum Key {
-        static let themePopoverShown = "theme-popover.shown"
+        static let themePopoverDismissed = "theme-popover.shown"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -83,20 +83,20 @@ final class ThemePopoverUserDefaultsPersistor: ThemePopoverPersistor {
         self.keyValueStore = keyValueStore
     }
 
-    var themePopoverShown: Bool {
+    var themePopoverDismissed: Bool {
         get {
             do {
-                return try keyValueStore.object(forKey: Key.themePopoverShown) as? Bool ?? false
+                return try keyValueStore.object(forKey: Key.themePopoverDismissed) as? Bool ?? false
             } catch {
-                Logger.general.error("Failed to read \(Key.themePopoverShown) from keyValueStore: \(error)")
+                Logger.general.error("Failed to read \(Key.themePopoverDismissed) from keyValueStore: \(error)")
                 return false
             }
         }
         set {
             do {
-                try keyValueStore.set(newValue, forKey: Key.themePopoverShown)
+                try keyValueStore.set(newValue, forKey: Key.themePopoverDismissed)
             } catch {
-                Logger.general.error("Failed to write \(Key.themePopoverShown) to keyValueStore: \(error)")
+                Logger.general.error("Failed to write \(Key.themePopoverDismissed) to keyValueStore: \(error)")
             }
         }
     }

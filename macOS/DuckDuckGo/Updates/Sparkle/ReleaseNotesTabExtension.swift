@@ -22,6 +22,7 @@ import Common
 import Foundation
 import Navigation
 import Persistence
+import PixelKit
 import WebKit
 
 #if SPARKLE
@@ -161,7 +162,7 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: any UpdateController, eventMapping: EventMapping<UpdateControllerEvent>?, keyValueStore: ThrowingKeyValueStoring) {
+    init(from updateController: any UpdateController, pixelFiring: PixelFiring?, keyValueStore: ThrowingKeyValueStoring) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
@@ -196,7 +197,7 @@ extension ReleaseNotesValues {
                 return
             }
 
-            eventMapping?.fire(.releaseNotesEmpty)
+            pixelFiring?.fire(UpdateFlowPixels.releaseNotesEmpty, frequency: .dailyAndCount)
 
             self.init(status: updateController.updateProgress.toStatus,
                       currentVersion: currentVersion,

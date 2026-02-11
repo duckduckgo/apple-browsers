@@ -1,7 +1,7 @@
 //
 //  SimplifiedSparkleUpdateController.swift
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -232,7 +232,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
 
     private let featureFlagger: FeatureFlagger
     private let buildType: ApplicationBuildType
-    private let eventMapping: EventMapping<UpdateControllerEvent>?
+    private let pixelFiring: PixelFiring?
 
     /// Computes whether automatic downloads should be enabled.
     /// Static for testability - no controller state needed.
@@ -263,7 +263,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
 
     public init(internalUserDecider: InternalUserDecider,
                 featureFlagger: FeatureFlagger,
-                eventMapping: EventMapping<UpdateControllerEvent>?,
+                pixelFiring: PixelFiring?,
                 notificationPresenter: UpdateNotificationPresenting,
                 keyValueStore: ThrowingKeyValueStoring,
                 buildType: ApplicationBuildType,
@@ -274,7 +274,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
         self.buildType = buildType
         self.internalUserDecider = internalUserDecider
         self.notificationPresenter = notificationPresenter
-        self.eventMapping = eventMapping
+        self.pixelFiring = pixelFiring
         self.settings = keyValueStore.throwingKeyedStoring()
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
 
@@ -339,7 +339,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
             updateStatus: updateStatus,
             currentVersion: appVersion.versionNumber,
             currentBuild: appVersion.buildNumber,
-            eventMapping: eventMapping
+            pixelFiring: pixelFiring
         )
     }
 
@@ -515,13 +515,13 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     }
 
     @objc public func runUpdate() {
-        eventMapping?.fire(.updaterDidRunUpdate)
+        pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidRunUpdate))
         resumeUpdater()
     }
 
     private func resumeUpdater() {
         if !progressState.isResumable {
-            eventMapping?.fire(.updaterAttemptToRestartWithoutResumeBlock)
+            pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterAttemptToRestartWithoutResumeBlock))
         }
         progressState.resumeCallback?()
     }
@@ -605,7 +605,7 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
             return
         }
 
-        eventMapping?.fire(.updaterAborted(reason: sparkleUpdaterErrorReason(from: error.localizedDescription)), error: error)
+        pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterAborted(reason: sparkleUpdaterErrorReason(from: error.localizedDescription)), error: error))
     }
 
     internal func sparkleUpdaterErrorReason(from errorDescription: String) -> String {
@@ -645,7 +645,7 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
         // Sparkle background checks bypass our check methods, so ensure tracking exists
         updateWideEvent.ensureFlowExists(initiationType: .automatic)
 
-        eventMapping?.fire(.updaterDidFindUpdate)
+        pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
 
         cachePendingUpdate(from: item)
@@ -686,7 +686,7 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
     public func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {
         Logger.updates.log("Download complete: \(item.displayVersionString, privacy: .public)")
         updateWideEvent.didCompleteDownload()
-        eventMapping?.fire(.updaterDidDownloadUpdate)
+        pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidDownloadUpdate))
 
         userDriver.updateLastUpdateDownloadedDate()
     }

@@ -147,10 +147,10 @@
 		1D8C2FF02B70F751005E4BBD /* MockTabSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */; };
 		1D8C2FF12B70F751005E4BBD /* MockTabSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */; };
 		1D9297BF2C1B062900A38521 /* ApplicationUpdateDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9297BE2C1B062900A38521 /* ApplicationUpdateDetector.swift */; };
-		1D94E7A02F33AA2E008315A2 /* MacOSWebExtensionPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */; };
-		1D94E7A12F33AA2E008315A2 /* MacOSWebExtensionPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */; };
 		1D94E7992F333CA1008315A2 /* AIChatOmnibarToolButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */; };
 		1D94E79A2F333CA1008315A2 /* AIChatOmnibarToolButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */; };
+		1D94E7A02F33AA2E008315A2 /* MacOSWebExtensionPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */; };
+		1D94E7A12F33AA2E008315A2 /* MacOSWebExtensionPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */; };
 		1D99CDDB2D929EC900656A84 /* PinnedTabsPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D99CDDA2D929EBE00656A84 /* PinnedTabsPixel.swift */; };
 		1D99CDDC2D929EC900656A84 /* PinnedTabsPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D99CDDA2D929EBE00656A84 /* PinnedTabsPixel.swift */; };
 		1D9A37672BD8EA8800EBC58D /* DockPositionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9A37662BD8EA8800EBC58D /* DockPositionProvider.swift */; };
@@ -2329,7 +2329,6 @@
 		840E58012F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */; };
 		840E58022F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F52F30A9E4009CFCEE /* UpdateCycleProgress.swift */; };
 		840E58032F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57EC2F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift */; };
-		840E58042F30A9E4009CFCEE /* UpdateControllerMappings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F42F30A9E4009CFCEE /* UpdateControllerMappings.swift */; };
 		840E58062F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F62F30A9E4009CFCEE /* UpdateNotificationPresenting.swift */; };
 		840E58072F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F12F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift */; };
 		840E58082F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F72F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift */; };
@@ -2341,7 +2340,6 @@
 		840E58102F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */; };
 		840E58112F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F52F30A9E4009CFCEE /* UpdateCycleProgress.swift */; };
 		840E58122F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57EC2F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift */; };
-		840E58132F30A9E4009CFCEE /* UpdateControllerMappings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F42F30A9E4009CFCEE /* UpdateControllerMappings.swift */; };
 		840E58152F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F62F30A9E4009CFCEE /* UpdateNotificationPresenting.swift */; };
 		840E58162F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F12F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift */; };
 		840E58172F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F72F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift */; };
@@ -4571,8 +4569,8 @@
 		1D8C2FEC2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockViewSnapshotRenderer.swift; sourceTree = "<group>"; };
 		1D8C2FEF2B70F751005E4BBD /* MockTabSnapshotStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockTabSnapshotStore.swift; sourceTree = "<group>"; };
 		1D9297BE2C1B062900A38521 /* ApplicationUpdateDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationUpdateDetector.swift; sourceTree = "<group>"; };
-		1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSWebExtensionPixelFiring.swift; sourceTree = "<group>"; };
 		1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatOmnibarToolButton.swift; sourceTree = "<group>"; };
+		1D94E79F2F33AA28008315A2 /* MacOSWebExtensionPixelFiring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSWebExtensionPixelFiring.swift; sourceTree = "<group>"; };
 		1D99CDDA2D929EBE00656A84 /* PinnedTabsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsPixel.swift; sourceTree = "<group>"; };
 		1D9A37662BD8EA8800EBC58D /* DockPositionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockPositionProvider.swift; sourceTree = "<group>"; };
 		1D9A4E592B43213B00F449E2 /* TabSnapshotExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSnapshotExtension.swift; sourceTree = "<group>"; };
@@ -5474,7 +5472,6 @@
 		840E57F12F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesTabExtensionFactory.swift; sourceTree = "<group>"; };
 		840E57F22F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesUserScriptFactory.swift; sourceTree = "<group>"; };
 		840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesUserScriptProvider.swift; sourceTree = "<group>"; };
-		840E57F42F30A9E4009CFCEE /* UpdateControllerMappings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateControllerMappings.swift; sourceTree = "<group>"; };
 		840E57F52F30A9E4009CFCEE /* UpdateCycleProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCycleProgress.swift; sourceTree = "<group>"; };
 		840E57F62F30A9E4009CFCEE /* UpdateNotificationPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateNotificationPresenting.swift; sourceTree = "<group>"; };
 		840E57F72F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdaterAvailabilityChecking.swift; sourceTree = "<group>"; };
@@ -7209,7 +7206,6 @@
 				7BAB80C52E2A420400F59FF4 /* UpdateCheckState.swift */,
 				AAD86E51267A0DFF005C11BE /* UpdateController.swift */,
 				8434512D2F2CDADE0027AFB6 /* UpdateControllerKeys.swift */,
-				840E57F42F30A9E4009CFCEE /* UpdateControllerMappings.swift */,
 				840E57F52F30A9E4009CFCEE /* UpdateCycleProgress.swift */,
 				BB01275B2E6F409E00263AD8 /* UpdateFlowPixels.swift */,
 				1D72D59B2BFF61B200AEDE36 /* UpdateNotificationPresenter.swift */,
@@ -15254,7 +15250,6 @@
 				840E58102F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */,
 				840E58112F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */,
 				840E58122F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift in Sources */,
-				840E58132F30A9E4009CFCEE /* UpdateControllerMappings.swift in Sources */,
 				840E58152F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */,
 				840E58162F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */,
 				840E58172F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */,
@@ -16512,7 +16507,6 @@
 				840E58012F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */,
 				840E58022F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */,
 				840E58032F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift in Sources */,
-				840E58042F30A9E4009CFCEE /* UpdateControllerMappings.swift in Sources */,
 				840E58062F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */,
 				840E58072F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */,
 				840E58082F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */,

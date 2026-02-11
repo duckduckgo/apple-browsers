@@ -1373,7 +1373,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard AppVersion.runType != .uiTests else { return }
 
         let buildType = StandardApplicationBuildType()
-        let eventMapping = UpdateControllerMappings.eventMapping(pixelFiring: PixelKit.shared)
         let notificationPresenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
 
         let updateControllerFactory = UpdateControllerFactory(featureFlagger: featureFlagger)
@@ -1381,10 +1380,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch updateControllerFactory.factoryMethod {
         case .appStore(let makeController):
             assert(buildType.isAppStoreBuild)
-            updateController = makeController(internalUserDecider, featureFlagger, eventMapping, notificationPresenter)
+            updateController = makeController(internalUserDecider, featureFlagger, PixelKit.shared, notificationPresenter)
         case .sparkle(let makeController):
             assert(buildType.isSparkleBuild)
-            updateController = makeController(internalUserDecider, featureFlagger, eventMapping, notificationPresenter, UserDefaults.standard, buildType, wideEvent)
+            updateController = makeController(internalUserDecider, featureFlagger, PixelKit.shared, notificationPresenter, UserDefaults.standard, buildType, wideEvent)
         case .none:
             assertionFailure("Failed to instantiate update controller")
             return

@@ -1,7 +1,7 @@
 //
 //  AppStoreUpdateController.swift
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
     private let updaterChecker: AppStoreUpdaterAvailabilityChecker
     private let releaseChecker: LatestReleaseChecker
     private let featureFlagger: FeatureFlagger
-    private let eventMapping: EventMapping<UpdateControllerEvent>?
+    private let pixelFiring: PixelFiring?
     private let internalUserDecider: InternalUserDecider
     private let appStoreOpener: AppStoreOpener?
 
@@ -84,14 +84,14 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
     /// Protocol-conforming initializer for production use.
     public init(internalUserDecider: InternalUserDecider,
                 featureFlagger: FeatureFlagger,
-                eventMapping: EventMapping<UpdateControllerEvent>?,
+                pixelFiring: PixelFiring?,
                 notificationPresenter: any UpdateNotificationPresenting) {
         self.updateCheckState = UpdateCheckState()
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.notificationPresenter = notificationPresenter
         self.releaseChecker = LatestReleaseChecker()
         self.featureFlagger = featureFlagger
-        self.eventMapping = eventMapping
+        self.pixelFiring = pixelFiring
         self.internalUserDecider = internalUserDecider
         self.appStoreOpener = DefaultAppStoreOpener()
         super.init()
@@ -113,18 +113,18 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
 
     // MARK: - Convenience Initializers
 
-    /// Convenience initializer for testing with minimal dependencies.
-    public init(appStoreOpener: AppStoreOpener? = nil,
-                internalUserDecider: InternalUserDecider? = nil,
-                featureFlagger: FeatureFlagger? = nil,
-                eventMapping: EventMapping<UpdateControllerEvent>? = nil,
-                notificationPresenter: any UpdateNotificationPresenting) {
+    /// Convenience internal initializer for testing with minimal dependencies.
+    init(appStoreOpener: AppStoreOpener? = nil,
+         internalUserDecider: InternalUserDecider? = nil,
+         featureFlagger: FeatureFlagger? = nil,
+         pixelFiring: PixelFiring? = nil,
+         notificationPresenter: any UpdateNotificationPresenting) {
         self.updateCheckState = UpdateCheckState()
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.notificationPresenter = notificationPresenter
         self.releaseChecker = LatestReleaseChecker()
         self.featureFlagger = featureFlagger ?? MockFeatureFlagger()
-        self.eventMapping = eventMapping
+        self.pixelFiring = pixelFiring
         self.internalUserDecider = internalUserDecider ?? MockInternalUserDecider(isInternalUser: false)
         self.appStoreOpener = appStoreOpener
         super.init()
@@ -245,8 +245,7 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
             /// If we fail to fetch the latest version we do not want to show any messages to the user.
             updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
 
-            // Track release metadata fetch failures via event mapping
-            eventMapping?.fire(.releaseMetadataFetchFailed(error: error))
+            pixelFiring?.fire(UpdateFlowPixels.releaseMetadataFetchFailed(error: error))
 
             Logger.updates.error("Failed to check for App Store updates: \(error.localizedDescription)")
 

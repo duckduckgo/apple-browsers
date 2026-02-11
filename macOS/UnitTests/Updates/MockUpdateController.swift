@@ -68,7 +68,7 @@ public class MockUpdateController: UpdateController {
 
     required public init(internalUserDecider: InternalUserDecider,
                          featureFlagger: FeatureFlagger,
-                         eventMapping: EventMapping<UpdateControllerEvent>?,
+                         pixelFiring: PixelFiring?,
                          notificationPresenter: UpdateNotificationPresenting,
                          keyValueStore: ThrowingKeyValueStoring,
                          buildType: ApplicationBuildType?,

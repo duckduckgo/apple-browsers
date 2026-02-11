@@ -1,7 +1,7 @@
 //
 //  SparkleUpdateController.swift
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -274,7 +274,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
-    private let eventMapping: EventMapping<UpdateControllerEvent>?
+    private let pixelFiring: PixelFiring?
 
     var useLegacyAutoRestartLogic: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
@@ -289,14 +289,14 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     /// Creates `SparkleUpdateWideEvent` internally from `wideEvent` parameter.
     public init(internalUserDecider: InternalUserDecider,
                 featureFlagger: FeatureFlagger,
-                eventMapping: EventMapping<UpdateControllerEvent>?,
+                pixelFiring: PixelFiring?,
                 notificationPresenter: any UpdateNotificationPresenting,
                 keyValueStore: any Persistence.ThrowingKeyValueStoring,
                 buildType: ApplicationBuildType,
                 wideEvent: WideEventManaging) {
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
-        self.eventMapping = eventMapping
+        self.pixelFiring = pixelFiring
         self.notificationPresenter = notificationPresenter
         self.internalUserDecider = internalUserDecider
         self.updateCheckState = UpdateCheckState()
@@ -337,7 +337,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
             updateStatus: updateStatus,
             currentVersion: currentVersion,
             currentBuild: currentBuild,
-            eventMapping: eventMapping
+            pixelFiring: pixelFiring
         )
     }
 
@@ -599,7 +599,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     @objc func runUpdate() {
         guard let userDriver else { return }
 
-        eventMapping?.fire(.updaterDidRunUpdate)
+        pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidRunUpdate))
 
         guard useLegacyAutoRestartLogic else {
             resumeUpdater()
@@ -627,7 +627,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     private func resumeUpdater() {
         if userDriver?.isResumable == false {
-            eventMapping?.fire(.updaterAttemptToRestartWithoutResumeBlock)
+            pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterAttemptToRestartWithoutResumeBlock))
         }
         userDriver?.resume()
     }
@@ -703,7 +703,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
             return
         }
 
-        eventMapping?.fire(.updaterAborted(reason: sparkleUpdaterErrorReason(from: error.localizedDescription)))
+        pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterAborted(reason: sparkleUpdaterErrorReason(from: error.localizedDescription)), error: error))
     }
 
     internal func sparkleUpdaterErrorReason(from errorDescription: String) -> String {
@@ -743,7 +743,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
         Logger.updates.log("Updater did find valid update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
 
-        eventMapping?.fire(.updaterDidFindUpdate)
+        pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
         updateValidityStartDate = Date()
 
@@ -785,7 +785,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
     func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {
         Logger.updates.log("Updater did download update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
         updateWideEvent.didCompleteDownload()
-        eventMapping?.fire(.updaterDidDownloadUpdate)
+        pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidDownloadUpdate))
 
         if !useLegacyAutoRestartLogic,
            let userDriver {

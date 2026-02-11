@@ -1,7 +1,7 @@
 //
 //  SparkleUpdateControllerTests.swift
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
         let updateController = SparkleUpdateController(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
-            eventMapping: nil,
+            pixelFiring: nil,
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
             buildType: ApplicationBuildTypeMock(),
@@ -79,7 +79,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
         let updateController = SparkleUpdateController(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
-            eventMapping: nil,
+            pixelFiring: nil,
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
             buildType: ApplicationBuildTypeMock(),
@@ -131,7 +131,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
         let updateController = SparkleUpdateController(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
-            eventMapping: nil,
+            pixelFiring: nil,
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
             buildType: ApplicationBuildTypeMock(),

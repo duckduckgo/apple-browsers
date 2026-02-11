@@ -20,6 +20,7 @@ import Combine
 import Common
 import Foundation
 import Persistence
+import PixelKit
 import UserScript
 import WebKit
 
@@ -31,13 +32,13 @@ extension ReleaseNotesUserScriptFactory: ReleaseNotesUserScriptFactoryBuilder {
     /// Creates a Sparkle-specific release notes user script.
     public func makeUserScript(
         updateController: UpdateController,
-        eventMapping: EventMapping<UpdateControllerEvent>?,
+        pixelFiring: PixelFiring?,
         keyValueStore: ThrowingKeyValueStoring,
         releaseNotesURL: URL
     ) -> Subfeature {
         ReleaseNotesUserScript(
             updateController: updateController,
-            eventMapping: eventMapping,
+            pixelFiring: pixelFiring,
             keyValueStore: keyValueStore,
             releaseNotesURL: releaseNotesURL
         )
@@ -51,7 +52,7 @@ extension ReleaseNotesUserScriptFactory: ReleaseNotesUserScriptFactoryBuilder {
 public final class ReleaseNotesUserScript: NSObject, Subfeature {
 
     private let updateController: UpdateController
-    private let eventMapping: EventMapping<UpdateControllerEvent>?
+    private let pixelFiring: PixelFiring?
     private let keyValueStore: ThrowingKeyValueStoring
     private let releaseNotesURL: URL
 
@@ -76,11 +77,11 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
     }
 
     public init(updateController: UpdateController,
-                eventMapping: EventMapping<UpdateControllerEvent>?,
+                pixelFiring: PixelFiring?,
                 keyValueStore: ThrowingKeyValueStoring,
                 releaseNotesURL: URL) {
         self.updateController = updateController
-        self.eventMapping = eventMapping
+        self.pixelFiring = pixelFiring
         self.keyValueStore = keyValueStore
         self.releaseNotesURL = releaseNotesURL
         super.init()
@@ -108,7 +109,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         guard AppVersion.runType != .uiTests, isInitialized,
               let webView, webView.url == releaseNotesURL else { return }
 
-        let values = ReleaseNotesValues(from: updateController, eventMapping: eventMapping, keyValueStore: keyValueStore)
+        let values = ReleaseNotesValues(from: updateController, pixelFiring: pixelFiring, keyValueStore: keyValueStore)
         broker?.push(method: "onUpdate", params: values, for: self, into: webView)
     }
 

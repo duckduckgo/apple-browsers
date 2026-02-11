@@ -1,7 +1,7 @@
 //
 //  UpdateController.swift
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2021 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -68,11 +68,11 @@ public enum UpdateControllerEvent: Equatable {
 public enum UpdateControllerFactoryMethodType {
     case appStore((_ internalUserDecider: InternalUserDecider,
                    _ featureFlagger: FeatureFlagger,
-                   _ eventMapping: EventMapping<UpdateControllerEvent>?,
+                   _ pixelFiring: PixelFiring?,
                    _ notificationPresenter: any UpdateNotificationPresenting) -> any UpdateController)
     case sparkle((_ internalUserDecider: InternalUserDecider,
                   _ featureFlagger: FeatureFlagger,
-                  _ eventMapping: EventMapping<UpdateControllerEvent>?,
+                  _ pixelFiring: PixelFiring?,
                   _ notificationPresenter: any UpdateNotificationPresenting,
                   _ keyValueStore: any Persistence.ThrowingKeyValueStoring,
                   _ buildType: ApplicationBuildType,
@@ -110,9 +110,9 @@ public protocol UpdateControllerFactoryMethodGetter {
 /// let controller: any UpdateController
 /// switch factoryMethod {
 /// case .appStore(let makeController):
-///     controller = makeController(internalUserDecider, featureFlagger, eventMapping, notificationPresenter)
+///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter)
 /// case .sparkle(let makeController):
-///     controller = makeController(internalUserDecider, featureFlagger, eventMapping, notificationPresenter, keyValueStore, buildType, wideEvent)
+///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, keyValueStore, buildType, wideEvent)
 /// }
 /// ```
 public struct UpdateControllerFactory {

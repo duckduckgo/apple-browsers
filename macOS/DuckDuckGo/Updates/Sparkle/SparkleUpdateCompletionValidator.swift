@@ -1,7 +1,7 @@
 //
 //  SparkleUpdateCompletionValidator.swift
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@
 import Common
 import Foundation
 import Persistence
+import PixelKit
 
 /// Validates Sparkle update completion and provides metadata for pixel firing.
 ///
 /// This class stores pending update metadata before app restart and validates
-/// update completion after restart. Pixel firing is handled by event mapping
-/// in the controllers that use this validator.
+/// update completion after restart.
 public final class SparkleUpdateCompletionValidator {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
@@ -56,7 +56,7 @@ public final class SparkleUpdateCompletionValidator {
         updateStatus: AppUpdateStatus,
         currentVersion: String,
         currentBuild: String,
-        eventMapping: EventMapping<UpdateControllerEvent>?
+        pixelFiring: PixelFiring?
     ) {
         // Ensure metadata is always cleared, regardless of outcome
         defer {
@@ -89,7 +89,7 @@ public final class SparkleUpdateCompletionValidator {
             // Fire different pixels based on whether update was Sparkle-initiated
             if updatedBySparkle {
                 // Success - Sparkle-initiated update completed
-                eventMapping?.fire(.updateApplicationSuccess(
+                pixelFiring?.fire(UpdateFlowPixels.updateApplicationSuccess(
                     sourceVersion: sourceVersion,
                     sourceBuild: sourceBuild,
                     targetVersion: currentVersion,
@@ -97,14 +97,14 @@ public final class SparkleUpdateCompletionValidator {
                     initiationType: initiationType,
                     updateConfiguration: updateConfiguration,
                     osVersion: osVersionString
-                ))
+                ), frequency: .dailyAndCount)
             } else {
                 // Unexpected - update detected outside Sparkle flow
-                eventMapping?.fire(.updateApplicationUnexpected(
+                pixelFiring?.fire(UpdateFlowPixels.updateApplicationUnexpected(
                     targetVersion: currentVersion,
                     targetBuild: currentBuild,
                     osVersion: osVersionString
-                ))
+                ), frequency: .dailyAndCount)
             }
 
         default:
@@ -113,7 +113,7 @@ public final class SparkleUpdateCompletionValidator {
 
             let failureStatus = updateStatus == .downgraded ? "downgraded" : "noChange"
 
-            eventMapping?.fire(.updateApplicationFailure(
+            pixelFiring?.fire(UpdateFlowPixels.updateApplicationFailure(
                 sourceVersion: sourceVersion,
                 sourceBuild: sourceBuild,
                 expectedVersion: expectedVersion,
@@ -124,7 +124,7 @@ public final class SparkleUpdateCompletionValidator {
                 initiationType: initiationType,
                 updateConfiguration: updateConfiguration,
                 osVersion: osVersionString
-            ))
+            ), frequency: .dailyAndCount)
         }
     }
 

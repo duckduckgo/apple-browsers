@@ -1,7 +1,7 @@
 //
 //  SparkleUpdateCompletionValidatorTests.swift
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@
 import Common
 import Persistence
 import PersistenceTestingUtils
+import PixelKit
+import PixelKitTestingUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -28,8 +30,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
     var validator: SparkleUpdateCompletionValidator!
     var testStore: ThrowingKeyValueStoring!
     var testSettings: (any ThrowingKeyedStoring<UpdateControllerSettings>)!
-    fileprivate var mockEventMapping: MockEventMapping!
-    var firedEvents: [UpdateControllerEvent] = []
+    fileprivate var mockPixelFiring: PixelKitMock!
 
     override func setUp() {
         super.setUp()
@@ -38,75 +39,25 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         testStore = InMemoryThrowingKeyValueStore()
         testSettings = testStore.throwingKeyedStoring()
         validator = SparkleUpdateCompletionValidator(settings: testSettings!)
-
-        // Setup mock event mapping
-        firedEvents = []
-        mockEventMapping = MockEventMapping { [weak self] event in
-            self?.firedEvents.append(event)
-        }
     }
 
     override func tearDown() {
         validator = nil
         testSettings = nil
         testStore = nil
-        mockEventMapping = nil
-        firedEvents = []
+        mockPixelFiring = nil
         super.tearDown()
     }
 
     // MARK: - Helper Methods
 
-    private func assertEventFired(_ event: UpdateControllerEvent, file: StaticString = #file, line: UInt = #line) {
-        XCTAssertTrue(firedEvents.contains(event), "Expected event was not fired. Fired events: \(firedEvents)", file: file, line: line)
+    private func osVersionString() -> String {
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+        return "\(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)"
     }
 
-    private func assertNoEventFired(file: StaticString = #file, line: UInt = #line) {
-        XCTAssertEqual(firedEvents, [], "Expected no events to fire, but \(firedEvents.count) were fired", file: file, line: line)
-    }
-
-    private func extractSuccessParameters() -> [String: String]? {
-        guard case .updateApplicationSuccess(let sourceVersion, let sourceBuild, let targetVersion, let targetBuild, let initiationType, let updateConfiguration, let osVersion) = firedEvents.first else {
-            return nil
-        }
-        return [
-            "sourceVersion": sourceVersion,
-            "sourceBuild": sourceBuild,
-            "targetVersion": targetVersion,
-            "targetBuild": targetBuild,
-            "initiationType": initiationType,
-            "updateConfiguration": updateConfiguration,
-            "osVersion": osVersion
-        ]
-    }
-
-    private func extractFailureParameters() -> [String: String]? {
-        guard case .updateApplicationFailure(let sourceVersion, let sourceBuild, let expectedVersion, let expectedBuild, let actualVersion, let actualBuild, let failureStatus, let initiationType, let updateConfiguration, let osVersion) = firedEvents.first else {
-            return nil
-        }
-        return [
-            "sourceVersion": sourceVersion,
-            "sourceBuild": sourceBuild,
-            "expectedVersion": expectedVersion,
-            "expectedBuild": expectedBuild,
-            "actualVersion": actualVersion,
-            "actualBuild": actualBuild,
-            "failureStatus": failureStatus,
-            "initiationType": initiationType,
-            "updateConfiguration": updateConfiguration,
-            "osVersion": osVersion
-        ]
-    }
-
-    private func extractUnexpectedParameters() -> [String: String]? {
-        guard case .updateApplicationUnexpected(let targetVersion, let targetBuild, let osVersion) = firedEvents.first else {
-            return nil
-        }
-        return [
-            "targetVersion": targetVersion,
-            "targetBuild": targetBuild,
-            "osVersion": osVersion
-        ]
+    private func makePixelMock(expecting expected: [ExpectedFireCall]) -> PixelKitMock {
+        PixelKitMock(expecting: expected)
     }
 
     // MARK: - Validation Tests
@@ -122,23 +73,26 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             updateConfiguration: "automatic"
         )
 
+        let expectedPixel = UpdateFlowPixels.updateApplicationSuccess(
+            sourceVersion: "1.100.0",
+            sourceBuild: "123456",
+            targetVersion: "1.101.0",
+            targetBuild: "123457",
+            initiationType: "manual",
+            updateConfiguration: "automatic",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
+
         // When: Check with .updated status
         validator.validateExpectations(
             updateStatus: .updated,
             currentVersion: "1.101.0",
             currentBuild: "123457",
-            eventMapping: mockEventMapping
+            pixelFiring: mockPixelFiring
         )
 
-        // Then: Pixel should be fired with correct parameters
-        let parameters = extractSuccessParameters()
-        XCTAssertEqual(parameters?["sourceVersion"], "1.100.0")
-        XCTAssertEqual(parameters?["sourceBuild"], "123456")
-        XCTAssertEqual(parameters?["targetVersion"], "1.101.0")
-        XCTAssertEqual(parameters?["targetBuild"], "123457")
-        XCTAssertEqual(parameters?["initiationType"], "manual")
-        XCTAssertEqual(parameters?["updateConfiguration"], "automatic")
-        XCTAssertNotNil(parameters?["osVersion"])
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
 
     func testWhenUpdateStatusIsNoChangeWithMetadataThenFailurePixelIsFired() throws {
@@ -152,26 +106,29 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             updateConfiguration: "automatic"
         )
 
+        let expectedPixel = UpdateFlowPixels.updateApplicationFailure(
+            sourceVersion: "1.100.0",
+            sourceBuild: "123456",
+            expectedVersion: "1.101.0",
+            expectedBuild: "123457",
+            actualVersion: "1.100.0",
+            actualBuild: "123456",
+            failureStatus: "noChange",
+            initiationType: "manual",
+            updateConfiguration: "automatic",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
+
         // When: Check with .noChange status
         validator.validateExpectations(
             updateStatus: .noChange,
             currentVersion: "1.100.0",
             currentBuild: "123456",
-            eventMapping: mockEventMapping
+            pixelFiring: mockPixelFiring
         )
 
-        // Then: Failure pixel should be fired
-        let parameters = extractFailureParameters()
-        XCTAssertEqual(parameters?["sourceVersion"], "1.100.0")
-        XCTAssertEqual(parameters?["sourceBuild"], "123456")
-        XCTAssertEqual(parameters?["expectedVersion"], "1.101.0")
-        XCTAssertEqual(parameters?["expectedBuild"], "123457")
-        XCTAssertEqual(parameters?["actualVersion"], "1.100.0")
-        XCTAssertEqual(parameters?["actualBuild"], "123456")
-        XCTAssertEqual(parameters?["failureStatus"], "noChange")
-        XCTAssertEqual(parameters?["initiationType"], "manual")
-        XCTAssertEqual(parameters?["updateConfiguration"], "automatic")
-        XCTAssertNotNil(parameters?["osVersion"])
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
 
         // AND: Metadata should be cleared
         XCTAssertNil(try testSettings.pendingUpdateSourceVersion)
@@ -193,26 +150,29 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             updateConfiguration: "automatic"
         )
 
+        let expectedPixel = UpdateFlowPixels.updateApplicationFailure(
+            sourceVersion: "1.100.0",
+            sourceBuild: "123456",
+            expectedVersion: "1.101.0",
+            expectedBuild: "123457",
+            actualVersion: "1.99.0",
+            actualBuild: "123455",
+            failureStatus: "downgraded",
+            initiationType: "manual",
+            updateConfiguration: "automatic",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
+
         // When: Check with .downgraded status
         validator.validateExpectations(
             updateStatus: .downgraded,
             currentVersion: "1.99.0",
             currentBuild: "123455",
-            eventMapping: mockEventMapping
+            pixelFiring: mockPixelFiring
         )
 
-        // Then: Failure pixel should be fired
-        let parameters = extractFailureParameters()
-        XCTAssertEqual(parameters?["sourceVersion"], "1.100.0")
-        XCTAssertEqual(parameters?["sourceBuild"], "123456")
-        XCTAssertEqual(parameters?["expectedVersion"], "1.101.0")
-        XCTAssertEqual(parameters?["expectedBuild"], "123457")
-        XCTAssertEqual(parameters?["actualVersion"], "1.99.0")
-        XCTAssertEqual(parameters?["actualBuild"], "123455")
-        XCTAssertEqual(parameters?["failureStatus"], "downgraded")
-        XCTAssertEqual(parameters?["initiationType"], "manual")
-        XCTAssertEqual(parameters?["updateConfiguration"], "automatic")
-        XCTAssertNotNil(parameters?["osVersion"])
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
 
         // AND: Metadata should be cleared
         XCTAssertNil(try testSettings.pendingUpdateSourceVersion)
@@ -225,20 +185,22 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
 
     func testWhenUpdateStatusIsUpdatedWithNoMetadataThenPixelIsFiredWithNonSparkleFlag() {
         // Given: NO metadata stored (non-Sparkle update)
+        let expectedPixel = UpdateFlowPixels.updateApplicationUnexpected(
+            targetVersion: "1.101.0",
+            targetBuild: "123457",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
 
         // When: Check with .updated status
         validator.validateExpectations(
             updateStatus: .updated,
             currentVersion: "1.101.0",
             currentBuild: "123457",
-            eventMapping: mockEventMapping
+            pixelFiring: mockPixelFiring
         )
 
-        // Then: Unexpected pixel should be fired
-        let parameters = extractUnexpectedParameters()
-        XCTAssertEqual(parameters?["targetVersion"], "1.101.0")
-        XCTAssertEqual(parameters?["targetBuild"], "123457")
-        XCTAssertNotNil(parameters?["osVersion"])
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
 
     func testWhenPixelIsFiredWithAutomaticInitiationThenParametersAreCorrect() {
@@ -252,17 +214,26 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             updateConfiguration: "automatic"
         )
 
+        let expectedPixel = UpdateFlowPixels.updateApplicationSuccess(
+            sourceVersion: "1.100.0",
+            sourceBuild: "123456",
+            targetVersion: "1.101.0",
+            targetBuild: "123457",
+            initiationType: "automatic",
+            updateConfiguration: "automatic",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
+
         // When: Fire pixel
         validator.validateExpectations(
             updateStatus: .updated,
             currentVersion: "1.101.0",
             currentBuild: "123457",
-            eventMapping: mockEventMapping
+            pixelFiring: mockPixelFiring
         )
 
-        // Then: Verify initiationType is automatic
-        let parameters = extractSuccessParameters()
-        XCTAssertEqual(parameters?["initiationType"], "automatic")
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
 
     func testWhenPixelIsFiredWithManualConfigurationThenParametersAreCorrect() {
@@ -276,17 +247,26 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             updateConfiguration: "manual"
         )
 
+        let expectedPixel = UpdateFlowPixels.updateApplicationSuccess(
+            sourceVersion: "1.100.0",
+            sourceBuild: "123456",
+            targetVersion: "1.101.0",
+            targetBuild: "123457",
+            initiationType: "manual",
+            updateConfiguration: "manual",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
+
         // When: Fire pixel
         validator.validateExpectations(
             updateStatus: .updated,
             currentVersion: "1.101.0",
             currentBuild: "123457",
-            eventMapping: mockEventMapping
+            pixelFiring: mockPixelFiring
         )
 
-        // Then: Verify updateConfiguration is manual
-        let parameters = extractSuccessParameters()
-        XCTAssertEqual(parameters?["updateConfiguration"], "manual")
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
 
     func testWhenPixelIsFiredThenMetadataIsCleared() {
@@ -299,35 +279,43 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             initiationType: "manual",
             updateConfiguration: "automatic"
         )
+        let expectedSuccess = UpdateFlowPixels.updateApplicationSuccess(
+            sourceVersion: "1.100.0",
+            sourceBuild: "123456",
+            targetVersion: "1.101.0",
+            targetBuild: "123457",
+            initiationType: "manual",
+            updateConfiguration: "automatic",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedSuccess, frequency: .dailyAndCount)])
 
         // When: Fire pixel once
         validator.validateExpectations(
             updateStatus: .updated,
             currentVersion: "1.101.0",
             currentBuild: "123457",
-            eventMapping: mockEventMapping
+            pixelFiring: mockPixelFiring
         )
 
-        // Then: First call should fire success pixel (Sparkle-initiated)
-        let firstCallParams = extractSuccessParameters()
-        XCTAssertEqual(firstCallParams?["sourceVersion"], "1.100.0")
-
-        // Clear the fired events array
-        firedEvents = []
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
 
         // When: Try to fire again
+        let expectedUnexpected = UpdateFlowPixels.updateApplicationUnexpected(
+            targetVersion: "1.101.0",
+            targetBuild: "123457",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedUnexpected, frequency: .dailyAndCount)])
+
         validator.validateExpectations(
             updateStatus: .updated,
             currentVersion: "1.101.0",
             currentBuild: "123457",
-            eventMapping: mockEventMapping
+            pixelFiring: mockPixelFiring
         )
 
-        // Then: Second call should fire unexpected pixel (metadata was cleared)
-        let secondCallParams = extractUnexpectedParameters()
-        XCTAssertEqual(secondCallParams?["targetVersion"], "1.101.0")
-        XCTAssertEqual(secondCallParams?["targetBuild"], "123457")
-        XCTAssertNotNil(secondCallParams?["osVersion"])
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
 
     func testWhenPixelIsFiredThenOSVersionIsFormattedCorrectly() {
@@ -340,21 +328,27 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             initiationType: "manual",
             updateConfiguration: "automatic"
         )
+        let expectedPixel = UpdateFlowPixels.updateApplicationSuccess(
+            sourceVersion: "1.100.0",
+            sourceBuild: "123456",
+            targetVersion: "1.101.0",
+            targetBuild: "123457",
+            initiationType: "manual",
+            updateConfiguration: "automatic",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
 
         // When: Fire pixel
         validator.validateExpectations(
             updateStatus: .updated,
             currentVersion: "1.101.0",
             currentBuild: "123457",
-            eventMapping: mockEventMapping
+            pixelFiring: mockPixelFiring
         )
 
-        // Then: OS version should be present and formatted correctly
-        let parameters = extractSuccessParameters()
-        let osVersion = parameters?["osVersion"]
-        XCTAssertNotNil(osVersion)
-        // Should be in format "14.2.1" (major.minor.patch)
-        XCTAssertTrue(osVersion?.components(separatedBy: ".").count ?? 0 >= 2)
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+        XCTAssertTrue(osVersionString().components(separatedBy: ".").count >= 2)
     }
 
     func testWhenValidationRunsThenMetadataIsAlwaysCleared() throws {
@@ -367,14 +361,28 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
             initiationType: "manual",
             updateConfiguration: "automatic"
         )
+        let expectedPixel = UpdateFlowPixels.updateApplicationFailure(
+            sourceVersion: "1.100.0",
+            sourceBuild: "123456",
+            expectedVersion: "1.101.0",
+            expectedBuild: "123457",
+            actualVersion: "1.100.0",
+            actualBuild: "123456",
+            failureStatus: "noChange",
+            initiationType: "manual",
+            updateConfiguration: "automatic",
+            osVersion: osVersionString()
+        )
+        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
 
         // When: Check with .noChange (failure pixel will fire)
         validator.validateExpectations(
             updateStatus: .noChange,
             currentVersion: "1.100.0",
             currentBuild: "123456",
-            eventMapping: mockEventMapping
+            pixelFiring: mockPixelFiring
         )
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
 
         // Then: Metadata should be cleared even after pixel fires
         XCTAssertNil(try testSettings.pendingUpdateSourceVersion)
@@ -383,18 +391,5 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         XCTAssertNil(try testSettings.pendingUpdateExpectedBuild)
         XCTAssertNil(try testSettings.pendingUpdateInitiationType)
         XCTAssertNil(try testSettings.pendingUpdateConfiguration)
-    }
-}
-
-// MARK: - Mock EventMapping
-
-private class MockEventMapping: EventMapping<UpdateControllerEvent> {
-    private let onFire: (UpdateControllerEvent) -> Void
-
-    init(onFire: @escaping (UpdateControllerEvent) -> Void) {
-        self.onFire = onFire
-        super.init { event, _, _, _ in
-            onFire(event)
-        }
     }
 }

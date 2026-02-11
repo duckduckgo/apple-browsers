@@ -21,13 +21,12 @@ import SwiftUI
 import Onboarding
 import MetricBuilder
 
-// MARK: - Try Anonymous Search
+// MARK: - Try Visiting Site
 
 extension OnboardingRebranding {
 
     struct OnboardingTrySiteDialog: View {
-        @Environment(\.verticalSizeClass) private var vSizeClass
-        @Environment(\.horizontalSizeClass) private var hSizeClass
+        @Environment(\.onboardingTheme) private var theme
 
         var message = UserText.Onboarding.ContextualOnboarding.onboardingTryASiteMessage
         let viewModel: OnboardingSiteSuggestionsViewModel
@@ -36,28 +35,29 @@ extension OnboardingRebranding {
         var body: some View {
             ScrollView(.vertical, showsIndicators: false) {
                 OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                    OnboardingRebranding.ContextualDaxDialogContent(
-                        orientation: DynamicMetrics.dialogOrientation.build(v: vSizeClass, h: hSizeClass),
-                        title: viewModel.title,
-                        message: message.attributed
-                    ) {
-                        OnboardingRebranding.ContextualOnboardingListView(list: viewModel.itemsList, action: viewModel.listItemPressed)
-                    }
+                    OnboardingTrySiteDialogContent(message: message, viewModel: viewModel)
                 }
-                .fixedSize()
                 .padding()
             }
         }
     }
 
-}
+    struct OnboardingTrySiteDialogContent: View {
+        @Environment(\.verticalSizeClass) private var vSizeClass
+        @Environment(\.horizontalSizeClass) private var hSizeClass
 
-private extension OnboardingRebranding.OnboardingTrySiteDialog {
+        var message = UserText.Onboarding.ContextualOnboarding.onboardingTryASiteMessage
+        let viewModel: OnboardingSiteSuggestionsViewModel
 
-    enum DynamicMetrics {
-        static let dialogOrientation: MetricBuilder = MetricBuilder<OnboardingRebranding.ContextualDaxDialogOrientation>(default: .verticalStack)
-            .iPhone(portrait: .verticalStack, landscape: .horizontalStack(alignment: .top))
-            .iPad(.horizontalStack(alignment: .top))
+        var body: some View {
+            OnboardingRebranding.ContextualDaxDialogContent(
+                orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation.build(v: vSizeClass, h: hSizeClass),
+                title: viewModel.title,
+                message: message.attributed
+            ) {
+                OnboardingRebranding.ContextualOnboardingListView(list: viewModel.itemsList, action: viewModel.listItemPressed)
+            }
+        }
     }
 
 }

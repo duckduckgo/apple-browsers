@@ -96,6 +96,7 @@ public extension OnboardingTheme {
             linearBubbleMetrics: linearBubbleMetrics,
             dismissButtonMetrics: dismissButtonMetrics,
             contextualOnboardingMetrics: ContextualOnboardingMetrics(
+                containerPadding: containerPadding,
                 contentSpacing: 20,
                 titleBodyVerticalSpacing: 10,
                 titleBodyInset: contextualTitleBodyContentInsets,
@@ -150,14 +151,22 @@ public extension OnboardingTheme {
         iPad: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20)
     ).build()
 
+    /// Insets for the onboarding bubble content, per device class.
     private static let bubbleContentInsets: EdgeInsets = MetricBuilder<EdgeInsets>(
         iPhone: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
         iPad: EdgeInsets(top: 24, leading: 40, bottom: 24, trailing: 40)
     ).build()
 
+    /// Insets for the contextual title/body copy block, per device class.
     private static let contextualTitleBodyContentInsets: EdgeInsets = MetricBuilder<EdgeInsets>(
         iPhone: EdgeInsets(top: 0, leading: 8, bottom: 12, trailing: 0),
         iPad: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+    ).build()
+
+    /// Outer padding for contextual onboarding content, per device class.
+    private static let containerPadding: EdgeInsets = MetricBuilder<EdgeInsets>(
+        iPhone: EdgeInsets(top: 16, leading: 16, bottom: 58, trailing: 16),
+        iPad: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)
     ).build()
 }
 

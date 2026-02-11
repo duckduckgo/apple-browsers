@@ -22,6 +22,10 @@ public extension OnboardingTheme {
 
     /// Layout and text-alignment metrics used by contextual onboarding screens.
     struct ContextualOnboardingMetrics: Equatable {
+
+        /// Outer padding applied to the contextual onboarding content container.
+        public let containerPadding: EdgeInsets
+
         /// Spacing between the copy block and CTA content.
         public let contentSpacing: CGFloat
 
@@ -42,6 +46,7 @@ public extension OnboardingTheme {
         public let optionsListButtonStyle: OnboardingButtonStyle
 
         public init(
+            containerPadding: EdgeInsets,
             contentSpacing: CGFloat,
             titleBodyVerticalSpacing: CGFloat,
             titleBodyInset: EdgeInsets,
@@ -50,6 +55,7 @@ public extension OnboardingTheme {
             optionsListMetrics: OptionsListMetrics,
             optionsListButtonStyle: OnboardingButtonStyle
         ) {
+            self.containerPadding = containerPadding
             self.contentSpacing = contentSpacing
             self.titleBodyVerticalSpacing = titleBodyVerticalSpacing
             self.titleBodyInset = titleBodyInset

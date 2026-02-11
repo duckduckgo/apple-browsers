@@ -139,18 +139,11 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_contextual_auto_attach_dau_enabled": {
-        "description": "Daily pixel fired when the contextual auto-attach setting is enabled",
+    "m_aichat_contextual_auto_attach_dau": {
+        "description": "Daily pixel fired on foreground to record the state of the contextual auto-attach setting",
         "owners": ["aataraxiaa"],
         "triggers": ["startup"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-    "m_aichat_contextual_auto_attach_dau_disabled": {
-        "description": "Daily pixel fired when the contextual auto-attach setting is disabled",
-        "owners": ["aataraxiaa"],
-        "triggers": ["startup"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "is_enabled"]
     }
 }

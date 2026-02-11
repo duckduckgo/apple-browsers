@@ -792,7 +792,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
                 NSMenuItem(title: "Set Launch Date A Month In the Past", action: #selector(AppDelegate.setLaunchDayAMonthInThePast))
                 NSMenuItem(title: "Reset Quit Survey Was Shown", action: #selector(AppDelegate.resetQuitSurveyWasShown))
-                NSMenuItem(title: "Reset Themes Popover Was Shown", action: #selector(AppDelegate.resetThemesPopoverWasShown))
+                NSMenuItem(title: "Reset Themes Popover Was Dismissed", action: #selector(AppDelegate.resetThemesPopoverWasDismissed))
 
             }.withAccessibilityIdentifier("MainMenu.resetData")
             NSMenuItem(title: "UI Triggers") {

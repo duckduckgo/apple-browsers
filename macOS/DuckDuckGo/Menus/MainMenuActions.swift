@@ -792,7 +792,7 @@ extension AppDelegate {
         persistor.hasQuitAppBefore = false
     }
 
-    @objc func resetThemesPopoverWasShown(_ sender: Any?) {
+    @objc func resetThemesPopoverWasDismissed(_ sender: Any?) {
         let persistor = ThemePopoverUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         persistor.themePopoverDismissed = false
     }

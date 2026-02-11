@@ -39,6 +39,7 @@ public protocol NewTabPageCustomBackgroundProviding: AnyObject {
     func processNewTabPageInitialized()
 
     func deleteImage(with imageID: String) async
+    @MainActor func dismissedThemePopover()
 
     @MainActor func showContextMenu(for imageID: String, using presenter: NewTabPageContextMenuPresenting) async
 }
@@ -107,6 +108,7 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
         case onImagesUpdate = "customizer_onImagesUpdate"
         case onThemeUpdate = "customizer_onThemeUpdate"
         case onThemePopoverUpdate = "customizer_onShowThemeVariantPopoverUpdate"
+        case onThemePopoverDismiss = "customizer_dismissThemeVariantPopover"
         case setBackground = "customizer_setBackground"
         case setTheme = "customizer_setTheme"
         case upload = "customizer_upload"
@@ -118,6 +120,7 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
             MessageName.deleteImage.rawValue: { [weak self] in try await self?.deleteImage(params: $0, original: $1) },
             MessageName.setBackground.rawValue: { [weak self] in try await self?.setBackground(params: $0, original: $1) },
             MessageName.setTheme.rawValue: { [weak self] in try await self?.setTheme(params: $0, original: $1) },
+            MessageName.onThemePopoverDismiss.rawValue: { [weak self] in try await self?.dismissedThemePopover(params: $0, original: $1) },
             MessageName.upload.rawValue: { [weak self] in try await self?.upload(params: $0, original: $1) },
         ])
     }
@@ -163,6 +166,12 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
             model.themeVariant = data.themeVariant
         }
 
+        return nil
+    }
+
+    @MainActor
+    private func dismissedThemePopover(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        model.dismissedThemePopover()
         return nil
     }
 

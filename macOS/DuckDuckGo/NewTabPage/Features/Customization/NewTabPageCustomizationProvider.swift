@@ -130,6 +130,11 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
     }
 
     @MainActor
+    func dismissedThemePopover() {
+        themePopoverDecider.markPopoverDismissed()
+    }
+
+    @MainActor
     func showContextMenu(for imageID: String, using presenter: any NewTabPageContextMenuPresenting) async {
         let menu = NSMenu()
 

@@ -20,6 +20,7 @@ import Combine
 import NewTabPage
 
 final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgroundProviding {
+
     var customizerOpener: NewTabPageCustomizerOpener = NewTabPageCustomizerOpener()
 
     var customizerData: NewTabPageDataModel.CustomizerData = .init(background: .default, showThemeVariantPopover: false, theme: .none, themeVariant: nil, userColor: nil, userImages: [])
@@ -44,6 +45,14 @@ final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgro
     }
 
     @Published
+    var themePopoverVisibile: Bool = false
+
+    var themePopoverVisibilityPublisher: AnyPublisher<Bool, Never> {
+        $themePopoverVisibile
+            .eraseToAnyPublisher()
+    }
+
+    @Published
     var userImages: [NewTabPageDataModel.UserImage] = []
 
     var userImagesPublisher: AnyPublisher<[NewTabPageDataModel.UserImage], Never> {
@@ -56,6 +65,10 @@ final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgro
 
     func deleteImage(with imageID: String) async {
         deleteImageCalls.append(imageID)
+    }
+
+    func dismissedThemePopover() {
+        // NO-OP
     }
 
     func showContextMenu(for imageID: String, using presenter: any NewTabPage.NewTabPageContextMenuPresenting) async {

@@ -24391,6 +24391,66 @@
         }
       }
     },
+    "duckai.automatically-send-page-content.toggle-setting" : {
+      "comment" : "Settings option to automatically send page content to the sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seiteninhalt automatisch an die Seitenleiste senden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Automatically send page content to the sidebar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía automáticamente el contenido de la página a la barra lateral"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer automatiquement le contenu de la page dans la barre latérale"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia automaticamente il contenuto della pagina alla barra laterale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagina-inhoud automatisch naar de zijbalk sturen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatycznie wysyłaj zawartość strony do paska bocznego"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar automaticamente o conteúdo da página para a barra lateral"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматически отправлять содержимое страницы на боковую панель"
+          }
+        }
+      }
+    },
     "duckai.description" : {
       "comment" : "Description of Duck.ai feature in settings",
       "extractionState" : "extracted_with_value",

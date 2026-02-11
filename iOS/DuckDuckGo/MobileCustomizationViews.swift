@@ -25,6 +25,10 @@ protocol MobileCustomizationView { }
 
 extension MobileCustomizationView {
 
+    private var dataClearingCapability: DataClearingCapable {
+        DataClearingCapability.create(using: AppDependencyProvider.shared.featureFlagger)
+    }
+
     func buttonIconProvider(_ button: MobileCustomization.Button) -> Image? {
         if button == .none {
             return Image(uiImage: DesignSystemImages.Glyphs.Size16.eyeClosed)
@@ -52,7 +56,7 @@ extension MobileCustomizationView {
         case .bookmarks:
             UserText.actionOpenBookmarks
         case .fire:
-            if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.enhancedDataClearingSettings) {
+            if dataClearingCapability.isEnhancedDataClearingEnabled {
                 UserText.settingsDeleteTabsAndData
             } else {
                 isAIChatEnabled ? UserText.settingsAutoClearTabsAndDataWithAIChat : UserText.settingsAutoClearTabsAndData

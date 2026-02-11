@@ -38,7 +38,7 @@ final class AutoClear: AutoClearing {
     private let worker: FireExecuting
     private var timestamp: TimeInterval?
     private let appSettings: AppSettings
-    private let featureFlagger: FeatureFlagger
+    private let dataClearingCapability: DataClearingCapable
 
     var isClearingEnabled: Bool {
         return AutoClearSettingsModel(settings: appSettings) != nil
@@ -46,10 +46,10 @@ final class AutoClear: AutoClearing {
 
     init(worker: FireExecuting,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         featureFlagger: FeatureFlagger) {
+         dataClearingCapability: DataClearingCapable) {
         self.worker = worker
         self.appSettings = appSettings
-        self.featureFlagger = featureFlagger
+        self.dataClearingCapability = dataClearingCapability
     }
 
     @MainActor
@@ -109,7 +109,7 @@ final class AutoClear: AutoClearing {
     private func shouldInjectAIChatsFireOption(into options: FireRequest.Options) -> Bool {
         options.contains(.data)
             && !options.contains(.aiChats)
-            && !featureFlagger.isFeatureOn(.enhancedDataClearingSettings)
+            && !dataClearingCapability.isEnhancedDataClearingEnabled
             && appSettings.autoClearAIChatHistory
     }
 

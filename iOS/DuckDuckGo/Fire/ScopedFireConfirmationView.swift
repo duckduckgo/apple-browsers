@@ -110,7 +110,7 @@ struct ScopedFireConfirmationView: View {
                 Button(action: {
                     viewModel.burnThisTab()
                 }) {
-                    Text(UserText.scopedFireConfirmationDeleteThisTabButton)
+                    Text(viewModel.tabScopeButtonTitle)
                 }
                 .buttonStyle(SecondaryDestructiveButtonStyle())
                 .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")

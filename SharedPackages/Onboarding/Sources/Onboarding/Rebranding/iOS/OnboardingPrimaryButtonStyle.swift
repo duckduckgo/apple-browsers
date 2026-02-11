@@ -1,5 +1,5 @@
 //
-//  OnboardingPrimaryButtonStyle-iOS.swift
+//  OnboardingPrimaryButtonStyle.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -37,7 +37,7 @@ struct OnboardingPrimaryButtonStyle: ButtonStyle {
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .lineLimit(nil)
-            .font(typography.small)
+            .font(typography.linear.button)
             .foregroundColor(colorPalette.primaryButtonTextColor)
             .padding(.vertical)
             .padding(.horizontal, nil)

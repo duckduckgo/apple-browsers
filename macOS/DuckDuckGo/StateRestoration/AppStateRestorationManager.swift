@@ -49,14 +49,10 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     private let pixelFiring: PixelFiring?
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
-    private var appIsRelaunchingAutomatically: Bool
-
-    var isRelaunchingAutomatically: Bool {
-        appIsRelaunchingAutomatically
-    }
+    internal private(set) var isRelaunchingAutomatically: Bool
 
     func resetRelaunchFlag() {
-        appIsRelaunchingAutomatically = false
+        isRelaunchingAutomatically = false
     }
 
     private var appDidTerminateAsExpected: Bool {
@@ -120,7 +116,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     func subscribeToAutomaticAppRelaunching(using relaunchPublisher: AnyPublisher<Void, Never>) {
         appWillRelaunchCancellable = relaunchPublisher
             .map { true }
-            .assign(to: \.appIsRelaunchingAutomatically, onWeaklyHeld: self)
+            .assign(to: \.isRelaunchingAutomatically, onWeaklyHeld: self)
     }
 
     var canRestoreLastSessionState: Bool {
@@ -164,8 +160,8 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     }
 
     func applicationDidFinishLaunching() {
-        let isRelaunchingAutomatically = self.appIsRelaunchingAutomatically
-        self.appIsRelaunchingAutomatically = false
+        let isRelaunchingAutomatically = self.isRelaunchingAutomatically
+        self.isRelaunchingAutomatically = false
         // don‘t automatically restore windows if relaunched 2nd time with no recently updated app session state
         readLastSessionState(restoreWindows: !service.isAppStateFileStale || isRelaunchingAutomatically, restoreRegularTabs: shouldRestoreRegularTabs)
 

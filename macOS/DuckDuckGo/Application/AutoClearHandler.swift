@@ -101,7 +101,11 @@ final class AutoClearHandler: ApplicationTerminationDecider {
 
     @MainActor
     func deciderSequenceCompleted(shouldProceed: Bool) {
-        // Reset stale relaunch flag if termination was cancelled
+        // Reset stale relaunch flag if termination was cancelled.
+        // Scenario: User clicks "Restart to Update" (sets flag=true), but an earlier
+        // decider (e.g., ActiveDownloadsAppTerminationDecider) cancels termination.
+        // Without this reset, the flag stays true and the next normal quit would
+        // incorrectly skip data clearing.
         if !shouldProceed && stateRestorationManager.isRelaunchingAutomatically {
             stateRestorationManager.resetRelaunchFlag()
         }

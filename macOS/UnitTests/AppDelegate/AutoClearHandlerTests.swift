@@ -207,6 +207,7 @@ class AutoClearHandlerTests: XCTestCase {
     func testShouldTerminate_whenRelaunchingAutomatically_skipsClearPrompt() {
         mockStateRestoration.isRelaunchingAutomatically = true
         dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isWarnBeforeClearingEnabled = true
         handler.resetTheCorrectTerminationFlag() // Ensure flag is false initially
 
         let result = handler.shouldTerminate(isAsync: false)
@@ -232,6 +233,7 @@ class AutoClearHandlerTests: XCTestCase {
     func testHandleAppTerminationFallback_whenRelaunchingAutomatically_skipsClearPrompt() {
         mockStateRestoration.isRelaunchingAutomatically = true
         dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isWarnBeforeClearingEnabled = true
         handler.resetTheCorrectTerminationFlag()
 
         let result = handler.handleAppTerminationFallback()

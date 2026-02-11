@@ -149,7 +149,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
           DSYM_LOCAL_PATH: "${{ env.dsyms_path }}"
           DSYM_NAME: ${{ env.dsyms_filename }}
-          DSYM_URL_ROOT: ${{ vars.DMG_URL_ROOT }}
+          DSYM_URL_ROOT: ${{ vars.IPA_URL_ROOT }}
           RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
           RELEASE_BUCKET_PREFIX: ${{ vars.IOS_RELEASE_BUCKET_PREFIX }}
           REVIEW_BUILDS_BUCKET_PREFIX: ${{ vars.REVIEW_BUILDS_BUCKET_PREFIX }}
@@ -175,7 +175,7 @@ jobs:
           TEST_BUILD_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.test-build-s3-path }}
           IPA_LOCAL_PATH: ${{ env.ipa_path }}
           IPA_NAME: ${{ env.ipa_filename }}
-          IPA_URL_ROOT: ${{ vars.DMG_URL_ROOT }}
+          IPA_URL_ROOT: ${{ vars.IPA_URL_ROOT }}
           RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
           RELEASE_BUCKET_PREFIX: ${{ vars.IOS_RELEASE_BUCKET_PREFIX }}
         run: |

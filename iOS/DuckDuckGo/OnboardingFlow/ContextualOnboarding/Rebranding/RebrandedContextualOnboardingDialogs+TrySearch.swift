@@ -46,7 +46,7 @@ extension OnboardingRebranding {
                         OnboardingRebranding.ContextualOnboardingListView(list: viewModel.itemsList, action: viewModel.listItemPressed)
                     }
                 }
-                .padding()
+                .padding(theme.contextualOnboardingMetrics.containerPadding)
             }
         }
     }

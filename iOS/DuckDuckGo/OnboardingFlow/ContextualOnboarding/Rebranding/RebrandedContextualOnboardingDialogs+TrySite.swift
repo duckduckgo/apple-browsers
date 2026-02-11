@@ -37,7 +37,7 @@ extension OnboardingRebranding {
                 OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
                     OnboardingTrySiteDialogContent(message: message, viewModel: viewModel)
                 }
-                .padding()
+                .padding(theme.contextualOnboardingMetrics.containerPadding)
             }
         }
     }

@@ -235,6 +235,10 @@ extension NewTabPageDataModel {
         let id: String
     }
 
+    struct ThemePopoverUpdate: Codable {
+        let showThemeVariantPopover: Bool
+    }
+
     struct UserImageContextMenu: Codable, Equatable {
         let target: Target
         let id: String

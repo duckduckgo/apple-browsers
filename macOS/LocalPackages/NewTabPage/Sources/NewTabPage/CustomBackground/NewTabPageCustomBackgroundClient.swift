@@ -97,6 +97,7 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
         case onBackgroundUpdate = "customizer_onBackgroundUpdate"
         case onImagesUpdate = "customizer_onImagesUpdate"
         case onThemeUpdate = "customizer_onThemeUpdate"
+        case onThemePopoverUpdate = "customizer_onShowThemeVariantPopoverUpdate"
         case setBackground = "customizer_setBackground"
         case setTheme = "customizer_setTheme"
         case upload = "customizer_upload"
@@ -171,6 +172,12 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
     private func notifyThemeStyle(theme: NewTabPageDataModel.Theme?, themeVariant: NewTabPageDataModel.ThemeVariant?) {
         let payload = NewTabPageDataModel.ThemeData(theme: theme, themeVariant: themeVariant)
         pushMessage(named: MessageName.onThemeUpdate.rawValue, params: payload)
+    }
+
+    @MainActor
+    private func notifyThemePopoverUpdate(visible: Bool) {
+        let payload = NewTabPageDataModel.ThemePopoverUpdate(showThemeVariantPopover: visible)
+        pushMessage(named: MessageName.onThemePopoverUpdate.rawValue, params: payload)
     }
 
     @MainActor

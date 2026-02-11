@@ -231,23 +231,12 @@ jobs:
     - name: Download and unzip artifact
       env:
         GH_TOKEN: ${{ github.token }}
+      retry:
+        max-attempts: 5
+        when: failure()
       run: |
-        max_attempts=5
-        retry_delay=10
-
-        for attempt in $(seq 1 $max_attempts); do
-          echo "Attempt $attempt of $max_attempts"
-          if gh run download "${{ github.run_id }}" --dir .; then
-            echo "Download successful"
-            exit 0
-          fi
-          if [[ $attempt -lt $max_attempts ]]; then
-            echo "Download failed, retrying in ${retry_delay}s..."
-            sleep $retry_delay
-          fi
-        done
-        echo "All download attempts failed"
-        exit 1
+        echo "Forcing failure to test retry behavior" && exit 1
+        gh run download "${{ github.run_id }}" --dir .
 
     - name: Set cache key hash
       run: |

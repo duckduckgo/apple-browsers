@@ -31,6 +31,7 @@ public protocol NewTabPageCustomBackgroundProviding: AnyObject {
     var theme: NewTabPageDataModel.Theme? { get set }
     var themeVariant: NewTabPageDataModel.ThemeVariant? { get set }
     var themeStylePublisher: AnyPublisher<(NewTabPageDataModel.Theme?, NewTabPageDataModel.ThemeVariant?), Never> { get }
+    var themePopoverVisibilityPublisher: AnyPublisher<Bool, Never> { get }
 
     var userImagesPublisher: AnyPublisher<[NewTabPageDataModel.UserImage], Never> { get }
 
@@ -69,6 +70,14 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
             .sink { [weak self] theme, themeVariant in
                 Task { @MainActor in
                     self?.notifyThemeStyle(theme: theme, themeVariant: themeVariant)
+                }
+            }
+            .store(in: &cancellables)
+
+        model.themePopoverVisibilityPublisher
+            .sink { [weak self] visible in
+                Task { @MainActor in
+                    self?.notifyThemePopoverUpdate(visible: visible)
                 }
             }
             .store(in: &cancellables)

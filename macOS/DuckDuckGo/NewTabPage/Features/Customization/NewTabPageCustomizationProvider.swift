@@ -23,8 +23,10 @@ import SwiftUI
 
 final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding {
     private var newTabPageDidAppearCancellable: AnyCancellable?
-    private var newTabPageDidAppear = false
+    private var newTabPageDidAppearCount: Int = 0
     private var newTabPageInitialized = false
+
+    @Published private var themePopoverVisible: Bool
 
     let customizationModel: NewTabPageCustomizationModel
     let appearancePreferences: AppearancePreferences
@@ -34,8 +36,9 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
         self.customizationModel = customizationModel
         self.appearancePreferences = appearancePreferences
         self.themePopoverDecider = themePopoverDecider
+        self.themePopoverVisible = themePopoverDecider.shouldShowPopover
 
-        startListeningToNewTabPageEvents(notificationCenter: notificationCenter)
+        startListeningToNewTabPageEventsIfNeeded(notificationCenter: notificationCenter)
     }
 
     var customizerOpener: NewTabPageCustomizerOpener {
@@ -101,6 +104,13 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
             .eraseToAnyPublisher()
     }
 
+    var themePopoverVisibilityPublisher: AnyPublisher<Bool, Never> {
+        $themePopoverVisible
+            .dropFirst()
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     var userImagesPublisher: AnyPublisher<[NewTabPageDataModel.UserImage], Never> {
         customizationModel.$availableUserBackgroundImages.dropFirst().removeDuplicates()
             .map { $0.map(NewTabPageDataModel.UserImage.init) }
@@ -140,28 +150,40 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
 
     func processNewTabPageInitialized() {
         newTabPageInitialized = true
-        markPopoverShownIfNeeded()
+        markThemePopoverDismissed()
     }
 }
 
 private extension NewTabPageCustomizationProvider {
 
-    func startListeningToNewTabPageEvents(notificationCenter: NotificationCenter) {
+    func startListeningToNewTabPageEventsIfNeeded(notificationCenter: NotificationCenter) {
+        guard themePopoverVisible else {
+            return
+        }
+
         newTabPageDidAppearCancellable = notificationCenter.publisher(for: .newTabPageWebViewDidAppear)
-            .prefix(1)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.processNewTabPageAppeared()
-                self?.newTabPageDidAppearCancellable = nil
             }
     }
 
-    func processNewTabPageAppeared() {
-        newTabPageDidAppear = true
-        markPopoverShownIfNeeded()
+    func stopListeningToNewTabPageEvents() {
+        newTabPageDidAppearCancellable = nil
     }
 
-    func markPopoverShownIfNeeded() {
+    func processNewTabPageAppeared() {
+        newTabPageDidAppearCount += 1
+
+        if shouldDismissPopover {
+            return
+        }
+
+        markThemePopoverDismissed()
+        stopListeningToNewTabPageEvents()
+    }
+
+    var shouldDismissPopover: Bool {
         /// Why this is required:
         ///     1.  NTP doesn't relay `Themes Popover appeared`, as Native has ownership of whenever NTP is rendered, and how
         ///     2.  FE's `initialSetup` invocation may be executed, under certain circumstances, without the actual WebView ever becoming present
@@ -169,11 +191,12 @@ private extension NewTabPageCustomizationProvider {
         ///
         /// We must only track "Themes Popover Show" whenever both, the NTP is known to be visible, and the NTP Initialization came thru.
         ///
-        guard newTabPageDidAppear, newTabPageInitialized else {
-            return
-        }
+        themePopoverVisible && newTabPageInitialized && newTabPageDidAppearCount >= 4
+    }
 
-        themePopoverDecider.markPopoverShown()
+    func markThemePopoverDismissed() {
+        themePopoverDecider.markPopoverDismissed()
+        themePopoverVisible = false
     }
 }
 

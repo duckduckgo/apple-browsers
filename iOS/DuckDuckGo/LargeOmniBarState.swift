@@ -296,7 +296,7 @@ struct LargeOmniBarState {
         var onBrowsingStartedState: OmniBarState { BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onBrowsingStoppedState: OmniBarState { HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEnterPadState: OmniBarState { self }
-        var onEnterPhoneState: OmniBarState { SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterPhoneState: OmniBarState { SmallOmniBarState.AIChatTabModeState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { self }
         var onEnterAIChatState: OmniBarState { self }
 

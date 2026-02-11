@@ -297,6 +297,52 @@ struct SmallOmniBarState {
         let isLoading: Bool
     }
     
+    /// OmniBarState used when displaying AI Chat in a tab on iPad at small width.
+    /// Unlike `AIChatModeState` (which hides everything for iPhone full-mode branding),
+    /// this state presents a normal browsing-style address bar with `showAIChatButton = false`.
+    struct AIChatTabModeState: OmniBarState, OmniBarLoadingBearerStateCreating {
+        let hasLargeWidth = false
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        let showAIChatButton = false
+        let clearTextOnStart = false
+        let allowsTrackersAnimation = false
+        let showSearchLoupe = false
+        let showPrivacyIcon = true
+        let showBackground = true
+        let showClear = false
+        var showAbort: Bool { isLoading }
+        var showRefresh: Bool { return !isLoading && dependencies.isRefreshButtonEnabled }
+        var showCustomizableButton: Bool {
+            guard dependencies.mobileCustomization.state.isEnabled else {
+                return true
+            }
+            return dependencies.mobileCustomization.state.currentAddressBarButton != .none
+        }
+        let showMenu = false
+        let showSettings = false
+        let showCancel = false
+        let showVoiceSearch = false
+        let showDismiss = false
+        var name: String { return "Phone" + Type.name(self) }
+        var onEditingStoppedState: OmniBarState { return self }
+        var onEditingStartedState: OmniBarState { return BrowsingTextEditingStartedState(dependencies: dependencies, isLoading: isLoading) }
+        var onTextClearedState: OmniBarState { return BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onTextEnteredState: OmniBarState { return BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onBrowsingStartedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onBrowsingStoppedState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterPadState: OmniBarState { return LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterPhoneState: OmniBarState { return self }
+        var onReloadState: OmniBarState { return self }
+        var onEnterAIChatState: OmniBarState { return self }
+
+        let isBrowsing = true
+
+        let dependencies: OmnibarDependencyProvider
+        let isLoading: Bool
+    }
+
     /// OmniBarState used when a displaying AI Chat in 'full mode' (i.e in a tab)
     struct AIChatModeState: OmniBarState, OmniBarLoadingBearerStateCreating {
         var hasLargeWidth = false

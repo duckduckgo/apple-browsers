@@ -661,10 +661,10 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertEqual(testee.onBrowsingStoppedState.name, LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false).name)
     }
 
-    func testWhenEnteringPhoneStateFromAIChatModeThenTransitionsToSmallAIChatModeState() {
+    func testWhenEnteringPhoneStateFromAIChatModeThenTransitionsToSmallAIChatTabModeState() {
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
         let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
-        XCTAssertTrue(testee.onEnterPhoneState is SmallOmniBarState.AIChatModeState)
+        XCTAssertTrue(testee.onEnterPhoneState is SmallOmniBarState.AIChatTabModeState)
     }
 
     func testWhenEnteringAIChatFromAIChatModeThenMaintainsState() {

@@ -45,10 +45,10 @@ final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgro
     }
 
     @Published
-    var themePopoverVisibile: Bool = false
+    var themePopoverVisible: Bool = false
 
     var themePopoverVisibilityPublisher: AnyPublisher<Bool, Never> {
-        $themePopoverVisibile
+        $themePopoverVisible
             .eraseToAnyPublisher()
     }
 

@@ -283,5 +283,11 @@
         "type": "string",
         "description": "Type of tab when burn was initiated",
         "enum": ["web", "ai", "unknown"]
+    },
+    "is_enabled": {
+        "key": "is_enabled",
+        "type": "string",
+        "description": "Whether the feature or setting is enabled",
+        "enum": ["true", "false"]
     }
 }

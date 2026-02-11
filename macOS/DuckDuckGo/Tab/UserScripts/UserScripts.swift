@@ -169,7 +169,7 @@ final class UserScripts: UserScriptsProvider {
         }
 
 #if SPARKLE
-        releaseNotesUserScript = ReleaseNotesUserScript()
+        releaseNotesUserScript = ReleaseNotesUserScript(keyValueStore: UserDefaults.standard)
 #endif
 
         userScripts.append(autoconsentUserScript)

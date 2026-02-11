@@ -16,13 +16,16 @@
 //  limitations under the License.
 //
 
-@testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
-import Sparkle
-import PixelKitTestingUtilities
+import Persistence
+import PersistenceTestingUtils
 import PixelKit
+import PixelKitTestingUtilities
 import PrivacyConfig
+import Sparkle
 import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
 
 final class UpdateControllerTests: XCTestCase {
 
@@ -50,10 +53,12 @@ final class UpdateControllerTests: XCTestCase {
     func testUpdaterWillRelaunchApplication_setsRestartingToUpdateStep() {
         // Given
         let mockWideEventManager = WideEventMock()
+        let mockSettings = InMemoryThrowingKeyValueStore().throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
         let mockWideEvent = SparkleUpdateWideEvent(
             wideEventManager: mockWideEventManager,
             internalUserDecider: MockInternalUserDecider(),
-            areAutomaticUpdatesEnabled: true
+            areAutomaticUpdatesEnabled: true,
+            settings: mockSettings
         )
 
         let updateController = SparkleUpdateController(
@@ -85,10 +90,12 @@ final class UpdateControllerTests: XCTestCase {
 
     func testDidFinishUpdateCycleFor_withNoUpdateFound_completesWideEvent() {
         let mockWideEventManager = WideEventMock()
+        let mockSettings = InMemoryThrowingKeyValueStore().throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
         let mockWideEvent = SparkleUpdateWideEvent(
             wideEventManager: mockWideEventManager,
             internalUserDecider: MockInternalUserDecider(),
-            areAutomaticUpdatesEnabled: true
+            areAutomaticUpdatesEnabled: true,
+            settings: mockSettings
         )
 
         let updateController = SparkleUpdateController(
@@ -122,6 +129,39 @@ final class UpdateControllerTests: XCTestCase {
         } else {
             XCTFail("Expected success status with no_update_available reason, got \(status)")
         }
+    }
+
+    // MARK: - PendingUpdateInfo Storage Tests
+
+    func testPendingUpdateInfo_storesAndRetrievesFromUserDefaults() throws {
+        // Given
+        let suiteName = "test_pending_update_info_\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: suiteName)!
+        defer { testDefaults.removePersistentDomain(forName: suiteName) }
+
+        let settings = testDefaults.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
+        let testDate = Date(timeIntervalSince1970: 1704067200)
+        let pendingInfo = SparkleUpdateController.PendingUpdateInfo(
+            version: "2.0.0",
+            build: "200",
+            date: testDate,
+            releaseNotes: ["Feature A", "Feature B"],
+            releaseNotesSubscription: [],
+            isCritical: false
+        )
+
+        // When - write
+        try settings.set(pendingInfo, for: \.pendingUpdateInfo)
+
+        // Then - read
+        let storedInfo = try settings.pendingUpdateInfo
+
+        XCTAssertNotNil(storedInfo)
+        XCTAssertEqual(storedInfo?.version, "2.0.0")
+        XCTAssertEqual(storedInfo?.build, "200")
+        XCTAssertEqual(storedInfo?.date.timeIntervalSince1970 ?? 0, 1704067200, accuracy: 1.0)
+        XCTAssertEqual(storedInfo?.releaseNotes, ["Feature A", "Feature B"])
+        XCTAssertEqual(storedInfo?.isCritical, false)
     }
 
 }

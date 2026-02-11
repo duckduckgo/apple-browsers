@@ -1618,6 +1618,10 @@ extension MainViewController: NSMenuItemValidation {
         case #selector(findInPageDone):
             return getActiveTabAndIndex()?.tab.findInPage?.isActive == true
 
+        // Location
+        case #selector(MainViewController.openLocation(_:)):
+            return allowsUserInteraction
+
         // Zoom
         case #selector(MainViewController.zoomIn(_:)):
             return getActiveTabAndIndex()?.tab.webView.canZoomIn == true
@@ -1635,7 +1639,11 @@ extension MainViewController: NSMenuItemValidation {
             return tabCollectionViewModel.canBookmarkAllOpenTabs()
         case #selector(MainViewController.openBookmark(_:)),
              #selector(MainViewController.showManageBookmarks(_:)):
-            return true
+            return allowsUserInteraction
+
+        // New Tabs
+        case #selector(MainViewController.newTab(_:)):
+            return allowsUserInteraction
 
         // Pin Tab
         case #selector(MainViewController.pinOrUnpinTab(_:)):
@@ -1658,6 +1666,10 @@ extension MainViewController: NSMenuItemValidation {
         // Save Content
         case #selector(MainViewController.saveAs(_:)):
             return activeTabViewModel?.canSaveContent == true
+
+        // Preferences:
+        case #selector(MainViewController.openPreferences(_:)):
+            return allowsUserInteraction
 
         // Printing
         case #selector(MainViewController.printWebView(_:)):
@@ -1708,7 +1720,18 @@ extension AppDelegate: NSMenuItemValidation {
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
         case #selector(AppDelegate.closeAllWindows(_:)):
-            return !Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty
+            return isDisplayingOneOrMoreWindows
+
+        case #selector(AppDelegate.newWindow(_:)):
+            return isUserInteractionAllowed || !isDisplayingOneOrMoreWindows
+
+        case #selector(AppDelegate.newBurnerWindow(_:)),
+            #selector(AppDelegate.newAIChat(_:)),
+            #selector(AppDelegate.openFile(_:)),
+            #selector(AppDelegate.openLocation(_:)),
+            #selector(AppDelegate.openPreferences),
+            #selector(AppDelegate.showManageBookmarks(_:)):
+            return isUserInteractionAllowed
 
         // Reopen Last Removed Tab
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
@@ -1728,9 +1751,20 @@ extension AppDelegate: NSMenuItemValidation {
 
         case #selector(AppDelegate.openReportBrokenSite(_:)):
             return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+
         default:
             return true
         }
+    }
+
+    @MainActor
+    private var isDisplayingOneOrMoreWindows: Bool {
+        Application.appDelegate.windowControllersManager.mainWindowControllers.count > 0
+    }
+
+    @MainActor
+    private var isUserInteractionAllowed: Bool {
+        OnboardingActionsManager.isOnboardingFinished
     }
 
     private var areTherePasswords: Bool {

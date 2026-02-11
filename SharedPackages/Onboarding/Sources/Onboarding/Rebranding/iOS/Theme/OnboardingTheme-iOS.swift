@@ -112,7 +112,8 @@ public extension OnboardingTheme {
                             optionsListMetrics: contextualOptionsListMetrics
                         )
                     )
-                )
+                ),
+                maxContainerWidth: 590
             ),
             linearOnboardingMetrics: linearOnboardingMetrics,
             linearTitleTextAlignment: .center,

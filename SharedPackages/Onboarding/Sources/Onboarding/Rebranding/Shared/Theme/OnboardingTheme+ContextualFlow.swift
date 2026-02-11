@@ -45,6 +45,10 @@ public extension OnboardingTheme {
         /// [Figma Selector  Buttons](https://www.figma.com/design/wMxBpe0mKrRS0nVhtwMGO7/%F0%9F%9A%80-Onboarding-Components--2026-?node-id=2-1521)
         public let optionsListButtonStyle: OnboardingButtonStyle
 
+        /// Maximum width for the contextual dialog container.
+        /// When `nil`, the container uses full available width.
+        public let maxContainerWidth: CGFloat?
+
         public init(
             containerPadding: EdgeInsets,
             contentSpacing: CGFloat,
@@ -53,7 +57,8 @@ public extension OnboardingTheme {
             contextualTitleTextAlignment: TextAlignment,
             contextualBodyTextAlignment: TextAlignment,
             optionsListMetrics: OptionsListMetrics,
-            optionsListButtonStyle: OnboardingButtonStyle
+            optionsListButtonStyle: OnboardingButtonStyle,
+            maxContainerWidth: CGFloat? = nil
         ) {
             self.containerPadding = containerPadding
             self.contentSpacing = contentSpacing
@@ -63,6 +68,7 @@ public extension OnboardingTheme {
             self.contextualBodyTextAlignment = contextualBodyTextAlignment
             self.optionsListMetrics = optionsListMetrics
             self.optionsListButtonStyle = optionsListButtonStyle
+            self.maxContainerWidth = maxContainerWidth
         }
     }
 

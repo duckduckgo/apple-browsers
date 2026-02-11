@@ -85,7 +85,7 @@ jobs:
           build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
           echo "app_version=${app_version}" >> $GITHUB_ENV
           echo "build_number=${build_number}" >> $GITHUB_ENV
-          
+
           lane_to_use="adhoc"
           if [[ "${{ github.event.inputs.build-type }}" == "Release" ]]; then
             lane_to_use="release_adhoc"
@@ -164,14 +164,13 @@ jobs:
           echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
 
       - name: Upload IPA to S3
-        if: inputs.asana-task-url
         id: upload-ipa-to-s3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
           AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
           RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
-          RELEASE_BUCKET_PREFIX: ${{ vars.RELEASE_BUCKET_PREFIX }}
+          RELEASE_BUCKET_PREFIX: ${{ vars.IOS_RELEASE_BUCKET_PREFIX }}
           REVIEW_BUILDS_BUCKET_PREFIX: ${{ vars.REVIEW_BUILDS_BUCKET_PREFIX }}
           IPA_URL_ROOT: ${{ vars.DMG_URL_ROOT }}
         run: |

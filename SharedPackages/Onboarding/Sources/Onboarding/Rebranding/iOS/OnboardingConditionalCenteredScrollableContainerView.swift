@@ -1,5 +1,5 @@
 //
-//  ConditionalCenteredScrollableContainerView.swift
+//  OnboardingConditionalCenteredScrollableContainerView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //

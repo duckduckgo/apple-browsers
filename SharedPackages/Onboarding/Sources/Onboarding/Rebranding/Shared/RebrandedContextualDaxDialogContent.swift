@@ -29,7 +29,6 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var theme
 
         let orientation: ContextualDaxDialogOrientation
-        let animationDelay: CGFloat
         let title: String?
         let message: NSAttributedString
         let content: Content
@@ -38,14 +37,11 @@ extension OnboardingRebranding {
 
         public init(
             orientation: ContextualDaxDialogOrientation = .verticalStack,
-            animationDelay: CGFloat = 0.3,
-            showContent: Bool = true,
             title: String? = nil,
             message: NSAttributedString,
-            @ViewBuilder content: () -> Content,
+            @ViewBuilder content: () -> Content
         ) {
             self.orientation = orientation
-            self.animationDelay = animationDelay
             self.title = title
             self.message = message
             self.content = content()
@@ -67,15 +63,20 @@ extension OnboardingRebranding {
                     }
                 }
             }
-            .visibility(shouldShowContent ? .visible : .invisible)
+            .opacity(shouldShowContent ? 1 : 0)
             .onAppear {
-                withAnimation(.default.delay(animationDelay)) {
-                    shouldShowContent = true
+                Task { @MainActor in
+                    try await Task.sleep(interval: theme.contentFadeInDelay)
+                    withAnimation(.easeIn(duration: theme.contentFadeInDuration)) {
+                        shouldShowContent = true
+                    }
                 }
             }
         }
     }
 }
+
+
 
 // MARK: Inner Views
 

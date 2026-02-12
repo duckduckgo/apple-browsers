@@ -49,6 +49,14 @@ public extension OnboardingTheme {
         /// When `nil`, the container uses full available width.
         public let maxContainerWidth: CGFloat?
 
+        /// Time delay (in seconds) before the contextual content starts to fade in.
+        /// This creates a brief pause after the dialog appears before animating the content.
+        public let contentFadeInDelay: TimeInterval
+
+        /// Duration (in seconds) of the fade-in animation for contextual content.
+        /// Controls how quickly the content transitions from invisible to fully visible.
+        public let contentFadeInDuration: TimeInterval
+
         public init(
             containerPadding: EdgeInsets,
             contentSpacing: CGFloat,
@@ -58,7 +66,9 @@ public extension OnboardingTheme {
             contextualBodyTextAlignment: TextAlignment,
             optionsListMetrics: OptionsListMetrics,
             optionsListButtonStyle: OnboardingButtonStyle,
-            maxContainerWidth: CGFloat? = nil
+            maxContainerWidth: CGFloat? = nil,
+            contentFadeInDelay: TimeInterval = 0.3,
+            contentFadeInDuration: TimeInterval = 0.25
         ) {
             self.containerPadding = containerPadding
             self.contentSpacing = contentSpacing
@@ -69,6 +79,8 @@ public extension OnboardingTheme {
             self.optionsListMetrics = optionsListMetrics
             self.optionsListButtonStyle = optionsListButtonStyle
             self.maxContainerWidth = maxContainerWidth
+            self.contentFadeInDelay = contentFadeInDelay
+            self.contentFadeInDuration = contentFadeInDuration
         }
     }
 

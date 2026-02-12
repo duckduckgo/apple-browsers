@@ -78,17 +78,17 @@ protocol TabSwitcherBarsStateHandling {
 /// This is what we hope will be the new version long term.
 class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
-    lazy var plusButton = BrowserChromeButton.createBarButtonItem(title: UserText.keyCommandNewTab, image: DesignSystemImages.Glyphs.Size24.add)
-    lazy var fireButton = BrowserChromeButton.createBarButtonItem(title: "Close all tabs and clear data", image: DesignSystemImages.Glyphs.Size24.fireSolid)
-    lazy var doneButton = BrowserChromeButton.createBarButtonItem(title: UserText.navigationTitleDone, image: nil)
-    lazy var closeTabsButton = BrowserChromeButton.createBarButtonItem(title: "", image: nil)
-    lazy var menuButton = BrowserChromeButton.createBarButtonItem(title: "More Menu", image: DesignSystemImages.Glyphs.Size24.moreApple)
-    lazy var addAllBookmarksButton = BrowserChromeButton.createBarButtonItem(title: UserText.bookmarkAllTabs, image: DesignSystemImages.Glyphs.Size24.bookmarkNew)
-    lazy var tabSwitcherStyleButton = BrowserChromeButton.createBarButtonItem(title: "", image: nil)
-    lazy var editButton = BrowserChromeButton.createBarButtonItem(title: UserText.actionGenericEdit, image: DesignSystemImages.Glyphs.Size24.menuDotsVertical)
-    lazy var selectAllButton = BrowserChromeButton.createBarButtonItem(title: UserText.selectAllTabs, image: nil)
-    lazy var deselectAllButton = BrowserChromeButton.createBarButtonItem(title: UserText.deselectAllTabs, image: nil)
-    lazy var duckChatButton = BrowserChromeButton.createBarButtonItem(title: UserText.duckAiFeatureName, image: DesignSystemImages.Glyphs.Size24.aiChat)
+    lazy var plusButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandNewTab, image: DesignSystemImages.Glyphs.Size24.add)
+    lazy var fireButton = BrowserChromeButton.createToolbarButtonItem(title: "Close all tabs and clear data", image: DesignSystemImages.Glyphs.Size24.fireSolid)
+    lazy var doneButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil)
+    lazy var closeTabsButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil)
+    lazy var menuButton = BrowserChromeButton.createToolbarButtonItem(title: "More Menu", image: DesignSystemImages.Glyphs.Size24.moreApple)
+    lazy var addAllBookmarksButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.bookmarkAllTabs, image: DesignSystemImages.Glyphs.Size24.bookmarkNew)
+    lazy var tabSwitcherStyleButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil)
+    lazy var editButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.actionGenericEdit, image: DesignSystemImages.Glyphs.Size24.menuDotsVertical)
+    lazy var selectAllButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.selectAllTabs, image: nil)
+    lazy var deselectAllButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.deselectAllTabs, image: nil)
+    lazy var duckChatButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.duckAiFeatureName, image: DesignSystemImages.Glyphs.Size24.aiChat)
 
     private(set) var bottomBarItems = [UIBarButtonItem]()
     private(set) var isBottomBarHidden = false

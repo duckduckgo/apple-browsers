@@ -229,7 +229,7 @@ private extension UIButton.Configuration {
 
 extension BrowserChromeButton {
 
-    static func createBarButtonItem(title: String, image: UIImage?) -> UIBarButtonItem {
+    static func createToolbarButtonItem(title: String, image: UIImage?) -> UIBarButtonItem {
         let button = BrowserChromeButton(.toolbar)
         if let image = image {
             button.setImage(image)

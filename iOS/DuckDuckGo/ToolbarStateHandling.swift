@@ -60,33 +60,33 @@ final class ToolbarHandler: ToolbarStateHandling {
     private let themeManager: ThemeManaging
 
     lazy var backButton = {
-        return BrowserChromeButton.createBarButtonItem(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
+        return BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
     }()
 
     lazy var fireBarButtonItem = {
-        let buttonItem = BrowserChromeButton.createBarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        let buttonItem = BrowserChromeButton.createToolbarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fireSolid)
         buttonItem.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
         return buttonItem
     }()
 
     lazy var forwardButton = {
-        return BrowserChromeButton.createBarButtonItem(title: UserText.keyCommandBrowserForward, image: DesignSystemImages.Glyphs.Size24.arrowRight)
+        return BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandBrowserForward, image: DesignSystemImages.Glyphs.Size24.arrowRight)
     }()
 
     lazy var tabSwitcherButton = {
-        return BrowserChromeButton.createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, image: DesignSystemImages.Glyphs.Size24.tabNew)
+        return BrowserChromeButton.createToolbarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, image: DesignSystemImages.Glyphs.Size24.tabNew)
     }()
 
     lazy var bookmarkButton = {
-        return BrowserChromeButton.createBarButtonItem(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarks)
+        return BrowserChromeButton.createToolbarButtonItem(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarks)
     }()
 
     lazy var passwordsButton = {
-        return BrowserChromeButton.createBarButtonItem(title: UserText.actionOpenPasswords, image: DesignSystemImages.Glyphs.Size24.key)
+        return BrowserChromeButton.createToolbarButtonItem(title: UserText.actionOpenPasswords, image: DesignSystemImages.Glyphs.Size24.key)
     }()
 
     lazy var browserMenuButton = {
-        return BrowserChromeButton.createBarButtonItem(title: UserText.menuButtonHint, image: DesignSystemImages.Glyphs.Size24.menuHamburger)
+        return BrowserChromeButton.createToolbarButtonItem(title: UserText.menuButtonHint, image: DesignSystemImages.Glyphs.Size24.menuHamburger)
     }()
 
     private var state: ToolbarContentState?

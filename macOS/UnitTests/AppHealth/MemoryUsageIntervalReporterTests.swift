@@ -30,12 +30,14 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
     private var mockMemoryUsageMonitor: MockIntervalMemoryMonitor!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPixelFiring: PixelKitMock!
+    private var mockAllocationStats: MockIntervalAllocationStatsProvider!
 
     override func setUp() {
         super.setUp()
         mockMemoryUsageMonitor = MockIntervalMemoryMonitor()
         mockFeatureFlagger = MockFeatureFlagger()
         mockPixelFiring = PixelKitMock()
+        mockAllocationStats = MockIntervalAllocationStatsProvider()
     }
 
     override func tearDown() {
@@ -43,6 +45,7 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
         mockMemoryUsageMonitor = nil
         mockFeatureFlagger = nil
         mockPixelFiring = nil
+        mockAllocationStats = nil
         super.tearDown()
     }
 
@@ -55,6 +58,7 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
             pixelFiring: mockPixelFiring,
             windowContext: nil,
             isSyncEnabled: { nil },
+            allocationStatsProvider: mockAllocationStats,
             checkInterval: checkInterval
         )
     }
@@ -74,7 +78,7 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1)
         let call = mockPixelFiring.actualFireCalls[0]
-        XCTAssertEqual(call.pixel.name, "m_mac_memory_usage")
+        XCTAssertEqual(call.pixel.name, "m_mac_memory_usage_interval")
         XCTAssertEqual(call.pixel.parameters?["trigger"], "startup")
         XCTAssertEqual(call.frequency, .standard)
     }
@@ -82,6 +86,7 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
     func testWhenStarted_ThenStartupPixelIncludesContextParameters() async {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 2500
+        mockAllocationStats.totalUsedBytes = 300 * 1_048_576 // 300 MB -> bucket 256
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = makeSUT()
         sut.startMonitoringForTesting()
@@ -94,9 +99,12 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
         XCTAssertEqual(params?["trigger"], "startup")
         XCTAssertEqual(params?["browser_memory_mb"], "2048")
         XCTAssertEqual(params?["windows"], "unknown")
-        XCTAssertEqual(params?["tabs"], "unknown")
+        XCTAssertEqual(params?["standard_tabs"], "unknown")
+        XCTAssertEqual(params?["pinned_tabs"], "unknown")
         XCTAssertEqual(params?["sync_enabled"], "unknown")
         XCTAssertNotNil(params?["architecture"])
+        XCTAssertEqual(params?["used_allocation"], "256")
+        XCTAssertNotNil(params?["uptime"])
     }
 
     // MARK: - Interval Triggering
@@ -325,12 +333,12 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
 
         // Then
         for call in mockPixelFiring.actualFireCalls {
-            XCTAssertEqual(call.pixel.name, "m_mac_memory_usage")
+            XCTAssertEqual(call.pixel.name, "m_mac_memory_usage_interval")
         }
     }
 }
 
-// MARK: - Mock
+// MARK: - Mocks
 
 private class MockIntervalMemoryMonitor: MemoryUsageMonitoring {
     var currentResidentMB: Double = 0
@@ -343,5 +351,13 @@ private class MockIntervalMemoryMonitor: MemoryUsageMonitoring {
             residentBytes: residentBytes,
             physFootprintBytes: physFootprintBytes
         )
+    }
+}
+
+private class MockIntervalAllocationStatsProvider: MemoryAllocationStatsProviding {
+    var totalUsedBytes: UInt64?
+
+    func currentTotalUsedBytes() -> UInt64? {
+        totalUsedBytes
     }
 }

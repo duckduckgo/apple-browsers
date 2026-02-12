@@ -683,7 +683,7 @@ extension AppDelegate {
     @objc func fireIntervalPixelNow(_ sender: Any?) {
         let alert = NSAlert()
         alert.messageText = "Fire Interval Pixel"
-        alert.informativeText = "Select a trigger to fire. The reporter will collect current context and fire the m_mac_memory_usage pixel."
+        alert.informativeText = "Select a trigger to fire. The reporter will collect current context and fire the m_mac_memory_usage_interval pixel."
         alert.alertStyle = .informational
 
         let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 200, height: 24), pullsDown: false)

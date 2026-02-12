@@ -389,6 +389,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
     var memoryUsageIntervalReporter: MemoryUsageIntervalReporter?
 
+    /// The date this app instance was launched, used for computing uptime in memory pixels.
+    private let appLaunchDate = Date()
+
     @MainActor
     // swiftlint:disable cyclomatic_complexity
     override init() {
@@ -1065,7 +1068,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pixelFiring: PixelKit.shared,
             memoryUsageMonitor: memoryUsageMonitor,
             windowContext: WindowContext(
-                tabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.allTabsCount },
+                standardTabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                pinnedTabs: windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count },
                 windows: windowControllersManager.mainWindowControllers.count
             ),
             isSyncEnabled: { [weak self] in
@@ -1073,6 +1077,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
                 return syncService.authState == .active
             },
+            launchDate: appLaunchDate,
             logger: .memory
         )
 
@@ -1081,7 +1086,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             windowContext: WindowContext(
-                tabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.allTabsCount },
+                standardTabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                pinnedTabs: windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count },
                 windows: windowControllersManager.mainWindowControllers.count
             ),
             isSyncEnabled: { [weak self] in
@@ -1089,6 +1095,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
                 return syncService.authState == .active
             },
+            launchDate: appLaunchDate,
             logger: .memory
         )
 

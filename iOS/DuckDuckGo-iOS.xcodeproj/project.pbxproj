@@ -92,6 +92,8 @@
 		1E9529A12C4E748B006E80D4 /* UINavigationControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9529A02C4E748B006E80D4 /* UINavigationControllerExtension.swift */; };
 		1EA51376286596A000493C6A /* PrivacyIconLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA51375286596A000493C6A /* PrivacyIconLogic.swift */; };
 		1EC458462948932500CB2B13 /* UIHostingControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC458452948932500CB2B13 /* UIHostingControllerExtension.swift */; };
+		DA0001012F3D000100000001 /* DarkReaderDomainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0001032F3D000100000001 /* DarkReaderDomainManager.swift */; };
+		DA0001022F3D000100000002 /* DarkReaderFeatureSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0001042F3D000100000002 /* DarkReaderFeatureSettings.swift */; };
 		1EC8B1832F29139400F18679 /* WebExtensionManager+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC8B17E2F29139400F18679 /* WebExtensionManager+iOS.swift */; };
 		1EC8B1842F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC8B17D2F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift */; };
 		1EC8B1852F29139400F18679 /* TabViewController+WKWebExtensionTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC8B1802F29139400F18679 /* TabViewController+WKWebExtensionTab.swift */; };
@@ -2417,6 +2419,8 @@
 		1EA51375286596A000493C6A /* PrivacyIconLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyIconLogic.swift; sourceTree = "<group>"; };
 		1EC458452948932500CB2B13 /* UIHostingControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIHostingControllerExtension.swift; sourceTree = "<group>"; };
 		1EC51CD828D8C0DF00E9D05A /* UIImageExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIImageExtension.swift; sourceTree = "<group>"; };
+		DA0001032F3D000100000001 /* DarkReaderDomainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkReaderDomainManager.swift; sourceTree = "<group>"; };
+		DA0001042F3D000100000002 /* DarkReaderFeatureSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkReaderFeatureSettings.swift; sourceTree = "<group>"; };
 		1EC8B17C2F29139400F18679 /* WebExtensionConfigurationProvider+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionConfigurationProvider+iOS.swift"; sourceTree = "<group>"; };
 		1EC8B17D2F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionEventsCoordinator+iOS.swift"; sourceTree = "<group>"; };
 		1EC8B17E2F29139400F18679 /* WebExtensionManager+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionManager+iOS.swift"; sourceTree = "<group>"; };
@@ -5187,6 +5191,15 @@
 			path = Autoconsent;
 			sourceTree = "<group>";
 		};
+		DA0001052F3D000100000003 /* DarkReader */ = {
+			isa = PBXGroup;
+			children = (
+				DA0001032F3D000100000001 /* DarkReaderDomainManager.swift */,
+				DA0001042F3D000100000002 /* DarkReaderFeatureSettings.swift */,
+			);
+			path = DarkReader;
+			sourceTree = "<group>";
+		};
 		1EC8B1822F29139400F18679 /* WebExtensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -6696,6 +6709,7 @@
 				84E341E31E2FC0E400BDBA6F /* UserInterfaceResources */,
 				3151F0E827357F8F00226F58 /* VoiceSearch */,
 				4B6484F427FD1E390050A7A1 /* Waitlist */,
+				DA0001052F3D000100000003 /* DarkReader */,
 				1EC8B1822F29139400F18679 /* WebExtensions */,
 				9FE7E7A22EAAF7B700AEAD83 /* WhatsNew */,
 				7B059F0E2D0387E900371ED0 /* Widgets */,
@@ -12052,6 +12066,8 @@
 				9FE7E7A12EAAF4BE00AEAD83 /* WhatsNewModalPromptProvider.swift in Sources */,
 				85010502292FB1000033978F /* FireproofFaviconUpdater.swift in Sources */,
 				981CA7EA2617797500E119D5 /* MainViewController+AddFavoriteFlow.swift in Sources */,
+				DA0001012F3D000100000001 /* DarkReaderDomainManager.swift in Sources */,
+				DA0001022F3D000100000002 /* DarkReaderFeatureSettings.swift in Sources */,
 				1EC8B1832F29139400F18679 /* WebExtensionManager+iOS.swift in Sources */,
 				1EC8B1842F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift in Sources */,
 				1EC8B1852F29139400F18679 /* TabViewController+WKWebExtensionTab.swift in Sources */,

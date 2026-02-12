@@ -105,7 +105,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         return FadeInView {
             OnboardingRebranding.OnboardingTrySiteDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
         }
-        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASite)
+        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
@@ -122,7 +122,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         FadeInView {
             OnboardingRebranding.OnboardingAddFavorite(message: message)
         }
-        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASite)
+        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
     }
 
 }

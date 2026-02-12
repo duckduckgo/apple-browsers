@@ -22,7 +22,7 @@ import MetricBuilder
 public enum ContextualOnboardingBackgroundType {
     case tryASearch
     case tryASearchCompleted
-    case tryVisitingASite
+    case tryVisitingASiteNTP
     case trackers
     case fireDialog
     case endOfJourney
@@ -30,7 +30,7 @@ public enum ContextualOnboardingBackgroundType {
 
     var alignment: Alignment {
         switch self {
-        case .tryASearch, .tryASearchCompleted, .tryVisitingASite, .trackers, .fireDialog, .endOfJourney:
+        case .tryASearch, .tryASearchCompleted, .tryVisitingASiteNTP, .trackers, .fireDialog, .endOfJourney:
             return .bottomTrailing
         case .privacyProTrial:
             return .center
@@ -40,19 +40,19 @@ public enum ContextualOnboardingBackgroundType {
     var image: Image {
         switch self {
         case .tryASearch:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.tryASearchBackground
         case .tryASearchCompleted:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
-        case .tryVisitingASite:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASiteBackground
+            return OnboardingRebrandingImages.Contextual.searchDoneBackground
+        case .tryVisitingASiteNTP:
+            return OnboardingRebrandingImages.Contextual.tryASiteBackground
         case .trackers:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.tryASearchBackground
         case .fireDialog:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.tryASearchBackground
         case .endOfJourney:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.tryASearchBackground
         case .privacyProTrial:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.tryASearchBackground
         }
     }
 }

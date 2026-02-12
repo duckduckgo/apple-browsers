@@ -31,19 +31,40 @@ import os.log
 /// Factory extension that provides the Sparkle updater implementation.
 ///
 /// This extension is compiled into the SparkleAppUpdater package and provides
-/// the Sparkle-specific `UpdateControllerFactoryMethodType.sparkle` factory method.
+/// the Sparkle-specific update controller instantiation.
 ///
 /// See `UpdateControllerFactory` in `UpdateController.swift` for details on
-/// how `factoryMethod` is consumed.
-extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
-    /// Returns the Sparkle constructor closure used by `UpdateControllerFactory.factoryMethod`.
-    /// - If `updatesSimplifiedFlow` is enabled, returns `.sparkle(SimplifiedSparkleUpdateController.init)`
-    /// - Otherwise, returns `.sparkle(DefaultSparkleUpdateController.init)`
-    public static func getFactoryMethod(featureFlagger: FeatureFlagger) -> UpdateControllerFactoryMethodType {
+/// how `instantiate` is consumed.
+extension UpdateControllerFactory: SparkleUpdateControllerFactory {
+    /// Instantiates the Sparkle update controller.
+    /// - If `updatesSimplifiedFlow` is enabled, returns `SimplifiedSparkleUpdateController`
+    /// - Otherwise, returns `DefaultSparkleUpdateController`
+    public static func instantiate(internalUserDecider: InternalUserDecider,
+                                   featureFlagger: FeatureFlagger,
+                                   pixelFiring: PixelFiring?,
+                                   notificationPresenter: any UpdateNotificationPresenting,
+                                   keyValueStore: any ThrowingKeyValueStoring,
+                                   allowUnsignedUpdates: Bool,
+                                   wideEvent: WideEventManaging,
+                                   isOnboardingFinished: @escaping () -> Bool) -> any SparkleUpdateController {
         if featureFlagger.isFeatureOn(.updatesSimplifiedFlow) {
-            return .sparkle(SimplifiedSparkleUpdateController.init)
+            return SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider,
+                                                     featureFlagger: featureFlagger,
+                                                     pixelFiring: pixelFiring,
+                                                     notificationPresenter: notificationPresenter,
+                                                     keyValueStore: keyValueStore,
+                                                     allowUnsignedUpdates: allowUnsignedUpdates,
+                                                     wideEvent: wideEvent,
+                                                     isOnboardingFinished: isOnboardingFinished)
         } else {
-            return .sparkle(DefaultSparkleUpdateController.init)
+            return DefaultSparkleUpdateController(internalUserDecider: internalUserDecider,
+                                                  featureFlagger: featureFlagger,
+                                                  pixelFiring: pixelFiring,
+                                                  notificationPresenter: notificationPresenter,
+                                                  keyValueStore: keyValueStore,
+                                                  allowUnsignedUpdates: allowUnsignedUpdates,
+                                                  wideEvent: wideEvent,
+                                                  isOnboardingFinished: isOnboardingFinished)
         }
     }
 }

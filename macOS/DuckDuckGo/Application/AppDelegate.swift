@@ -1411,41 +1411,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let buildType = StandardApplicationBuildType()
         let notificationPresenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
 
-        let updateControllerFactory = UpdateControllerFactory(featureFlagger: featureFlagger)
-        let updateController: any UpdateController
-        switch updateControllerFactory.factoryMethod {
-        case .appStore(let makeController):
-            assert(buildType.isAppStoreBuild)
-            updateController = makeController(
-                internalUserDecider,
-                featureFlagger,
-                PixelKit.shared,
-                notificationPresenter,
-                { OnboardingActionsManager.isOnboardingFinished }
-            )
-        case .sparkle(let makeController):
-            assert(buildType.isSparkleBuild)
-            let allowUnsignedUpdates = buildType.isDebugBuild || buildType.isReviewBuild
-            updateController = makeController(
-                internalUserDecider,
-                featureFlagger,
-                PixelKit.shared,
-                notificationPresenter,
-                UserDefaults.standard,
-                allowUnsignedUpdates,
-                wideEvent,
-                { OnboardingActionsManager.isOnboardingFinished }
-            )
-            if let sparkleUpdateController = updateController as? any SparkleUpdateController {
-                stateRestorationManager.subscribeToAutomaticAppRelaunching(using: sparkleUpdateController.willRelaunchAppPublisher)
-            } else {
-                assertionFailure("Update controller is not a SparkleUpdateController")
+        if buildType.isAppStoreBuild {
+            guard let appStoreFactory = UpdateControllerFactory.self as? any AppStoreUpdateControllerFactory.Type else {
+                assertionFailure("Failed to instantiate app store update controller")
+                return
             }
-        case .none:
-            assertionFailure("Failed to instantiate update controller")
-            return
+
+            self.updateController = appStoreFactory.instantiate(
+                internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger,
+                pixelFiring: PixelKit.shared,
+                notificationPresenter: notificationPresenter,
+                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
+            )
+        } else {
+            assert(buildType.isSparkleBuild)
+
+            guard let sparkleFactory = UpdateControllerFactory.self as? any SparkleUpdateControllerFactory.Type else {
+                assertionFailure("Failed to instantiate sparkle update controller")
+                return
+            }
+
+            let allowUnsignedUpdates = buildType.isDebugBuild || buildType.isReviewBuild
+            let sparkleUpdateController = sparkleFactory.instantiate(
+                internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger,
+                pixelFiring: PixelKit.shared,
+                notificationPresenter: notificationPresenter,
+                keyValueStore: UserDefaults.standard,
+                allowUnsignedUpdates: allowUnsignedUpdates,
+                wideEvent: wideEvent,
+                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
+            )
+            stateRestorationManager.subscribeToAutomaticAppRelaunching(using: sparkleUpdateController.willRelaunchAppPublisher)
+            self.updateController = sparkleUpdateController
         }
-        self.updateController = updateController
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

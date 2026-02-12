@@ -67,6 +67,8 @@ final class MainCoordinator {
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
     private var adaptiveDarkModeObserver: Any?
+    private var darkReaderDomainManager: DarkReaderDomainManager?
+    private var darkReaderDomainCancellable: AnyCancellable?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -210,14 +212,14 @@ final class MainCoordinator {
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
                                         whatsNewRepository: whatsNewRepository)
-        setupWebExtensions()
+        setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
     }
 
     func start() {
         controller.loadViewIfNeeded()
     }
 
-    private func setupWebExtensions() {
+    private func setupWebExtensions(privacyConfigurationManager: PrivacyConfigurationManaging) {
         if #available(iOS 18.4, *), featureFlagger.isFeatureOn(.webExtensions) {
             let webExtensionManager = WebExtensionManagerFactory.makeManager(mainViewController: controller)
             self.webExtensionManager = webExtensionManager
@@ -241,6 +243,20 @@ final class MainCoordinator {
                     self?.clearWebExtensionReferences()
                 }
 
+            if featureFlagger.isFeatureOn(.forceWebsiteDarkMode) {
+                let domainManager = DarkReaderDomainManager(privacyConfigurationManager: privacyConfigurationManager)
+                self.darkReaderDomainManager = domainManager
+
+                darkReaderDomainCancellable = domainManager.blockedDomainsPublisher
+                    .receive(on: DispatchQueue.main)
+                    .sink { [weak self] domains in
+                        guard let self, let manager = self.webExtensionManager else { return }
+                        Task { @MainActor in
+                            await self.updateBundledDarkReaderBlockedDomains(domains, manager: manager)
+                        }
+                    }
+            }
+
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
                 await self.updateBundledDarkReader(manager: webExtensionManager)
@@ -260,10 +276,9 @@ final class MainCoordinator {
         }
     }
 
-    private static let darkReaderBlockedDomains: Set<String> = [
-        "duckduckgo.com",
-        "apple.com",
-    ]
+    private var darkReaderBlockedDomains: Set<String> {
+        darkReaderDomainManager?.blockedDomains ?? ["duckduckgo.com"]
+    }
 
     private func updateBundledDarkReader(manager: WebExtensionManaging) async {
         guard #available(iOS 18.4, *) else { return }
@@ -275,16 +290,25 @@ final class MainCoordinator {
         let appSettings = AppDependencyProvider.shared.appSettings
         if appSettings.isAdaptiveDarkModeEnabled {
             try? await manager.installBundledExtension(resourceURL: darkReaderURL,
-                                                       blockedDomains: Self.darkReaderBlockedDomains)
+                                                       blockedDomains: darkReaderBlockedDomains)
         } else {
             try? manager.uninstallBundledExtension(resourceURL: darkReaderURL)
         }
+    }
+
+    private func updateBundledDarkReaderBlockedDomains(_ domains: Set<String>, manager: WebExtensionManaging) async {
+        guard #available(iOS 18.4, *) else { return }
+        guard let darkReaderURL = Bundle.main.url(forResource: "darkreader", withExtension: nil) else { return }
+
+        try? await manager.updateBlockedDomains(domains, forBundledExtensionAt: darkReaderURL)
     }
 
     private func clearWebExtensionReferences() {
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
         adaptiveDarkModeObserver = nil
+        darkReaderDomainManager = nil
+        darkReaderDomainCancellable = nil
         tabManager.setWebExtensionManager(nil)
         controller.setWebExtensionEventsCoordinator(nil)
         controller.setWebExtensionManager(nil)

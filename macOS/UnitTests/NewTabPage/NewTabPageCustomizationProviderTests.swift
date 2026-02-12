@@ -132,7 +132,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 background: .solidColor("color05"),
                 showThemeVariantPopover: themePopoverDecider.shouldShowPopover,
                 theme: .light,
-                themeVariant: nil,
+                themeVariant: .default,
                 userColor: .init(hex: "#123abc"),
                 userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init)
             )

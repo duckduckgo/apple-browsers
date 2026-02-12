@@ -32,7 +32,7 @@ struct SaveLoginView: View {
         case updatePassword
 
         // Part of experiment "iOS: A/B test autofill onboarding"
-        // https://app.asana.com/1/137249556945/project/72649045549333/task/1208707884599795)
+        // https://app.asana.com/1/137249556945/project/72649045549333/task/1208707884599795
         case newUserVariant1
         case newUserVariant2
         case newUserVariant3
@@ -241,11 +241,11 @@ struct SaveLoginView: View {
     @ViewBuilder
     private var contentView: some View {
         switch layoutType {
-            case .updateUsername:
-                updateUsernameContentView
-            default:
-                let text = layoutType == .updatePassword ? UserText.autoUpdatePasswordMessage : UserText.autofillSaveLoginSecurityMessage
-                AutofillViews.SecureDescription(text: text)
+        case .updateUsername:
+            updateUsernameContentView
+        default:
+            let text = layoutType == .updatePassword ? UserText.autoUpdatePasswordMessage : UserText.autofillSaveLoginSecurityMessage
+            AutofillViews.SecureDescription(text: text)
         }
     }
     

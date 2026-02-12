@@ -75,12 +75,12 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     init(internalUserDecider: InternalUserDecider,
          areAutomaticUpdatesEnabled: Bool,
          useLegacyAutoRestartLogic: Bool,
-         keyValueStore: ThrowingKeyValueStoring) {
+         settings: (any ThrowingKeyedStoring<UpdateControllerSettings>)) {
 
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
         self.useLegacyAutoRestartLogic = useLegacyAutoRestartLogic
-        self.settings = keyValueStore.throwingKeyedStoring()
+        self.settings = settings
     }
 
     func resume() {

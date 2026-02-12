@@ -1,7 +1,7 @@
 //
 //  SparkleUpdateWideEvent.swift
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@
 import AppUpdaterShared
 import Common
 import Foundation
-import PixelKit
-import Persistence
-import PrivacyConfig
 import os.log
+import Persistence
+import PixelKit
+import PrivacyConfig
 
 /// Orchestrates Wide Event tracking for Sparkle update cycles.
 ///

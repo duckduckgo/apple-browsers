@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Izbriši sve";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Izbriši ovo čavrljanje";
+"scoped.fire.confirmation.delete.this.chat.description" = "\"Izbriši sve\" neće izbrisati tvoju Duck.ai povijest čavrljanja.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Izbriši ovu karticu";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "\"Izbriši ovu karticu\" briše ovo Duck.ai čavrljanje i sve podatke s mrežnih lokacija posjećenih u ovoj kartici.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Ovo će otkazati preuzimanja u tijeku.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "Nove kartice koje kreiraš također se mogu pojedinačno izbrisati.";
+"scoped.fire.confirmation.new.tabs.info" = "Nove kartice koje si kreirao također se mogu pojedinačno izbrisati.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Brisanje podataka mrežnih lokacija može te odjaviti s računa.";

@@ -1,7 +1,7 @@
 {
   "name": "PublicSearcher",
   "url": "publicsearcher.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.publicsearcher.com/optOut/name/landingPage",
   "steps": [
@@ -136,6 +136,54 @@
             }
           ],
           "id": "632f5161-71d4-4e0b-ac2d-f6c770ebda48"
+        },
+        {
+          "actionType": "expectation",
+          "_comment": "add a bit more wait time for the captchas to complete",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".container"
+            }
+          ],
+          "id": "3a01aae9-612e-4ed8-b36d-54484e62cd7b"
+        },
+        {
+          "actionType": "condition",
+          "_comment": "captcha is not always present at this stage",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#svg-captcha-rendering svg",
+              "failSilently": true
+            }
+          ],
+          "actions": [
+            {
+              "actionType": "getCaptchaInfo",
+              "captchaType": "image",
+              "selector": "#svg-captcha-rendering svg",
+              "id": "3ade98cb-9fcd-4c02-803a-157fcd3c92c9"
+            },
+            {
+              "actionType": "solveCaptcha",
+              "captchaType": "image",
+              "selector": "#svgCaptchaInputId",
+              "id": "244986f1-e765-4f20-b94a-2e2faa3d7a75"
+            },
+            {
+              "actionType": "click",
+              "failSilently": true,
+              "elements": [
+                {
+                  "type": "button",
+                  "selector": "#svgCaptchaButtonId"
+                }
+              ],
+              "id": "42ba49cf-2b2f-4d77-8756-df800ef5e18d"
+            }
+          ],
+          "id": "0448a534-9040-484d-9e2f-f7faae520ddb"
         },
         {
           "actionType": "expectation",

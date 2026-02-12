@@ -155,6 +155,7 @@ public enum RemoteMessageResponse {
         case appUpdate = "AppUpdate"
         case macComputer = "MacComputer"
         case newForMacAndWindows = "NewForMacAndWindows"
+        case macAndWindows = "MacAndWindows"
         case privacyShield = "PrivacyShield"
         case aiChat = "Duck.ai"
         case visualDesignUpdate = "VisualDesignUpdate"

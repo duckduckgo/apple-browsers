@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Összes törlése";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Csevegés törlése";
+"scoped.fire.confirmation.delete.this.chat.description" = "Az „Összes törlése” lehetőség választása esetén a Duck.ai csevegési előzményei nem törlődnek.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Lap törlése";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "A „Lap törlése” művelet törli ezt a Duck.ai csevegést, valamint az ezen a lapon meglátogatott webhelyek minden webhelyadatát.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Ez megszakítja a folyamatban lévő letöltéseket.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "A létrehozott új lapok egyenként is törölhetők.";
+"scoped.fire.confirmation.new.tabs.info" = "Az újonnan létrehozott lapok egyenként is törölhetők.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "A webhelyadatok törlése kijelentkeztethet a fiókjaidból.";

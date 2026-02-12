@@ -31,8 +31,6 @@ final class ApplicationUpdateDetectorTests: XCTestCase {
         super.setUp()
         // Use in-memory store for testing
         testStore = InMemoryThrowingKeyValueStore()
-        // Reset the state before each test
-        ApplicationUpdateDetector.resetState()
     }
 
     override func tearDown() {

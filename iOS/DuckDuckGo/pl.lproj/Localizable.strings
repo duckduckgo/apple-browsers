@@ -2942,10 +2942,10 @@
 "scoped.fire.confirmation.delete.all.button" = "Usuń wszystko";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Usuń ten czat";
+"scoped.fire.confirmation.delete.this.chat.description" = "Opcja „Usuń wszystkie” nie usunie Twojej historii czatów Duck.ai.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Usuń tę kartę";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "Opcja „Usuń tę kartę” powoduje usunięcie tego czatu Duck.ai i wszelkich danych witryn odwiedzonych na tej karcie.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Spowoduje to anulowanie trwającego pobierania.";

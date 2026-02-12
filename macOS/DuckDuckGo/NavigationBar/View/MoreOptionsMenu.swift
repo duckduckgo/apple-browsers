@@ -16,21 +16,22 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
+import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
-import BrowserServicesKit
-import History
-import PixelKit
-import PrivacyConfig
-import VPN
-import Subscription
-import os.log
-import Freemium
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
-import SwiftUI
 import DesignResourcesKitIcons
+import Freemium
+import History
+import os.log
+import PixelKit
+import PrivacyConfig
+import Subscription
+import SwiftUI
+import VPN
 
 protocol OptionsButtonMenuDelegate: AnyObject {
 

@@ -39,12 +39,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger,
          windowControllersManager: WindowControllersManagerProtocol,
-         keyValueStore: ThrowingKeyValueStoring? = nil,
+         keyValueStore: ThrowingKeyValueStoring,
          supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
-        self.settings = if let keyValueStore { keyValueStore.throwingKeyedStoring() } else { UserDefaults.standard.throwingKeyedStoring() }
+        self.settings = keyValueStore.throwingKeyedStoring()
         self.appVersionModel = .init(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
         self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
         internalUserDecider.isInternalUserPublisher

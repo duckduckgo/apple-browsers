@@ -2942,10 +2942,10 @@
 "scoped.fire.confirmation.delete.all.button" = "Kustuta kõik";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Kustuta see vestlus";
+"scoped.fire.confirmation.delete.this.chat.description" = "„Kustuta kõik” ei kustuta su Duck.ai vestlusajalugu.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Kustuta see vahekaart";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "Toiming „Kustuta see vahekaart” kustutab selle Duck.ai vestluse ja kõik sellel vahekaardil külastatud saitide andmed.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "See tühistab pooleliolevad allalaadimised.";

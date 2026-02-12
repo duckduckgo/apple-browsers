@@ -27,10 +27,8 @@ public final class ApplicationUpdateDetector {
     private var updateStatus: AppUpdateStatus = .noChange
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
-    private static var sharedInstance: ApplicationUpdateDetector?
-
-    init(keyValueStore: ThrowingKeyValueStoring) {
-        self.settings = keyValueStore.throwingKeyedStoring()
+    init(settings: any ThrowingKeyedStoring<UpdateControllerSettings>) {
+        self.settings = settings
     }
 
     private var previousAppVersion: String? {
@@ -48,7 +46,7 @@ public final class ApplicationUpdateDetector {
                                             previousVersion: String? = nil,
                                             previousBuild: String? = nil,
                                             keyValueStore: ThrowingKeyValueStoring) -> AppUpdateStatus {
-        let detector = ApplicationUpdateDetector(keyValueStore: keyValueStore)
+        let detector = ApplicationUpdateDetector(settings: keyValueStore.throwingKeyedStoring())
         return detector.isApplicationUpdated(currentVersion: currentVersion,
                                              currentBuild: currentBuild,
                                              previousVersion: previousVersion,
@@ -121,10 +119,4 @@ public final class ApplicationUpdateDetector {
         return build.isEmpty ? nil : build
     }
 
-    public static func resetState() {
-        // Clear shared instance to ensure fresh state for tests
-        // Each call to isApplicationUpdated creates a new instance, so this ensures
-        // tests start with a clean slate
-        sharedInstance = nil
-    }
 }

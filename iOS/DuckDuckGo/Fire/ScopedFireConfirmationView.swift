@@ -28,16 +28,21 @@ struct ScopedFireConfirmationView: View {
     
     @ObservedObject var viewModel: ScopedFireConfirmationViewModel
     @State private var isAnimating = false
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
     init(viewModel: ScopedFireConfirmationViewModel) {
         self.viewModel = viewModel
+    }
+    
+    private var contentPadding: EdgeInsets {
+        horizontalSizeClass == .compact ? Constants.sheetViewPadding : Constants.popoverViewPadding
     }
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ScrollView {
                 contentView
-                    .padding(Constants.viewPadding)
+                    .padding(contentPadding)
             }
             .modifier(ScrollBounceBehaviorModifier())
             closeButton
@@ -105,7 +110,7 @@ struct ScopedFireConfirmationView: View {
                 Button(action: {
                     viewModel.burnThisTab()
                 }) {
-                    Text(UserText.scopedFireConfirmationDeleteThisTabButton)
+                    Text(viewModel.tabScopeButtonTitle)
                 }
                 .buttonStyle(SecondaryDestructiveButtonStyle())
                 .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")
@@ -130,7 +135,8 @@ struct ScopedFireConfirmationView: View {
 
 private extension ScopedFireConfirmationView {
     enum Constants {
-        static let viewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
+        static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
+        static let popoverViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         static let mainSectionSpacing: CGFloat = 16
         static let headerSectionSpacing: CGFloat = 8
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)

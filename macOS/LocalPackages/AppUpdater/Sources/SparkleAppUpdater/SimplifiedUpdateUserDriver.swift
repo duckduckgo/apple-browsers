@@ -19,8 +19,8 @@
 import AppKit
 import AppUpdaterShared
 import Foundation
-import Persistence
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 import Sparkle
@@ -32,12 +32,8 @@ public final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
     private var pendingUpdateSince: Date {
-        get {
-            (try? settings.pendingUpdateSince) ?? .distantPast
-        }
-        set {
-            try? settings.set(newValue, for: \.pendingUpdateSince)
-        }
+        get { (try? settings.pendingUpdateSince) ?? .distantPast }
+        set { try? settings.set(newValue, for: \.pendingUpdateSince) }
     }
 
     public func updateLastUpdateDownloadedDate() {
@@ -61,12 +57,12 @@ public final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
 
     public init(internalUserDecider: InternalUserDecider,
                 areAutomaticUpdatesEnabled: Bool,
-                keyValueStore: ThrowingKeyValueStoring,
+                settings: (any ThrowingKeyedStoring<UpdateControllerSettings>),
                 onProgressChange: @escaping (UpdateCycleProgress, (() -> Void)?) -> Void) {
 
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
-        self.settings = keyValueStore.throwingKeyedStoring()
+        self.settings = settings
         self.onProgressChange = onProgressChange
     }
 

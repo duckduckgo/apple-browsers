@@ -19,6 +19,7 @@
 import Common
 import Foundation
 import Persistence
+import PixelKit
 import UserScript
 
 /// Protocol that concrete updater packages implement for the factory pattern.
@@ -29,7 +30,7 @@ public protocol ReleaseNotesUserScriptFactoryBuilder {
     /// Creates a release notes user script with required dependencies.
     func makeUserScript(
         updateController: UpdateController,
-        eventMapping: EventMapping<UpdateControllerEvent>?,
+        pixelFiring: PixelFiring?,
         keyValueStore: ThrowingKeyValueStoring,
         releaseNotesURL: URL
     ) -> Subfeature

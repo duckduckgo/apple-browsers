@@ -1,0 +1,50 @@
+// Memory usage interval pixel
+// Fires at startup and scheduled intervals to report memory usage with context
+{
+    "m_mac_memory_usage": {
+        "description": "Fires at startup and scheduled intervals to report browser memory usage with context parameters",
+        "owners": ["jotaemepereira"],
+        "triggers": ["startup", "scheduled"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "trigger",
+                "type": "string",
+                "enum": ["startup", "1h", "2h", "4h", "8h", "24h"],
+                "description": "The interval trigger that caused this pixel to fire"
+            },
+            {
+                "key": "browser_memory_mb",
+                "type": "number",
+                "enum": [0, 512, 1024, 2048, 4096, 8192, 16384],
+                "description": "Browser memory usage (phys_footprint) in MB, bucketed"
+            },
+            {
+                "key": "windows",
+                "type": "string",
+                "enum": ["0", "1", "2", "4", "7", "11", "21", "unknown"],
+                "description": "Number of open browser windows, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "tabs",
+                "type": "string",
+                "enum": ["0", "1", "2", "4", "7", "11", "21", "51", "unknown"],
+                "description": "Total number of tabs across all windows, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "architecture",
+                "type": "string",
+                "enum": ["ARM", "Intel"],
+                "description": "CPU architecture of the build"
+            },
+            {
+                "key": "sync_enabled",
+                "type": "string",
+                "enum": ["true", "false", "unknown"],
+                "description": "Whether Sync is currently enabled. 'unknown' if unavailable."
+            }
+        ]
+    }
+}

@@ -2942,16 +2942,16 @@
 "scoped.fire.confirmation.delete.all.button" = "Διαγραφή όλων";
 
 /* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Διαγραφή αυτής της συνομιλίας";
+"scoped.fire.confirmation.delete.this.chat.description" = "Η επιλογή «Διαγραφή όλων» δεν θα διαγράψει το ιστορικό συνομιλιών σας στο Duck.ai.";
 "scoped.fire.confirmation.delete.this.tab.button" = "Διαγραφή αυτής της καρτέλας";
 
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "Η επιλογή «Διαγραφή αυτής της καρτέλας» διαγράφει αυτήν τη συνομιλία του Duck.ai και τυχόν δεδομένα ιστότοπου από τους ιστότοπους που επισκέπτεστε σε αυτήν την καρτέλα.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Αυτό θα ακυρώσει λήψεις που βρίσκονται σε εξέλιξη.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "Οι νέες καρτέλες που δημιουργείτε μπορούν επίσης να διαγραφούν μεμονωμένα.";
+"scoped.fire.confirmation.new.tabs.info" = "Οι νέες καρτέλες που δημιουργήσατε μπορούν επίσης να διαγραφούν μεμονωμένα.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Η διαγραφή δεδομένων ιστότοπου μπορεί να σας αποσυνδέσει από τους λογαριασμούς.";

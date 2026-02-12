@@ -455,7 +455,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
         }
         if !action.prompt.isEmpty {
-            contextualInputViewController.setText(action.prompt)
+            contextualInputViewController.appendText(action.prompt)
         }
     }
 

@@ -65,6 +65,7 @@ public enum PrivacyFeature: String {
     case forceOldAppDelegate
     case htmlHistoryPage
     case tabManager
+    case tabSwitcherTrackerCount
     case webViewStateRestoration
     case experimentalTheming
     case setAsDefaultAndAddToDock
@@ -86,6 +87,7 @@ public enum PrivacyFeature: String {
     case serp
     case popupBlocking
     case combinedPermissionView
+    case pageContext
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -233,6 +235,12 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
     case browsingMenuSheetEnabledByDefault
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
+    case enhancedDataClearingSettings
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091
+    case burnSingleTab
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -352,6 +360,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar cluster for AI Chat
     case omnibarCluster
 
+    /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
+    case omnibarTools
+
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
@@ -366,6 +377,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls whether automatic page context attachment defaults to enabled
     case autoAttachContextByDefault
+
+    /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
+    case iPadDuckaiOnTab
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

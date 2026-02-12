@@ -172,7 +172,7 @@ final class UserScripts: UserScriptsProvider {
             let factory = ReleaseNotesUserScriptFactory()
             releaseNotesUserScript = (factory as? ReleaseNotesUserScriptFactoryBuilder)?.makeUserScript(
                 updateController: updateController,
-                eventMapping: UpdateControllerMappings.eventMapping(pixelFiring: PixelKit.shared),
+                pixelFiring: PixelKit.shared,
                 keyValueStore: UserDefaults.standard,
                 releaseNotesURL: .releaseNotes
             )

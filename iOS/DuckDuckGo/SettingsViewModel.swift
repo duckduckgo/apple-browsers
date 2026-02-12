@@ -173,6 +173,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }
 
+    var isForceWebsiteDarkModeEnabled: Bool {
+        featureFlagger.isFeatureOn(.forceWebsiteDarkMode)
+    }
+
     var isBlackFridayCampaignEnabled: Bool {
         blackFridayCampaignProvider.isCampaignEnabled
     }

@@ -72,6 +72,12 @@ struct SettingsAppearanceView: View {
                 SettingsPickerCellView(label: UserText.settingsTheme,
                                        options: ThemeStyle.allCases,
                                        selectedOption: viewModel.themeStyleBinding)
+
+                // Force Dark Mode on websites
+                if viewModel.isForceWebsiteDarkModeEnabled {
+                    SettingsCellView(label: UserText.settingsForceWebsiteDarkMode,
+                                     accessory: .toggle(isOn: viewModel.adaptiveDarkModeBinding))
+                }
             }
 
             // AddressBar specific settings
@@ -116,14 +122,6 @@ struct SettingsAppearanceView: View {
                 Text(UserText.settingsTrackerBlockingAnimationSection)
             }
 
-            if viewModel.isInternalUser {
-                Section {
-                    SettingsCellView(label: "Adaptive Dark Mode",
-                                     accessory: .toggle(isOn: viewModel.adaptiveDarkModeBinding))
-                } header: {
-                    Text("Website Appearance")
-                }
-            }
         }
         .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
                                     displayMode: .inline,

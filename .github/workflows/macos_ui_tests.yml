@@ -44,7 +44,6 @@ on:
       - '.github/**'
       - '.xcode-version'
       - 'SharedPackages/BrowserServicesKit/Package.swift'
-      - 'SharedPackages/BrowserServicesKit/Package.resolved'
 
 concurrency:
   # When this workflow is called by another workflow (e.g. code freeze), `github.workflow` contains the name of the calling workflow,

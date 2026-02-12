@@ -381,7 +381,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     let memoryUsageMonitor: MemoryUsageMonitor
-    let memoryPressureReporter: MemoryPressureReporter
+    /// Optional `var` because its `syncServiceProvider` closure captures `self`,
+    /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
+    var memoryPressureReporter: MemoryPressureReporter?
     let memoryUsageThresholdReporter: MemoryUsageThresholdReporter
     /// Optional `var` because its `syncServiceProvider` closure captures `self`,
     /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
@@ -1049,7 +1051,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.attributedMetricManager.addNotificationsObserver()
 
         memoryUsageMonitor = MemoryUsageMonitor(internalUserDecider: internalUserDecider, logger: .memory)
-        memoryPressureReporter = MemoryPressureReporter(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared, logger: .memory)
         memoryUsageThresholdReporter = MemoryUsageThresholdReporter(
             memoryUsageMonitor: memoryUsageMonitor,
             featureFlagger: featureFlagger,
@@ -1058,6 +1059,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         super.init()
+
+        memoryPressureReporter = MemoryPressureReporter(
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            memoryUsageMonitor: memoryUsageMonitor,
+            windowContext: WindowContext(
+                tabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.allTabsCount },
+                windows: windowControllersManager.mainWindowControllers.count
+            ),
+            isSyncEnabled: { [weak self] in
+                guard let syncService = self?.syncService else { return nil }
+
+                return syncService.authState == .active
+            },
+            logger: .memory
+        )
 
         memoryUsageIntervalReporter = MemoryUsageIntervalReporter(
             memoryUsageMonitor: memoryUsageMonitor,
@@ -1071,7 +1088,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let syncService = self?.syncService else { return nil }
 
                 return syncService.authState == .active
-            }(),
+            },
             logger: .memory
         )
 

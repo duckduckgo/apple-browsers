@@ -1,10 +1,42 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
     "m_mac_memory_pressure_critical": {
-        "description": "Sent when the operating system reports critical level memory pressure.",
-        "owners": ["ayoy"],
+        "description": "Sent when the operating system reports critical level memory pressure, with context about browser state at the time of the event.",
+        "owners": ["ayoy", "jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "browser_memory_mb",
+                "type": "number",
+                "enum": [0, 512, 1024, 2048, 4096, 8192, 16384],
+                "description": "Browser memory usage (phys_footprint) in MB, bucketed"
+            },
+            {
+                "key": "windows",
+                "type": "string",
+                "enum": ["0", "1", "2", "4", "7", "11", "21", "unknown"],
+                "description": "Number of open browser windows, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "tabs",
+                "type": "string",
+                "enum": ["0", "1", "2", "4", "7", "11", "21", "51", "unknown"],
+                "description": "Total number of tabs across all windows, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "architecture",
+                "type": "string",
+                "enum": ["ARM", "Intel"],
+                "description": "CPU architecture of the build"
+            },
+            {
+                "key": "sync_enabled",
+                "type": "string",
+                "enum": ["true", "false", "unknown"],
+                "description": "Whether Sync is currently enabled. 'unknown' if unavailable."
+            }
+        ]
     }
 }

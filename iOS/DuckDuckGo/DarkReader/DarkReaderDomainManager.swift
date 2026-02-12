@@ -89,7 +89,7 @@ final class DarkReaderDomainManager {
 
     @available(iOS 18.4, *)
     private static func matchPatternPermissions(for domain: String,
-                                                status: WKWebExtensionPermissionStatus) -> [WebExtensionMatchPatternPermission] {
+                                                status: WKWebExtensionContext.PermissionStatus) -> [WebExtensionMatchPatternPermission] {
         var permissions: [WebExtensionMatchPatternPermission] = []
 
         if let exact = try? WKWebExtension.MatchPattern(string: "*://\(domain)/*") {

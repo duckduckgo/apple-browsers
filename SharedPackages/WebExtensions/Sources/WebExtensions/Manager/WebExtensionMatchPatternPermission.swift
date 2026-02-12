@@ -23,9 +23,9 @@ import WebKit
 public struct WebExtensionMatchPatternPermission {
 
     public let matchPattern: WKWebExtension.MatchPattern
-    public let status: WKWebExtensionPermissionStatus
+    public let status: WKWebExtensionContext.PermissionStatus
 
-    public init(matchPattern: WKWebExtension.MatchPattern, status: WKWebExtensionPermissionStatus) {
+    public init(matchPattern: WKWebExtension.MatchPattern, status: WKWebExtensionContext.PermissionStatus) {
         self.matchPattern = matchPattern
         self.status = status
     }

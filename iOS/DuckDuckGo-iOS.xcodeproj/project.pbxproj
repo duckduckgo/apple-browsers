@@ -1536,6 +1536,7 @@
 		9FEBDE242E0BFB8C00175B8B /* DefaultBrowserPromptPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEBDE232E0BFB7300175B8B /* DefaultBrowserPromptPixelHandler.swift */; };
 		9FF362BE2F3AC7A300824B30 /* RebrandedContextualDialogsDynamicMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362BD2F3AC78B00824B30 /* RebrandedContextualDialogsDynamicMetrics.swift */; };
 		9FF362C82F3C6EBA00824B30 /* RebrandedContextualOnboardingDialogs+AddFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362C72F3C6EA300824B30 /* RebrandedContextualOnboardingDialogs+AddFavorite.swift */; };
+		9FF362D02F3D884200824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362CF2F3D883500824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift */; };
 		9FF967AF2E0E243100E45B54 /* DefaultBrowserPromptUserTypeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967AE2E0E242F00E45B54 /* DefaultBrowserPromptUserTypeManager.swift */; };
 		9FF967B22E0E26DE00E45B54 /* DefaultBrowserPromptUserTypeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967B12E0E26DB00E45B54 /* DefaultBrowserPromptUserTypeManagerTests.swift */; };
 		9FF967B42E0E270300E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967B32E0E26F900E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift */; };
@@ -3990,6 +3991,7 @@
 		9FEBDE232E0BFB7300175B8B /* DefaultBrowserPromptPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptPixelHandler.swift; sourceTree = "<group>"; };
 		9FF362BD2F3AC78B00824B30 /* RebrandedContextualDialogsDynamicMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedContextualDialogsDynamicMetrics.swift; sourceTree = "<group>"; };
 		9FF362C72F3C6EA300824B30 /* RebrandedContextualOnboardingDialogs+AddFavorite.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+AddFavorite.swift"; sourceTree = "<group>"; };
+		9FF362CF2F3D883500824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+Trackers.swift"; sourceTree = "<group>"; };
 		9FF967AE2E0E242F00E45B54 /* DefaultBrowserPromptUserTypeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserTypeManager.swift; sourceTree = "<group>"; };
 		9FF967B12E0E26DB00E45B54 /* DefaultBrowserPromptUserTypeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserTypeManagerTests.swift; sourceTree = "<group>"; };
 		9FF967B32E0E26F900E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserTypeStoreTests.swift; sourceTree = "<group>"; };
@@ -7471,6 +7473,7 @@
 				9FB71CB42F395A86000AD042 /* RebrandedContextualOnboardingDialogs+TrySite.swift */,
 				9FB71CB62F39840E000AD042 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */,
 				9FF362C72F3C6EA300824B30 /* RebrandedContextualOnboardingDialogs+AddFavorite.swift */,
+				9FF362CF2F3D883500824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift */,
 				9F0369F32F23098900A00DCA /* RebrandedContextualDaxDialogFactory.swift */,
 				9F0369ED2F2307A000A00DCA /* RebrandedNewTabDaxDialogFactory.swift */,
 			);
@@ -11756,6 +11759,7 @@
 				C1C18BF62D956FAD00FFBA2E /* AutofillEditableCell.swift in Sources */,
 				6F55AE622ED8E7BB005D1F5B /* BrowsingMenuBuilder.swift in Sources */,
 				65BD16352D8C206F000795DE /* DuckPlayerPrimingModalView.swift in Sources */,
+				9FF362D02F3D884200824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift in Sources */,
 				65BD16362D8C206F000795DE /* DuckPlayerPrimingModalViewModel.swift in Sources */,
 				C1641EAF2BC2F5140012607A /* ImportPasswordsViaSyncViewController.swift in Sources */,
 				D63FF8982C1B6A45006DE24D /* DuckPlayer.swift in Sources */,

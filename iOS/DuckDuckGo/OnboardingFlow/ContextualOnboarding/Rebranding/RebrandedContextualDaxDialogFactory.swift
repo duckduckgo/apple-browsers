@@ -187,7 +187,7 @@ private extension RebrandedContextualDaxDialogFactory {
         delegate: ContextualOnboardingDelegate,
         onSizeUpdate: @escaping () -> Void
     ) -> some View {
-        let attributedMessage = spec.message.attributedStringFromMarkdown(color: ThemeManager.shared.currentTheme.daxDialogTextColor)
+        let attributedMessage = spec.message.attributedStringFromMarkdown(color: ThemeManager.shared.currentTheme.daxDialogTextColor, fontSize: 19)
 
         let onManualDismiss: (_ isShowingFireDialog: Bool) -> Void = { [weak delegate, weak self] isShowingFireDialog in
             // Hide Pulsing animation for Privacy Shield or Fire Dialog
@@ -203,21 +203,24 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        return OnboardingTrackersDoneDialog(
-            shouldFollowUp: shouldFollowUpToFireDialog,
-            message: attributedMessage,
-            blockedTrackersCTAAction: { [weak self, weak delegate] in
-                // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
-                if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
-                    delegate?.didTapDismissContextualOnboardingAction()
-                } else {
-                    onSizeUpdate()
-                    delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
-                    self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
-                }
-            },
-            onManualDismiss: onManualDismiss
-        )
+        return OnboardingConditionalCenteredScrollableContainerView {
+            OnboardingRebranding.OnboardingTrackersBlockedDialog(
+                shouldFollowUp: shouldFollowUpToFireDialog,
+                message: attributedMessage,
+                blockedTrackersCTAAction: { [weak self, weak delegate] in
+                    // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
+                    if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
+                        delegate?.didTapDismissContextualOnboardingAction()
+                    } else {
+                        onSizeUpdate()
+                        delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
+                        self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
+                    }
+                },
+                onManualDismiss: onManualDismiss
+            )
+        }
+        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP, animationContext: .default)
         .onAppear { [weak delegate] in
             delegate?.didShowContextualOnboardingTrackersDialog()
         }

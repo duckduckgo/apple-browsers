@@ -249,10 +249,10 @@ final class MainCoordinator {
 
                 darkReaderDomainCancellable = domainManager.blockedDomainsPublisher
                     .receive(on: DispatchQueue.main)
-                    .sink { [weak self] domains in
+                    .sink { [weak self] _ in
                         guard let self, let manager = self.webExtensionManager else { return }
                         Task { @MainActor in
-                            await self.updateBundledDarkReaderBlockedDomains(domains, manager: manager)
+                            await self.applyDarkReaderPermissionUpdates(manager: manager)
                         }
                     }
             }
@@ -289,18 +289,22 @@ final class MainCoordinator {
 
         let appSettings = AppDependencyProvider.shared.appSettings
         if appSettings.isAdaptiveDarkModeEnabled {
+            let domains = darkReaderBlockedDomains
             try? await manager.installBundledExtension(resourceURL: darkReaderURL,
-                                                       blockedDomains: darkReaderBlockedDomains)
+                                                       blockedDomains: domains)
+            darkReaderDomainManager?.recordAppliedDomains(domains)
         } else {
             try? manager.uninstallBundledExtension(resourceURL: darkReaderURL)
         }
     }
 
-    private func updateBundledDarkReaderBlockedDomains(_ domains: Set<String>, manager: WebExtensionManaging) async {
+    private func applyDarkReaderPermissionUpdates(manager: WebExtensionManaging) async {
         guard #available(iOS 18.4, *) else { return }
-        guard let darkReaderURL = Bundle.main.url(forResource: "darkreader", withExtension: nil) else { return }
+        guard let darkReaderURL = Bundle.main.url(forResource: "darkreader", withExtension: nil),
+              let domainManager = darkReaderDomainManager else { return }
 
-        try? await manager.updateBlockedDomains(domains, forBundledExtensionAt: darkReaderURL)
+        let permissions = domainManager.makePermissionUpdates()
+        try? await manager.updatePermissions(permissions, forBundledExtensionAt: darkReaderURL)
     }
 
     private func clearWebExtensionReferences() {

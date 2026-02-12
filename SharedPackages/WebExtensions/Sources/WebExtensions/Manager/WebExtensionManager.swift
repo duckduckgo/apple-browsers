@@ -46,7 +46,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     // MARK: - Bundled Extensions
 
     private var bundledExtensionIdentifiers: Set<String> = []
-    private var bundledExtensionBlockedDomains: [String: Set<String>] = [:]
 
     // MARK: - AsyncStream
 
@@ -257,7 +256,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         do {
             try await loader.loadBundledWebExtension(from: resourceURL, identifier: identifier, blockedDomains: blockedDomains, into: controller)
             bundledExtensionIdentifiers.insert(identifier)
-            bundledExtensionBlockedDomains[identifier] = blockedDomains
             Logger.webExtensions.info("✅ Successfully installed bundled extension (\(identifier))")
         } catch {
             Logger.webExtensions.error("❌ Failed to install bundled extension: \(error.localizedDescription)")
@@ -272,7 +270,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         Logger.webExtensions.debug("🔄 Uninstalling bundled extension: \(identifier)")
 
         bundledExtensionIdentifiers.remove(identifier)
-        bundledExtensionBlockedDomains.removeValue(forKey: identifier)
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
@@ -288,42 +285,21 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         bundledExtensionIdentifiers.contains(context.uniqueIdentifier)
     }
 
-    public func updateBlockedDomains(_ domains: Set<String>, forBundledExtensionAt resourceURL: URL) async throws {
+    public func updatePermissions(_ permissions: [WebExtensionMatchPatternPermission], forBundledExtensionAt resourceURL: URL) async throws {
         let identifier = Self.bundledExtensionIdentifier(for: resourceURL)
 
         guard let extensionContext = context(for: identifier) else {
-            Logger.webExtensions.error("❌ Cannot update blocked domains: bundled extension '\(identifier)' not loaded")
+            Logger.webExtensions.error("❌ Cannot update permissions: bundled extension '\(identifier)' not loaded")
             return
         }
 
-        let previousDomains = bundledExtensionBlockedDomains[identifier] ?? []
-        let domainsToRemove = previousDomains.subtracting(domains)
-        let domainsToAdd = domains.subtracting(previousDomains)
+        guard !permissions.isEmpty else { return }
 
-        guard !domainsToRemove.isEmpty || !domainsToAdd.isEmpty else { return }
-
-        // Reset domains that are no longer blocked
-        for domain in domainsToRemove {
-            if let exact = try? WKWebExtension.MatchPattern(string: "*://\(domain)/*") {
-                extensionContext.setPermissionStatus(.grantedExplicitly, for: exact, expirationDate: nil)
-            }
-            if !domain.hasPrefix("*."), let wildcard = try? WKWebExtension.MatchPattern(string: "*://*.\(domain)/*") {
-                extensionContext.setPermissionStatus(.grantedExplicitly, for: wildcard, expirationDate: nil)
-            }
+        for permission in permissions {
+            extensionContext.setPermissionStatus(permission.status, for: permission.matchPattern, expirationDate: nil)
         }
 
-        // Deny newly blocked domains
-        for domain in domainsToAdd {
-            if let exact = try? WKWebExtension.MatchPattern(string: "*://\(domain)/*") {
-                extensionContext.setPermissionStatus(.deniedExplicitly, for: exact, expirationDate: nil)
-            }
-            if !domain.hasPrefix("*."), let wildcard = try? WKWebExtension.MatchPattern(string: "*://*.\(domain)/*") {
-                extensionContext.setPermissionStatus(.deniedExplicitly, for: wildcard, expirationDate: nil)
-            }
-        }
-
-        bundledExtensionBlockedDomains[identifier] = domains
-        Logger.webExtensions.debug("Updated blocked domains for '\(identifier)': removed \(domainsToRemove.count), added \(domainsToAdd.count)")
+        Logger.webExtensions.debug("Applied \(permissions.count) permission update(s) for '\(identifier)'")
     }
 
     static func bundledExtensionIdentifier(for resourceURL: URL) -> String {

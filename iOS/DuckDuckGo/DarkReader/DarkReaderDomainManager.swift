@@ -20,8 +20,11 @@
 import Combine
 import Foundation
 import PrivacyConfig
+import WebExtensions
+import WebKit
 
-/// Manages the set of domains where DarkReader (force dark mode) should be blocked.
+/// Manages the set of domains where DarkReader (force dark mode) should be blocked,
+/// and translates domain changes into web extension permission updates.
 ///
 /// Merges two sources:
 /// 1. A hardcoded blocklist (e.g. `duckduckgo.com`)
@@ -31,6 +34,9 @@ final class DarkReaderDomainManager {
     private static let hardcodedBlockedDomains: Set<String> = ["duckduckgo.com"]
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+
+    /// Tracks domains that have been applied as permissions to the extension context.
+    private var appliedBlockedDomains: Set<String> = []
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -52,5 +58,47 @@ final class DarkReaderDomainManager {
                 self?.blockedDomains ?? Self.hardcodedBlockedDomains
             }
             .eraseToAnyPublisher()
+    }
+
+    /// Records domains that have already been applied (e.g. during initial install).
+    func recordAppliedDomains(_ domains: Set<String>) {
+        appliedBlockedDomains = domains
+    }
+
+    /// Computes match pattern permission changes needed to transition from the previously applied
+    /// state to the current blocked domains, and records the new state.
+    @available(iOS 18.4, *)
+    func makePermissionUpdates() -> [WebExtensionMatchPatternPermission] {
+        let currentDomains = blockedDomains
+        let domainsToRemove = appliedBlockedDomains.subtracting(currentDomains)
+        let domainsToAdd = currentDomains.subtracting(appliedBlockedDomains)
+
+        guard !domainsToRemove.isEmpty || !domainsToAdd.isEmpty else { return [] }
+
+        var permissions: [WebExtensionMatchPatternPermission] = []
+        for domain in domainsToRemove {
+            permissions.append(contentsOf: Self.matchPatternPermissions(for: domain, status: .grantedExplicitly))
+        }
+        for domain in domainsToAdd {
+            permissions.append(contentsOf: Self.matchPatternPermissions(for: domain, status: .deniedExplicitly))
+        }
+
+        appliedBlockedDomains = currentDomains
+        return permissions
+    }
+
+    @available(iOS 18.4, *)
+    private static func matchPatternPermissions(for domain: String,
+                                                status: WKWebExtensionPermissionStatus) -> [WebExtensionMatchPatternPermission] {
+        var permissions: [WebExtensionMatchPatternPermission] = []
+
+        if let exact = try? WKWebExtension.MatchPattern(string: "*://\(domain)/*") {
+            permissions.append(WebExtensionMatchPatternPermission(matchPattern: exact, status: status))
+        }
+        if !domain.hasPrefix("*."), let wildcard = try? WKWebExtension.MatchPattern(string: "*://*.\(domain)/*") {
+            permissions.append(WebExtensionMatchPatternPermission(matchPattern: wildcard, status: status))
+        }
+
+        return permissions
     }
 }

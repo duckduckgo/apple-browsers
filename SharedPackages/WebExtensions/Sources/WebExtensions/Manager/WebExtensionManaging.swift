@@ -94,13 +94,13 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     func isBundledExtension(_ context: WKWebExtensionContext) -> Bool
 
-    /// Updates the set of blocked domains for a bundled extension.
+    /// Applies match pattern permission changes to a bundled extension context.
     ///
-    /// Previously denied domains that are no longer in the new set are reset to `.grantedExplicitly`.
-    /// New domains are set to `.deniedExplicitly` (exact + wildcard subdomain patterns).
+    /// Each permission entry sets the given status on the context for the specified match pattern.
+    /// Callers are responsible for computing diffs and producing the correct grant/deny entries.
     /// - Parameters:
-    ///   - domains: The new complete set of blocked domains.
+    ///   - permissions: The match pattern permissions to apply.
     ///   - resourceURL: The resource URL used when installing the bundled extension.
     @available(macOS 15.4, iOS 18.4, *)
-    func updateBlockedDomains(_ domains: Set<String>, forBundledExtensionAt resourceURL: URL) async throws
+    func updatePermissions(_ permissions: [WebExtensionMatchPatternPermission], forBundledExtensionAt resourceURL: URL) async throws
 }

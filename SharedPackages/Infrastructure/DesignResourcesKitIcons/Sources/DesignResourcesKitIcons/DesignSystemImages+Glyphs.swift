@@ -369,6 +369,7 @@ public extension DesignSystemImages {
             public static var chevronCircleDown: DesignSystemImage { .init(resource: .chevronCircleDown24) }
             public static var chevronDown: DesignSystemImage { .init(resource: .chevronDown24) }
             public static var chevronDownSmall: DesignSystemImage { .init(resource: .chevronDown24Small) }
+            public static var chevronLeft: DesignSystemImage { .init(resource: .chevronLeft24) }
             public static var chevronLeftSmall: DesignSystemImage { .init(resource: .chevronLeft24Small) }
             public static var chevronRightSmall: DesignSystemImage { .init(resource: .chevronRight24Small) }
             public static var chevronUpSmall: DesignSystemImage { .init(resource: .chevronUp24Small) }

@@ -50,7 +50,7 @@ public final class SparkleUpdateCompletionValidator {
     }
 
     /// Check if update completed successfully and fire appropriate events.
-    /// Called after ApplicationUpdateDetector.isApplicationUpdated()
+    /// Called after ApplicationUpdateDetector.isApplicationUpdated(...)
     /// Always fires pixel for successful updates, using stored metadata when available
     public func validateExpectations(
         updateStatus: AppUpdateStatus,

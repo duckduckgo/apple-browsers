@@ -40,18 +40,6 @@ public final class ApplicationUpdateDetector {
         set { try? settings.set(newValue, for: \.previousBuild) }
     }
 
-    public static func isApplicationUpdated(currentVersion: String? = nil,
-                                            currentBuild: String? = nil,
-                                            previousVersion: String? = nil,
-                                            previousBuild: String? = nil,
-                                            keyValueStore: ThrowingKeyValueStoring) -> AppUpdateStatus {
-        let detector = ApplicationUpdateDetector(settings: keyValueStore.throwingKeyedStoring())
-        return detector.isApplicationUpdated(currentVersion: currentVersion,
-                                             currentBuild: currentBuild,
-                                             previousVersion: previousVersion,
-                                             previousBuild: previousBuild)
-    }
-
     func isApplicationUpdated(currentVersion: String? = nil,
                               currentBuild: String? = nil,
                               previousVersion: String? = nil,

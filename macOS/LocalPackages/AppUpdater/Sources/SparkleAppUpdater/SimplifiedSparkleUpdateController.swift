@@ -227,6 +227,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
 
     // MARK: - Update Detection
 
+    private let applicationUpdateDetector: ApplicationUpdateDetector
     private let updateCompletionValidator: SparkleUpdateCompletionValidator
 
     // MARK: - Feature Flags support
@@ -282,6 +283,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
         self.pixelFiring = pixelFiring
         self.isOnboardingFinished = isOnboardingFinished
         self.settings = keyValueStore.throwingKeyedStoring()
+        self.applicationUpdateDetector = ApplicationUpdateDetector(settings: settings)
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
 
         // Capture the current value before initializing updateWideEvent
@@ -338,7 +340,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
 
     private func validateUpdateExpectations() {
         // Validate expectations from previous update attempt if any
-        let updateStatus = ApplicationUpdateDetector(settings: settings).isApplicationUpdated()
+        let updateStatus = applicationUpdateDetector.isApplicationUpdated()
 
         let appVersion = AppVersion()
         updateCompletionValidator.validateExpectations(
@@ -369,7 +371,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     }
 
     private func checkNewApplicationVersion() {
-        let updateStatus = ApplicationUpdateDetector(settings: settings).isApplicationUpdated()
+        let updateStatus = applicationUpdateDetector.isApplicationUpdated()
 
         switch updateStatus {
         case .noChange: break

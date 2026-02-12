@@ -16,44 +16,43 @@
 //  limitations under the License.
 //
 
-/// Protocol for determining application build type characteristics.
-public protocol ApplicationBuildType {
+protocol ApplicationBuildType {
     var isSparkleBuild: Bool { get }
     var isAppStoreBuild: Bool { get }
     var isDebugBuild: Bool { get }
     var isReviewBuild: Bool { get }
 }
 
-struct StandardApplicationBuildType: ApplicationBuildType {
+final class StandardApplicationBuildType: ApplicationBuildType {
     var isSparkleBuild: Bool {
-#if SPARKLE
+        #if SPARKLE
         return true
-#else
+        #else
         return false
-#endif
+        #endif
     }
 
     var isAppStoreBuild: Bool {
-#if APPSTORE
+        #if APPSTORE
         return true
-#else
+        #else
         return false
-#endif
+        #endif
     }
 
     var isDebugBuild: Bool {
-#if DEBUG
+        #if DEBUG
         return true
-#else
+        #else
         return false
-#endif
+        #endif
     }
 
     var isReviewBuild: Bool {
-#if REVIEW
+        #if REVIEW
         return true
-#else
+        #else
         return false
-#endif
+        #endif
     }
 }

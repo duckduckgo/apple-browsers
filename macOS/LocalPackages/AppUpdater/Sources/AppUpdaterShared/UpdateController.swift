@@ -29,45 +29,6 @@ import Navigation
 import UserScript
 import WebKit
 
-public enum UpdateControllerEvent: Equatable {
-    case updaterDidRunUpdate
-    case updaterAttemptToRestartWithoutResumeBlock
-    case updaterAborted(reason: String)
-    case updaterDidFindUpdate
-    case updaterDidDownloadUpdate
-    case releaseMetadataFetchFailed(error: Error)
-    case releaseNotesEmpty
-    case updateApplicationSuccess(sourceVersion: String, sourceBuild: String, targetVersion: String, targetBuild: String, initiationType: String, updateConfiguration: String, osVersion: String)
-    case updateApplicationFailure(sourceVersion: String, sourceBuild: String, expectedVersion: String, expectedBuild: String, actualVersion: String, actualBuild: String, failureStatus: String, initiationType: String, updateConfiguration: String, osVersion: String)
-    case updateApplicationUnexpected(targetVersion: String, targetBuild: String, osVersion: String)
-
-    public static func == (lhs: UpdateControllerEvent, rhs: UpdateControllerEvent) -> Bool {
-        switch (lhs, rhs) {
-        case (.updaterDidRunUpdate, .updaterDidRunUpdate),
-             (.updaterAttemptToRestartWithoutResumeBlock, .updaterAttemptToRestartWithoutResumeBlock),
-             (.updaterDidFindUpdate, .updaterDidFindUpdate),
-             (.updaterDidDownloadUpdate, .updaterDidDownloadUpdate),
-             (.releaseNotesEmpty, .releaseNotesEmpty):
-            return true
-        case (.updaterAborted(let lReason), .updaterAborted(let rReason)):
-            return lReason == rReason
-        case (.releaseMetadataFetchFailed(let lError), .releaseMetadataFetchFailed(let rError)):
-            return lError.localizedDescription == rError.localizedDescription
-        case (.updateApplicationSuccess(let l1, let l2, let l3, let l4, let l5, let l6, let l7),
-              .updateApplicationSuccess(let r1, let r2, let r3, let r4, let r5, let r6, let r7)):
-            return l1 == r1 && l2 == r2 && l3 == r3 && l4 == r4 && l5 == r5 && l6 == r6 && l7 == r7
-        case (.updateApplicationFailure(let l1, let l2, let l3, let l4, let l5, let l6, let l7, let l8, let l9, let l10),
-              .updateApplicationFailure(let r1, let r2, let r3, let r4, let r5, let r6, let r7, let r8, let r9, let r10)):
-            return l1 == r1 && l2 == r2 && l3 == r3 && l4 == r4 && l5 == r5 && l6 == r6 && l7 == r7 && l8 == r8 && l9 == r9 && l10 == r10
-        case (.updateApplicationUnexpected(let l1, let l2, let l3),
-              .updateApplicationUnexpected(let r1, let r2, let r3)):
-            return l1 == r1 && l2 == r2 && l3 == r3
-        default:
-            return false
-        }
-    }
-}
-
 public enum UpdateControllerFactoryMethodType {
     case appStore((_ internalUserDecider: InternalUserDecider,
                    _ featureFlagger: FeatureFlagger,

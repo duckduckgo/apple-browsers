@@ -138,7 +138,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(titleText, _, items, primaryActionText, _) = message.content else {
+        guard case let .cardsList(titleText, _, _, items, primaryActionText, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -171,7 +171,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -203,7 +203,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -229,7 +229,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(titleText, placeholder, items, primaryActionText, primaryAction) = message.content else {
+        guard case let .cardsList(titleText, placeholder, _, items, primaryActionText, primaryAction) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -276,7 +276,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -302,7 +302,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -332,7 +332,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -372,7 +372,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -413,7 +413,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -458,7 +458,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -497,7 +497,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -540,7 +540,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -590,7 +590,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }
@@ -641,7 +641,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         message.localizeContent(translation: translation)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = message.content else {
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
             XCTFail("Expected cardsList content")
             return
         }

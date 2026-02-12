@@ -42,6 +42,7 @@ final class SettingsViewModel: ObservableObject {
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
     lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private lazy var dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: featureFlagger)
     private lazy var animator: FireButtonAnimator = FireButtonAnimator(appSettings: AppUserDefaults())
     private var legacyViewProvider: SettingsLegacyViewProvider
     private lazy var versionProvider: AppVersion = AppVersion.shared
@@ -68,6 +69,17 @@ final class SettingsViewModel: ObservableObject {
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     var browsingMenuSheetCapability: BrowsingMenuSheetCapable
     private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
+    
+    private lazy var newBadgeVisibilityManager: NewBadgeVisibilityManaging = {
+        NewBadgeVisibilityManager(
+            keyValueStore: keyValueStore,
+            configProvider: DefaultNewBadgeConfigProvider(
+                featureFlagger: featureFlagger,
+                privacyConfigurationManager: privacyConfigurationManager
+            ),
+            currentAppVersionProvider: { AppVersion.shared.versionNumber }
+        )
+    }()
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
@@ -142,6 +154,10 @@ final class SettingsViewModel: ObservableObject {
 
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
+    var meetsLocaleRequirement: Bool {
+        runPrerequisitesDelegate?.meetsLocaleRequirement ?? false
     }
 
     var dbpMeetsProfileRunPrequisite: Bool {
@@ -981,6 +997,23 @@ extension SettingsViewModel {
         urlOpener.open(URL.emailProtectionSupportLink)
     }
 
+    func shouldShowNewBadge(for feature: NewBadgeFeature) -> Bool {
+        guard isFeatureAvailableForNewBadge(feature) else { return false }
+        return newBadgeVisibilityManager.shouldShowBadge(for: feature)
+    }
+
+    func storeNewBadgeFirstImpressionDateIfNeeded(for feature: NewBadgeFeature) {
+        guard isFeatureAvailableForNewBadge(feature) else { return }
+        newBadgeVisibilityManager.storeFirstImpressionDateIfNeeded(for: feature)
+    }
+
+    private func isFeatureAvailableForNewBadge(_ feature: NewBadgeFeature) -> Bool {
+        switch feature {
+        case .personalInformationRemoval:
+            return isPIREnabled && meetsLocaleRequirement && dataBrokerProtectionViewControllerProvider != nil
+        }
+    }
+
     func openOtherPlatforms() {
         urlOpener.open(URL.otherDevices)
     }
@@ -1484,7 +1517,7 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
     }
 
     func navigateToAutoClearData() {
-        if featureFlagger.isFeatureOn(.enhancedDataClearingSettings) {
+        if dataClearingCapability.isEnhancedDataClearingEnabled {
             let viewModel = AutoClearSettingsViewModel(
                 appSettings: appSettings,
                 aiChatSettings: aiChatSettings

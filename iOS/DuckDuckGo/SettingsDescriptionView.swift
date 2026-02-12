@@ -24,17 +24,17 @@ import DesignResourcesKitIcons
 struct SettingsDescription {
     let image: Image
     let title: String
-    let status: StatusIndicator
+    let status: StatusIndicator?
     let explanation: String?
 
-    init(imageName: String, title: String, status: StatusIndicator, explanation: String?) {
+    init(imageName: String, title: String, status: StatusIndicator?, explanation: String?) {
         self.image = Image(imageName)
         self.title = title
         self.status = status
         self.explanation = explanation
     }
 
-    init(image: DesignSystemImage, title: String, status: StatusIndicator, explanation: String?) {
+    init(image: DesignSystemImage, title: String, status: StatusIndicator?, explanation: String?) {
         self.image = Image(uiImage: image)
         self.title = title
         self.status = status
@@ -59,8 +59,10 @@ struct SettingsDescriptionView: View {
                 .multilineTextAlignment(.center)
                 .foregroundColor(.init(designSystemColor: .textPrimary))
 
-            StatusIndicatorView(status: content.status)
-                .padding(.top, -4)
+            if let status = content.status {
+                StatusIndicatorView(status: status)
+                    .padding(.top, -4)
+            }
 
             if let explanation = content.explanation {
                 Text(LocalizedStringKey(explanation))

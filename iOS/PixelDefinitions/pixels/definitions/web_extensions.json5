@@ -1,0 +1,82 @@
+{
+    "m_web_extension_installed": {
+        "description": "Fires when a web extension is successfully installed.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "m_web_extension_install_error": {
+        "description": "Fires when a web extension installation fails.",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_web_extension_uninstalled": {
+        "description": "Fires when a web extension is successfully uninstalled.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "m_web_extension_uninstall_error": {
+        "description": "Fires when a web extension uninstallation fails.",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_web_extension_uninstalled_all": {
+        "description": "Fires when all web extensions are successfully uninstalled.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "m_web_extension_uninstall_all_error": {
+        "description": "Fires when uninstalling all web extensions fails (at least one extension failed to uninstall).",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_web_extension_loaded": {
+        "description": "Fires during app startup when installed web extensions are successfully loaded.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "m_web_extension_load_error": {
+        "description": "Fires during app startup when loading installed web extensions fails (at least one extension failed to load).",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    }
+}

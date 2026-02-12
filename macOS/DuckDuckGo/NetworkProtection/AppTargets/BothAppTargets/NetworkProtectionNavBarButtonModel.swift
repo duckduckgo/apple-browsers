@@ -78,8 +78,8 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     // MARK: - Initialization
 
     init(popoverManager: NetPPopoverManager,
-         pinningManager: PinningManager = LocalPinningManager.shared,
-         vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager),
+         pinningManager: PinningManager,
+         vpnGatekeeper: VPNFeatureGatekeeper,
          statusReporter: NetworkProtectionStatusReporter,
          themeManager: ThemeManaging,
          vpnUpsellVisibilityManager: VPNUpsellVisibilityManager) {

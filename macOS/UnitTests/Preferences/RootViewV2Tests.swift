@@ -17,6 +17,7 @@
 //
 
 import Combine
+import PersistenceTestingUtils
 import PixelKitTestingUtilities
 import PrivacyConfig
 import Subscription
@@ -63,7 +64,7 @@ final class RootViewV2Tests: XCTestCase {
                 windowControllersManager: WindowControllersManagerMock(),
                 featureFlagger: MockFeatureFlagger()
             ),
-            aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
+            aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
                 persistor: DuckPlayerPreferencesPersistorMock(),
@@ -97,8 +98,9 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
-            showTab: { _ in },
+            showTab: { _ in }
             )
 
         // Then
@@ -117,7 +119,8 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: mockRemoteAISettings,
             wideEvent: WideEventMock(),
-            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            pinningManager: MockPinningManager(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -151,7 +154,8 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionUIHandler: subscriptionUIHandler,
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
-            wideEvent: WideEventMock()
+            wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -188,6 +192,7 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in },
             pixelHandler: { pixel, _ in

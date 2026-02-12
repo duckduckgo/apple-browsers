@@ -39,6 +39,11 @@ extension RemoteMessagingUI {
 
         let screenTitle: String
         let icon: String?
+        let preloadedHeaderImage: UIImage?
+        let headerImageUrl: URL?
+        let loadHeaderImage: ((URL) async throws -> UIImage)?
+        let onHeaderImageLoadSuccess: (() -> Void)?
+        let onHeaderImageLoadFailed: (() -> Void)?
         let items: [CardsListDisplayModel.Item]
         let onAppear: (() -> Void)?
         let primaryAction: (title: String, action: () -> Void)?
@@ -78,7 +83,13 @@ extension RemoteMessagingUI {
         var body: some View {
             VStack(spacing: Metrics.CardsList.componentsVerticalSpacing) {
                 VStack(spacing: Metrics.CardsList.contentInset) {
-                    Header(icon: displayModel.icon, title: displayModel.screenTitle)
+                    Header(icon: displayModel.icon,
+                           preloadedHeaderImage: displayModel.preloadedHeaderImage,
+                           headerImageUrl: displayModel.headerImageUrl,
+                           loadHeaderImage: displayModel.loadHeaderImage,
+                           onImageLoadSuccess: displayModel.onHeaderImageLoadSuccess,
+                           onImageLoadFailed: displayModel.onHeaderImageLoadFailed,
+                           title: displayModel.screenTitle)
 
                     Content(items: displayModel.items)
                 }
@@ -222,7 +233,14 @@ private extension RemoteMessagingUI.CardsListView {
 
     struct Header: View {
         let icon: String?
+        let preloadedHeaderImage: UIImage?
+        let headerImageUrl: URL?
+        let loadHeaderImage: ((URL) async throws -> UIImage)?
+        let onImageLoadSuccess: (() -> Void)?
+        let onImageLoadFailed: (() -> Void)?
         let title: String
+
+        @State private var loadedImage: UIImage?
 
         var body: some View {
             VStack(alignment: .center, spacing: 24.0) {
@@ -238,11 +256,31 @@ private extension RemoteMessagingUI.CardsListView {
 
         @ViewBuilder
         private var logoImage: some View {
-            if let icon {
+            if let displayImage = loadedImage ?? preloadedHeaderImage {
+                Image(uiImage: displayImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: Metrics.CardsList.headerImageMaxHeight)
+            } else if let icon {
                 Image(icon)
                     .scaledToFit()
+                    .task {
+                        await loadRemoteImage()
+                    }
             } else {
                 EmptyView()
+            }
+        }
+
+        private func loadRemoteImage() async {
+            guard let headerImageUrl, let loadHeaderImage else { return }
+            do {
+                loadedImage = try await loadHeaderImage(headerImageUrl)
+                onImageLoadSuccess?()
+            } catch is CancellationError {
+                // Task was cancelled - no-op
+            } catch {
+                onImageLoadFailed?()
             }
         }
     }
@@ -384,6 +422,7 @@ private enum Metrics {
         static let cardsVerticalSpacing: CGFloat = 12.0
         @MainActor
         static let buttonBottomPadding: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 12.0, iPad: 24.0).build()
+        static let headerImageMaxHeight: CGFloat = 48.0
     }
 
     enum Section {
@@ -439,6 +478,11 @@ struct CardsList_Previews: PreviewProvider {
         return .init(displayModel: .init(
             screenTitle: "What’s New",
             icon: "RemoteMessageDDGAnnouncement",
+            preloadedHeaderImage: nil,
+            headerImageUrl: nil,
+            loadHeaderImage: nil,
+            onHeaderImageLoadSuccess: nil,
+            onHeaderImageLoadFailed: nil,
             items: items,
             onAppear: nil,
             primaryAction: action

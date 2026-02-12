@@ -45,7 +45,7 @@ enum SubscriptionContainerViewFactory {
                                     featureFlagger: FeatureFlagger) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
-                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
 
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager(),
@@ -97,7 +97,7 @@ enum SubscriptionContainerViewFactory {
                                   featureFlagger: FeatureFlagger) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
-                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
 
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager(),
@@ -138,7 +138,7 @@ enum SubscriptionContainerViewFactory {
                                 featureFlagger: FeatureFlagger) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
-                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
 
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager(),
@@ -194,7 +194,7 @@ enum SubscriptionContainerViewFactory {
                                 featureFlagger: FeatureFlagger,
                                 onDisappear: @escaping () -> Void) -> some View {
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
-                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
         let appStoreRestoreFlow: AppStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                                   pendingTransactionHandler: pendingTransactionHandler)

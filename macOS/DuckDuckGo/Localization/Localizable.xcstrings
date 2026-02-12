@@ -2300,6 +2300,126 @@
         }
       }
     },
+    "aichat.customize-button.tooltip" : {
+      "comment" : "Tooltip for the customize button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antworten anpassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize responses"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personaliza las respuestas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personnaliser les réponses"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizza le risposte"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antwoorden aanpassen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostosuj odpowiedzi"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personaliza as respostas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настрой ответы"
+          }
+        }
+      }
+    },
+    "aichat.image-upload-button.tooltip" : {
+      "comment" : "Tooltip for the image upload button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bild anhängen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Attach image"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjuntar imagen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Joindre une image"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allega immagine"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afbeelding bijvoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Załącz obraz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anexar imagem"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прикрепить изображение"
+          }
+        }
+      }
+    },
     "aichat.omnibar.placeholder" : {
       "comment" : "Placeholder text shown in the Duck.ai chat input field",
       "extractionState" : "extracted_with_value",
@@ -2416,6 +2536,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Конфиденциальный поиск"
+          }
+        }
+      }
+    },
+    "aichat.search-toggle-button.tooltip" : {
+      "comment" : "Tooltip for the search toggle button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web durchsuchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search the web"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca en la web"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher sur le Web"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca nel web"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoeken op het web"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyszukaj w Internecie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar na web"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Искать в интернете"
           }
         }
       }
@@ -7480,7 +7660,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "В отсутствие блокировки, любой у кого появится доступ к устройству сможет использовать или изменить ваши автозаполняемые данные. Из соображений безопасности при заполнении платежных данных в формах всегда требуется аутентификация."
+            "value" : "В отсутствие блокировки любой, у кого появится доступ к устройству, сможет использовать или изменить ваши автозаполняемые данные. Из соображений безопасности при заполнении платежных данных в формах всегда требуется аутентификация."
           }
         }
       }
@@ -24207,6 +24387,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настройки видео"
+          }
+        }
+      }
+    },
+    "duckai.automatically-send-page-content.toggle-setting" : {
+      "comment" : "Settings option to automatically send page content to the sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seiteninhalt automatisch an die Seitenleiste senden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Automatically send page content to the sidebar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía automáticamente el contenido de la página a la barra lateral"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer automatiquement le contenu de la page dans la barre latérale"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia automaticamente il contenuto della pagina alla barra laterale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagina-inhoud automatisch naar de zijbalk sturen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatycznie wysyłaj zawartość strony do paska bocznego"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar automaticamente o conteúdo da página para a barra lateral"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматически отправлять содержимое страницы на боковую панель"
           }
         }
       }
@@ -85935,7 +86175,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problem beim Importieren meiner Daten"
+            "value" : "Issue importing my stuff"
           }
         },
         "en" : {
@@ -85947,43 +86187,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problema al importar mis datos"
+            "value" : "Problema al importar mis cosas"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problème d'importation de mes données"
+            "value" : "Problème d'importation"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problema nell'importazione dei miei dati"
+            "value" : "Issue importing my stuff"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Probleem bij het importeren van mijn gegevens"
+            "value" : "Probleem met het importeren van mijn gegevens"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problem z importowaniem moich danych"
+            "value" : "Issue importing my stuff"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problema ao importar os meus dados"
+            "value" : "Issue importing my stuff"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Проблема с импортом моих данных"
+            "value" : "Сложно импортировать контент"
           }
         }
       }
@@ -86193,7 +86433,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pas d'extensions"
+            "value" : "Aucune extension"
           }
         },
         "it" : {
@@ -86211,7 +86451,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Brak rozszerzeń"
+            "value" : "Nie ma rozszerzeń"
           }
         },
         "pt" : {
@@ -86235,7 +86475,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine Passwortmanager-Erweiterungen"
+            "value" : "No password manager extensions"
           }
         },
         "en" : {
@@ -86247,43 +86487,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sin extensiones de gestor de contraseñas"
+            "value" : "No hay extensiones del administrador de contraseñas"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pas d'extensions de gestionnaire de mots de passe"
+            "value" : "Aucune extension pour le gestionnaire de mots de passe"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuna estensione per il gestore di password"
+            "value" : "No password manager extensions"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geen wachtwoordbeheerder-extensies"
+            "value" : "Geen uitbreidingen voor wachtwoordbeheer"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Brak rozszerzeń menedżera haseł"
+            "value" : "No password manager extensions"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sem extensões de gestor de palavras-passe"
+            "value" : "No password manager extensions"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нет расширений для менеджера паролей"
+            "value" : "Нет расширений браузера для управления паролями"
           }
         }
       }
@@ -86307,19 +86547,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sin traducciones de sitios web"
+            "value" : "No hay traducciones del sitio web"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pas de traduction de sites web"
+            "value" : "Pas de traduction des sites Web"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuna traduzione dei siti web"
+            "value" : "No website translations"
           }
         },
         "nl" : {
@@ -86331,19 +86571,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Brak tłumaczeń stron internetowych"
+            "value" : "No website translations"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sem traduções de sites"
+            "value" : "No website translations"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нет перевода веб-сайтов"
+            "value" : "Нет переводов сайтов"
           }
         }
       }
@@ -87255,7 +87495,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Websites haben nicht funktioniert"
+            "value" : "Websites didn't work"
           }
         },
         "en" : {
@@ -87267,19 +87507,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los sitios web no funcionaron"
+            "value" : "Las páginas web no funcionaban"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les sites web n'ont pas fonctionné"
+            "value" : "Les sites Web ne fonctionnaient pas"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I siti web non hanno funzionato"
+            "value" : "Websites didn't work"
           }
         },
         "nl" : {
@@ -87291,19 +87531,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Strony internetowe nie działały"
+            "value" : "Websites didn't work"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Os sites não funcionaram"
+            "value" : "Websites didn't work"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Веб-сайты не работали"
+            "value" : "Не работали сайты"
           }
         }
       }

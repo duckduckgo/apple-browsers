@@ -59,7 +59,7 @@ class OnboardingManagerTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
-        startupPreferences = StartupPreferences(persistor: startupPersistor, appearancePreferences: appearancePreferences)
+        startupPreferences = StartupPreferences(pinningManager: MockPinningManager(), persistor: startupPersistor, appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()
         manager = OnboardingActionsManager(navigationDelegate: navigationDelegate, dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences, dataImportProvider: importProvider, featureFlagger: MockFeatureFlagger())
     }

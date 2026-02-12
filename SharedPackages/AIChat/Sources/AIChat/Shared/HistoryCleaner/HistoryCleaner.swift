@@ -55,6 +55,7 @@ public final class HistoryCleaner: HistoryCleaning {
         await performDelete(chatID: chatID)
     }
 
+    @MainActor
     private func performDelete(chatID: String?) async -> Result<Void, Error> {
         guard webView == nil else {
             return .failure(HistoryCleanerError.operationInProgress)

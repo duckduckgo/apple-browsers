@@ -65,6 +65,7 @@ public enum PrivacyFeature: String {
     case forceOldAppDelegate
     case htmlHistoryPage
     case tabManager
+    case tabSwitcherTrackerCount
     case webViewStateRestoration
     case experimentalTheming
     case setAsDefaultAndAddToDock
@@ -86,6 +87,7 @@ public enum PrivacyFeature: String {
     case serp
     case popupBlocking
     case combinedPermissionView
+    case pageContext
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -144,10 +146,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
 
-    /// Feature Flag for the Tab Spinner
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
-    case tabProgressIndicator
-
     /// Feature flag for Themes
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
     case themes
@@ -171,6 +169,18 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
     case memoryPressureReporting
+
+    /// Memory Usage Reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
+    case memoryUsageReporting
+
+    /// Failsafe flag to bring back keys sorting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
+
+    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
+    case crashCollectionLimitCallStackTreeDepth
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -222,6 +232,15 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
+    case browsingMenuSheetEnabledByDefault
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
+    case enhancedDataClearingSettings
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091
+    case burnSingleTab
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -276,6 +295,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case foregroundRunningWhenDashboardOpen
     case clickActionDelayReductionOptimization
     case pirRollout
+    case goToMarket
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -340,6 +360,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar cluster for AI Chat
     case omnibarCluster
 
+    /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
+    case omnibarTools
+
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
@@ -354,6 +377,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls whether automatic page context attachment defaults to enabled
     case autoAttachContextByDefault
+
+    /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
+    case iPadDuckaiOnTab
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

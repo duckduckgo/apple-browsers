@@ -52,7 +52,8 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         isIPad: Bool,
         pixelReporter: RemoteMessagingPixelReporting?,
         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-        displayModelMapper: WhatsNewDisplayModelMapping = WhatsNewDisplayModelMapper(),
+        imageLoader: RemoteMessagingImageLoading,
+        displayModelMapper: WhatsNewDisplayModelMapping? = nil,
         featureFlagger: FeatureFlagger
     ) {
         self.displayContext = displayContext
@@ -61,7 +62,7 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         self.isIPad = isIPad
         self.pixelReporter = pixelReporter
         self.userScriptsDependencies = userScriptsDependencies
-        self.displayModelMapper = displayModelMapper
+        self.displayModelMapper = displayModelMapper ?? WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
         self.featureFlagger = featureFlagger
     }
 

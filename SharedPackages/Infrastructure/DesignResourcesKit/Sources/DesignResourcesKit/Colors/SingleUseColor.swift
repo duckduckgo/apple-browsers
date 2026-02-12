@@ -48,15 +48,24 @@ public extension SingleUseColor {
     enum Rebranding {
         case textPrimary
         case textSecondary
+        case textLink
 
         case accentPrimary
 
         case accentAltPrimary
+        case accentAltGlowPrimary
+
+        case backdrop
 
         case surfaceTertiary
 
         case buttonsPrimaryDefault
         case buttonsPrimaryText
+
+        case buttonsSecondaryDefault
+        case buttonsSecondaryText
+
+        case decorationPrimary
     }
 
 }

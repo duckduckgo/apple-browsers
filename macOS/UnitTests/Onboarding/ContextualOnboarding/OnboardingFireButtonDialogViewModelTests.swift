@@ -92,7 +92,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
     func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
-            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
             aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator
         )

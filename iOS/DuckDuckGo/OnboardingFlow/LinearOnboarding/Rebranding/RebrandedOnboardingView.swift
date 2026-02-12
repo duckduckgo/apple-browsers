@@ -169,14 +169,10 @@ extension OnboardingRebranding {
                             },
                             content: {
                                 switch state.type {
-                                case .browsersComparisonDialog:
-                                    EmptyView()
                                 case .addToDockPromoDialog:
                                     addToDockPromoView
                                 case .chooseAppIconDialog:
                                     appIconPickerView
-                                case .chooseAddressBarPositionDialog:
-                                    EmptyView()
                                 case .chooseSearchExperienceDialog:
                                     searchExperienceSelectionView
                                 default:
@@ -257,37 +253,37 @@ extension OnboardingRebranding {
             .visibility(configuration.isVisible ? .visible : .invisible)
         }
 
+        @ViewBuilder
         private func makeBubbleView<Content: View>(
             configuration: BubbleBackedDialogConfiguration,
             stepInfo: ViewState.Intro.StepInfo?,
             @ViewBuilder content: @escaping () -> Content
-        ) -> AnyView {
-            let tailPosition: OnboardingBubbleView<Content>.TailPosition
-            switch configuration.tailDirection {
+        ) -> some View {
+            let tailPosition: OnboardingBubbleView<Content>.TailPosition = switch configuration.tailDirection {
             case .leading:
-                tailPosition = .bottom(offset: configuration.tailOffset, direction: .leading)
+                .bottom(offset: configuration.tailOffset, direction: .leading)
             case .trailing:
-                tailPosition = .bottom(offset: configuration.tailOffset, direction: .trailing)
+                .bottom(offset: configuration.tailOffset, direction: .trailing)
             }
 
             if let stepInfo {
-                return AnyView(OnboardingBubbleView.withStepProgressIndicator(
+                OnboardingBubbleView.withStepProgressIndicator(
                     tailPosition: tailPosition,
                     currentStep: stepInfo.currentStep,
                     totalSteps: stepInfo.totalSteps
                 ) {
                     content()
-                })
+                }
+            } else {
+                OnboardingBubbleView(
+                    tailPosition: tailPosition,
+                    contentInsets: OnboardingTheme.rebranding2026.linearBubbleMetrics.contentInsets,
+                    arrowLength: OnboardingTheme.rebranding2026.linearBubbleMetrics.arrowLength,
+                    arrowWidth: OnboardingTheme.rebranding2026.linearBubbleMetrics.arrowWidth
+                ) {
+                    content()
+                }
             }
-
-            return AnyView(OnboardingBubbleView(
-                tailPosition: tailPosition,
-                contentInsets: OnboardingTheme.rebranding2026.linearBubbleMetrics.contentInsets,
-                arrowLength: OnboardingTheme.rebranding2026.linearBubbleMetrics.arrowLength,
-                arrowWidth: OnboardingTheme.rebranding2026.linearBubbleMetrics.arrowWidth
-            ) {
-                content()
-            })
         }
 
         @ViewBuilder

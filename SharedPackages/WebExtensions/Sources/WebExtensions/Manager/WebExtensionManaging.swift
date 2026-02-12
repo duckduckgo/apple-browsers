@@ -93,4 +93,14 @@ public protocol WebExtensionManaging: AnyObject {
     /// Returns whether the given extension context is a bundled extension.
     @available(macOS 15.4, iOS 18.4, *)
     func isBundledExtension(_ context: WKWebExtensionContext) -> Bool
+
+    /// Updates the set of blocked domains for a bundled extension.
+    ///
+    /// Previously denied domains that are no longer in the new set are reset to `.grantedExplicitly`.
+    /// New domains are set to `.deniedExplicitly` (exact + wildcard subdomain patterns).
+    /// - Parameters:
+    ///   - domains: The new complete set of blocked domains.
+    ///   - resourceURL: The resource URL used when installing the bundled extension.
+    @available(macOS 15.4, iOS 18.4, *)
+    func updateBlockedDomains(_ domains: Set<String>, forBundledExtensionAt resourceURL: URL) async throws
 }

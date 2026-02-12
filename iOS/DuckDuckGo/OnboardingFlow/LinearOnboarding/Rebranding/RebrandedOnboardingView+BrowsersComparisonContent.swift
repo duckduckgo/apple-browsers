@@ -21,59 +21,70 @@ import SwiftUI
 import DuckUI
 import Onboarding
 
+enum BrowsersComparisonContentMetrics {
+    static let additionalTopMargin: CGFloat = 0
+}
+
+private enum BrowsersComparisonContentCopy {
+    static let setAsDefaultBrowserCTA = "Choose Your Browser"
+    static let skipCTA = "Skip"
+}
+
 extension OnboardingRebranding.OnboardingView {
 
     struct BrowsersComparisonContent: View {
+        @Environment(\.onboardingTheme) private var onboardingTheme
 
         private let title: String
-        private var animateText: Binding<Bool>
-        private var showContent: Binding<Bool>
+        private let currentStep: Int
+        private let totalSteps: Int
         private let setAsDefaultBrowserAction: () -> Void
         private let cancelAction: () -> Void
-        private var isSkipped: Binding<Bool>
 
         init(
             title: String,
-            animateText: Binding<Bool> = .constant(true),
-            showContent: Binding<Bool> = .constant(false),
-            isSkipped: Binding<Bool>,
+            currentStep: Int,
+            totalSteps: Int,
             setAsDefaultBrowserAction: @escaping () -> Void,
             cancelAction: @escaping () -> Void
         ) {
             self.title = title
-            self.animateText = animateText
-            self.showContent = showContent
-            self.isSkipped = isSkipped
+            self.currentStep = currentStep
+            self.totalSteps = totalSteps
             self.setAsDefaultBrowserAction = setAsDefaultBrowserAction
             self.cancelAction = cancelAction
         }
 
         var body: some View {
-            VStack(spacing: 16.0) {
-                AnimatableTypingText(title, startAnimating: animateText, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showContent.wrappedValue = true
+            OnboardingBubbleView.withStepProgressIndicator(
+                tailPosition: .bottom(offset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset, direction: .leading),
+                currentStep: currentStep,
+                totalSteps: totalSteps
+            ) {
+                VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+                    Text(title)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.title)
+                        .multilineTextAlignment(.center)
+
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+                        RebrandedBrowsersComparisonTable()
+
+                        VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                            Button(action: setAsDefaultBrowserAction) {
+                                Text(BrowsersComparisonContentCopy.setAsDefaultBrowserCTA)
+                            }
+                            .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+
+                            Button(action: cancelAction) {
+                                Text(BrowsersComparisonContentCopy.skipCTA)
+                            }
+                            .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                        }
                     }
                 }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 20, weight: .bold))
-
-
-                VStack(spacing: 24) {
-                    BrowsersComparisonChart(privacyFeatures: BrowsersComparisonModel.privacyFeatures)
-
-                    RebrandedOnboardingView.OnboardingActions(
-                        viewModel: .init(
-                            primaryButtonTitle: UserText.Onboarding.BrowsersComparison.cta,
-                            secondaryButtonTitle: UserText.onboardingSkip
-                        ),
-                        primaryAction: setAsDefaultBrowserAction,
-                        secondaryAction: cancelAction
-                    )
-
-                }
-                .visibility(showContent.wrappedValue ? .visible : .invisible)
             }
+            .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth)
         }
 
     }

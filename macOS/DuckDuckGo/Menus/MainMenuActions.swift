@@ -619,8 +619,8 @@ extension AppDelegate {
         throwTestCppException()
     }
 
-    @objc func simulateMemoryPressureCritical(_ sender: Any?) {
-        memoryPressureReporter.simulateMemoryPressureEvent(level: .critical)
+    @MainActor @objc func simulateMemoryPressureCritical(_ sender: Any?) {
+        memoryPressureReporter?.simulateMemoryPressureEvent(level: .critical)
     }
 
     @objc func simulateMemoryUsageReport(_ sender: Any?) {
@@ -659,7 +659,7 @@ extension AppDelegate {
     }
 
     @objc func clearSimulatedMemory(_ sender: Any?) {
-        NSApp.delegateTyped.memoryUsageMonitor.clearSimulatedMemoryReport()
+        memoryUsageMonitor.clearSimulatedMemoryReport()
         Logger.memory.info("Cleared simulated memory report, reverting to real system memory")
 
         let alert = NSAlert()
@@ -670,7 +670,7 @@ extension AppDelegate {
     }
 
     @objc func startMemoryReporterImmediately(_ sender: Any?) {
-        NSApp.delegateTyped.memoryUsageThresholdReporter.startMonitoringImmediately()
+        memoryUsageThresholdReporter.startMonitoringImmediately()
         Logger.memory.info("Memory usage threshold reporter started immediately (skipped 5-minute delay)")
 
         let alert = NSAlert()
@@ -678,6 +678,33 @@ extension AppDelegate {
         alert.informativeText = "Memory usage threshold reporter is now monitoring (5-minute delay skipped)."
         alert.alertStyle = .informational
         alert.runModal()
+    }
+
+    @objc func fireIntervalPixelNow(_ sender: Any?) {
+        let alert = NSAlert()
+        alert.messageText = "Fire Interval Pixel"
+        alert.informativeText = "Select a trigger to fire. The reporter will collect current context and fire the m_mac_memory_usage pixel."
+        alert.alertStyle = .informational
+
+        let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 200, height: 24), pullsDown: false)
+        for trigger in MemoryUsageIntervalPixel.Trigger.allCases {
+            popup.addItem(withTitle: trigger.rawValue)
+        }
+        alert.accessoryView = popup
+
+        alert.addButton(withTitle: "Fire")
+        alert.addButton(withTitle: "Cancel")
+
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn else { return }
+
+        let selectedIndex = popup.indexOfSelectedItem
+        let trigger = MemoryUsageIntervalPixel.Trigger.allCases[selectedIndex]
+
+        Task {
+            await memoryUsageIntervalReporter?.fireTriggerNow(trigger)
+            Logger.memory.info("Interval pixel fired for trigger: \(trigger.rawValue, privacy: .public)")
+        }
     }
 
     @objc func resetSecureVaultData(_ sender: Any?) {

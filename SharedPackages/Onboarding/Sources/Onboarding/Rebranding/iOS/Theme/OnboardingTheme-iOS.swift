@@ -43,7 +43,9 @@ public extension OnboardingTheme {
             optionsListIconColor: Color(singleUseColor: .rebranding(.accentPrimary)),
             optionsListTextColor: Color(singleUseColor: .rebranding(.textLink)),
             primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
-            primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText))
+            primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText)),
+            secondaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsSecondaryDefault)),
+            secondaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsSecondaryText))
         )
         let bubbleMetrics = BubbleMetrics(
             contentInsets: bubbleContentInsets,
@@ -51,6 +53,11 @@ public extension OnboardingTheme {
             borderWidth: borderWidth,
             shadowRadius: 6.0,
             shadowPosition: CGPoint(x: 0, y: 7)
+        )
+        let linearBubbleMetrics = LinearBubbleMetrics(
+            contentInsets: linearBubbleContentInsets,
+            arrowLength: 40,
+            arrowWidth: 29
         )
         let dismissButtonMetrics = DismissButtonMetrics(
             buttonSize: CGSize(width: 44, height: 44),
@@ -65,10 +72,28 @@ public extension OnboardingTheme {
             itemMaxHeight: 40
         )
 
+        let linearOnboardingMetrics = LinearOnboardingMetrics(
+            contentOuterSpacing: 16.0,
+            contentInnerSpacing: 20,
+            buttonSpacing: 12,
+            bubbleMaxWidth: 360,
+            bubbleTailOffset: 0.8,
+            topMarginRatio: 0.18,
+            minTopMargin: 16,
+            maxTopMargin: 16,
+            progressBarTrailingPadding: 16.0,
+            progressBarTopPadding: 12.0,
+            rebrandingBadgeLeadingPadding: 12.0,
+            rebrandingBadgeTopPadding: 12.0,
+            dialogVerticalOffsetPercentage: MetricBuilder<CGFloat>(default: 0.1).iPhoneSmallScreen(0.01),
+            actionsSpacing: 12
+        )
+
         return OnboardingTheme(
             typography: typography,
             colorPalette: colorPalette,
             bubbleMetrics: bubbleMetrics,
+            linearBubbleMetrics: linearBubbleMetrics,
             dismissButtonMetrics: dismissButtonMetrics,
             contextualOnboardingMetrics: ContextualOnboardingMetrics(
                 contentSpacing: 20,
@@ -88,11 +113,19 @@ public extension OnboardingTheme {
                     )
                 )
             ),
+            linearOnboardingMetrics: linearOnboardingMetrics,
             linearTitleTextAlignment: .center,
             linearBodyTextAlignment: .center,
             primaryButtonStyle: OnboardingButtonStyle(
                 id: .primary,
                 style: AnyButtonStyle(OnboardingPrimaryButtonStyle(
+                    typography: typography,
+                    colorPalette: colorPalette
+                ))
+            ),
+            secondaryButtonStyle: OnboardingButtonStyle(
+                id: .secondary,
+                style: AnyButtonStyle(OnboardingSecondaryButtonStyle(
                     typography: typography,
                     colorPalette: colorPalette
                 ))
@@ -111,6 +144,11 @@ public extension OnboardingTheme {
             )
         )
     }()
+
+    private static let linearBubbleContentInsets: EdgeInsets = MetricBuilder<EdgeInsets>(
+        iPhone: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),
+        iPad: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20)
+    ).build()
 
     private static let bubbleContentInsets: EdgeInsets = MetricBuilder<EdgeInsets>(
         iPhone: EdgeInsets(top: 32, leading: 20, bottom: 20, trailing: 20),

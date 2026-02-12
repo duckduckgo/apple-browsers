@@ -34,7 +34,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
     let contextMenuScript = ContextMenuUserScript()
-    let printingUserScript = PrintingUserScript()
     let hoverUserScript = HoverUserScript()
     let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
@@ -253,7 +252,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         surrogatesScript,
         contentBlockerRulesScript,
         pageObserverScript,
-        printingUserScript,
         hoverUserScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,

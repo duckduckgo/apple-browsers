@@ -866,6 +866,8 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))
                 NSMenuItem(title: "Clear Simulated Memory", action: #selector(AppDelegate.clearSimulatedMemory))
                 NSMenuItem(title: "Start Reporter Immediately (Skip 5min Delay)", action: #selector(AppDelegate.startMemoryReporterImmediately))
+                NSMenuItem.separator()
+                NSMenuItem(title: "Fire Interval Pixel Now...", action: #selector(AppDelegate.fireIntervalPixelNow))
             }
 
             NSMenuItem(title: "Hang Debugging") {

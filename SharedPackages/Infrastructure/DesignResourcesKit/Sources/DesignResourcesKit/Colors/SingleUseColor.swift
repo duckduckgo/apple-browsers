@@ -50,6 +50,7 @@ public extension SingleUseColor {
         case accentPrimary
 
         case accentAltPrimary
+        case accentAltGlowPrimary
 
         case backdrop
 
@@ -57,6 +58,11 @@ public extension SingleUseColor {
 
         case buttonsPrimaryDefault
         case buttonsPrimaryText
+
+        case buttonsSecondaryDefault
+        case buttonsSecondaryText
+
+        case decorationPrimary
     }
 
 }

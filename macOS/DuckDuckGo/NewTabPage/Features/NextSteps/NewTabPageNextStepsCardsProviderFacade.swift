@@ -51,6 +51,7 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
             legacyPersistor: legacyPersistor,
             legacySubscriptionCardPersistor: legacySubscriptionCardPersistor,
             appearancePreferences: appearancePreferences,
+            featureFlagger: featureFlagger,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             dockCustomizer: DockCustomizer(),
             dataImportProvider: dataImportProvider,

@@ -2884,11 +2884,11 @@ Take back control of your personal information with the browser designed for dat
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 
-/* Settings screen cell subtitle for enabling automatic page context */
-"settings.aifeatures.automatic.context.subtitle" = "Automatically send page context to Duck.ai";
+/* Settings screen cell subtitle for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.subtitle" = "Automatically send page content to Duck.ai";
 
-/* Settings screen cell title for enabling automatic page context */
-"settings.aifeatures.automatic.context.title" = "Automatically Send Context";
+/* Settings screen cell title for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.title" = "Automatically Send Content";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";

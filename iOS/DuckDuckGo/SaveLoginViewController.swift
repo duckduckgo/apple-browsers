@@ -139,8 +139,8 @@ extension SaveLoginViewController: SaveLoginViewModelDelegate {
 
         let backfilledParameter = [PixelParameters.backfilled: String(describing: backfilled)]
         switch viewModel.layoutType {
-        case .saveLogin, .newUserVariant1, .newUserVariant2, .newUserVariant3, .savePassword, .newUser:
-            if case .newUser = viewModel.layoutType {
+        case .saveLogin, .savePassword, .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3:
+            if viewModel.layoutType.isNewUserVariant {
                 Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalConfirmed, withAdditionalParameters: backfilledParameter)
             } else if case .savePassword = viewModel.layoutType {
                 Pixel.fire(pixel: .autofillLoginsSavePasswordModalConfirmed, withAdditionalParameters: backfilledParameter)

@@ -76,7 +76,7 @@
 		1D36E65C298ACD2900AA485D /* AppIconChanger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36E65A298ACD2900AA485D /* AppIconChanger.swift */; };
 		1D36F4242A3B85C50052B527 /* TabCleanupPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36F4232A3B85C50052B527 /* TabCleanupPreparer.swift */; };
 		1D36F4252A3B85C50052B527 /* TabCleanupPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36F4232A3B85C50052B527 /* TabCleanupPreparer.swift */; };
-		1D39E5772C2BFD5700757339 /* ReleaseNotesTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D39E5762C2BFD5700757339 /* ReleaseNotesTabExtension.swift */; };
+		1D39E5772C2BFD5700757339 /* ReleaseNotesNavigationResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D39E5762C2BFD5700757339 /* ReleaseNotesNavigationResponder.swift */; };
 		1D39E57A2C2C0F3700757339 /* ReleaseNotesUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D39E5792C2C0F3700757339 /* ReleaseNotesUserScript.swift */; };
 		1D39F7252DCA29A500F258F0 /* InitialWindowFrameProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D39F7242DCA299D00F258F0 /* InitialWindowFrameProvider.swift */; };
 		1D39F7262DCA29A500F258F0 /* InitialWindowFrameProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D39F7242DCA299D00F258F0 /* InitialWindowFrameProvider.swift */; };
@@ -2320,26 +2320,19 @@
 		840E57E42F30A988009CFCEE /* LatestReleaseChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57E32F30A988009CFCEE /* LatestReleaseChecker.swift */; };
 		840E57E92F30A9AA009CFCEE /* Update+Sparkle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57E82F30A9AA009CFCEE /* Update+Sparkle.swift */; };
 		840E57EA2F30A9AA009CFCEE /* SPUUpdater+UpdaterAvailabilityChecking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57E72F30A9AA009CFCEE /* SPUUpdater+UpdaterAvailabilityChecking.swift */; };
-		840E57EB2F30A9AA009CFCEE /* ReleaseNotesTabExtensionConformance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57E62F30A9AA009CFCEE /* ReleaseNotesTabExtensionConformance.swift */; };
 		840E57FB2F30A9E4009CFCEE /* UpdateValidationResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F92F30A9E4009CFCEE /* UpdateValidationResult.swift */; };
 		840E57FC2F30A9E4009CFCEE /* UpdateState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F82F30A9E4009CFCEE /* UpdateState.swift */; };
-		840E57FD2F30A9E4009CFCEE /* ReleaseNotesTabExtensionProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F02F30A9E4009CFCEE /* ReleaseNotesTabExtensionProtocol.swift */; };
-		840E57FF2F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F22F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift */; };
 		840E58002F30A9E4009CFCEE /* ReleaseNotesParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57EF2F30A9E4009CFCEE /* ReleaseNotesParser.swift */; };
 		840E58012F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */; };
 		840E58022F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F52F30A9E4009CFCEE /* UpdateCycleProgress.swift */; };
 		840E58062F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F62F30A9E4009CFCEE /* UpdateNotificationPresenting.swift */; };
-		840E58072F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F12F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift */; };
 		840E58082F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F72F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift */; };
 		840E58092F30A9E4009CFCEE /* ReleaseMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57EE2F30A9E4009CFCEE /* ReleaseMetadata.swift */; };
 		840E580A2F30A9E4009CFCEE /* UpdateValidationResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F92F30A9E4009CFCEE /* UpdateValidationResult.swift */; };
 		840E580B2F30A9E4009CFCEE /* UpdateState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F82F30A9E4009CFCEE /* UpdateState.swift */; };
-		840E580C2F30A9E4009CFCEE /* ReleaseNotesTabExtensionProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F02F30A9E4009CFCEE /* ReleaseNotesTabExtensionProtocol.swift */; };
-		840E580E2F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F22F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift */; };
 		840E58102F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */; };
 		840E58112F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F52F30A9E4009CFCEE /* UpdateCycleProgress.swift */; };
 		840E58152F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F62F30A9E4009CFCEE /* UpdateNotificationPresenting.swift */; };
-		840E58162F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F12F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift */; };
 		840E58172F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F72F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift */; };
 		840E58182F30A9E4009CFCEE /* ReleaseMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57EE2F30A9E4009CFCEE /* ReleaseMetadata.swift */; };
 		840E581F2F30AA27009CFCEE /* MockUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581D2F30AA27009CFCEE /* MockUpdater.swift */; };
@@ -2350,7 +2343,6 @@
 		840E58272F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581A2F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift */; };
 		840E58282F30AA27009CFCEE /* MockNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581B2F30AA27009CFCEE /* MockNotificationPresenter.swift */; };
 		840E58292F30AA27009CFCEE /* MockUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581C2F30AA27009CFCEE /* MockUpdateController.swift */; };
-		840E583D2F30AE2B009CFCEE /* ReleaseNotesTabExtensionConformance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57E62F30A9AA009CFCEE /* ReleaseNotesTabExtensionConformance.swift */; };
 		841BE93B2C6F1CB200E9C2B5 /* MenuItemNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */; };
 		841BE93C2C6F1CB200E9C2B5 /* MenuItemNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */; };
 		841BE93E2C6F236000E9C2B5 /* BookmarkDragDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */; };
@@ -2457,6 +2449,7 @@
 		845F573D2E982B2600C7F78A /* SharedTestUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 845F573C2E982B2600C7F78A /* SharedTestUtilities */; };
 		8463C26B2F3DA3C600C718CF /* PendingUpdateInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8463C26A2F3DA3C600C718CF /* PendingUpdateInfo.swift */; };
 		8463C26C2F3DA3C600C718CF /* PendingUpdateInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8463C26A2F3DA3C600C718CF /* PendingUpdateInfo.swift */; };
+		8463C2772F3DB48900C718CF /* ReleaseNotesUserScriptFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8463C2762F3DB47C00C718CF /* ReleaseNotesUserScriptFactory.swift */; };
 		84658D392EAA09680018D992 /* WindowControllersManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */; };
 		84658D3A2EAA09680018D992 /* WindowControllersManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */; };
 		84658D3E2EAA0BCF0018D992 /* PinnedTabsManagerProvidingMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84658D3D2EAA0BCF0018D992 /* PinnedTabsManagerProvidingMock.swift */; };
@@ -4521,7 +4514,7 @@
 		1D36E657298AA3BA00AA485D /* InternalUserDeciderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalUserDeciderStore.swift; sourceTree = "<group>"; };
 		1D36E65A298ACD2900AA485D /* AppIconChanger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconChanger.swift; sourceTree = "<group>"; };
 		1D36F4232A3B85C50052B527 /* TabCleanupPreparer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCleanupPreparer.swift; sourceTree = "<group>"; };
-		1D39E5762C2BFD5700757339 /* ReleaseNotesTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesTabExtension.swift; sourceTree = "<group>"; };
+		1D39E5762C2BFD5700757339 /* ReleaseNotesNavigationResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesNavigationResponder.swift; sourceTree = "<group>"; };
 		1D39E5792C2C0F3700757339 /* ReleaseNotesUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesUserScript.swift; sourceTree = "<group>"; };
 		1D39F7242DCA299D00F258F0 /* InitialWindowFrameProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialWindowFrameProvider.swift; sourceTree = "<group>"; };
 		1D39F7272DCA2C9200F258F0 /* InitialWindowFrameProviderTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InitialWindowFrameProviderTests.swift; sourceTree = "<group>"; };
@@ -5462,14 +5455,10 @@
 		8409BD772ED878C400E39FA7 /* popup-servicenow.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "popup-servicenow.html"; sourceTree = "<group>"; };
 		840B66822F39FC2A001E20C6 /* SparkleUpdateControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateControllerTests.swift; sourceTree = "<group>"; };
 		840E57E32F30A988009CFCEE /* LatestReleaseChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestReleaseChecker.swift; sourceTree = "<group>"; };
-		840E57E62F30A9AA009CFCEE /* ReleaseNotesTabExtensionConformance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesTabExtensionConformance.swift; sourceTree = "<group>"; };
 		840E57E72F30A9AA009CFCEE /* SPUUpdater+UpdaterAvailabilityChecking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPUUpdater+UpdaterAvailabilityChecking.swift"; sourceTree = "<group>"; };
 		840E57E82F30A9AA009CFCEE /* Update+Sparkle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Update+Sparkle.swift"; sourceTree = "<group>"; };
 		840E57EE2F30A9E4009CFCEE /* ReleaseMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseMetadata.swift; sourceTree = "<group>"; };
 		840E57EF2F30A9E4009CFCEE /* ReleaseNotesParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesParser.swift; sourceTree = "<group>"; };
-		840E57F02F30A9E4009CFCEE /* ReleaseNotesTabExtensionProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesTabExtensionProtocol.swift; sourceTree = "<group>"; };
-		840E57F12F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesTabExtensionFactory.swift; sourceTree = "<group>"; };
-		840E57F22F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesUserScriptFactory.swift; sourceTree = "<group>"; };
 		840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesUserScriptProvider.swift; sourceTree = "<group>"; };
 		840E57F52F30A9E4009CFCEE /* UpdateCycleProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCycleProgress.swift; sourceTree = "<group>"; };
 		840E57F62F30A9E4009CFCEE /* UpdateNotificationPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateNotificationPresenting.swift; sourceTree = "<group>"; };
@@ -5529,6 +5518,7 @@
 		845F57312E98021F00C7F78A /* FireproofDomainsStoreMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireproofDomainsStoreMock.swift; sourceTree = "<group>"; };
 		845F57362E980A1900C7F78A /* HistoryCoordinatingMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryCoordinatingMock.swift; sourceTree = "<group>"; };
 		8463C26A2F3DA3C600C718CF /* PendingUpdateInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingUpdateInfo.swift; sourceTree = "<group>"; };
+		8463C2762F3DB47C00C718CF /* ReleaseNotesUserScriptFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesUserScriptFactory.swift; sourceTree = "<group>"; };
 		84658D3D2EAA0BCF0018D992 /* PinnedTabsManagerProvidingMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsManagerProvidingMock.swift; sourceTree = "<group>"; };
 		84658D402EAA0CBD0018D992 /* MockHistoryViewDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockHistoryViewDataProvider.swift; sourceTree = "<group>"; };
 		846F4CD02E04829D00266DB7 /* TabContent+DisplayedFavicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabContent+DisplayedFavicon.swift"; sourceTree = "<group>"; };
@@ -7196,10 +7186,6 @@
 				BB4830C82E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift */,
 				8463C26A2F3DA3C600C718CF /* PendingUpdateInfo.swift */,
 				840E57EE2F30A9E4009CFCEE /* ReleaseMetadata.swift */,
-				840E57E62F30A9AA009CFCEE /* ReleaseNotesTabExtensionConformance.swift */,
-				840E57F12F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift */,
-				840E57F02F30A9E4009CFCEE /* ReleaseNotesTabExtensionProtocol.swift */,
-				840E57F22F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift */,
 				840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */,
 				BB6B34132E78B807004E4ACE /* Update.swift */,
 				7BAB80C42E2A420400F59FF4 /* UpdateCheckActor.swift */,
@@ -11939,8 +11925,9 @@
 			children = (
 				1D9297BE2C1B062900A38521 /* ApplicationUpdateDetector.swift */,
 				840E57EF2F30A9E4009CFCEE /* ReleaseNotesParser.swift */,
-				1D39E5762C2BFD5700757339 /* ReleaseNotesTabExtension.swift */,
+				1D39E5762C2BFD5700757339 /* ReleaseNotesNavigationResponder.swift */,
 				1D39E5792C2C0F3700757339 /* ReleaseNotesUserScript.swift */,
+				8463C2762F3DB47C00C718CF /* ReleaseNotesUserScriptFactory.swift */,
 				7B8854232F0C5A7200E872CF /* SimplifiedSparkleUpdateController.swift */,
 				7B00587E2F192DF6005132B4 /* SimplifiedUpdateUserDriver.swift */,
 				7B5886382EAFEF310079F8B1 /* SparkleDebugHelper.swift */,
@@ -15169,7 +15156,6 @@
 				31267C6A2B640C4B00FEF811 /* DataBrokerProtectionFeatureDisabler.swift in Sources */,
 				9F5D4EC62DED3FA800B16D98 /* DefaultBrowserAndDockPromptPixelEvent.swift in Sources */,
 				3707C723294B5D2900682A9F /* URLSessionExtension.swift in Sources */,
-				840E583D2F30AE2B009CFCEE /* ReleaseNotesTabExtensionConformance.swift in Sources */,
 				3706FC4E293F65D500E42796 /* AtbAndVariantCleanup.swift in Sources */,
 				3706FC50293F65D500E42796 /* FeedbackWindow.swift in Sources */,
 				B6E3E5552BBFCEE300A41922 /* NoDownloadsCellView.swift in Sources */,
@@ -15246,12 +15232,9 @@
 				EE8C11D62E9E8347002FFD72 /* FileImportScreenView.swift in Sources */,
 				840E580A2F30A9E4009CFCEE /* UpdateValidationResult.swift in Sources */,
 				840E580B2F30A9E4009CFCEE /* UpdateState.swift in Sources */,
-				840E580C2F30A9E4009CFCEE /* ReleaseNotesTabExtensionProtocol.swift in Sources */,
-				840E580E2F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift in Sources */,
 				840E58102F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */,
 				840E58112F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */,
 				840E58152F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */,
-				840E58162F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */,
 				840E58172F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */,
 				840E58182F30A9E4009CFCEE /* ReleaseMetadata.swift in Sources */,
 				3706FC6C293F65D500E42796 /* BookmarkViewModel.swift in Sources */,
@@ -16355,7 +16338,7 @@
 				31FC23512DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */,
 				CC0DD9132E5DF47E00277E46 /* SessionRestorePromptView.swift in Sources */,
 				F14890982ECDD24400B5239E /* AttributedMetricDebugMenu.swift in Sources */,
-				1D39E5772C2BFD5700757339 /* ReleaseNotesTabExtension.swift in Sources */,
+				1D39E5772C2BFD5700757339 /* ReleaseNotesNavigationResponder.swift in Sources */,
 				987799F12999993C005D8EB6 /* LegacyBookmarkStore.swift in Sources */,
 				1E4EDA292DE9ED2D0019B6E8 /* AIChatSidebarProvider.swift in Sources */,
 				1D220BF82B86192200F8BBC6 /* PreferencesEmailProtectionView.swift in Sources */,
@@ -16501,13 +16484,10 @@
 				EEC4A6712B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift in Sources */,
 				840E57FB2F30A9E4009CFCEE /* UpdateValidationResult.swift in Sources */,
 				840E57FC2F30A9E4009CFCEE /* UpdateState.swift in Sources */,
-				840E57FD2F30A9E4009CFCEE /* ReleaseNotesTabExtensionProtocol.swift in Sources */,
-				840E57FF2F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift in Sources */,
 				840E58002F30A9E4009CFCEE /* ReleaseNotesParser.swift in Sources */,
 				840E58012F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */,
 				840E58022F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */,
 				840E58062F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */,
-				840E58072F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */,
 				840E58082F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */,
 				840E58092F30A9E4009CFCEE /* ReleaseMetadata.swift in Sources */,
 				1DD6A7B72D804B60006AE043 /* PinnedTabsDiscoveryPopover.swift in Sources */,
@@ -16797,7 +16777,6 @@
 				B6685E4229A61C470043D2EE /* DownloadsTabExtension.swift in Sources */,
 				840E57E92F30A9AA009CFCEE /* Update+Sparkle.swift in Sources */,
 				840E57EA2F30A9AA009CFCEE /* SPUUpdater+UpdaterAvailabilityChecking.swift in Sources */,
-				840E57EB2F30A9AA009CFCEE /* ReleaseNotesTabExtensionConformance.swift in Sources */,
 				B5CBB60B2EC4F80A006C3F54 /* TabTitleView.swift in Sources */,
 				84E720692EAA1A96002618BD /* HistoryCoordinatingMock.swift in Sources */,
 				4B8AC93B26B48ADF00879451 /* ASN1Parser.swift in Sources */,
@@ -16831,6 +16810,7 @@
 				37CDFC252D7874C500CBB429 /* HistoryViewDataProviderPixelHandler.swift in Sources */,
 				371209212C232E3F003ADF3D /* RemoteMessagingClient.swift in Sources */,
 				B69A14F22B4D6FE800B9417D /* AddBookmarkFolderPopoverViewModel.swift in Sources */,
+				8463C2772F3DB48900C718CF /* ReleaseNotesUserScriptFactory.swift in Sources */,
 				4BE65478271FCD41008D1D63 /* PasswordManagementNoteItemView.swift in Sources */,
 				AA5C8F632591021700748EB7 /* NSApplicationExtension.swift in Sources */,
 				84DDB90A2C92B66E008C997B /* WKVisitedLinkStoreWrapper.swift in Sources */,

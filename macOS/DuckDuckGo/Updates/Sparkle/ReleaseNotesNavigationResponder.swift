@@ -1,5 +1,5 @@
 //
-//  ReleaseNotesTabExtension.swift
+//  ReleaseNotesNavigationResponder.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -25,8 +25,6 @@ import Persistence
 import PixelKit
 import WebKit
 
-#if SPARKLE
-
 public struct ReleaseNotesValues: Codable {
     enum Status: String {
         case loaded
@@ -49,32 +47,11 @@ public struct ReleaseNotesValues: Codable {
     let automaticUpdate: Bool?
 }
 
-/// Factory extension that provides Sparkle-specific release notes tab extension.
-///
-/// This extension is only compiled when SparkleAppUpdater is linked, making the
-/// factory functional only in Sparkle builds.
-extension ReleaseNotesTabExtensionFactory: ReleaseNotesTabExtensionFactoryBuilder {
-    /// Creates a Sparkle-specific release notes tab extension.
-    public func makeExtension(
-        updateController: any SparkleUpdateController,
-        releaseNotesURL: URL,
-        scriptsPublisher: some Publisher<some ReleaseNotesUserScriptProvider, Never>,
-        webViewPublisher: some Publisher<WKWebView, Never>
-    ) -> ReleaseNotesTabExtensionBase {
-        ReleaseNotesTabExtension(
-            updateController: updateController,
-            releaseNotesURL: releaseNotesURL,
-            scriptsPublisher: scriptsPublisher,
-            webViewPublisher: webViewPublisher
-        )
-    }
-}
-
-/// Sparkle-specific implementation of release notes tab extension.
+/// Sparkle-specific implementation of release notes navigation responder.
 ///
 /// Handles displaying release notes, update progress, and triggering update checks
 /// for the Sparkle update system.
-public final class ReleaseNotesTabExtension: ReleaseNotesTabExtensionBase {
+public final class ReleaseNotesNavigationResponder: NavigationResponder {
 
     private var cancellables = Set<AnyCancellable>()
     private weak var webView: WKWebView? {
@@ -88,11 +65,10 @@ public final class ReleaseNotesTabExtension: ReleaseNotesTabExtensionBase {
 
     public init(updateController: any SparkleUpdateController,
                 releaseNotesURL: URL,
-                scriptsPublisher: some Publisher<some ReleaseNotesUserScriptProvider, Never>,
+                scriptsPublisher: some Publisher<any ReleaseNotesUserScriptProvider, Never>,
                 webViewPublisher: some Publisher<WKWebView, Never>) {
         self.updateController = updateController
         self.releaseNotesURL = releaseNotesURL
-        super.init()
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
@@ -268,5 +244,3 @@ private extension UpdateCycleProgress {
         return percentage
     }
 }
-
-#endif

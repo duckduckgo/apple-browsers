@@ -25,6 +25,9 @@ import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
+import Navigation
+import UserScript
+import WebKit
 
 public enum UpdateControllerEvent: Equatable {
     case updaterDidRunUpdate
@@ -338,7 +341,20 @@ public protocol SparkleUpdateController: UpdateController, SparkleUpdateControll
     ///
     /// **Usage**: Troubleshooting for menu item visibility bugs.
     func log()
+
+    func makeReleaseNotesNavigationResponder(
+        releaseNotesURL: URL,
+        scriptsPublisher: some Publisher<any ReleaseNotesUserScriptProvider, Never>,
+        webViewPublisher: some Publisher<WKWebView, Never>
+    ) -> any NavigationResponder & AnyObject
+
+    func makeReleaseNotesUserScript(
+        pixelFiring: PixelFiring?,
+        keyValueStore: ThrowingKeyValueStoring,
+        releaseNotesURL: URL
+    ) -> Subfeature
 }
+
 /// Objective-C base UpdateController protocol to be used as Menu Item target.
 @objc public protocol UpdateControllerObjC {
     /// Opens the appropriate page for viewing update information.

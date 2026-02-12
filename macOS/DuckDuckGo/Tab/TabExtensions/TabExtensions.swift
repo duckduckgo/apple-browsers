@@ -107,6 +107,7 @@ typealias TabExtensionsBuilderArguments = (
     titlePublisher: AnyPublisher<String?, Never>,
     errorPublisher: AnyPublisher<WKError?, Never>,
     userScriptsPublisher: AnyPublisher<UserScripts?, Never>,
+    updateController: (any UpdateController)?,
     inheritedAttribution: AdClickAttributionLogic.State?,
     userContentControllerFuture: Future<UserContentController, Never>,
     permissionModel: PermissionModel,
@@ -333,19 +334,6 @@ extension TabExtensionsBuilder {
 
         add {
             SubscriptionTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
-        }
-
-        // Release notes tab extension - only available for Sparkle builds
-        if let updateController = dependencies.updateController as? any SparkleUpdateController {
-            let factory = ReleaseNotesTabExtensionFactory()
-            if let ext = (factory as? ReleaseNotesTabExtensionFactoryBuilder)?.makeExtension(
-                updateController: updateController,
-                releaseNotesURL: .releaseNotes,
-                scriptsPublisher: userScripts.compactMap { $0 },
-                webViewPublisher: args.webViewFuture
-            ) {
-                add { ext }
-            }
         }
 
         if let tunnelController = dependencies.tunnelController {

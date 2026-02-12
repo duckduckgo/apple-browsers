@@ -335,9 +335,13 @@ public protocol SparkleUpdateController: UpdateController, SparkleUpdateControll
 }
 
 extension UpdateController {
+
+    private var isUpdateNotificationAllowed: Bool {
+        Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
+    }
+
     public func showUpdateNotificationIfNeeded(isOnboardingFinished: () -> Bool) {
-        let isUpdateNotificationAllowed = isOnboardingFinished() && Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
-        guard let latestUpdate, hasPendingUpdate, isUpdateNotificationAllowed else { return }
+        guard let latestUpdate, hasPendingUpdate, isOnboardingFinished(), isUpdateNotificationAllowed else { return }
 
         notificationPresenter.showUpdateNotification(for: latestUpdate.type, areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
 

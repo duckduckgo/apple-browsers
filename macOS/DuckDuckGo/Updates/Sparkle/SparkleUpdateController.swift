@@ -48,11 +48,6 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
     }
 }
 
-public protocol SparkleCustomFeedURLProviding {
-    func setCustomFeedURL(_ urlString: String)
-    func resetFeedURLToDefault()
-}
-
 extension PendingUpdateInfo {
     init(from item: SUAppcastItem) {
         let (notes, notesSubscription) = ReleaseNotesParser.parseReleaseNotes(from: item.itemDescription)

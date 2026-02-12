@@ -65,8 +65,8 @@ final class WebView: WKWebView {
         isInspectorShown && window != nil
     }
 
-    init(frame: CGRect,
-         configuration: WKWebViewConfiguration,
+    init(frame: CGRect = .zero,
+         configuration: WKWebViewConfiguration = .init(),
          privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig) {
         self.privacyConfig = privacyConfig
         super.init(frame: frame, configuration: configuration)

@@ -478,13 +478,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
               let update = updateController.latestUpdate else {
             return
         }
-#if SPARKLE
+        #if SPARKLE
         // Log edge cases where menu item appears but doesn't function
         // To be removed in a future version
         if !update.isInstalled, updateController.updateProgress.isDone {
             updateController.log()
         }
-#endif
+        #endif
 
         guard updateController.hasPendingUpdate && updateController.mustShowUpdateIndicators else {
             return
@@ -493,25 +493,25 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         let isMenuItemCreatedFromUpdateController = featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) || featureFlagger.isFeatureOn(.updatesSimplifiedFlow)
 
         let menuItem: NSMenuItem = {
-#if SPARKLE
+            #if SPARKLE
             if isMenuItemCreatedFromUpdateController {
                 return SparkleUpdateMenuItemFactory.menuItem(for: updateController)
             } else {
                 return SparkleUpdateMenuItemFactory.menuItem(for: update)
             }
-#else
+            #else
             return AppStoreUpdateMenuItemFactory.menuItem(for: update)
-#endif
+            #endif
         }()
 
         updateMenuItem = menuItem
         addItem(menuItem)
 
-#if SPARKLE
+        #if SPARKLE
         if let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem {
             addItem(releaseNotes)
         }
-#endif
+        #endif
 
         addItem(NSMenuItem.separator())
     }

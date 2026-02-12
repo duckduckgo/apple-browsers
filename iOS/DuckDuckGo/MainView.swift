@@ -286,10 +286,20 @@ extension MainViewFactory {
     }
 
     private func constrainToolbar() {
+        let isiOS26: Bool
+        if #available(iOS 26, *) {
+            isiOS26 = true
+        } else {
+            isiOS26 = false
+        }
+
+        // Changing this?  Best change TabSwitcherViewController too
+        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
+
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
         NSLayoutConstraint.activate([
-            toolbar.constrainView(superview, by: .width),
+            toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),
             toolbar.constrainAttribute(.height, to: 49),
             coordinator.constraints.toolbarBottom,

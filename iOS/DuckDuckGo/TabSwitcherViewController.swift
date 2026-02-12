@@ -195,12 +195,24 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition() {
+        guard let view = self.view else {
+            assertionFailure()
+            return
+        }
         let isBottomBar = appSettings.currentAddressBarPosition.isBottom
 
-        // Potentially for these 3 we could do thing better for 'normal' on iPad
-        let topOffset = -6.0
+        let isiOS26: Bool
+        if #available(iOS 26, *) {
+            isiOS26 = true
+        } else {
+            isiOS26 = false
+        }
+
+        // Changing this?  Best change MainView too
+        let topOffset = isiOS26 ? 4.0 : -6.0
         let bottomOffset = 8.0
-        let navHPadding = 10.0
+        let navHPadding = isiOS26 ? -6.0 : -2.0
+        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
 
         // The constants here are to force the ai button to align between the tab switcher and this view
         NSLayoutConstraint.activate([
@@ -225,8 +237,8 @@ class TabSwitcherViewController: UIViewController {
                 borderView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
 
             // Always at the bottom
-            toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            toolbar.constrainView(view, by: .width, constant: toolbarWidthMod),
+            toolbar.constrainView(view, by: .centerX),
             toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ].compactMap { $0 })
     }
@@ -816,7 +828,7 @@ extension TabSwitcherViewController {
 
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
-                
+
         collectionView.reloadData()
     }
 

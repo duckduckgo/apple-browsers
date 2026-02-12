@@ -151,6 +151,7 @@ private extension RebrandedContextualDaxDialogFactory {
 
 private extension RebrandedContextualDaxDialogFactory {
 
+    // This could be removed. Originally this was in place to represent the dialog if the user refreshed or quit and relaunched the app.
     func tryVisitingSiteDialog(delegate: ContextualOnboardingDelegate) -> some View {
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
@@ -163,12 +164,10 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        return OnboardingConditionalCenteredScrollableContainerView {
-            OnboardingRebranding.OnboardingTrySiteDialog(
-                viewModel: viewModel,
-                onManualDismiss: onManualDismiss
-            )
-        }
+        return OnboardingRebranding.OnboardingTrySiteDialog(
+            viewModel: viewModel,
+            onManualDismiss: onManualDismiss
+        )
         .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP, animationContext: .default)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()

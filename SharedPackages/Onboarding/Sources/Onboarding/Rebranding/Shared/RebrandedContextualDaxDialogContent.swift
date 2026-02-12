@@ -76,8 +76,6 @@ extension OnboardingRebranding {
     }
 }
 
-
-
 // MARK: Inner Views
 
 private extension OnboardingRebranding {

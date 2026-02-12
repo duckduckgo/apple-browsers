@@ -146,6 +146,7 @@ private extension RebrandedNewTabDaxDialogFactory {
                     onManualDismiss()
                 }
             )
+            .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in

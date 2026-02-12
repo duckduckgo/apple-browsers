@@ -444,7 +444,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .uiTestExperiment,
              .onboardingRebranding,
              .webExtensions,
-             .enhancedDarkMode:
+             .forceWebsiteDarkMode:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -688,7 +688,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .webExtensions:
             return .internalOnly()
-        case .enhancedDarkMode:
+        case .forceWebsiteDarkMode:
             return .internalOnly()
         }
     }

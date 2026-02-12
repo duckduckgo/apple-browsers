@@ -25,38 +25,6 @@ import DesignResourcesKit
 
 extension Preferences {
 
-    // MARK: - Legacy: Superseded by `ThemeAppearanceViewV2`
-    //
-    struct ThemeAppearanceButton: View {
-        let title: String
-        let imageName: String
-        @Binding var isSelected: Bool
-
-        var body: some View {
-            VStack {
-                Button(action: { isSelected.toggle() }) {
-                    VStack(spacing: 2) {
-                        Image(imageName)
-                            .padding(2)
-                            .background(selectionBackground)
-                        Text(title)
-                    }
-                }
-                .padding(.horizontal, 2)
-                .buttonStyle(.plain)
-            }
-        }
-
-        @ViewBuilder
-        private var selectionBackground: some View {
-            if isSelected {
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color(.linkBlue), lineWidth: 2)
-            }
-        }
-
-    }
-
     // MARK: - Appearance View (Light / Dark / System)
     //
     struct ThemeAppearanceViewV2: View {

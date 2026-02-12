@@ -29,7 +29,7 @@ import UserScript
 public protocol ReleaseNotesUserScriptFactoryBuilder {
     /// Creates a release notes user script with required dependencies.
     func makeUserScript(
-        updateController: UpdateController,
+        updateController: any SparkleUpdateController,
         pixelFiring: PixelFiring?,
         keyValueStore: ThrowingKeyValueStoring,
         releaseNotesURL: URL

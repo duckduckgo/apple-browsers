@@ -34,7 +34,7 @@ import os.log
 /// Update checks rely on Sparkle's built-in scheduling plus check-on-launch.
 /// Internal users check every 30 minutes; external users check every hour.
 /// Sparkle's `canCheckForUpdates` and `sessionInProgress` guards prevent concurrent or invalid checks.
-public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
+public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController {
 
     public enum Constants {
         public static let internalChannelName = "internal-channel"
@@ -137,7 +137,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
 
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
-    private var pendingUpdateInfo: SparkleUpdateController.PendingUpdateInfo? {
+    private var pendingUpdateInfo: PendingUpdateInfo? {
         get {
             try? settings.pendingUpdateInfo
         }
@@ -479,7 +479,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     // MARK: - Private
 
     private func cachePendingUpdate(from item: SUAppcastItem) {
-        let info = SparkleUpdateController.PendingUpdateInfo(from: item)
+        let info = PendingUpdateInfo(from: item)
         pendingUpdateInfo = info
         Logger.updates.log("Cached pending update info for version \(info.version) build \(info.build)")
     }

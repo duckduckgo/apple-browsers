@@ -38,7 +38,7 @@ extension Update {
                   dateFormatterProvider: dateFormatterProvider())
     }
 
-    convenience init(pendingUpdateInfo: SparkleUpdateController.PendingUpdateInfo, isInstalled: Bool, needsLatestReleaseNote: Bool, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
+    convenience init(pendingUpdateInfo: PendingUpdateInfo, isInstalled: Bool, needsLatestReleaseNote: Bool, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
         self.init(isInstalled: isInstalled,
                   type: pendingUpdateInfo.isCritical ? .critical : .regular,
                   version: pendingUpdateInfo.version,

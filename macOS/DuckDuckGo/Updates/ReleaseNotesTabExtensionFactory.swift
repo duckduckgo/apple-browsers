@@ -35,7 +35,7 @@ open class ReleaseNotesTabExtensionBase: ReleaseNotesTabExtensionProtocol {
 public protocol ReleaseNotesTabExtensionFactoryBuilder {
     /// Creates a release notes tab extension with required dependencies.
     func makeExtension(
-        updateController: UpdateController,
+        updateController: any SparkleUpdateController,
         releaseNotesURL: URL,
         scriptsPublisher: some Publisher<some ReleaseNotesUserScriptProvider, Never>,
         webViewPublisher: some Publisher<WKWebView, Never>

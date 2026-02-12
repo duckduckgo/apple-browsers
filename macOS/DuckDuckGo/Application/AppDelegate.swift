@@ -1400,12 +1400,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 wideEvent,
                 { OnboardingActionsManager.isOnboardingFinished }
             )
+            if let sparkleUpdateController = updateController as? any SparkleUpdateController {
+                stateRestorationManager.subscribeToAutomaticAppRelaunching(using: sparkleUpdateController.willRelaunchAppPublisher)
+            } else {
+                assertionFailure("Update controller is not a SparkleUpdateController")
+            }
         case .none:
             assertionFailure("Failed to instantiate update controller")
             return
         }
         self.updateController = updateController
-        stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -1807,14 +1811,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func subscribeToUpdateControllerChanges() {
-#if SPARKLE
-        guard AppVersion.runType != .uiTests else { return }
+        guard AppVersion.runType != .uiTests,
+              let sparkleUpdateController = updateController as? any SparkleUpdateController else { return }
 
-        updateProgressCancellable = updateController?.updateProgressPublisher
-            .sink { [weak self] progress in
-                self?.updateController?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+        updateProgressCancellable = sparkleUpdateController.updateProgressPublisher
+            .sink { progress in
+                sparkleUpdateController.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
-#endif
     }
 
     private func emailDidSignInNotification(_ notification: Notification) {

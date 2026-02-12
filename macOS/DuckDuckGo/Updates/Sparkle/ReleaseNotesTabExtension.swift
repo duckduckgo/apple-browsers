@@ -56,7 +56,7 @@ public struct ReleaseNotesValues: Codable {
 extension ReleaseNotesTabExtensionFactory: ReleaseNotesTabExtensionFactoryBuilder {
     /// Creates a Sparkle-specific release notes tab extension.
     public func makeExtension(
-        updateController: UpdateController,
+        updateController: any SparkleUpdateController,
         releaseNotesURL: URL,
         scriptsPublisher: some Publisher<some ReleaseNotesUserScriptProvider, Never>,
         webViewPublisher: some Publisher<WKWebView, Never>
@@ -83,10 +83,10 @@ public final class ReleaseNotesTabExtension: ReleaseNotesTabExtensionBase {
         }
     }
     private weak var releaseNotesUserScript: ReleaseNotesUserScript?
-    private let updateController: UpdateController
+    private let updateController: any SparkleUpdateController
     private let releaseNotesURL: URL
 
-    public init(updateController: UpdateController,
+    public init(updateController: any SparkleUpdateController,
                 releaseNotesURL: URL,
                 scriptsPublisher: some Publisher<some ReleaseNotesUserScriptProvider, Never>,
                 webViewPublisher: some Publisher<WKWebView, Never>) {
@@ -162,7 +162,7 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: any UpdateController, pixelFiring: PixelFiring?, keyValueStore: ThrowingKeyValueStoring) {
+    init(from updateController: any SparkleUpdateController, pixelFiring: PixelFiring?, keyValueStore: ThrowingKeyValueStoring) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 

@@ -167,7 +167,7 @@ final class UserScripts: UserScriptsProvider {
         }
 
         // Release notes user script - only available for Sparkle builds
-        if let updateController = Application.appDelegate.updateController {
+        if let updateController = Application.appDelegate.updateController as? any SparkleUpdateController {
             let factory = ReleaseNotesUserScriptFactory()
             releaseNotesUserScript = (factory as? ReleaseNotesUserScriptFactoryBuilder)?.makeUserScript(
                 updateController: updateController,

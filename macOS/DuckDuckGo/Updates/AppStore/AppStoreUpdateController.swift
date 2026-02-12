@@ -184,16 +184,6 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
         openUpdatesPage()
     }
 
-    // MARK: - Sparkle-only methods - no-op for App Store builds.
-    @objc public func runUpdateFromMenuItem() {}
-    public func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress) {}
-    public var isAtRestartCheckpoint: Bool { false }
-    public var shouldForceUpdateCheck: Bool { false }
-    public var willRelaunchAppPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
-    public var useLegacyAutoRestartLogic: Bool { false }
-    public func checkForUpdateRespectingRollout() {}
-    public func log() {}
-
     // MARK: - Private Update Logic
 
     @UpdateCheckActor

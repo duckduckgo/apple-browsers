@@ -75,10 +75,8 @@ public struct UpdateControllerSettings: StoringKeys {
     public let pendingUpdateInitiationType = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateInitiationType, assertionHandler: { _ in })
     public let pendingUpdateConfiguration = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateConfiguration, assertionHandler: { _ in })
 
-#if SPARKLE
     // Cached pending update info (PendingUpdateInfo stored as Codable)
-    let pendingUpdateInfo = StorageKey<SparkleUpdateController.PendingUpdateInfo>(UpdateControllerStorageKeys.pendingUpdateInfo, assertionHandler: { _ in })
-#endif
+    let pendingUpdateInfo = StorageKey<PendingUpdateInfo>(UpdateControllerStorageKeys.pendingUpdateInfo, assertionHandler: { _ in })
 
     public init() {}
 }

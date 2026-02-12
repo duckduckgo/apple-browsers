@@ -38,12 +38,12 @@ import os.log
 extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
     /// Returns the Sparkle constructor closure used by `UpdateControllerFactory.factoryMethod`.
     /// - If `updatesSimplifiedFlow` is enabled, returns `.sparkle(SimplifiedSparkleUpdateController.init)`
-    /// - Otherwise, returns `.sparkle(SparkleUpdateController.init)`
+    /// - Otherwise, returns `.sparkle(DefaultSparkleUpdateController.init)`
     public static func getFactoryMethod(featureFlagger: FeatureFlagger) -> UpdateControllerFactoryMethodType {
         if featureFlagger.isFeatureOn(.updatesSimplifiedFlow) {
             return .sparkle(SimplifiedSparkleUpdateController.init)
         } else {
-            return .sparkle(SparkleUpdateController.init)
+            return .sparkle(DefaultSparkleUpdateController.init)
         }
     }
 }
@@ -53,21 +53,19 @@ public protocol SparkleCustomFeedURLProviding {
     func resetFeedURLToDefault()
 }
 
-public protocol SparkleUpdateControllerProtocol: UpdateController {
-    // Sparkle-specific state
-    var isAtRestartCheckpoint: Bool { get }
-    var shouldForceUpdateCheck: Bool { get }
-    var useLegacyAutoRestartLogic: Bool { get }
-    var willRelaunchAppPublisher: AnyPublisher<Void, Never> { get }
-
-    // Sparkle-specific methods
-    func checkForUpdateRespectingRollout()
-    func runUpdateFromMenuItem()
-    func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress)
-    func log()
+extension PendingUpdateInfo {
+    init(from item: SUAppcastItem) {
+        let (notes, notesSubscription) = ReleaseNotesParser.parseReleaseNotes(from: item.itemDescription)
+        self.init(version: item.displayVersionString,
+                  build: item.versionString,
+                  date: item.date ?? Date(),
+                  releaseNotes: notes,
+                  releaseNotesSubscription: notesSubscription,
+                  isCritical: item.isCriticalUpdate)
+    }
 }
 
-final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
+final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
 
     enum Constants {
         static let internalChannelName = "internal-channel"
@@ -104,35 +102,6 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     private func refreshUpdateFromCache(_ cachedUpdateResult: UpdateCheckResult) {
         latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled, needsLatestReleaseNote: cachedUpdateResult.needsLatestReleaseNote)
         hasPendingUpdate = latestUpdate?.isInstalled == false && updateProgress.isDone && userDriver?.isResumable == true
-    }
-
-    // Struct used to persist pending update info across app restarts
-    struct PendingUpdateInfo: Codable {
-        let version: String
-        let build: String
-        let date: Date
-        let releaseNotes: [String]
-        let releaseNotesSubscription: [String]
-        let isCritical: Bool
-
-        init(version: String, build: String, date: Date, releaseNotes: [String], releaseNotesSubscription: [String], isCritical: Bool) {
-            self.version = version
-            self.build = build
-            self.date = date
-            self.releaseNotes = releaseNotes
-            self.releaseNotesSubscription = releaseNotesSubscription
-            self.isCritical = isCritical
-        }
-
-        init(from item: SUAppcastItem) {
-            self.version = item.displayVersionString
-            self.build = item.versionString
-            self.date = item.date ?? Date()
-            let (notes, notesSubscription) = ReleaseNotesParser.parseReleaseNotes(from: item.itemDescription)
-            self.releaseNotes = notes
-            self.releaseNotesSubscription = notesSubscription
-            self.isCritical = item.isCriticalUpdate
-        }
     }
 
     @Published private(set) var updateProgress = UpdateCycleProgress.default {
@@ -652,9 +621,9 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     }
 }
 
-extension SparkleUpdateController: SparkleCustomFeedURLProviding {}
+extension DefaultSparkleUpdateController: SparkleCustomFeedURLProviding {}
 
-extension SparkleUpdateController: SPUUpdaterDelegate {
+extension DefaultSparkleUpdateController: SPUUpdaterDelegate {
 
     func feedURLString(for updater: SPUUpdater) -> String? {
         guard allowUnsignedUpdates else { return nil }

@@ -23,12 +23,12 @@ final class SparkleUpdateMenuItemFactory {
     static func menuItem(for update: Update) -> NSMenuItem {
         let item = NSMenuItem(title: UserText.updateAvailableMenuItem)
         item.target = Application.appDelegate.updateController
-        item.action = #selector(UpdateController.runUpdateFromMenuItem)
+        item.action = #selector(SparkleUpdateController.runUpdateFromMenuItem)
         item.image = NSImage.updateMenuItemIcon
         return item
     }
 
-    static func menuItem(for controller: any UpdateController) -> NSMenuItem {
+    static func menuItem(for controller: any SparkleUpdateController) -> NSMenuItem {
 
         let title: String
 
@@ -39,8 +39,8 @@ final class SparkleUpdateMenuItemFactory {
         }
 
         let item = NSMenuItem(title: title)
-        item.target = Application.appDelegate.updateController
-        item.action = #selector(UpdateController.runUpdateFromMenuItem)
+        item.target = controller
+        item.action = #selector(SparkleUpdateController.runUpdateFromMenuItem)
         item.image = NSImage.updateMenuItemIcon
         return item
     }

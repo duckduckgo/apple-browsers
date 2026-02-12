@@ -336,7 +336,7 @@ extension TabExtensionsBuilder {
         }
 
         // Release notes tab extension - only available for Sparkle builds
-        if let updateController = dependencies.updateController {
+        if let updateController = dependencies.updateController as? any SparkleUpdateController {
             let factory = ReleaseNotesTabExtensionFactory()
             if let ext = (factory as? ReleaseNotesTabExtensionFactoryBuilder)?.makeExtension(
                 updateController: updateController,

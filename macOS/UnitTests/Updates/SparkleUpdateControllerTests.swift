@@ -37,7 +37,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         let featureFlagger = MockFeatureFlagger()
 
-        let updateController = SparkleUpdateController(
+        let updateController = DefaultSparkleUpdateController(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
             pixelFiring: nil,
@@ -77,7 +77,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
             settings: settings
         )
 
-        let updateController = SparkleUpdateController(
+        let updateController = DefaultSparkleUpdateController(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
             pixelFiring: nil,
@@ -130,7 +130,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         let featureFlagger = MockFeatureFlagger()
 
-        let updateController = SparkleUpdateController(
+        let updateController = DefaultSparkleUpdateController(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
             pixelFiring: nil,
@@ -184,7 +184,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
 
         let settings = testDefaults.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
         let testDate = Date(timeIntervalSince1970: 1704067200)
-        let pendingInfo = SparkleUpdateController.PendingUpdateInfo(
+        let pendingInfo = PendingUpdateInfo(
             version: "2.0.0",
             build: "200",
             date: testDate,

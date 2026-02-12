@@ -2455,6 +2455,8 @@
 		845F57332E98021F00C7F78A /* FireproofDomainsStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845F57312E98021F00C7F78A /* FireproofDomainsStoreMock.swift */; };
 		845F57352E98036F00C7F78A /* SharedTestUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 845F57342E98036F00C7F78A /* SharedTestUtilities */; };
 		845F573D2E982B2600C7F78A /* SharedTestUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 845F573C2E982B2600C7F78A /* SharedTestUtilities */; };
+		8463C26B2F3DA3C600C718CF /* PendingUpdateInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8463C26A2F3DA3C600C718CF /* PendingUpdateInfo.swift */; };
+		8463C26C2F3DA3C600C718CF /* PendingUpdateInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8463C26A2F3DA3C600C718CF /* PendingUpdateInfo.swift */; };
 		84658D392EAA09680018D992 /* WindowControllersManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */; };
 		84658D3A2EAA09680018D992 /* WindowControllersManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */; };
 		84658D3E2EAA0BCF0018D992 /* PinnedTabsManagerProvidingMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84658D3D2EAA0BCF0018D992 /* PinnedTabsManagerProvidingMock.swift */; };
@@ -5526,6 +5528,7 @@
 		845F57282E97FCC900C7F78A /* PermissionManagerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManagerMock.swift; sourceTree = "<group>"; };
 		845F57312E98021F00C7F78A /* FireproofDomainsStoreMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireproofDomainsStoreMock.swift; sourceTree = "<group>"; };
 		845F57362E980A1900C7F78A /* HistoryCoordinatingMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryCoordinatingMock.swift; sourceTree = "<group>"; };
+		8463C26A2F3DA3C600C718CF /* PendingUpdateInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingUpdateInfo.swift; sourceTree = "<group>"; };
 		84658D3D2EAA0BCF0018D992 /* PinnedTabsManagerProvidingMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsManagerProvidingMock.swift; sourceTree = "<group>"; };
 		84658D402EAA0CBD0018D992 /* MockHistoryViewDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockHistoryViewDataProvider.swift; sourceTree = "<group>"; };
 		846F4CD02E04829D00266DB7 /* TabContent+DisplayedFavicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabContent+DisplayedFavicon.swift"; sourceTree = "<group>"; };
@@ -7191,6 +7194,7 @@
 				BB98DF472E74AEC500C15330 /* AppStore */,
 				BB98DF462E74AE9100C15330 /* Sparkle */,
 				BB4830C82E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift */,
+				8463C26A2F3DA3C600C718CF /* PendingUpdateInfo.swift */,
 				840E57EE2F30A9E4009CFCEE /* ReleaseMetadata.swift */,
 				840E57E62F30A9AA009CFCEE /* ReleaseNotesTabExtensionConformance.swift */,
 				840E57F12F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift */,
@@ -14568,6 +14572,7 @@
 				3706FB45293F65D500E42796 /* SuggestionContainerViewModel.swift in Sources */,
 				1D39F7252DCA29A500F258F0 /* InitialWindowFrameProvider.swift in Sources */,
 				3706FB47293F65D500E42796 /* NSPasteboardItemExtension.swift in Sources */,
+				8463C26C2F3DA3C600C718CF /* PendingUpdateInfo.swift in Sources */,
 				3706FB48293F65D500E42796 /* AutofillPreferencesModel.swift in Sources */,
 				B6F1B0272BCE5A50005E863C /* TabContent.swift in Sources */,
 				3168506E2AF3AD1D009A2828 /* WaitlistViewControllerPresenter.swift in Sources */,
@@ -17280,6 +17285,7 @@
 				B693955226F04BEB0015B914 /* LongPressButton.swift in Sources */,
 				B6085D062743905F00A9C456 /* CoreDataStore.swift in Sources */,
 				4B0511E1262CAA8600F6079C /* NSOpenPanelExtensions.swift in Sources */,
+				8463C26B2F3DA3C600C718CF /* PendingUpdateInfo.swift in Sources */,
 				7B99CF312EEAC1A5003FA486 /* UserNotificationAuthorizationService.swift in Sources */,
 				AAE99B8927088A19008B6BD9 /* FirePopover.swift in Sources */,
 				8443DC6E2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */,

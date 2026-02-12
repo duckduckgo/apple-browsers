@@ -31,7 +31,7 @@ import WebKit
 extension ReleaseNotesUserScriptFactory: ReleaseNotesUserScriptFactoryBuilder {
     /// Creates a Sparkle-specific release notes user script.
     public func makeUserScript(
-        updateController: UpdateController,
+        updateController: any SparkleUpdateController,
         pixelFiring: PixelFiring?,
         keyValueStore: ThrowingKeyValueStoring,
         releaseNotesURL: URL
@@ -51,7 +51,7 @@ extension ReleaseNotesUserScriptFactory: ReleaseNotesUserScriptFactoryBuilder {
 /// providing update status, progress, and triggering update actions.
 public final class ReleaseNotesUserScript: NSObject, Subfeature {
 
-    private let updateController: UpdateController
+    private let updateController: any SparkleUpdateController
     private let pixelFiring: PixelFiring?
     private let keyValueStore: ThrowingKeyValueStoring
     private let releaseNotesURL: URL
@@ -76,7 +76,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         case retryUpdate
     }
 
-    public init(updateController: UpdateController,
+    public init(updateController: any SparkleUpdateController,
                 pixelFiring: PixelFiring?,
                 keyValueStore: ThrowingKeyValueStoring,
                 releaseNotesURL: URL) {

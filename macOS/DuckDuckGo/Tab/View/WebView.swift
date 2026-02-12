@@ -197,13 +197,20 @@ final class WebView: WKWebView {
     // MARK: - Events
 
     override func mouseDown(with event: NSEvent) {
-        if shouldApplyControlClickFix(for: event) {
+        if shouldApplyControlClickFix(for: event),
+            let modifierReleased  = NSEvent.keyEvent(with: .flagsChanged,
+                                                location: event.locationInWindow,
+                                                modifierFlags: event.modifierFlags.subtracting(.control),
+                                                timestamp: event.timestamp,
+                                                windowNumber: event.windowNumber,
+                                                context: nil,
+                                                characters: "",
+                                                charactersIgnoringModifiers: "",
+                                                isARepeat: false,
+                                                keyCode: UInt16(kVK_Control)) {
             // Google Drive sometimes handles ctrl+click incorrectly: it extends selection instead of opening the context menu.
             // Simulate Control key release first, then forward the original ctrl+click so the page treats it as a right click.
-            var flags = event.modifierFlags
-            flags.remove(.control)
-            let fakeEvent = NSEvent.keyEvent(with: .flagsChanged, location: event.locationInWindow, modifierFlags: flags, timestamp: event.timestamp, windowNumber: event.windowNumber, context: nil, characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: UInt16(kVK_Control))!
-            NSApp.sendEvent(fakeEvent)
+            NSApp.sendEvent(modifierReleased)
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 super.mouseDown(with: event)

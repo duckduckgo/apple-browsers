@@ -382,8 +382,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     let memoryUsageMonitor: MemoryUsageMonitor
-    let memoryPressureReporter: MemoryPressureReporter
+    /// Optional `var` because its `syncServiceProvider` closure captures `self`,
+    /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
+    var memoryPressureReporter: MemoryPressureReporter?
     let memoryUsageThresholdReporter: MemoryUsageThresholdReporter
+    /// Optional `var` because its `syncServiceProvider` closure captures `self`,
+    /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
+    var memoryUsageIntervalReporter: MemoryUsageIntervalReporter?
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
@@ -1047,7 +1052,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.attributedMetricManager.addNotificationsObserver()
 
         memoryUsageMonitor = MemoryUsageMonitor(internalUserDecider: internalUserDecider, logger: .memory)
-        memoryPressureReporter = MemoryPressureReporter(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared, logger: .memory)
         memoryUsageThresholdReporter = MemoryUsageThresholdReporter(
             memoryUsageMonitor: memoryUsageMonitor,
             featureFlagger: featureFlagger,
@@ -1056,6 +1060,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         super.init()
+
+        memoryPressureReporter = MemoryPressureReporter(
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            memoryUsageMonitor: memoryUsageMonitor,
+            windowContext: WindowContext(
+                tabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.allTabsCount },
+                windows: windowControllersManager.mainWindowControllers.count
+            ),
+            isSyncEnabled: { [weak self] in
+                guard let syncService = self?.syncService else { return nil }
+
+                return syncService.authState == .active
+            },
+            logger: .memory
+        )
+
+        memoryUsageIntervalReporter = MemoryUsageIntervalReporter(
+            memoryUsageMonitor: memoryUsageMonitor,
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            windowContext: WindowContext(
+                tabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.allTabsCount },
+                windows: windowControllersManager.mainWindowControllers.count
+            ),
+            isSyncEnabled: { [weak self] in
+                guard let syncService = self?.syncService else { return nil }
+
+                return syncService.authState == .active
+            },
+            logger: .memory
+        )
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
     }
@@ -1381,16 +1417,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch updateControllerFactory.factoryMethod {
         case .appStore(let makeController):
             assert(buildType.isAppStoreBuild)
-            updateController = makeController(internalUserDecider, featureFlagger, PixelKit.shared, notificationPresenter)
+            updateController = makeController(
+                internalUserDecider,
+                featureFlagger,
+                PixelKit.shared,
+                notificationPresenter,
+                { OnboardingActionsManager.isOnboardingFinished }
+            )
         case .sparkle(let makeController):
             assert(buildType.isSparkleBuild)
-            updateController = makeController(internalUserDecider, featureFlagger, PixelKit.shared, notificationPresenter, UserDefaults.standard, buildType, wideEvent)
+            let allowUnsignedUpdates = buildType.isDebugBuild || buildType.isReviewBuild
+            updateController = makeController(
+                internalUserDecider,
+                featureFlagger,
+                PixelKit.shared,
+                notificationPresenter,
+                UserDefaults.standard,
+                allowUnsignedUpdates,
+                wideEvent,
+                { OnboardingActionsManager.isOnboardingFinished }
+            )
+            if let sparkleUpdateController = updateController as? any SparkleUpdateController {
+                stateRestorationManager.subscribeToAutomaticAppRelaunching(using: sparkleUpdateController.willRelaunchAppPublisher)
+            } else {
+                assertionFailure("Update controller is not a SparkleUpdateController")
+            }
         case .none:
             assertionFailure("Failed to instantiate update controller")
             return
         }
         self.updateController = updateController
-        stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -1792,14 +1848,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func subscribeToUpdateControllerChanges() {
-#if SPARKLE
-        guard AppVersion.runType != .uiTests else { return }
+        guard AppVersion.runType != .uiTests,
+              let sparkleUpdateController = updateController as? any SparkleUpdateController else { return }
 
-        updateProgressCancellable = updateController?.updateProgressPublisher
-            .sink { [weak self] progress in
-                self?.updateController?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+        updateProgressCancellable = sparkleUpdateController.updateProgressPublisher
+            .sink { progress in
+                sparkleUpdateController.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
-#endif
     }
 
     private func emailDidSignInNotification(_ notification: Notification) {

@@ -25,29 +25,25 @@ import AppUpdaterTestHelpers
 
 final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
 
-    var mockBuildType: ApplicationBuildTypeMock!
     var mockFeatureFlagger: MockFeatureFlagger!
 
     override func setUp() {
         super.setUp()
-        mockBuildType = ApplicationBuildTypeMock()
         mockFeatureFlagger = MockFeatureFlagger()
     }
 
     override func tearDown() {
-        mockBuildType = nil
         mockFeatureFlagger = nil
         super.tearDown()
     }
 
-    // MARK: - DEBUG Build Tests
+    // MARK: - Unsigned Updates Enabled
 
-    func testResolveAutoDownload_debugBuild_flagOff_preferenceOn_returnsFalse() {
-        mockBuildType.isDebugBuild = true
+    func testResolveAutoDownload_unsignedUpdatesEnabled_flagOff_preferenceOn_returnsFalse() {
         // Flag OFF = not in enabledUpdateFeatureFlags array
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            buildType: mockBuildType,
+            allowUnsignedUpdates: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
         )
@@ -55,12 +51,11 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testResolveAutoDownload_debugBuild_flagOn_preferenceOn_returnsTrue() {
-        mockBuildType.isDebugBuild = true
+    func testResolveAutoDownload_unsignedUpdatesEnabled_debugFlagOn_preferenceOn_returnsTrue() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInDEBUG]
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            buildType: mockBuildType,
+            allowUnsignedUpdates: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
         )
@@ -68,12 +63,11 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testResolveAutoDownload_debugBuild_flagOn_preferenceOff_returnsFalse() {
-        mockBuildType.isDebugBuild = true
+    func testResolveAutoDownload_unsignedUpdatesEnabled_debugFlagOn_preferenceOff_returnsFalse() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInDEBUG]
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            buildType: mockBuildType,
+            allowUnsignedUpdates: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: false
         )
@@ -81,14 +75,13 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    // MARK: - REVIEW Build Tests
+    // MARK: - Non-Debug Flag Handling
 
-    func testResolveAutoDownload_reviewBuild_flagOff_preferenceOn_returnsFalse() {
-        mockBuildType.isReviewBuild = true
-        // Flag OFF = not in enabledUpdateFeatureFlags array
+    func testResolveAutoDownload_unsignedUpdatesEnabled_nonDebugFlagOff_preferenceOn_returnsFalse() {
+        // Flag OFF = not in enabledUpdateFeatureFlags array.
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            buildType: mockBuildType,
+            allowUnsignedUpdates: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
         )
@@ -96,25 +89,27 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testResolveAutoDownload_reviewBuild_flagOn_preferenceOn_returnsTrue() {
-        mockBuildType.isReviewBuild = true
+    func testResolveAutoDownload_unsignedUpdatesEnabled_nonDebugFlagOn_preferenceOn_matchesBuild() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInREVIEW]
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            buildType: mockBuildType,
+            allowUnsignedUpdates: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
         )
 
+#if DEBUG
+        XCTAssertFalse(result)
+#else
         XCTAssertTrue(result)
+#endif
     }
 
-    func testResolveAutoDownload_reviewBuild_flagOn_preferenceOff_returnsFalse() {
-        mockBuildType.isReviewBuild = true
+    func testResolveAutoDownload_unsignedUpdatesEnabled_nonDebugFlagOn_preferenceOff_returnsFalse() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInREVIEW]
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            buildType: mockBuildType,
+            allowUnsignedUpdates: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: false
         )
@@ -122,15 +117,11 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    // MARK: - Release Build Tests
+    // MARK: - Unsigned Updates Disabled
 
-    func testResolveAutoDownload_releaseBuild_preferenceOn_returnsTrue() {
-        // Neither debug nor review - flags don't matter
-        mockBuildType.isDebugBuild = false
-        mockBuildType.isReviewBuild = false
-
+    func testResolveAutoDownload_unsignedUpdatesDisabled_preferenceOn_returnsTrue() {
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            buildType: mockBuildType,
+            allowUnsignedUpdates: false,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
         )
@@ -138,12 +129,9 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testResolveAutoDownload_releaseBuild_preferenceOff_returnsFalse() {
-        mockBuildType.isDebugBuild = false
-        mockBuildType.isReviewBuild = false
-
+    func testResolveAutoDownload_unsignedUpdatesDisabled_preferenceOff_returnsFalse() {
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            buildType: mockBuildType,
+            allowUnsignedUpdates: false,
             featureFlagger: mockFeatureFlagger,
             userPreference: false
         )

@@ -39,14 +39,15 @@ final class SparkleUpdateControllerTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         let featureFlagger = MockFeatureFlagger()
 
-        let updateController = SparkleUpdateController(
+        let updateController = DefaultSparkleUpdateController(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
             pixelFiring: nil,
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
-            buildType: ApplicationBuildTypeMock(),
-            wideEvent: mockWideEventManager
+            allowUnsignedUpdates: false,
+            wideEvent: mockWideEventManager,
+            isOnboardingFinished: { true }
         )
 
         XCTAssertEqual(updateController.sparkleUpdaterErrorReason(from: "Package installer failed to launch."), "Package installer failed to launch." )
@@ -78,14 +79,15 @@ final class SparkleUpdateControllerTests: XCTestCase {
             settings: settings
         )
 
-        let updateController = SparkleUpdateController(
+        let updateController = DefaultSparkleUpdateController(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
             pixelFiring: nil,
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
-            buildType: ApplicationBuildTypeMock(),
-            wideEvent: mockWideEventManager
+            allowUnsignedUpdates: false,
+            wideEvent: mockWideEventManager,
+            isOnboardingFinished: { true }
         )
 
         // Start a flow and simulate finding an update
@@ -130,14 +132,15 @@ final class SparkleUpdateControllerTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         let featureFlagger = MockFeatureFlagger()
 
-        let updateController = SparkleUpdateController(
+        let updateController = DefaultSparkleUpdateController(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
             pixelFiring: nil,
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
-            buildType: ApplicationBuildTypeMock(),
-            wideEvent: mockWideEventManager
+            allowUnsignedUpdates: false,
+            wideEvent: mockWideEventManager,
+            isOnboardingFinished: { true }
         )
 
         // Start a flow through the controller's public interface
@@ -183,7 +186,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
 
         let settings = testDefaults.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
         let testDate = Date(timeIntervalSince1970: 1704067200)
-        let pendingInfo = SparkleUpdateController.PendingUpdateInfo(
+        let pendingInfo = PendingUpdateInfo(
             version: "2.0.0",
             build: "200",
             date: testDate,

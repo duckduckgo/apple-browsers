@@ -69,8 +69,9 @@ public class MockUpdateController: UpdateController {
                          pixelFiring: PixelFiring?,
                          notificationPresenter: UpdateNotificationPresenting,
                          keyValueStore: ThrowingKeyValueStoring,
-                         buildType: ApplicationBuildType?,
-                         wideEvent: WideEventManaging?) {
+                         allowUnsignedUpdates: Bool,
+                         wideEvent: WideEventManaging?,
+                         isOnboardingFinished: @escaping () -> Bool) {
         fatalError("Use init() for testing")
     }
 

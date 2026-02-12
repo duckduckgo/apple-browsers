@@ -25,34 +25,13 @@ import PixelKit
 import UserScript
 import WebKit
 
-/// Factory extension that provides Sparkle-specific release notes user script.
-///
-/// This extension is only compiled when SparkleAppUpdater is linked, making the
-/// factory functional only in Sparkle builds.
-extension ReleaseNotesUserScriptFactory: ReleaseNotesUserScriptFactoryBuilder {
-    /// Creates a Sparkle-specific release notes user script.
-    public func makeUserScript(
-        updateController: UpdateController,
-        pixelFiring: PixelFiring?,
-        keyValueStore: ThrowingKeyValueStoring,
-        releaseNotesURL: URL
-    ) -> Subfeature {
-        ReleaseNotesUserScript(
-            updateController: updateController,
-            pixelFiring: pixelFiring,
-            keyValueStore: keyValueStore,
-            releaseNotesURL: releaseNotesURL
-        )
-    }
-}
-
 /// Sparkle-specific implementation of release notes user script.
 ///
 /// Handles communication between the release notes web page and the update controller,
 /// providing update status, progress, and triggering update actions.
 public final class ReleaseNotesUserScript: NSObject, Subfeature {
 
-    private let updateController: UpdateController
+    private let updateController: any SparkleUpdateController
     private let pixelFiring: PixelFiring?
     private let keyValueStore: ThrowingKeyValueStoring
     private let releaseNotesURL: URL
@@ -77,7 +56,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         case retryUpdate
     }
 
-    public init(updateController: UpdateController,
+    public init(updateController: any SparkleUpdateController,
                 pixelFiring: PixelFiring?,
                 keyValueStore: ThrowingKeyValueStoring,
                 releaseNotesURL: URL) {

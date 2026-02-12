@@ -28,12 +28,14 @@ final class MemoryPressureReporterTests: XCTestCase {
     private var sut: MemoryPressureReporter!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPixelFiring: PixelKitMock!
+    private var mockMemoryUsageMonitor: MockPressureMemoryMonitor!
     private var notificationCenter: NotificationCenter!
 
     override func setUp() {
         super.setUp()
         mockFeatureFlagger = MockFeatureFlagger()
         mockPixelFiring = PixelKitMock()
+        mockMemoryUsageMonitor = MockPressureMemoryMonitor()
         notificationCenter = NotificationCenter()
     }
 
@@ -41,37 +43,94 @@ final class MemoryPressureReporterTests: XCTestCase {
         sut = nil
         mockFeatureFlagger = nil
         mockPixelFiring = nil
+        mockMemoryUsageMonitor = nil
         notificationCenter = nil
         super.tearDown()
+    }
+
+    // MARK: - Helpers
+
+    private func makeSUT() -> MemoryPressureReporter {
+        MemoryPressureReporter(
+            featureFlagger: mockFeatureFlagger,
+            pixelFiring: mockPixelFiring,
+            memoryUsageMonitor: mockMemoryUsageMonitor,
+            windowContext: nil,
+            isSyncEnabled: { nil },
+            notificationCenter: notificationCenter
+        )
     }
 
     // MARK: - Pixel Name Tests
 
     func testMemoryPressureCriticalPixelName() {
-        // Given/When
-        let pixel = MemoryPressurePixel.memoryPressureCritical
+        // Given
+        let context = MemoryReportingContext(
+            browserMemoryMB: 1024,
+            windows: nil,
+            tabs: nil,
+            architecture: "ARM",
+            syncEnabled: nil
+        )
+
+        // When
+        let pixel = MemoryPressurePixel.memoryPressureCritical(context: context)
 
         // Then
         XCTAssertEqual(pixel.name, "m_mac_memory_pressure_critical")
     }
 
-    func testMemoryPressurePixelParameters() {
-        // Given/When
-        let criticalPixel = MemoryPressurePixel.memoryPressureCritical
+    func testMemoryPressurePixelIncludesContextParameters() {
+        // Given
+        let context = MemoryReportingContext(
+            browserMemoryMB: 2048,
+            windows: 4,
+            tabs: 21,
+            architecture: "ARM",
+            syncEnabled: true
+        )
+
+        // When
+        let pixel = MemoryPressurePixel.memoryPressureCritical(context: context)
 
         // Then
-        XCTAssertNil(criticalPixel.parameters)
-        XCTAssertNil(criticalPixel.standardParameters)
+        let params = pixel.parameters
+        XCTAssertNotNil(params)
+        XCTAssertEqual(params?["browser_memory_mb"], "2048")
+        XCTAssertEqual(params?["windows"], "4")
+        XCTAssertEqual(params?["tabs"], "21")
+        XCTAssertEqual(params?["architecture"], "ARM")
+        XCTAssertEqual(params?["sync_enabled"], "true")
+    }
+
+    func testMemoryPressurePixelReturnsUnknownForNilDependencies() {
+        // Given
+        let context = MemoryReportingContext(
+            browserMemoryMB: 512,
+            windows: nil,
+            tabs: nil,
+            architecture: "Intel",
+            syncEnabled: nil
+        )
+
+        // When
+        let pixel = MemoryPressurePixel.memoryPressureCritical(context: context)
+
+        // Then
+        let params = pixel.parameters
+        XCTAssertEqual(params?["windows"], "unknown")
+        XCTAssertEqual(params?["tabs"], "unknown")
+        XCTAssertEqual(params?["sync_enabled"], "unknown")
     }
 
     // MARK: - Notification + Pixel tests
 
+    @MainActor
     func testWhenCriticalEventProcessed_ThenPostsCriticalNotificationAndFiresCriticalPixel() {
         // Given
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 1024
         mockFeatureFlagger.enabledFeatureFlags = [.memoryPressureReporting]
-        sut = MemoryPressureReporter(featureFlagger: mockFeatureFlagger,
-                                     pixelFiring: mockPixelFiring,
-                                     notificationCenter: notificationCenter)
+        sut = makeSUT()
 
         let notificationExpectation = expectation(forNotification: .memoryPressureCritical, object: nil, notificationCenter: notificationCenter) { notification in
             return notification.object as AnyObject? === self.sut
@@ -87,12 +146,30 @@ final class MemoryPressureReporterTests: XCTestCase {
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.frequency, .dailyAndStandard)
     }
 
+    @MainActor
+    func testWhenCriticalEventProcessed_ThenPixelIncludesContextParameters() {
+        // Given
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 5000
+        mockFeatureFlagger.enabledFeatureFlags = [.memoryPressureReporting]
+        sut = makeSUT()
+
+        // When
+        sut.processMemoryPressureEventForTesting(.critical)
+
+        // Then
+        let params = mockPixelFiring.actualFireCalls.first?.pixel.parameters
+        XCTAssertEqual(params?["browser_memory_mb"], "4096") // 5000MB buckets to 4096
+        XCTAssertEqual(params?["windows"], "unknown")
+        XCTAssertEqual(params?["tabs"], "unknown")
+        XCTAssertNotNil(params?["architecture"])
+        XCTAssertEqual(params?["sync_enabled"], "unknown")
+    }
+
+    @MainActor
     func testWhenNormalEventProcessed_ThenDoesNotPostNotificationsOrFirePixels() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.memoryPressureReporting]
-        sut = MemoryPressureReporter(featureFlagger: mockFeatureFlagger,
-                                     pixelFiring: mockPixelFiring,
-                                     notificationCenter: notificationCenter)
+        sut = makeSUT()
 
         let criticalNotificationExpectation = expectation(forNotification: .memoryPressureCritical, object: nil, notificationCenter: notificationCenter, handler: nil)
         criticalNotificationExpectation.isInverted = true
@@ -103,5 +180,21 @@ final class MemoryPressureReporterTests: XCTestCase {
         // Then
         wait(for: [criticalNotificationExpectation], timeout: 0.2)
         XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+    }
+}
+
+// MARK: - Mock
+
+private class MockPressureMemoryMonitor: MemoryUsageMonitoring {
+    var currentResidentMB: Double = 0
+    var currentPhysFootprintMB: Double = 0
+
+    func getCurrentMemoryUsage() -> MemoryUsageMonitor.MemoryReport {
+        let residentBytes = UInt64(currentResidentMB * 1_048_576)
+        let physFootprintBytes = UInt64(currentPhysFootprintMB * 1_048_576)
+        return MemoryUsageMonitor.MemoryReport(
+            residentBytes: residentBytes,
+            physFootprintBytes: physFootprintBytes
+        )
     }
 }

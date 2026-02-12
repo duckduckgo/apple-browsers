@@ -21,7 +21,7 @@ import AppUpdaterShared
 import Foundation
 
 /// Protocol for opening the App Store
-public protocol AppStoreOpener {
+protocol AppStoreOpener {
     func openAppStore()
 }
 

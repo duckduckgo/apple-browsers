@@ -39,28 +39,14 @@ import os.log
 extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
     /// Returns the Sparkle constructor closure used by `UpdateControllerFactory.factoryMethod`.
     /// - If `updatesSimplifiedFlow` is enabled, returns `.sparkle(SimplifiedSparkleUpdateController.init)`
-    /// - Otherwise, returns `.sparkle(SparkleUpdateController.init)`
+    /// - Otherwise, returns `.sparkle(DefaultSparkleUpdateController.init)`
     public static func getFactoryMethod(featureFlagger: FeatureFlagger) -> UpdateControllerFactoryMethodType {
         if featureFlagger.isFeatureOn(.updatesSimplifiedFlow) {
             return .sparkle(SimplifiedSparkleUpdateController.init)
         } else {
-            return .sparkle(SparkleUpdateController.init)
+            return .sparkle(DefaultSparkleUpdateController.init)
         }
     }
-}
-
-public protocol SparkleUpdateControllerProtocol: UpdateController {
-    // Sparkle-specific state
-    var isAtRestartCheckpoint: Bool { get }
-    var shouldForceUpdateCheck: Bool { get }
-    var useLegacyAutoRestartLogic: Bool { get }
-    var willRelaunchAppPublisher: AnyPublisher<Void, Never> { get }
-
-    // Sparkle-specific methods
-    func checkForUpdateRespectingRollout()
-    func runUpdateFromMenuItem()
-    func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress)
-    func log()
 }
 
 extension PendingUpdateInfo {
@@ -75,7 +61,7 @@ extension PendingUpdateInfo {
     }
 }
 
-final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
+final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
 
     enum Constants {
         static let internalChannelName = "internal-channel"
@@ -120,7 +106,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
                 refreshUpdateFromCache(cachedUpdateResult)
                 needsNotificationDot = hasPendingUpdate
             }
-            showUpdateNotificationIfNeeded()
+            showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
 
             // Dismiss stale "update available" popover when download begins
             if case .downloadDidStart = updateProgress {
@@ -150,11 +136,11 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     private var customFeedURL: String? {
         get {
-            guard buildType.isDebugBuild || buildType.isReviewBuild else { return nil }
+            guard allowUnsignedUpdates else { return nil }
             return try? settings.debugSparkleCustomFeedURL
         }
         set {
-            guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
+            guard allowUnsignedUpdates else { return }
             try? settings.set(newValue, for: \.debugSparkleCustomFeedURL)
         }
     }
@@ -239,8 +225,8 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     private let updateCheckState: UpdateCheckState
 
-    // MARK: - Build Type
-    private let buildType: ApplicationBuildType
+    // MARK: - Build Configuration
+    private let allowUnsignedUpdates: Bool
 
     // MARK: - WideEvent Tracking
     private let updateWideEvent: SparkleUpdateWideEvent
@@ -254,6 +240,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
+    private let isOnboardingFinished: () -> Bool
 
     var useLegacyAutoRestartLogic: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
@@ -271,16 +258,18 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
                 pixelFiring: PixelFiring?,
                 notificationPresenter: any UpdateNotificationPresenting,
                 keyValueStore: any Persistence.ThrowingKeyValueStoring,
-                buildType: ApplicationBuildType,
-                wideEvent: WideEventManaging) {
+                allowUnsignedUpdates: Bool,
+                wideEvent: WideEventManaging,
+                isOnboardingFinished: @escaping () -> Bool) {
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.notificationPresenter = notificationPresenter
         self.internalUserDecider = internalUserDecider
+        self.isOnboardingFinished = isOnboardingFinished
         self.updateCheckState = UpdateCheckState()
         self.settings = keyValueStore.throwingKeyedStoring()
-        self.buildType = buildType
+        self.allowUnsignedUpdates = allowUnsignedUpdates
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
         self.applicationUpdateDetector = ApplicationUpdateDetector(settings: settings)
 
@@ -618,22 +607,22 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     // MARK: - Debug: Custom Feed URL
 
     func setCustomFeedURL(_ urlString: String) {
-        guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
+        guard allowUnsignedUpdates else { return }
         customFeedURL = urlString
     }
 
     func resetFeedURLToDefault() {
-        guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
+        guard allowUnsignedUpdates else { return }
         customFeedURL = nil
     }
 }
 
-extension SparkleUpdateController: SparkleCustomFeedURLProviding {}
+extension DefaultSparkleUpdateController: SparkleCustomFeedURLProviding {}
 
-extension SparkleUpdateController: SPUUpdaterDelegate {
+extension DefaultSparkleUpdateController: SPUUpdaterDelegate {
 
     func feedURLString(for updater: SPUUpdater) -> String? {
-        guard buildType.isDebugBuild || buildType.isReviewBuild else { return nil }
+        guard allowUnsignedUpdates else { return nil }
         return customFeedURL
     }
 

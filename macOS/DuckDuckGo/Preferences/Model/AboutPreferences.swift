@@ -68,7 +68,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     var useLegacyAutoRestartLogic: Bool {
-        updateController?.useLegacyAutoRestartLogic ?? false
+        (updateController as? any SparkleUpdateController)?.useLegacyAutoRestartLogic ?? false
     }
 
     var shouldShowUpdateStatus: Bool {
@@ -133,14 +133,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
                 },
                 enabled: true)
         case .updateCycle(let progress):
-            #if SPARKLE
             if isAtRestartCheckpoint {
                 return UpdateButtonConfiguration(
                     title: UserText.restartToUpdate,
                     action: runUpdate,
                     enabled: true)
             }
-            #endif
             if hasPendingUpdate {
                 return UpdateButtonConfiguration(
                     title: UserText.runUpdate,
@@ -188,11 +186,9 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         Logger.updates.log("🔍 AboutPreferences.refreshUpdateState: updateState=\(String(describing: self.updateState), privacy: .public)")
     }
 
-#if SPARKLE
     private var isAtRestartCheckpoint: Bool {
-        updateController?.isAtRestartCheckpoint ?? false
+        (updateController as? any SparkleUpdateController)?.isAtRestartCheckpoint ?? false
     }
-#endif
 
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     var customFeedURL: String? {
@@ -226,8 +222,8 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     func checkForUpdate(userInitiated: Bool) {
         if userInitiated {
             updateController?.checkForUpdateSkippingRollout()
-        } else {
-            updateController?.checkForUpdateRespectingRollout()
+        } else if let sparkleUpdateController = updateController as? any SparkleUpdateController {
+            sparkleUpdateController.checkForUpdateRespectingRollout()
         }
     }
 }

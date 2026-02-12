@@ -25,7 +25,8 @@ import PrivacyConfigTestsUtils
 
 extension AppearancePreferences {
     static let mock = AppearancePreferences(
-        persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: MockKeyValueFileStore()),
+        // swiftlint:disable:next force_try
+        persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: try! MockKeyValueFileStore()),
         privacyConfigurationManager: MockPrivacyConfigurationManager(),
         featureFlagger: MockFeatureFlagger(),
         aiChatMenuConfig: MockAIChatConfig()

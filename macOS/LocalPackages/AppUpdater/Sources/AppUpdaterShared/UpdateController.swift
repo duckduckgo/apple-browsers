@@ -25,6 +25,9 @@ import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
+import Navigation
+import UserScript
+import WebKit
 
 public enum UpdateControllerEvent: Equatable {
     case updaterDidRunUpdate
@@ -69,14 +72,16 @@ public enum UpdateControllerFactoryMethodType {
     case appStore((_ internalUserDecider: InternalUserDecider,
                    _ featureFlagger: FeatureFlagger,
                    _ pixelFiring: PixelFiring?,
-                   _ notificationPresenter: any UpdateNotificationPresenting) -> any UpdateController)
+                   _ notificationPresenter: any UpdateNotificationPresenting,
+                   _ isOnboardingFinished: @escaping () -> Bool) -> any UpdateController)
     case sparkle((_ internalUserDecider: InternalUserDecider,
                   _ featureFlagger: FeatureFlagger,
                   _ pixelFiring: PixelFiring?,
                   _ notificationPresenter: any UpdateNotificationPresenting,
                   _ keyValueStore: any Persistence.ThrowingKeyValueStoring,
-                  _ buildType: ApplicationBuildType,
-                  _ wideEvent: WideEventManaging) -> any UpdateController)
+                  _ allowUnsignedUpdates: Bool,
+                  _ wideEvent: WideEventManaging,
+                  _ isOnboardingFinished: @escaping () -> Bool) -> any UpdateController)
 }
 
 /// Protocol that concrete updater packages conform to for the factory pattern.
@@ -110,9 +115,9 @@ public protocol UpdateControllerFactoryMethodGetter {
 /// let controller: any UpdateController
 /// switch factoryMethod {
 /// case .appStore(let makeController):
-///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter)
+///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, isOnboardingFinished)
 /// case .sparkle(let makeController):
-///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, keyValueStore, buildType, wideEvent)
+///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, keyValueStore, allowUnsignedUpdates, wideEvent, isOnboardingFinished)
 /// }
 /// ```
 public struct UpdateControllerFactory {
@@ -274,23 +279,20 @@ public protocol UpdateController: UpdateControllerObjC {
     /// User-initiated action that should always attempt a fresh check.
     func checkForUpdateSkippingRollout()
 
-    // MARK: - Sparkle-Only Methods
+}
 
-    /// Checks if a new application version was installed and handles post-update notification presenting logic.
+/// Objective-C Sparkle-specific protocol for menu item selector bridging.
+@objc public protocol SparkleUpdateControllerObjC {
+    /// Triggers update installation from the main menu "Update DuckDuckGo" menu item.
     ///
-    /// **Sparkle-only method** - Called by Sparkle after app restart to detect version changes.
-    ///
-    /// **App Store Behavior**: No-op, not used in App Store builds
-    /// **Sparkle Behavior**: Detects if app was updated, fires analytics, resets update state
-    ///
-    /// - Parameter updateProgress: Current update cycle progress to determine post-update actions
-    func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress)
+    /// **Sparkle Behavior**: Starts update download/install process if update is available.
+    func runUpdateFromMenuItem()
+}
 
+/// Sparkle-specific updater contract that extends the shared `UpdateController`.
+public protocol SparkleUpdateController: UpdateController, SparkleUpdateControllerObjC {
     /// Indicates whether the app is paused at a restart checkpoint waiting for user action.
     ///
-    /// **Sparkle-only property** - Used for new update flow where app requires manual restart.
-    ///
-    /// **App Store Behavior**: Always returns `false`
     /// **Sparkle Behavior**: Returns `true` when update is downloaded and ready to install,
     /// but waiting for user to manually restart the app (when automatic restarts are disabled).
     ///
@@ -299,55 +301,60 @@ public protocol UpdateController: UpdateControllerObjC {
 
     /// Forces an update check to bypass rollout percentage restrictions.
     ///
-    /// **Sparkle-only property** - Used for debugging and internal testing.
-    ///
-    /// **App Store Behavior**: Always returns `false`
-    /// **Sparkle Behavior**: Returns `true` when internal user debug settings force update checks
+    /// **Sparkle Behavior**: Returns `true` when internal user debug settings force update checks.
     ///
     /// **Usage**: Internal testing to verify update flow without waiting for rollout.
     var shouldForceUpdateCheck: Bool { get }
 
-    /// Publisher that emits when the app is about to relaunch for an update.
-    ///
-    /// **Sparkle-only publisher** - Signals imminent app relaunch.
-    ///
-    /// **App Store Behavior**: Never emits (empty publisher)
-    /// **Sparkle Behavior**: Emits just before Sparkle performs automatic relaunch
-    ///
-    /// **Usage**: Allows cleanup operations before app restart (save state, close windows, etc.)
-    var willRelaunchAppPublisher: AnyPublisher<Void, Never> { get }
-
     /// Indicates whether to use legacy automatic restart logic.
     ///
-    /// **Sparkle-only property** - Controls which update flow to use.
-    ///
-    /// **App Store Behavior**: Always returns `false`
     /// **Sparkle Behavior**: Returns `false` when feature flag `.updatesWontAutomaticallyRestartApp` is enabled (new flow),
-    ///                       returns `true` when feature flag is disabled (legacy flow)
+    ///                       returns `true` when feature flag is disabled (legacy flow).
     ///
     /// **Usage**: Determines whether to use the new manual restart flow or legacy automatic restart flow.
     var useLegacyAutoRestartLogic: Bool { get }
 
+    /// Publisher that emits when the app is about to relaunch for an update.
+    ///
+    /// **Sparkle Behavior**: Emits just before Sparkle performs automatic relaunch.
+    ///
+    /// **Usage**: Allows cleanup operations before app restart (save state, close windows, etc.).
+    var willRelaunchAppPublisher: AnyPublisher<Void, Never> { get }
+
     /// Checks for updates while respecting rollout percentage restrictions.
     ///
-    /// **Sparkle-only method** - Automatic update check that honors server-side rollout config.
-    ///
-    /// **App Store Behavior**: No-op with assertion failure
-    /// **Sparkle Behavior**: Checks appcast and respects rollout percentage for staged releases
+    /// **Sparkle Behavior**: Checks appcast and respects rollout percentage for staged releases.
     ///
     /// **Usage**: Called during automatic update checks to gradually roll out updates.
     func checkForUpdateRespectingRollout()
 
+    /// Checks if a new application version was installed and handles post-update notification presenting logic.
+    ///
+    /// **Sparkle-only method** - Called by Sparkle after app restart to detect version changes.
+    ///
+    /// - Parameter updateProgress: Current update cycle progress to determine post-update actions.
+    func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress)
+
     /// Logs edge cases where menu item appears but doesn't function.
     ///
-    /// **Sparkle-only method** - Debug logging for menu state inconsistencies.
-    ///
-    /// **App Store Behavior**: No-op with assertion failure
-    /// **Sparkle Behavior**: Logs when "Update DuckDuckGo" menu item is visible but shouldn't be
+    /// **Sparkle Behavior**: Logs when "Update DuckDuckGo" menu item is visible but shouldn't be.
     ///
     /// **Usage**: Troubleshooting for menu item visibility bugs.
     func log()
+
+    func makeReleaseNotesNavigationResponder(
+        releaseNotesURL: URL,
+        scriptsPublisher: some Publisher<any ReleaseNotesUserScriptProvider, Never>,
+        webViewPublisher: some Publisher<WKWebView, Never>
+    ) -> any NavigationResponder & AnyObject
+
+    func makeReleaseNotesUserScript(
+        pixelFiring: PixelFiring?,
+        keyValueStore: ThrowingKeyValueStoring,
+        releaseNotesURL: URL
+    ) -> Subfeature
 }
+
 /// Objective-C base UpdateController protocol to be used as Menu Item target.
 @objc public protocol UpdateControllerObjC {
     /// Opens the appropriate page for viewing update information.
@@ -360,16 +367,6 @@ public protocol UpdateController: UpdateControllerObjC {
     /// Provides access to detailed update information and manual update path.
     func openUpdatesPage()
 
-    /// Triggers update installation from the main menu "Update DuckDuckGo" menu item.
-    ///
-    /// **Sparkle-only method** - Initiates update process when user clicks menu item.
-    ///
-    /// **App Store Behavior**: No-op with assertion failure (menu item shouldn't exist)
-    /// **Sparkle Behavior**: Starts update download/install process if update is available
-    ///
-    /// **Usage**: Called by `UpdateMenuItemFactory` when user selects "Update DuckDuckGo" from main menu.
-    func runUpdateFromMenuItem()
-
     /// Handles cleanup when the app is terminating.
     ///
     /// Called during app termination to ensure proper cleanup of update-related state.
@@ -379,11 +376,11 @@ public protocol UpdateController: UpdateControllerObjC {
 extension UpdateController {
 
     private var isUpdateNotificationAllowed: Bool {
-        /*OnboardingActionsManager.isOnboardingFinished &&*/ Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
+        Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
     }
 
-    public func showUpdateNotificationIfNeeded() {
-        guard let latestUpdate, hasPendingUpdate, isUpdateNotificationAllowed else { return }
+    public func showUpdateNotificationIfNeeded(isOnboardingFinished: () -> Bool) {
+        guard let latestUpdate, hasPendingUpdate, isOnboardingFinished(), isUpdateNotificationAllowed else { return }
 
         notificationPresenter.showUpdateNotification(for: latestUpdate.type, areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
 

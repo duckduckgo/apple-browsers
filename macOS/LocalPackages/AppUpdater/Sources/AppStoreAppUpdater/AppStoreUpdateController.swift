@@ -79,6 +79,7 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
     private let pixelFiring: PixelFiring?
     private let internalUserDecider: InternalUserDecider
     private let appStoreOpener: AppStoreOpener?
+    private let isOnboardingFinished: () -> Bool
 
     // MARK: - Initialization
 
@@ -86,7 +87,8 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
     public init(internalUserDecider: InternalUserDecider,
                 featureFlagger: FeatureFlagger,
                 pixelFiring: PixelFiring?,
-                notificationPresenter: any UpdateNotificationPresenting) {
+                notificationPresenter: any UpdateNotificationPresenting,
+                isOnboardingFinished: @escaping () -> Bool) {
         self.updateCheckState = UpdateCheckState()
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.notificationPresenter = notificationPresenter
@@ -95,6 +97,7 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
         self.pixelFiring = pixelFiring
         self.internalUserDecider = internalUserDecider
         self.appStoreOpener = DefaultAppStoreOpener()
+        self.isOnboardingFinished = isOnboardingFinished
         super.init()
 
         // Only setup cloud checking if feature flag is on
@@ -119,7 +122,8 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
          internalUserDecider: InternalUserDecider? = nil,
          featureFlagger: FeatureFlagger? = nil,
          pixelFiring: PixelFiring? = nil,
-         notificationPresenter: any UpdateNotificationPresenting) {
+         notificationPresenter: any UpdateNotificationPresenting,
+         isOnboardingFinished: @escaping () -> Bool = { true }) {
         self.updateCheckState = UpdateCheckState()
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
         self.notificationPresenter = notificationPresenter
@@ -128,6 +132,7 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
         self.pixelFiring = pixelFiring
         self.internalUserDecider = internalUserDecider ?? MockInternalUserDecider(isInternalUser: false)
         self.appStoreOpener = appStoreOpener
+        self.isOnboardingFinished = isOnboardingFinished
         super.init()
     }
 
@@ -180,16 +185,6 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
         openUpdatesPage()
     }
 
-    // MARK: - Sparkle-only methods - no-op for App Store builds.
-    @objc public func runUpdateFromMenuItem() {}
-    public func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress) {}
-    public var isAtRestartCheckpoint: Bool { false }
-    public var shouldForceUpdateCheck: Bool { false }
-    public var willRelaunchAppPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
-    public var useLegacyAutoRestartLogic: Bool { false }
-    public func checkForUpdateRespectingRollout() {}
-    public func log() {}
-
     // MARK: - Private Update Logic
 
     @UpdateCheckActor
@@ -237,7 +232,7 @@ extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
                 }
             }
 
-            showUpdateNotificationIfNeeded()
+            showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
 
             // Record check time for rate limiting
             await updateCheckState.recordCheckTime()

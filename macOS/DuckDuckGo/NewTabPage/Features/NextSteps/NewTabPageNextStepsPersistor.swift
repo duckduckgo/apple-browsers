@@ -23,6 +23,7 @@ import Persistence
 protocol NewTabPageNextStepsCardsPersisting {
     var orderedCardIDs: [NewTabPageDataModel.CardID]? { get set }
     var firstCardLevel: NewTabPageDataModel.CardLevel { get set }
+    var isFirstSession: Bool { get set }
 
     func timesShown(for card: NewTabPageDataModel.CardID) -> Int
     func setTimesShown(_ value: Int, for card: NewTabPageDataModel.CardID)
@@ -43,6 +44,7 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
     enum Keys {
         static let cardOrder = "new.tab.page.next.steps.card.order"
         static let firstCardLevel = "new.tab.page.next.steps.first.card.level"
+        static let isFirstSession = "new.tab.page.next.steps.is.first.session"
     }
 
     init(keyValueStore: ThrowingKeyValueStoring) {
@@ -85,6 +87,23 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
                 lock.unlock()
             }
             try? keyValueStore.set(newValue.rawValue, forKey: Keys.firstCardLevel)
+        }
+    }
+
+    var isFirstSession: Bool {
+        get {
+            lock.lock()
+            defer {
+                lock.unlock()
+            }
+            return (try? keyValueStore.object(forKey: Keys.isFirstSession) as? Bool) ?? true
+        }
+        set {
+            lock.lock()
+            defer {
+                lock.unlock()
+            }
+            try? keyValueStore.set(newValue, forKey: Keys.isFirstSession)
         }
     }
 
@@ -149,6 +168,7 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
         }
         try? keyValueStore.removeObject(forKey: Keys.cardOrder)
         try? keyValueStore.removeObject(forKey: Keys.firstCardLevel)
+        try? keyValueStore.removeObject(forKey: Keys.isFirstSession)
     }
 
     private func shownKey(for card: NewTabPageDataModel.CardID) -> String {

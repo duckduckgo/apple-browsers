@@ -276,6 +276,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
     case nextStepsListWidget
 
+    /// Enables advanced card ordering for the Next Steps List widget
+    /// This flag is disabled by default to allow testing the new widget design with current ordering logic
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
+    case nextStepsListAdvancedCardOrdering
+
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
@@ -412,6 +417,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSync,
                 .heuristicAction,
                 .nextStepsListWidget,
+                .nextStepsListAdvancedCardOrdering,
                 .wideEventPostEndpoint,
                 .freeTrialConversionWideEvent:
             return true
@@ -587,6 +593,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .heuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         case .nextStepsListWidget:
+            return .disabled
+        case .nextStepsListAdvancedCardOrdering:
             return .disabled
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))

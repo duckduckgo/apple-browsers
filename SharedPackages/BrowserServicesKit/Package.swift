@@ -63,7 +63,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "13.1.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "13.2.0"),
         .package(path: "../URLPredictor"),
     ],
     targets: [
@@ -91,7 +91,8 @@ let package = Package(
                 "ContentBlocking",
                 "SecureStorage",
                 "Subscription",
-                "PixelKit"
+                "PixelKit",
+                "Navigation"
             ],
             resources: [
                 .process("ContentBlocking/UserScripts/contentblockerrules.js"),

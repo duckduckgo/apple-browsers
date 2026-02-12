@@ -21,15 +21,24 @@ import SwiftUI
 import DuckUI
 import Onboarding
 
+private enum IntroDialogContentMetrics {
+    static let additionalTopMargin: CGFloat = 40
+}
+
+private enum IntroDialogContentCopy {
+    static let continueCTA = "Let's do it!"
+    static let skipCTA = "I've been here before"
+}
+
 extension OnboardingRebranding.OnboardingView {
 
     struct IntroDialogContent: View {
+        @Environment(\.onboardingTheme) private var onboardingTheme
 
         private let title: String
+        private let message: String
         private let skipOnboardingView: AnyView?
-        private var animateText: Binding<Bool>
         private var showCTA: Binding<Bool>
-        private var isSkipped: Binding<Bool>
         private let continueAction: () -> Void
         private let skipAction: () -> Void
 
@@ -37,18 +46,16 @@ extension OnboardingRebranding.OnboardingView {
 
         init(
             title: String,
+            message: String,
             skipOnboardingView: AnyView?,
-            animateText: Binding<Bool> = .constant(true),
             showCTA: Binding<Bool> = .constant(false),
-            isSkipped: Binding<Bool>,
             continueAction: @escaping () -> Void,
             skipAction: @escaping () -> Void
         ) {
             self.title = title
+            self.message = message
             self.skipOnboardingView = skipOnboardingView
-            self.animateText = animateText
             self.showCTA = showCTA
-            self.isSkipped = isSkipped
             self.continueAction = continueAction
             self.skipAction = skipAction
         }
@@ -57,39 +64,75 @@ extension OnboardingRebranding.OnboardingView {
             if showSkipOnboarding {
                 skipOnboardingView
             } else {
-                introContent
-            }
-        }
-
-        private var introContent: some View {
-            VStack(spacing: 24.0) {
-                AnimatableTypingText(title, startAnimating: animateText, skipAnimation: isSkipped) {
+                ZStack(alignment: .top) {
+                    VStack(spacing: 0) {
+                        bubbleContent
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + IntroDialogContentMetrics.additionalTopMargin)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .onAppear {
+                    guard !showCTA.wrappedValue else { return }
                     withAnimation {
                         showCTA.wrappedValue = true
                     }
                 }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 20, weight: .bold))
-
-                VStack {
-                    Button(action: continueAction) {
-                        Text(UserText.Onboarding.Intro.continueCTA)
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
-
-                    if skipOnboardingView != nil {
-                        OnboardingBorderedButton(maxHeight: 50.0, content: {
-                            Text(UserText.Onboarding.Intro.skipCTA)
-                        }, action: {
-                            isSkipped.wrappedValue = false
-                            showSkipOnboarding = true
-                            skipAction()
-                        })
-                    }
-                }
-                .visibility(showCTA.wrappedValue ? .visible : .invisible)
             }
         }
+
+        private var bubbleContent: some View {
+            OnboardingBubbleView(
+                tailPosition: .bottom(offset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset, direction: .leading),
+                contentInsets: onboardingTheme.linearBubbleMetrics.contentInsets,
+                arrowLength: onboardingTheme.linearBubbleMetrics.arrowLength,
+                arrowWidth: onboardingTheme.linearBubbleMetrics.arrowWidth
+            ) {
+                LinearDialogContentContainer(
+                    metrics: .init(
+                        outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                        textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                        contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                        actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                    ),
+                    message: AnyView(
+                        Text(message)
+                            .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                            .font(onboardingTheme.typography.body)
+                            .multilineTextAlignment(.center)
+                    ),
+                    title: {
+                        Text(title)
+                            .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                            .font(onboardingTheme.typography.title)
+                            .multilineTextAlignment(.center)
+                    },
+                    actions: {
+                        VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                            Button(action: continueAction) {
+                                Text(IntroDialogContentCopy.continueCTA)
+                            }
+                            .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+
+                            if skipOnboardingView != nil {
+                                Button(action: {
+                                    showSkipOnboarding = true
+                                    skipAction()
+                                }) {
+                                    Text(IntroDialogContentCopy.skipCTA)
+                                }
+                                .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                            }
+                        }
+                        .visibility(showCTA.wrappedValue ? .visible : .invisible)
+                    }
+                )
+            }
+            .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth)
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+
 
     }
 }

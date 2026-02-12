@@ -31,11 +31,10 @@ import UserScript
 import WebKit
 
 @MainActor
-final class UserScripts: UserScriptsProvider {
+final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
     let contextMenuScript = ContextMenuUserScript()
-    let printingUserScript = PrintingUserScript()
     let hoverUserScript = HoverUserScript()
     let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
@@ -168,10 +167,8 @@ final class UserScripts: UserScriptsProvider {
         }
 
         // Release notes user script - only available for Sparkle builds
-        if let updateController = Application.appDelegate.updateController {
-            let factory = ReleaseNotesUserScriptFactory()
-            releaseNotesUserScript = (factory as? ReleaseNotesUserScriptFactoryBuilder)?.makeUserScript(
-                updateController: updateController,
+        if let updateController = Application.appDelegate.updateController as? any SparkleUpdateController {
+            releaseNotesUserScript = updateController.makeReleaseNotesUserScript(
                 pixelFiring: PixelKit.shared,
                 keyValueStore: UserDefaults.standard,
                 releaseNotesURL: .releaseNotes
@@ -256,7 +253,6 @@ final class UserScripts: UserScriptsProvider {
         surrogatesScript,
         contentBlockerRulesScript,
         pageObserverScript,
-        printingUserScript,
         hoverUserScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,

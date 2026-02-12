@@ -97,13 +97,12 @@
 // - `isBannerPermanentlyDismissed`: User clicked "Never Ask Again"
 // - `debugSetDefaultAndAddToDockPromptCurrentDateKey`: Simulated date override (debug only)
 
-import AppUpdaterShared
-import BrowserServicesKit
 import Combine
-import FeatureFlags
-import PixelKit
 import SwiftUI
 import SwiftUIExtensions
+import BrowserServicesKit
+import FeatureFlags
+import PixelKit
 
 enum DefaultBrowserAndDockPromptDismissAction: Equatable {
     case userInput(prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool)

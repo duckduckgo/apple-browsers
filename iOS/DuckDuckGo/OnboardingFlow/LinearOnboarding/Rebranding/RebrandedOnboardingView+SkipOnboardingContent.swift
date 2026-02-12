@@ -21,11 +21,6 @@ import SwiftUI
 import DuckUI
 import Onboarding
 
-private enum SkipOnboardingContentMetrics {
-    static let textSpacing: CGFloat = 28.0
-    static let buttonSpacing: CGFloat = 8.0
-}
-
 extension OnboardingRebranding.OnboardingView {
 
     struct SkipOnboardingContent: View {
@@ -49,9 +44,9 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             LinearDialogContentContainer(
                 metrics: .init(
-                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing,
-                    textSpacing: SkipOnboardingContentMetrics.textSpacing,
-                    contentSpacing: 0,
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
@@ -67,7 +62,7 @@ extension OnboardingRebranding.OnboardingView {
                         .font(onboardingTheme.typography.title)
                 },
                 actions: {
-                    VStack(spacing: SkipOnboardingContentMetrics.buttonSpacing) {
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: startBrowsingAction) {
                             Text(Copy.confirmSkipOnboardingCTA)
                         }

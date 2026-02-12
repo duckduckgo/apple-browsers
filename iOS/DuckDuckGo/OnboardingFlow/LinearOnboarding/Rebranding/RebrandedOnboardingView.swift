@@ -244,7 +244,7 @@ extension OnboardingRebranding {
             configuration: BubbleBackedDialogConfiguration
         ) -> some View {
             let stepInfo: ViewState.Intro.StepInfo? = if configuration.showsStepCounter {
-                .init(currentStep: state.step.currentStep + 1, totalSteps: state.step.totalSteps)
+                .init(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
             } else {
                 nil
             }

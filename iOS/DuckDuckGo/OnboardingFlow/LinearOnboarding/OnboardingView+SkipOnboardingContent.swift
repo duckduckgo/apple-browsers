@@ -28,6 +28,8 @@ extension OnboardingView {
 
         typealias Copy = UserText.Onboarding.Skip
 
+        @Environment(\.onboardingTheme) private var onboardingTheme
+
         private var animateTitle: Binding<Bool>
         private var animateMessage: Binding<Bool>
         private var showCTA: Binding<Bool>
@@ -52,8 +54,8 @@ extension OnboardingView {
         }
 
         var body: some View {
-            VStack(spacing: 20.0) {
-                VStack(spacing: 28.0) {
+            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+                VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     AnimatableTypingText(Copy.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
                         withAnimation {
                             animateMessage.wrappedValue = true
@@ -61,7 +63,7 @@ extension OnboardingView {
                     }
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
-                    .font(Font.system(size: 24, weight: .bold))
+                    .font(onboardingTheme.typography.title)
 
                     AnimatableTypingText(Copy.message.attributed.withFont(.daxBodyBold(), forText: Self.fireButtonCopy), startAnimating: animateMessage, skipAnimation: isSkipped) {
                         withAnimation {
@@ -70,10 +72,10 @@ extension OnboardingView {
                     }
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
-                    .font(Font.system(size: 18))
+                    .font(onboardingTheme.typography.body)
                 }
 
-                VStack(spacing: 8.0) {
+                VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                     Button(action: startBrowsingAction) {
                         Text(Copy.confirmSkipOnboardingCTA)
                     }

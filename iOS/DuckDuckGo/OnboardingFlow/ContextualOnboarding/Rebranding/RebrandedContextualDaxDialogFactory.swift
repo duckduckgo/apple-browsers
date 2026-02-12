@@ -244,10 +244,13 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        return OnboardingFireDialog(onManualDismiss: onManualDismiss)
-            .onFirstAppear { [weak self] in
-                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
-            }
+        return OnboardingConditionalCenteredScrollableContainerView {
+            OnboardingRebranding.OnboardingFireDialog(onManualDismiss: onManualDismiss)
+        }
+        .applyContextualOnboardingBackground(backgroundType: .fireDialog, animationContext: .default)
+        .onFirstAppear { [weak self] in
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+        }
     }
 
 }

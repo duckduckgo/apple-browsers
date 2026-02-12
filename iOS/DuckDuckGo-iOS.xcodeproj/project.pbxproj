@@ -1537,6 +1537,7 @@
 		9FF362BE2F3AC7A300824B30 /* RebrandedContextualDialogsDynamicMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362BD2F3AC78B00824B30 /* RebrandedContextualDialogsDynamicMetrics.swift */; };
 		9FF362C82F3C6EBA00824B30 /* RebrandedContextualOnboardingDialogs+AddFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362C72F3C6EA300824B30 /* RebrandedContextualOnboardingDialogs+AddFavorite.swift */; };
 		9FF362D02F3D884200824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362CF2F3D883500824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift */; };
+		9FF362D22F3D9C1600824B30 /* RebrandedContextualOnboardingDialogs+Fire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362D12F3D9C0700824B30 /* RebrandedContextualOnboardingDialogs+Fire.swift */; };
 		9FF967AF2E0E243100E45B54 /* DefaultBrowserPromptUserTypeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967AE2E0E242F00E45B54 /* DefaultBrowserPromptUserTypeManager.swift */; };
 		9FF967B22E0E26DE00E45B54 /* DefaultBrowserPromptUserTypeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967B12E0E26DB00E45B54 /* DefaultBrowserPromptUserTypeManagerTests.swift */; };
 		9FF967B42E0E270300E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967B32E0E26F900E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift */; };
@@ -3992,6 +3993,7 @@
 		9FF362BD2F3AC78B00824B30 /* RebrandedContextualDialogsDynamicMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedContextualDialogsDynamicMetrics.swift; sourceTree = "<group>"; };
 		9FF362C72F3C6EA300824B30 /* RebrandedContextualOnboardingDialogs+AddFavorite.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+AddFavorite.swift"; sourceTree = "<group>"; };
 		9FF362CF2F3D883500824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+Trackers.swift"; sourceTree = "<group>"; };
+		9FF362D12F3D9C0700824B30 /* RebrandedContextualOnboardingDialogs+Fire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+Fire.swift"; sourceTree = "<group>"; };
 		9FF967AE2E0E242F00E45B54 /* DefaultBrowserPromptUserTypeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserTypeManager.swift; sourceTree = "<group>"; };
 		9FF967B12E0E26DB00E45B54 /* DefaultBrowserPromptUserTypeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserTypeManagerTests.swift; sourceTree = "<group>"; };
 		9FF967B32E0E26F900E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserTypeStoreTests.swift; sourceTree = "<group>"; };
@@ -7474,6 +7476,7 @@
 				9FB71CB62F39840E000AD042 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */,
 				9FF362C72F3C6EA300824B30 /* RebrandedContextualOnboardingDialogs+AddFavorite.swift */,
 				9FF362CF2F3D883500824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift */,
+				9FF362D12F3D9C0700824B30 /* RebrandedContextualOnboardingDialogs+Fire.swift */,
 				9F0369F32F23098900A00DCA /* RebrandedContextualDaxDialogFactory.swift */,
 				9F0369ED2F2307A000A00DCA /* RebrandedNewTabDaxDialogFactory.swift */,
 			);
@@ -11894,6 +11897,7 @@
 				D6E83C602B22B3C9006C8AFB /* SettingsState.swift in Sources */,
 				D6E83C482B20C812006C8AFB /* SettingsHostingController.swift in Sources */,
 				F46FEC5727987A5F0061D9DF /* KeychainItemsDebugViewController.swift in Sources */,
+				9FF362D22F3D9C1600824B30 /* RebrandedContextualOnboardingDialogs+Fire.swift in Sources */,
 				CBF259832D4293B700AC63E4 /* RemoteMessagingService.swift in Sources */,
 				7B4F87E72D0734090010B18F /* ControlCenterWidget.swift in Sources */,
 				56D60AA52EE33EA600652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift in Sources */,

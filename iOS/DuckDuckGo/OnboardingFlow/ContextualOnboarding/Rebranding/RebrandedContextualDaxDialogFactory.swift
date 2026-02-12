@@ -187,7 +187,7 @@ private extension RebrandedContextualDaxDialogFactory {
         delegate: ContextualOnboardingDelegate,
         onSizeUpdate: @escaping () -> Void
     ) -> some View {
-        let attributedMessage = spec.message.attributedStringFromMarkdown(color: ThemeManager.shared.currentTheme.daxDialogTextColor, fontSize: 19)
+        let attributedMessage = attributedStringFromLegacyMarkdown(spec.message)
 
         let onManualDismiss: (_ isShowingFireDialog: Bool) -> Void = { [weak delegate, weak self] isShowingFireDialog in
             // Hide Pulsing animation for Privacy Shield or Fire Dialog
@@ -283,4 +283,38 @@ private extension RebrandedContextualDaxDialogFactory {
         }
     }
 
+}
+
+// MARK: - Helpers
+
+private extension RebrandedContextualDaxDialogFactory {
+
+    // Converts a string with single asterisks for bold (*text*) to an AttributedString using native markdown parsing.
+    // Native markdown requires double asterisks for bold (**text**), so this helper converts the format.
+    func attributedStringFromLegacyMarkdown(_ string: String) -> AttributedString {
+        // Convert *text* to **text** for native markdown parsing using regex
+        // Matches *text* but not escaped \* or already doubled **
+        // - (?<!\*) - Negative lookbehind: ensure no * before
+        // - \* - Match a single *
+        // - (?!\*) - Negative lookahead: ensure no * after
+        // - ([^\*]+) - Capture group: one or more non-asterisk characters
+        // - \*(?!\*) - Match closing single * (not followed by another *)
+        let markdown = string.replacingOccurrences(
+            of: #"(?<!\*)\*(?!\*)([^\*]+)\*(?!\*)"#,
+            with: "**$1**",
+            options: .regularExpression
+        )
+
+        // Parse with native AttributedString markdown support
+        do {
+            return try AttributedString(
+                markdown: markdown,
+                options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+            )
+        } catch {
+            // Fallback to plain text if parsing fails
+            return AttributedString(string)
+        }
+    }
+    
 }

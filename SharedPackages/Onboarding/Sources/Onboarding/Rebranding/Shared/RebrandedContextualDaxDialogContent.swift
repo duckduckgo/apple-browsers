@@ -28,13 +28,41 @@ extension OnboardingRebranding {
     public struct ContextualDaxDialogContent<Content: View>: View {
         @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var theme
 
-        let orientation: ContextualDaxDialogOrientation
-        let title: NSAttributedString?
-        let message: NSAttributedString
-        let content: Content
+        private let orientation: ContextualDaxDialogOrientation
+        #if os(iOS)
+        private let title: AttributedString?
+        private let message: AttributedString
+        #else
+        private let title: NSAttributedString?
+        private let message: NSAttributedString
+        #endif
+        private let content: Content
 
         @State private var shouldShowContent = false
 
+        #if os(iOS)
+        public init(
+            orientation: ContextualDaxDialogOrientation = .verticalStack,
+            title: AttributedString? = nil,
+            message: AttributedString,
+            @ViewBuilder content: () -> Content
+        ) {
+            self.orientation = orientation
+            self.title = title
+            self.message = message
+            self.content = content()
+        }
+
+        public init(
+            orientation: ContextualDaxDialogOrientation = .verticalStack,
+            title: String? = nil,
+            message: String,
+            @ViewBuilder content: () -> Content
+        ) {
+            self.init(orientation: orientation, title: title.flatMap(AttributedString.init), message: AttributedString(message), content: content)
+        }
+
+        #else
         public init(
             orientation: ContextualDaxDialogOrientation = .verticalStack,
             title: NSAttributedString? = nil,
@@ -46,6 +74,7 @@ extension OnboardingRebranding {
             self.message = message
             self.content = content()
         }
+        #endif
 
         public var body: some View {
             Group {
@@ -76,6 +105,54 @@ extension OnboardingRebranding {
     }
 }
 
+#if os(iOS)
+extension OnboardingRebranding.ContextualDaxDialogContent where Content == EmptyView {
+
+    /// Convenience initializer for dialogs without additional content.
+    public init(
+        orientation: OnboardingRebranding.ContextualDaxDialogOrientation = .verticalStack,
+        title: AttributedString? = nil,
+        message: AttributedString
+    ) {
+        self.init(orientation: orientation, title: title, message: message) {
+            EmptyView()
+        }
+    }
+
+    /// Convenience initializer for dialogs without additional content, accepting plain strings.
+    public init(
+        orientation: OnboardingRebranding.ContextualDaxDialogOrientation = .verticalStack,
+        title: String? = nil,
+        message: String
+    ) {
+        self.init(
+            orientation: orientation,
+            title: title.flatMap(AttributedString.init),
+            message: AttributedString(message)
+        ) {
+            EmptyView()
+        }
+    }
+}
+#endif
+
+#if os(macOS)
+extension OnboardingRebranding.ContextualDaxDialogContent where Content == EmptyView {
+
+    /// Convenience initializer for dialogs without additional content.
+    public init(
+        orientation: OnboardingRebranding.ContextualDaxDialogOrientation = .verticalStack,
+        title: NSAttributedString? = nil,
+        message: NSAttributedString
+    ) {
+        self.init(orientation: orientation, title: title, message: message) {
+            EmptyView()
+        }
+    }
+}
+#endif
+
+
 // MARK: Inner Views
 
 private extension OnboardingRebranding {
@@ -83,31 +160,62 @@ private extension OnboardingRebranding {
     struct TitleMessageStack: View {
         @Environment(\.onboardingTheme) private var theme
 
+        #if os(iOS)
+        let title: AttributedString?
+        let message: AttributedString
+        #else
         let title: NSAttributedString?
         let message: NSAttributedString
+        #endif
 
         var body: some View {
             VStack(alignment: .leading, spacing: theme.contextualOnboardingMetrics.titleBodyVerticalSpacing) {
                 if let title {
-                    attributedText(title)
+                    StyledAttributedText(title)
                         .font(theme.typography.contextualTitle)
                         .multilineTextAlignment(theme.contextualOnboardingMetrics.contextualTitleTextAlignment)
                 }
-                attributedText(message)
+                StyledAttributedText(message)
                     .font(theme.typography.contextualBody)
                     .multilineTextAlignment(theme.contextualOnboardingMetrics.contextualBodyTextAlignment)
             }
             .padding(.leading, theme.contextualOnboardingMetrics.titleBodyInset.leading)
             .padding(.bottom, theme.contextualOnboardingMetrics.titleBodyInset.bottom)
         }
-
-        private func attributedText(_ attributedString: NSAttributedString) -> some View {
-            if #available(iOS 15, macOS 12, *) {
-                Text(AttributedString(attributedString))
-            } else {
-                Text(attributedString.string)
-            }
-        }
     }
 
 }
+
+// MARK: - Helpers
+
+#if os(iOS)
+private struct StyledAttributedText: View {
+    private let attributedString: AttributedString
+
+    init(_ attributedString: AttributedString) {
+        self.attributedString = attributedString
+    }
+
+    var body: some View {
+        Text(attributedString)
+    }
+}
+#endif
+
+#if os(macOS)
+private struct StyledAttributedText: View {
+    private let nsAttributedString: NSAttributedString
+
+    init(_ attributedString: NSAttributedString) {
+        self.attributedString = attributedString
+    }
+
+    var body: some View {
+        if #available(macOS 12, *) {
+            Text(AttributedString(attributedString))
+        } else {
+            Text(attributedString.string)
+        }
+    }
+}
+#endif

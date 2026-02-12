@@ -33,7 +33,7 @@ extension OnboardingRebranding {
         @State private var showNextScreen: Bool = false
 
         let shouldFollowUp: Bool
-        let message: NSAttributedString
+        let message: AttributedString
         var cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
         let blockedTrackersCTAAction: () -> Void
         let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
@@ -43,14 +43,14 @@ extension OnboardingRebranding {
                 if showNextScreen {
                     OnboardingFireButtonDialogContent()
                 } else {
-                    searchDoneContent
+                    trackersBlockedContent
                 }
             }
             .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
         }
 
-        private var searchDoneContent: some View {
+        private var trackersBlockedContent: some View {
             OnboardingRebranding.ContextualDaxDialogContent(
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
                 message: message

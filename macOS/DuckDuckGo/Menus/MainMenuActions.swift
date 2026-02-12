@@ -1073,7 +1073,8 @@ extension MainViewController {
         guard let manager = WarnBeforeQuitManager(
             currentEvent: currentEvent,
             action: .close,
-            isWarningEnabled: { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs }
+            isWarningEnabled: { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs },
+            isPhysicalKeyPress: WarnBeforeQuitManager.makePhysicalKeyPressCheck(for: currentEvent)
         ) else {
             completion(false)
             return

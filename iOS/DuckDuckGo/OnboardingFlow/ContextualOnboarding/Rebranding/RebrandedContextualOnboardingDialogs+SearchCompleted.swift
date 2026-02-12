@@ -57,7 +57,7 @@ extension OnboardingRebranding {
         private var searchDoneContent: some View {
             OnboardingRebranding.ContextualDaxDialogContent(
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
-                title: title,
+                title: title.attributed,
                 message: message.attributed
             ) {
                 Button {
@@ -79,4 +79,5 @@ extension OnboardingRebranding {
         }
 
     }
+
 }

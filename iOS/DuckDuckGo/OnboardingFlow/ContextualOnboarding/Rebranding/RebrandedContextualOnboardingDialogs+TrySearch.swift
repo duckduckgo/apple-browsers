@@ -40,7 +40,7 @@ extension OnboardingRebranding {
                 OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
                     OnboardingRebranding.ContextualDaxDialogContent(
                         orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation().build(v: vSizeClass, h: hSizeClass),
-                        title: title,
+                        title: title.attributed,
                         message: message.attributed
                     ) {
                         OnboardingRebranding.ContextualOnboardingListView(list: viewModel.itemsList, action: viewModel.listItemPressed)

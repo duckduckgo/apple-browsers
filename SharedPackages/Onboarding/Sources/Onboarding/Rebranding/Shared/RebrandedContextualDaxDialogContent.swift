@@ -29,7 +29,7 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var theme
 
         let orientation: ContextualDaxDialogOrientation
-        let title: String?
+        let title: NSAttributedString?
         let message: NSAttributedString
         let content: Content
 
@@ -37,7 +37,7 @@ extension OnboardingRebranding {
 
         public init(
             orientation: ContextualDaxDialogOrientation = .verticalStack,
-            title: String? = nil,
+            title: NSAttributedString? = nil,
             message: NSAttributedString,
             @ViewBuilder content: () -> Content
         ) {
@@ -52,12 +52,12 @@ extension OnboardingRebranding {
                 switch orientation {
                 case .verticalStack:
                     VStack(alignment: .leading, spacing: theme.contentSpacing) {
-                        TitleMessageStack(title: title, message: message.string)
+                        TitleMessageStack(title: title, message: message)
                         content
                     }
                 case let .horizontalStack(alignment):
                     HStack(alignment: alignment) {
-                        TitleMessageStack(title: title, message: message.string)
+                        TitleMessageStack(title: title, message: message)
                         Spacer(minLength: theme.contentSpacing)
                         content
                     }
@@ -83,22 +83,30 @@ private extension OnboardingRebranding {
     struct TitleMessageStack: View {
         @Environment(\.onboardingTheme) private var theme
 
-        let title: String?
-        let message: String
+        let title: NSAttributedString?
+        let message: NSAttributedString
 
         var body: some View {
             VStack(alignment: .leading, spacing: theme.contextualOnboardingMetrics.titleBodyVerticalSpacing) {
                 if let title {
-                    Text(title)
+                    attributedText(title)
                         .font(theme.typography.contextualTitle)
                         .multilineTextAlignment(theme.contextualOnboardingMetrics.contextualTitleTextAlignment)
                 }
-                Text(message)
+                attributedText(message)
                     .font(theme.typography.contextualBody)
                     .multilineTextAlignment(theme.contextualOnboardingMetrics.contextualBodyTextAlignment)
             }
             .padding(.leading, theme.contextualOnboardingMetrics.titleBodyInset.leading)
             .padding(.bottom, theme.contextualOnboardingMetrics.titleBodyInset.bottom)
+        }
+
+        private func attributedText(_ attributedString: NSAttributedString) -> some View {
+            if #available(iOS 15, macOS 12, *) {
+                Text(AttributedString(attributedString))
+            } else {
+                Text(attributedString.string)
+            }
         }
     }
 

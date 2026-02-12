@@ -1504,7 +1504,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             action: .quit,
             isWarningEnabled: { [tabsPreferences] in
                 tabsPreferences.warnBeforeQuitting
-            }
+            },
+            isPhysicalKeyPress: WarnBeforeQuitManager.makePhysicalKeyPressCheck(for: currentEvent)
         ) else { return nil }
 
         let presenter = WarnBeforeQuitOverlayPresenter(

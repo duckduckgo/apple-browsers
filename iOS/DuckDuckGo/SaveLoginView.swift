@@ -137,8 +137,8 @@ struct SaveLoginView: View {
         return useScrollView
     }
 
-    // MARK: - Control Variant (Features List)
-    
+    // MARK: - Control View (Features List)
+
     @ViewBuilder
     private var featuresView: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -206,8 +206,8 @@ struct SaveLoginView: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
-    // MARK: - CTA Buttons
-    
+    // MARK: - CTA View
+
     @ViewBuilder
     private var ctaView: some View {
         VStack(spacing: Const.Size.ctaVerticalSpacing) {
@@ -258,17 +258,14 @@ struct SaveLoginView: View {
             featuresView.padding([.bottom], Const.Size.featuresListPadding)
             
         case .newUserVariant1:
-            // Design #3: No feature list, just security message
-            EmptyView()
-            
+            Text(verbatim: "VARIANT 1")
+
         case .newUserVariant2:
-            // Design #4: Illustration/graphic
-            variant2IllustrationView
-            
+            Text(verbatim: "VARIANT 2")
+
         case .newUserVariant3:
-            // Design #7: Single icon with text
-            variant3IconView
-            
+            Text(verbatim: "VARIANT 3")
+
         case .saveLogin, .savePassword, .updateUsername, .updatePassword:
             // Non-onboarding flows: no additional content
             EmptyView()
@@ -280,30 +277,6 @@ struct SaveLoginView: View {
             .font(Const.Fonts.userInfo)
             .lineLimit(1)
             .multilineTextAlignment(.center)
-    }
-    
-    // MARK: - Variant-Specific Views
-    
-    @ViewBuilder
-    private var variant2IllustrationView: some View {
-        // TODO: Implement illustration view for variant 2 (Design #4)
-        VStack(spacing: Const.Size.contentSpacing) {
-            Text("VARIANT 2 - Illustration")
-                .daxSubheadRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-        }
-        .padding([.bottom], Const.Size.featuresListPadding)
-    }
-    
-    @ViewBuilder
-    private var variant3IconView: some View {
-        // TODO: Implement icon view for variant 3 (Design #7)
-        VStack(spacing: Const.Size.contentSpacing) {
-            Text("VARIANT 3 - Icon")
-                .daxSubheadRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-        }
-        .padding([.bottom], Const.Size.featuresListPadding)
     }
 }
 

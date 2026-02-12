@@ -76,7 +76,7 @@ public struct UpdateControllerSettings: StoringKeys {
     public let pendingUpdateConfiguration = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateConfiguration, assertionHandler: { _ in })
 
     // Cached pending update info (PendingUpdateInfo stored as Codable)
-    let pendingUpdateInfo = StorageKey<PendingUpdateInfo>(UpdateControllerStorageKeys.pendingUpdateInfo, assertionHandler: { _ in })
+    public let pendingUpdateInfo = StorageKey<PendingUpdateInfo>(UpdateControllerStorageKeys.pendingUpdateInfo, assertionHandler: { _ in })
 
     public init() {}
 }

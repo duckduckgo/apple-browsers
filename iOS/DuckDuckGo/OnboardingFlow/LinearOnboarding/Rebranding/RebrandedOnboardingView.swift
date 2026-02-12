@@ -34,6 +34,7 @@ private enum OnboardingViewCopy {
 private enum BubbleBackedDialogMetrics {
     static let introAdditionalTopMargin: CGFloat = 40
     static let browsersComparisonAdditionalTopMargin: CGFloat = 0
+    static let addressBarPositionAdditionalTopMargin: CGFloat = 0
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -175,7 +176,7 @@ extension OnboardingRebranding {
                                 case .chooseAppIconDialog:
                                     appIconPickerView
                                 case .chooseAddressBarPositionDialog:
-                                    addressBarPreferenceSelectionView
+                                    EmptyView()
                                 case .chooseSearchExperienceDialog:
                                     searchExperienceSelectionView
                                 default:
@@ -296,6 +297,8 @@ extension OnboardingRebranding {
                 introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
             case .browsersComparisonDialog:
                 browsersComparisonView
+            case .chooseAddressBarPositionDialog:
+                addressBarPositionView
             default:
                 EmptyView()
             }
@@ -316,6 +319,14 @@ extension OnboardingRebranding {
                     tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.browsersComparisonAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseAddressBarPositionDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin,
                     isVisible: true,
                     showsStepCounter: true
                 )
@@ -348,14 +359,10 @@ extension OnboardingRebranding {
             .onboardingDaxDialogStyle()
         }
 
-        private var addressBarPreferenceSelectionView: some View {
+        private var addressBarPositionView: some View {
             AddressBarPositionContent(
-                animateTitle: $model.addressBarPositionContentState.animateTitle,
-                showContent: $model.addressBarPositionContentState.showContent,
-                isSkipped: $model.isSkipped,
                 action: model.selectAddressBarPositionAction
             )
-            .onboardingDaxDialogStyle()
         }
 
         private var searchExperienceSelectionView: some View {

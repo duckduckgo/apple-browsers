@@ -210,11 +210,22 @@ final class MemoryUsageIntervalReporter {
 
 extension MemoryUsageIntervalReporter {
 
-    /// For testing: sets up monitoring state without starting the background task.
+    /// For testing: cancels any Combine-driven monitoring and sets up state manually.
+    ///
+    /// This cancels the feature-flag subscription and any background task so that
+    /// only explicit `checkIntervalsNow()` calls fire pixels — avoiding races between
+    /// the Combine-driven path and the test's manual control flow.
     ///
     /// - Parameter startTime: The simulated session start time.
     func startMonitoringForTesting(startTime: Date = Date()) {
-        lock.withLock { self.startTime = startTime }
+        featureFlagCancellable?.cancel()
+        featureFlagCancellable = nil
+        monitoringTask?.cancel()
+        monitoringTask = nil
+        lock.withLock {
+            self.startTime = startTime
+            self.firedTriggers.removeAll()
+        }
     }
 
     /// For testing and debug menu: triggers an immediate interval check.

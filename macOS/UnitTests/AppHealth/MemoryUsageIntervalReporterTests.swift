@@ -23,6 +23,7 @@ import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 final class MemoryUsageIntervalReporterTests: XCTestCase {
 
     private var sut: MemoryUsageIntervalReporter!
@@ -221,7 +222,6 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
 
     // MARK: - Feature Flag Lifecycle (Production Combine Path)
 
-    @MainActor
     func testWhenFeatureFlagEnabledViaPublisher_ThenStartsMonitoringAndFiresStartup() async throws {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 1024
@@ -238,7 +238,6 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
         XCTAssertTrue(startupFired, "Startup pixel should fire when feature flag is enabled via publisher")
     }
 
-    @MainActor
     func testWhenFeatureFlagToggledOffThenOn_ThenSessionResetsAndStartupFiresAgain() async throws {
         // Given - start with flag ON
         mockMemoryUsageMonitor.currentPhysFootprintMB = 512

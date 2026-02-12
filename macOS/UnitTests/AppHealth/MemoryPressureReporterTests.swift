@@ -29,6 +29,7 @@ final class MemoryPressureReporterTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPixelFiring: PixelKitMock!
     private var mockMemoryUsageMonitor: MockPressureMemoryMonitor!
+    private var mockAllocationStats: MockPressureAllocationStatsProvider!
     private var notificationCenter: NotificationCenter!
 
     override func setUp() {
@@ -36,6 +37,7 @@ final class MemoryPressureReporterTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockPixelFiring = PixelKitMock()
         mockMemoryUsageMonitor = MockPressureMemoryMonitor()
+        mockAllocationStats = MockPressureAllocationStatsProvider()
         notificationCenter = NotificationCenter()
     }
 
@@ -44,6 +46,7 @@ final class MemoryPressureReporterTests: XCTestCase {
         mockFeatureFlagger = nil
         mockPixelFiring = nil
         mockMemoryUsageMonitor = nil
+        mockAllocationStats = nil
         notificationCenter = nil
         super.tearDown()
     }
@@ -57,6 +60,7 @@ final class MemoryPressureReporterTests: XCTestCase {
             memoryUsageMonitor: mockMemoryUsageMonitor,
             windowContext: nil,
             isSyncEnabled: { nil },
+            allocationStatsProvider: mockAllocationStats,
             notificationCenter: notificationCenter
         )
     }
@@ -68,9 +72,12 @@ final class MemoryPressureReporterTests: XCTestCase {
         let context = MemoryReportingContext(
             browserMemoryMB: 1024,
             windows: nil,
-            tabs: nil,
+            standardTabs: nil,
+            pinnedTabs: nil,
             architecture: "ARM",
-            syncEnabled: nil
+            syncEnabled: nil,
+            usedAllocationMB: nil,
+            uptimeMinutes: 0
         )
 
         // When
@@ -85,9 +92,12 @@ final class MemoryPressureReporterTests: XCTestCase {
         let context = MemoryReportingContext(
             browserMemoryMB: 2048,
             windows: 4,
-            tabs: 21,
+            standardTabs: 21,
+            pinnedTabs: 4,
             architecture: "ARM",
-            syncEnabled: true
+            syncEnabled: true,
+            usedAllocationMB: 512,
+            uptimeMinutes: 120
         )
 
         // When
@@ -98,9 +108,12 @@ final class MemoryPressureReporterTests: XCTestCase {
         XCTAssertNotNil(params)
         XCTAssertEqual(params?["browser_memory_mb"], "2048")
         XCTAssertEqual(params?["windows"], "4")
-        XCTAssertEqual(params?["tabs"], "21")
+        XCTAssertEqual(params?["standard_tabs"], "21")
+        XCTAssertEqual(params?["pinned_tabs"], "4")
         XCTAssertEqual(params?["architecture"], "ARM")
         XCTAssertEqual(params?["sync_enabled"], "true")
+        XCTAssertEqual(params?["used_allocation"], "512")
+        XCTAssertEqual(params?["uptime"], "120")
     }
 
     func testMemoryPressurePixelReturnsUnknownForNilDependencies() {
@@ -108,9 +121,12 @@ final class MemoryPressureReporterTests: XCTestCase {
         let context = MemoryReportingContext(
             browserMemoryMB: 512,
             windows: nil,
-            tabs: nil,
+            standardTabs: nil,
+            pinnedTabs: nil,
             architecture: "Intel",
-            syncEnabled: nil
+            syncEnabled: nil,
+            usedAllocationMB: nil,
+            uptimeMinutes: 5
         )
 
         // When
@@ -119,8 +135,10 @@ final class MemoryPressureReporterTests: XCTestCase {
         // Then
         let params = pixel.parameters
         XCTAssertEqual(params?["windows"], "unknown")
-        XCTAssertEqual(params?["tabs"], "unknown")
+        XCTAssertEqual(params?["standard_tabs"], "unknown")
+        XCTAssertEqual(params?["pinned_tabs"], "unknown")
         XCTAssertEqual(params?["sync_enabled"], "unknown")
+        XCTAssertEqual(params?["used_allocation"], "unknown")
     }
 
     // MARK: - Notification + Pixel tests
@@ -160,7 +178,8 @@ final class MemoryPressureReporterTests: XCTestCase {
         let params = mockPixelFiring.actualFireCalls.first?.pixel.parameters
         XCTAssertEqual(params?["browser_memory_mb"], "4096") // 5000MB buckets to 4096
         XCTAssertEqual(params?["windows"], "unknown")
-        XCTAssertEqual(params?["tabs"], "unknown")
+        XCTAssertEqual(params?["standard_tabs"], "unknown")
+        XCTAssertEqual(params?["pinned_tabs"], "unknown")
         XCTAssertNotNil(params?["architecture"])
         XCTAssertEqual(params?["sync_enabled"], "unknown")
     }
@@ -183,7 +202,7 @@ final class MemoryPressureReporterTests: XCTestCase {
     }
 }
 
-// MARK: - Mock
+// MARK: - Mocks
 
 private class MockPressureMemoryMonitor: MemoryUsageMonitoring {
     var currentResidentMB: Double = 0
@@ -196,5 +215,13 @@ private class MockPressureMemoryMonitor: MemoryUsageMonitoring {
             residentBytes: residentBytes,
             physFootprintBytes: physFootprintBytes
         )
+    }
+}
+
+private class MockPressureAllocationStatsProvider: MemoryAllocationStatsProviding {
+    var totalUsedBytes: UInt64?
+
+    func currentTotalUsedBytes() -> UInt64? {
+        totalUsedBytes
     }
 }

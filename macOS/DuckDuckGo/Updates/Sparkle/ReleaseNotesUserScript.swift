@@ -75,7 +75,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         .reportPageException: reportPageException,
         .reportInitException: reportInitException,
         .browserRestart: browserRestart,
-        .retryUpdate: retryUpdate
+        .retryUpdate: retryUpdate,
     ]
 
     @MainActor

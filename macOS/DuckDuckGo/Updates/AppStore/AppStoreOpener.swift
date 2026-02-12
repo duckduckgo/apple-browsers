@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import AppKit
 import Foundation
+import AppKit
 
 /// Protocol for opening the App Store
 protocol AppStoreOpener {

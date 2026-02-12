@@ -52,36 +52,37 @@ extension OnboardingView {
         }
 
         var body: some View {
-            VStack(spacing: 24.0) {
-                AnimatableTypingText(Copy.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    withAnimation {
-                        animateMessage.wrappedValue = true
+            VStack(spacing: 20.0) {
+                VStack(spacing: 28.0) {
+                    AnimatableTypingText(Copy.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
+                        withAnimation {
+                            animateMessage.wrappedValue = true
+                        }
                     }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 20, weight: .bold))
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.center)
+                    .font(Font.system(size: 24, weight: .bold))
 
-                AnimatableTypingText(Copy.message.attributed.withFont(.daxBodyBold(), forText: Self.fireButtonCopy), startAnimating: animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showCTA.wrappedValue = true
+                    AnimatableTypingText(Copy.message.attributed.withFont(.daxBodyBold(), forText: Self.fireButtonCopy), startAnimating: animateMessage, skipAnimation: isSkipped) {
+                        withAnimation {
+                            showCTA.wrappedValue = true
+                        }
                     }
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.center)
+                    .font(Font.system(size: 18))
                 }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 16))
 
-                VStack {
+                VStack(spacing: 8.0) {
                     Button(action: startBrowsingAction) {
                         Text(Copy.confirmSkipOnboardingCTA)
                     }
                     .buttonStyle(PrimaryButtonStyle())
 
-                    OnboardingBorderedButton(
-                        maxHeight: 50.0,
-                        content: {
-                            Text(Copy.resumeOnboardingCTA)
-                        },
-                        action: resumeOnboardingAction
-                    )
+                    Button(action: resumeOnboardingAction) {
+                        Text(Copy.resumeOnboardingCTA)
+                    }
+                    .buttonStyle(SecondaryFillButtonStyle())
                 }
                 .visibility(showCTA.wrappedValue ? .visible : .invisible)
             }

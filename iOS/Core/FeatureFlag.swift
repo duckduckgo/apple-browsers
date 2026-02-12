@@ -325,6 +325,8 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true
     case webExtensions
+
+    case forceWebsiteDarkMode
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -441,7 +443,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .freeTrialConversionWideEvent,
              .uiTestExperiment,
              .onboardingRebranding,
-             .webExtensions:
+             .webExtensions,
+             .enhancedDarkMode:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -684,6 +687,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingRebranding:
             return .disabled
         case .webExtensions:
+            return .internalOnly()
+        case .enhancedDarkMode:
             return .internalOnly()
         }
     }

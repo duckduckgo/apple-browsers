@@ -87,6 +87,7 @@ public enum PrivacyFeature: String {
     case serp
     case popupBlocking
     case combinedPermissionView
+    case forceWebsiteDarkMode
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -626,4 +627,10 @@ public enum UpdatesSubfeature: String, PrivacySubfeature {
 
     /// Simplified update flow without expiration logic
     case simplifiedFlow
+}
+
+public enum ForceWebsiteDarkModeSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .forceWebsiteDarkMode }
+
+    case rollout
 }

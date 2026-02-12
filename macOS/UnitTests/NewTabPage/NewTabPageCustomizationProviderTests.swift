@@ -140,7 +140,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testThatCustomizerDataIncludesThemeVariantWhenThemesFeatureIsEnabled() async throws {
+    func testThatCustomizerDataIncludesThemeVariant() async throws {
         appearancePreferences.themeName = .violet
 
         XCTAssertEqual(provider.customizerData.themeVariant, .violet)

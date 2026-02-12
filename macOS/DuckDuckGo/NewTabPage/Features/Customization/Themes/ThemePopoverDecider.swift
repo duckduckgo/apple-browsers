@@ -31,7 +31,6 @@ protocol ThemePopoverDeciding {
 
 /// Determines when the Themes Popover should be rendered:
 ///
-///     - The `.themes` Feature Flag must be enabled
 ///     - The Popover must not have been shown before
 ///     - The default theme must be set (otherwise users already know about the feature!)
 ///     - At least two days must have elapsed since the Install Date

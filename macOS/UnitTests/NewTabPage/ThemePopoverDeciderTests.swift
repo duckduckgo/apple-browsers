@@ -24,12 +24,6 @@ import XCTest
 @MainActor
 final class ThemePopoverDeciderTests: XCTestCase {
 
-    func testWhenThemesFeatureFlagDisabledThenShouldShowPopoverIsFalse() {
-        let (decider, _) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: 3)
-
-        XCTAssertFalse(decider.shouldShowPopover)
-    }
-
     func testWhenPopoverAlreadyShownThenShouldShowPopoverIsFalse() {
         let (decider, _) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: true, firstLaunchElapsedDays: 3)
 

@@ -48,7 +48,7 @@ public enum ContextualOnboardingBackgroundType {
         case .tryVisitingASiteNTP:
             return OnboardingRebrandingImages.Contextual.tryASiteBackground
         case .trackers:
-            return OnboardingRebrandingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.trackerBlockedBackground
         case .fireDialog:
             return OnboardingRebrandingImages.Contextual.tryASearchBackground
         case .endOfJourney:

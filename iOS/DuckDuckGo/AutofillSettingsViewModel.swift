@@ -117,6 +117,8 @@ final class AutofillSettingsViewModel: ObservableObject {
     @Published var isExtensionEnabled: Bool = false
     @Published var isEnableRequestThrottled: Bool = false
 
+    private let experimentPixels: AutofillOnboardingExperimentPixelFiring
+
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          keyValueStore: KeyValueStoringDictionaryRepresentable = UserDefaults.standard,
          autofillNeverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager,
@@ -124,7 +126,9 @@ final class AutofillSettingsViewModel: ObservableObject {
          source: AutofillSettingsSource,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          syncService: DDGSyncing,
-         syncDataProviders: SyncDataProviders) {
+         syncDataProviders: SyncDataProviders,
+         experimentPixels: AutofillOnboardingExperimentPixelFiring = AutofillOnboardingExperimentPixelReporter()) {
+        self.experimentPixels = experimentPixels
         self.autofillNeverPromptWebsitesManager = autofillNeverPromptWebsitesManager
         self.appSettings = appSettings
         self.keyValueStore = keyValueStore
@@ -271,6 +275,7 @@ final class AutofillSettingsViewModel: ObservableObject {
                     case .success:
                         isExtensionEnabled = true
                         isShowingActivationView = true
+                        experimentPixels.fireAutofillOtherAppsEnabled(true)
                     case .throttled:
                         isEnableRequestThrottled = coordinator.isEnableRequestThrottled
                         isShowingActivationView = false

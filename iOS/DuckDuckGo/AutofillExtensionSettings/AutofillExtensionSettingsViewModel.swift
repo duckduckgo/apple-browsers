@@ -51,6 +51,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
 
     private let coordinator: AutofillExtensionEnableCoordinator
     private let source: String
+    private let experimentPixels: AutofillOnboardingExperimentPixelFiring
     weak var delegate: (any AutofillExtensionSettingsViewModelDelegate)?
 
     @Published var isExtensionEnabled: Bool = false
@@ -60,15 +61,24 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         coordinator.isEnableRequestThrottled
     }
 
-    init(source: String, coordinator: AutofillExtensionEnableCoordinator? = nil) {
+    init(source: String,
+         coordinator: AutofillExtensionEnableCoordinator? = nil,
+         experimentPixels: AutofillOnboardingExperimentPixelFiring = AutofillOnboardingExperimentPixelReporter()) {
         self.source = source
         self.coordinator = coordinator ?? AutofillExtensionEnableCoordinator(source: source)
+        self.experimentPixels = experimentPixels
         self.coordinator.delegate = self
         Task { await updateExtensionStatus() }
     }
 
     func updateExtensionStatus() async {
+        let wasEnabled = isExtensionEnabled
         isExtensionEnabled = await coordinator.updateExtensionStatus()
+
+        // Detect when the user disables the extension via system settings and returns to the app
+        if wasEnabled && !isExtensionEnabled {
+            experimentPixels.fireAutofillOtherAppsEnabled(false)
+        }
     }
 
     func enableExtension() async {
@@ -78,6 +88,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         case .success:
             isExtensionEnabled = true
             isShowingActivationView = true
+            experimentPixels.fireAutofillOtherAppsEnabled(true)
         case .throttled, .cancelled, .failed:
             isExtensionEnabled = false
             isShowingActivationView = false

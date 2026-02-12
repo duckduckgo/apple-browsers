@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 
 /// Provides access to the force dark mode feature configuration and user settings.
 protocol DarkReaderFeatureSettings {

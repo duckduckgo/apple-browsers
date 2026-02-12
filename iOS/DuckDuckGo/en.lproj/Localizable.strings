@@ -3088,6 +3088,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproofed Sites";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Force Dark Mode on Websites";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "General";
 

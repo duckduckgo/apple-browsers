@@ -61,6 +61,10 @@ private enum AddressBarPositionPickerMetrics {
     static let cornerRadius: CGFloat = 16.0
     static let borderWidth: CGFloat = 1.0
     static let minHeight: CGFloat = 63.0
+    static let borderLightColor = Color.black.opacity(0.18)
+    static let borderDarkColor = Color.white.opacity(0.18)
+
+    static let accentColor = Color(singleUseColor: .rebranding(.accentPrimary))
 
     enum Radio {
         static let size: CGFloat = 24.0
@@ -73,6 +77,7 @@ private enum AddressBarPositionPickerMetrics {
 extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker {
 
     struct AddressBarPositionButton: View {
+        @Environment(\.colorScheme) private var colorScheme
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         let icon: ImageResource
@@ -80,10 +85,6 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
         let message: String
         let isSelected: Bool
         let action: () -> Void
-
-        private var accentColor: Color {
-            Color(singleUseColor: .rebranding(.accentPrimary))
-        }
 
         var body: some View {
             Button(action: action) {
@@ -112,20 +113,17 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
 
         private var borderColor: Color {
             if isSelected {
-                accentColor
+                AddressBarPositionPickerMetrics.accentColor
             } else {
-                Color(designSystemColor: .border)
+                colorScheme == .light ? AddressBarPositionPickerMetrics.borderLightColor : AddressBarPositionPickerMetrics.borderDarkColor
             }
         }
 
     }
 
     struct RadioIndicator: View {
+        @Environment(\.colorScheme) private var colorScheme
         let isSelected: Bool
-
-        private var accentColor: Color {
-            Color(singleUseColor: .rebranding(.accentPrimary))
-        }
 
         var body: some View {
             Circle()
@@ -147,19 +145,23 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
                             .fill(Color.white)
                             .frame(width: AddressBarPositionPickerMetrics.Radio.checkSize, height: AddressBarPositionPickerMetrics.Radio.checkSize)
                     )
-                    .foregroundStyle(accentColor)
+                    .foregroundStyle(AddressBarPositionPickerMetrics.accentColor)
                     .frame(width: AddressBarPositionPickerMetrics.Radio.size, height: AddressBarPositionPickerMetrics.Radio.size)
                     .clipShape(Circle())
             } else {
                 Circle()
                     .inset(by: AddressBarPositionPickerMetrics.Radio.strokeInset)
-                    .stroke(Color.secondary, lineWidth: AddressBarPositionPickerMetrics.Radio.strokeWidth)
+                    .stroke(checkboxStrokeColor, lineWidth: AddressBarPositionPickerMetrics.Radio.strokeWidth)
             }
+        }
+
+        private var checkboxStrokeColor: Color {
+            colorScheme == .light ? AddressBarPositionPickerMetrics.borderLightColor : AddressBarPositionPickerMetrics.borderDarkColor
         }
 
         private var foregroundColor: Color {
             if isSelected {
-                accentColor
+                AddressBarPositionPickerMetrics.accentColor
             } else {
                 Color(designSystemColor: .controlsFillPrimary)
             }

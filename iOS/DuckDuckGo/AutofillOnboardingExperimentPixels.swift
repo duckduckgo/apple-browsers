@@ -26,7 +26,7 @@ import PrivacyConfig
 // MARK: - Storage Keys
 
 enum AutofillOnboardingExperimentStorageKeys: String, StorageKeyDescribing {
-    case onboardingImpressionCount = "com.duckduckgo.autofill.onboarding.experiment.impression-count"
+    case onboardingImpressionCount = "com-duckduckgo-autofill-onboarding-experiment-impression_count"
 }
 
 struct AutofillOnboardingExperimentKeys: StoringKeys {

@@ -37,7 +37,7 @@ final class ThemePopoverDeciderTests: XCTestCase {
         XCTAssertFalse(decider.shouldShowPopover)
     }
 
-    func testWhenPopoverAlreadyShownThenShouldShowPopoverIsFalse() {
+    func testWhenPopoverWasDismissedThenShouldShowPopoverIsFalse() {
         let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverDismissed: true, firstLaunchElapsedDays: 3)
         featureFlagger.enabledFeatureFlags = [.themes]
 

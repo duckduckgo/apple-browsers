@@ -89,6 +89,8 @@ final class AutofillSettingsViewModel: ObservableObject {
             } else {
                 Pixel.fire(pixel: .autofillLoginsSettingsDisabled, withAdditionalParameters: ["source": source.rawValue])
             }
+
+            experimentPixels.fireAutofillEnabled(savePasswordsEnabled)
         }
     }
     @Published var showingResetConfirmation = false

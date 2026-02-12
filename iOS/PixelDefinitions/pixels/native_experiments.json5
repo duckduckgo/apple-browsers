@@ -18,8 +18,8 @@
                     "enum": ["1"]
                 },
                 "passwords_saved": {
-                    "description": "Fires on each password save; thresholds at 1, 4, 6, 11 passwords",
-                    "enum": ["1"]
+                    "description": "Fires on each password save with the current account count bucket",
+                    "enum": ["none", "few", "some", "many", "lots"]
                 },
                 "import_completed": {
                     "description": "Fires when the user completes the data import flow",

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
 import Persistence
 import PixelExperimentKit
@@ -54,7 +55,8 @@ protocol AutofillOnboardingExperimentPixelFiring {
 
     // MARK: - Secondary Metrics
 
-    /// Fires when a password is saved. The framework fires at threshold milestones (1, 4, 6, 11).
+    /// Fires when a password is saved, with the current account count bucketed (none, few, some, many, lots).
+    /// Deduplication ensures each bucket value fires at most once per conversion window.
     func firePasswordsSaved()
 
     /// Fires when the user completes the data import flow.
@@ -135,7 +137,6 @@ final class AutofillOnboardingExperimentPixelReporter: AutofillOnboardingExperim
     // MARK: Thresholds
 
     private let neverAskThresholds: [Int] = [1, 2, 3, 5]
-    private let passwordsSavedThresholds: [Int] = [1, 4, 6, 11]
 
     // MARK: - Primary Metrics
 
@@ -174,14 +175,16 @@ final class AutofillOnboardingExperimentPixelReporter: AutofillOnboardingExperim
     // MARK: - Secondary Metrics
 
     func firePasswordsSaved() {
+        guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter()),
+              let count = try? vault.accountsCount() else { return }
+
+        let bucket = AutofillPixelReporter.accountsBucketNameFrom(count: count)
         for window in Window.secondary {
-            for threshold in passwordsSavedThresholds {
-                PixelKit.fireExperimentPixelIfThresholdReached(
-                    for: subfeatureID,
-                    metric: Metric.passwordsSaved,
-                    conversionWindowDays: window,
-                    threshold: threshold)
-            }
+            PixelKit.fireExperimentPixel(
+                for: subfeatureID,
+                metric: Metric.passwordsSaved,
+                conversionWindowDays: window,
+                value: bucket)
         }
     }
 

@@ -67,6 +67,7 @@ final class MainCoordinator {
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
     private var adaptiveDarkModeObserver: Any?
+    private var darkReaderFeatureSettings: DarkReaderFeatureSettings?
     private var darkReaderDomainManager: DarkReaderDomainManager?
     private var darkReaderDomainCancellable: AnyCancellable?
 
@@ -243,7 +244,10 @@ final class MainCoordinator {
                     self?.clearWebExtensionReferences()
                 }
 
-            if featureFlagger.isFeatureOn(.forceWebsiteDarkMode) {
+            let darkReaderSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger)
+            self.darkReaderFeatureSettings = darkReaderSettings
+
+            if darkReaderSettings.isFeatureEnabled {
                 let domainManager = DarkReaderDomainManager(privacyConfigurationManager: privacyConfigurationManager)
                 self.darkReaderDomainManager = domainManager
 
@@ -287,8 +291,7 @@ final class MainCoordinator {
             return
         }
 
-        let appSettings = AppDependencyProvider.shared.appSettings
-        if appSettings.isAdaptiveDarkModeEnabled {
+        if darkReaderFeatureSettings?.isDarkModeEnabled == true {
             let domains = darkReaderBlockedDomains
             try? await manager.installBundledExtension(resourceURL: darkReaderURL,
                                                        blockedDomains: domains)
@@ -311,6 +314,7 @@ final class MainCoordinator {
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
         adaptiveDarkModeObserver = nil
+        darkReaderFeatureSettings = nil
         darkReaderDomainManager = nil
         darkReaderDomainCancellable = nil
         tabManager.setWebExtensionManager(nil)

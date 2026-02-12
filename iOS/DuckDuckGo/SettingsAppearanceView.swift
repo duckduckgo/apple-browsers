@@ -76,7 +76,7 @@ struct SettingsAppearanceView: View {
                 // Force Dark Mode on websites
                 if viewModel.isForceWebsiteDarkModeEnabled {
                     SettingsCellView(label: UserText.settingsForceWebsiteDarkMode,
-                                     accessory: .toggle(isOn: viewModel.adaptiveDarkModeBinding))
+                                     accessory: .toggle(isOn: viewModel.darkModeBinding))
                 }
             }
 

@@ -173,8 +173,11 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }
 
+    lazy var darkReaderFeatureSettings: DarkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
+                                                                                                appSettings: appSettings)
+
     var isForceWebsiteDarkModeEnabled: Bool {
-        featureFlagger.isFeatureOn(.forceWebsiteDarkMode)
+        darkReaderFeatureSettings.isFeatureEnabled
     }
 
     var isBlackFridayCampaignEnabled: Bool {
@@ -582,13 +585,10 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var adaptiveDarkModeBinding: Binding<Bool> {
+    var darkModeBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.appSettings.isAdaptiveDarkModeEnabled },
-            set: {
-                self.appSettings.isAdaptiveDarkModeEnabled = $0
-                NotificationCenter.default.post(name: AppUserDefaults.Notifications.adaptiveDarkModeChanged, object: nil)
-            }
+            get: { self.darkReaderFeatureSettings.isDarkModeEnabled },
+            set: { self.darkReaderFeatureSettings.setDarkModeEnabled($0) }
         )
     }
 

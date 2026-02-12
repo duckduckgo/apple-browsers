@@ -141,17 +141,9 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
 
     @MainActor
     func testThatCustomizerDataIncludesThemeVariantWhenThemesFeatureIsEnabled() async throws {
-        featureFlagger.enabledFeatureFlags = [.themes]
         appearancePreferences.themeName = .violet
 
         XCTAssertEqual(provider.customizerData.themeVariant, .violet)
-    }
-
-    func testThatCustomizerDataExcludesThemeVariantWhenThemesFeatureIsDisabled() {
-        featureFlagger.enabledFeatureFlags = []
-        appearancePreferences.themeName = .violet
-
-        XCTAssertNil(provider.customizerData.themeVariant)
     }
 
     func testThatBackgroundPublisherPublishesEvents() throws {
@@ -193,7 +185,6 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     @MainActor
     func testThatThemeVariantGetterReturnsSelectedThemeNameDuringInitialization() {
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.themes]
         let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(),
                                                           privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                                           featureFlagger: featureFlagger,
@@ -213,7 +204,6 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     }
 
     func testThatThemeVariantGetterReturnsSelectedThemeNameAfterInitialization() {
-        featureFlagger.enabledFeatureFlags = [.themes]
         appearancePreferences.themeName = .violet
         XCTAssertEqual(provider.customizerData.themeVariant, .violet)
     }

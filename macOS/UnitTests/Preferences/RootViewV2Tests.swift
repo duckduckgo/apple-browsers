@@ -17,6 +17,7 @@
 //
 
 import Combine
+import PersistenceTestingUtils
 import PixelKitTestingUtilities
 import PrivacyConfig
 import Subscription
@@ -63,7 +64,7 @@ final class RootViewV2Tests: XCTestCase {
                 windowControllersManager: WindowControllersManagerMock(),
                 featureFlagger: MockFeatureFlagger()
             ),
-            aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
+            aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: DuckPlayerPreferences(
                 persistor: DuckPlayerPreferencesPersistorMock(),

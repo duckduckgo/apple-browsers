@@ -18,12 +18,41 @@
 
 import SwiftUI
 
+public enum OnboardingRebrandingImages {
+
+    public enum Contextual {
+        public static let tryASearchBackground = Image("Rebranding/contextual-bg-try-search", bundle: .module)
+    }
+
+    public enum Comparison {
+        public static let safariIcon = Image("SafariBrowserIcon", bundle: .module)
+        public static let ddgIcon = Image("DDGBrowserIcon", bundle: .module)
+        public static let availableIcon = Image("Rebranding/Onboarding-Check", bundle: .module)
+        public static let partialIcon = Image("Rebranding/Onboarding-Stop", bundle: .module)
+        public static let unavailableIcon = Image("Rebranding/Onboarding-Cross", bundle: .module)
+        public static let privateSearchIcon = Image("Rebranding/Comparison-PrivateSearch", bundle: .module)
+        public static let blockTrackersIcon = Image("Rebranding/Comparison-BlockTrackers", bundle: .module)
+        public static let blockCookiesIcon = Image("Rebranding/Comparison-BlockCookies", bundle: .module)
+        public static let blockAdsIcon = Image("Rebranding/Comparison-BlockAds", bundle: .module)
+        public static let eraseDataIcon = Image("Rebranding/Comparison-EraseData", bundle: .module)
+    }
+
+    public enum Branding {
+        public static let duckDuckGoLogo = Image("Rebranding/DuckDuckGoLogo", bundle: .module)
+    }
+
+}
+
 extension OnboardingRebranding {
 
     enum OnboardingImages {
 
         enum Contextual {
-            static let tryASearchBackground = Image("Rebranding/contextual-bg-try-search", bundle: .module)
+            static let tryASearchBackground = OnboardingRebrandingImages.Contextual.tryASearchBackground
+        }
+
+        enum Branding {
+            static let duckDuckGoLogo = OnboardingRebrandingImages.Branding.duckDuckGoLogo
         }
 
     }

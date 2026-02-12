@@ -381,8 +381,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     let memoryUsageMonitor: MemoryUsageMonitor
-    let memoryPressureReporter: MemoryPressureReporter
+    /// Optional `var` because its `syncServiceProvider` closure captures `self`,
+    /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
+    var memoryPressureReporter: MemoryPressureReporter?
     let memoryUsageThresholdReporter: MemoryUsageThresholdReporter
+    /// Optional `var` because its `syncServiceProvider` closure captures `self`,
+    /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
+    var memoryUsageIntervalReporter: MemoryUsageIntervalReporter?
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
@@ -777,7 +782,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aboutPreferences = AboutPreferences(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            keyValueStore: UserDefaults.standard
         )
         accessibilityPreferences = AccessibilityPreferences()
         duckPlayer = DuckPlayer(
@@ -1045,7 +1051,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.attributedMetricManager.addNotificationsObserver()
 
         memoryUsageMonitor = MemoryUsageMonitor(internalUserDecider: internalUserDecider, logger: .memory)
-        memoryPressureReporter = MemoryPressureReporter(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared, logger: .memory)
         memoryUsageThresholdReporter = MemoryUsageThresholdReporter(
             memoryUsageMonitor: memoryUsageMonitor,
             featureFlagger: featureFlagger,
@@ -1054,6 +1059,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         super.init()
+
+        memoryPressureReporter = MemoryPressureReporter(
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            memoryUsageMonitor: memoryUsageMonitor,
+            windowContext: WindowContext(
+                tabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.allTabsCount },
+                windows: windowControllersManager.mainWindowControllers.count
+            ),
+            isSyncEnabled: { [weak self] in
+                guard let syncService = self?.syncService else { return nil }
+
+                return syncService.authState == .active
+            },
+            logger: .memory
+        )
+
+        memoryUsageIntervalReporter = MemoryUsageIntervalReporter(
+            memoryUsageMonitor: memoryUsageMonitor,
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            windowContext: WindowContext(
+                tabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.allTabsCount },
+                windows: windowControllersManager.mainWindowControllers.count
+            ),
+            isSyncEnabled: { [weak self] in
+                guard let syncService = self?.syncService else { return nil }
+
+                return syncService.authState == .active
+            },
+            logger: .memory
+        )
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
     }
@@ -1088,9 +1125,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if AppVersion.runType != .uiTests {
             let controller: any SparkleUpdateControllerProtocol
             if featureFlagger.isFeatureOn(.updatesSimplifiedFlow) {
-                controller = SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider)
+                controller = SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider, keyValueStore: UserDefaults.standard)
             } else {
-                controller = SparkleUpdateController(internalUserDecider: internalUserDecider)
+                controller = SparkleUpdateController(internalUserDecider: internalUserDecider, keyValueStore: UserDefaults.standard)
             }
             self.updateController = controller
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: controller.willRelaunchAppPublisher)

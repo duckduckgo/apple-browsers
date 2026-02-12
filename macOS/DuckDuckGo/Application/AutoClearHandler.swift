@@ -38,14 +38,14 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     private let dataClearingPreferences: DataClearingPreferences
     private let startupPreferences: StartupPreferences
     private let fireViewModel: FireViewModel
-    private let stateRestorationManager: AppStateRestorationManager
+    private let stateRestorationManager: AppStateRestorationManaging
     private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let alertPresenter: AutoClearAlertPresenting
 
     init(dataClearingPreferences: DataClearingPreferences,
          startupPreferences: StartupPreferences,
          fireViewModel: FireViewModel,
-         stateRestorationManager: AppStateRestorationManager,
+         stateRestorationManager: AppStateRestorationManaging,
          aiChatSyncCleaner: AIChatSyncCleaning?,
          alertPresenter: AutoClearAlertPresenting = DefaultAutoClearAlertPresenter()) {
         self.dataClearingPreferences = dataClearingPreferences
@@ -67,6 +67,12 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     @MainActor
     func shouldTerminate(isAsync: Bool) -> TerminationQuery {
         guard dataClearingPreferences.isAutoClearEnabled else { return .sync(.next) }
+
+        // Skip auto-clear if app is relaunching for an update
+        if stateRestorationManager.isRelaunchingAutomatically {
+            appTerminationHandledCorrectly = true
+            return .sync(.next)
+        }
 
         if dataClearingPreferences.isWarnBeforeClearingEnabled {
             switch confirmAutoClear() {
@@ -91,6 +97,18 @@ final class AutoClearHandler: ApplicationTerminationDecider {
             await performAutoClear()
             return .next
         })
+    }
+
+    @MainActor
+    func deciderSequenceCompleted(shouldProceed: Bool) {
+        // Reset stale relaunch flag if termination was cancelled.
+        // Scenario: User clicks "Restart to Update" (sets flag=true), but an earlier
+        // decider (e.g., ActiveDownloadsAppTerminationDecider) cancels termination.
+        // Without this reset, the flag stays true and the next normal quit would
+        // incorrectly skip data clearing.
+        if !shouldProceed && stateRestorationManager.isRelaunchingAutomatically {
+            stateRestorationManager.resetRelaunchFlag()
+        }
     }
 
     func resetTheCorrectTerminationFlag() {
@@ -121,6 +139,12 @@ final class AutoClearHandler: ApplicationTerminationDecider {
     @MainActor
     func handleAppTerminationFallback() -> NSApplication.TerminateReply? {
         guard dataClearingPreferences.isAutoClearEnabled else { return nil }
+
+        // Skip auto-clear if app is relaunching for an update
+        if stateRestorationManager.isRelaunchingAutomatically {
+            appTerminationHandledCorrectly = true
+            return .terminateNow
+        }
 
         if dataClearingPreferences.isWarnBeforeClearingEnabled {
             switch confirmAutoClear() {

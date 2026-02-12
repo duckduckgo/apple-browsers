@@ -277,16 +277,15 @@ struct LargeOmniBarState {
         let showPrivacyIcon = true
         let showBackground = true
         let showClear = false
-        let showAbort = false
-        let showRefresh = false
-        let showCustomizableButton = false
+        var showAbort: Bool { isLoading }
+        var showRefresh: Bool { !isLoading && dependencies.isRefreshButtonEnabled }
+        let showCustomizableButton = true
         let showMenu = true
         let showSettings = false
         let showCancel = false
         let showDismiss = false
         let showVoiceSearch = false
         let isBrowsing = true
-        let allowCustomization = false
 
         var name: String { "Pad" + Type.name(self) }
 
@@ -294,10 +293,10 @@ struct LargeOmniBarState {
         var onEditingStartedState: OmniBarState { BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onTextClearedState: OmniBarState { BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onTextEnteredState: OmniBarState { BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
-        var onBrowsingStartedState: OmniBarState { self }
+        var onBrowsingStartedState: OmniBarState { BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onBrowsingStoppedState: OmniBarState { HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEnterPadState: OmniBarState { self }
-        var onEnterPhoneState: OmniBarState { SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterPhoneState: OmniBarState { SmallOmniBarState.AIChatTabModeState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { self }
         var onEnterAIChatState: OmniBarState { self }
 

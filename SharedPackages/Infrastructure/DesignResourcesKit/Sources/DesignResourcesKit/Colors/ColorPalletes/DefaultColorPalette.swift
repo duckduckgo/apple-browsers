@@ -260,6 +260,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: .x161616)
         case let .rebranding(rebrandingColor):
             return dynamicColor(for: rebrandingColor)
+        case .toolbarButton:
+            return DynamicColor(lightColor: x1F1F1F.opacity(0.918), darkColor: .tint(0.905))
         }
     }
 }

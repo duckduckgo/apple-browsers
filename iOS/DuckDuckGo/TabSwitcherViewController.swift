@@ -815,7 +815,7 @@ extension TabSwitcherViewController {
         }
 
         toolbar.barTintColor = theme.barBackgroundColor
-        toolbar.tintColor = theme.barTintColor
+        toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
                 
         collectionView.reloadData()
     }

@@ -26,6 +26,7 @@ class BrowserChromeButton: UIButton {
         case primary
         case secondary
         case tabSwitcher
+        case toolbar
     }
 
     var type: ButtonType {
@@ -152,6 +153,8 @@ class BrowserChromeButton: UIButton {
             return .omniBarDefault()
         case .tabSwitcher:
             return .tabSwitcherDefault()
+        case .toolbar:
+            return .omniBarDefault()
         }
     }
 }
@@ -185,6 +188,14 @@ private extension BrowserChromeButton.ButtonType {
             default:
                 return UIColor(designSystemColor: .iconsSecondary)
             }
+
+        case .toolbar:
+            switch state {
+            case .disabled:
+                return UIColor(singleUseColor: SingleUseColor.toolbarButton).withAlphaComponent(0.5)
+            default:
+                return UIColor(singleUseColor: SingleUseColor.toolbarButton)
+            }
         }
     }
 }
@@ -213,12 +224,13 @@ private extension UIButton.Configuration {
 
         return config
     }
+
 }
 
 extension BrowserChromeButton {
 
     static func createBarButtonItem(title: String, image: UIImage?) -> UIBarButtonItem {
-        let button = BrowserChromeButton(.primary)
+        let button = BrowserChromeButton(.toolbar)
         if let image = image {
             button.setImage(image)
         }

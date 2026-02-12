@@ -184,7 +184,7 @@ private struct SaveLoginDebugMockManager: SaveAutofillLoginManagerProtocol {
 
     var username: String { "dax@duck.com" }
     var visiblePassword: String { "supersecurepasswordquack" }
-    var isNewAccount: Bool { layoutType == .newUser || layoutType == .saveLogin }
+    var isNewAccount: Bool { layoutType.isNewUserVariant || layoutType == .saveLogin }
     var accountDomain: String { "duck.com" }
 
     var isPasswordOnlyAccount: Bool {

@@ -26,7 +26,6 @@ import os.log
 ///
 protocol ThemePopoverDeciding {
     var shouldShowPopover: Bool { get }
-
     func shouldDismissPopover(newTabPageDidAppearCount: Int) -> Bool
     func markPopoverDismissed()
 }

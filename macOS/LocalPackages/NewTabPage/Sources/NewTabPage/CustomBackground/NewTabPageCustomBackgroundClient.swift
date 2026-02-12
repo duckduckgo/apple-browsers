@@ -77,7 +77,7 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
         model.themePopoverVisibilityPublisher
             .sink { [weak self] visible in
                 Task { @MainActor in
-                    self?.notifyThemePopoverUpdate(visible: visible)
+                    self?.notifyThemePopoverShownUpdate(visible: visible)
                 }
             }
             .store(in: &cancellables)
@@ -106,10 +106,10 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
         case onBackgroundUpdate = "customizer_onBackgroundUpdate"
         case onImagesUpdate = "customizer_onImagesUpdate"
         case onThemeUpdate = "customizer_onThemeUpdate"
-        case onThemePopoverUpdate = "customizer_onShowThemeVariantPopoverUpdate"
         case onThemePopoverDismiss = "customizer_dismissThemeVariantPopover"
         case setBackground = "customizer_setBackground"
         case setTheme = "customizer_setTheme"
+        case setThemePopoverShown = "customizer_onShowThemeVariantPopoverUpdate"
         case upload = "customizer_upload"
     }
 
@@ -192,9 +192,9 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
     }
 
     @MainActor
-    private func notifyThemePopoverUpdate(visible: Bool) {
+    private func notifyThemePopoverShownUpdate(visible: Bool) {
         let payload = NewTabPageDataModel.ThemePopoverUpdate(showThemeVariantPopover: visible)
-        pushMessage(named: MessageName.onThemePopoverUpdate.rawValue, params: payload)
+        pushMessage(named: MessageName.setThemePopoverShown.rawValue, params: payload)
     }
 
     @MainActor

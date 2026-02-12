@@ -25,7 +25,8 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
     private var newTabPageDidAppearCancellable: AnyCancellable?
     private var newTabPageDidAppearCount: Int = 0
 
-    @Published private var themePopoverVisible: Bool
+    private let themePopoverVisibilitySubject = PassthroughSubject<Bool, Never>()
+    private var themePopoverVisible: Bool
 
     let customizationModel: NewTabPageCustomizationModel
     let appearancePreferences: AppearancePreferences
@@ -104,8 +105,7 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
     }
 
     var themePopoverVisibilityPublisher: AnyPublisher<Bool, Never> {
-        $themePopoverVisible
-            .dropFirst()
+        themePopoverVisibilitySubject
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
@@ -130,7 +130,7 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
 
     @MainActor
     func dismissedThemePopover() {
-        dismissThemePopoverAndStopListeningToEvents()
+        markThemePopoverAsDismissed()
     }
 
     @MainActor
@@ -174,13 +174,17 @@ private extension NewTabPageCustomizationProvider {
             return
         }
 
-        dismissThemePopoverAndStopListeningToEvents()
+        markThemePopoverAsDismissed(notifyObservers: true)
     }
 
-    func dismissThemePopoverAndStopListeningToEvents() {
+    func markThemePopoverAsDismissed(notifyObservers: Bool = false) {
         themePopoverDecider.markPopoverDismissed()
         themePopoverVisible = false
         newTabPageDidAppearCancellable = nil
+
+        if notifyObservers {
+            themePopoverVisibilitySubject.send(false)
+        }
     }
 }
 

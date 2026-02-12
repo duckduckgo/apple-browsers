@@ -174,10 +174,10 @@ public struct BackgroundAnimationContext {
 
 public extension View {
 
-    @ViewBuilder
     /// Applies the contextual onboarding background illustration.
     ///
     /// If an animation context is provided, the illustration animates in from the bottom edge.
+    @ViewBuilder
     func applyContextualOnboardingBackground(backgroundType: ContextualOnboardingBackgroundType, animationContext: BackgroundAnimationContext? = nil) -> some View {
         if let animationContext {
             self.modifier(OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(backgroundType: backgroundType, animation: animationContext.animation, delay: animationContext.delay))

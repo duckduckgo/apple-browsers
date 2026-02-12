@@ -142,7 +142,6 @@ extension NewTabPageActionsManager {
 
         let themePopoverPersistor = ThemePopoverUserDefaultsPersistor(keyValueStore: keyValueStore)
         let themePopoverDecider = ThemePopoverDecider(appearancePreferences: appearancePreferences,
-                                                      featureFlagger: featureFlagger,
                                                       firstLaunchDate: AppDelegate.firstLaunchDate,
                                                       persistor: themePopoverPersistor)
 

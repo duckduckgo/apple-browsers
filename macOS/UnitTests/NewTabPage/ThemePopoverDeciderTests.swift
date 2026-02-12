@@ -25,29 +25,26 @@ import XCTest
 final class ThemePopoverDeciderTests: XCTestCase {
 
     func testWhenThemesFeatureFlagDisabledThenShouldShowPopoverIsFalse() {
-        let (decider, _, _) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: 3)
+        let (decider, _) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: 3)
 
         XCTAssertFalse(decider.shouldShowPopover)
     }
 
     func testWhenPopoverAlreadyShownThenShouldShowPopoverIsFalse() {
-        let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: true, firstLaunchElapsedDays: 3)
-        featureFlagger.enabledFeatureFlags = [.themes]
+        let (decider, _) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: true, firstLaunchElapsedDays: 3)
 
         XCTAssertFalse(decider.shouldShowPopover)
     }
 
     func testWhenThemeIsNotDefaultThenShouldShowPopoverIsFalse() {
-        let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .violet, themePopoverShown: false, firstLaunchElapsedDays: 3)
-        featureFlagger.enabledFeatureFlags = [.themes]
+        let (decider, _) = buildThemePopoverDecider(initialTheme: .violet, themePopoverShown: false, firstLaunchElapsedDays: 3)
 
         XCTAssertFalse(decider.shouldShowPopover)
     }
 
     func testWhenLessThanTwoDaysSinceFirstLaunchThenShouldShowPopoverIsFalse() {
         for daysAgo in [0, 1] {
-            let (decider, _, featureFlagger) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: UInt(daysAgo))
-            featureFlagger.enabledFeatureFlags = [.themes]
+            let (decider, _) = buildThemePopoverDecider(initialTheme: .default, themePopoverShown: false, firstLaunchElapsedDays: UInt(daysAgo))
 
             XCTAssertFalse(decider.shouldShowPopover)
         }
@@ -58,7 +55,7 @@ final class ThemePopoverDeciderTests: XCTestCase {
 
 private extension ThemePopoverDeciderTests {
 
-    func buildThemePopoverDecider(initialTheme: ThemeName, themePopoverShown: Bool, firstLaunchElapsedDays: UInt) -> (ThemePopoverDeciding, ThemePopoverPersistor, MockFeatureFlagger) {
+    func buildThemePopoverDecider(initialTheme: ThemeName, themePopoverShown: Bool, firstLaunchElapsedDays: UInt) -> (ThemePopoverDeciding, ThemePopoverPersistor) {
         let featureFlagger = MockFeatureFlagger()
         let firstLaunchDate = buildDate(daysAgo: firstLaunchElapsedDays)
 
@@ -71,9 +68,9 @@ private extension ThemePopoverDeciderTests {
         )
 
         let popoverPersistor = MockThemePopoverPersistor(themePopoverShown: themePopoverShown)
-        let popoverDecider = ThemePopoverDecider(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger, firstLaunchDate: firstLaunchDate, persistor: popoverPersistor)
+        let popoverDecider = ThemePopoverDecider(appearancePreferences: appearancePreferences, firstLaunchDate: firstLaunchDate, persistor: popoverPersistor)
 
-        return (popoverDecider, popoverPersistor, featureFlagger)
+        return (popoverDecider, popoverPersistor)
     }
 
     func buildDate(daysAgo: UInt) -> Date {

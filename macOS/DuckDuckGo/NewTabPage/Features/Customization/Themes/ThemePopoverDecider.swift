@@ -38,7 +38,6 @@ protocol ThemePopoverDeciding {
 ///
 final class ThemePopoverDecider: ThemePopoverDeciding {
     private let appearancePreferences: AppearancePreferences
-    private let featureFlagger: FeatureFlagger
     private let firstLaunchDate: Date
     private var persistor: ThemePopoverPersistor
 
@@ -46,9 +45,8 @@ final class ThemePopoverDecider: ThemePopoverDeciding {
         false
     }
 
-    init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, firstLaunchDate: Date, persistor: ThemePopoverPersistor) {
+    init(appearancePreferences: AppearancePreferences, firstLaunchDate: Date, persistor: ThemePopoverPersistor) {
         self.appearancePreferences = appearancePreferences
-        self.featureFlagger = featureFlagger
         self.firstLaunchDate = firstLaunchDate
         self.persistor = persistor
     }

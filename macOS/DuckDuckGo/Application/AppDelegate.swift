@@ -1389,13 +1389,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         case .sparkle(let makeController):
             assert(buildType.isSparkleBuild)
+            let allowUnsignedUpdates = buildType.isDebugBuild || buildType.isReviewBuild
             updateController = makeController(
                 internalUserDecider,
                 featureFlagger,
                 PixelKit.shared,
                 notificationPresenter,
                 UserDefaults.standard,
-                buildType,
+                allowUnsignedUpdates,
                 wideEvent,
                 { OnboardingActionsManager.isOnboardingFinished }
             )

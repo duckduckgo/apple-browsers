@@ -22,11 +22,18 @@ import PersistenceTestingUtils
 
 // MARK: - Mocks
 
+final class MockApplicationBuildType: ApplicationBuildType {
+    var isSparkleBuild: Bool = true
+    var isAppStoreBuild: Bool = false
+    var isDebugBuild: Bool = false
+    var isReviewBuild: Bool = false
+}
+
 final class MockBundleURLProvider: BundleURLProviding {
     var bundleURL: URL = URL(fileURLWithPath: "/Applications/DuckDuckGo.app")
 }
 
-final class MockFileManagerForReinstallDetection: FileManager, @unchecked Sendable {
+final class MockFileManagerForReinstallDetection: FileManager {
     var mockCreationDate: Date?
     var shouldThrowError = false
 
@@ -51,7 +58,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
     // MARK: - Properties
 
     private var sut: DefaultReinstallUserDetection!
-    private var mockBuildType: ApplicationBuildTypeMock!
+    private var mockBuildType: MockApplicationBuildType!
     private var mockFileManager: MockFileManagerForReinstallDetection!
     private var mockBundleURLProvider: MockBundleURLProvider!
     private var mockKeyValueStore: MockThrowingKeyValueStore!
@@ -67,7 +74,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        mockBuildType = ApplicationBuildTypeMock()
+        mockBuildType = MockApplicationBuildType()
         mockBuildType.isSparkleBuild = true // Default to Sparkle build for reinstall detection tests
         mockFileManager = MockFileManagerForReinstallDetection()
         mockBundleURLProvider = MockBundleURLProvider()

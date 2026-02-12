@@ -171,11 +171,11 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     private var customFeedURL: String? {
         get {
-            guard buildType.isDebugBuild || buildType.isReviewBuild else { return nil }
+            guard allowUnsignedUpdates else { return nil }
             return try? settings.debugSparkleCustomFeedURL
         }
         set {
-            guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
+            guard allowUnsignedUpdates else { return }
             try? settings.set(newValue, for: \.debugSparkleCustomFeedURL)
         }
     }
@@ -260,8 +260,8 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     private let updateCheckState: UpdateCheckState
 
-    // MARK: - Build Type
-    private let buildType: ApplicationBuildType
+    // MARK: - Build Configuration
+    private let allowUnsignedUpdates: Bool
 
     // MARK: - WideEvent Tracking
     private let updateWideEvent: SparkleUpdateWideEvent
@@ -293,7 +293,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
                 pixelFiring: PixelFiring?,
                 notificationPresenter: any UpdateNotificationPresenting,
                 keyValueStore: any Persistence.ThrowingKeyValueStoring,
-                buildType: ApplicationBuildType,
+                allowUnsignedUpdates: Bool,
                 wideEvent: WideEventManaging,
                 isOnboardingFinished: @escaping () -> Bool) {
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
@@ -304,7 +304,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
         self.isOnboardingFinished = isOnboardingFinished
         self.updateCheckState = UpdateCheckState()
         self.settings = keyValueStore.throwingKeyedStoring()
-        self.buildType = buildType
+        self.allowUnsignedUpdates = allowUnsignedUpdates
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
         self.applicationUpdateDetector = ApplicationUpdateDetector(settings: settings)
 
@@ -642,12 +642,12 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     // MARK: - Debug: Custom Feed URL
 
     func setCustomFeedURL(_ urlString: String) {
-        guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
+        guard allowUnsignedUpdates else { return }
         customFeedURL = urlString
     }
 
     func resetFeedURLToDefault() {
-        guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
+        guard allowUnsignedUpdates else { return }
         customFeedURL = nil
     }
 }
@@ -657,7 +657,7 @@ extension SparkleUpdateController: SparkleCustomFeedURLProviding {}
 extension SparkleUpdateController: SPUUpdaterDelegate {
 
     func feedURLString(for updater: SPUUpdater) -> String? {
-        guard buildType.isDebugBuild || buildType.isReviewBuild else { return nil }
+        guard allowUnsignedUpdates else { return nil }
         return customFeedURL
     }
 

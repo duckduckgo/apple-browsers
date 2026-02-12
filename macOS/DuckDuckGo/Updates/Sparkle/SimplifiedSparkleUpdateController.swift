@@ -151,11 +151,11 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
 
     private var customFeedURL: String? {
         get {
-            guard buildType.isDebugBuild || buildType.isReviewBuild else { return nil }
+            guard allowUnsignedUpdates else { return nil }
             return try? settings.debugSparkleCustomFeedURL
         }
         set {
-            guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
+            guard allowUnsignedUpdates else { return }
             try? settings.set(newValue, for: \.debugSparkleCustomFeedURL)
         }
     }
@@ -231,30 +231,32 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
-    private let buildType: ApplicationBuildType
+    private let allowUnsignedUpdates: Bool
     private let pixelFiring: PixelFiring?
     private let isOnboardingFinished: () -> Bool
 
     /// Computes whether automatic downloads should be enabled.
     /// Static for testability - no controller state needed.
-    public static func resolveAutoDownloadEnabled(
-        buildType: ApplicationBuildType,
-        featureFlagger: FeatureFlagger,
-        userPreference: Bool
-    ) -> Bool {
-        if buildType.isDebugBuild {
-            return featureFlagger.isFeatureOn(.autoUpdateInDEBUG) && userPreference
-        } else if buildType.isReviewBuild {
-            return featureFlagger.isFeatureOn(.autoUpdateInREVIEW) && userPreference
-        } else {
+    public static func resolveAutoDownloadEnabled(allowUnsignedUpdates: Bool,
+                                                  featureFlagger: FeatureFlagger,
+                                                  userPreference: Bool) -> Bool {
+        // Unsigned updates are only allowed in DEBUG/REVIEW builds.
+        guard allowUnsignedUpdates else {
             return userPreference
         }
+
+#if DEBUG
+        let isUnsignedAutoUpdateEnabled = featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+#else // REVIEW
+        let isUnsignedAutoUpdateEnabled = featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
+#endif
+        return isUnsignedAutoUpdateEnabled && userPreference
     }
 
     /// Instance wrapper for the static method - convenience for non-static contexts.
     private func resolveAutoDownloadEnabled(userPreference: Bool) -> Bool {
         Self.resolveAutoDownloadEnabled(
-            buildType: buildType,
+            allowUnsignedUpdates: allowUnsignedUpdates,
             featureFlagger: featureFlagger,
             userPreference: userPreference
         )
@@ -267,13 +269,13 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
                 pixelFiring: PixelFiring?,
                 notificationPresenter: UpdateNotificationPresenting,
                 keyValueStore: ThrowingKeyValueStoring,
-                buildType: ApplicationBuildType,
+                allowUnsignedUpdates: Bool,
                 wideEvent: WideEventManaging,
                 isOnboardingFinished: @escaping () -> Bool) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
-        self.buildType = buildType
+        self.allowUnsignedUpdates = allowUnsignedUpdates
         self.internalUserDecider = internalUserDecider
         self.notificationPresenter = notificationPresenter
         self.pixelFiring = pixelFiring
@@ -292,7 +294,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
 
         // Compute effective auto-download state before super.init() using static method
         let shouldAutoDownload = Self.resolveAutoDownloadEnabled(
-            buildType: buildType,
+            allowUnsignedUpdates: allowUnsignedUpdates,
             featureFlagger: featureFlagger,
             userPreference: currentAutomaticUpdatesEnabled
         )
@@ -550,12 +552,12 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     // MARK: - Debug: Custom Feed URL
 
     public func setCustomFeedURL(_ urlString: String) {
-        guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
+        guard allowUnsignedUpdates else { return }
         customFeedURL = urlString
     }
 
     public func resetFeedURLToDefault() {
-        guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
+        guard allowUnsignedUpdates else { return }
         customFeedURL = nil
     }
 }
@@ -565,7 +567,7 @@ extension SimplifiedSparkleUpdateController: SparkleCustomFeedURLProviding {}
 extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
 
     public func feedURLString(for updater: SPUUpdater) -> String? {
-        guard buildType.isDebugBuild || buildType.isReviewBuild else { return nil }
+        guard allowUnsignedUpdates else { return nil }
         return customFeedURL
     }
 

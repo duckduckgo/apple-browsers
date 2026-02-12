@@ -76,7 +76,7 @@ public enum UpdateControllerFactoryMethodType {
                   _ pixelFiring: PixelFiring?,
                   _ notificationPresenter: any UpdateNotificationPresenting,
                   _ keyValueStore: any Persistence.ThrowingKeyValueStoring,
-                  _ buildType: ApplicationBuildType,
+                  _ allowUnsignedUpdates: Bool,
                   _ wideEvent: WideEventManaging,
                   _ isOnboardingFinished: @escaping () -> Bool) -> any UpdateController)
 }
@@ -114,7 +114,7 @@ public protocol UpdateControllerFactoryMethodGetter {
 /// case .appStore(let makeController):
 ///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, isOnboardingFinished)
 /// case .sparkle(let makeController):
-///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, keyValueStore, buildType, wideEvent, isOnboardingFinished)
+///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, keyValueStore, allowUnsignedUpdates, wideEvent, isOnboardingFinished)
 /// }
 /// ```
 public struct UpdateControllerFactory {

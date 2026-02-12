@@ -2328,7 +2328,6 @@
 		840E58002F30A9E4009CFCEE /* ReleaseNotesParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57EF2F30A9E4009CFCEE /* ReleaseNotesParser.swift */; };
 		840E58012F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */; };
 		840E58022F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F52F30A9E4009CFCEE /* UpdateCycleProgress.swift */; };
-		840E58032F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57EC2F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift */; };
 		840E58062F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F62F30A9E4009CFCEE /* UpdateNotificationPresenting.swift */; };
 		840E58072F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F12F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift */; };
 		840E58082F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F72F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift */; };
@@ -2339,7 +2338,6 @@
 		840E580E2F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F22F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift */; };
 		840E58102F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */; };
 		840E58112F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F52F30A9E4009CFCEE /* UpdateCycleProgress.swift */; };
-		840E58122F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57EC2F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift */; };
 		840E58152F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F62F30A9E4009CFCEE /* UpdateNotificationPresenting.swift */; };
 		840E58162F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F12F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift */; };
 		840E58172F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F72F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift */; };
@@ -5465,7 +5463,6 @@
 		840E57E62F30A9AA009CFCEE /* ReleaseNotesTabExtensionConformance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesTabExtensionConformance.swift; sourceTree = "<group>"; };
 		840E57E72F30A9AA009CFCEE /* SPUUpdater+UpdaterAvailabilityChecking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPUUpdater+UpdaterAvailabilityChecking.swift"; sourceTree = "<group>"; };
 		840E57E82F30A9AA009CFCEE /* Update+Sparkle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Update+Sparkle.swift"; sourceTree = "<group>"; };
-		840E57EC2F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationBuildTypeProtocol.swift; sourceTree = "<group>"; };
 		840E57EE2F30A9E4009CFCEE /* ReleaseMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseMetadata.swift; sourceTree = "<group>"; };
 		840E57EF2F30A9E4009CFCEE /* ReleaseNotesParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesParser.swift; sourceTree = "<group>"; };
 		840E57F02F30A9E4009CFCEE /* ReleaseNotesTabExtensionProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesTabExtensionProtocol.swift; sourceTree = "<group>"; };
@@ -7193,7 +7190,6 @@
 			children = (
 				BB98DF472E74AEC500C15330 /* AppStore */,
 				BB98DF462E74AE9100C15330 /* Sparkle */,
-				840E57EC2F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift */,
 				BB4830C82E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift */,
 				840E57EE2F30A9E4009CFCEE /* ReleaseMetadata.swift */,
 				840E57E62F30A9AA009CFCEE /* ReleaseNotesTabExtensionConformance.swift */,
@@ -15249,7 +15245,6 @@
 				840E580E2F30A9E4009CFCEE /* ReleaseNotesUserScriptFactory.swift in Sources */,
 				840E58102F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */,
 				840E58112F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */,
-				840E58122F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift in Sources */,
 				840E58152F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */,
 				840E58162F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */,
 				840E58172F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */,
@@ -16506,7 +16501,6 @@
 				840E58002F30A9E4009CFCEE /* ReleaseNotesParser.swift in Sources */,
 				840E58012F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */,
 				840E58022F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */,
-				840E58032F30A9E4009CFCEE /* ApplicationBuildTypeProtocol.swift in Sources */,
 				840E58062F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */,
 				840E58072F30A9E4009CFCEE /* ReleaseNotesTabExtensionFactory.swift in Sources */,
 				840E58082F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */,

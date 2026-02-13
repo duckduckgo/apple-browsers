@@ -3055,6 +3055,12 @@
 /* Settings screen cell title for enabling automatic page context */
 "settings.aifeatures.automatic.context.title" = "Автоматично изпращане на контекст";
 
+/* Settings screen cell subtitle for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.subtitle" = "Показване на последните Duck.ai чатове, докато пишеш";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Предложения за чат";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скриване на изображения, генерирани от изкуствен интелект";
 

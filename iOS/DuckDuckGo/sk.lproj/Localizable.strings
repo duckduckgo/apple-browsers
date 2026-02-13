@@ -3055,6 +3055,12 @@
 /* Settings screen cell title for enabling automatic page context */
 "settings.aifeatures.automatic.context.title" = "Automatické odosielanie kontextu";
 
+/* Settings screen cell subtitle for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.subtitle" = "Zobrazuj nedávne Duck.ai čety počas písania";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Návrhy četu";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skryť obrázky generované umelou inteligenciou";
 

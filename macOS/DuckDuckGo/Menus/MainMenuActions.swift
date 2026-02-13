@@ -1763,7 +1763,8 @@ extension AppDelegate: NSMenuItemValidation {
             #selector(AppDelegate.openFile(_:)),
             #selector(AppDelegate.openLocation(_:)),
             #selector(AppDelegate.openPreferences),
-            #selector(AppDelegate.showManageBookmarks(_:)):
+            #selector(AppDelegate.showManageBookmarks(_:)),
+            #selector(AppDelegate.openImportBrowserDataWindow(_:)):
             return isUserInteractionAllowed
 
         // Reopen Last Removed Tab

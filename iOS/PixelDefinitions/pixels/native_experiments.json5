@@ -17,6 +17,10 @@
                     "description": "Fires at various thresholds when the user taps Never ask for this site",
                     "enum": ["1", "2", "3", "5"]
                 },
+                "onboarding_ended": {
+                    "description": "Fires once per user when they exit first-time-user status",
+                    "enum": ["1"]
+                },
                 "passwords_saved": {
                     "description": "Fires on each password save with the current account count bucket",
                     "enum": ["none", "few", "some", "many", "lots"]

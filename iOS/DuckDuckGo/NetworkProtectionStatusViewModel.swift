@@ -198,6 +198,16 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
             statusObserver: statusObserver,
             vpnSettings: settings)
 
+        let recentServerInfo = serverInfoObserver.recentValue
+        if let attributes = recentServerInfo.serverLocation {
+            self.location = NetworkProtectionLocationStatusModel.formattedLocation(
+                city: attributes.city,
+                country: attributes.country
+            )
+        }
+        self.ipAddress = recentServerInfo.serverAddress
+        self.hasServerInfo = recentServerInfo.serverAddress != nil || recentServerInfo.serverLocation != nil
+
         statusMessage = message(for: statusObserver.recentValue)
 
         updateViewModel(withStatus: statusObserver.recentValue)

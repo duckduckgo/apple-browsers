@@ -417,7 +417,7 @@ struct DataBrokerRunCustomJSONView: View {
         .foregroundColor(.secondary)
     }
 
-    private func resultsRow(for scanResult: ScanResult, listWidth: CGFloat) -> some View {
+    private func resultsRow(for scanResult: DebugScanResult, listWidth: CGFloat) -> some View {
         HStack(spacing: Constants.columnSpacing) {
             Text(scanResult.extractedProfile.name ?? "No name")
                 .frame(width: Constants.resultNameColumnWidth, alignment: .leading)
@@ -471,7 +471,7 @@ struct DataBrokerRunCustomJSONView: View {
         + Constants.columnSpacing * 2
     }
     private var debugEventDetailsHeight: CGFloat { 160 }
-    private var selectedResult: ScanResult? {
+    private var selectedResult: DebugScanResult? {
         guard let selectedResultId else { return nil }
         return viewModel.results.first { $0.id == selectedResultId }
     }

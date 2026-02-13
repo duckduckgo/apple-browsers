@@ -20,6 +20,7 @@ import Foundation
 
 public protocol AIChatsHandling {
     func delete(until: Date, token: String) async throws
+    func delete(chatIds: [String], token: String) async throws
 }
 
 public final class AIChats: AIChatsHandling {
@@ -53,4 +54,31 @@ public final class AIChats: AIChatsHandling {
             throw SyncError.unexpectedStatusCode(statusCode)
         }
     }
+
+    public func delete(chatIds: [String], token: String) async throws {
+        guard !chatIds.isEmpty else { return }
+
+        let updates: [[String: String]] = chatIds.map { chatId in
+            ["id": chatId, "deleted": "true"]
+        }
+
+        let jsonData = try JSONSerialization.data(withJSONObject: updates)
+
+        let request = api.createAuthenticatedJSONRequest(
+            url: endpoints.aiChats,
+            method: .patch,
+            authToken: token,
+            json: jsonData,
+            headers: [:],
+            parameters: [:]
+        )
+
+        let result = try await request.execute()
+        let statusCode = result.response.statusCode
+
+        guard statusCode == 204 else {
+            throw SyncError.unexpectedStatusCode(statusCode)
+        }
+    }
+
 }

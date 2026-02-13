@@ -20,7 +20,7 @@ import Foundation
 
 /// Delegate for receiving lifecycle events from the web extension manager.
 /// Implement this protocol to perform platform-specific actions such as migrations or UI updates.
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionLifecycleDelegate: AnyObject {
 
     /// Called before loading extensions. Use this to perform migrations or other setup.
@@ -31,7 +31,7 @@ public protocol WebExtensionLifecycleDelegate: AnyObject {
 }
 
 /// Default implementations to make all methods optional.
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionLifecycleDelegate {
 
     func webExtensionManagerWillLoadExtensions(_ manager: WebExtensionManaging) {}

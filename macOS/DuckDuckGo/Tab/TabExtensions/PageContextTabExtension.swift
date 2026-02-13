@@ -165,13 +165,14 @@ final class PageContextTabExtension {
             .store(in: &userScriptCancellables)
     }
 
+    /// handle view controller changes when the sidebar is closed and reopened.
     private func subscribeToCollectionRequest() {
         sidebarCancellables.removeAll()
-        guard let sidebarViewController = sidebar?.sidebarViewController else {
+        guard let sidebar else {
             return
         }
 
-        sidebarViewController.pageContextRequestedPublisher?
+        sidebar.pageContextRequestedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.shouldForceContextCollection = true

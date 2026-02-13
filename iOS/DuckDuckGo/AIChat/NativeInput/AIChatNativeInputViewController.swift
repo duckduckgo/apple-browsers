@@ -69,6 +69,10 @@ final class AIChatNativeInputViewController: UIViewController {
         nativeInputView.setText(text)
     }
 
+    func appendText(_ text: String) {
+        nativeInputView.appendText(text)
+    }
+
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol) {

@@ -166,6 +166,21 @@ final class HistoryManagerTests: XCTestCase {
         XCTAssertEqual(mockTabHistoryCoordinator.removeVisitsCalls.first, ["tab-1", "tab-2"])
     }
 
+    @MainActor
+    func testWhenRemoveBrowsingHistoryCalled_ThenDelegatesToDbCoordinator() async {
+        let spyHistoryCoordinator = SpyBurnVisitsHistoryCoordinator()
+        let historyManager = HistoryManager(dbCoordinator: spyHistoryCoordinator,
+                                            tld: TLD(),
+                                            tabHistoryCoordinator: MockTabHistoryCoordinating(),
+                                            isAutocompleteEnabledByUser: true,
+                                            isRecentlyVisitedSitesEnabledByUser: true)
+
+        await historyManager.removeBrowsingHistory(tabID: "test-tab-123")
+
+        XCTAssertEqual(spyHistoryCoordinator.burnVisitsForTabIDCalls.count, 1)
+        XCTAssertEqual(spyHistoryCoordinator.burnVisitsForTabIDCalls.first, "test-tab-123")
+    }
+
     private func makeHistoryManager(_ db: CoreDataDatabase) -> HistoryManager {
         let eventMapper = HistoryStoreEventMapper()
         let context = db.makeContext(concurrencyType: .privateQueueConcurrencyType)

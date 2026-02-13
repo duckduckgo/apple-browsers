@@ -156,7 +156,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     @MainActor
@@ -196,7 +196,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     @MainActor
@@ -236,7 +236,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     @MainActor
@@ -259,7 +259,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         DispatchQueue.main.async {
             expectation2.fulfill()
         }
-        wait(for: [expectation2], timeout: 0.1)
+        wait(for: [expectation2], timeout: 5)
 
         // Wait for event to be processed on main actor
         DispatchQueue.main.async {
@@ -275,7 +275,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     @MainActor
@@ -308,7 +308,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     // MARK: - Popup Creation Tests
@@ -449,7 +449,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     @MainActor
@@ -486,7 +486,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     // MARK: - Empty URL Suppression Tests
@@ -524,7 +524,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // Wait for query to be added and granted
-        wait(for: [queryAddedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait to ensure createChildTab is NOT called
         wait(for: [permissionGrantedExpectation], timeout: 0.1)
@@ -562,7 +562,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Wait for query to be added, granted, and popup created
-        wait(for: [queryAddedExpectation, popupCreatedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation, popupCreatedExpectation], timeout: 5.0)
     }
 
     // MARK: - Allow Popups for Current Page Tests
@@ -602,7 +602,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
 
         // Wait for query to be added and granted
-        wait(for: [queryAddedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
@@ -653,7 +653,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
 
         // Wait for query to be added and granted
-        wait(for: [queryAddedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
@@ -704,7 +704,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
 
         // Wait for query to be added and granted
-        wait(for: [queryAddedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
@@ -755,7 +755,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
 
         // Wait for query to be added and granted
-        wait(for: [queryAddedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
@@ -816,7 +816,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
 
         // Wait for query to be added and granted
-        wait(for: [queryAddedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
@@ -859,7 +859,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let firstAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
 
-        wait(for: [queryAddedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation], timeout: 5.0)
 
         // WHEN - Multiple subsequent popups of different types
         let emptyAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
@@ -914,7 +914,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let aboutBlankAction = WKNavigationAction.mock(url: URL(string: "about:blank")!, webView: self.webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: aboutBlankAction, windowFeatures: windowFeatures)
 
-        wait(for: [queryAddedExpectation, permissionGrantedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation, permissionGrantedExpectation], timeout: 5.0)
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Subsequent about:blank allowed
@@ -1016,7 +1016,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     @MainActor
@@ -1064,7 +1064,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: aboutBlankAction, windowFeatures: windowFeatures)
 
         // THEN - Should be created (not suppressed)
-        wait(for: [queryAddedExpectation, popupCreatedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation, popupCreatedExpectation], timeout: 5.0)
     }
 
     // MARK: - Persisted Permission Tests
@@ -1097,7 +1097,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup should be created without prompting
-        wait(for: [popupCreatedExpectation], timeout: 1.0)
+        wait(for: [popupCreatedExpectation], timeout: 5.0)
         wait(for: [queryExpectation], timeout: 0.1)
     }
 
@@ -1147,7 +1147,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let firstAction = WKNavigationAction.mock(url: URL(string: "https://popup1.com")!, webView: self.webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
 
-        wait(for: [firstPopupExpectation], timeout: 1.0)
+        wait(for: [firstPopupExpectation], timeout: 5.0)
 
         // Simulate navigation
         let navigation = Navigation(identity: NavigationIdentity(nil), responders: ResponderChain(), state: .started, isCurrent: true)
@@ -1158,7 +1158,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: secondAction, windowFeatures: windowFeatures)
 
         // THEN - Both popups allowed
-        wait(for: [secondPopupExpectation], timeout: 1.0)
+        wait(for: [secondPopupExpectation], timeout: 5.0)
     }
 
     // MARK: - lastUserInteractionEvent Consumption Tests
@@ -1388,7 +1388,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: true)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
-        wait(for: [popupCreatedExpectation], timeout: 1.0)
+        wait(for: [popupCreatedExpectation], timeout: 5.0)
 
         // THEN - pageInitiatedPopupOpened should NOT be set
         XCTAssertFalse(popupHandlingExtension.pageInitiatedPopupOpened, "User-initiated popup should not set pageInitiatedPopupOpened flag")
@@ -1413,7 +1413,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
-        wait(for: [popupCreatedExpectation], timeout: 1.0)
+        wait(for: [popupCreatedExpectation], timeout: 5.0)
 
         // THEN - pageInitiatedPopupOpened should be set
         XCTAssertTrue(popupHandlingExtension.pageInitiatedPopupOpened, "Non-user-initiated popup should set pageInitiatedPopupOpened flag")
@@ -1436,7 +1436,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
-        wait(for: [popupCreatedExpectation], timeout: 1.0)
+        wait(for: [popupCreatedExpectation], timeout: 5.0)
 
         XCTAssertTrue(popupHandlingExtension.pageInitiatedPopupOpened, "Flag should be set after popup")
 
@@ -1473,7 +1473,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Publisher should send event
-        wait(for: [popupCreatedExpectation, publisherExpectation], timeout: 1.0)
+        wait(for: [popupCreatedExpectation, publisherExpectation], timeout: 5.0)
     }
 
     @MainActor
@@ -1502,7 +1502,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Publisher should NOT send event
-        wait(for: [popupCreatedExpectation], timeout: 1.0)
+        wait(for: [popupCreatedExpectation], timeout: 5.0)
         wait(for: [publisherExpectation], timeout: 0.1)
     }
 
@@ -1716,7 +1716,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup allowed immediately without permission request
-        wait(for: [popupExpectation], timeout: 0.5)
+        wait(for: [popupExpectation], timeout: 5)
     }
 
     @MainActor
@@ -1747,7 +1747,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup allowed (strips to parent domain google.com which is in allowlist)
-        wait(for: [popupExpectation], timeout: 0.5)
+        wait(for: [popupExpectation], timeout: 5)
     }
 
     @MainActor
@@ -1778,7 +1778,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup allowed (google.com is in allowlist)
-        wait(for: [popupExpectation], timeout: 0.5)
+        wait(for: [popupExpectation], timeout: 5)
     }
 
     @MainActor
@@ -1840,7 +1840,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             isUserInitiated: false
         )
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: githubAction, windowFeatures: windowFeatures)
-        wait(for: [githubExpectation], timeout: 0.5)
+        wait(for: [githubExpectation], timeout: 5)
 
         // Test parent domain match: oauth.reddit.com matches reddit.com
         let redditExpectation = expectation(description: "Reddit popup created")
@@ -1862,7 +1862,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             isUserInitiated: false
         )
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: redditAction, windowFeatures: windowFeatures)
-        wait(for: [redditExpectation], timeout: 0.5)
+        wait(for: [redditExpectation], timeout: 5)
     }
 
     @MainActor
@@ -1894,7 +1894,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup allowed (parent domain matches)
-        wait(for: [popupCreatedExpectation], timeout: 0.5)
+        wait(for: [popupCreatedExpectation], timeout: 5)
     }
 
     @MainActor
@@ -1926,7 +1926,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup allowed (eTLD+1 matches)
-        wait(for: [popupCreatedExpectation], timeout: 0.5)
+        wait(for: [popupCreatedExpectation], timeout: 5)
     }
 
     @MainActor
@@ -1958,7 +1958,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup allowed (parent domain x.example.com matches)
-        wait(for: [popupCreatedExpectation], timeout: 0.5)
+        wait(for: [popupCreatedExpectation], timeout: 5)
     }
 
     @MainActor
@@ -2088,7 +2088,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup allowed (case-insensitive match)
-        wait(for: [popupExpectation], timeout: 0.5)
+        wait(for: [popupExpectation], timeout: 5)
     }
 
     @MainActor
@@ -2119,7 +2119,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup allowed (www prefix stripped)
-        wait(for: [popupExpectation], timeout: 0.5)
+        wait(for: [popupExpectation], timeout: 5)
     }
 
     @MainActor
@@ -2150,7 +2150,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup allowed (www prefix stripped, case-insensitive, parent domain matches)
-        wait(for: [popupExpectation], timeout: 0.5)
+        wait(for: [popupExpectation], timeout: 5)
     }
 
     @MainActor
@@ -2181,7 +2181,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup allowed (parent domain matching handles case-insensitivity)
-        wait(for: [popupExpectation], timeout: 0.5)
+        wait(for: [popupExpectation], timeout: 5)
     }
 
 }

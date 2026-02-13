@@ -101,8 +101,21 @@ import Subscription
 
     func testStatusUpdate_connected_updatesStatusMessageEverySecond_withTimeLapsed() throws {
         statusObserver.subject.send(.connected(connectedDate: Date()))
-        try waitForPublisher(viewModel.$statusMessage, toEmit: "Connected · 0s")
-        try waitForPublisher(viewModel.$statusMessage, toEmit: "Connected · 1s")
+
+        // This test looks at whether the publisher emits an updated "Connected" message over time.
+        // In rare cases, CI can start emitting them at the 1s mark, which broke the previous test that was expecting
+        // the first instance to read "0s". To make the test more resilient, it now gets the first two "Connected"
+        // messages that are emitted and confirms that they're different.
+        let messages = try waitForPublisher(
+            viewModel.$statusMessage
+                .removeDuplicates()
+                .filter { $0.hasPrefix("Connected") }
+                .prefix(2)
+                .collect()
+        )
+
+        XCTAssertEqual(messages.count, 2)
+        XCTAssertNotEqual(messages[0], messages[1], "Status message should update over time")
     }
 
     func testStatusUpdate_disconnecting_updateStatusToDisconnecting() throws {

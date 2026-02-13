@@ -105,6 +105,8 @@ class SettingsHostingController: UIHostingController<AnyView> {
             on: self,
             sourceRect: sourceRect,
             tabViewModel: nil,
+            pixelSource: .settings,
+            daxDialogsManager: viewProvider.daxDialogsManager,
             onConfirm: onConfirm,
             onCancel: onCancel
         )

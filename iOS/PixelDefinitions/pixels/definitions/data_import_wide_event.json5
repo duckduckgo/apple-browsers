@@ -12,6 +12,7 @@
             "wideEventType",
             "wideEventFormFactor",
             "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
             "wideEventFeatureStatus",
             "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
@@ -19,6 +20,7 @@
             "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",

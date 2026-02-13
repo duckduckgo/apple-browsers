@@ -22,6 +22,7 @@ import UIKit
 import PixelKit
 import BrowserServicesKit
 import Subscription
+import RemoteMessaging
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -93,7 +94,7 @@ struct Launching: LaunchingHandling {
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService()
+        let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
         let statisticsService = StatisticsService()
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
@@ -113,6 +114,10 @@ struct Launching: LaunchingHandling {
                                                                   featureFlagger: featureFlagger,
                                                                   daxDialogs: daxDialogs)
 
+        let remoteMessagingImageLoader = RemoteMessagingImageLoader(
+            dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
+            cache: RemoteMessagingImageLoader.defaultCache
+        )
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -123,6 +128,7 @@ struct Launching: LaunchingHandling {
                                                             syncService: syncService.sync,
                                                             winBackOfferService: winBackOfferService,
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter,
+                                                            remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
@@ -162,6 +168,7 @@ struct Launching: LaunchingHandling {
                 whatsNewRepository: whatsNewRepository,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                 remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
+                remoteMessagingImageLoader: remoteMessagingImageLoader,
                 appSettings: appSettings,
                 aiChatSettings: aiChatSettings,
                 experimentalAIChatManager: ExperimentalAIChatManager(),

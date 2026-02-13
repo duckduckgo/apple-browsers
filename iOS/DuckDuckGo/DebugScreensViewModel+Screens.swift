@@ -25,6 +25,7 @@ import BareBonesBrowserKit
 import Core
 import DataBrokerProtection_iOS
 import AIChat
+import WebExtensions
 
 extension DebugScreensViewModel {
 
@@ -181,6 +182,7 @@ extension DebugScreensViewModel {
                                                             runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
                 }
             }) : nil,
+            webExtensionsDebugScreen,
             .controller(title: "File Size Inspector", { _ in
                 return self.debugStoryboard.instantiateViewController(identifier: "FileSizeDebug") { coder in
                     FileSizeDebugViewController(coder: coder)
@@ -226,12 +228,13 @@ extension DebugScreensViewModel {
                 }
 
                 let isOnboardingRebranding = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.onboardingRebranding)
+                let defaultFlow: OnboardingDebugFlow = isOnboardingRebranding ? .rebranding : .legacy
 
                 weak var capturedController: OnboardingDebugViewController?
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(isRebrandingFlow: isOnboardingRebranding) {
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(initialFlow: defaultFlow) { flow in
                     guard let capturedController else { return }
 
-                    let controller: Onboarding = if isOnboardingRebranding {
+                    let controller: Onboarding = if flow.isRebranding {
                         OnboardingIntroViewController.rebranded(
                             onboardingPixelReporter: OnboardingPixelReporter(),
                             systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
@@ -284,6 +287,21 @@ extension DebugScreensViewModel {
         )
 
         store.lastPresentationTimestamp = nil
+    }
+
+    private var webExtensionsDebugScreen: DebugScreen? {
+        guard #available(iOS 18.4, *),
+              AppDependencyProvider.shared.featureFlagger.isFeatureOn(.webExtensions) else {
+            return nil
+        }
+
+        return .view(title: "Web Extensions") { d in
+            if let manager = d.webExtensionManager {
+                WebExtensionsDebugView(webExtensionManager: manager)
+            } else {
+                Text("Web Extensions not available")
+            }
+        }
     }
 
 }

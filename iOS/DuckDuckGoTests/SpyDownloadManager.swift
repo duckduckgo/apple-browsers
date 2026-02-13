@@ -23,11 +23,6 @@ import Foundation
 class SpyDownloadManager: DownloadManaging {
     var downloadList: Set<Download> = []
     var downloadsDirectoryFiles: [URL] = []
-    var deleteDownloadsDirectoryIfEmptyCallCount = 0
-    
-    func deleteDownloadsDirectoryIfEmpty() {
-        deleteDownloadsDirectoryIfEmptyCallCount += 1
-    }
     
     func startMonitoringDownloadsDirectoryChanges() { }
     

@@ -27,6 +27,7 @@ public protocol AIChatSyncCleaning: AnyObject {
     func recordAutoClearBackgroundTimestamp(date: Date?) async
     func recordLocalClear(date: Date?) async
     func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async
+    func recordChatDeletion(chatID: String) async
     func deleteIfNeeded() async
 }
 
@@ -35,6 +36,7 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     public enum Keys {
         public static let lastClearTimestamp = "com.duckduckgo.aichat.sync.lastClearTimestamp"
         public static let autoClearBackgroundTimestamp = "com.duckduckgo.aichat.sync.autoClearBackgroundTimestamp"
+        public static let chatIDsToDelete = "com.duckduckgo.aichat.sync.chatIDsToDelete"
     }
 
     private let sync: DDGSyncing
@@ -103,6 +105,14 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
         await state.promoteAutoClearToLastClear()
     }
 
+    public func recordChatDeletion(chatID: String) async {
+        guard canUseAIChatSyncDelete else {
+            return
+        }
+
+        await state.addChatToBeDeleted(chatID: chatID)
+    }
+
     /// If a clear timestamp exists, attempt to delete AI Chats up to that time on the server.
     /// On success, the timestamp is removed; on failure it is retained for a later retry.
     public func deleteIfNeeded() async {
@@ -110,6 +120,11 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
             return
         }
 
+        await deleteByTimestamp()
+        await deletePendingChats()
+    }
+
+    private func deleteByTimestamp() async {
         guard let timestampValue = await state.readLastClear() else {
             return
         }
@@ -124,6 +139,23 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
             await state.clearLastClearIf(unchanged: timestampValue)
         } catch {
             Logger.aiChat.debug("Failed to delete AI Chats: \(error.localizedDescription)")
+        }
+    }
+
+    private func deletePendingChats() async {
+        guard let pendingChats = await state.readChatIDsToBeDeleted(),
+              !pendingChats.isEmpty else {
+            Logger.aiChat.debug("No chat IDs pending deletion")
+            return
+        }
+
+        let chatsToDelete = Set(pendingChats)
+        do {
+            try await sync.deleteAIChats(chatIds: Array(chatsToDelete))
+            // Only remove the specific chat IDs that were successfully deleted
+            await state.removeChatsFromPending(chatIDs: chatsToDelete)
+        } catch {
+            Logger.aiChat.debug("Failed to delete pending ai chats: \(error.localizedDescription)")
         }
     }
 }
@@ -160,6 +192,26 @@ private actor AIChatSyncState {
         if let currentTimestamp = try? store.object(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp) as? Double,
            currentTimestamp == expected {
             try? store.removeObject(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
+        }
+    }
+
+    func addChatToBeDeleted(chatID: String) {
+        var currentIDs: Set<String> = Set((try? store.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]) ?? [])
+        currentIDs.insert(chatID)
+        try? store.set(Array(currentIDs), forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+    }
+
+    func readChatIDsToBeDeleted() -> [String]? {
+        try? store.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
+    }
+
+    func removeChatsFromPending(chatIDs: Set<String>) {
+        var currentIDs = Set((try? store.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]) ?? [])
+        currentIDs.subtract(chatIDs)
+        if currentIDs.isEmpty {
+            try? store.removeObject(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        } else {
+            try? store.set(Array(currentIDs), forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
         }
     }
 }

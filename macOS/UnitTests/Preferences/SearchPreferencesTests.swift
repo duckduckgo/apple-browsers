@@ -27,7 +27,8 @@ class MockSearchPreferencesPersistor: SearchPreferencesPersistor {
 class SearchPreferencesTests: XCTestCase {
 
     override func setUpWithError() throws {
-        PixelKit.setUp(appVersion: "",
+        PixelKit.setUp(dryRun: true,
+                       appVersion: "",
                        defaultHeaders: [:],
                        defaults: UserDefaults()) { _, _, _, _, _, _ in }
     }

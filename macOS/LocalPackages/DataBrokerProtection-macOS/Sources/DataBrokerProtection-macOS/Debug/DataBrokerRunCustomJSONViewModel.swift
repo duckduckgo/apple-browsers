@@ -126,13 +126,6 @@ final class AddressUI: ObservableObject {
     }
 }
 
-struct ScanResult {
-    let id = UUID()
-    let dataBroker: DataBroker
-    let profileQuery: ProfileQuery
-    let extractedProfile: ExtractedProfile
-}
-
 /// Preset entries look like this:
 ///
 /// John Smith
@@ -175,7 +168,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     @Published var birthYear: String = ""
     @Published var age: String = ""
-    @Published var results = [ScanResult]()
+    @Published var results = [DebugScanResult]()
     @Published var showAlert = false
     @Published var showNoResults = false
     @Published var names = [NameUI.empty()]
@@ -196,7 +189,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     private let emailService: EmailService
     lazy var emailConfirmationDataService: EmailConfirmationDataServiceProvider = {
-        EmailConfirmationDataService(emailConfirmationStore: emailConfirmationStore,
+        EmailConfirmationDataService(emailConfirmationStore: debugEmailConfirmationStore,
                                      database: nil,
                                      emailServiceV0: emailService,
                                      emailServiceV1: emailServiceV1,
@@ -206,7 +199,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                         self?.addHistoryDebugEvent(summary: "Email confirmation", details: message)
                                      })
     }()
-    let emailConfirmationStore = DebugEmailConfirmationStore()
+    let debugEmailConfirmationStore = DebugEmailConfirmationStore()
     let captchaService: CaptchaService
     private let emailServiceV1: EmailServiceV1Protocol
     let privacyConfigManager: PrivacyConfigurationManaging
@@ -219,7 +212,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let featureFlagger: DBPFeatureFlagging
 
     private var isSyncingAgeFields = false
-    var awaitingEmailConfirmationProfileIds = Set<Int64>()
 
     var combinedDebugEvents: [DebugEventRow] {
         let debugRows = debugEvents.map { event in
@@ -299,8 +291,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.error = nil
         self.results.removeAll()
         self.debugEvents.removeAll()
-        self.awaitingEmailConfirmationProfileIds.removeAll()
-        self.emailConfirmationStore.reset()
+        self.debugEmailConfirmationStore.reset()
         self.isProgressActive = true
         self.progressText = "Starting scan..."
         if let data = jsonString.data(using: .utf8) {
@@ -346,7 +337,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             let brokerId = DebugHelper.stableId(for: query.dataBroker)
                             let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
                             let assignedProfiles: [ExtractedProfile] = extractedProfiles.map { profile in
-                                emailConfirmationStore.storeExtractedProfile(profile,
+                                debugEmailConfirmationStore.storeExtractedProfile(profile,
                                                                              brokerId: brokerId,
                                                                              profileQueryId: profileQueryId,
                                                                              stableId: DebugHelper.stableId(for: profile))
@@ -355,9 +346,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
                             Task { @MainActor in
                                 for extractedProfile in assignedProfiles {
-                                    self.results.append(ScanResult(dataBroker: query.dataBroker,
-                                                                   profileQuery: query.profileQuery,
-                                                                   extractedProfile: extractedProfile))
+                                    self.results.append(DebugScanResult(dataBroker: query.dataBroker,
+                                                                        profileQuery: query.profileQuery,
+                                                                        extractedProfile: extractedProfile))
                                 }
                             }
                             group.leave()
@@ -390,7 +381,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     @MainActor
-    func runOptOut(scanResult: ScanResult) {
+    func runOptOut(scanResult: DebugScanResult) {
         isProgressActive = true
         progressText = "Starting opt-out..."
         addOptOutStartedEvent(for: scanResult)
@@ -482,7 +473,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let profileQueries = profile.profileQueries
         var brokerProfileQueryData = [BrokerProfileQueryData]()
 
-        let resolvedBroker = brokerWithId(broker)
+        let resolvedBroker = broker.with(id: DebugHelper.stableId(for: broker))
         for profileQuery in profileQueries {
             let profileQueryId = DebugHelper.stableId(for: profileQuery)
             let fakeScanJobData = ScanJobData(brokerId: DebugHelper.stableId(for: resolvedBroker),
@@ -504,11 +495,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             self.showAlert = true
             self.alert = AlertUI.noResults()
         }
-    }
-
-    private func brokerWithId(_ broker: DataBroker) -> DataBroker {
-        guard broker.id == nil else { return broker }
-        return broker.with(id: DebugHelper.stableId(for: broker))
     }
 
     func showAlert(for error: Error) {

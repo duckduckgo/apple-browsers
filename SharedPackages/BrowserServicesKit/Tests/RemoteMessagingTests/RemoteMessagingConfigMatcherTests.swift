@@ -1076,7 +1076,10 @@ private extension RemoteMessagingConfigMatcherTests {
     func mediumMessage(id: String = "1", matchingRules: [Int], exclusionRules: [Int]) -> RemoteMessageModel {
         return RemoteMessageModel(id: id,
                                   surfaces: .newTabPage,
-                                  content: .medium(titleText: "title", descriptionText: "description", placeholder: .announce),
+                                  content: .medium(titleText: "title",
+                                                   descriptionText: "description",
+                                                   placeholder: .announce,
+                                                   imageUrl: nil),
                                   matchingRules: matchingRules,
                                   exclusionRules: exclusionRules,
                                   isMetricsEnabled: true
@@ -1086,7 +1089,7 @@ private extension RemoteMessagingConfigMatcherTests {
     func cardsListMessage(id: String = "1", matchingRules: [Int], exclusionRules: [Int], items: [RemoteMessageModelType.ListItem]) -> RemoteMessageModel {
         return RemoteMessageModel(id: id,
                                   surfaces: [.modal, .dedicatedTab],
-                                  content: .cardsList(titleText: "Feature List", placeholder: nil, items: items, primaryActionText: "Got It", primaryAction: .dismiss),
+                                  content: .cardsList(titleText: "Feature List", placeholder: nil, imageUrl: nil, items: items, primaryActionText: "Got It", primaryAction: .dismiss),
                                   matchingRules: matchingRules,
                                   exclusionRules: exclusionRules,
                                   isMetricsEnabled: true

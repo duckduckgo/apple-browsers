@@ -109,6 +109,10 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 #elseif os(iOS)
             cleanupExistingPIRDebugWindow()
 
+            if #available(iOS 16.4, *) {
+                webView?.isInspectable = true
+            }
+
             let viewController = UIViewController.init()
             viewController.view = webView
             let navigationController = UINavigationController(rootViewController: viewController)

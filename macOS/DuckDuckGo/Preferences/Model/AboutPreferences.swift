@@ -21,6 +21,7 @@ import Common
 import Combine
 import FeatureFlags
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 
@@ -32,14 +33,17 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     let windowControllersManager: WindowControllersManagerProtocol
     let supportedOSChecker: SupportedOSChecking
     private var cancellables = Set<AnyCancellable>()
+    private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger,
          windowControllersManager: WindowControllersManagerProtocol,
+         keyValueStore: ThrowingKeyValueStoring,
          supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
+        self.settings = keyValueStore.throwingKeyedStoring()
         self.appVersionModel = .init(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
         self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
         internalUserDecider.isInternalUserPublisher
@@ -196,7 +200,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     var customFeedURL: String? {
-        UserDefaults.standard.string(forKey: UserDefaultsWrapper<String>.Key.debugSparkleCustomFeedURL.rawValue)
+        return try? settings.debugSparkleCustomFeedURL
     }
 #endif
 

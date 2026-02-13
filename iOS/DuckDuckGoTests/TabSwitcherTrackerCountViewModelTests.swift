@@ -31,10 +31,12 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         var handleAppTerminationCallCount = 0
         var fetchDelayNanoseconds: UInt64?
         var fetchCallCount = 0
+        var onFetchStarted: (() -> Void)?
 
         func recordBlockedTracker(_ name: String) async { recordCalls.append(name) }
         func fetchPrivacyStatsTotalCount() async -> Int64 {
             fetchCallCount += 1
+            onFetchStarted?()
             if let delay = fetchDelayNanoseconds {
                 try? await Task.sleep(nanoseconds: delay)
             }
@@ -48,6 +50,7 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         var isGridViewEnabled: Bool = true
         var hasSeenNewLayout: Bool = false
         var showTrackerCountInTabSwitcher: Bool = true
+        var lastTrackerCountInTabSwitcher: Int64?
     }
 
     func testRefreshHiddenWhenSettingDisabled() async {
@@ -55,7 +58,7 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         settings.showTrackerCountInTabSwitcher = false
         let stats = MockPrivacyStats()
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger, initialState: .hidden)
 
         await viewModel.refreshAsync()
 
@@ -68,7 +71,7 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         let stats = MockPrivacyStats()
         stats.total = 5
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger, initialState: .hidden)
 
         await viewModel.refreshAsync()
 
@@ -80,7 +83,7 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         let stats = MockPrivacyStats()
         stats.total = 0
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger, initialState: .hidden)
 
         await viewModel.refreshAsync()
 
@@ -92,7 +95,7 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         let stats = MockPrivacyStats()
         stats.total = 5
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger, initialState: .hidden)
 
         await viewModel.refreshAsync()
 
@@ -105,7 +108,7 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         settings.showTrackerCountInTabSwitcher = true
         let stats = MockPrivacyStats()
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger, initialState: .hidden)
 
         viewModel.hide()
 
@@ -119,12 +122,16 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         stats.total = 100
         stats.fetchDelayNanoseconds = 100_000_000 // 100ms
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger, initialState: .hidden)
 
-        // Start first refresh (will be slow due to delay)
+        // Start first refresh
+        let firstFetchStarted = expectation(description: "First fetch started")
+        stats.onFetchStarted = { firstFetchStarted.fulfill() }
         viewModel.refresh()
+        await fulfillment(of: [firstFetchStarted], timeout: 3.0)
+        stats.onFetchStarted = nil
 
-        // Immediately start second refresh which should cancel the first
+        // Start second refresh which should cancel the first
         stats.total = 200
         let state = await viewModel.refreshAsync()
 
@@ -141,7 +148,7 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         stats.total = 50
         stats.fetchDelayNanoseconds = 100_000_000 // 100ms
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger, initialState: .hidden)
 
         // Start refresh (will be slow due to delay)
         viewModel.refresh()
@@ -163,7 +170,7 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         stats.total = 50
         stats.fetchDelayNanoseconds = 100_000_000 // 100ms
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
-        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger)
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger, initialState: .hidden)
 
         // Start refreshAsync in a separate task (will be slow due to delay)
         let refreshTask = Task {
@@ -185,5 +192,98 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         // State should remain hidden because hide() cancelled the refreshAsync task
         XCTAssertFalse(viewModel.state.isVisible)
         XCTAssertFalse(settings.showTrackerCountInTabSwitcher)
+    }
+
+    // MARK: - calculateInitialState tests
+
+    func testCalculateInitialStateReturnsHiddenWhenFeatureDisabled() async {
+        let settings = MockTabSwitcherSettings()
+        settings.showTrackerCountInTabSwitcher = true
+        let stats = MockPrivacyStats()
+        stats.total = 100
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+
+        let state = await TabSwitcherTrackerCountViewModel.calculateInitialState(
+            featureFlagger: featureFlagger,
+            settings: settings,
+            privacyStats: stats
+        )
+
+        XCTAssertFalse(state.isVisible)
+    }
+
+    func testCalculateInitialStateReturnsHiddenWhenSettingDisabled() async {
+        let settings = MockTabSwitcherSettings()
+        settings.showTrackerCountInTabSwitcher = false
+        let stats = MockPrivacyStats()
+        stats.total = 100
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
+
+        let state = await TabSwitcherTrackerCountViewModel.calculateInitialState(
+            featureFlagger: featureFlagger,
+            settings: settings,
+            privacyStats: stats
+        )
+
+        XCTAssertFalse(state.isVisible)
+    }
+
+    func testCalculateInitialStateReturnsHiddenWhenCountIsZero() async {
+        let settings = MockTabSwitcherSettings()
+        settings.showTrackerCountInTabSwitcher = true
+        let stats = MockPrivacyStats()
+        stats.total = 0
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
+
+        let state = await TabSwitcherTrackerCountViewModel.calculateInitialState(
+            featureFlagger: featureFlagger,
+            settings: settings,
+            privacyStats: stats
+        )
+
+        XCTAssertFalse(state.isVisible)
+    }
+
+    func testCalculateInitialStateReturnsVisibleWithCorrectCount() async {
+        let settings = MockTabSwitcherSettings()
+        settings.showTrackerCountInTabSwitcher = true
+        let stats = MockPrivacyStats()
+        stats.total = 42
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
+
+        let state = await TabSwitcherTrackerCountViewModel.calculateInitialState(
+            featureFlagger: featureFlagger,
+            settings: settings,
+            privacyStats: stats
+        )
+
+        XCTAssertTrue(state.isVisible)
+        XCTAssertTrue(state.title.contains("42"))
+        XCTAssertFalse(state.subtitle.isEmpty)
+    }
+
+    func testInitialStateIsUsedByViewModel() async {
+        let settings = MockTabSwitcherSettings()
+        let stats = MockPrivacyStats()
+        stats.total = 100
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
+
+        let initialState = TabSwitcherTrackerCountViewModel.State(
+            isVisible: true,
+            title: "Initial Title",
+            subtitle: "Initial Subtitle"
+        )
+
+        let viewModel = TabSwitcherTrackerCountViewModel(
+            settings: settings,
+            privacyStats: stats,
+            featureFlagger: featureFlagger,
+            initialState: initialState
+        )
+
+        // Verify the initial state is used
+        XCTAssertTrue(viewModel.state.isVisible)
+        XCTAssertEqual(viewModel.state.title, "Initial Title")
+        XCTAssertEqual(viewModel.state.subtitle, "Initial Subtitle")
     }
 }

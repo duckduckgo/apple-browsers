@@ -64,7 +64,7 @@ final class DataImportProviderTests: XCTestCase {
         bookmarkManager = MockBookmarkManager()
         bookmarkManager.list = notImportedBookmarkList
 
-        provider = BookmarksAndPasswordsImportStatusProvider(secureVault: vault, bookmarkManager: bookmarkManager)
+        provider = BookmarksAndPasswordsImportStatusProvider(secureVault: vault, bookmarkManager: bookmarkManager, pinningManager: MockPinningManager())
     }
 
     override var allowedNonNilVariables: Set<String> {

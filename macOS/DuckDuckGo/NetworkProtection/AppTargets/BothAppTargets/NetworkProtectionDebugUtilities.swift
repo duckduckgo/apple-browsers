@@ -47,6 +47,7 @@ final class NetworkProtectionDebugUtilities {
     // MARK: - Initializers
 
     init(loginItemsManager: LoginItemsManager = .init(),
+         pinningManager: PinningManager,
          settings: VPNSettings = .init(defaults: .netP),
          vpnAppState: VPNAppState = .init(defaults: .netP)) {
 
@@ -56,7 +57,7 @@ final class NetworkProtectionDebugUtilities {
         let ipcClient = VPNControllerXPCClient.shared
 
         self.ipcClient = ipcClient
-        self.vpnUninstaller = VPNUninstaller(ipcClient: ipcClient)
+        self.vpnUninstaller = VPNUninstaller(pinningManager: pinningManager, ipcClient: ipcClient)
         self.vpnAppState = vpnAppState
     }
 

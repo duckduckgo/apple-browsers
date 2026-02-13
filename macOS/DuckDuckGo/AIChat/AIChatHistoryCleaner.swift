@@ -44,6 +44,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     let notificationCenter: NotificationCenter
     private var featureDiscoveryObserver: NSObjectProtocol?
     private let pixelKit: PixelKit?
+    private let dataClearingPixelsReporter: DataClearingPixelsReporter
     private var historyCleaner: HistoryCleaning
 
     @Published
@@ -69,6 +70,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         aiChatWasUsedBefore = featureDiscovery.wasUsedBefore(.aiChat)
 
         self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
+        self.dataClearingPixelsReporter = .init(pixelFiring: self.pixelKit)
         subscribeToChanges()
     }
 
@@ -88,6 +90,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
             pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
+            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnChatHistoryError(error))
             pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
 
             if let userScriptError = error as? UserScriptError {

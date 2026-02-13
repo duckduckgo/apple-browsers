@@ -287,4 +287,192 @@ final class AIChatSyncCleanerTests: XCTestCase {
         let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp) as? Double
         XCTAssertEqual(storedValue, fixedDate.timeIntervalSince1970 + 1, "Timestamp should remain because it changed after the delete started")
     }
+
+    // MARK: - recordChatDeletion Tests
+
+    func testGivenFeatureFlagDisabled_WhenRecordChatDeletion_ThenNothingIsStored() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = false
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT()
+
+        // When
+        await sut.recordChatDeletion(chatID: "chat-123")
+
+        // Then
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
+        XCTAssertNil(storedValue, "No chat ID should be stored when feature flag is disabled")
+    }
+
+    func testGivenSyncInactive_WhenRecordChatDeletion_ThenNothingIsStored() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .inactive
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT()
+
+        // When
+        await sut.recordChatDeletion(chatID: "chat-123")
+
+        // Then
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
+        XCTAssertNil(storedValue, "No chat ID should be stored when sync is inactive")
+    }
+
+    func testGivenChatHistoryDisabled_WhenRecordChatDeletion_ThenNothingIsStored() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = false
+        sut = makeSUT()
+
+        // When
+        await sut.recordChatDeletion(chatID: "chat-123")
+
+        // Then
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
+        XCTAssertNil(storedValue, "No chat ID should be stored when chat history is disabled")
+    }
+
+    func testGivenAllConditionsMet_WhenRecordChatDeletion_ThenChatIDIsStored() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT()
+
+        // When
+        await sut.recordChatDeletion(chatID: "chat-1")
+        await sut.recordChatDeletion(chatID: "chat-2")
+        await sut.recordChatDeletion(chatID: "chat-3")
+
+        // Then
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
+        XCTAssertEqual(Set(storedValue ?? []), Set(["chat-1", "chat-2", "chat-3"]), "All chat IDs should be stored")
+    }
+
+    func testWhenSameChatIDRecordedTwice_ThenOnlyStoredOnce() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT()
+
+        // When
+        await sut.recordChatDeletion(chatID: "chat-123")
+        await sut.recordChatDeletion(chatID: "chat-123")
+
+        // Then
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
+        XCTAssertEqual(storedValue, ["chat-123"], "Duplicate chat ID should only be stored once")
+    }
+
+    // MARK: - deleteIfNeeded with Chat IDs Tests
+
+    func testGivenPendingChatIDs_WhenDeleteIfNeeded_ThenDeleteIsCalled() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        try? mockKeyValueStore.set(["chat-1", "chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        sut = makeSUT()
+
+        // When
+        await sut.deleteIfNeeded()
+
+        // Then
+        XCTAssertEqual(mockSync.deleteAIChatsByChatIdsCallCount, 1, "Delete by chat IDs should be called once")
+        XCTAssertEqual(Set(mockSync.deleteAIChatsByChatIds ?? []), Set(["chat-1", "chat-2"]), "Delete should be called with correct chat IDs")
+    }
+
+    func testGivenPendingChatIDsAndDeleteSucceeds_WhenDeleteIfNeeded_ThenChatIDsAreCleared() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        mockSync.deleteAIChatsByChatIdsError = nil
+        try? mockKeyValueStore.set(["chat-1", "chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        sut = makeSUT()
+
+        // When
+        await sut.deleteIfNeeded()
+
+        // Then
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        XCTAssertNil(storedValue, "Chat IDs should be cleared after successful delete")
+    }
+
+    func testGivenPendingChatIDsAndDeleteFails_WhenDeleteIfNeeded_ThenChatIDsAreRetained() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        mockSync.deleteAIChatsByChatIdsError = NSError(domain: "test", code: 1)
+        try? mockKeyValueStore.set(["chat-1", "chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        sut = makeSUT()
+
+        // When
+        await sut.deleteIfNeeded()
+
+        // Then
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
+        XCTAssertEqual(Set(storedValue ?? []), Set(["chat-1", "chat-2"]), "Chat IDs should be retained for retry after failed delete")
+    }
+
+    func testGivenNoPendingChatIDs_WhenDeleteIfNeeded_ThenDeleteByIdsIsNotCalled() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        // No chat IDs stored
+        sut = makeSUT()
+
+        // When
+        await sut.deleteIfNeeded()
+
+        // Then
+        XCTAssertEqual(mockSync.deleteAIChatsByChatIdsCallCount, 0, "Delete by chat IDs should not be called when no chat IDs are pending")
+    }
+
+    func testGivenChatIDsAddedDuringDelete_WhenDeleteSucceeds_ThenNewChatIDsArePreserved() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        try? mockKeyValueStore.set(["chat-1", "chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        sut = makeSUT()
+
+        // Simulate new chat ID being added during the network call
+        mockSync.onDeleteAIChatsByChatIds = { [weak mockKeyValueStore] in
+            var current = (try? mockKeyValueStore?.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]) ?? []
+            current.append("chat-3")
+            try? mockKeyValueStore?.set(current, forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        }
+
+        // When
+        await sut.deleteIfNeeded()
+
+        // Then
+        XCTAssertEqual(mockSync.deleteAIChatsByChatIdsCallCount, 1)
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
+        XCTAssertEqual(storedValue, ["chat-3"], "New chat ID added during delete should be preserved")
+    }
+
+    func testGivenBothTimestampAndChatIDs_WhenDeleteIfNeeded_ThenBothAreProcessed() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        try? mockKeyValueStore.set(fixedDate.timeIntervalSince1970, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
+        try? mockKeyValueStore.set(["chat-1"], forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
+        sut = makeSUT()
+
+        // When
+        await sut.deleteIfNeeded()
+
+        // Then
+        XCTAssertEqual(mockSync.deleteAIChatsCallCount, 1, "Timestamp-based delete should be called")
+        XCTAssertEqual(mockSync.deleteAIChatsByChatIdsCallCount, 1, "ChatID-based delete should be called")
+    }
 }

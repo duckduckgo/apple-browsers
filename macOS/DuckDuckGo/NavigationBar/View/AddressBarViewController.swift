@@ -82,7 +82,6 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var activeOuterBorderView: ColorView!
     @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
     @IBOutlet var innerBorderView: ColorView!
-    @IBOutlet var progressIndicator: LoadingProgressView!
     @IBOutlet var buttonsContainerView: NSView!
     @IBOutlet var switchToTabBox: ColorView!
     @IBOutlet var switchToTabLabel: NSTextField!
@@ -272,6 +271,8 @@ final class AddressBarViewController: NSViewController {
         setupAddressBarPlaceHolder()
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
+        passiveTextField.setAccessibilityIdentifier("AddressBarViewController.passiveTextField")
+
         passiveTextField.isSelectable = !isInPopUpWindow
         /// Passive Address Bar text field is centered by the constraints
         /// Left alignment is used to prevent jumping of the text field in overflow mode when the buttons width changes
@@ -419,7 +420,6 @@ final class AddressBarViewController: NSViewController {
                 addressBarTextField.sharedTextState = sharedTextState
 
                 subscribeToTabContent()
-                subscribeToProgressEventsIfNeeded()
 
                 // don't resign first responder on tab switching
                 clickPoint = nil
@@ -449,58 +449,6 @@ final class AddressBarViewController: NSViewController {
         tabViewModel?.tab.$content
             .map { $0 == .newtab }
             .assign(to: \.isHomePage, onWeaklyHeld: self)
-            .store(in: &tabViewModelCancellables)
-    }
-
-    private let displaysTabsProgressIndicator: Bool = NSApp.delegateTyped.displaysTabsProgressIndicator == false
-
-    private func subscribeToProgressEventsIfNeeded() {
-        guard let tabViewModel, displaysTabsProgressIndicator else {
-            progressIndicator.hide(animated: false)
-            return
-        }
-
-        func shouldShowLoadingIndicator(for tabViewModel: TabViewModel, isLoading: Bool, error: Error?) -> Bool {
-            if isLoading,
-               let url = tabViewModel.tab.content.urlForWebView,
-               url.navigationalScheme?.isHypertextScheme == true,
-               !url.isDuckDuckGoSearch, !url.isDuckPlayer,
-               error == nil {
-                return true
-            } else {
-                return false
-            }
-        }
-
-        if shouldShowLoadingIndicator(for: tabViewModel, isLoading: tabViewModel.isLoading, error: tabViewModel.tab.error) {
-            progressIndicator.show(progress: tabViewModel.progress, startTime: tabViewModel.loadingStartTime)
-        } else {
-            progressIndicator.hide(animated: false)
-        }
-
-        tabViewModel.$progress
-            .sink { [weak self] value in
-                guard tabViewModel.isLoading,
-                      let progressIndicator = self?.progressIndicator,
-                      progressIndicator.isProgressShown
-                else { return }
-
-                progressIndicator.increaseProgress(to: value)
-            }
-            .store(in: &tabViewModelCancellables)
-
-        tabViewModel.$isLoading.combineLatest(tabViewModel.tab.$error)
-            .debounce(for: 0.1, scheduler: RunLoop.main)
-            .sink { [weak self] isLoading, error in
-                guard let progressIndicator = self?.progressIndicator else { return }
-
-                if shouldShowLoadingIndicator(for: tabViewModel, isLoading: isLoading, error: error) {
-                    progressIndicator.show(progress: tabViewModel.progress, startTime: tabViewModel.loadingStartTime)
-
-                } else if progressIndicator.isProgressShown {
-                    progressIndicator.finishAndHide()
-                }
-            }
             .store(in: &tabViewModelCancellables)
     }
 

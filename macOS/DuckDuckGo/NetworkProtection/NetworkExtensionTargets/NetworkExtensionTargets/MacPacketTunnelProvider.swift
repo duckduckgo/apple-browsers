@@ -533,7 +533,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        let pixelHandler = SubscriptionPixelHandler(source: .systemExtension)
+        let pixelHandler = SubscriptionPixelHandler(source: .systemExtension, pixelKit: PixelKit.shared)
         let subscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
                                                                subscriptionEndpointService: subscriptionEndpointService,
@@ -679,13 +679,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     // MARK: - Pixels
 
     private func setupPixels(defaultHeaders: [String: String] = [:]) {
-        let dryRun: Bool
-#if DEBUG
-        dryRun = true
-#else
-        dryRun = false
-#endif
-
         let source: String
 
 #if NETP_SYSTEM_EXTENSION && !APPSTORE
@@ -698,7 +691,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
-        PixelKit.setUp(dryRun: dryRun,
+        PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
                        defaultHeaders: defaultHeaders,

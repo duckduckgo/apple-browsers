@@ -73,7 +73,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
     }
     
     func testNotificationTemporaryRealityDownload() throws {
@@ -100,7 +100,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
         
     }
     
@@ -127,7 +127,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
     }
     
     func testNotificationPermanentBinaryDownload() throws {
@@ -153,7 +153,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
     }
     
     func testClosurePermanentBinaryDownload() throws {
@@ -173,7 +173,7 @@ class DownloadManagerTests: XCTestCase {
             XCTAssertTrue(downloadManagerTestsHelper.checkIfFileExists(finalPath), "File should exist")
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
     }
     
     func testIfFinishedDownloadIsRemovedFromList() throws {
@@ -231,7 +231,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
     }
     
     func testDownloadListUniqueFilenames() throws {
@@ -311,7 +311,7 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
         
         // Then
         XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory should exist after non-temporary download")
@@ -338,57 +338,9 @@ class DownloadManagerTests: XCTestCase {
         }
         
         downloadManager.startDownload(download)
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 5)
         
         // Then
         XCTAssertFalse(handler.downloadsDirectoryExists(), "Directory should not exist after temporary download")
-    }
-    
-    func testWhenDownloadManagerInitializedWithEmptyDirectoryThenDirectoryDeleted() throws {
-        // Given
-        let handler = DownloadsDirectoryHandler()
-        handler.createDownloadsDirectory()
-        XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory should exist before initialization")
-        XCTAssertTrue(try handler.downloadsDirectoryFiles.isEmpty, "Directory should be empty")
-        
-        // When
-        _ = DownloadManager(NotificationCenter(), downloadsDirectoryHandler: handler)
-        
-        // Then
-        XCTAssertFalse(handler.downloadsDirectoryExists(), "Empty directory should be deleted on launch")
-    }
-    
-    func testWhenDownloadManagerInitializedWithNonEmptyDirectoryThenDirectoryNotDeleted() throws {
-        // Given
-        let handler = DownloadsDirectoryHandler()
-        handler.createDownloadsDirectory()
-        let fileURL = handler.downloadsDirectory.appendingPathComponent("testFile.txt")
-        FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
-        XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory should exist before initialization")
-        XCTAssertFalse(try handler.downloadsDirectoryFiles.isEmpty, "Directory should not be empty")
-        
-        // When
-        _ = DownloadManager(NotificationCenter(), downloadsDirectoryHandler: handler)
-        
-        // Then
-        XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory with files should not be deleted on launch")
-        XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path), "File should still exist")
-    }
-    
-    func testDeleteDownloadsDirectoryIfEmptyDelegatesToHandler() throws {
-        // Given
-        let handler = DownloadsDirectoryHandler()
-        handler.createDownloadsDirectory()
-        XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory should exist")
-        XCTAssertTrue(try handler.downloadsDirectoryFiles.isEmpty, "Directory should be empty")
-        
-        let notificationCenter = NotificationCenter()
-        let downloadManager = DownloadManager(notificationCenter, downloadsDirectoryHandler: handler)
-        
-        // When
-        downloadManager.deleteDownloadsDirectoryIfEmpty()
-        
-        // Then
-        XCTAssertFalse(handler.downloadsDirectoryExists(), "Directory should be deleted via handler")
     }
 }

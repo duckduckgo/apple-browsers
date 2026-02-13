@@ -60,6 +60,12 @@ protocol AIChatSidebarProviding: AnyObject {
     /// - Parameter tabID: The unique identifier of the tab
     func resetSidebar(for tabID: TabIdentifier)
 
+    /// Clears the sidebar for the specified tab if the session has expired.
+    /// - Parameter tabID: The unique identifier of the tab
+    /// - Returns: `true` if the sidebar was cleared due to session expiry, `false` otherwise
+    @discardableResult
+    func clearSidebarIfSessionExpired(for tabID: TabIdentifier) -> Bool
+
     /// The underlying model containing all active chat sidebars mapped by their tab identifiers.
     /// This dictionary maintains the state of all chat sidebars across different browser tabs.
     var sidebarsByTab: AIChatSidebarsByTab { get }
@@ -171,5 +177,17 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
 
     func resetSidebar(for tabID: TabIdentifier) {
         sidebarsByTab.removeValue(forKey: tabID)
+    }
+
+    @discardableResult
+    func clearSidebarIfSessionExpired(for tabID: TabIdentifier) -> Bool {
+        guard let existingSidebar = sidebarsByTab[tabID],
+              existingSidebar.isSessionExpired else {
+            return false
+        }
+
+        existingSidebar.unloadViewController(persistingState: shouldKeepSession)
+        sidebarsByTab.removeValue(forKey: tabID)
+        return true
     }
 }

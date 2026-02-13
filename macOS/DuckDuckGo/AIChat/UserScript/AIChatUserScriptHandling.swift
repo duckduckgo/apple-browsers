@@ -22,6 +22,7 @@ import Combine
 import Common
 import Foundation
 import PixelKit
+import Subscription
 import UserScript
 import OSLog
 import PrivacyConfig
@@ -95,6 +96,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let statisticsLoader: StatisticsLoader?
     private let syncServiceProvider: () -> DDGSyncing?
     private let featureFlagger: FeatureFlagger
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let migrationStore = AIChatMigrationStore()
 
     init(
@@ -105,6 +107,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         statisticsLoader: StatisticsLoader?,
         syncServiceProvider: @escaping () -> DDGSyncing?,
         featureFlagger: FeatureFlagger,
+        freeTrialConversionService: FreeTrialConversionInstrumentationService = Application.appDelegate.freeTrialConversionService,
         notificationCenter: NotificationCenter = .default
     ) {
         self.storage = storage
@@ -115,6 +118,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.syncServiceProvider = syncServiceProvider
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
+        self.freeTrialConversionService = freeTrialConversionService
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
@@ -516,12 +520,14 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         switch metric.metricName {
         case .userDidSubmitFirstPrompt:
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+            markDuckAIActivatedIfNeeded(metric)
             pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
         case .userDidSubmitPrompt:
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+            markDuckAIActivatedIfNeeded(metric)
             pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
@@ -536,6 +542,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         statisticsLoader?.refreshRetentionAtbOnDuckAiPromptSubmition {
             completion?()
         }
+    }
+
+    private func markDuckAIActivatedIfNeeded(_ metric: AIChatMetric) {
+        guard let tier = metric.modelTier, case .plus = tier else { return }
+        freeTrialConversionService.markDuckAIActivated()
     }
 
 }

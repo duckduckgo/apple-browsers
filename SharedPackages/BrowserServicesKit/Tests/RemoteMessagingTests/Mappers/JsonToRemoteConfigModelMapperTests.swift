@@ -29,8 +29,12 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         XCTAssertEqual(config.messages[0], RemoteMessageModel(
                 id: "8274589c-8aeb-4322-a737-3852911569e3",
                 surfaces: .newTabPage,
-                content: .bigSingleAction(titleText: "title", descriptionText: "description", placeholder: .announce,
-                                          primaryActionText: "Ok", primaryAction: .url(value: "https://duckduckgo.com")),
+                content: .bigSingleAction(titleText: "title",
+                                          descriptionText: "description",
+                                          placeholder: .announce,
+                                          imageUrl: nil,
+                                          primaryActionText: "Ok",
+                                          primaryAction: .url(value: "https://duckduckgo.com")),
                 matchingRules: [],
                 exclusionRules: [],
                 isMetricsEnabled: true)
@@ -39,8 +43,11 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         XCTAssertEqual(config.messages[1], RemoteMessageModel(
                 id: "8274589c-8aeb-4322-a737-3852911569e3",
                 surfaces: .newTabPage,
-                content: .bigSingleAction(titleText: "Kedvenc hozzáadása", descriptionText: "Kedvenc eltávolítása", placeholder: .ddgAnnounce,
-                                          primaryActionText: "Ok", primaryAction: .url(value: "https://duckduckgo.com")),
+                content: .bigSingleAction(titleText: "Kedvenc hozzáadása",
+                                          descriptionText: "Kedvenc eltávolítása",
+                                          placeholder: .ddgAnnounce,
+                                          imageUrl: nil, primaryActionText: "Ok",
+                                          primaryAction: .url(value: "https://duckduckgo.com")),
                 matchingRules: [],
                 exclusionRules: [],
                 isMetricsEnabled: true)
@@ -58,7 +65,10 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         XCTAssertEqual(config.messages[3], RemoteMessageModel(
                 id: "c3549d64-b388-41d8-9649-33e6e2674e8e",
                 surfaces: .newTabPage,
-                content: .medium(titleText: "Here goes a title", descriptionText: "description", placeholder: .criticalUpdate),
+                content: .medium(titleText: "Here goes a title",
+                                 descriptionText: "description",
+                                 placeholder: .criticalUpdate,
+                                 imageUrl: nil),
                 matchingRules: [],
                 exclusionRules: [],
                 isMetricsEnabled: true)
@@ -67,9 +77,14 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         XCTAssertEqual(config.messages[4], RemoteMessageModel(
                 id: "c2d0a1f1-6157-434f-8145-38416037d339",
                 surfaces: .newTabPage,
-                content: .bigTwoAction(titleText: "Here goes a title", descriptionText: "description", placeholder: .appUpdate,
-                                       primaryActionText: "Ok", primaryAction: .appStore,
-                                       secondaryActionText: "Cancel", secondaryAction: .dismiss),
+                content: .bigTwoAction(titleText: "Here goes a title",
+                                       descriptionText: "description",
+                                       placeholder: .appUpdate,
+                                       imageUrl: nil,
+                                       primaryActionText: "Ok",
+                                       primaryAction: .appStore,
+                                       secondaryActionText: "Cancel",
+                                       secondaryAction: .dismiss),
                 matchingRules: [],
                 exclusionRules: [],
                 isMetricsEnabled: true)
@@ -78,10 +93,15 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         XCTAssertEqual(config.messages[5], RemoteMessageModel(
             id: "96EEA91B-030D-41E5-95A7-F11C1952A5FF",
             surfaces: .newTabPage,
-            content: .bigTwoAction(titleText: "Here goes a title", descriptionText: "description", placeholder: .newForMacAndWindows,
-                                   primaryActionText: "Ok", primaryAction: .share(value: "https://duckduckgo.com/app",
-                                                                                  title: "Share Title"),
-                                   secondaryActionText: "Cancel", secondaryAction: .dismiss),
+            content: .bigTwoAction(titleText: "Here goes a title",
+                                   descriptionText: "description",
+                                   placeholder: .newForMacAndWindows,
+                                   imageUrl: nil,
+                                   primaryActionText: "Ok",
+                                   primaryAction: .share(value: "https://duckduckgo.com/app",
+                                                         title: "Share Title"),
+                                   secondaryActionText: "Cancel",
+                                   secondaryAction: .dismiss),
             matchingRules: [],
             exclusionRules: [],
             isMetricsEnabled: true)
@@ -90,8 +110,12 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         XCTAssertEqual(config.messages[6], RemoteMessageModel(
             id: "6E58D3DA-AB9D-47A4-87B7-B8AF830BFB5E",
             surfaces: .newTabPage,
-            content: .promoSingleAction(titleText: "Promo Title", descriptionText: "Promo Description", placeholder: .newForMacAndWindows,
-                                        actionText: "Promo Action", action: .dismiss),
+            content: .promoSingleAction(titleText: "Promo Title",
+                                        descriptionText: "Promo Description",
+                                        placeholder: .newForMacAndWindows,
+                                        imageUrl: nil,
+                                        actionText: "Promo Action",
+                                        action: .dismiss),
             matchingRules: [],
             exclusionRules: [],
             isMetricsEnabled: true)
@@ -104,6 +128,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
                 titleText: "Survey Title",
                 descriptionText: "Survey Description",
                 placeholder: .subscription,
+                imageUrl: nil,
                 actionText: "Survey Action",
                 action: .survey(value: "https://duckduckgo.com/survey")
             ),
@@ -119,6 +144,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
                 titleText: "PIR Title",
                 descriptionText: "PIR Description",
                 placeholder: .subscription,
+                imageUrl: nil,
                 primaryActionText: "PIR Action",
                 primaryAction: .navigation(value: .personalInformationRemoval)
             ),

@@ -44,6 +44,10 @@ protocol AIChatContextualModePixelFiring {
     func firePageContextRemovedNative()
     func firePageContextRemovedFrontend()
 
+    // MARK: - Page Context Collection
+    func firePageContextCollectionEmpty()
+    func firePageContextCollectionUnavailable()
+
     // MARK: - Prompt Submission
     func firePromptSubmittedWithContext()
     func firePromptSubmittedWithoutContext()
@@ -149,6 +153,16 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func firePageContextRemovedFrontend() {
         firePixel(.aiChatContextualPageContextRemovedFrontend)
+    }
+
+    // MARK: - Page Context Collection
+
+    func firePageContextCollectionEmpty() {
+        firePixel(.aiChatContextualPageContextCollectionEmpty)
+    }
+
+    func firePageContextCollectionUnavailable() {
+        firePixel(.aiChatContextualPageContextCollectionUnavailable)
     }
 
     // MARK: - Prompt Submission

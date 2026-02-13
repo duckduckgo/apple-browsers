@@ -45,8 +45,19 @@ struct AIChatPageContext: Equatable {
 // MARK: - Provider Typealiases
 
 typealias WebViewProvider = () -> WKWebView?
-typealias UserScriptProvider = () -> PageContextUserScript?
+typealias UserScriptProvider = () -> PageContextCollecting?
 typealias FaviconProvider = (URL) -> String?
+
+// MARK: - Page Context Collection Protocol
+
+/// Protocol for page context collection, enabling dependency injection and testing.
+protocol PageContextCollecting: AnyObject {
+    var collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
+    var webView: WKWebView? { get set }
+    func collect()
+}
+
+extension PageContextUserScript: PageContextCollecting {}
 
 // MARK: - Protocols
 
@@ -63,6 +74,9 @@ protocol AIChatPageContextHandling: AnyObject {
 
     /// Clears stored context and cancels active subscriptions.
     func clear()
+
+    /// Resubscribes to the current script's publisher after content blocking assets are reinstalled.
+    func resubscribe()
 }
 
 // MARK: - Implementation
@@ -75,6 +89,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     private let webViewProvider: WebViewProvider
     private let userScriptProvider: UserScriptProvider
     private let faviconProvider: FaviconProvider
+    private let pixelHandler: AIChatContextualModePixelFiring
 
     private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
     private var updatesCancellable: AnyCancellable?
@@ -89,10 +104,12 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
     init(webViewProvider: @escaping WebViewProvider,
          userScriptProvider: @escaping UserScriptProvider,
-         faviconProvider: @escaping FaviconProvider) {
+         faviconProvider: @escaping FaviconProvider,
+         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
         self.webViewProvider = webViewProvider
         self.userScriptProvider = userScriptProvider
         self.faviconProvider = faviconProvider
+        self.pixelHandler = pixelHandler
     }
 
     @discardableResult
@@ -101,9 +118,10 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
         guard let script = userScriptProvider() else {
             Logger.aiChat.debug("[PageContext] Collection skipped - no user script available")
+            pixelHandler.firePageContextCollectionUnavailable()
             return false
         }
-        
+
         guard let webView = webViewProvider() else {
            Logger.aiChat.debug("[PageContext] Collection skipped - no web view available")
            return false
@@ -125,6 +143,15 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
             script.webView = nil
         }
     }
+
+    /// Resubscribes to the current PageContextUserScript's publisher.
+    /// Call when content blocking assets are reinstalled and a new script instance is created.
+    func resubscribe() {
+        Logger.aiChat.debug("[PageContext] Resubscribe called - cancelling existing subscription")
+        updatesCancellable?.cancel()
+        updatesCancellable = nil
+        startObservingUpdates()
+    }
 }
 
 // MARK: - Private Methods
@@ -132,16 +159,30 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 private extension AIChatPageContextHandler {
 
     func startObservingUpdates() {
-        guard updatesCancellable == nil,
-              let script = userScriptProvider() else { return }
+        guard updatesCancellable == nil else {
+            Logger.aiChat.debug("[PageContext] startObservingUpdates skipped - already subscribed")
+            return
+        }
+        guard let script = userScriptProvider() else {
+            Logger.aiChat.debug("[PageContext] startObservingUpdates skipped - no script available")
+            return
+        }
 
+        Logger.aiChat.debug("[PageContext] startObservingUpdates - subscribing to new script instance")
         updatesCancellable = script.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
                 guard let self else { return }
 
                 guard let pageContext else {
-                    Logger.aiChat.debug("[PageContext] Context collection returned nil - publishing nil to subscribers")
+                    Logger.aiChat.debug("[PageContext] Context collection returned nil - decode failure, publishing nil to subscribers")
+                    self.contextSubject.send(nil)
+                    return
+                }
+
+                guard !pageContext.isEmpty() else {
+                    Logger.aiChat.debug("[PageContext] Context collection returned empty content - publishing nil to subscribers")
+                    self.pixelHandler.firePageContextCollectionEmpty()
                     self.contextSubject.send(nil)
                     return
                 }

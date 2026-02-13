@@ -169,12 +169,17 @@ struct SettingsSubscriptionView: View {
         }
 
         if subscriptionFeatures.contains(.dataBrokerProtection) {
+            let shouldShowPIRNewBadge = settingsViewModel.shouldShowNewBadge(for: .personalInformationRemoval)
             SettingsCellView(
                 label: UserText.settingsPProDBPTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                 statusIndicator: StatusIndicatorView(status: .off),
-                isGreyedOut: true
+                isGreyedOut: true,
+                optionalBadgeText: shouldShowPIRNewBadge ? UserText.settingsItemNewBadge : nil
             )
+            .onAppear {
+                settingsViewModel.storeNewBadgeFirstImpressionDateIfNeeded(for: .personalInformationRemoval)
+            }
         }
 
         if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
@@ -292,6 +297,7 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             let hasDBPEntitlement = userEntitlements.contains(.dataBrokerProtection)
             let hasValidStoredProfile = settingsViewModel.dbpMeetsProfileRunPrequisite
+            let shouldShowPIRNewBadge = settingsViewModel.shouldShowNewBadge(for: .personalInformationRemoval)
             var statusIndicator: StatusIndicator = hasDBPEntitlement && hasValidStoredProfile ? .on : .off
 
             let destination: LazyView<AnyView> = {
@@ -309,10 +315,14 @@ struct SettingsSubscriptionView: View {
                     label: UserText.settingsPProDBPTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                     statusIndicator: StatusIndicatorView(status: statusIndicator),
-                    isGreyedOut: !hasDBPEntitlement
+                    isGreyedOut: !hasDBPEntitlement,
+                    optionalBadgeText: shouldShowPIRNewBadge ? UserText.settingsItemNewBadge : nil
                 )
             }
             .disabled(!hasDBPEntitlement)
+            .onAppear {
+                settingsViewModel.storeNewBadgeFirstImpressionDateIfNeeded(for: .personalInformationRemoval)
+            }
         }
 
         if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {

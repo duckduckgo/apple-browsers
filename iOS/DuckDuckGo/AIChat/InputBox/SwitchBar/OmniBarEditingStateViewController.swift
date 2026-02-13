@@ -320,6 +320,16 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         manager.delegate = self
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
+        manager.hasSuggestionsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.scheduleAnimation {
+                    self.updateDaxVisibility()
+                    self.view.layoutIfNeeded()
+                }
+            }
+            .store(in: &cancellables)
         aiChatHistoryManager = manager
     }
 
@@ -513,7 +523,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
-        let isShowingChatHistory = aiChatHistoryManager != nil
+        let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
 
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
 

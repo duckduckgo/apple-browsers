@@ -99,7 +99,7 @@ open class TabBarCollectionView: NSCollectionView {
             return
         }
         let rect = frameForItem(at: indexPath.item)
-        animator().performBatchUpdates {
+        performAnimatedUpdate { [self] in
             animator().scrollToVisible(rect)
         } completionHandler: { [weak self] didFinish in
             guard let self, didFinish, isIndexPathValid(indexPath) else { return }
@@ -113,15 +113,32 @@ open class TabBarCollectionView: NSCollectionView {
     }
 
     func scrollToEnd(completionHandler: ((Bool) -> Void)? = nil) {
-        animator().performBatchUpdates({
-            animator().scroll(CGPoint(x: self.bounds.size.width, y: 0))
+        performAnimatedUpdate({
+            self.animator().scroll(CGPoint(x: self.bounds.size.width, y: 0))
         }, completionHandler: completionHandler)
     }
 
     func scrollToBeginning(completionHandler: ((Bool) -> Void)? = nil) {
-        animator().performBatchUpdates({
-            animator().scroll(CGPoint(x: 0, y: 0))
+        performAnimatedUpdate({
+            self.animator().scroll(CGPoint(x: 0, y: 0))
         }, completionHandler: completionHandler)
+    }
+
+    /// Performs an animated update on the collection view.
+    /// On macOS 13+ uses `performBatchUpdates` for proper implicit animations.
+    /// On macOS 12 and earlier uses `NSAnimationContext` with explicit layout invalidation
+    /// to avoid a crash caused by data source consistency validation in `performBatchUpdates`.
+    private func performAnimatedUpdate(_ updates: @escaping () -> Void, completionHandler: ((Bool) -> Void)? = nil) {
+        if #available(macOS 13.0, *) {
+            animator().performBatchUpdates(updates, completionHandler: completionHandler)
+        } else {
+            collectionViewLayout?.invalidateLayout()
+            NSAnimationContext.runAnimationGroup { _ in
+                updates()
+            } completionHandler: {
+                completionHandler?(true)
+            }
+        }
     }
 
     func invalidateLayout() {

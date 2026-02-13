@@ -106,6 +106,40 @@ public enum SubscriptionURL: Equatable {
             true
         }
     }
+
+    /// Returns a set of all subscription URL paths for validating get token requests.
+    /// Paths are extracted from the enum cases, excluding external URLs that don't use the base subscription URL.
+    ///
+    /// Note: `.upgradeToTier` is not included separately as it uses the same path as `.plans`,
+    /// differing only by a query parameter (`tier=<value>`). Query parameters are not validated by path matching.
+    public static func allSubscriptionPaths() -> Set<String> {
+        let baseURL = StaticURLs.defaultBaseSubscriptionURL
+        let cases: [SubscriptionURL] = [
+            .baseURL,
+            .purchase,
+            .welcome,
+            .activationFlow,
+            .activationFlowThisDeviceEmailStep,
+            .activationFlowThisDeviceActivateEmailStep,
+            .activationFlowThisDeviceActivateEmailOTPStep,
+            .activationFlowAddEmailStep,
+            .activationFlowLinkViaEmailStep,
+            .activationFlowSuccess,
+            .manageEmail,
+            .identityTheftRestoration,
+            .plans
+        ]
+
+        return Set(cases.compactMap { urlCase -> String? in
+            let url = urlCase.subscriptionURL(environment: .production)
+            // Only include paths that are relative to the base subscription URL
+            guard url.host == baseURL.host else { return nil }
+
+            let path = url.path
+            // Remove leading slash if present
+            return path.hasPrefix("/") ? String(path.dropFirst()) : path
+        })
+    }
 }
 
 extension SubscriptionURL {

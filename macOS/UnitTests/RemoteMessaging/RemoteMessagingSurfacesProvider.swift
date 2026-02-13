@@ -28,12 +28,12 @@ struct RemoteMessagingSurfacesProviderTest {
         "Check Expected Surface Is Returned For Message Type",
         arguments: [
             (.small(titleText: "", descriptionText: ""), .newTabPage),
-            (.medium(titleText: "", descriptionText: "", placeholder: .announce), .newTabPage),
-            (.bigSingleAction(titleText: "", descriptionText: "", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss), .newTabPage),
-            (.bigSingleAction(titleText: "", descriptionText: "", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss), .tabBar),
-            (.bigTwoAction(titleText: "", descriptionText: "", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss, secondaryActionText: "", secondaryAction: .dismiss), .newTabPage),
-            (.promoSingleAction(titleText: "", descriptionText: "", placeholder: .announce, actionText: "", action: .dismiss), .newTabPage),
-            (.cardsList(titleText: "", placeholder: nil, items: [], primaryActionText: "", primaryAction: .dismiss), .dedicatedTab)
+            (.medium(titleText: "", descriptionText: "", placeholder: .announce, imageUrl: nil), .newTabPage),
+            (.bigSingleAction(titleText: "", descriptionText: "", placeholder: .announce, imageUrl: nil, primaryActionText: "", primaryAction: .dismiss), .newTabPage),
+            (.bigSingleAction(titleText: "", descriptionText: "", placeholder: .announce, imageUrl: nil, primaryActionText: "", primaryAction: .dismiss), .tabBar),
+            (.bigTwoAction(titleText: "", descriptionText: "", placeholder: .announce, imageUrl: nil, primaryActionText: "", primaryAction: .dismiss, secondaryActionText: "", secondaryAction: .dismiss), .newTabPage),
+            (.promoSingleAction(titleText: "", descriptionText: "", placeholder: .announce, imageUrl: nil, actionText: "", action: .dismiss), .newTabPage),
+            (.cardsList(titleText: "", placeholder: nil, imageUrl: nil, items: [], primaryActionText: "", primaryAction: .dismiss), .dedicatedTab)
         ] as [(RemoteMessageModelType, RemoteMessageSurfaceType)]
     )
     func returnExpectedSurfaceForMessageType(messageType: RemoteMessageModelType, expectedSurface: RemoteMessageSurfaceType) throws {

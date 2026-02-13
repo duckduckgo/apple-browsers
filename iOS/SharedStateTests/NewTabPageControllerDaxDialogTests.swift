@@ -59,6 +59,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             daxDialogsManager: specProvider,
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
             appSettings: AppSettingsMock(),
             internalUserCommands: MockURLBasedDebugCommands()
         )

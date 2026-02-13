@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import Core
+import os.log
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -142,13 +143,16 @@ final class AIChatContextualWebViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()
         if let url = initialURL {
+            Logger.aiChat.debug("[ContextualWebVC] Loading initialURL: \(url.absoluteString)")
             loadChatURL(url)
         } else {
+            Logger.aiChat.debug("[ContextualWebVC] No initialURL, loading default AI chat")
             loadAIChat()
         }
     }
@@ -175,9 +179,12 @@ final class AIChatContextualWebViewController: UIViewController {
 
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+        Logger.aiChat.debug("[ContextualWebVC] submitPrompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if isPageReady && isContentHandlerReady {
+            Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
             aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
         } else {
+            Logger.aiChat.debug("[ContextualWebVC] Queuing prompt as pending")
             pendingPrompt = prompt
             pendingPageContext = pageContext
         }
@@ -197,8 +204,11 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.reload()
     }
 
-    /// Loads a specific chat URL (for cold restore after app restart).
     func loadChatURL(_ url: URL) {
+        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(url.absoluteString)")
+        isPageReady = false
+        pendingPrompt = nil
+        pendingPageContext = nil
         loadingView.startAnimating()
         webView.load(URLRequest(url: url))
     }
@@ -346,6 +356,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private func loadAIChat() {
         loadingView.startAnimating()
         let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+        Logger.aiChat.debug("[ContextualWebVC] loadAIChat - loading URL: \(contextualURL.absoluteString)")
         let request = URLRequest(url: contextualURL)
         webView.load(request)
     }
@@ -369,6 +380,7 @@ final class AIChatContextualWebViewController: UIViewController {
 
     /// Handles edge case where user submits before preloaded web view is fully ready.
     private func submitPendingPromptIfReady() {
+        Logger.aiChat.debug("[ContextualWebVC] submitPendingPromptIfReady - pendingPrompt: \(self.pendingPrompt != nil), isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         guard let prompt = pendingPrompt,
               isPageReady,
               isContentHandlerReady else { return }
@@ -376,6 +388,11 @@ final class AIChatContextualWebViewController: UIViewController {
         let pageContext = pendingPageContext
         pendingPrompt = nil
         pendingPageContext = nil
+        submitPromptNow(prompt, pageContext: pageContext)
+    }
+
+    private func submitPromptNow(_ prompt: String, pageContext: AIChatPageContextData?) {
+        Logger.aiChat.debug("[ContextualWebVC] Submitting pending prompt now")
         aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
     }
 
@@ -452,6 +469,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        Logger.aiChat.debug("[ContextualWebVC] didFinish navigation - URL: \(String(describing: webView.url?.absoluteString))")
         loadingView.stopAnimating()
         isPageReady = true
         submitPendingPromptIfReady()

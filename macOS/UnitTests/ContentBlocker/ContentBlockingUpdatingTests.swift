@@ -50,6 +50,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         )
         let windowControllersManager = WindowControllersManagerMock()
         let startupPreferences = StartupPreferences(
+            pinningManager: MockPinningManager(),
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences
         )
@@ -85,6 +86,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        startupPreferences: startupPreferences,
                                        windowControllersManager: windowControllersManager,
                                        bookmarkManager: MockBookmarkManager(),
+                                       pinningManager: MockPinningManager(),
                                        historyCoordinator: CapturingHistoryDataSource(),
                                        fireproofDomains: MockFireproofDomains(domains: []),
                                        fireCoordinator: fireCoordinator,

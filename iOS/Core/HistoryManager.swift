@@ -36,6 +36,7 @@ public protocol HistoryManaging {
     @MainActor func commitChanges(url: URL)
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
     @MainActor func removeTabHistory(for tabIDs: [String]) async
+    @MainActor func removeBrowsingHistory(tabID: String) async
 }
 
 public class HistoryManager: HistoryManaging {
@@ -122,12 +123,29 @@ public class HistoryManager: HistoryManaging {
         return try await tabHistoryCoordinator.tabHistory(tabID: tabID)
     }
 
+    /// Removes tab history records for the specified tabs without affecting global browsing history.
+    ///
+    /// Tab history tracks which URLs were visited in each tab (used to determine what to burn),
+    /// but is not surfaced to the user. Call this when closing tabs to clean up stale records.
     @MainActor
     public func removeTabHistory(for tabIDs: [String]) async {
         do {
             try await tabHistoryCoordinator.removeVisits(for: tabIDs)
         } catch {
             Logger.history.error("Failed to remove tab history: \(error.localizedDescription)")
+        }
+    }
+
+    /// Burns all browsing history entries associated with a specific tab.
+    ///
+    /// This removes the tab's history records from the global browsing history,
+    /// used when burning a single tab to clear its footprint from history.
+    @MainActor
+    public func removeBrowsingHistory(tabID: String) async {
+        do {
+            try await dbCoordinator.burnVisits(for: tabID)
+        } catch {
+            Logger.history.error("Failed to remove global history for tab: \(error.localizedDescription)")
         }
     }
 
@@ -146,6 +164,8 @@ class NullHistoryCoordinator: HistoryCoordinating {
     var historyDictionaryPublisher: Published<[URL: History.HistoryEntry]?>.Publisher {
         $historyDictionary
     }
+    
+    var dataClearingPixelsHandling: (any DataClearingPixelsHandling)?
 
     func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
         return nil
@@ -189,6 +209,9 @@ class NullHistoryCoordinator: HistoryCoordinating {
         DispatchQueue.main.asyncOrNow {
             completion()
         }
+    }
+    
+    func burnVisits(for tabID: String) async throws {
     }
 
     func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {

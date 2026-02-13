@@ -42,6 +42,10 @@ extension TabViewController {
         return settings.isAIChatBrowsingMenuUserSettingsEnabled
     }
 
+    private var dataClearingCapability: DataClearingCapable {
+        DataClearingCapability.create(using: featureFlagger)
+    }
+
     func buildBrowsingMenuHeaderContent() -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
 
@@ -72,8 +76,6 @@ extension TabViewController {
         
         return entries
     }
-
-    var favoriteEntryIndex: Int { 1 }
 
     func buildShortcutsMenu() -> [BrowsingMenuEntry] {
         buildShortcutsEntries(state: .newTab)
@@ -144,10 +146,13 @@ extension TabViewController {
         return entries
     }
     
-    func buildAITabMenu(useSmallIcon: Bool = true, includeSettings: Bool = true, separateUtililtyItems: Bool = false) -> [BrowsingMenuEntry] {
+    func buildAITabMenu(useSmallIcon: Bool = true,
+                        includeSettings: Bool = true,
+                        separateUtilityItems: Bool = false,
+                        useDetailTextForZoom: Bool = false) -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
         
-        entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon, addPrint: !separateUtililtyItems))
+        entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon, addPrint: !separateUtilityItems, useDetailTextForZoom: useDetailTextForZoom))
 
         entries.append(.separator)
         
@@ -161,7 +166,7 @@ extension TabViewController {
         
         entries.append(buildAIChatSidebarEntry(useSmallIcon: useSmallIcon))
 
-        if separateUtililtyItems {
+        if separateUtilityItems {
             entries.append(.separator)
             entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
         }
@@ -286,7 +291,6 @@ extension TabViewController {
 
         let bookmarkEntries = buildBookmarkEntries(for: link, with: bookmarksInterface)
         entries.append(bookmarkEntries.bookmark)
-        assert(self.favoriteEntryIndex == entries.count, "Entry index should be in sync with entry placement")
         entries.append(bookmarkEntries.favorite)
 
         entries.append(.separator)
@@ -314,12 +318,12 @@ extension TabViewController {
         return entries
     }
     
-    private func buildAITabLinkEntries(useSmallIcon: Bool = true, addPrint: Bool = true) -> [BrowsingMenuEntry] {
+    private func buildAITabLinkEntries(useSmallIcon: Bool = true, addPrint: Bool = true, useDetailTextForZoom: Bool) -> [BrowsingMenuEntry] {
         guard let link = link, !isError else { return [] }
 
         var entries = [BrowsingMenuEntry]()
 
-        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon, percentageInDetail: false) {
+        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon, percentageInDetail: useDetailTextForZoom) {
             entries.append(entry)
         }
 
@@ -428,9 +432,11 @@ extension TabViewController {
     }
     
     private func buildClearDataEntry(clearTabsAndData: @escaping () -> Void, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        return BrowsingMenuEntry.regular(name: UserText.actionForgetAll,
-                                         accessibilityLabel: UserText.actionForgetAll,
+        let title = dataClearingCapability.isEnhancedDataClearingEnabled ? UserText.settingsDeleteTabsAndData : UserText.actionForgetAll
+        return BrowsingMenuEntry.regular(name: title,
+                                         accessibilityLabel: title,
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireSolid,
+                                         tag: .fire,
                                          action: clearTabsAndData)
     }
     
@@ -549,6 +555,7 @@ extension TabViewController {
 
         let entry = BrowsingMenuEntry.regular(name: UserText.actionSaveFavorite,
                                               image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.favorite : DesignSystemImages.Glyphs.Size24.favorite,
+                                              tag: .favorite,
                                               action: { [weak self] in
             Pixel.fire(pixel: addToFavoriteFlow ? .browsingMenuAddToFavoritesAddFavoriteFlow : .browsingMenuAddToFavorites)
             DailyPixel.fire(pixel: .addFavoriteDaily)
@@ -849,7 +856,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeAITabMenu() -> [BrowsingMenuEntry] {
-        buildAITabMenu(useSmallIcon: false, includeSettings: false, separateUtililtyItems: true)
+        buildAITabMenu(useSmallIcon: false, includeSettings: false, separateUtilityItems: true, useDetailTextForZoom: true)
     }
     
     func makeAITabMenuHeaderContent() -> [BrowsingMenuEntry] {

@@ -44,6 +44,22 @@ final class MockDDGSyncing: DDGSyncing {
         }
     }
 
+    // MARK: - Delete AI Chats by Chat IDs
+
+    var deleteAIChatsByChatIdsCallCount = 0
+    var deleteAIChatsByChatIds: [String]?
+    var deleteAIChatsByChatIdsError: Error?
+    var onDeleteAIChatsByChatIds: (() -> Void)?
+
+    func deleteAIChats(chatIds: [String]) async throws {
+        deleteAIChatsByChatIdsCallCount += 1
+        deleteAIChatsByChatIds = chatIds
+        onDeleteAIChatsByChatIds?()
+        if let error = deleteAIChatsByChatIdsError {
+            throw error
+        }
+    }
+
     // MARK: - Token Rescope
 
     var mainTokenRescopeResult: String?

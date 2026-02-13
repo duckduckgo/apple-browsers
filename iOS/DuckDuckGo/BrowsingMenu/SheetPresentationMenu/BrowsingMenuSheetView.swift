@@ -55,7 +55,7 @@ struct BrowsingMenuSheetView: View {
 
         static let websiteHeaderHeight: CGFloat = 56
         /// Height of header when only close button is shown (compact mode without website info)
-        static let closeButtonHeaderHeight: CGFloat = 40
+        static let closeButtonHeaderHeight: CGFloat = 48
     }
 
     @Environment(\.dismiss) var dismiss
@@ -227,6 +227,7 @@ extension BrowsingMenuModel {
 
         enum Tag {
             case favorite
+            case fire
         }
 
         enum Detail {
@@ -249,7 +250,7 @@ extension BrowsingMenuModel.Entry {
 
             return nil
 
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detail, let action):
+        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detail, let tag, let action):
             self.init(
                 name: name,
                 accessibilityLabel: accessibilityLabel,
@@ -258,7 +259,7 @@ extension BrowsingMenuModel.Entry {
                 customDotColor: customDotColor,
                 detail: detail.map { .text($0) },
                 action: action,
-                tag: tag
+                tag: tag,
             )
         }
     }
@@ -279,7 +280,7 @@ private struct MenuRowButton: View {
                         if isHighlighted {
                             LottieView(lottieFile: "view_highlight", loopMode: .mode(.loop), isAnimating: .constant(true))
                                 .scaledToFill()
-                                .scaleEffect(1.3)
+                                .scaleEffect(2.0)
                         }
                     }
 
@@ -367,7 +368,7 @@ private struct BrowsingMenuHeaderView: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(alignment: .top, spacing: 0) {
             if isWebsiteInfoVisible {
                 HStack(spacing: MenuHeaderConstant.contentSpacing) {
                     faviconView
@@ -381,7 +382,7 @@ private struct BrowsingMenuHeaderView: View {
 
             closeButton
         }
-        .padding(.vertical, MenuHeaderConstant.bottomPadding)
+        .padding(.bottom, MenuHeaderConstant.bottomPadding)
         .frame(maxWidth: .infinity)
     }
 

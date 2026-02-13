@@ -57,6 +57,7 @@ class MainViewFactory {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
+                                                      aichatIPadTabFeature: AIChatIPadTabFeature(featureFlagger: featureFlagger),
                                                       aiChatSettings: aiChatSettings,
                                                       suggestionTrayDependencies: suggestionTrayDependencies,
                                                       appSettings: appSettings,

@@ -26,7 +26,7 @@ import WebKit
 import PDFKit
 import CommonObjCExtensions
 
-extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
+extension Tab: WKUIDelegate {
 
     // "protected" delegate property
     private var delegate: TabDelegate? {

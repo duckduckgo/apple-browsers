@@ -90,4 +90,11 @@ final class HistoryStoringMock: HistoryStoring {
         return entry.visits.map { ($0.identifier!, $0.date) }
     }
 
+    var pageVisitIDsCalled = false
+    var pageVisitIDsResult: [Visit.ID] = []
+    func pageVisitIDs(in tabID: String) async throws -> [Visit.ID] {
+        pageVisitIDsCalled = true
+        return pageVisitIDsResult
+    }
+
 }

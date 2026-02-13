@@ -307,6 +307,10 @@ final public class HistoryStore: HistoryStoring {
         return .success(())
     }
 
+    /// Retrieves all visit IDs associated with a specific tab.
+    public func pageVisitIDs(in tabID: String) async throws -> [Visit.ID] {
+        return try await tabHistoryStore.pageVisitIDs(in: tabID)
+    }
 }
 
 fileprivate extension BrowsingHistory {

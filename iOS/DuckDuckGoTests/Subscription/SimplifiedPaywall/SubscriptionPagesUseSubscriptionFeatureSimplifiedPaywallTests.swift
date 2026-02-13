@@ -40,6 +40,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
     private var mockInternalUserDecider: MockInternalUserDecider!
     private var mockWideEvent: WideEventMock!
     private var mockPendingTransactionHandler: MockPendingTransactionHandler!
+    private var mockRequestValidator: ScriptRequestValidatorMock!
 
     override func setUp() async throws {
         PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(), eventTracker: ExperimentEventTracker(), fire: { _, _, _ in })
@@ -55,6 +56,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
         mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
         mockWideEvent = WideEventMock()
         mockPendingTransactionHandler = MockPendingTransactionHandler()
+        mockRequestValidator = ScriptRequestValidatorMock()
 
         sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
@@ -64,7 +66,8 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
             appStoreRestoreFlow: mockAppStoreRestoreFlow,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent,
-            pendingTransactionHandler: mockPendingTransactionHandler)
+            pendingTransactionHandler: mockPendingTransactionHandler,
+            requestValidator: mockRequestValidator)
     }
 
     func testWhenSubscriptionSelectedIncludesExperimentParameters_thenSubscriptionPurchasedReceivesExperimentParameters() async throws {

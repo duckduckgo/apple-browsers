@@ -25,12 +25,12 @@ struct OnboardingDebugView: View {
     @StateObject private var viewModel = OnboardingDebugViewModel()
     @State private var isShowingResetDaxDialogsAlert = false
 
-    private let isRebrandingFlow: Bool
-    private let newOnboardingIntroStartAction: () -> Void
+    private let newOnboardingIntroStartAction: (OnboardingDebugFlow) -> Void
+    @State private var selectedFlow: OnboardingDebugFlow
 
-    init(isRebrandingFlow: Bool, onNewOnboardingIntroStartAction: @escaping () -> Void) {
-        self.isRebrandingFlow = isRebrandingFlow
+    init(initialFlow: OnboardingDebugFlow, onNewOnboardingIntroStartAction: @escaping (OnboardingDebugFlow) -> Void) {
         newOnboardingIntroStartAction = onNewOnboardingIntroStartAction
+        _selectedFlow = State(initialValue: initialFlow)
     }
 
     var body: some View {
@@ -64,9 +64,24 @@ struct OnboardingDebugView: View {
             }
 
             Section {
-                Button(action: newOnboardingIntroStartAction, label: {
-                    let onboardingType = isRebrandingFlow ? "Rebranding" : "Legacy"
-                    Text(verbatim: "Preview Onboarding \(onboardingType) Intro - \(viewModel.onboardingUserType.description)")
+                Picker(
+                    selection: $selectedFlow,
+                    content: {
+                        ForEach(OnboardingDebugFlow.allCases) { flow in
+                            Text(verbatim: flow.description).tag(flow)
+                        }
+                    },
+                    label: {
+                        Text(verbatim: "Flow:")
+                    }
+                )
+            } header: {
+                Text(verbatim: "Onboarding Flow")
+            }
+
+            Section {
+                Button(action: { newOnboardingIntroStartAction(selectedFlow) }, label: {
+                    Text(verbatim: "Preview Onboarding \(selectedFlow.description) Intro - \(viewModel.onboardingUserType.description)")
                 })
             }
         }
@@ -113,12 +128,32 @@ final class OnboardingDebugViewModel: ObservableObject {
     }
 }
 
-#Preview {
-    OnboardingDebugView(isRebrandingFlow: false, onNewOnboardingIntroStartAction: {})
-}
-
 extension OnboardingUserType: Identifiable {
     var id: OnboardingUserType {
         self
     }
+}
+
+enum OnboardingDebugFlow: String, CaseIterable, CustomStringConvertible, Identifiable {
+    case rebranding
+    case legacy
+
+    var id: OnboardingDebugFlow { self }
+
+    var description: String {
+        switch self {
+        case .rebranding:
+            return "Rebranding"
+        case .legacy:
+            return "Original (Legacy)"
+        }
+    }
+
+    var isRebranding: Bool {
+        self == .rebranding
+    }
+}
+
+#Preview {
+    OnboardingDebugView(initialFlow: .legacy, onNewOnboardingIntroStartAction: { _ in })
 }

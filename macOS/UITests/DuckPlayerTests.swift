@@ -47,6 +47,24 @@ class DuckPlayerTests: UITestCase {
         addressBarTextField.pasteURL(URL(string: url)!)
     }
 
+    /// Finds a YouTube video link on the SERP, checking for both possible title formats
+    /// (with and without " - YouTube" suffix)
+    private func findOrganicVideoLink(timeout: TimeInterval = UITests.Timeouts.navigation) -> XCUIElement? {
+        // Try the full title with " - YouTube" suffix first
+        let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
+        if organicVideo.waitForExistence(timeout: timeout) {
+            return organicVideo
+        }
+
+        // Fall back to the shorter title without suffix
+        let shortTitleVideo = app.links.containing(.staticText, identifier: Self.youtubeVideoTitle).firstMatch
+        if shortTitleVideo.waitForExistence(timeout: timeout) {
+            return shortTitleVideo
+        }
+
+        return nil
+    }
+
     private func openDuckPlayerSettings() {
         app.openPreferencesWindow()
 
@@ -98,12 +116,15 @@ class DuckPlayerTests: UITestCase {
         // Give the page time to load
         sleep(5)
 
-        // Get the YouTube view
-        let youtubeWebView = app.windows.firstMatch.webViews["\(Self.organicVideoTitle)"]
+        // Get the YouTube view - check both possible title formats
+        let youtubeWebViewWithSuffix = app.windows.firstMatch.webViews["\(Self.organicVideoTitle)"]
+        let youtubeWebViewWithoutSuffix = app.windows.firstMatch.webViews["\(Self.youtubeVideoTitle)"]
 
-        // Validate YouTube page loaded
+        // Validate YouTube page loaded (either title format)
+        let webViewExists = youtubeWebViewWithSuffix.waitForExistence(timeout: UITests.Timeouts.elementExistence + Self.duckPlayerLoadDelay)
+            || youtubeWebViewWithoutSuffix.waitForExistence(timeout: UITests.Timeouts.elementExistence)
         XCTAssertTrue(
-            youtubeWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence + Self.duckPlayerLoadDelay),
+            webViewExists,
             "YouTube webview did not load in a reasonable timeframe."
         )
 
@@ -147,10 +168,10 @@ class DuckPlayerTests: UITestCase {
         // Search
         openURL(url: Self.searchURL)
 
-        // Click Link
-        let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
-        XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.navigation))
-        organicVideo.click()
+        // Click Link - check both possible title formats
+        let organicVideo = findOrganicVideoLink()
+        XCTAssertNotNil(organicVideo, "Could not find YouTube video link on SERP")
+        organicVideo?.click()
         sleep(2)
 
         try closeNonDuckPlayerTabs()
@@ -197,9 +218,10 @@ class DuckPlayerTests: UITestCase {
         // Search
         openURL(url: Self.searchURL)
 
-        let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
-        XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.navigation))
-        organicVideo.click()
+        // Click Link - check both possible title formats
+        let organicVideo = findOrganicVideoLink()
+        XCTAssertNotNil(organicVideo, "Could not find YouTube video link on SERP")
+        organicVideo?.click()
         sleep(2)
 
         verifyYoutubeLoads()
@@ -246,13 +268,25 @@ class DuckPlayerTests: UITestCase {
         // Search
         openURL(url: Self.searchURL)
 
-        let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
-        XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.navigation))
-        organicVideo.click()
+        // Click Link - check both possible title formats
+        let organicVideo = findOrganicVideoLink()
+        XCTAssertNotNil(organicVideo, "Could not find YouTube video link on SERP")
+        organicVideo?.click()
 
         sleep(2)
 
-        verifyYoutubeLoads()
+        // Wait for the Duck Player overlay to appear and click "Watch in Duck Player"
+        let watchInDuckPlayerLink = app.links.containing(.staticText, identifier: Self.watchOnDuckPlayerLink).firstMatch
+        XCTAssertTrue(
+            watchInDuckPlayerLink.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Duck Player overlay did not appear"
+        )
+        watchInDuckPlayerLink.click()
+
+        sleep(2)
+
+        try closeNonDuckPlayerTabs()
+        verifyDuckPlayerLoads()
 
     }
 

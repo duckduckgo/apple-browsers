@@ -62,6 +62,7 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                userNotificationService: notificationService,
                 pixelKit: pixelKit,
                 wideEvent: appDependencies.wideEvent,
                 subscriptionManager: dbpSubscriptionManager,
@@ -81,7 +82,8 @@ final class DBPService: NSObject {
                     return view
                 },
                 eventsHandler: eventsHandler,
-                isWebViewInspectable: isWebViewInspectable)
+                isWebViewInspectable: isWebViewInspectable,
+                freeTrialConversionService: appDependencies.freeTrialConversionService)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil

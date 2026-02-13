@@ -125,10 +125,10 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
     /// - Parameter timeout: Maximum seconds to wait for a JS response before failing with `.timeout`.
     /// - Returns: Result signalling success or an error.
     @MainActor
-    func clearAIChatDataAsync(timeout: TimeInterval = 5) async -> Result<Void, Error> {
+    func clearAIChatDataAsync(chatID: String?, timeout: TimeInterval = 5) async -> Result<Void, Error> {
         guard webView != nil, broker != nil else { return .failure(ClearError.notReady) }
 
-        sendClearDataMessage()
+        sendClearDataMessage(chatID: chatID)
 
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
@@ -141,9 +141,13 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
 
     // MARK: - Private helpers
 
-    private func sendClearDataMessage() {
+    private func sendClearDataMessage(chatID: String?) {
         guard let webView else { return }
-        broker?.push(method: AIChatDataClearingUserScript.MessageName.duckAiClearData.rawValue, params: nil, for: self, into: webView)
+        var params: [String: String]?
+        if let chatID {
+            params = ["chatId": chatID]
+        }
+        broker?.push(method: AIChatDataClearingUserScript.MessageName.duckAiClearData.rawValue, params: params, for: self, into: webView)
     }
 
     @MainActor

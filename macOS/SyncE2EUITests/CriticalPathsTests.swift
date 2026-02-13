@@ -474,9 +474,9 @@ final class CriticalPathsTests: XCTestCase {
         XCTAssertTrue(creditCardsItem.waitForExistence(timeout: 5))
         creditCardsItem.click()
         let elementsQuery = currentWindow.popovers.scrollViews.otherElements
-        elementsQuery.buttons["Test Credit Card, Visa (1111)"].click()
-        elementsQuery.buttons["Credit card, MasterCard (1308)"].click()
-        elementsQuery.buttons["Debit card, Visa (4242)"].click()
+        elementsQuery.buttons["Test Credit Card, •••• 1111"].click()
+        elementsQuery.buttons["Credit card, •••• 1308 Expires: 07/2032"].click()
+        elementsQuery.buttons["Debit card, •••• 4242 Expires: 10/2030"].click()
         app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
     }
 

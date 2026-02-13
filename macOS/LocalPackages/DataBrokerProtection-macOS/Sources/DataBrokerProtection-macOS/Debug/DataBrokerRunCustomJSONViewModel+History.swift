@@ -39,28 +39,28 @@ extension DataBrokerRunCustomJSONViewModel {
                                      type: .error(error: (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription))))
     }
 
-    func addOptOutStartedEvent(for scanResult: ScanResult) {
+    func addOptOutStartedEvent(for scanResult: DebugScanResult) {
         addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
                                      brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
                                      profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
                                      type: .optOutStarted))
     }
 
-    func addOptOutConfirmedEvent(for scanResult: ScanResult) {
+    func addOptOutConfirmedEvent(for scanResult: DebugScanResult) {
         addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
                                      brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
                                      profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
                                      type: .optOutConfirmed))
     }
 
-    func addOptOutAwaitingEmailConfirmationEvent(for scanResult: ScanResult) {
+    func addOptOutAwaitingEmailConfirmationEvent(for scanResult: DebugScanResult) {
         addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
                                      brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
                                      profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
                                      type: .optOutSubmittedAndAwaitingEmailConfirmation))
     }
 
-    func addOptOutErrorEvent(for scanResult: ScanResult, error: Error) {
+    func addOptOutErrorEvent(for scanResult: DebugScanResult, error: Error) {
         addHistoryEvent(HistoryEvent(extractedProfileId: scanResult.extractedProfile.id ?? 0,
                                      brokerId: DebugHelper.stableId(for: scanResult.dataBroker),
                                      profileQueryId: DebugHelper.stableId(for: scanResult.profileQuery),
@@ -74,7 +74,6 @@ extension DataBrokerRunCustomJSONViewModel {
                                                   profileQueryLabel: self.historyEventDetails(event),
                                                   summary: self.historyEventDescription(event),
                                                   details: ""))
-            self.updateEmailConfirmationState(for: event)
         }
     }
 

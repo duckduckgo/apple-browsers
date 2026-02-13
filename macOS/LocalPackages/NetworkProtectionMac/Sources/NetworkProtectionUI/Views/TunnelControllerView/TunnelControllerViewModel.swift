@@ -531,6 +531,7 @@ public final class TunnelControllerViewModel: ObservableObject {
             defer { toggleTransition = .idle }
 
             await tunnelController.start()
+            uiActionHandler.didStartVPN()
         }
     }
 

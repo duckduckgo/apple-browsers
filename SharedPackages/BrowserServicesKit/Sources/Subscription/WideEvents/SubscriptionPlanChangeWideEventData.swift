@@ -25,7 +25,8 @@ public class SubscriptionPlanChangeWideEventData: WideEventData {
         pixelName: "subscription_plan_change",
         featureName: "subscription-plan-change",
         mobileMetaType: "ios-subscription-plan-change",
-        desktopMetaType: "macos-subscription-plan-change"
+        desktopMetaType: "macos-subscription-plan-change",
+        version: "1.0.0"
     )
 
     public static let confirmationTimeout: TimeInterval = .hours(4)

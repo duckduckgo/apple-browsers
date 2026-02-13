@@ -66,6 +66,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var fireproofing: Fireproofing?
     var aiChatSettings: AIChatSettingsProvider?
     var keyValueStore: ThrowingKeyValueStoring?
+    var daxDialogsManager: DaxDialogsManaging?
     private weak var tabsModel: TabsModel?
 
     private lazy var tabSwitcherButton: TabSwitcherButton = TabSwitcherStaticButton()
@@ -138,7 +139,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBAction func onFireButtonPressed() {
         
         func showClearDataAlert() {
-            guard let aiChatSettings, let tabsModel, let historyManager, let fireproofing, let keyValueStore else {
+            guard let aiChatSettings, let tabsModel, let historyManager, let fireproofing, let keyValueStore, let daxDialogsManager else {
                 assertionFailure("TabsBarViewController is not configured properly. Check MainViewController.loadTabsBarIfNeeded()")
                 return
             }
@@ -152,13 +153,13 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
                 on: self,
                 attachPopoverTo: fireButton,
                 tabViewModel: tabManager?.viewModelForCurrentTab(),
+                pixelSource: .browsing,
+                daxDialogsManager: daxDialogsManager,
                 onConfirm: { [weak self] fireRequest in
                     guard let self = self else { return }
                     self.delegate?.tabsBarDidRequestForgetAll(self, fireRequest: fireRequest)
                 },
-                onCancel: {
-                    // TODO: - Maybe add pixel
-                }
+                onCancel: { }
             )
         }
 

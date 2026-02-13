@@ -249,8 +249,6 @@ final class UserScripts: UserScriptsProvider {
         contextMenuScript,
         surrogatesScript,
         contentBlockerRulesScript,
-        printingUserScript,
-        pageObserverScript,
         hoverUserScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,

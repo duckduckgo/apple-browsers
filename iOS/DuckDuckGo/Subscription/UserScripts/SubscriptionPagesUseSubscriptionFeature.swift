@@ -168,7 +168,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          wideEvent: WideEventManaging,
          tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter(),
          pendingTransactionHandler: PendingTransactionHandling,
-         subscriptionFlowsExecuter: SubscriptionFlowsExecuting.
+         subscriptionFlowsExecuter: SubscriptionFlowsExecuting,
          requestValidator: any ScriptRequestValidator) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability

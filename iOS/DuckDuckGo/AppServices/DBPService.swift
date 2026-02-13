@@ -62,6 +62,7 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                userNotificationService: notificationService,
                 pixelKit: pixelKit,
                 wideEvent: appDependencies.wideEvent,
                 subscriptionManager: dbpSubscriptionManager,

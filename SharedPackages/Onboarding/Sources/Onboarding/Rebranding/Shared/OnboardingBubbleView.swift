@@ -23,21 +23,30 @@ public struct OnboardingBubbleView<Content: View>: View {
     @Environment(\.onboardingTheme) private var onboardingTheme
 
     private let tailPosition: TailPosition?
+    private let contentInsets: EdgeInsets?
+    private let arrowLength: CGFloat?
+    private let arrowWidth: CGFloat?
     private let content: () -> Content
 
     public init(
         tailPosition: TailPosition?,
+        contentInsets: EdgeInsets? = nil,
+        arrowLength: CGFloat? = nil,
+        arrowWidth: CGFloat? = nil,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.tailPosition = tailPosition
+        self.contentInsets = contentInsets
+        self.arrowLength = arrowLength
+        self.arrowWidth = arrowWidth
         self.content = content
     }
 
     public var body: some View {
         let tail = TailConfig(position: tailPosition)
         BubbleView(
-            arrowLength: tail.arrowLength,
-            arrowWidth: tail.arrowWidth,
+            arrowLength: arrowLength ?? tail.arrowLength,
+            arrowWidth: arrowWidth ?? tail.arrowWidth,
             arrowEdge: tail.arrowEdge,
             arrowOffset: tail.arrowOffset,
             cornerRadius: onboardingTheme.bubbleMetrics.cornerRadius,
@@ -48,7 +57,7 @@ public struct OnboardingBubbleView<Content: View>: View {
             fillColor: onboardingTheme.colorPalette.bubbleBackground,
             borderColor: onboardingTheme.colorPalette.bubbleBorder,
             borderWidth: onboardingTheme.bubbleMetrics.borderWidth,
-            contentPadding: onboardingTheme.bubbleMetrics.contentInsets,
+            contentPadding: contentInsets ?? onboardingTheme.bubbleMetrics.contentInsets,
             content: content
         )
         .applyOnboardingShadow()
@@ -66,7 +75,7 @@ public extension OnboardingBubbleView {
         totalSteps: Int,
         @ViewBuilder content: @escaping () -> Content
     ) -> some View {
-        OnboardingBubbleView(tailPosition: tailPosition, content: content)
+        LinearBubbleWrapper(tailPosition: tailPosition, content: content)
             .onboardingStepProgress(currentStep: currentStep, totalSteps: totalSteps)
     }
     #endif
@@ -81,6 +90,29 @@ public extension OnboardingBubbleView {
     }
 
 }
+
+// MARK: - Linear Bubble Wrapper
+
+#if os(iOS)
+/// Internal wrapper that reads the theme to pass linear bubble metrics.
+private struct LinearBubbleWrapper<Content: View>: View {
+    @Environment(\.onboardingTheme) private var onboardingTheme
+
+    let tailPosition: OnboardingBubbleView<Content>.TailPosition
+    let content: () -> Content
+
+    var body: some View {
+        let metrics = onboardingTheme.linearBubbleMetrics
+        OnboardingBubbleView(
+            tailPosition: tailPosition,
+            contentInsets: metrics.contentInsets,
+            arrowLength: metrics.arrowLength,
+            arrowWidth: metrics.arrowWidth,
+            content: content
+        )
+    }
+}
+#endif
 
 // MARK: - OnboardingBubble + Tail Helpers
 

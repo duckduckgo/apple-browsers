@@ -155,8 +155,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private var purchaseWideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
     private var planChangeWideEventData: SubscriptionPlanChangeWideEventData?
-    var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
-
+    private var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
+    private let requestValidator: any ScriptRequestValidator
 
     init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -168,7 +168,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          wideEvent: WideEventManaging,
          tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter(),
          pendingTransactionHandler: PendingTransactionHandling,
-         subscriptionFlowsExecuter: SubscriptionFlowsExecuting) {
+         subscriptionFlowsExecuter: SubscriptionFlowsExecuting.
+         requestValidator: any ScriptRequestValidator) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -180,6 +181,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.tierEventReporter = tierEventReporter
         self.pendingTransactionHandler = pendingTransactionHandler
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter
+        self.requestValidator = requestValidator
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -332,6 +334,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 
     func getAuthAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard await requestValidator.canPageRequestToken(original) else {
+            Logger.subscription.error("Unauthorised access to token")
+            return nil
+        }
         let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .localValid)
         return AccessTokenValue(accessToken: tokenContainer?.accessToken ?? "")
     }
@@ -731,6 +737,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 
     func getAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard await requestValidator.canPageRequestToken(original) else {
+            Logger.subscription.error("Unauthorised access to token")
+            return nil
+        }
         do {
             let accessToken = try await subscriptionManager.getTokenContainer(policy: .localValid).accessToken
             return [SubscriptionPagesUseSubscriptionFeatureConstants.token: accessToken]

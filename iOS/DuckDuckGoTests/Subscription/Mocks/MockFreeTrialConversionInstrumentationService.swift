@@ -25,9 +25,11 @@ final class MockFreeTrialConversionInstrumentationService: FreeTrialConversionIn
     var startObservingSubscriptionChangesCalled = false
     var markVPNActivatedCalled = false
     var markPIRActivatedCalled = false
+    var markDuckAIActivatedCalled = false
 
     var markVPNActivatedCallback: (() -> Void)?
     var markPIRActivatedCallback: (() -> Void)?
+    var markDuckAIActivatedCallback: (() -> Void)?
 
     func startObservingSubscriptionChanges() {
         startObservingSubscriptionChangesCalled = true
@@ -41,5 +43,10 @@ final class MockFreeTrialConversionInstrumentationService: FreeTrialConversionIn
     func markPIRActivated() {
         markPIRActivatedCalled = true
         markPIRActivatedCallback?()
+    }
+
+    func markDuckAIActivated() {
+        markDuckAIActivatedCalled = true
+        markDuckAIActivatedCallback?()
     }
 }

@@ -23,15 +23,32 @@ import RemoteMessaging
 import UIKit
 
 enum HomeSupportedMessageDisplayType {
-    case small(titleText: String, descriptionText: String)
-    case medium(titleText: String, descriptionText: String, placeholder: RemotePlaceholder)
-    case bigSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
-                         primaryActionText: String, primaryAction: RemoteAction)
-    case bigTwoAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
-                      primaryActionText: String, primaryAction: RemoteAction, secondaryActionText: String,
+    case small(titleText: String,
+               descriptionText: String)
+    case medium(titleText: String,
+                descriptionText: String,
+                placeholder: RemotePlaceholder,
+                imageUrl: URL?)
+    case bigSingleAction(titleText: String,
+                         descriptionText: String,
+                         placeholder: RemotePlaceholder,
+                         imageUrl: URL?,
+                         primaryActionText: String,
+                         primaryAction: RemoteAction)
+    case bigTwoAction(titleText: String,
+                      descriptionText: String,
+                      placeholder: RemotePlaceholder,
+                      imageUrl: URL?,
+                      primaryActionText: String,
+                      primaryAction: RemoteAction,
+                      secondaryActionText: String,
                       secondaryAction: RemoteAction)
-    case promoSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
-                           actionText: String, action: RemoteAction)
+    case promoSingleAction(titleText: String,
+                           descriptionText: String,
+                           placeholder: RemotePlaceholder,
+                           imageUrl: URL?,
+                           actionText: String,
+                           action: RemoteAction)
 }
 
 struct HomeMessageViewModel {
@@ -44,36 +61,38 @@ struct HomeMessageViewModel {
     }
 
     let messageId: String
-    let sendPixels: Bool
     let modelType: HomeSupportedMessageDisplayType
     let messageActionHandler: RemoteMessagingActionHandling
+    let preloadedImage: UIImage?
+    let loadRemoteImage: (() async -> UIImage?)?
 
     var image: String? {
         switch modelType {
         case .small:
             return nil
-        case .medium(_, _, let placeholder):
+        case .medium(_, _, let placeholder, _):
             return placeholder.rawValue
-        case .bigSingleAction(_, _, let placeholder, _, _):
+        case .bigSingleAction(_, _, let placeholder, _, _, _):
             return placeholder.rawValue
-        case .bigTwoAction(_, _, let placeholder, _, _, _, _):
+        case .bigTwoAction(_, _, let placeholder, _, _, _, _, _):
             return placeholder.rawValue
-        case .promoSingleAction(_, _, let placeholder, _, _):
+        case .promoSingleAction(_, _, let placeholder, _, _, _):
             return placeholder.rawValue
         }
     }
+
     
     var title: String {
         switch modelType {
         case .small(let titleText, _):
             return titleText
-        case .medium(let titleText, _, _):
+        case .medium(let titleText, _, _, _):
             return titleText
-        case .bigSingleAction(let titleText, _, _, _, _):
+        case .bigSingleAction(let titleText, _, _, _, _, _):
             return titleText
-        case .bigTwoAction(let titleText, _, _, _, _, _, _):
+        case .bigTwoAction(let titleText, _, _, _, _, _, _, _):
             return titleText
-        case .promoSingleAction(let titleText, _, _, _, _):
+        case .promoSingleAction(let titleText, _, _, _, _, _):
             return titleText
         }
     }
@@ -83,13 +102,13 @@ struct HomeMessageViewModel {
             switch modelType {
             case .small(_, let descriptionText):
                 return descriptionText
-            case .medium(_, let descriptionText, _):
+            case .medium(_, let descriptionText, _, _):
                 return descriptionText
-            case .bigSingleAction(_, let descriptionText, _, _, _):
+            case .bigSingleAction(_, let descriptionText, _, _, _, _):
                 return descriptionText
-            case .bigTwoAction(_, let descriptionText, _, _, _, _, _):
+            case .bigTwoAction(_, let descriptionText, _, _, _, _, _, _):
                 return descriptionText
-            case .promoSingleAction(_, let descriptionText, _, _, _):
+            case .promoSingleAction(_, let descriptionText, _, _, _, _):
                 return descriptionText
             }
         }()
@@ -104,31 +123,35 @@ struct HomeMessageViewModel {
             return []
         case .medium:
             return []
-        case .bigSingleAction(_, _, _, let primaryActionText, let primaryAction):
+        case .bigSingleAction(_, _, _, _, let primaryActionText, let primaryAction):
             return [
                 HomeMessageButtonViewModel(title: primaryActionText,
                                            actionStyle: primaryAction.actionStyle(),
-                                           action: mapActionToViewModel(remoteAction: primaryAction, buttonAction:
-                                                .primaryAction(isShare: primaryAction.isShare), onDidClose: onDidClose))
+                                           action: mapActionToViewModel(remoteAction: primaryAction,
+                                                                        buttonAction: .primaryAction(isShare: primaryAction.isShare),
+                                                                        onDidClose: onDidClose))
             ]
-        case .bigTwoAction(_, _, _, let primaryActionText, let primaryAction, let secondaryActionText, let secondaryAction):
+        case .bigTwoAction(_, _, _, _, let primaryActionText, let primaryAction, let secondaryActionText, let secondaryAction):
             return [
                 HomeMessageButtonViewModel(title: secondaryActionText,
                                            actionStyle: secondaryAction.actionStyle(isSecondaryAction: true),
-                                           action: mapActionToViewModel(remoteAction: secondaryAction, buttonAction:
-                                                .secondaryAction(isShare: secondaryAction.isShare), onDidClose: onDidClose)),
+                                           action: mapActionToViewModel(remoteAction: secondaryAction,
+                                                                        buttonAction: .secondaryAction(isShare: secondaryAction.isShare),
+                                                                        onDidClose: onDidClose)),
 
                 HomeMessageButtonViewModel(title: primaryActionText,
                                            actionStyle: primaryAction.actionStyle(),
-                                           action: mapActionToViewModel(remoteAction: primaryAction, buttonAction:
-                                           .primaryAction(isShare: primaryAction.isShare), onDidClose: onDidClose))
+                                           action: mapActionToViewModel(remoteAction: primaryAction,
+                                                                        buttonAction: .primaryAction(isShare: primaryAction.isShare),
+                                                                        onDidClose: onDidClose))
             ]
-        case .promoSingleAction(_, _, _, let actionText, let action):
+        case .promoSingleAction(_, _, _, _, let actionText, let action):
             return [
                 HomeMessageButtonViewModel(title: actionText,
                                            actionStyle: action.actionStyle(),
-                                           action: mapActionToViewModel(remoteAction: action, buttonAction:
-                                                .action(isShare: action.isShare), onDidClose: onDidClose))]
+                                           action: mapActionToViewModel(remoteAction: action,
+                                                                        buttonAction: .action(isShare: action.isShare),
+                                                                        onDidClose: onDidClose))]
         }
     }
     
@@ -146,6 +169,7 @@ struct HomeMessageViewModel {
             await onDidClose(buttonAction)
         }
     }
+
 }
 
 struct HomeMessageButtonViewModel {

@@ -236,10 +236,12 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
         do {
             let subscription = try await self.subscriptionManager.getSubscription(cachePolicy: cachePolicy)
-            Task { @MainActor in
-                self.state.subscriptionInfo = subscription
-                if loadingIndicator { self.displaySubscriptionLoader(false) }
+            if loadingIndicator {
+                Task { @MainActor in
+                    self.displaySubscriptionLoader(false)
+                }
             }
+
             await updateSubscriptionsStatusMessage(subscription: subscription,
                                                    date: subscription.expiresOrRenewsAt,
                                                    product: subscription.productId,
@@ -415,6 +417,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     @MainActor
     private func updateSubscriptionsStatusMessage(subscription: DuckDuckGoSubscription, date: Date, product: String, billingPeriod: DuckDuckGoSubscription.BillingPeriod) {
         state.cancelPendingDowngradeDetails = nil
+        state.subscriptionInfo = subscription
+
         // Check for pending plan first (downgrade scheduled)
         if let pendingPlan = subscription.firstPendingPlan {
             let effectiveDate = dateFormatter.string(from: pendingPlan.effectiveAt)

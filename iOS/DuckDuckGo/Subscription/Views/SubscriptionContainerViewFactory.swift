@@ -102,7 +102,8 @@ enum SubscriptionContainerViewFactory {
                                                                        internalUserDecider: internalUserDecider,
                                                                        wideEvent: wideEvent,
                                                                        pendingTransactionHandler: pendingTransactionHandler,
-                                                                       subscriptionFlowsExecuter: subscriptionFlowsExecuter),
+                                                                       subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
@@ -143,7 +144,8 @@ enum SubscriptionContainerViewFactory {
                                                                                                      internalUserDecider: internalUserDecider,
                                                                                                      wideEvent: wideEvent,
                                                                                                      pendingTransactionHandler: pendingTransactionHandler,
-                                                                                                     subscriptionFlowsExecuter: subscriptionFlowsExecuter)
+                                                                                                     subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                                                                                                     requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
 
         let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
                                                        isInternalUser: internalUserDecider.isInternalUser,
@@ -210,7 +212,8 @@ enum SubscriptionContainerViewFactory {
                                                                        internalUserDecider: internalUserDecider,
                                                                        wideEvent: wideEvent,
                                                                        pendingTransactionHandler: pendingTransactionHandler,
-                                                                       subscriptionFlowsExecuter: subscriptionFlowsExecuter),
+                                                                       subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
@@ -255,7 +258,8 @@ enum SubscriptionContainerViewFactory {
                                                                        internalUserDecider: internalUserDecider,
                                                                        wideEvent: wideEvent,
                                                                        pendingTransactionHandler: pendingTransactionHandler,
-                                                                       subscriptionFlowsExecuter: subscriptionFlowsExecuter),
+                                                                       subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
 

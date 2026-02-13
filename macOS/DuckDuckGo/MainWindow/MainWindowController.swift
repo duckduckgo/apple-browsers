@@ -73,7 +73,6 @@ final class MainWindowController: NSWindowController {
 
         setupWindow(window)
         setupToolbar()
-        subscribeToTrafficLightsAlpha()
         subscribeToBurningData()
         subscribeToResolutionChange()
         subscribeToFullScreenToolbarChanges()
@@ -130,10 +129,19 @@ final class MainWindowController: NSWindowController {
 
     private func setupWindow(_ window: NSWindow) {
         window.delegate = self
+        startOnboardingIfNeeded()
+    }
 
-        if shouldShowOnboarding {
-            mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.startOnboarding()
+    private func startOnboardingIfNeeded() {
+        guard shouldShowOnboarding, let selectedTab = mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab else {
+            return
         }
+
+        // During Onboarding, several UI elements get disabled. In order to prevent flickering, we'll disable them right after kicking off Onboarding.
+        // Locking up UI via `OnboardingUserScript.setInit` has a noticeable delay, where elements may flash.
+        //
+        selectedTab.startOnboarding()
+        userInteraction(prevented: true)
     }
 
     private func subscribeToResolutionChange() {
@@ -191,23 +199,6 @@ final class MainWindowController: NSWindowController {
         moveTabBarView(toTitlebarView: true)
     }
 
-    private var trafficLightsAlphaCancellable: AnyCancellable?
-    private func subscribeToTrafficLightsAlpha() {
-        let tabBarViewController = mainViewController.tabBarViewController
-
-        // slide tabs to the left in full screen
-        trafficLightsAlphaCancellable = window?.standardWindowButton(.closeButton)?
-            .publisher(for: \.alphaValue)
-            .map { alphaValue in
-                if #available(macOS 26, *) {
-                    return TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPaddingMacOS26.rawValue * alphaValue
-                } else {
-                    return TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPadding.rawValue * alphaValue
-                }
-            }
-            .assign(to: \.constant, onWeaklyHeld: tabBarViewController.pinnedTabsViewLeadingConstraint)
-    }
-
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
 
@@ -221,25 +212,18 @@ final class MainWindowController: NSWindowController {
     }
 
     func userInteraction(prevented: Bool, forBurning: Bool = false) {
-        mainViewController.tabCollectionViewModel.changesEnabled = !prevented
-        mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.contentChangeEnabled = !prevented
+        mainViewController.userInteraction(prevented: prevented)
 
-        mainViewController.tabBarViewController.fireButton.isEnabled = !prevented
-        mainViewController.tabBarViewController.isInteractionPrevented = prevented
-        mainViewController.navigationBarViewController.controlsForUserPrevention.forEach { $0?.isEnabled = !prevented }
-        mainViewController.bookmarksBarViewController.userInteraction(prevented: prevented)
-
-        NSApplication.shared.mainMenuTyped.autoupdatingMenusForUserPrevention.forEach { $0.autoenablesItems = !prevented }
         NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !prevented }
 
         guard forBurning else { return }
         if prevented {
-             window?.styleMask.remove(.closable)
-             mainViewController.view.makeMeFirstResponder()
-         } else {
-             window?.styleMask.update(with: .closable)
-             mainViewController.adjustFirstResponder()
-         }
+            window?.styleMask.remove(.closable)
+            mainViewController.view.makeMeFirstResponder()
+        } else {
+            window?.styleMask.update(with: .closable)
+            mainViewController.adjustFirstResponder()
+        }
     }
 
     private func moveTabBarView(toTitlebarView: Bool) {
@@ -560,14 +544,6 @@ fileprivate extension MainMenu {
             preferencesMenuItem
         ]
     }
-
-    var autoupdatingMenusForUserPrevention: [NSMenu] {
-        return [
-            preferencesMenuItem.menu,
-            manageBookmarksMenuItem.menu
-        ].compactMap { $0 }
-    }
-
 }
 
 extension NSWindow {

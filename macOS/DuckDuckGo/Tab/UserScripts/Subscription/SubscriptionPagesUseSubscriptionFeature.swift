@@ -74,8 +74,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private let notificationCenter: NotificationCenter
     /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
-
     private let aiChatURL: URL
+    private let requestValidator: any ScriptRequestValidator
 
     // Wide Event
     private let wideEvent: WideEventManaging
@@ -99,7 +99,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 wideEvent: WideEventManaging,
                 subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
                 pendingTransactionHandler: PendingTransactionHandling,
-                flowPerformer: any SubscriptionFlowsExecuting) {
+                flowPerformer: any SubscriptionFlowsExecuting,
+                requestValidator: any ScriptRequestValidator) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
@@ -113,6 +114,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.subscriptionEventReporter = subscriptionEventReporter
         self.pendingTransactionHandler = pendingTransactionHandler
         self.flowPerformer = flowPerformer
+        self.requestValidator = requestValidator
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -169,7 +171,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     }
 
     // MARK: - Subscription + Auth
-
     func setAuthTokens(params: Any, original: WKScriptMessage) async throws -> Encodable? {
 
         PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailSuccess, frequency: .legacyDailyAndCount)
@@ -208,6 +209,10 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     }
 
     func getAuthAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard await requestValidator.canPageRequestToken(original) else {
+            Logger.subscription.error("Unauthorised access to token")
+            return nil
+        }
         let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .localValid)
         return AccessTokenValue(accessToken: tokenContainer?.accessToken ?? "")
     }
@@ -691,6 +696,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     }
 
     func getAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard await requestValidator.canPageRequestToken(original) else {
+            Logger.subscription.error("Unauthorised access to token")
+            return nil
+        }
+
         do {
             let accessToken = try await subscriptionManager.getTokenContainer(policy: .localValid).accessToken
             return ["token": accessToken]

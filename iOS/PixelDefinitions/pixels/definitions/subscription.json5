@@ -289,6 +289,21 @@
             }
         ]
     },
+    "m_privacy-pro_freetrial_duck_ai_activation": {
+        "description": "Fired when a user activates Duck.ai for the first time during a free trial. Includes activation day to distinguish D1 vs D2-D7 activators.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "activation_day",
+                "type": "string",
+                "description": "When Duck.ai was activated during the free trial",
+                "enum": ["d1", "d2_to_d7"]
+            }
+        ]
+    },
 
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232
     "m_ios_wide_subscription_purchase": {
@@ -310,6 +325,7 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -402,6 +418,7 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -482,6 +499,7 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -573,6 +591,7 @@
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",

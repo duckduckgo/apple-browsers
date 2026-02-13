@@ -88,9 +88,9 @@ public final class NewTabPageRMFClient: NewTabPageUserScriptClient {
         }
 
         switch remoteMessageProvider.newTabPageRemoteMessage?.content {
-        case let .bigSingleAction(_, _, _, _, primaryAction):
+        case let .bigSingleAction(_, _, _, _, _, primaryAction):
             await remoteMessageProvider.handleAction(primaryAction, andDismissUsing: .action)
-        case let .bigTwoAction(_, _, _, _, primaryAction, _, _):
+        case let .bigTwoAction(_, _, _, _, _, primaryAction, _, _):
             await remoteMessageProvider.handleAction(primaryAction, andDismissUsing: .primaryAction)
         default:
             break
@@ -106,7 +106,7 @@ public final class NewTabPageRMFClient: NewTabPageUserScriptClient {
         }
 
         switch remoteMessageProvider.newTabPageRemoteMessage?.content {
-        case let .bigTwoAction(_, _, _, _, _, _, secondaryAction):
+        case let .bigTwoAction(_, _, _, _, _, _, _, secondaryAction):
             await remoteMessageProvider.handleAction(secondaryAction, andDismissUsing: .secondaryAction)
         default:
             break

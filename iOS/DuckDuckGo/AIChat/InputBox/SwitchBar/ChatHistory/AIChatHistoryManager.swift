@@ -43,6 +43,17 @@ final class AIChatHistoryManager {
 
     weak var delegate: AIChatHistoryManagerDelegate?
 
+    var hasSuggestions: Bool {
+        viewModel.hasSuggestions
+    }
+
+    var hasSuggestionsPublisher: AnyPublisher<Bool, Never> {
+        viewModel.$filteredSuggestions
+            .map { !$0.isEmpty }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     private var historyViewController: AIChatHistoryListViewController?
     private let suggestionsReader: AIChatSuggestionsReading
     private let aiChatSettings: AIChatSettingsProvider

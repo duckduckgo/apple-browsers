@@ -154,7 +154,8 @@ private final class WideEventDataMeasuringMock: WideEventDataMeasuringInterval {
         pixelName: "test-wide-event",
         featureName: "test-wide-event",
         mobileMetaType: "ios-test-wide-event",
-        desktopMetaType: "macos-test-wide-event"
+        desktopMetaType: "macos-test-wide-event",
+        version: "1.0.0"
     )
 
     var globalData: WideEventGlobalData

@@ -659,7 +659,8 @@ final class SubscriptionDebugViewController: UITableViewController {
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 wideEvent: AppDependencyProvider.shared.wideEvent,
                 pendingTransactionHandler: pendingTransactionHandler,
-                subscriptionFlowsExecuter: subscriptionFlowsExecuter
+                subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
             )
 
             // Create params matching what the web would send

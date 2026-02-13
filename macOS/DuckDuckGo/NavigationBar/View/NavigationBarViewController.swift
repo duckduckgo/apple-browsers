@@ -201,6 +201,7 @@ final class NavigationBarViewController: NSViewController {
                 optionsButton,
                 overflowButton,
                 bookmarkListButton,
+                downloadsButton,
                 passwordManagementButton,
                 addressBarViewController?.addressBarTextField,
                 addressBarViewController?.passiveTextField,

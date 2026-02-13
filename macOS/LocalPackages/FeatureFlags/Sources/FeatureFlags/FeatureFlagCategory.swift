@@ -54,6 +54,7 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
                 .aiChatSuggestions,
+                .aiChatOmnibarTools,
                 .aiChatOmnibarOnboarding,
                 .standaloneMigration:
             return .duckAI

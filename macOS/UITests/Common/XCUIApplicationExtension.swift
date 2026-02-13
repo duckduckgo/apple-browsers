@@ -37,6 +37,8 @@ extension XCUIApplication {
     enum AccessibilityIdentifiers {
         static let okButton = "OKButton"
         static let addressBarTextField = "AddressBarViewController.addressBarTextField"
+        static let addressBarPassiveTextField = "AddressBarViewController.passiveTextField"
+        static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"

@@ -29,6 +29,7 @@ struct JsonToRemoteMessageModelMapperPlaceholdersTests {
         (.appUpdate, .appUpdate),
         (.macComputer, .macComputer),
         (.newForMacAndWindows, .newForMacAndWindows),
+        (.macAndWindows, .macAndWindows),
         (.privacyShield, .subscription),
         (.aiChat, .aiChat),
         (.visualDesignUpdate, .visualDesignUpdate),
@@ -85,16 +86,17 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
             ("5", .appUpdate),
             ("6", .macComputer),
             ("7", .newForMacAndWindows),
-            ("8", .subscription),
-            ("9", .aiChat),
-            ("10", .visualDesignUpdate),
-            ("11", .imageAI),
-            ("12", .radarCheckGreen),
-            ("13", .keyImport),
-            ("14", .radar),
-            ("15", .radarCheckPurple),
-            ("16", .pir),
-            ("17", .subscription),
+            ("8", .macAndWindows),
+            ("9", .subscription),
+            ("10", .aiChat),
+            ("11", .visualDesignUpdate),
+            ("12", .imageAI),
+            ("13", .radarCheckGreen),
+            ("14", .keyImport),
+            ("15", .radar),
+            ("16", .radarCheckPurple),
+            ("17", .pir),
+            ("18", .subscription),
         ] as [(String, RemotePlaceholder)]
     )
     func placeholderIsMappedCorrectlyForMessages(id: String, expectedDomainValue: RemotePlaceholder) throws {
@@ -122,21 +124,22 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
             ("5", .appUpdate),
             ("6", .macComputer),
             ("7", .newForMacAndWindows),
-            ("8", .subscription),
-            ("9", .aiChat),
-            ("10", .visualDesignUpdate),
-            ("11", .imageAI),
-            ("12", .radarCheckGreen),
-            ("13", .keyImport),
-            ("14", .radar),
-            ("15", .radarCheckPurple),
-            ("16", .pir),
-            ("17", .subscription),
+            ("8", .macAndWindows),
+            ("9", .subscription),
+            ("10", .aiChat),
+            ("11", .visualDesignUpdate),
+            ("12", .imageAI),
+            ("13", .radarCheckGreen),
+            ("14", .keyImport),
+            ("15", .radar),
+            ("16", .radarCheckPurple),
+            ("17", .pir),
+            ("18", .subscription),
         ] as [(String, RemotePlaceholder)]
     )
     func placeholderIsMappedCorrectlyForItemsInList(itemId: String, expectedDomainValue: RemotePlaceholder) throws {
         // GIVEN
-        let messageId = "18"
+        let messageId = "19"
         let message = try #require(config.messages.first(where: { $0.id == messageId }))
         let listItems = try #require(message.content?.listItems)
 

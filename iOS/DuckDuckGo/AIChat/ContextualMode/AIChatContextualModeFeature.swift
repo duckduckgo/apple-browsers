@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Common
 import Foundation
 import PrivacyConfig
@@ -25,9 +26,11 @@ import PrivacyConfig
 protocol AIChatContextualModeFeatureProviding {
     /// Whether Duck AI contextual chat mode is available on this device.
     ///
-    /// Returns `true` only when both conditions are met:
-    /// - The `contextualDuckAIMode` feature flag is enabled
+    /// Returns `true` only when all conditions are met:
+    /// - The `contextualDuckAIMode` sub-feature flag is enabled
+    /// - The `pageContext` top-level feature flag is enabled
     /// - The device is running on an iPhone (not iPad or other devices)
+    /// - The AI Chat URL domain is `duck.ai`
     var isAvailable: Bool { get }
 }
 
@@ -36,15 +39,21 @@ struct AIChatContextualModeFeature: AIChatContextualModeFeatureProviding {
 
     private let featureFlagger: any FeatureFlagger
     private let devicePlatform: DevicePlatformProviding.Type
+    private let aiChatURLProvider: () -> URL
 
     init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         aiChatURLProvider: @escaping () -> URL = { [settings = AIChatSettings()] in settings.aiChatURL }) {
         self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
+        self.aiChatURLProvider = aiChatURLProvider
     }
 
     /// Whether Duck AI contextual chat mode is available.
     var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.contextualDuckAIMode) && devicePlatform.isIphone
+        featureFlagger.isFeatureOn(.contextualDuckAIMode)
+            && featureFlagger.isFeatureOn(.pageContextFeature)
+            && devicePlatform.isIphone
+            && aiChatURLProvider().isStandaloneDuckAIURL
     }
 }

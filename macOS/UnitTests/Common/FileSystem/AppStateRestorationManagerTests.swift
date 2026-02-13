@@ -75,6 +75,10 @@ final class AppStateRestorationManagerTests: XCTestCase {
         mockFileStore = nil
         mockPromptCoordinator = nil
         mockPixelKit = nil
+
+        // Clean up UserDefaults to ensure test isolation
+        UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.appIsRelaunchingAutomatically.rawValue)
+
         super.tearDown()
     }
 

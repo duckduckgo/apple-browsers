@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import CoreGraphics
 import OSLog
 import PixelKit
 import SwiftUI
@@ -103,6 +104,10 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     /// Checks if modifiers are currently held (injectable for testing)
     private let isModifierHeld: (NSEvent.ModifierFlags) -> Bool
 
+    /// Checks if the triggering key combination is physically pressed on hardware (not simulated).
+    /// When nil, the check is skipped (assumes physical). Pass `makePhysicalKeyPressCheck(for:)` in production.
+    private let isPhysicalKeyPress: (() -> Bool)?
+
     /// Delegate for event interception
     private weak var application: WarnBeforeQuitManagerDelegate?
 
@@ -151,6 +156,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
           timerFactory: ((TimeInterval, @escaping @MainActor () -> Void) -> Timer)? = nil,
           animationDelay: TimeInterval = Constants.defaultAnimationDelay,
           isModifierHeld: ((NSEvent.ModifierFlags) -> Bool)? = nil,
+          isPhysicalKeyPress: (() -> Bool)? = nil,
           delegate: WarnBeforeQuitManagerDelegate? = nil) {
         // Validate this is a keyDown event with modifier and valid character
         guard currentEvent.type == .keyDown,
@@ -173,6 +179,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
             let currentModifiers = NSEvent.modifierFlags.deviceIndependent
             return currentModifiers.intersection(requiredModifiers) == requiredModifiers
         }
+        self.isPhysicalKeyPress = isPhysicalKeyPress
         // Create state AsyncStream for external observation
         (stateStreamStorage, stateSubject) = AsyncStream<State>.makeStream(of: State.self, bufferingPolicy: .bufferingNewest(3))
     }
@@ -204,6 +211,14 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         // Don't show confirmation if another decider already delayed termination or feature is disabled
         guard !isAsync, warningEnabled, currentState == .idle else {
             assert(currentState == .idle, "shouldTerminate should only be called when currentState is .idle, but currentState is \(currentState)")
+            return .sync(.next)
+        }
+
+        // Skip warning for simulated key events (e.g., from mouse button remapping tools).
+        // CGEventSource.hidSystemState only reflects physical hardware — programmatic key
+        // injections via CGEventPost won't appear in the HID state.
+        if let isPhysicalKeyPress, !isPhysicalKeyPress() {
+            Logger.general.debug("WarnBeforeQuitManager: Skipping warning — key event is not from physical keyboard")
             return .sync(.next)
         }
 
@@ -574,6 +589,24 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                 return nil // consume event to prevent beep
             }
             return event // pass through other events
+        }
+    }
+
+    /// Creates a closure that checks whether the key combination from `event` is physically
+    /// pressed on hardware, using `CGEventSource.hidSystemState`.
+    ///
+    /// Programmatic key injections (e.g., mouse button remapping tools posting via `CGEventPost`)
+    /// update `combinedSessionState` but **not** `hidSystemState`, so this distinguishes
+    /// real keyboard input from simulated shortcuts.
+    static func makePhysicalKeyPressCheck(for event: NSEvent) -> () -> Bool {
+        let keyCode = event.keyCode
+        let modifierMask = event.keyEquivalent?.modifierMask ?? []
+        return {
+            let physicalFlags = CGEventSource.flagsState(.hidSystemState)
+            let requiredCGFlags = CGEventFlags(rawValue: UInt64(modifierMask.rawValue))
+            let modifiersPhysicallyHeld = physicalFlags.contains(requiredCGFlags)
+            let keyPhysicallyHeld = CGEventSource.keyState(.hidSystemState, key: CGKeyCode(keyCode))
+            return modifiersPhysicallyHeld && keyPhysicallyHeld
         }
     }
 

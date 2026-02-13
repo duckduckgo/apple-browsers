@@ -438,7 +438,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
-        XCTAssertNotNil(capturedDayAverage, "Should capture raw day average")
+        XCTAssertNotNil(capturedDayAverage, "Should capture day average")
     }
 
     /// Tests average search count pixel after first month (includes day_average parameter)
@@ -498,7 +498,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
-        XCTAssertNotNil(capturedDayAverage, "Should capture raw day average")
+        XCTAssertNotNil(capturedDayAverage, "Should capture day average")
     }
 
     // MARK: - Average AD Click Tests

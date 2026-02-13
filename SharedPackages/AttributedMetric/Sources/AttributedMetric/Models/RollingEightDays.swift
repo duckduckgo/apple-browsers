@@ -145,7 +145,7 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
     }
 
     /// Calculates the rounded average of the past 7 days, excluding today and unknown values.
-    public var past7DaysAverage:(average: Int, daysCounted: Int) {
+    public var past7DaysAverage: (average: Int, daysCounted: Int) {
         var sum = 0
         var notUnknownValues = 0
         for value in values.dropLast() {

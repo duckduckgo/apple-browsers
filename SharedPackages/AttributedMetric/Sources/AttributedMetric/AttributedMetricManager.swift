@@ -337,35 +337,37 @@ public final class AttributedMetricManager {
         Logger.attributedMetric.log("Calculating average search count")
         guard let timePastFromInstall = timePastFromInstall else { return }
         let search8Days = dataStorage.search8Days
-        let average = search8Days.past7DaysAverage
+        let result = search8Days.past7DaysAverage
 
-        guard average > 0 else { return }
+        guard result.average > 0 else { return }
 
         switch timePastFromInstall {
         case .none:
             return
         case .weeks:
-            guard let bucket = try? bucketModifier.bucket(value: average, pixelName: .userAverageSearchesPastWeekFirstMonth) else {
+            guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageSearchesPastWeekFirstMonth) else {
                 Logger.attributedMetric.error("Failed to bucket average search count value")
                 return
             }
-            Logger.attributedMetric.debug("Average last week (first month) search count: \(average, privacy: .public), bucket: \(bucket.value, privacy: .public)")
+            Logger.attributedMetric.debug("Average last week (first month) search count: \(result.average, privacy: .public), bucket: \(bucket.value, privacy: .public)")
             pixelKit?.fire(AttributedMetricPixel.userAverageSearchesPastWeekFirstMonth(origin: originOrInstall.origin,
                                                                                        installDate: originOrInstall.installDate,
                                                                                        count: bucket.value,
+                                                                                       dayAverage: result.daysCounted,
                                                                                        bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
                            includeAppVersionParameter: false,
                            doNotEnforcePrefix: true)
         case .months:
-            guard let bucket = try? bucketModifier.bucket(value: average, pixelName: .userAverageSearchesPastWeek) else {
+            guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageSearchesPastWeek) else {
                 Logger.attributedMetric.error("Failed to bucket average search count value")
                 return
             }
-            Logger.attributedMetric.debug("Average last week search count: \(average, privacy: .public), bucket: \(bucket.value, privacy: .public)")
+            Logger.attributedMetric.debug("Average last week search count: \(result.average, privacy: .public), bucket: \(bucket.value, privacy: .public)")
             pixelKit?.fire(AttributedMetricPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin,
                                                                              installDate: originOrInstall.installDate,
                                                                              count: bucket.value,
+                                                                             dayAverage: result.daysCounted,
                                                                              bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
                            includeAppVersionParameter: false,
@@ -389,8 +391,8 @@ public final class AttributedMetricManager {
 
         let adClick8Days = dataStorage.adClick8Days
         guard adClick8Days.countPast7Days > 0 else { return }
-        let average = adClick8Days.past7DaysAverage
-        guard let bucket = try? bucketModifier.bucket(value: average, pixelName: .userAverageAdClicksPastWeek) else {
+        let result = adClick8Days.past7DaysAverage
+        guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageAdClicksPastWeek) else {
             Logger.attributedMetric.error("Failed to bucket average AD click value")
             return
         }
@@ -420,8 +422,8 @@ public final class AttributedMetricManager {
 
         let duckAIChat8Days = dataStorage.duckAIChat8Days
         guard duckAIChat8Days.countPast7Days > 0 else { return }
-        let average = duckAIChat8Days.past7DaysAverage
-        guard let bucket = try? bucketModifier.bucket(value: average, pixelName: .userAverageDuckAiUsagePastWeek) else {
+        let result = duckAIChat8Days.past7DaysAverage
+        guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageDuckAiUsagePastWeek) else {
             Logger.attributedMetric.error("Failed to bucket average Duck.AI chat value")
             return
         }

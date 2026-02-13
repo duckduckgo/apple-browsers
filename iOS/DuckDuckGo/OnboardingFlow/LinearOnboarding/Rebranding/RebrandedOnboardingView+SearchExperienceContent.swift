@@ -18,7 +18,6 @@
 //
 
 import SwiftUI
-import DuckUI
 import Onboarding
 
 extension OnboardingRebranding.OnboardingView {
@@ -26,31 +25,20 @@ extension OnboardingRebranding.OnboardingView {
     struct SearchExperienceContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
-        private var animateTitle: Binding<Bool>
-        private var showContent: Binding<Bool>
-        private var isSkipped: Binding<Bool>
         private let action: () -> Void
 
         @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
 
-        init(animateTitle: Binding<Bool> = .constant(true),
-             showContent: Binding<Bool> = .constant(true),
-             isSkipped: Binding<Bool>,
-             action: @escaping () -> Void) {
-            self.animateTitle = animateTitle
-            self.showContent = showContent
-            self.isSkipped = isSkipped
+        init(action: @escaping () -> Void) {
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
-                AnimatableTypingText(UserText.Onboarding.SearchExperience.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    showContent.wrappedValue = true
-                }
-                .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                .font(onboardingTheme.typography.title)
-                .multilineTextAlignment(.center)
+                Text(UserText.Onboarding.SearchExperience.title)
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     RebrandedOnboardingView.OnboardingSearchExperiencePicker(viewModel: viewModel)
@@ -68,7 +56,6 @@ extension OnboardingRebranding.OnboardingView {
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
-                .visibility(showContent.wrappedValue ? .visible : .invisible)
             }
         }
     }

@@ -91,21 +91,23 @@ private struct RadioIndicator: View {
     let isSelected: Bool
     let accentColor: Color
 
+    @Environment(\.onboardingTheme) private var onboardingTheme
+
     var body: some View {
         if isSelected {
             ZStack {
                 Circle()
                     .fill(accentColor)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(onboardingTheme.typography.caption)
                     .foregroundColor(.white)
             }
         } else {
             Circle()
-                .fill(Color.primary.opacity(0.06))
+                .fill(Color.primary.opacity(PickerMetrics.radioFillOpacity))
                 .overlay(
                     Circle()
-                        .stroke(Color.primary.opacity(0.3), lineWidth: 1.5)
+                        .stroke(Color.primary.opacity(PickerMetrics.radioStrokeOpacity), lineWidth: PickerMetrics.radioStrokeWidth)
                 )
         }
     }
@@ -116,4 +118,7 @@ private enum PickerMetrics {
     static let contentSpacing: CGFloat = 8
     static let imageHeight: CGFloat = 72
     static let radioSize: CGFloat = 24
+    static let radioFillOpacity: Double = 0.06
+    static let radioStrokeOpacity: Double = 0.3
+    static let radioStrokeWidth: CGFloat = 1.5
 }

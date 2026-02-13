@@ -369,9 +369,6 @@ extension OnboardingRebranding {
 
         private var searchExperienceSelectionView: some View {
             SearchExperienceContent(
-                animateTitle: $model.searchExperienceContentState.animateTitle,
-                showContent: $model.searchExperienceContentState.showContent,
-                isSkipped: $model.isSkipped,
                 action: model.selectSearchExperienceAction
             )
         }

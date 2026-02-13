@@ -24,12 +24,94 @@ extension OnboardingRebranding.OnboardingView {
 
     struct OnboardingSearchExperiencePicker: View {
         @ObservedObject var viewModel: OnboardingSearchExperiencePickerViewModel
+        @Environment(\.onboardingTheme) private var onboardingTheme
 
         var body: some View {
-            SettingsAIExperimentalPickerView(
-                isDuckAISelected: viewModel.isSearchAndAIChatEnabled
-            )
+            HStack(alignment: .top, spacing: PickerMetrics.optionsSpacing) {
+                PickerOption(
+                    isSelected: !viewModel.isSearchAndAIChatEnabled.wrappedValue,
+                    selectedImage: OnboardingRebrandingImages.SearchExperience.searchOn,
+                    unselectedImage: OnboardingRebrandingImages.SearchExperience.searchOff,
+                    title: UserText.settingsAIPickerSearchOnly,
+                    accentColor: onboardingTheme.colorPalette.optionsListIconColor
+                ) {
+                    viewModel.isSearchAndAIChatEnabled.wrappedValue = false
+                }
+
+                PickerOption(
+                    isSelected: viewModel.isSearchAndAIChatEnabled.wrappedValue,
+                    selectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOn,
+                    unselectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOff,
+                    title: UserText.settingsAIPickerSearchAndDuckAI,
+                    accentColor: onboardingTheme.colorPalette.optionsListIconColor
+                ) {
+                    viewModel.isSearchAndAIChatEnabled.wrappedValue = true
+                }
+            }
         }
     }
 
+}
+
+private struct PickerOption: View {
+    let isSelected: Bool
+    let selectedImage: Image
+    let unselectedImage: Image
+    let title: String
+    let accentColor: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: PickerMetrics.contentSpacing) {
+                (isSelected ? selectedImage : unselectedImage)
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: PickerMetrics.imageHeight)
+
+                Text(title)
+                    .font(.system(size: PickerMetrics.labelFontSize))
+                    .foregroundColor(Color(UIColor.label.withAlphaComponent(0.96)))
+                    .multilineTextAlignment(.center)
+
+                RadioIndicator(isSelected: isSelected, accentColor: accentColor)
+                    .frame(width: PickerMetrics.radioSize, height: PickerMetrics.radioSize)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct RadioIndicator: View {
+    let isSelected: Bool
+    let accentColor: Color
+
+    var body: some View {
+        if isSelected {
+            ZStack {
+                Circle()
+                    .fill(accentColor)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        } else {
+            Circle()
+                .fill(Color.black.opacity(0.06))
+                .overlay(
+                    Circle()
+                        .stroke(Color.black.opacity(0.3), lineWidth: 1.5)
+                )
+        }
+    }
+}
+
+private enum PickerMetrics {
+    static let optionsSpacing: CGFloat = 8
+    static let contentSpacing: CGFloat = 8
+    static let imageHeight: CGFloat = 72
+    static let labelFontSize: CGFloat = 12
+    static let radioSize: CGFloat = 24
 }

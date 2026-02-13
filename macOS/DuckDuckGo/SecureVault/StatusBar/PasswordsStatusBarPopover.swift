@@ -117,7 +117,7 @@ extension PasswordsStatusBarPopover: NSPopoverDelegate {
 
         if let window = viewController.view.window {
             for sheet in window.sheets {
-                sheet.endSheet(window)
+                window.endSheet(sheet)
             }
         }
         viewController.postChange()

@@ -107,7 +107,7 @@ public extension OnboardingTheme {
             contextualOnboardingMetrics: ContextualOnboardingMetrics(
                 containerPadding: containerPadding,
                 contentSpacing: 20,
-                titleBodyVerticalSpacing: 10,
+                titleBodyVerticalSpacing: 28,
                 titleBodyInset: contextualTitleBodyContentInsets,
                 contextualTitleTextAlignment: .leading,
                 contextualBodyTextAlignment: .leading,
@@ -169,7 +169,7 @@ public extension OnboardingTheme {
 
     /// Insets for the contextual title/body copy block, per device class.
     private static let contextualTitleBodyContentInsets: EdgeInsets = MetricBuilder<EdgeInsets>(
-        iPhone: EdgeInsets(top: 0, leading: 8, bottom: 12, trailing: 0),
+        iPhone: EdgeInsets(top: 0, leading: 8, bottom: 12, trailing: 8),
         iPad: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
     ).build()
 

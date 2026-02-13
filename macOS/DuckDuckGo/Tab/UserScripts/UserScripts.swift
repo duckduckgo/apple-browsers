@@ -233,7 +233,7 @@ final class UserScripts: UserScriptsProvider {
                                                            uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                            aiChatURL: AIChatRemoteSettings().aiChatURL,
                                                            wideEvent: Application.appDelegate.wideEvent,
-                                                           pendingTransactionHandler: pendingTransactionHandler)
+                                                           pendingTransactionHandler: pendingTransactionHandler, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)

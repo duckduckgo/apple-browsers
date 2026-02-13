@@ -917,7 +917,7 @@ final class MainMenu: NSMenu {
                             uiHandler: Application.appDelegate.subscriptionUIHandler,
                             aiChatURL: AIChatRemoteSettings().aiChatURL,
                             wideEvent: Application.appDelegate.wideEvent,
-                            pendingTransactionHandler: pendingTransactionHandler
+                            pendingTransactionHandler: pendingTransactionHandler, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
                         )
 
                         // Create params matching what the web would send

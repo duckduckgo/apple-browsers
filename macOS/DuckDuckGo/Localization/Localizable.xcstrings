@@ -2420,6 +2420,66 @@
         }
       }
     },
+    "aichat.model-picker-button.tooltip" : {
+      "comment" : "Tooltip for the model picker button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modell auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose model"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige modelo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir un modèle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli il modello"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model kiezen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz model"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher modelo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите модель"
+          }
+        }
+      }
+    },
     "aichat.omnibar.placeholder" : {
       "comment" : "Placeholder text shown in the Duck.ai chat input field",
       "extractionState" : "extracted_with_value",
@@ -86175,7 +86235,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Issue importing my stuff"
+            "value" : "Problem beim Importieren meiner Sachen"
           }
         },
         "en" : {
@@ -86199,7 +86259,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Issue importing my stuff"
+            "value" : "Problema con l'importazione dei miei contenuti"
           }
         },
         "nl" : {
@@ -86211,13 +86271,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Issue importing my stuff"
+            "value" : "Problem z importowaniem moich rzeczy"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Issue importing my stuff"
+            "value" : "Problema ao importar as minhas coisas"
           }
         },
         "ru" : {
@@ -86475,7 +86535,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No password manager extensions"
+            "value" : "Keine Passwort-Manager-Erweiterungen"
           }
         },
         "en" : {
@@ -86499,7 +86559,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No password manager extensions"
+            "value" : "Nessuna estensione del gestore di password"
           }
         },
         "nl" : {
@@ -86511,13 +86571,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No password manager extensions"
+            "value" : "Brak rozszerzeń menedżera haseł"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No password manager extensions"
+            "value" : "Sem extensões do gestor de palavras-passe"
           }
         },
         "ru" : {
@@ -86559,7 +86619,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No website translations"
+            "value" : "Nessuna traduzione di siti web"
           }
         },
         "nl" : {
@@ -86571,13 +86631,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No website translations"
+            "value" : "Brak tłumaczeń stron internetowych"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No website translations"
+            "value" : "Sem traduções para websites"
           }
         },
         "ru" : {
@@ -87495,7 +87555,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Websites didn't work"
+            "value" : "Websites haben nicht funktioniert"
           }
         },
         "en" : {
@@ -87519,7 +87579,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Websites didn't work"
+            "value" : "I siti web non funzionavano"
           }
         },
         "nl" : {
@@ -87531,13 +87591,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Websites didn't work"
+            "value" : "Strony internetowe nie działają"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Websites didn't work"
+            "value" : "Os sites não funcionaram"
           }
         },
         "ru" : {

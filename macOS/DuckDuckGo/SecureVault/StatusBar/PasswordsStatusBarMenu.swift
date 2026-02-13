@@ -124,7 +124,7 @@ final class PasswordsStatusBarMenu: NSObject {
         hideMenuItem.target = self
         menu.addItem(hideMenuItem)
 
-        let yPosition = statusItem.statusBar!.thickness + 8
+        let yPosition = (statusItem.statusBar?.thickness ?? NSStatusBar.system.thickness) + 8
 
         menu.popUp(positioning: nil,
                    at: NSPoint(x: 0, y: yPosition),

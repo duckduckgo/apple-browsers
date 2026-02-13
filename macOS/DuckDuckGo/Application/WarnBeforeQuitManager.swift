@@ -599,6 +599,7 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     /// update `combinedSessionState` but **not** `hidSystemState`, so this distinguishes
     /// real keyboard input from simulated shortcuts.
     static func makePhysicalKeyPressCheck(for event: NSEvent) -> () -> Bool {
+        guard event.type == .keyDown else { return { false } }
         let keyCode = event.keyCode
         let modifierMask = event.keyEquivalent?.modifierMask ?? []
         return {

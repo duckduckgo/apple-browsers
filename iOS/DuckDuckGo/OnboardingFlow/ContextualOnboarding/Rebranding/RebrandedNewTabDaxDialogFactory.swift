@@ -161,13 +161,16 @@ private extension RebrandedNewTabDaxDialogFactory {
 private extension RebrandedNewTabDaxDialogFactory {
 
     func createSubscriptionPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+        let title = UserText.SubscriptionPromotionOnboarding.Promo.title
+        let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? UserText.SubscriptionPromotionOnboarding.Promo.message() : UserText.SubscriptionPromotionOnboarding.Promo.messageDeprecated()
+        let dismissText = "No Thanks"
+
         return FadeInView {
-            SubscriptionPromotionView(
-                title: UserText.SubscriptionPromotionOnboarding.Promo.title,
-                // This is temporary and will be removed after rebranding is launched
-                message: AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ?  UserText.SubscriptionPromotionOnboarding.Promo.message() : UserText.SubscriptionPromotionOnboarding.Promo.messageDeprecated(),
+            OnboardingRebranding.OnboardingSubscriptionPromoDialog(
+                title: title,
+                message: AttributedString(message),
                 proceedText: proceedButtonText,
-                dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.skip,
+                dismissText: dismissText,
                 proceedAction: { [weak self] in
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
                     let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
@@ -178,15 +181,17 @@ private extension RebrandedNewTabDaxDialogFactory {
                     )
                     onDismiss(false)
                 },
+                dismissAction: {
+                    onDismiss(true)
+                },
                 onManualDismiss: { [weak self] in
                     self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
                     self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
                     onDismiss(true)
                 }
             )
-            .onboardingDaxDialogStyle()
         }
-        .onboardingContextualBackgroundStyle(background: .illustratedGradient)
+        .applyContextualOnboardingBackground(backgroundType: .privacyProTrial)
         .onFirstAppear { [weak self] in
             self?.onboardingSubscriptionPromotionHelper.fireImpressionPixel()
             self?.daxDialogsFlowCoordinator.subscriptionPromotionDialogSeen = true

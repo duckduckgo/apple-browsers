@@ -1539,6 +1539,7 @@
 		9FF362D02F3D884200824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362CF2F3D883500824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift */; };
 		9FF362D22F3D9C1600824B30 /* RebrandedContextualOnboardingDialogs+Fire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362D12F3D9C0700824B30 /* RebrandedContextualOnboardingDialogs+Fire.swift */; };
 		9FF362D82F3DB73F00824B30 /* RebrandedContextualOnboardingDialogs+EndOfJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362D72F3DB73100824B30 /* RebrandedContextualOnboardingDialogs+EndOfJourney.swift */; };
+		9FF362DA2F3DC6A200824B30 /* RebrandedContextualOnboardingDialogs+SubscriptionPromo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF362D92F3DC68F00824B30 /* RebrandedContextualOnboardingDialogs+SubscriptionPromo.swift */; };
 		9FF967AF2E0E243100E45B54 /* DefaultBrowserPromptUserTypeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967AE2E0E242F00E45B54 /* DefaultBrowserPromptUserTypeManager.swift */; };
 		9FF967B22E0E26DE00E45B54 /* DefaultBrowserPromptUserTypeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967B12E0E26DB00E45B54 /* DefaultBrowserPromptUserTypeManagerTests.swift */; };
 		9FF967B42E0E270300E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF967B32E0E26F900E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift */; };
@@ -3996,6 +3997,7 @@
 		9FF362CF2F3D883500824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+Trackers.swift"; sourceTree = "<group>"; };
 		9FF362D12F3D9C0700824B30 /* RebrandedContextualOnboardingDialogs+Fire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+Fire.swift"; sourceTree = "<group>"; };
 		9FF362D72F3DB73100824B30 /* RebrandedContextualOnboardingDialogs+EndOfJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+EndOfJourney.swift"; sourceTree = "<group>"; };
+		9FF362D92F3DC68F00824B30 /* RebrandedContextualOnboardingDialogs+SubscriptionPromo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RebrandedContextualOnboardingDialogs+SubscriptionPromo.swift"; sourceTree = "<group>"; };
 		9FF967AE2E0E242F00E45B54 /* DefaultBrowserPromptUserTypeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserTypeManager.swift; sourceTree = "<group>"; };
 		9FF967B12E0E26DB00E45B54 /* DefaultBrowserPromptUserTypeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserTypeManagerTests.swift; sourceTree = "<group>"; };
 		9FF967B32E0E26F900E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserTypeStoreTests.swift; sourceTree = "<group>"; };
@@ -7480,6 +7482,7 @@
 				9FF362CF2F3D883500824B30 /* RebrandedContextualOnboardingDialogs+Trackers.swift */,
 				9FF362D12F3D9C0700824B30 /* RebrandedContextualOnboardingDialogs+Fire.swift */,
 				9FF362D72F3DB73100824B30 /* RebrandedContextualOnboardingDialogs+EndOfJourney.swift */,
+				9FF362D92F3DC68F00824B30 /* RebrandedContextualOnboardingDialogs+SubscriptionPromo.swift */,
 				9F0369F32F23098900A00DCA /* RebrandedContextualDaxDialogFactory.swift */,
 				9F0369ED2F2307A000A00DCA /* RebrandedNewTabDaxDialogFactory.swift */,
 			);
@@ -11548,6 +11551,7 @@
 				85F996CE2E54ADC0006B4641 /* OpenAIChatFromAddressBarHandling.swift in Sources */,
 				1E8AD1C727BE9B2900ABA377 /* DownloadsListDataSource.swift in Sources */,
 				85B7CD8D2DCA3308000C7B7B /* MessageNavigator.swift in Sources */,
+				9FF362DA2F3DC6A200824B30 /* RebrandedContextualOnboardingDialogs+SubscriptionPromo.swift in Sources */,
 				8569E1702D52C9A4004A3CB7 /* TabSwitcherBarsStateHandler.swift in Sources */,
 				9FE08BDC2C2A88FA001D5EBC /* OnboardingIntroViewController.swift in Sources */,
 				3157B43527F497F50042D3D7 /* SaveLoginViewController.swift in Sources */,
@@ -11754,6 +11758,7 @@
 				AA2000020000000000000002 /* PrivacyStatsProviding.swift in Sources */,
 				AA2000030000000000000003 /* PrivacyStatsDatabase.swift in Sources */,
 				AA2000040000000000000004 /* TabSwitcherTrackerCountViewModel.swift in Sources */,
+				9FF362D82F3DB73F00824B30 /* RebrandedContextualOnboardingDialogs+EndOfJourney.swift in Sources */,
 				83BE9BC3215D69C1009844D9 /* AppConfigurationFetch.swift in Sources */,
 				37CF91622BB474AA00BADCAE /* CrashCollectionOnboardingView.swift in Sources */,
 				1EEC460627A9499600E75FCB /* DownloadsList.swift in Sources */,

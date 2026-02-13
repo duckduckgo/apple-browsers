@@ -2887,9 +2887,6 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell title for enabling automatic page context */
 "settings.aifeatures.automatic.context.title" = "Automatically Send Context";
 
-/* Settings screen cell subtitle for enabling chat suggestions */
-"settings.aifeatures.chat.suggestions.subtitle" = "Show recent Duck.ai chats as you type";
-
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Chat Suggestions";
 

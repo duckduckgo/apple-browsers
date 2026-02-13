@@ -1939,8 +1939,6 @@ public struct UserText {
 
     public static let settingsChatSuggestionsTitle = NSLocalizedString("settings.aifeatures.chat.suggestions.title", value: "Chat Suggestions", comment: "Settings screen cell title for enabling chat suggestions")
 
-    public static let settingsChatSuggestionsSubtitle = NSLocalizedString("settings.aifeatures.chat.suggestions.subtitle", value: "Show recent Duck.ai chats as you type", comment: "Settings screen cell subtitle for enabling chat suggestions")
-
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 
     public static let settingsAiFeaturesSearchAssistSubtitle = NSLocalizedString("settings.features.assist.subtitle", value: "Choose how often you want AI-assisted answers to appear in your searches", comment: "A description of what the AI Chat toggle does")

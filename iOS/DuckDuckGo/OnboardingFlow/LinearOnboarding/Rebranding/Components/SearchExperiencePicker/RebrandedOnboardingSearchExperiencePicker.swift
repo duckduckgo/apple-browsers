@@ -61,6 +61,8 @@ private struct PickerOption: View {
     let accentColor: Color
     let action: () -> Void
 
+    @Environment(\.onboardingTheme) private var onboardingTheme
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: PickerMetrics.contentSpacing) {
@@ -71,8 +73,8 @@ private struct PickerOption: View {
                     .frame(height: PickerMetrics.imageHeight)
 
                 Text(title)
-                    .font(.system(size: PickerMetrics.labelFontSize))
-                    .foregroundColor(Color(UIColor.label.withAlphaComponent(0.96)))
+                    .font(onboardingTheme.typography.small)
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                     .multilineTextAlignment(.center)
 
                 RadioIndicator(isSelected: isSelected, accentColor: accentColor)
@@ -81,6 +83,7 @@ private struct PickerOption: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -99,10 +102,10 @@ private struct RadioIndicator: View {
             }
         } else {
             Circle()
-                .fill(Color.black.opacity(0.06))
+                .fill(Color.primary.opacity(0.06))
                 .overlay(
                     Circle()
-                        .stroke(Color.black.opacity(0.3), lineWidth: 1.5)
+                        .stroke(Color.primary.opacity(0.3), lineWidth: 1.5)
                 )
         }
     }
@@ -112,6 +115,5 @@ private enum PickerMetrics {
     static let optionsSpacing: CGFloat = 8
     static let contentSpacing: CGFloat = 8
     static let imageHeight: CGFloat = 72
-    static let labelFontSize: CGFloat = 12
     static let radioSize: CGFloat = 24
 }

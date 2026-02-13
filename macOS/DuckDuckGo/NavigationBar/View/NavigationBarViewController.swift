@@ -142,6 +142,8 @@ final class NavigationBarViewController: NSViewController {
     var isDownloadsPopoverShown: Bool {
         popovers.isDownloadsPopoverShown
     }
+
+    private var allowsUserInteraction: Bool = true
     private var isAutoFillAutosaveMessageVisible: Bool = false
 
     private var urlCancellable: AnyCancellable?
@@ -196,7 +198,7 @@ final class NavigationBarViewController: NSViewController {
         tabCollectionViewModel.isPopup
     }
 
-    var controlsForUserPrevention: [NSControl?] {
+    private var controlsForUserPrevention: [NSControl?] {
         return [homeButton,
                 optionsButton,
                 overflowButton,
@@ -857,6 +859,14 @@ final class NavigationBarViewController: NSViewController {
                                          withDelegate: self)
         } else {
             Logger.passwordManager.error("Received save autofill data call, but there was no data to present")
+        }
+    }
+
+    func userInteraction(prevented: Bool) {
+        allowsUserInteraction = !prevented
+
+        controlsForUserPrevention.forEach { control in
+            control?.isEnabled = !prevented
         }
     }
 
@@ -1907,7 +1917,9 @@ extension NavigationBarViewController: NSMenuDelegate {
     public func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        BookmarksBarMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences)
+        let bookmarksMenu = BookmarksBarMenuFactory.makeMenuItem(NSApp.delegateTyped.appearancePreferences)
+        bookmarksMenu.isEnabled = allowsUserInteraction
+        menu.addItem(bookmarksMenu)
 
         menu.addItem(NSMenuItem.separator())
 

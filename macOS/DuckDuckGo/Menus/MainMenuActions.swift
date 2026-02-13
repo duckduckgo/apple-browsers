@@ -1666,7 +1666,8 @@ extension MainViewController: NSMenuItemValidation {
         case #selector(MainViewController.bookmarkAllOpenTabs(_:)):
             return tabCollectionViewModel.canBookmarkAllOpenTabs()
         case #selector(MainViewController.openBookmark(_:)),
-             #selector(MainViewController.showManageBookmarks(_:)):
+             #selector(MainViewController.showManageBookmarks(_:)),
+            #selector(MainViewController.toggleBookmarksBarFromMenu(_:)):
             return allowsUserInteraction
 
         // New Tabs

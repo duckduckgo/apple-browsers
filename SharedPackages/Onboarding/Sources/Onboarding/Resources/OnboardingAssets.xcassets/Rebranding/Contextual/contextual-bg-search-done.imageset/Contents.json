@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "contextual-bg-try-site-light.pdf",
+      "filename" : "contextual-bg-search-done-light.pdf",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "contextual-bg-try-site-dark.pdf",
+      "filename" : "contextual-bg-search-done-dark.pdf",
       "idiom" : "universal"
     }
   ],

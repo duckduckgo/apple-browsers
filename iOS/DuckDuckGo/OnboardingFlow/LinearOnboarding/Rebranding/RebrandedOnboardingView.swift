@@ -296,6 +296,8 @@ extension OnboardingRebranding {
                 introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
             case .browsersComparisonDialog:
                 browsersComparisonView
+            case .addToDockPromoDialog:
+                addToDockPromoView
             default:
                 EmptyView()
             }
@@ -319,6 +321,14 @@ extension OnboardingRebranding {
                     isVisible: true,
                     showsStepCounter: true
                 )
+            case .addToDockPromoDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.browsersComparisonAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
             default:
                 nil
             }
@@ -326,13 +336,12 @@ extension OnboardingRebranding {
 
         private var addToDockPromoView: some View {
             AddToDockPromoContent(
-                isAnimating: $model.addToDockState.isAnimating,
                 isSkipped: $model.isSkipped,
+                skipAction: { fromAddToDockTutorial in
+                    model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
+                },
                 showTutorialAction: {
                     model.addToDockShowTutorialAction()
-                },
-                dismissAction: { fromAddToDockTutorial in
-                    model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
                 }
             )
         }

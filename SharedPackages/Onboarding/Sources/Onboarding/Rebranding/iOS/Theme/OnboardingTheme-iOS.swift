@@ -86,7 +86,7 @@ public extension OnboardingTheme {
             contentInnerSpacing: 20,
             buttonSpacing: 12,
             bubbleMaxWidth: 360,
-            bubbleTailOffset: 0.8,
+            bubbleTailOffset: 0.36, // 318:115=1:x (bubble width) : (leading pixels in Figma from bubble border)=1:x
             topMarginRatio: 0.18,
             minTopMargin: 16,
             maxTopMargin: 16,

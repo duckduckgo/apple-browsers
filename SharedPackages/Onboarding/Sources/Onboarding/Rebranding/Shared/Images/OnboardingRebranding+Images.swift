@@ -37,6 +37,11 @@ public enum OnboardingRebrandingImages {
         public static let eraseDataIcon = Image("Rebranding/Comparison-EraseData", bundle: .module)
     }
 
+    public enum AddToDock {
+        public static let promo = Image("Rebranding/AddToDock-Promo", bundle: .module)
+        public static let tutorialBazel = Image("Rebranding/AddToDock-TourBazel", bundle: .module)
+    }
+
     public enum Branding {
         public static let duckDuckGoLogo = Image("Rebranding/DuckDuckGoLogo", bundle: .module)
     }

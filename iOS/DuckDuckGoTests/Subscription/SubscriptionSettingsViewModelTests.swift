@@ -659,7 +659,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(sut.state.isShowingInternalSubscriptionNotice)
     }
 
-    func testSetCancelDowngradeStatus_WhenIdle_SetsIsCancelDowngradeInProgressFalse() async {
+    func testSetCancelDowngradeStatus_WhenIdle_SetsCancelDowngradeTransactionStatusToNil() async {
         mockSubscriptionManager.resultSubscription = .success(
             SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
@@ -675,7 +675,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         sut.cancelPendingDowngrade()
         await fulfillment(of: [performerCalled], timeout: 5.0)
 
-        XCTAssertFalse(sut.state.isCancelDowngradeInProgress)
+        XCTAssertNil(sut.state.cancelDowngradeTransactionStatus)
     }
 
     @MainActor

@@ -458,7 +458,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         leadingButtonsContainer.isHidden = true
 
-        backButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall)
+        backButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
         DefaultOmniBarView.setUpCommonProperties(for: backButtonView)
 
         forwardButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowRight)

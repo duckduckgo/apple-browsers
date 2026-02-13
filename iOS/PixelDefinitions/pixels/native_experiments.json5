@@ -15,7 +15,7 @@
                 },
                 "never_ask_tap": {
                     "description": "Fires at various thresholds when the user taps Never ask for this site",
-                    "enum": ["1"]
+                    "enum": ["1", "2", "3", "5"]
                 },
                 "passwords_saved": {
                     "description": "Fires on each password save with the current account count bucket",

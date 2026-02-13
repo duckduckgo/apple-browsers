@@ -25,7 +25,7 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
     let customizationModel: NewTabPageCustomizationModel
     let appearancePreferences: AppearancePreferences
 
-    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences, notificationCenter: NotificationCenter = .default) {
+    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences) {
         self.customizationModel = customizationModel
         self.appearancePreferences = appearancePreferences
     }

@@ -142,7 +142,7 @@ extension NewTabPageActionsManager {
 
         let customizationProvider = NewTabPageCustomizationProvider(
             customizationModel: customizationModel,
-            appearancePreferences: appearancePreferences,
+            appearancePreferences: appearancePreferences
         )
         let freemiumDBPBannerProvider = NewTabPageFreemiumDBPBannerProvider(model: freemiumDBPPromotionViewCoordinator)
         let winBackOfferBannerProvider = NewTabPageWinBackOfferBannerProvider(model: winBackOfferPromotionViewCoordinator)

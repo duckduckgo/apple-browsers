@@ -109,16 +109,30 @@ extension OnboardingRebranding {
             self.model = model
         }
 
+        /// Direction the bubble's tail arrow points toward.
         private enum BubbleTailDirection {
             case leading
             case trailing
         }
 
+        /// Layout configuration for a bubble-backed onboarding dialog step.
+        ///
+        /// Each onboarding step that renders inside an ``OnboardingBubbleView`` uses this
+        /// configuration to control the bubble's tail position, vertical placement, visibility,
+        /// and whether a step progress indicator is shown.
+        ///
+        /// Steps that return `nil` from ``bubbleBackedDialogConfiguration(for:)`` fall through
+        /// to the legacy Dax dialog path instead.
         private struct BubbleBackedDialogConfiguration {
+            /// Horizontal offset of the bubble tail arrow from the leading/trailing edge.
             let tailOffset: CGFloat
+            /// Which side the tail arrow points toward.
             let tailDirection: BubbleTailDirection
+            /// Extra top padding added on top of the base minimum top margin.
             let additionalTopMargin: CGFloat
+            /// Whether the dialog content is visible (used for entrance sequencing).
             let isVisible: Bool
+            /// Whether to display the step progress indicator (e.g. "3 of 5").
             let showsStepCounter: Bool
         }
 

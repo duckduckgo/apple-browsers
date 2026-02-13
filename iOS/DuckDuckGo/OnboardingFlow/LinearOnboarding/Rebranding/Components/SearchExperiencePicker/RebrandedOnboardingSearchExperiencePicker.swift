@@ -100,7 +100,7 @@ private struct RadioIndicator: View {
                     .fill(accentColor)
                 Image(systemName: "checkmark")
                     .font(onboardingTheme.typography.caption)
-                    .foregroundColor(.white)
+                    .foregroundColor(PickerMetrics.radioCheckmarkColor)
             }
         } else {
             Circle()
@@ -121,4 +121,5 @@ private enum PickerMetrics {
     static let radioFillOpacity: Double = 0.06
     static let radioStrokeOpacity: Double = 0.3
     static let radioStrokeWidth: CGFloat = 1.5
+    static let radioCheckmarkColor: Color = .white
 }

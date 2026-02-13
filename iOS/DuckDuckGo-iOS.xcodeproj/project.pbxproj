@@ -2027,6 +2027,7 @@
 		EA39B7E2268A1A35000C62CD /* privacy-reference-tests in Resources */ = {isa = PBXBuildFile; fileRef = EA39B7E1268A1A35000C62CD /* privacy-reference-tests */; };
 		EA90A5267F61028E3525A81E /* RebrandedAppIconPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D67C082BD4927358D771DB /* RebrandedAppIconPicker.swift */; };
 		EAB19EDA268963510015D3EA /* DomainMatchingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */; };
+		ED3811FB2F3F362700F0D0DD /* MockAutofillOnboardingExperimentPixelFiring.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED3811FA2F3F362700F0D0DD /* MockAutofillOnboardingExperimentPixelFiring.swift */; };
 		ED48ED462F3CC88400FBAFFF /* AutofillOnboardingExperimentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED48ED452F3CC88400FBAFFF /* AutofillOnboardingExperimentPixels.swift */; };
 		ED4B3F3D2F191E5F006C5FE4 /* PrivacyConfig in Frameworks */ = {isa = PBXBuildFile; productRef = ED4B3F3C2F191E5F006C5FE4 /* PrivacyConfig */; };
 		EE00D2D72DFB2D4900B79E9D /* AutofillUsageStore+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00D2D62DFB2D4000B79E9D /* AutofillUsageStore+App.swift */; };
@@ -4522,6 +4523,7 @@
 		DD503EBD506182525F5E8107 /* RebrandedOnboardingView+Landing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+Landing.swift"; sourceTree = "<group>"; };
 		EA39B7E1268A1A35000C62CD /* privacy-reference-tests */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder; name = "privacy-reference-tests"; path = "../SharedPackages/BrowserServicesKit/Tests/BrowserServicesKitTests/Resources/privacy-reference-tests"; sourceTree = SOURCE_ROOT; };
 		EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DomainMatchingTests.swift; sourceTree = "<group>"; };
+		ED3811FA2F3F362700F0D0DD /* MockAutofillOnboardingExperimentPixelFiring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAutofillOnboardingExperimentPixelFiring.swift; sourceTree = "<group>"; };
 		ED48ED452F3CC88400FBAFFF /* AutofillOnboardingExperimentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillOnboardingExperimentPixels.swift; sourceTree = "<group>"; };
 		EDB06E4C5FAE7E6BC7CDC6CC /* RebrandedOnboardingView+AppIconPickerContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+AppIconPickerContent.swift"; sourceTree = "<group>"; };
 		EE00D2D32DFB295000B79E9D /* UserDefaults+Autofill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Autofill.swift"; sourceTree = "<group>"; };
@@ -9326,6 +9328,14 @@
 			name = PrivacyReferenceTests;
 			sourceTree = "<group>";
 		};
+		ED3811F92F3F361500F0D0DD /* Mocks */ = {
+			isa = PBXGroup;
+			children = (
+				ED3811FA2F3F362700F0D0DD /* MockAutofillOnboardingExperimentPixelFiring.swift */,
+			);
+			name = Mocks;
+			sourceTree = "<group>";
+		};
 		EE00D2D52DFB2D3000B79E9D /* Usage */ = {
 			isa = PBXGroup;
 			children = (
@@ -10317,6 +10327,7 @@
 				C1056A542E253D81003220BA /* CredentialsImport */,
 				C1E2C2232D9ED1910011C66C /* CreditCardManagement */,
 				C185ED622BD4388F00BAE9DC /* Import */,
+				ED3811F92F3F361500F0D0DD /* Mocks */,
 				C1935A1D2C89CA4B001AD72D /* PasswordManagement */,
 				C111F94F2DC3CC0200FABCA8 /* SaveCreditCard */,
 				C14073812D8373EB0087E836 /* Settings */,
@@ -12633,6 +12644,7 @@
 				CB18A3662E2790C700BE9D8D /* UserAgentConfigurationTests.swift in Sources */,
 				F40F843728C939760081AE75 /* AutofillLoginListViewModelTests.swift in Sources */,
 				986CD5532DE913EE00AFA98A /* MockFavoritesListInteracting.swift in Sources */,
+				ED3811FB2F3F362700F0D0DD /* MockAutofillOnboardingExperimentPixelFiring.swift in Sources */,
 				3192F4582E6F1E5500FC2A95 /* LaunchSourceManagerTests.swift in Sources */,
 				1E05D1DB29C47B3300BF9A1F /* DailyPixelTests.swift in Sources */,
 				98E564332DE8B64300E6E75F /* HistoryMocks.swift in Sources */,

@@ -27,6 +27,12 @@ import PrivacyConfig
 import Networking
 import Persistence
 
+/// Status for the cancel-downgrade overlay
+enum CancelDowngradeOverlayStatus {
+    case planChangeInProgress
+    case completingPlanChange
+}
+
 final class SubscriptionSettingsViewModel: ObservableObject {
 
     private let subscriptionManager: SubscriptionManager
@@ -53,7 +59,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         var subscriptionInfo: DuckDuckGoSubscription?
         var isLoadingSubscriptionInfo: Bool = false
         var cancelPendingDowngradeDetails: String?
-        var isCancelDowngradeInProgress: Bool = false
+        var cancelDowngradeTransactionStatus: CancelDowngradeOverlayStatus?
         var cancelDowngradeError: SubscriptionPurchaseError?
 
         // Used to display stripe WebUI
@@ -154,7 +160,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         }
 
         switch platform {
-        case .apple:
+        case .apple, .stripe:
             if tier != nil {
                 state.pendingUpgradeTier = tier
                 state.isShowingUpgradeView = true
@@ -163,8 +169,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             }
         case .google:
             displayGoogleView(true)
-        case .stripe:
-            Task { await manageStripeSubscription() }
         case .unknown:
             displayInternalSubscriptionNotice(true)
         }
@@ -206,14 +210,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         dateFormatter.timeStyle = .none
 #endif
         return dateFormatter
-    }()
-
-    /// Day and month only for the cancel-pending-downgrade banner, in locale-appropriate order (e.g. "2 February" or "February 2").
-    private var bannerDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        formatter.dateFormat = DateFormatter.dateFormat(fromTemplate: "d MMMM", options: 0, locale: formatter.locale) ?? "d MMMM"
-        return formatter
     }()
 
     func onFirstAppear() {
@@ -323,8 +319,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
         switch platform {
         case .apple:
-            guard !state.isCancelDowngradeInProgress else { return }
-            state.isCancelDowngradeInProgress = true
+            guard state.cancelDowngradeTransactionStatus == nil else { return }
+            state.cancelDowngradeTransactionStatus = .planChangeInProgress
             state.cancelDowngradeError = nil
             cancelDowngradeError = nil
             Pixel.fire(pixel: .subscriptionCancelPendingDowngradeClick)
@@ -341,7 +337,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     @MainActor
     private func runCancelHandler() async {
         guard let productId = state.subscriptionInfo?.productId else {
-            state.isCancelDowngradeInProgress = false
+            state.cancelDowngradeTransactionStatus = nil
             return
         }
         let setError: (AppStorePurchaseFlowError?) -> Void = { [weak self] in self?.setCancelDowngradeError($0) }
@@ -357,8 +353,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     /// Called by the cancel-downgrade performer callbacks when transaction status changes (e.g. .idle when done).
     @MainActor
     func setCancelDowngradeStatus(_ status: SubscriptionTransactionStatus) {
-        if status == .idle {
-            state.isCancelDowngradeInProgress = false
+        switch status {
+        case .changingPlan:
+            state.cancelDowngradeTransactionStatus = .planChangeInProgress
+        case .planChangePolling:
+            state.cancelDowngradeTransactionStatus = .completingPlanChange
+        default:
+            state.cancelDowngradeTransactionStatus = nil
         }
     }
 
@@ -417,10 +418,9 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         // Check for pending plan first (downgrade scheduled)
         if let pendingPlan = subscription.firstPendingPlan {
             let effectiveDate = dateFormatter.string(from: pendingPlan.effectiveAt)
-            let effectiveDateForBanner = bannerDateFormatter.string(from: pendingPlan.effectiveAt)
             let tierName = pendingPlan.tier.rawValue.capitalized
             state.subscriptionDetails = UserText.pendingDowngradeInfo(tierName: tierName, billingPeriod: pendingPlan.billingPeriod, effectiveDate: effectiveDate)
-            state.cancelPendingDowngradeDetails = UserText.cancelPendingDowngradeBannerInfo(tierName: tierName, effectiveDate: effectiveDateForBanner)
+            state.cancelPendingDowngradeDetails = UserText.cancelPendingDowngradeBannerInfo(tierName: tierName, effectiveDate: effectiveDate)
             return
         }
 

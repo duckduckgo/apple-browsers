@@ -214,7 +214,8 @@ enum UserText {
                                          bundle: Bundle.module,
                                          value: "Your plan will downgrade to %@ on %@.",
                                          comment: "Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).'")
-        return String(format: localized, tierName, effectiveDate)
+        let nonBreakingDate = effectiveDate.replacingOccurrences(of: " ", with: "\u{00A0}")
+        return String(format: localized, tierName, nonBreakingDate)
     }
 
     static let cancelDowngradeButton = NSLocalizedString("subscription.preferences.cancel.downgrade.button", bundle: Bundle.module, value: "Cancel Downgrade", comment: "Button to cancel a pending downgrade of the subscription")

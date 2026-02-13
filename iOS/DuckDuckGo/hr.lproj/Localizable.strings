@@ -3715,8 +3715,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Pretplatnički paketi";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Završava se promjena plana…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Dovršavanje kupnje...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Promjena plana u tijeku...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Kupnja u tijeku...";

@@ -213,8 +213,8 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(sut.state.isShowingGoogleView)
     }
 
-    func testViewAllPlans_WhenStripePlatform_SetsIsShowingStripeViewTrue() async {
-        // Given - Stripe platform subscription
+    func testViewAllPlans_WhenStripePlatform_SetsIsShowingPlansViewTrue() async {
+        // Given - Stripe platform subscription (same as Apple: navigateToPlans sets isShowingPlansView)
         mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe, tier: .plus))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
@@ -223,19 +223,10 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         await waitForSubscriptionUpdate()
 
         // When
-        let stripeViewExpectation = expectation(description: "Stripe view shown")
-        sut.$state
-            .map { $0.isShowingStripeView }
-            .filter { $0 == true }
-            .first()
-            .sink { _ in stripeViewExpectation.fulfill() }
-            .store(in: &cancellables)
-
         sut.navigateToPlans()
 
-        // Then - Wait for isShowingStripeView to become true
-        await fulfillment(of: [stripeViewExpectation], timeout: 2.0)
-        XCTAssertTrue(sut.state.isShowingStripeView)
+        // Then
+        XCTAssertTrue(sut.state.isShowingPlansView)
     }
 
     func testViewAllPlans_WhenUnknownPlatform_SetsIsShowingInternalSubscriptionNoticeTrue() async {
@@ -668,7 +659,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(sut.state.isShowingInternalSubscriptionNotice)
     }
 
-    func testSetCancelDowngradeStatus_WhenIdle_SetsIsCancelDowngradeInProgressFalse() async {
+    func testSetCancelDowngradeStatus_WhenIdle_SetsCancelDowngradeTransactionStatusToNil() async {
         mockSubscriptionManager.resultSubscription = .success(
             SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
@@ -684,7 +675,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         sut.cancelPendingDowngrade()
         await fulfillment(of: [performerCalled], timeout: 5.0)
 
-        XCTAssertFalse(sut.state.isCancelDowngradeInProgress)
+        XCTAssertNil(sut.state.cancelDowngradeTransactionStatus)
     }
 
     @MainActor

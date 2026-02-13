@@ -271,16 +271,8 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
                 return .presentSheet(.apple)
             }
         case .stripe:
-            if currentPurchasePlatform == .stripe {
-                // Stripe subscription on Stripe app → show plans/upgrade page
-                return .navigateToPlans { [weak self] in
-                    self?.userEventHandler(.openURL(url))
-                }
-            } else {
-                // Stripe subscription on App Store app → redirect to Stripe portal
-                return .navigateToManageSubscription { [weak self] in
-                    self?.openStripeCustomerPortal()
-                }
+            return .navigateToPlans { [weak self] in
+                self?.userEventHandler(.openURL(url))
             }
         case .google:
             return .presentSheet(.google)

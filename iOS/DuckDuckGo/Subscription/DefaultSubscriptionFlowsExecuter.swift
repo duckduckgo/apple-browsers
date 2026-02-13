@@ -67,7 +67,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
                                   setTransactionError: ((AppStorePurchaseFlowError?) -> Void)? = nil,
                                   pushPurchaseUpdate: ((PurchaseUpdate) async -> Void)? = nil) async {
         setTransactionError?(nil)
-        setTransactionStatus?(.purchasing)
+        setTransactionStatus?(.changingPlan)
 
         // Get current subscription info for wide event tracking
         let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
@@ -114,7 +114,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
             return
         }
 
-        setTransactionStatus?(.polling)
+        setTransactionStatus?(.planChangePolling)
 
         guard transactionJWS.isEmpty == false else {
             Logger.subscription.fault("[TierChange] Purchase transaction JWS is empty")
@@ -155,7 +155,14 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
     }
 
     private func determineChangeType(change: String?) -> SubscriptionPlanChangeWideEventData.ChangeType? {
-        guard let change = change?.lowercased() else { return nil }
+        SubscriptionPlanChangeWideEventData.ChangeType.parse(string: change)
+    }
+}
+
+extension SubscriptionPlanChangeWideEventData.ChangeType {
+    /// Parses a change type string from the frontend (e.g. "upgrade", "downgrade", "crossgrade"; case-insensitive).
+    static func parse(string: String?) -> SubscriptionPlanChangeWideEventData.ChangeType? {
+        guard let change = string?.lowercased() else { return nil }
         switch change {
         case "upgrade": return .upgrade
         case "downgrade": return .downgrade

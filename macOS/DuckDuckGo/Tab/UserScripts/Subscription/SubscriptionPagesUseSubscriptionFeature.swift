@@ -231,20 +231,9 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsRequested)
 
-        let result: Result<SubscriptionTierOptions, Error>
-
-        switch subscriptionPlatform {
-        case .appStore:
-            guard #available(macOS 12.0, *) else { return SubscriptionTierOptions.empty }
-            result = await subscriptionManager.storePurchaseManager()
-                .subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
-                .mapError { $0 as Error }
-
-        case .stripe:
-            result = await stripePurchaseFlow
-                .subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
-                .mapError { $0 as Error }
-        }
+        let result = await subscriptionManager.subscriptionTierOptions(
+            includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled
+        )
 
         switch result {
         case .success(let subscriptionTierOptions):
@@ -504,9 +493,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         }
 
         Logger.subscription.log("[TierChange] Parsed - id: \(subscriptionSelection.id, privacy: .public), change: \(subscriptionSelection.change ?? "nil", privacy: .public)")
+        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let effectivePlatform: DuckDuckGoSubscription.Platform = currentSubscription?.platform ?? (subscriptionPlatform == .stripe ? .stripe : .apple)
 
-        switch subscriptionPlatform {
-        case .appStore:
+        switch effectivePlatform {
+        case .apple:
             let purchaseUpdate = await flowPerformer.performTierChange(
                 to: subscriptionSelection.id,
                 changeType: subscriptionSelection.change,
@@ -519,16 +510,9 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             }
         case .stripe:
             // For Stripe tier changes, we always send the auth token so the backend can modify the existing subscription
-            guard let subscriptionSelection: SubscriptionChangeSelection = CodableHelper.decode(from: params) else {
-                assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionChangeSelection")
-                subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
-                return nil
-            }
-
             Logger.subscription.log("[TierChange] Stripe - id: \(subscriptionSelection.id, privacy: .public), change: \(subscriptionSelection.change ?? "nil", privacy: .public)")
 
             // Get current subscription info for wide event tracking
-            let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
             let fromPlan = currentSubscription?.productId ?? ""
 
             // Determine change type from frontend
@@ -571,7 +555,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             // Return redirect with token so frontend handles Stripe checkout
             // Note: For Stripe, the wide event will be completed when completeStripePayment is called
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.redirect(withToken: accessToken))
-
+        default:
+            assertionFailure("SubscriptionPagesUserScript: expected Apple or Stipe platform on SubscriptionChangeSelection")
+            subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
+            await uiHandler.dismissProgressViewController()
+            return nil
         }
         await uiHandler.dismissProgressViewController()
         return nil
@@ -631,7 +619,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         var accountActivationDuration = WideEvent.MeasuredInterval.startingNow()
         purchaseWideEventData?.activateAccountDuration = accountActivationDuration
 
-        await uiHandler.presentProgressViewController(withTitle: UserText.completingPurchaseTitle)
+        let completingTitle = planChangeWideEventData != nil ? UserText.completePlanChangeTitle : UserText.completingPurchaseTitle
+        await uiHandler.presentProgressViewController(withTitle: completingTitle)
         await stripePurchaseFlow.completeSubscriptionPurchase()
         await uiHandler.dismissProgressViewController()
 

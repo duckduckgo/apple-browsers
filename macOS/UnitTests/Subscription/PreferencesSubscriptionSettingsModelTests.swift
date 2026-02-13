@@ -548,7 +548,7 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
     }
 
     @MainActor
-    func testViewAllPlansAction_WhenStripeSubscriptionOnAppStoreApp_ReturnsNavigateToManageSubscription() {
+    func testViewAllPlansAction_WhenStripeSubscriptionOnAppStoreApp_ReturnsNavigateToPlans() {
         // Given - Stripe subscription on App Store app (platforms don't match)
         sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe, tier: .plus),
                       purchasePlatform: .appStore)
@@ -565,11 +565,15 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
         // When
         let action = sut.viewAllPlansAction()
 
-        // Then - Should navigate to Stripe portal
-        if case .navigateToManageSubscription = action {
-            // Success - Stripe subscriptions on App Store app redirect to Stripe portal
+        // Then
+        if case .navigateToPlans(let navigationAction) = action {
+            navigationAction()
+            XCTAssertTrue(userEvents.contains { event in
+                if case .openURL(.plans) = event { return true }
+                return false
+            })
         } else {
-            XCTFail("Expected navigateToManageSubscription action for Stripe portal")
+            XCTFail("Expected navigateToPlans action")
         }
     }
 

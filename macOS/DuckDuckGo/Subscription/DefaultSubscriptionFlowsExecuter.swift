@@ -78,8 +78,8 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
         )
         wideEvent.startFlow(wideData)
 
-        // 2: Show purchase progress UI to user
-        uiHandler.presentProgressViewController(withTitle: UserText.purchasingSubscriptionTitle)
+        // 2: Show plan change progress UI to user
+        uiHandler.presentProgressViewController(withTitle: UserText.planChangeInProgressTitle)
 
         // 3: Set up the purchase flow
         let appStorePurchaseFlow = makeAppStorePurchaseFlow()
@@ -109,7 +109,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
         }
 
         // 5: Update UI to indicate that the tier change is completing
-        uiHandler.updateProgressViewController(title: UserText.completingPurchaseTitle)
+        uiHandler.updateProgressViewController(title: UserText.completePlanChangeTitle)
 
         // Start confirmation timing
         wideData.confirmationDuration = WideEvent.MeasuredInterval.startingNow()

@@ -220,7 +220,7 @@ private extension RebrandedContextualDaxDialogFactory {
                 onManualDismiss: onManualDismiss
             )
         }
-        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP, animationContext: .default)
+        .applyContextualOnboardingBackground(backgroundType: .trackers, animationContext: .default)
         .onAppear { [weak delegate] in
             delegate?.didShowContextualOnboardingTrackersDialog()
         }

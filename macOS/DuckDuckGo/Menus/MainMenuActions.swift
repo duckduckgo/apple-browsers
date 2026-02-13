@@ -1676,7 +1676,7 @@ extension MainViewController: NSMenuItemValidation {
 
         // Duplicate Tab
         case #selector(MainViewController.duplicateTab(_:)):
-            return allowsUserInteraction
+            return getActiveTabAndIndex()?.tab.content.canBeDuplicated == true
 
         // Pin Tab
         case #selector(MainViewController.pinOrUnpinTab(_:)):

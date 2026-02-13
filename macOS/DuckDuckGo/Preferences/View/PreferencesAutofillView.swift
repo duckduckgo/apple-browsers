@@ -190,10 +190,12 @@ extension Preferences {
                     TextMenuItemCaption(UserText.autofillNeverLockWarning)
                 }
 
-                // SECTION 5: Menu Bar
-                PreferencePaneSection {
-                    TextMenuItemHeader(UserText.passwordsMenuBarSection)
-                    ToggleMenuItem(UserText.showPasswordsInMenuBar, isOn: $model.showInMenuBar)
+                if Application.appDelegate.featureFlagger.isFeatureOn(.autofillPasswordsStatusBar) {
+                    // SECTION 5: Menu Bar
+                    PreferencePaneSection {
+                        TextMenuItemHeader(UserText.passwordsMenuBarSection)
+                        ToggleMenuItem(UserText.showPasswordsInMenuBar, isOn: $model.showInMenuBar)
+                    }
                 }
             }
         }

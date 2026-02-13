@@ -248,6 +248,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Prioritize results where the domain matches the search query when searching passwords & autofill
     case autofillPasswordSearchPrioritizeDomain
 
+    /// Controls visibility of the Passwords menu bar feature
+    case autofillPasswordsStatusBar
+
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit
@@ -404,6 +407,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newPermissionView,
                 .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain,
+                .autofillPasswordsStatusBar,
                 .warnBeforeQuit,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
@@ -572,6 +576,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.terminationDeciderSequence))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
+        case .autofillPasswordsStatusBar:
+            return .internalOnly()
         case .warnBeforeQuit:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
         case .dataImportWideEventMeasurement:

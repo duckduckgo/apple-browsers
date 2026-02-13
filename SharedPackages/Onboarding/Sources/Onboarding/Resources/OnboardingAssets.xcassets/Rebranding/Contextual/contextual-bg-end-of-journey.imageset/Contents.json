@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "contextual-bg-search-done-light.pdf",
+      "filename" : "contextual-bg-end-of-journey-light.pdf",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "contextual-bg-search-done-dark.pdf",
+      "filename" : "contextual-bg-end-of-journey-dark.pdf",
       "idiom" : "universal"
     }
   ],

@@ -50,11 +50,11 @@ public enum ContextualOnboardingBackgroundType {
         case .trackers:
             return OnboardingRebrandingImages.Contextual.trackerBlockedBackground
         case .fireDialog:
-            return OnboardingRebrandingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.trackerBlockedBackground
         case .endOfJourney:
-            return OnboardingRebrandingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.endOfJourneyBackground
         case .privacyProTrial:
-            return OnboardingRebrandingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.subscriptionPromoBackground
         }
     }
 }

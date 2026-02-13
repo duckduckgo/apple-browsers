@@ -1666,7 +1666,8 @@ extension MainViewController: NSMenuItemValidation {
         case #selector(MainViewController.bookmarkAllOpenTabs(_:)):
             return tabCollectionViewModel.canBookmarkAllOpenTabs()
         case #selector(MainViewController.openBookmark(_:)),
-             #selector(MainViewController.showManageBookmarks(_:)):
+             #selector(MainViewController.showManageBookmarks(_:)),
+            #selector(MainViewController.toggleBookmarksBarFromMenu(_:)):
             return allowsUserInteraction
 
         // New Tabs
@@ -1732,7 +1733,7 @@ extension MainViewController: NSMenuItemValidation {
             let isDownloadsPopoverShown = self.navigationBarViewController.isDownloadsPopoverShown
             menuItem.title = isDownloadsPopoverShown ? UserText.closeDownloads : UserText.openDownloads
 
-            return true
+            return allowsUserInteraction
 
         case #selector(MainViewController.summarize(_:)):
             return aiChatMenuConfig.shouldDisplaySummarizationMenuItem

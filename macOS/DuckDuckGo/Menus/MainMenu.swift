@@ -673,11 +673,11 @@ final class MainMenu: NSMenu {
             return
         }
         self.toggleBookmarksBarMenuItem = toggleBookmarksBarMenuItem
-        toggleBookmarksBarMenuItem.target = self
-        toggleBookmarksBarMenuItem.action = #selector(toggleBookmarksBarFromMenu(_:))
+        toggleBookmarksBarMenuItem.action = #selector(MainViewController.toggleBookmarksBarFromMenu)
         toggleBookmarksBarMenuItem.setAccessibilityIdentifier("MainMenu.toggleBookmarksBar")
 
         self.bookmarksMenuToggleBookmarksBarMenuItem = bookmarksMenuToggleBookmarksBarMenuItem
+        bookmarksMenuToggleBookmarksBarMenuItem.action = #selector(MainViewController.toggleBookmarksBarFromMenu)
     }
 
     private func updateHomeButtonMenuItem() {
@@ -694,13 +694,6 @@ final class MainMenu: NSMenu {
             return
         }
         self.showTabsAndBookmarksBarOnFullScreenMenuItem = showTabsAndBookmarksBarOnFullScreenMenuItem
-    }
-
-    @MainActor
-    @objc
-    private func toggleBookmarksBarFromMenu(_ sender: Any) {
-        guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
-        mainVC.toggleBookmarksBarFromMenu(sender)
     }
 
     private func updateShortcutMenuItems() {

@@ -2,7 +2,8 @@
     "agents": ["ddg_mac_desktop"],
     "target": {
         "key": "appVersion",
-        "version": "1.167.0"
+        "versionUrl": "https://staticcdn.duckduckgo.com/macos-desktop-browser/release_metadata.json",
+        "versionRef": "latest_appstore_version.latest_version"
     },
     "forceLowerCase": false
 }

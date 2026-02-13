@@ -27,7 +27,8 @@ public class DataImportWideEventData: WideEventData {
         pixelName: "data_import",
         featureName: "data-import",
         mobileMetaType: "ios-data-import",
-        desktopMetaType: "macos-data-import"
+        desktopMetaType: "macos-data-import",
+        version: "1.0.0"
     )
     public static let importTimeout: TimeInterval = .minutes(15)
 

@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import Core
+import os.log
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -48,6 +49,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private var downloadHandler: DownloadHandling
     private let pixelHandler: AIChatContextualModePixelFiring
+    private let debugSettings: AIChatDebugSettingsHandling
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -110,7 +112,8 @@ final class AIChatContextualWebViewController: UIViewController {
          featureFlagger: FeatureFlagger,
          downloadHandler: DownloadHandling,
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
-         pixelHandler: AIChatContextualModePixelFiring) {
+         pixelHandler: AIChatContextualModePixelFiring,
+         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -118,6 +121,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.downloadHandler = downloadHandler
         self.pixelHandler = pixelHandler
+        self.debugSettings = debugSettings
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
@@ -139,13 +143,16 @@ final class AIChatContextualWebViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()
         if let url = initialURL {
+            Logger.aiChat.debug("[ContextualWebVC] Loading initialURL: \(url.absoluteString)")
             loadChatURL(url)
         } else {
+            Logger.aiChat.debug("[ContextualWebVC] No initialURL, loading default AI chat")
             loadAIChat()
         }
     }
@@ -172,9 +179,12 @@ final class AIChatContextualWebViewController: UIViewController {
 
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+        Logger.aiChat.debug("[ContextualWebVC] submitPrompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if isPageReady && isContentHandlerReady {
+            Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
             aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
         } else {
+            Logger.aiChat.debug("[ContextualWebVC] Queuing prompt as pending")
             pendingPrompt = prompt
             pendingPageContext = pageContext
         }
@@ -194,13 +204,11 @@ final class AIChatContextualWebViewController: UIViewController {
         webView.reload()
     }
 
-    /// Returns the current contextual chat URL if one exists, nil otherwise.
-    var currentContextualChatURL: URL? {
-        webView.url.flatMap { $0.duckAIChatID != nil ? $0 : nil }
-    }
-
-    /// Loads a specific chat URL (for cold restore after app restart).
     func loadChatURL(_ url: URL) {
+        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(url.absoluteString)")
+        isPageReady = false
+        pendingPrompt = nil
+        pendingPageContext = nil
         loadingView.startAnimating()
         webView.load(URLRequest(url: url))
     }
@@ -348,6 +356,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private func loadAIChat() {
         loadingView.startAnimating()
         let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+        Logger.aiChat.debug("[ContextualWebVC] loadAIChat - loading URL: \(contextualURL.absoluteString)")
         let request = URLRequest(url: contextualURL)
         webView.load(request)
     }
@@ -371,6 +380,7 @@ final class AIChatContextualWebViewController: UIViewController {
 
     /// Handles edge case where user submits before preloaded web view is fully ready.
     private func submitPendingPromptIfReady() {
+        Logger.aiChat.debug("[ContextualWebVC] submitPendingPromptIfReady - pendingPrompt: \(self.pendingPrompt != nil), isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         guard let prompt = pendingPrompt,
               isPageReady,
               isContentHandlerReady else { return }
@@ -378,6 +388,11 @@ final class AIChatContextualWebViewController: UIViewController {
         let pageContext = pendingPageContext
         pendingPrompt = nil
         pendingPageContext = nil
+        submitPromptNow(prompt, pageContext: pageContext)
+    }
+
+    private func submitPromptNow(_ prompt: String, pageContext: AIChatPageContextData?) {
+        Logger.aiChat.debug("[ContextualWebVC] Submitting pending prompt now")
         aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
     }
 
@@ -430,7 +445,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let url = navigationAction.request.url else { return .allow }
 
-        if url.scheme == "blob" || url.isDuckAIURL || navigationAction.targetFrame?.isMainFrame == false {
+        if url.scheme == "blob" || url.isDuckAIURL || debugSettings.matchesCustomURL(url) || navigationAction.targetFrame?.isMainFrame == false {
             return .allow
         }
 
@@ -454,6 +469,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        Logger.aiChat.debug("[ContextualWebVC] didFinish navigation - URL: \(String(describing: webView.url?.absoluteString))")
         loadingView.stopAnimating()
         isPageReady = true
         submitPendingPromptIfReady()

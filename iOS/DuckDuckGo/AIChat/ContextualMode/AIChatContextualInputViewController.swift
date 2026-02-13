@@ -113,6 +113,10 @@ final class AIChatContextualInputViewController: UIViewController {
         nativeInputViewController.setText(text)
     }
 
+    func appendText(_ text: String) {
+        nativeInputViewController.appendText(text)
+    }
+
     func showContextChip(_ chipView: UIView) {
         nativeInputViewController.showContextChip(chipView)
         updateQuickActions()

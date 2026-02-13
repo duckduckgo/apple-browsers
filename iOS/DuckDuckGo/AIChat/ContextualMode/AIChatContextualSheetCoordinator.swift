@@ -194,7 +194,6 @@ private extension AIChatContextualSheetCoordinator {
                 guard let self else { return nil }
                 return self.makeWebViewController()
             },
-            existingWebViewController: nil,
             onOpenSettings: { [weak self] in
                 guard let self else { return }
                 self.sheetViewController?.dismiss(animated: true) { [weak self] in

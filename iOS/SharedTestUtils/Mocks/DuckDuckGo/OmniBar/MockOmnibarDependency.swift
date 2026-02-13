@@ -28,6 +28,7 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     var voiceSearchHelper: VoiceSearchHelperProtocol
     var featureFlagger: FeatureFlagger
+    var aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     var aiChatSettings: AIChatSettingsProvider
     var appSettings: any AppSettings
     var daxEasterEggPresenter: DaxEasterEggPresenting
@@ -35,15 +36,21 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol = MockVoiceSearchHelper(),
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+         aichatIPadTabFeature: AIChatIPadTabFeatureProviding = MockAIChatIPadTabFeature(),
          aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
          appSettings: AppSettings = AppSettingsMock(),
          daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(logoStore: DaxEasterEggLogoStore(), featureFlagger: MockFeatureFlagger()),
          mobileCustomization: MobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore())) {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
+        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.daxEasterEggPresenter = daxEasterEggPresenter
         self.mobileCustomization = mobileCustomization
     }
+}
+
+struct MockAIChatIPadTabFeature: AIChatIPadTabFeatureProviding {
+    var isAvailable: Bool = false
 }

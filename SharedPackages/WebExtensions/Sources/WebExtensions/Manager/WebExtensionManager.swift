@@ -42,6 +42,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     /// Optional internal site handler for platform-specific URL handling.
     public private(set) var internalSiteHandler: (any WebExtensionInternalSiteHandling)?
 
+    /// Pixel firing for analytics.
+    private let pixelFiring: WebExtensionPixelFiring
+
     // MARK: - AsyncStream
 
     private var continuation: AsyncStream<Void>.Continuation?
@@ -59,7 +62,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
                 loader: WebExtensionLoading? = nil,
                 eventsListener: WebExtensionEventsListening = WebExtensionEventsListener(),
                 lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
-                internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil) {
+                internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
+                pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
@@ -71,6 +75,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         self.eventsListener = eventsListener
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
+        self.pixelFiring = pixelFiring
 
         super.init()
 
@@ -117,9 +122,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
             installationStore.add(installedExtension)
             Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) (\(identifier))")
+            pixelFiring.fire(.installed)
         } catch {
             Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
             try? storageProvider.removeExtension(identifier: identifier)
+            pixelFiring.fire(.installError(error: error))
             throw WebExtensionError.failedToLoadWebExtension(error)
         }
 
@@ -142,10 +149,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
             try storageProvider.removeExtension(identifier: identifier)
         } catch {
             Logger.webExtensions.error("❌ Failed to remove extension files for '\(identifier)': \(error.localizedDescription)")
+            pixelFiring.fire(.uninstallError(error: error))
             throw WebExtensionError.failedToRemoveWebExtension(error)
         }
 
         Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
+        pixelFiring.fire(.uninstalled)
         notifyUpdate()
     }
 
@@ -167,8 +176,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         let failureCount = results.count - successCount
         if failureCount > 0 {
             Logger.webExtensions.error("❌ Uninstall all completed with errors: \(successCount) succeeded, \(failureCount) failed")
+            if let firstError = results.compactMap({ result -> Error? in
+                if case .failure(let error) = result { return error }
+                return nil
+            }).first {
+                pixelFiring.fire(.uninstallAllError(error: firstError))
+            }
         } else {
             Logger.webExtensions.info("✅ Uninstall all completed: \(successCount) extensions removed")
+            pixelFiring.fire(.uninstalledAll)
         }
 
         storageProvider.cleanupOrphanedExtensions(keeping: [])
@@ -213,8 +229,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
         if failedIdentifiers.isEmpty {
             Logger.webExtensions.info("✅ Extension loading completed: \(successCount) loaded")
+            if successCount > 0 {
+                pixelFiring.fire(.loaded)
+            }
         } else {
             Logger.webExtensions.error("❌ Extension loading completed with errors: \(successCount) loaded, \(failedIdentifiers.count) failed and removed")
+            if let firstError = results.compactMap({ result -> Error? in
+                if case .failure(let error) = result { return error }
+                return nil
+            }).first {
+                pixelFiring.fire(.loadError(error: firstError))
+            }
         }
 
         let knownIdentifiers = Set(installationStore.installedExtensions.map(\.uniqueIdentifier))

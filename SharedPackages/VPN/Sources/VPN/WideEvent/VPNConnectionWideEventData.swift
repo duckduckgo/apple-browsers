@@ -25,7 +25,8 @@ public class VPNConnectionWideEventData: WideEventData {
         pixelName: "vpn_connection",
         featureName: "vpn-connection",
         mobileMetaType: "ios-vpn-connection",
-        desktopMetaType: "macos-vpn-connection"
+        desktopMetaType: "macos-vpn-connection",
+        version: "1.0.0"
     )
 
     public static let connectionTimeout: TimeInterval = .minutes(15)

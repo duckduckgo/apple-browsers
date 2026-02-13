@@ -491,20 +491,18 @@ class TabManager: TabManaging {
     
     @MainActor
     func closeTab(_ tab: Tab, shouldCreateEmptyTabAtSamePosition: Bool, clearTabHistory: Bool) {
+        let behavior: TabClosingBehavior = shouldCreateEmptyTabAtSamePosition ? .createEmptyTabAtSamePosition : .onlyClose
         delegate?.tabDidRequestClose(tab,
-                                     shouldCreateEmptyTabAtSamePosition: shouldCreateEmptyTabAtSamePosition,
+                                     behavior: behavior,
                                      clearTabHistory: clearTabHistory)
     }
 
     @MainActor
     func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool) {
-        // Close the tab without creating a new one in place
+        // Close the tab and create or reuse an empty tab
         delegate?.tabDidRequestClose(tab,
-                                     shouldCreateEmptyTabAtSamePosition: false,
+                                     behavior: .createOrReuseEmptyTab,
                                      clearTabHistory: clearTabHistory)
-
-        // Create a new one if needed or reuse an existing home page
-        delegate?.newTab(reuseExisting: true)
     }
 
     func cleanupTabsFaviconCache() {

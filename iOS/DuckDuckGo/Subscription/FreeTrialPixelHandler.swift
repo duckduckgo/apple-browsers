@@ -38,4 +38,9 @@ public struct FreeTrialPixelHandler: FreeTrialPixelHandling {
         Pixel.fire(pixel: .privacyProFreeTrialPIRActivation,
                    withAdditionalParameters: ["activation_day": activationDay.rawValue])
     }
+
+    public func fireFreeTrialDuckAIActivation(activationDay: FreeTrialActivationDay) {
+        Pixel.fire(pixel: .privacyProFreeTrialDuckAIActivation,
+                   withAdditionalParameters: ["activation_day": activationDay.rawValue])
+    }
 }

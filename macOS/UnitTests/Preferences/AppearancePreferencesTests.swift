@@ -201,7 +201,7 @@ final class AppearancePreferencesTests: XCTestCase {
 
         XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 9)
 
-        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget, .nextStepsListAdvancedCardOrdering]
 
         XCTAssertEqual(model.maxNextStepsCardsDemonstrationDays, 14)
     }

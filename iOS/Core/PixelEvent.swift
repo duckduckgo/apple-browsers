@@ -1432,7 +1432,8 @@ extension Pixel {
         case aiChatMetricDuckAIKeyboardReturnPressed
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
-        
+        case aiChatContextualAutoAttachDAU
+
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
         
@@ -1626,6 +1627,16 @@ extension Pixel {
         case productTelemeterySurfaceUsageSettings
         case productTelemeterySurfaceUsageBookmarksPage
         case productTelemeterySurfaceUsagePasswordsPage
+
+        // MARK: - Web Extensions
+        case webExtensionInstalled
+        case webExtensionInstallError
+        case webExtensionUninstalled
+        case webExtensionUninstallError
+        case webExtensionUninstalledAll
+        case webExtensionUninstallAllError
+        case webExtensionLoaded
+        case webExtensionLoadError
     }
 
 }
@@ -2938,6 +2949,7 @@ extension Pixel.Event {
         case .aiChatMetricDuckAIKeyboardReturnPressed: return "m_aichat_duckai_keyboard_return_pressed"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
+        case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
 
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
@@ -3184,12 +3196,22 @@ extension Pixel.Event {
         case .productTelemeterySurfaceUsageSettings: return "m_product_telemetry_surface_usage_settings"
         case .productTelemeterySurfaceUsageBookmarksPage: return "m_product_telemetry_surface_usage_bookmarks_page"
         case .productTelemeterySurfaceUsagePasswordsPage: return "m_product_telemetry_surface_usage_passwords_page"
+
+        // MARK: - Web Extensions
+        case .webExtensionInstalled: return "m_web_extension_installed"
+        case .webExtensionInstallError: return "m_web_extension_install_error"
+        case .webExtensionUninstalled: return "m_web_extension_uninstalled"
+        case .webExtensionUninstallError: return "m_web_extension_uninstall_error"
+        case .webExtensionUninstalledAll: return "m_web_extension_uninstalled_all"
+        case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
+        case .webExtensionLoaded: return "m_web_extension_loaded"
+        case .webExtensionLoadError: return "m_web_extension_load_error"
         }
     }
 }
 
 extension Pixel.Event {
-    
+
     public enum BucketAggregation: String, CustomStringConvertible {
 
         public var description: String { rawValue }
@@ -3317,6 +3339,10 @@ public extension Pixel.Event {
         case settingToggled(to: Bool)
         case matchesApiTimeout
         case failedToDownloadInitialDataSets(category: ThreatKind, type: DataManager.StoredDataType.Kind)
+        case singleDataSetUpdatePerformance(MaliciousSiteProtection.SingleDataSetUpdatePerformanceInfo)
+        case singleDataSetUpdateDiskUsage(MaliciousSiteProtection.SingleDataSetUpdateDiskUsageInfo)
+        case aggregateDataSetUpdatePerformance(MaliciousSiteProtection.AggregateDataSetPerformanceInfo)
+        case aggregateDataSetUpdateDiskUsage(MaliciousSiteProtection.AggregateDataSetUpdateDiskUsageInfo)
 
         public init?(_ pixelKitEvent: MaliciousSiteProtection.Event) {
             switch pixelKitEvent {
@@ -3334,6 +3360,14 @@ public extension Pixel.Event {
                 return nil
             case .failedToDownloadInitialDataSets(category: let category, type: let type):
                 self = .failedToDownloadInitialDataSets(category: category, type: type)
+            case .singleDataSetUpdatePerformance(let dataSetUpdateInfo):
+                self = .singleDataSetUpdatePerformance(dataSetUpdateInfo)
+            case .singleDataSetUpdateDiskUsage(let dataSetUpdateInfo):
+                self = .singleDataSetUpdateDiskUsage(dataSetUpdateInfo)
+            case .aggregateDataSetUpdatePerformance(let aggregateDataSetsUpdateInfo):
+                self = .aggregateDataSetUpdatePerformance(aggregateDataSetsUpdateInfo)
+            case .aggregateDataSetUpdateDiskUsage(let aggregateDataSetsUpdateInfo):
+                self = .aggregateDataSetUpdateDiskUsage(aggregateDataSetsUpdateInfo)
             }
         }
 
@@ -3351,12 +3385,20 @@ public extension Pixel.Event {
                 return MaliciousSiteProtection.Event.matchesApiTimeout
             case .failedToDownloadInitialDataSets(let category, let type):
                 return MaliciousSiteProtection.Event.failedToDownloadInitialDataSets(category: category, type: type)
+            case .singleDataSetUpdatePerformance(let info):
+                return MaliciousSiteProtection.Event.singleDataSetUpdatePerformance(info)
+            case .singleDataSetUpdateDiskUsage(let info):
+                return MaliciousSiteProtection.Event.singleDataSetUpdateDiskUsage(info)
+            case .aggregateDataSetUpdatePerformance(let info):
+                return MaliciousSiteProtection.Event.aggregateDataSetUpdatePerformance(info)
+            case .aggregateDataSetUpdateDiskUsage(let info):
+                return MaliciousSiteProtection.Event.aggregateDataSetUpdateDiskUsage(info)
             }
         }
 
         var name: String {
             switch self {
-            case .failedToDownloadInitialDataSets:
+            case .failedToDownloadInitialDataSets, .singleDataSetUpdatePerformance, .singleDataSetUpdateDiskUsage, .aggregateDataSetUpdatePerformance, .aggregateDataSetUpdateDiskUsage:
                 return "debug_\(event.name)"
             default:
                 return event.name

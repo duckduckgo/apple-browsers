@@ -77,6 +77,13 @@ public final class AIChatNativeInputView: UIView {
         delegate?.nativeInputViewDidChangeText(self, text: text)
     }
 
+    /// Appends text to the existing content, adding a space separator if needed.
+    public func appendText(_ text: String) {
+        let current = self.text
+        let newText = current.isEmpty ? text : current + " " + text
+        setText(newText)
+    }
+
     public var placeholder = "" {
         didSet { placeholderLabel.text = placeholder }
     }

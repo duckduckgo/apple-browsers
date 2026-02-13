@@ -20,6 +20,7 @@
 
 import Common
 import Foundation
+import Persistence
 import PixelKit
 import PrivacyConfig
 import os.log
@@ -50,16 +51,16 @@ final class SparkleUpdateWideEvent {
     private let internalUserDecider: InternalUserDecider
     private var currentFlowID: String?
     var areAutomaticUpdatesEnabled: Bool
-
-    @UserDefaultsWrapper(key: .lastSuccessfulUpdateDate, defaultValue: nil)
-    static var lastSuccessfulUpdateDate: Date?
+    private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
     init(wideEventManager: WideEventManaging,
          internalUserDecider: InternalUserDecider,
-         areAutomaticUpdatesEnabled: Bool) {
+         areAutomaticUpdatesEnabled: Bool,
+         settings: any ThrowingKeyedStoring<UpdateControllerSettings>) {
         self.wideEventManager = wideEventManager
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
+        self.settings = settings
     }
 
     /// Starts tracking a new update flow.
@@ -133,7 +134,7 @@ final class SparkleUpdateWideEvent {
             data.lastKnownStep = .updateFound
 
             // Add time since last update if available (bucketed for privacy)
-            if let lastUpdateDate = Self.lastSuccessfulUpdateDate {
+            if let lastUpdateDate = try? settings.lastSuccessfulUpdateDate {
                 data.timeSinceLastUpdateBucket = UpdateWideEventData.TimeSinceUpdateBucket(from: lastUpdateDate)
             }
         }

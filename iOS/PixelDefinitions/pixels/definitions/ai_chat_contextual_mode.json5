@@ -138,5 +138,12 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_auto_attach_dau": {
+        "description": "Daily pixel fired on foreground to record the state of the contextual auto-attach setting",
+        "owners": ["aataraxiaa"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "is_enabled"]
     }
 }

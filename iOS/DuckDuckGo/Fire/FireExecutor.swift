@@ -99,6 +99,7 @@ class FireExecutor: FireExecuting {
     private let textZoomCoordinator: TextZoomCoordinating
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
+    private let dataClearingCapability: DataClearingCapable
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let dataStore: (any DDGWebsiteDataStore)?
     private let appSettings: AppSettings
@@ -123,6 +124,7 @@ class FireExecutor: FireExecuting {
          textZoomCoordinator: TextZoomCoordinating,
          historyManager: HistoryManaging,
          featureFlagger: FeatureFlagger,
+         dataClearingCapability: DataClearingCapable? = nil,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          dataStore: (any DDGWebsiteDataStore)? = nil,
          historyCleanerProvider: HistoryCleanerProvider? = nil,
@@ -139,6 +141,7 @@ class FireExecutor: FireExecuting {
         self.textZoomCoordinator = textZoomCoordinator
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
+        self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
         self.privacyConfigurationManager = privacyConfigurationManager
         self.dataStore = dataStore
         self.historyCleanerProvider = historyCleanerProvider ??
@@ -415,7 +418,7 @@ class FireExecutor: FireExecuting {
     /// - The user setting autoClearAIChatHistory should be ignored
     /// - Returns: A boolean indicating if we should run the ai chats burn flow
     private func shouldBurnAIHistory(_ request: FireRequest) -> Bool {
-        let chosenThroughNewAutoClearUI = featureFlagger.isFeatureOn(.enhancedDataClearingSettings) && request.trigger != .manualFire
+        let chosenThroughNewAutoClearUI = dataClearingCapability.isEnhancedDataClearingEnabled && request.trigger != .manualFire
 
         var singleChatBurn: Bool = false
         if case .tab = request.scope { singleChatBurn = true }

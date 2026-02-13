@@ -112,6 +112,7 @@ class AddOrEditBookmarkViewController: UIViewController {
     
     func updateSaveButton() {
         guard let saveButton = navigationItem.rightBarButtonItem else { return }
+        saveButton.tintColor = UIColor(designSystemColor: .accent)
         if viewModel.canSave {
             saveButton.isEnabled = true
         } else {

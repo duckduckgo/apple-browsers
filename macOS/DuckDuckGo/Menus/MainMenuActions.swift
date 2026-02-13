@@ -1669,10 +1669,6 @@ extension MainViewController: NSMenuItemValidation {
              #selector(MainViewController.showManageBookmarks(_:)):
             return allowsUserInteraction
 
-        // Downloads
-        case #selector(MainViewController.toggleDownloads(_:)):
-            return allowsUserInteraction
-
         // New Tabs
         case #selector(MainViewController.newTab(_:)):
             return allowsUserInteraction
@@ -1736,7 +1732,7 @@ extension MainViewController: NSMenuItemValidation {
             let isDownloadsPopoverShown = self.navigationBarViewController.isDownloadsPopoverShown
             menuItem.title = isDownloadsPopoverShown ? UserText.closeDownloads : UserText.openDownloads
 
-            return true
+            return allowsUserInteraction
 
         case #selector(MainViewController.summarize(_:)):
             return aiChatMenuConfig.shouldDisplaySummarizationMenuItem

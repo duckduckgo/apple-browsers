@@ -56,6 +56,8 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
 
     @Published var isExtensionEnabled: Bool = false
     @Published var isShowingActivationView: Bool = false
+    /// Temporary flag used to ensure we don't fire pixel on initial state discovery
+    private var hasCompletedInitialLoad: Bool = false
 
     var isEnableRequestThrottled: Bool {
         coordinator.isEnableRequestThrottled
@@ -75,9 +77,10 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         let wasEnabled = isExtensionEnabled
         isExtensionEnabled = await coordinator.updateExtensionStatus()
 
-        if wasEnabled != isExtensionEnabled {
+        if hasCompletedInitialLoad && wasEnabled != isExtensionEnabled {
             experimentPixels.fireAutofillInOtherAppsEnabled(isExtensionEnabled)
         }
+        hasCompletedInitialLoad = true
     }
 
     func enableExtension() async {

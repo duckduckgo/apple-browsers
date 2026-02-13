@@ -133,8 +133,7 @@ private extension RebrandedNewTabDaxDialogFactory {
     
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         return FadeInView {
-            OnboardingFinalDialog(
-                logoPosition: .top,
+            OnboardingRebranding.OnboardingEndOfJourneyDialog(
                 message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                 cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                 dismissAction: { [weak self] in
@@ -148,7 +147,7 @@ private extension RebrandedNewTabDaxDialogFactory {
             )
             .onboardingDaxDialogStyle()
         }
-        .onboardingContextualBackgroundStyle(background: .illustratedGradient)
+        .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)

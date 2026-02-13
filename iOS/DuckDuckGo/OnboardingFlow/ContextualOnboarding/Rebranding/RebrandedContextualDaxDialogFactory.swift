@@ -273,13 +273,15 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        return OnboardingFinalDialog(
-            logoPosition: .left,
-            message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-            cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-            dismissAction: dismissAction,
-            onManualDismiss: onManualDismiss
-        )
+        return OnboardingConditionalCenteredScrollableContainerView {
+            OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+                cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                dismissAction: dismissAction,
+                onManualDismiss: onManualDismiss
+            )
+        }
+        .applyContextualOnboardingBackground(backgroundType: .endOfJourney, animationContext: .default)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)

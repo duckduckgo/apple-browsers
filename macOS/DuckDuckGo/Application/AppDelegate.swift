@@ -1867,8 +1867,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpPasswordsMenuBarVisibility() {
+        guard featureFlagger.isFeatureOn(.autofillPasswordsStatusBar) else {
+            passwordsStatusBarMenu?.hide()
+            passwordsStatusBarMenu = nil
+            passwordsMenuBarCancellable = nil
+            return
+        }
+
         let preferences = AutofillPreferences()
-        passwordsStatusBarMenu = PasswordsStatusBarMenu(preferences: preferences, pinningManager: pinningManager)
+        if passwordsStatusBarMenu == nil {
+            passwordsStatusBarMenu = PasswordsStatusBarMenu(preferences: preferences, pinningManager: pinningManager)
+        }
 
         if preferences.showInMenuBar {
             passwordsStatusBarMenu?.show()

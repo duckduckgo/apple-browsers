@@ -75,9 +75,8 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         let wasEnabled = isExtensionEnabled
         isExtensionEnabled = await coordinator.updateExtensionStatus()
 
-        // Detect when the user disables the extension via system settings and returns to the app
-        if wasEnabled && !isExtensionEnabled {
-            experimentPixels.fireAutofillOtherAppsEnabled(false)
+        if wasEnabled != isExtensionEnabled {
+            experimentPixels.fireAutofillInOtherAppsEnabled(isExtensionEnabled)
         }
     }
 
@@ -88,7 +87,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         case .success:
             isExtensionEnabled = true
             isShowingActivationView = true
-            experimentPixels.fireAutofillOtherAppsEnabled(true)
+            experimentPixels.fireAutofillInOtherAppsEnabled(true)
         case .throttled, .cancelled, .failed:
             isExtensionEnabled = false
             isShowingActivationView = false

@@ -69,7 +69,7 @@ protocol AutofillOnboardingExperimentPixelFiring {
     func fireSyncEnabled(_ enabled: Bool)
 
     /// Fires when Autofill in Other Apps (credential provider extension) is toggled on or off.
-    func fireAutofillOtherAppsEnabled(_ enabled: Bool)
+    func fireAutofillInOtherAppsEnabled(_ enabled: Bool)
 
     // MARK: - Diagnostic Metrics
 
@@ -218,7 +218,7 @@ final class AutofillOnboardingExperimentPixelReporter: AutofillOnboardingExperim
         }
     }
 
-    func fireAutofillOtherAppsEnabled(_ enabled: Bool) {
+    func fireAutofillInOtherAppsEnabled(_ enabled: Bool) {
         for window in Window.secondary {
             PixelKit.fireExperimentPixel(
                 for: subfeatureID,

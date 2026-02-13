@@ -82,8 +82,9 @@ final class AutofillSettingsViewModel: ObservableObject {
         didSet {
             appSettings.autofillCredentialsEnabled = savePasswordsEnabled
             keyValueStore.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autofillFirstTimeUser.rawValue)
+            experimentPixels.fireOnboardingEnded()
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
-            
+
             if savePasswordsEnabled {
                 Pixel.fire(pixel: .autofillLoginsSettingsEnabled)
             } else {
@@ -226,7 +227,12 @@ final class AutofillSettingsViewModel: ObservableObject {
         }
 
         if #available(iOS 18, *), let coordinator = extensionEnableCoordinator as? AutofillExtensionEnableCoordinator {
+            let wasEnabled = isExtensionEnabled
             isExtensionEnabled = await coordinator.updateExtensionStatus()
+
+            if wasEnabled != isExtensionEnabled {
+                experimentPixels.fireAutofillInOtherAppsEnabled(isExtensionEnabled)
+            }
         }
     }
 
@@ -277,7 +283,7 @@ final class AutofillSettingsViewModel: ObservableObject {
                     case .success:
                         isExtensionEnabled = true
                         isShowingActivationView = true
-                        experimentPixels.fireAutofillOtherAppsEnabled(true)
+                        experimentPixels.fireAutofillInOtherAppsEnabled(true)
                     case .throttled:
                         isEnableRequestThrottled = coordinator.isEnableRequestThrottled
                         isShowingActivationView = false

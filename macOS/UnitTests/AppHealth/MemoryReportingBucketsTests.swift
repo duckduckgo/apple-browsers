@@ -71,30 +71,86 @@ final class MemoryReportingBucketsTests: XCTestCase {
         XCTAssertEqual(MemoryReportingBuckets.bucketWindowCount(100), 21)
     }
 
-    // MARK: - Tab Count Bucketing
+    // MARK: - Standard Tab Count Bucketing
 
-    func testBucketTabCount_AtBoundaries() {
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(0), 0)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(1), 1)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(2), 2)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(4), 4)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(7), 7)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(11), 11)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(21), 21)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(51), 51)
+    func testBucketStandardTabCount_AtBoundaries() {
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(0), 0)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(1), 1)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(2), 2)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(4), 4)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(7), 7)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(11), 11)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(21), 21)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(51), 51)
     }
 
-    func testBucketTabCount_WithinRanges() {
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(3), 2)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(5), 4)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(6), 4)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(9), 7)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(10), 7)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(15), 11)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(30), 21)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(50), 21)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(100), 51)
-        XCTAssertEqual(MemoryReportingBuckets.bucketTabCount(500), 51)
+    func testBucketStandardTabCount_WithinRanges() {
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(3), 2)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(5), 4)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(6), 4)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(9), 7)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(10), 7)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(15), 11)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(30), 21)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(50), 21)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(100), 51)
+        XCTAssertEqual(MemoryReportingBuckets.bucketStandardTabCount(500), 51)
+    }
+
+    // MARK: - Pinned Tab Count Bucketing
+
+    func testBucketPinnedTabCount_AtBoundaries() {
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(0), 0)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(1), 1)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(2), 2)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(4), 4)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(7), 7)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(11), 11)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(15), 15)
+    }
+
+    func testBucketPinnedTabCount_WithinRanges() {
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(3), 2)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(5), 4)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(6), 4)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(9), 7)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(10), 7)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(12), 11)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(14), 11)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(20), 15)
+        XCTAssertEqual(MemoryReportingBuckets.bucketPinnedTabCount(100), 15)
+    }
+
+    // MARK: - Used Allocation Bucketing
+
+    func testBucketUsedAllocationMB_BelowFirstBucket() {
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(0), 0)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(32), 0)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(63.9), 0)
+    }
+
+    func testBucketUsedAllocationMB_AtBoundaries() {
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(64), 64)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(128), 128)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(256), 256)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(512), 512)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(1024), 1024)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(2048), 2048)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(4096), 4096)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(8192), 8192)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(16384), 16384)
+    }
+
+    func testBucketUsedAllocationMB_WithinRanges() {
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(100), 64)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(200), 128)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(400), 256)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(800), 512)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(1500), 1024)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(3000), 2048)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(6000), 4096)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(12000), 8192)
+        XCTAssertEqual(MemoryReportingBuckets.bucketUsedAllocationMB(32000), 16384)
     }
 
     // MARK: - Architecture

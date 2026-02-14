@@ -18,6 +18,7 @@
 
 #if os(iOS)
 import SwiftUI
+import UIKit
 import DesignResourcesKit
 import MetricBuilder
 
@@ -30,11 +31,19 @@ public extension OnboardingTheme {
     static let iOSRebranding2026 = {
         let bubbleCornerRadius = 36.0
         let borderWidth = 1.5
+        let bubbleBorderColor = Color(uiColor: UIColor { traitCollection in
+            switch traitCollection.userInterfaceStyle {
+            case .dark:
+                return UIColor(singleUseColor: .rebranding(.surfaceTertiary))
+            default:
+                return UIColor(singleUseColor: .rebranding(.accentAltPrimary))
+            }
+        })
 
         let typography: OnboardingTheme.Typography = .system
         let colorPalette = ColorPalette(
             background: Color(singleUseColor: .rebranding(.backdrop)),
-            bubbleBorder: Color(singleUseColor: .rebranding(.accentAltPrimary)),
+            bubbleBorder: bubbleBorderColor,
             bubbleBackground: Color(singleUseColor: .rebranding(.surfaceTertiary)),
             bubbleShadow: Color.shade(0.03),
             textPrimary: Color(singleUseColor: .rebranding(.textPrimary)),

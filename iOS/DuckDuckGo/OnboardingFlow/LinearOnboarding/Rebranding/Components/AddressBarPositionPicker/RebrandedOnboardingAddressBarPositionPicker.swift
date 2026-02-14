@@ -59,6 +59,8 @@ private enum AddressBarPositionPickerMetrics {
         static let checkSize: CGFloat = 16.0
         static let strokeInset = 0.75
         static let strokeWidth = 1.5
+        static let borderLightColor = Color.black.opacity(0.18)
+        static let borderDarkColor = Color.white.opacity(0.18)
     }
 }
 
@@ -139,8 +141,12 @@ extension OnboardingRebranding.OnboardingView.OnboardingAddressBarPositionPicker
             } else {
                 Circle()
                     .inset(by: AddressBarPositionPickerMetrics.Checkbox.strokeInset)
-                    .stroke(.secondary, lineWidth: AddressBarPositionPickerMetrics.Checkbox.strokeWidth)
+                    .stroke(checkboxStrokeColor, lineWidth: AddressBarPositionPickerMetrics.Checkbox.strokeWidth)
             }
+        }
+
+        private var checkboxStrokeColor: Color {
+            colorScheme == .light ? AddressBarPositionPickerMetrics.Checkbox.borderLightColor : AddressBarPositionPickerMetrics.Checkbox.borderDarkColor
         }
 
         private var foregroundColor: Color {

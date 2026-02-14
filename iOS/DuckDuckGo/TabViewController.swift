@@ -179,6 +179,7 @@ class TabViewController: UIViewController {
     private var trackersInfoWorkItem: DispatchWorkItem?
     private var lastVisitedTrackerAnimationDomain: String?
     private var lastNotifiedTrackerAnimationDomain: String?
+    var shouldSuppressAnimationOnFirstLoad: Bool = false
     
     private var tabURLInterceptor: TabURLInterceptor
     private var currentlyLoadedURL: URL?
@@ -623,7 +624,7 @@ class TabViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing)
         initAttributionLogic()
         decorate()
@@ -642,6 +643,12 @@ class TabViewController: UIViewController {
 
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
+
+        // Read animation suppression flag from Tab model on first load
+        // This ensures background tabs get the flag when they're loaded for the first time
+        if tabModel.shouldSuppressAnimationOnFirstLoad {
+            shouldSuppressAnimationOnFirstLoad = true
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -1975,7 +1982,18 @@ extension TabViewController: WKNavigationDelegate {
 
     private func updateTrackerAnimationDomainState(for url: URL?) {
         let currentDomain = trackerAnimationDomain(for: url)
-        guard currentDomain != lastVisitedTrackerAnimationDomain else { return }
+
+        // Pre-set domain on first load to suppress tracker animation on cold start
+        if shouldSuppressAnimationOnFirstLoad && url != nil {
+            lastNotifiedTrackerAnimationDomain = currentDomain
+            lastVisitedTrackerAnimationDomain = currentDomain
+            shouldSuppressAnimationOnFirstLoad = false
+            return
+        }
+
+        guard currentDomain != lastVisitedTrackerAnimationDomain else {
+            return
+        }
         lastVisitedTrackerAnimationDomain = currentDomain
         lastNotifiedTrackerAnimationDomain = nil
     }

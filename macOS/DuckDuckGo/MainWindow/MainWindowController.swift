@@ -401,6 +401,8 @@ extension MainWindowController: NSWindowDelegate {
             PixelKit.fire(GeneralPixel.windowFullscreen, frequency: .dailyAndCount)
         }
 
+        PixelKit.fire(GeneralPixel.reviewTestPixel(source: .automatic), frequency: .dailyAndCount)
+
         // fix NSToolbarFullScreenWindow occurring beneath the MainWindow
         // https://app.asana.com/0/1177771139624306/1203853030672990/f
         // NSApp should be active at the moment of window ordering otherwise toolbar would disappear on activation

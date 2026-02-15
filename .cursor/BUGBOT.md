@@ -57,30 +57,7 @@ Dictionary files live at `{platform}/PixelDefinitions/pixels/` (e.g. `iOS/PixelD
 
 ### Suffix Correctness
 
-Check that the `suffixes` array matches how the pixel is fired:
-
-**iOS firing methods:**
-
-| Swift call | Expected suffixes |
-|---|---|
-| `Pixel.fire(pixel:)` | `["platform", "form_factor"]` only |
-| `DailyPixel.fire(pixel:)` | `["daily", "platform", "form_factor"]` |
-| `DailyPixel.fireDailyAndCount(pixel:)` | `["first_daily_count", "platform", "form_factor"]` |
-| `DailyPixel.fireDailyAndCount(pixel:, pixelNameSuffixes: .legacyDailyPixelSuffixes)` | `["legacy_daily_count", "platform", "form_factor"]` |
-| `UniquePixel.fire(pixel:)` | `["platform", "form_factor"]` (pixel name typically ends in `_u` or `_unique`) |
-
-**macOS firing frequencies:**
-
-| `frequency:` value | Expected suffixes |
-|---|---|
-| `.standard` or omitted | None |
-| `.daily` | `["daily"]` |
-| `.dailyAndCount` | `["daily_count"]` |
-| `.dailyAndStandard` | `["daily_standard"]` |
-| `.legacyDaily` | No suffix field — the `_d` is baked into the pixel name |
-| `.legacyDailyAndCount` | `["legacy_daily_count"]` |
-
-Compound suffixes (nested arrays like `["daily", "platform", "form_factor"]`) are valid and produce combined variants.
+If a pixel is fired with a daily frequency — e.g. `DailyPixel.fire`, `DailyPixel.fireDailyAndCount`, or `PixelKit.fire(..., frequency: .daily)` / `.dailyAndCount` / `.dailyAndStandard` — the definition's `suffixes` array should include a daily-related suffix such as `"daily"`, `"daily_count"`, `"daily_standard"`, `"first_daily_count"`, or `"legacy_daily_count"`. If the pixel is fired with a daily frequency but the definition has no daily-related suffix, flag it.
 
 ### Expiry Dates
 

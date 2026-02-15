@@ -539,28 +539,6 @@ private struct BackgroundExitingTransitionModifier: AnimatableModifier {
     }
 }
 
-private struct BackgroundEnteringTransitionModifier: AnimatableModifier {
-    var progress: CGFloat
-    let screenWidth: CGFloat
-
-    var animatableData: CGFloat {
-        get { progress }
-        set { progress = newValue }
-    }
-
-    func body(content: Content) -> some View {
-        // TODO: Replace multiplier with actual image width once designer provides
-        // updated assets without horizontal padding. Current images have ~25-30%
-        // white padding on each side which creates visual gaps during transitions.
-        // Multiplier of 2.0 is a temporary workaround to ensure entering background
-        // starts fully off-screen.
-        let offsetMultiplier: CGFloat = 2.0
-
-        content
-            .offset(x: screenWidth * offsetMultiplier * (1.0 - progress))
-    }
-}
-
 struct ScrollableOnboardingBackground: View {
 
     private enum Metrics {
@@ -593,10 +571,7 @@ struct ScrollableOnboardingBackground: View {
 
                 // Current background (entering or static)
                 backgroundView(for: viewState, width: proxy.size.width)
-                    .modifier(BackgroundEnteringTransitionModifier(
-                        progress: enteringTransitionProgress,
-                        screenWidth: proxy.size.width,
-                    ))
+                    .offset(x: Metrics.backgroundImageWidth * (1 - enteringTransitionProgress))
                     .zIndex(1)
             }
             .frame(width: proxy.size.width, alignment: .bottomLeading)

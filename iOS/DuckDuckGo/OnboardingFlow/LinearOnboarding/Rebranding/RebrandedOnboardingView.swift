@@ -191,21 +191,23 @@ extension OnboardingRebranding {
                 onboardingTheme.colorPalette.background
                     .ignoresSafeArea()
 
+                ScrollableOnboardingBackground(viewState: model.state)
+
                 switch model.state {
                 case .landing:
                     landingView
                 case let .onboarding(viewState):
                     onboardingDialogView(state: viewState)
-#if DEBUG || ALPHA
-                        .safeAreaInset(edge: .bottom) {
-                            Button {
-                                model.overrideOnboardingCompleted()
-                            } label: {
-                                Text(UserText.Onboarding.Intro.Debug.skip)
-                            }
-                            .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
-                        }
-#endif
+//#if DEBUG || ALPHA
+//                        .safeAreaInset(edge: .bottom) {
+//                            Button {
+//                                model.overrideOnboardingCompleted()
+//                            } label: {
+//                                Text(UserText.Onboarding.Intro.Debug.skip)
+//                            }
+//                            .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
+//                        }
+//#endif
                 }
             }
             .overlay(alignment: .topLeading) {
@@ -518,5 +520,126 @@ private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+struct ScrollableOnboardingBackground: View {
+    let viewState: OnboardingView.ViewState
+
+    @State private var previousViewState: OnboardingView.ViewState?
+    @State private var isTransitioning = false
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                // Previous background (exiting)
+                if let previousState = previousViewState,
+                   previousState.backgroundImage != viewState.backgroundImage {
+                    backgroundView(for: previousState, width: proxy.size.width)
+                        .offset(x: previousBackgroundOffset(screenWidth: proxy.size.width))
+                        .opacity(previousBackgroundOpacity(screenWidth: proxy.size.width))
+                        .zIndex(0)
+                }
+
+                // Current background (entering or static)
+                backgroundView(for: viewState, width: proxy.size.width)
+                    .offset(x: currentBackgroundOffset(screenWidth: proxy.size.width))
+                    .opacity(1)
+                    .zIndex(1)
+            }
+            .frame(width: proxy.size.width, alignment: .bottomLeading)
+        }
+        .onChange(of: viewState) { newState in
+            // Only animate if the background actually changes
+            guard let previous = previousViewState,
+                  previous.backgroundImage != newState.backgroundImage else { return }
+
+            // Start with new background off-screen to the right
+            isTransitioning = false
+
+            // Animate both backgrounds
+            withAnimation(.easeInOut(duration: 1.5)) {
+                isTransitioning = true
+            }
+
+            // After animation completes, update previous state
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                previousViewState = newState
+            }
+        }
+        .onAppear {
+            previousViewState = viewState
+            isTransitioning = true  // Initial state should be centered
+        }
+    }
+
+    private func previousBackgroundOffset(screenWidth: CGFloat) -> CGFloat {
+        return isTransitioning ? -screenWidth : 0
+    }
+
+    private func previousBackgroundOpacity(screenWidth: CGFloat) -> Double {
+        guard screenWidth > 0 else { return 1 }
+
+        let offset = previousBackgroundOffset(screenWidth: screenWidth)
+        // As offset goes from 0 to -screenWidth, opacity goes from 1 to 0
+        // Progress: 0.0 (at center) -> 1.0 (fully off-screen left)
+        let progress = abs(offset) / screenWidth
+        return 1.0 - progress
+    }
+
+    private func currentBackgroundOffset(screenWidth: CGFloat) -> CGFloat {
+        guard let previous = previousViewState else {
+            return 0  // First time, just show centered
+        }
+
+        if previous.backgroundImage == viewState.backgroundImage {
+            return 0  // Same background, stay centered
+        }
+
+        // Different background: start off-screen right, animate to center
+        return isTransitioning ? 0 : screenWidth
+    }
+
+    private func backgroundView(for state: OnboardingView.ViewState, width: CGFloat) -> some View {
+        VStack {
+            Spacer()
+            state.backgroundImage
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: width, alignment: .center)
+                .frame(maxHeight: 410)
+        }
+        .ignoresSafeArea()
+    }
+
+}
+
+extension OnboardingView.ViewState {
+    var backgroundImage: Image {
+        switch self {
+        case .landing:
+            return OnboardingRebrandingImages.Linear.introBackground
+        case .onboarding(let intro):
+            return intro.type.backgroundImage
+        }
+    }
+}
+
+extension OnboardingView.ViewState.Intro.IntroType {
+    var backgroundImage: Image {
+        switch self {
+        case .startOnboardingDialog:
+            return OnboardingRebrandingImages.Linear.introBackground
+        case .browsersComparisonDialog:
+            return OnboardingRebrandingImages.Linear.browsersComparisonBackground
+        case .addToDockPromoDialog:
+            return OnboardingRebrandingImages.Linear.addToDockBackground
+        case .chooseAppIconDialog:
+            return OnboardingRebrandingImages.Linear.appIconColorSelectionBackground
+        case .chooseAddressBarPositionDialog:
+            return OnboardingRebrandingImages.Linear.addressBarPositionBackground
+        case .chooseSearchExperienceDialog:
+            return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
+        }
     }
 }

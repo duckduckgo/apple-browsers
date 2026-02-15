@@ -653,7 +653,6 @@ struct ScrollableOnboardingBackground: View {
                 .frame(maxHeight: Metrics.backgroundImageHeight)
         }
         .ignoresSafeArea()
-        .drawingGroup()  // Rasterizes layer for better animation performance
     }
 
 }

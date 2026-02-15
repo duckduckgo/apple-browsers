@@ -523,10 +523,9 @@ private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
     }
 }
 
-private struct BackgroundTransitionModifier: AnimatableModifier {
+private struct BackgroundExitingTransitionModifier: AnimatableModifier {
     var progress: CGFloat
     let screenWidth: CGFloat
-    let isExiting: Bool
 
     var animatableData: CGFloat {
         get { progress }
@@ -534,22 +533,41 @@ private struct BackgroundTransitionModifier: AnimatableModifier {
     }
 
     func body(content: Content) -> some View {
-        if isExiting {
-            content
-                .offset(x: -screenWidth * progress)
-                .opacity(1.0 - progress)
-        } else {
-            content
-                .offset(x: screenWidth * (1.0 - progress))
-        }
+        content
+            .offset(x: -screenWidth * progress)
+            .opacity(1.0 - progress)
+    }
+}
+
+private struct BackgroundEnteringTransitionModifier: AnimatableModifier {
+    var progress: CGFloat
+    let screenWidth: CGFloat
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .offset(x: screenWidth * (1.0 - progress))
     }
 }
 
 struct ScrollableOnboardingBackground: View {
+
+    private enum Metrics {
+        static let exitDuration: TimeInterval = 1.5
+        static let enterDelay: TimeInterval = 1.5  // Start entering halfway through exit
+        static let enterDuration: TimeInterval = 1.5
+    }
+
+
     let viewState: OnboardingView.ViewState
 
     @State private var previousViewState: OnboardingView.ViewState?
-    @State private var transitionProgress: CGFloat = 1.0  // 0.0 = start, 1.0 = end
+    @State private var exitingTransitionProgress: CGFloat = 1.0  // 0.0 = start, 1.0 = end
+    @State private var enteringTransitionProgress: CGFloat = 1.0  // 0.0 = start, 1.0 = end
 
     var body: some View {
         GeometryReader { proxy in
@@ -558,20 +576,18 @@ struct ScrollableOnboardingBackground: View {
                 if let previousState = previousViewState,
                    previousState.backgroundImage != viewState.backgroundImage {
                     backgroundView(for: previousState, width: proxy.size.width)
-                        .modifier(BackgroundTransitionModifier(
-                            progress: transitionProgress,
+                        .modifier(BackgroundExitingTransitionModifier(
+                            progress: exitingTransitionProgress,
                             screenWidth: proxy.size.width,
-                            isExiting: true
                         ))
                         .zIndex(0)
                 }
 
                 // Current background (entering or static)
                 backgroundView(for: viewState, width: proxy.size.width)
-                    .modifier(BackgroundTransitionModifier(
-                        progress: transitionProgress,
+                    .modifier(BackgroundEnteringTransitionModifier(
+                        progress: enteringTransitionProgress,
                         screenWidth: proxy.size.width,
-                        isExiting: false
                     ))
                     .zIndex(1)
             }
@@ -582,22 +598,31 @@ struct ScrollableOnboardingBackground: View {
             guard let previous = previousViewState,
                   previous.backgroundImage != newState.backgroundImage else { return }
 
-            // Start with new background off-screen to the right
-            transitionProgress = 0.0
+            // Calculate total duration: the longer of the two overlapping animations
+            let totalDuration = max(Metrics.exitDuration, Metrics.enterDelay + Metrics.enterDuration)
 
-            // Animate both backgrounds
-            withAnimation(.easeInOut(duration: 1.5)) {
-                transitionProgress = 1.0
+            // Reset progress for new transition
+            exitingTransitionProgress = 0.0
+            enteringTransitionProgress = 0.0
+
+            // Animate exiting background (slides left + fades)
+            withAnimation(.easeInOut(duration: Metrics.exitDuration)) {
+                exitingTransitionProgress = 1.0
             }
 
-            // After animation completes, update previous state
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            // Animate entering background after delay (slides in from right)
+            withAnimation(.easeInOut(duration: Metrics.enterDuration).delay(Metrics.enterDelay)) {
+                enteringTransitionProgress = 1.0
+            }
+
+            // After all animations complete, update previous state
+            DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration) {
                 previousViewState = newState
             }
         }
         .onAppear {
             previousViewState = viewState
-            transitionProgress = 1.0  // Initial state should be centered
+            enteringTransitionProgress = 1.0  // Initial state should be centered
         }
     }
 

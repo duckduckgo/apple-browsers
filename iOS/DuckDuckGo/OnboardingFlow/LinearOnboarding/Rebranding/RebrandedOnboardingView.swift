@@ -523,11 +523,33 @@ private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
     }
 }
 
+private struct BackgroundTransitionModifier: AnimatableModifier {
+    var progress: CGFloat
+    let screenWidth: CGFloat
+    let isExiting: Bool
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        if isExiting {
+            content
+                .offset(x: -screenWidth * progress)
+                .opacity(1.0 - progress)
+        } else {
+            content
+                .offset(x: screenWidth * (1.0 - progress))
+        }
+    }
+}
+
 struct ScrollableOnboardingBackground: View {
     let viewState: OnboardingView.ViewState
 
     @State private var previousViewState: OnboardingView.ViewState?
-    @State private var isTransitioning = false
+    @State private var transitionProgress: CGFloat = 1.0  // 0.0 = start, 1.0 = end
 
     var body: some View {
         GeometryReader { proxy in
@@ -536,15 +558,21 @@ struct ScrollableOnboardingBackground: View {
                 if let previousState = previousViewState,
                    previousState.backgroundImage != viewState.backgroundImage {
                     backgroundView(for: previousState, width: proxy.size.width)
-                        .offset(x: previousBackgroundOffset(screenWidth: proxy.size.width))
-                        .opacity(previousBackgroundOpacity(screenWidth: proxy.size.width))
+                        .modifier(BackgroundTransitionModifier(
+                            progress: transitionProgress,
+                            screenWidth: proxy.size.width,
+                            isExiting: true
+                        ))
                         .zIndex(0)
                 }
 
                 // Current background (entering or static)
                 backgroundView(for: viewState, width: proxy.size.width)
-                    .offset(x: currentBackgroundOffset(screenWidth: proxy.size.width))
-                    .opacity(1)
+                    .modifier(BackgroundTransitionModifier(
+                        progress: transitionProgress,
+                        screenWidth: proxy.size.width,
+                        isExiting: false
+                    ))
                     .zIndex(1)
             }
             .frame(width: proxy.size.width, alignment: .bottomLeading)
@@ -555,11 +583,11 @@ struct ScrollableOnboardingBackground: View {
                   previous.backgroundImage != newState.backgroundImage else { return }
 
             // Start with new background off-screen to the right
-            isTransitioning = false
+            transitionProgress = 0.0
 
             // Animate both backgrounds
             withAnimation(.easeInOut(duration: 1.5)) {
-                isTransitioning = true
+                transitionProgress = 1.0
             }
 
             // After animation completes, update previous state
@@ -569,35 +597,8 @@ struct ScrollableOnboardingBackground: View {
         }
         .onAppear {
             previousViewState = viewState
-            isTransitioning = true  // Initial state should be centered
+            transitionProgress = 1.0  // Initial state should be centered
         }
-    }
-
-    private func previousBackgroundOffset(screenWidth: CGFloat) -> CGFloat {
-        return isTransitioning ? -screenWidth : 0
-    }
-
-    private func previousBackgroundOpacity(screenWidth: CGFloat) -> Double {
-        guard screenWidth > 0 else { return 1 }
-
-        let offset = previousBackgroundOffset(screenWidth: screenWidth)
-        // As offset goes from 0 to -screenWidth, opacity goes from 1 to 0
-        // Progress: 0.0 (at center) -> 1.0 (fully off-screen left)
-        let progress = abs(offset) / screenWidth
-        return 1.0 - progress
-    }
-
-    private func currentBackgroundOffset(screenWidth: CGFloat) -> CGFloat {
-        guard let previous = previousViewState else {
-            return 0  // First time, just show centered
-        }
-
-        if previous.backgroundImage == viewState.backgroundImage {
-            return 0  // Same background, stay centered
-        }
-
-        // Different background: start off-screen right, animate to center
-        return isTransitioning ? 0 : screenWidth
     }
 
     private func backgroundView(for state: OnboardingView.ViewState, width: CGFloat) -> some View {

@@ -29,14 +29,17 @@ public enum AsyncErrorType: String {
     case bookmarksCountLimitExceeded
     case credentialsCountLimitExceeded
     case creditCardsCountLimitExceeded
+    case aiChatsCountLimitExceeded
     case bookmarksRequestSizeLimitExceeded
     case credentialsRequestSizeLimitExceeded
     case creditCardsRequestSizeLimitExceeded
+    case aiChatsRequestSizeLimitExceeded
     case invalidLoginCredentials
     case tooManyRequests
     case badRequestBookmarks
     case badRequestCredentials
     case badRequestCreditCards
+    case badRequestAiChats
 }
 
 public class SyncErrorHandler: EventMapping<SyncError> {
@@ -223,6 +226,8 @@ extension SyncErrorHandler {
                 syncIsPaused(errorType: .creditCardsCountLimitExceeded)
             case .settings:
                 break
+            case .aiChats:
+                syncIsPaused(errorType: .aiChatsCountLimitExceeded)
             }
         case .unexpectedStatusCode(413):
             switch modelType {
@@ -234,6 +239,8 @@ extension SyncErrorHandler {
                 syncIsPaused(errorType: .creditCardsRequestSizeLimitExceeded)
             case .settings:
                 break
+            case .aiChats:
+                syncIsPaused(errorType: .aiChatsRequestSizeLimitExceeded)
             }
         case .unexpectedStatusCode(400):
             switch modelType {
@@ -245,6 +252,8 @@ extension SyncErrorHandler {
                 syncIsPaused(errorType: .badRequestCreditCards)
             case .settings:
                 break
+            case .aiChats:
+                syncIsPaused(errorType: .badRequestAiChats)
             }
             DailyPixel.fire(pixel: modelType.badRequestPixel)
         case .unexpectedStatusCode(401):
@@ -268,6 +277,8 @@ extension SyncErrorHandler {
             currentSyncCredentialsPausedError = errorType.rawValue
             self.isSyncCredentialsPaused = true
             DailyPixel.fire(pixel: .syncCredentialsObjectLimitExceededDaily)
+        case .aiChatsCountLimitExceeded:
+            DailyPixel.fire(pixel: .syncAiChatsObjectLimitExceededDaily)
         case .bookmarksRequestSizeLimitExceeded:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
@@ -276,12 +287,16 @@ extension SyncErrorHandler {
             currentSyncCredentialsPausedError = errorType.rawValue
             self.isSyncCredentialsPaused = true
             DailyPixel.fire(pixel: .syncCredentialsRequestSizeLimitExceededDaily)
+        case .aiChatsRequestSizeLimitExceeded:
+            DailyPixel.fire(pixel: .syncAiChatsRequestSizeLimitExceededDaily)
         case .badRequestBookmarks:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
         case .badRequestCredentials:
             currentSyncCredentialsPausedError = errorType.rawValue
             self.isSyncCredentialsPaused = true
+        case .badRequestAiChats:
+            break;
         case .invalidLoginCredentials:
             currentSyncAllPausedError = errorType.rawValue
             self.isSyncPaused = true
@@ -335,14 +350,16 @@ extension SyncErrorHandler {
             guard !didShowCreditCardsSyncPausedError else { return }
             alertPresenter?.showSyncPausedAlert(for: errorType)
             didShowCreditCardsSyncPausedError = true
+        case .badRequestAiChats, .aiChatsCountLimitExceeded, .aiChatsRequestSizeLimitExceeded:
+            break
         }
-
     }
     private enum ModelType: String {
         case bookmarks
         case credentials
         case creditCards
         case settings
+        case aiChats
 
         var syncFailedPixel: Pixel.Event {
             switch self {
@@ -354,6 +371,8 @@ extension SyncErrorHandler {
                     .syncCreditCardsFailed
             case .settings:
                     .syncSettingsFailed
+            case .aiChats:
+                    .syncAiChatsFailed
             }
         }
 
@@ -367,6 +386,8 @@ extension SyncErrorHandler {
                     .syncCreditCardsPatchCompressionFailed
             case .settings:
                     .syncSettingsPatchCompressionFailed
+            case .aiChats:
+                    .syncAiChatsPatchCompressionFailed
             }
         }
 
@@ -380,6 +401,8 @@ extension SyncErrorHandler {
                     .syncCreditCardsTooManyRequestsDaily
             case .settings:
                     .syncSettingsTooManyRequestsDaily
+            case .aiChats:
+                    .syncAiChatsTooManyRequestsDaily
             }
         }
 
@@ -393,6 +416,8 @@ extension SyncErrorHandler {
                     .syncCreditCardsValidationErrorDaily
             case .settings:
                     .syncSettingsValidationErrorDaily
+            case .aiChats:
+                    .syncAiChatsValidationErrorDaily
             }
         }
     }
@@ -403,11 +428,11 @@ extension SyncErrorHandler: SyncErrorHandling {
     public func handleSettingsError(_ error: Error) {
         handleError(error, modelType: .settings)
     }
-    
+
     public func handleBookmarkError(_ error: Error) {
         handleError(error, modelType: .bookmarks)
     }
-    
+
     public func handleCredentialError(_ error: Error) {
         handleError(error, modelType: .credentials)
     }
@@ -416,11 +441,15 @@ extension SyncErrorHandler: SyncErrorHandling {
         handleError(error, modelType: .creditCards)
     }
 
+    public func handleAiChatsError(_ error: any Error) {
+        handleError(error, modelType: .aiChats)
+    }
+
     public func syncBookmarksSucceded() {
         lastSyncSuccessTime = dateProvider.currentDate
         resetBookmarksErrors()
     }
-    
+
     public func syncCredentialsSucceded() {
         lastSyncSuccessTime = dateProvider.currentDate
         resetCredentialsErrors()

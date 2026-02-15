@@ -44,6 +44,7 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     private let featureFlagProvider: AIChatFeatureFlagProviding
     private let dateProvider: () -> Date
     private let state: AIChatSyncState
+    private let httpRequestErrorHandler: ((Error) -> Void)?
 
     private var canUseAIChatSyncDelete: Bool {
         guard featureFlagProvider.isAIChatSyncEnabled() else {
@@ -64,12 +65,14 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     public init(sync: DDGSyncing,
                 keyValueStore: ThrowingKeyValueStoring,
                 featureFlagProvider: AIChatFeatureFlagProviding,
-                dateProvider: @escaping () -> Date = Date.init) {
+                dateProvider: @escaping () -> Date = Date.init,
+                httpRequestErrorHandler: ((Error) -> Void)?) {
         self.sync = sync
         self.keyValueStore = keyValueStore
         self.featureFlagProvider = featureFlagProvider
         self.dateProvider = dateProvider
         self.state = AIChatSyncState(store: keyValueStore)
+        self.httpRequestErrorHandler = httpRequestErrorHandler
     }
 
     /// Record the time of a local clear (Fire/autoclear). This timestamp will be used for the next delete call.
@@ -138,6 +141,7 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
             // Only clear the stored timestamp if it hasn't been updated since we read it.
             await state.clearLastClearIf(unchanged: timestampValue)
         } catch {
+            httpRequestErrorHandler?(error)
             Logger.aiChat.debug("Failed to delete AI Chats: \(error.localizedDescription)")
         }
     }

@@ -611,13 +611,22 @@ struct ScrollableOnboardingBackground: View {
             }
 
             // Animate entering background after delay (slides in from right)
-            withAnimation(.easeInOut(duration: Metrics.enterDuration).delay(Metrics.enterDelay)) {
-                enteringTransitionProgress = 1.0
-            }
+            if #available(iOS 17, *) {
+                withAnimation(.easeInOut(duration: Metrics.enterDuration).delay(Metrics.enterDelay)) {
+                    enteringTransitionProgress = 1.0
+                } completion: {
+                    // Update previous state after animation completes (iOS 17+)
+                    previousViewState = newState
+                }
+            } else {
+                withAnimation(.easeInOut(duration: Metrics.enterDuration).delay(Metrics.enterDelay)) {
+                    enteringTransitionProgress = 1.0
+                }
 
-            // After all animations complete, update previous state
-            DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration) {
-                previousViewState = newState
+                // Fallback for iOS 16 and earlier
+                DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration) {
+                    previousViewState = newState
+                }
             }
         }
         .onAppear {

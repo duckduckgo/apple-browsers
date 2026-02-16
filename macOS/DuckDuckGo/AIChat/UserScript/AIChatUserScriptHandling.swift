@@ -95,6 +95,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let pixelFiring: PixelFiring?
     private let statisticsLoader: StatisticsLoader?
     private let syncServiceProvider: () -> DDGSyncing?
+    private let syncErrorHandler: SyncErrorHandling
     private let featureFlagger: FeatureFlagger
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let migrationStore = AIChatMigrationStore()
@@ -106,6 +107,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         pixelFiring: PixelFiring?,
         statisticsLoader: StatisticsLoader?,
         syncServiceProvider: @escaping () -> DDGSyncing?,
+        syncErrorHandler: SyncErrorHandling,
         featureFlagger: FeatureFlagger,
         freeTrialConversionService: FreeTrialConversionInstrumentationService = Application.appDelegate.freeTrialConversionService,
         notificationCenter: NotificationCenter = .default
@@ -116,6 +118,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.pixelFiring = pixelFiring
         self.statisticsLoader = statisticsLoader
         self.syncServiceProvider = syncServiceProvider
+        self.syncErrorHandler = syncErrorHandler
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
@@ -476,7 +479,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         guard sync.authState != .initializing else {
             return nil
         }
-        return AIChatSyncHandler(sync: sync)
+        return AIChatSyncHandler(sync: sync, httpRequestErrorHandler: syncErrorHandler.handleAiChatsError)
     }
 }
 // swiftlint:enable inclusive_language

@@ -32,6 +32,7 @@ protocol SyncErrorHandling {
     func handleCreditCardsError(_ error: Error)
     func handleIdentitiesError(_ error: Error)
     func handleSettingsError(_ error: Error)
+    func handleAiChatsError(_ error: Error)
     func syncBookmarksSucceded()
     func syncCredentialsSucceded()
     func syncCreditCardsSucceded()
@@ -340,6 +341,10 @@ extension SyncErrorHandler: SyncErrorHandling {
          handleError(error, modelType: .settings)
      }
 
+    func handleAiChatsError(_ error: Error) {
+        handleError(error, modelType: .aiChats)
+    }
+
     private func handleError(_ error: Error, modelType: ModelType) {
         switch error {
         case SyncError.patchPayloadCompressionFailed(let errorCode):
@@ -376,6 +381,8 @@ extension SyncErrorHandler: SyncErrorHandling {
                 syncIsPaused(errorType: .creditCardsCountLimitExceeded)
             case .identities:
                 syncIsPaused(errorType: .identitiesCountLimitExceeded)
+            case .aiChats:
+                syncIsPaused(errorType: .aiChatsCountLimitExceeded)
             case .settings:
                 break
             }
@@ -389,6 +396,8 @@ extension SyncErrorHandler: SyncErrorHandling {
                 syncIsPaused(errorType: .creditCardsRequestSizeLimitExceeded)
             case .identities:
                 syncIsPaused(errorType: .identitiesRequestSizeLimitExceeded)
+            case .aiChats:
+                syncIsPaused(errorType: .aiChatsRequestSizeLimitExceeded)
             case .settings:
                 break
             }
@@ -402,12 +411,19 @@ extension SyncErrorHandler: SyncErrorHandling {
                 syncIsPaused(errorType: .badRequestCreditCards)
             case .identities:
                 syncIsPaused(errorType: .badRequestIdentities)
+            case .aiChats:
+                syncIsPaused(errorType: .badRequestAiChats)
             case .settings:
                 break
             }
             PixelKit.fire(modelType.badRequestPixel, frequency: .legacyDailyNoSuffix)
         case .unexpectedStatusCode(401):
-            syncIsPaused(errorType: .invalidLoginCredentials)
+            switch modelType {
+            case .aiChats:
+                break
+            default:
+                syncIsPaused(errorType: .invalidLoginCredentials)
+            }
         case .unexpectedStatusCode(418), .unexpectedStatusCode(429):
             syncIsPaused(errorType: .tooManyRequests)
             PixelKit.fire(modelType.tooManyRequestsPixel, frequency: .legacyDailyNoSuffix)
@@ -435,6 +451,8 @@ extension SyncErrorHandler: SyncErrorHandling {
             currentSyncIdentitiesPausedError = errorType.rawValue
             self.isSyncIdentitiesPaused = true
             PixelKit.fire(GeneralPixel.syncIdentitiesObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
+        case .aiChatsCountLimitExceeded:
+            PixelKit.fire(GeneralPixel.syncAiChatsObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .bookmarksRequestSizeLimitExceeded:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
@@ -451,6 +469,8 @@ extension SyncErrorHandler: SyncErrorHandling {
             currentSyncIdentitiesPausedError = errorType.rawValue
             self.isSyncIdentitiesPaused = true
             PixelKit.fire(GeneralPixel.syncIdentitiesRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
+        case .aiChatsRequestSizeLimitExceeded:
+            PixelKit.fire(GeneralPixel.syncAiChatsRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .badRequestBookmarks:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
@@ -463,6 +483,8 @@ extension SyncErrorHandler: SyncErrorHandling {
         case .badRequestIdentities:
             currentSyncIdentitiesPausedError = errorType.rawValue
             self.isSyncIdentitiesPaused = true
+        case .badRequestAiChats:
+            break
         case .invalidLoginCredentials:
             currentSyncAllPausedError = errorType.rawValue
             self.isSyncPaused = true
@@ -506,6 +528,8 @@ extension SyncErrorHandler: SyncErrorHandling {
             guard !didShowIdentitiesSyncPausedError else { return }
             alertPresenter.showSyncPausedAlert(title: UserText.syncIdentitiesPausedAlertTitle, informative: UserText.syncIdentitiesBadRequestAlertDescription)
             didShowIdentitiesSyncPausedError = true
+        case .badRequestAiChats, .aiChatsCountLimitExceeded, .aiChatsRequestSizeLimitExceeded:
+            break
         case .invalidLoginCredentials:
             guard !didShowInvalidLoginSyncPausedError else { return }
             alertPresenter.showSyncPausedAlert(title: UserText.syncPausedAlertTitle, informative: UserText.syncInvalidLoginAlertDescription)
@@ -522,16 +546,19 @@ extension SyncErrorHandler: SyncErrorHandling {
         case credentialsCountLimitExceeded
         case creditCardsCountLimitExceeded
         case identitiesCountLimitExceeded
+        case aiChatsCountLimitExceeded
         case bookmarksRequestSizeLimitExceeded
         case credentialsRequestSizeLimitExceeded
         case creditCardsRequestSizeLimitExceeded
         case identitiesRequestSizeLimitExceeded
+        case aiChatsRequestSizeLimitExceeded
         case invalidLoginCredentials
         case tooManyRequests
         case badRequestBookmarks
         case badRequestCredentials
         case badRequestCreditCards
         case badRequestIdentities
+        case badRequestAiChats
     }
 
     private enum ModelType: String {
@@ -540,6 +567,7 @@ extension SyncErrorHandler: SyncErrorHandling {
         case creditCards
         case identities
         case settings
+        case aiChats
 
         var syncFailedPixel: GeneralPixel {
             switch self {
@@ -553,6 +581,8 @@ extension SyncErrorHandler: SyncErrorHandling {
                     .syncIdentitiesFailed
             case .settings:
                     .syncSettingsFailed
+            case .aiChats:
+                    .syncAiChatsFailed
             }
         }
 
@@ -568,6 +598,8 @@ extension SyncErrorHandler: SyncErrorHandling {
                     .syncIdentitiesPatchCompressionFailed
             case .settings:
                     .syncSettingsPatchCompressionFailed
+            case .aiChats:
+                    .syncAiChatsPatchCompressionFailed
             }
         }
 
@@ -583,6 +615,8 @@ extension SyncErrorHandler: SyncErrorHandling {
                     .syncIdentitiesTooManyRequestsDaily
             case .settings:
                     .syncSettingsTooManyRequestsDaily
+            case .aiChats:
+                    .syncAiChatsTooManyRequestsDaily
             }
         }
 
@@ -598,6 +632,8 @@ extension SyncErrorHandler: SyncErrorHandling {
                     .syncIdentitiesValidationErrorDaily
             case .settings:
                     .syncSettingsValidationErrorDaily
+            case .aiChats:
+                    .syncAiChatsValidationErrorDaily
             }
         }
     }

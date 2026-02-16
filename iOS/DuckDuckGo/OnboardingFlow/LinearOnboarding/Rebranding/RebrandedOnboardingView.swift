@@ -168,10 +168,6 @@ extension OnboardingRebranding {
                             },
                             content: {
                                 switch state.type {
-                                case .browsersComparisonDialog:
-                                    EmptyView()
-                                case .addToDockPromoDialog:
-                                    addToDockPromoView
                                 case .chooseAppIconDialog:
                                     appIconPickerView
                                 case .chooseAddressBarPositionDialog:

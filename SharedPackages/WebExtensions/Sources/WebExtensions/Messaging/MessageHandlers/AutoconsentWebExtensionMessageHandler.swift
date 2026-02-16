@@ -56,7 +56,6 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
     public func handleMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {
         Logger.webExtensions.debug("📝 AutoconsentWebExtensionMessageHandler received method: \(message.method)")
-        Logger.webExtensions.debug("📝 AutoconsentWebExtensionMessageHandler --- Params: \(String(describing: message.params))")
 
         guard let method = Method(rawValue: message.method) else {
             return .failure(WebExtensionMessageHandlerError.unknownMethod(message.method))
@@ -65,15 +64,18 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         switch method {
         case .sendPixel:
 //            return handleSendPixel(message.params)
+            Logger.webExtensions.debug("📝 AutoconsentWebExtensionMessageHandler --- Params: \(String(describing: message.params))")
             return .failure(WebExtensionMessageHandlerError.unknownMethod("sendPixel"))
         case .refreshCpmDashboardState:
 //            return handleRefreshCpmDashboardState(message.params)
             return .failure(WebExtensionMessageHandlerError.unknownMethod("refreshCpmDashboardState"))
         case .showCpmAnimation:
 //            return handleShowCpmAnimation(message.params)
+            Logger.webExtensions.debug("📝 AutoconsentWebExtensionMessageHandler --- Params: \(String(describing: message.params))")
             return .failure(WebExtensionMessageHandlerError.unknownMethod("showCpmAnimation"))
         case .cookiePopupHandled:
 //            return handleCookiePopupHandled(message.params)
+            Logger.webExtensions.debug("📝 AutoconsentWebExtensionMessageHandler --- Params: \(String(describing: message.params))")
             return .failure(WebExtensionMessageHandlerError.unknownMethod("cookiePopupHandled"))
         case .isFeatureEnabled:
             return handleIsFeatureEnabled(message.params)

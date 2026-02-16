@@ -76,8 +76,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 //            return handleCookiePopupHandled(message.params)
             return .failure(WebExtensionMessageHandlerError.unknownMethod("cookiePopupHandled"))
         case .isFeatureEnabled:
-//            return handleIsFeatureEnabled(message.params)
-            return .failure(WebExtensionMessageHandlerError.unknownMethod("isFeatureEnabled"))
+            return handleIsFeatureEnabled(message.params)
         case .isSubFeatureEnabled:
 //            return handleIsSubFeatureEnabled(message.params)
             return .failure(WebExtensionMessageHandlerError.unknownMethod("isSubFeatureEnabled"))
@@ -155,18 +154,26 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 //        return .success(Self.successResponse)
 //    }
 
-//    private func handleIsFeatureEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
-//        guard
-//            let featureName = params?["featureName"] as? String,
-//            let url = params?["url"] as? String
-//        else {
-//            return .failure(WebExtensionMessageHandlerError.missingParameter("featureName or url"))
-//        }
-//
-//        Logger.webExtensions.debug("🔍 Is Feature Enabled - feature: \(featureName), url: \(url)")
-//
-//        return .success(["enabled": true])
-//    }
+    private func handleIsFeatureEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
+        guard
+            let featureName = params?["featureName"] as? String,
+            let urlString = params?["url"] as? String
+        else {
+            return .failure(WebExtensionMessageHandlerError.missingParameter("featureName or url"))
+        }
+
+        Logger.webExtensions.debug("🔍 Is Feature Enabled - feature: \(featureName), url: \(urlString)")
+
+        guard let feature = PrivacyFeature(rawValue: featureName) else {
+            Logger.webExtensions.error("❌ Unknown feature name: \(featureName)")
+            return .success(["enabled": false])
+        }
+
+        let domain = URL(string: urlString)?.host
+        let isEnabled = privacyConfigurationManager.privacyConfig.isFeature(feature, enabledForDomain: domain)
+
+        return .success(["enabled": isEnabled])
+    }
 
 //    private func handleIsSubFeatureEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
 //        guard

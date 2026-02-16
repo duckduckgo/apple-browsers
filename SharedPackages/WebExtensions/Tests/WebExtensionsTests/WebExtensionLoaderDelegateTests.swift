@@ -125,8 +125,8 @@ final class WebExtensionLoadingDelegateMock: WebExtensionLoadingDelegate {
     var willLoadIdentifier: String?
 
     func webExtensionLoader(_ loader: WebExtensionLoading,
-                           willLoad context: WKWebExtensionContext,
-                           identifier: String) {
+                            willLoad context: WKWebExtensionContext,
+                            identifier: String) {
         willLoadCalled = true
         willLoadContext = context
         willLoadIdentifier = identifier

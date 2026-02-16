@@ -426,6 +426,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync off")
         }
 
+        PixelKit.fire(GeneralPixel.syncAiChatTokenRequestedDaily, frequency: .legacyDailyNoSuffix)
+
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
             pixelFiring?.fire(AIChatPixel.aiChatSyncDecryptionError(reason: "invalid parameters"), frequency: .dailyAndStandard)
             return AIChatErrorResponse(reason: "invalid parameters")

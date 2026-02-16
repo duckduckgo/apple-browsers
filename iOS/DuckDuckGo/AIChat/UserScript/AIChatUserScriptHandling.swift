@@ -463,6 +463,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync off")
         }
 
+        DailyPixel.fire(pixel: .syncAiChatTokenRequestedDaily)
+
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSyncDecryptionError, withAdditionalParameters: ["reason": "invalid parameters"])
             return AIChatErrorResponse(reason: "invalid parameters")

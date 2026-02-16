@@ -31,7 +31,13 @@ struct BrowsingMenuModel {
 struct BrowsingMenuSheetView: View {
 
     enum Metrics {
-        static let headerButtonVerticalPadding: CGFloat = 12
+        static let headerButtonVerticalPadding: CGFloat = {
+            if #available(iOS 26, *) {
+                return 22
+            } else {
+                return 12
+            }
+        }()
         static let headerButtonHorizontalPadding: CGFloat = 8
         static let headerButtonIconSize: CGFloat = 26
         static let headerButtonIconTextSpacing: CGFloat = 4
@@ -39,13 +45,26 @@ struct BrowsingMenuSheetView: View {
         /// Approximate row size for `.insetGrouped` style.
         /// This is an estimate used for height calculation and may not exactly match
         /// the system-provided height in all configurations.
-        static let defaultListRowHeight: CGFloat = 44
+        static let defaultListRowHeight: CGFloat = {
+            if #available(iOS 26, *) {
+                return 56
+            } else {
+                return 44
+            }
+        }()
 
         /// Approximate spacing between list sections.
         /// Note: The actual UI uses `.compactSectionSpacingIfAvailable()` which applies
         /// `.compact` section spacing on iOS 17+. This value is an approximation and
         /// the actual spacing may differ slightly on earlier versions.
-        static let listSectionSpacing: CGFloat = 20
+        static let listSectionSpacing: CGFloat = {
+            if #available(iOS 26, *) {
+                return 24
+            } else {
+                return 20
+            }
+        }()
+
         static let listTopPadding: CGFloat = 20
         static let grabberHeight: CGFloat = 20
 

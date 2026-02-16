@@ -298,7 +298,7 @@ private extension DefaultColorPalette {
         case .buttonsSecondaryText:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.Eggshell.eggshell10)
         case .controlsFillPrimary:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.white.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))
         case .decorationPrimary:
             return DynamicColor(lightColor: Color(0x242323).opacity(0.09), darkColor: Color(0xFFFFFF).opacity(0.06))
         }

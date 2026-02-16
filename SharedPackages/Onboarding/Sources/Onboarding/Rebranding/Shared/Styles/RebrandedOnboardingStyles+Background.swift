@@ -32,9 +32,9 @@ public enum ContextualOnboardingBackgroundType {
 
     var alignment: Alignment {
         switch self {
-        case .tryASearch, .tryASearchCompleted, .tryVisitingASiteNTP, .trackers, .fireDialog, .endOfJourney:
+        case .tryASearch, .tryASearchCompleted, .tryVisitingASiteNTP, .trackers, .fireDialog:
             return .bottomTrailing
-        case .privacyProTrial:
+        case .endOfJourney, .privacyProTrial:
             return .center
         }
     }
@@ -79,7 +79,7 @@ extension OnboardingRebranding.OnboardingStyles {
                     backgroundType.image
                         .resizable()
                         .scaledToFit()
-                        .frame(maxHeight: maxHeightMetrics)
+                        .frame(maxHeight: backgroundType.alignment == .center ? nil : maxHeightMetrics) // Center-aligned backgrounds have no height constraint to prevent cropping on iPad and landscape
                         .background(
                             GeometryReader { proxy in
                                 Color.clear

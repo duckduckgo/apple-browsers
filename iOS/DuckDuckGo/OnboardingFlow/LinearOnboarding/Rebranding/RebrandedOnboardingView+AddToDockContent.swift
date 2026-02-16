@@ -33,13 +33,6 @@ extension OnboardingRebranding.OnboardingView {
         private let skipAction: (_ fromAddToDock: Bool) -> Void
         private let isSkipped: Binding<Bool>
 
-        /// Desired horizontal padding between the content images and the bubble border.
-        /// The bubble's own `contentInsets` are larger (e.g. 20 pt) so the images use negative
-        /// horizontal padding to extend past the text content area and land at this distance
-        /// from the bubble edge.
-        private static let imagePaddingFromBubbleBorder: CGFloat = 9.0
-        private static let lottiePaddingFromBubbleBorder: CGFloat = 31.0
-
         init(
             isSkipped: Binding<Bool>,
             skipAction: @escaping (_ fromAddToDock: Bool) -> Void,
@@ -67,7 +60,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(Copy.Promo.message)
+                    Text(Copy.Promo.introMessage)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)

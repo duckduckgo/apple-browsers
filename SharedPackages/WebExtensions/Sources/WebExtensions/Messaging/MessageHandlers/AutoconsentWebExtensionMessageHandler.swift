@@ -78,8 +78,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         case .isFeatureEnabled:
             return handleIsFeatureEnabled(message.params)
         case .isSubFeatureEnabled:
-//            return handleIsSubFeatureEnabled(message.params)
-            return .failure(WebExtensionMessageHandlerError.unknownMethod("isSubFeatureEnabled"))
+            return handleIsSubFeatureEnabled(message.params)
         case .getResourceIfNew:
             return handleGetResourceIfNew(message.params)
         case .isAutoconsentSettingEnabled:
@@ -175,18 +174,35 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         return .success(["enabled": isEnabled])
     }
 
-//    private func handleIsSubFeatureEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
-//        guard
-//            let featureName = params?["featureName"] as? String,
-//            let subfeatureName = params?["subfeatureName"] as? String
-//        else {
-//            return .failure(WebExtensionMessageHandlerError.missingParameter("featureName or subfeatureName"))
-//        }
-//
-//        Logger.webExtensions.debug("🔍 Is SubFeature Enabled - feature: \(featureName), subfeature: \(subfeatureName)")
-//
-//        return .success(["enabled": true])
-//    }
+    private func handleIsSubFeatureEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
+        guard
+            let featureName = params?["featureName"] as? String,
+            let subfeatureName = params?["subfeatureName"] as? String
+        else {
+            return .failure(WebExtensionMessageHandlerError.missingParameter("featureName or subfeatureName"))
+        }
+
+        Logger.webExtensions.debug("🔍 Is SubFeature Enabled - feature: \(featureName), subfeature: \(subfeatureName)")
+
+        guard let feature = PrivacyFeature(rawValue: featureName) else {
+            Logger.webExtensions.error("❌ Unknown feature name: \(featureName)")
+            return .success(["enabled": false])
+        }
+
+        guard feature == .autoconsent else {
+            Logger.webExtensions.error("❌ Subfeature check not supported for feature: \(featureName)")
+            return .success(["enabled": false])
+        }
+
+        guard let subfeature = AutoconsentSubfeature(rawValue: subfeatureName) else {
+            Logger.webExtensions.error("❌ Unknown autoconsent subfeature: \(subfeatureName)")
+            return .success(["enabled": false])
+        }
+
+        let isEnabled = privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(subfeature)
+
+        return .success(["enabled": isEnabled])
+    }
 
     private func handleGetResourceIfNew(_ params: [String: Any]?) -> WebExtensionMessageResult {
         guard

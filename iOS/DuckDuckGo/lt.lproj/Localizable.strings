@@ -3127,12 +3127,6 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Automatiškai siųsti turinį";
 
-/* Settings screen cell subtitle for enabling chat suggestions */
-"settings.aifeatures.chat.suggestions.subtitle" = "Rodyti naujausius „Duck.ai“ pokalbius rašant";
-
-/* Settings screen cell title for enabling chat suggestions */
-"settings.aifeatures.chat.suggestions.title" = "Pokalbių pasiūlymai";
-
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Slėpti DI generuotus vaizdus";
 

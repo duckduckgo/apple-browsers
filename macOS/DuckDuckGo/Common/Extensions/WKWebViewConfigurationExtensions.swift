@@ -42,6 +42,8 @@ extension WKWebViewConfiguration {
         }
 
         allowsAirPlayForMediaPlayback = true
+        systemProcessName = "DuckDuckGo Web Content"
+
         if #available(macOS 12.3, *) {
             preferences.isElementFullscreenEnabled = true
         } else {
@@ -77,6 +79,32 @@ extension WKWebViewConfiguration {
         self.processPool.geolocationProvider = GeolocationProvider(processPool: self.processPool)
     }
 
+}
+
+private extension WKWebViewConfiguration {
+
+    static let processNameKey: String = "processDisplayName"
+
+    var supportsProcessNameSelector: Bool {
+        responds(to: NSSelectorFromString("_" + Self.processNameKey))
+    }
+
+    var systemProcessName: String? {
+        get {
+            guard supportsProcessNameSelector else {
+                return nil
+            }
+
+            return value(forKey: Self.processNameKey) as? String
+        }
+        set {
+            guard supportsProcessNameSelector else {
+                return
+            }
+
+            setValue(newValue, forKey: Self.processNameKey)
+        }
+    }
 }
 
 extension WKPreferences {

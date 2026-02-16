@@ -170,7 +170,7 @@ extension OnboardingRebranding {
                             .frame(width: geometry.size.width, alignment: .center)
                             .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
                     } else {
-                        DaxDialogView(
+                        DaxDialogView( // Old implementation, fallback
                             logoPosition: .top,
                             matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
                             showDialogBox: $model.introState.showDaxDialogBox,
@@ -330,7 +330,10 @@ extension OnboardingRebranding {
                 BubbleBackedDialogConfiguration(
                     tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
-                    additionalTopMargin: BubbleBackedDialogMetrics.browsersComparisonAdditionalTopMargin,
+                    additionalTopMargin: BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
             case .chooseAddressBarPositionDialog:
                 BubbleBackedDialogConfiguration(
                     tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,

@@ -1891,8 +1891,9 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
               
-        /// Never show onboarding Dax on Youtube or DuckPlayer, unless DuckPlayer is disabled
+        /// Never show onboarding Dax on Duck.ai, Youtube or DuckPlayer (unless DuckPlayer is disabled)
         guard let url = link?.url,
+              !url.isDuckAIURL,
               !url.isDuckPlayer,
               !(url.isYoutube && duckPlayerNavigationHandler.duckPlayer.settings.mode != .disabled) else {
             scheduleTrackerNetworksAnimation(collapsing: true)

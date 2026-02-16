@@ -20,7 +20,6 @@
 import SwiftUI
 import Onboarding
 import DuckUI
-import MetricBuilder
 
 private enum OnboardingViewMetrics {
     static let landingScreenDuration = 2.0
@@ -30,6 +29,11 @@ private enum OnboardingViewCopy {
     static let introTitle = "Hi There!"
     static let introMessage = "Ready for a faster browser that keeps you protected?"
     static let browsersComparisonTitle = "Protections activated!"
+}
+
+private enum BubbleBackedDialogMetrics {
+    static let introAdditionalTopMargin: CGFloat = 40
+    static let browsersComparisonAdditionalTopMargin: CGFloat = 0
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -98,14 +102,23 @@ extension OnboardingRebranding {
         static let daxGeometryEffectID = "DaxIcon"
 
         @Namespace var animationNamespace
-        @Environment(\.verticalSizeClass) private var verticalSizeClass
-        @Environment(\.horizontalSizeClass) private var horizontalSizeClass
         @ObservedObject private var model: OnboardingIntroViewModel
-
-        @State private var isPlayingSetAsDefaultVideo: Bool = false
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
+        }
+
+        private enum BubbleTailDirection {
+            case leading
+            case trailing
+        }
+
+        private struct BubbleBackedDialogConfiguration {
+            let tailOffset: CGFloat
+            let tailDirection: BubbleTailDirection
+            let additionalTopMargin: CGFloat
+            let isVisible: Bool
+            let showsStepCounter: Bool
         }
 
         var body: some View {
@@ -141,15 +154,11 @@ extension OnboardingRebranding {
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
             GeometryReader { geometry in
                 VStack(alignment: .center) {
-                    switch state.type {
-                    case .startOnboardingDialog(let shouldShowSkipOnboardingButton):
-                        introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
+                    if let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type) {
+                        bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
                             .frame(width: geometry.size.width, alignment: .center)
-                    case .browsersComparisonDialog:
-                        browsersComparisonView(step: state.step)
-                            .frame(width: geometry.size.width, alignment: .center)
-                            .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.minTopMargin + BrowsersComparisonContentMetrics.additionalTopMargin)
-                    default:
+                            .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
+                    } else {
                         DaxDialogView(
                             logoPosition: .top,
                             matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
@@ -173,10 +182,6 @@ extension OnboardingRebranding {
                                     EmptyView()
                                 }
                             }
-                        )
-                        .onboardingProgressIndicator(
-                            currentStep: state.step.currentStep,
-                            totalSteps: 0
                         )
                         .frame(width: geometry.size.width, alignment: .center)
                         .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.minTopMargin)
@@ -204,10 +209,6 @@ extension OnboardingRebranding {
             let skipOnboardingView: AnyView? = if shouldShowSkipOnboardingButton {
                 AnyView(
                     SkipOnboardingContent(
-                        animateTitle: $model.skipOnboardingState.animateTitle,
-                        animateMessage: $model.skipOnboardingState.animateMessage,
-                        showCTA: $model.skipOnboardingState.showContent,
-                        isSkipped: $model.isSkipped,
                         startBrowsingAction: model.confirmSkipOnboardingAction,
                         resumeOnboardingAction: {
                             animateBrowserComparisonViewState(isResumingOnboarding: true)
@@ -228,18 +229,99 @@ extension OnboardingRebranding {
                 },
                 skipAction: model.skipOnboardingAction
             )
-            .onboardingDaxDialogStyle()
-            .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
         }
 
-        private func browsersComparisonView(step: ViewState.Intro.StepInfo) -> some View {
+        private var browsersComparisonView: some View {
             BrowsersComparisonContent(
                 title: OnboardingViewCopy.browsersComparisonTitle,
-                currentStep: step.currentStep,
-                totalSteps: step.totalSteps,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
                 cancelAction: model.cancelSetDefaultBrowserAction
             )
+        }
+
+        private func bubbleBackedDialogView(
+            state: ViewState.Intro,
+            configuration: BubbleBackedDialogConfiguration
+        ) -> some View {
+            let stepInfo: ViewState.Intro.StepInfo? = if configuration.showsStepCounter {
+                .init(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
+            } else {
+                nil
+            }
+            return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
+                bubbleBackedDialogContent(for: state.type)
+            }
+            .frame(maxWidth: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleMaxWidth)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .visibility(configuration.isVisible ? .visible : .invisible)
+        }
+
+        private func makeBubbleView<Content: View>(
+            configuration: BubbleBackedDialogConfiguration,
+            stepInfo: ViewState.Intro.StepInfo?,
+            @ViewBuilder content: @escaping () -> Content
+        ) -> AnyView {
+            let tailPosition: OnboardingBubbleView<Content>.TailPosition
+            switch configuration.tailDirection {
+            case .leading:
+                tailPosition = .bottom(offset: configuration.tailOffset, direction: .leading)
+            case .trailing:
+                tailPosition = .bottom(offset: configuration.tailOffset, direction: .trailing)
+            }
+
+            if let stepInfo {
+                return AnyView(OnboardingBubbleView.withStepProgressIndicator(
+                    tailPosition: tailPosition,
+                    currentStep: stepInfo.currentStep,
+                    totalSteps: stepInfo.totalSteps
+                ) {
+                    content()
+                })
+            }
+
+            return AnyView(OnboardingBubbleView(
+                tailPosition: tailPosition,
+                contentInsets: OnboardingTheme.rebranding2026.linearBubbleMetrics.contentInsets,
+                arrowLength: OnboardingTheme.rebranding2026.linearBubbleMetrics.arrowLength,
+                arrowWidth: OnboardingTheme.rebranding2026.linearBubbleMetrics.arrowWidth
+            ) {
+                content()
+            })
+        }
+
+        @ViewBuilder
+        private func bubbleBackedDialogContent(for type: ViewState.Intro.IntroType) -> some View {
+            switch type {
+            case .startOnboardingDialog(let shouldShowSkipOnboardingButton):
+                introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
+            case .browsersComparisonDialog:
+                browsersComparisonView
+            default:
+                EmptyView()
+            }
+        }
+
+        private func bubbleBackedDialogConfiguration(for type: ViewState.Intro.IntroType) -> BubbleBackedDialogConfiguration? {
+            switch type {
+            case .startOnboardingDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
+                    isVisible: model.introState.showIntroViewContent,
+                    showsStepCounter: false
+                )
+            case .browsersComparisonDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.browsersComparisonAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            default:
+                nil
+            }
         }
 
         private var addToDockPromoView: some View {
@@ -309,32 +391,4 @@ private struct RebrandingBadge: View {
             )
             .accessibilityIdentifier("RebrandedBadge")
     }
-}
-
-private struct OnboardingProgressIndicatorModifier: ViewModifier {
-    @Environment(\.onboardingTheme) private var onboardingTheme
-
-    let currentStep: Int
-    let totalSteps: Int
-
-    func body(content: Content) -> some View {
-        content
-            .overlay(alignment: .topTrailing) {
-                RebrandedOnboardingView.OnboardingProgressIndicator(
-                    stepInfo: .init(currentStep: currentStep, totalSteps: totalSteps)
-                )
-                .padding(.trailing, onboardingTheme.linearOnboardingMetrics.progressBarTrailingPadding)
-                .padding(.top, onboardingTheme.linearOnboardingMetrics.progressBarTopPadding)
-                .transition(.identity)
-                .visibility(totalSteps == 0 ? .invisible : .visible)
-            }
-    }
-}
-
-private extension View {
-
-    func onboardingProgressIndicator(currentStep: Int, totalSteps: Int) -> some View {
-        modifier(OnboardingProgressIndicatorModifier(currentStep: currentStep, totalSteps: totalSteps))
-    }
-
 }

@@ -59,6 +59,8 @@ final class MemoryPressureReporter {
     private let memoryUsageMonitor: MemoryUsageMonitoring
     private let windowContext: () -> WindowContext?
     private let isSyncEnabled: () -> Bool?
+    private let allocationStatsProvider: MemoryAllocationStatsProviding
+    private let launchDate: Date
     private let logger: Logger?
     private let notificationCenter: NotificationCenter
     private var memoryPressureSource: DispatchSourceMemoryPressure?
@@ -69,6 +71,8 @@ final class MemoryPressureReporter {
          memoryUsageMonitor: MemoryUsageMonitoring,
          windowContext: @autoclosure @escaping () -> WindowContext?,
          isSyncEnabled: @escaping () -> Bool?,
+         allocationStatsProvider: MemoryAllocationStatsProviding = MemoryAllocationStatsExporter(),
+         launchDate: Date = Date(),
          logger: Logger? = nil,
          notificationCenter: NotificationCenter = .default) {
         self.featureFlagger = featureFlagger
@@ -76,6 +80,8 @@ final class MemoryPressureReporter {
         self.memoryUsageMonitor = memoryUsageMonitor
         self.windowContext = windowContext
         self.isSyncEnabled = isSyncEnabled
+        self.allocationStatsProvider = allocationStatsProvider
+        self.launchDate = launchDate
         self.logger = logger
         self.notificationCenter = notificationCenter
         subscribeToFeatureFlagUpdates()
@@ -140,7 +146,9 @@ final class MemoryPressureReporter {
             let context = MemoryReportingContext.collect(
                 memoryUsageMonitor: memoryUsageMonitor,
                 windowContext: windowContext(),
-                isSyncEnabled: isSyncEnabled()
+                isSyncEnabled: isSyncEnabled(),
+                usedAllocationBytes: allocationStatsProvider.currentTotalUsedBytes(),
+                launchDate: launchDate
             )
             pixelFiring?.fire(MemoryPressurePixel.memoryPressureCritical(context: context), frequency: .dailyAndStandard)
         }

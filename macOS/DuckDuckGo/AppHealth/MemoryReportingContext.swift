@@ -20,7 +20,8 @@ import Foundation
 
 /// A snapshot of current windows and tabs in use
 struct WindowContext {
-    let tabs: Int
+    let standardTabs: Int
+    let pinnedTabs: Int
     let windows: Int
 }
 
@@ -38,8 +39,11 @@ struct MemoryReportingContext {
     /// Bucketed number of open windows (0, 1, 2, 4, 7, 11, 21), or `nil` if unavailable.
     let windows: Int?
 
-    /// Bucketed total tab count across all windows (0, 1, 2, 4, 7, 11, 21, 51), or `nil` if unavailable.
-    let tabs: Int?
+    /// Bucketed standard (unpinned) tab count across all windows (0, 1, 2, 4, 7, 11, 21, 51), or `nil` if unavailable.
+    let standardTabs: Int?
+
+    /// Bucketed pinned tab count across all windows (0, 1, 2, 4, 7, 11, 15), or `nil` if unavailable.
+    let pinnedTabs: Int?
 
     /// Architecture of the current build ("ARM" or "Intel").
     let architecture: String
@@ -47,15 +51,24 @@ struct MemoryReportingContext {
     /// Whether Sync is currently enabled (user is logged in and active), or `nil` if unavailable.
     let syncEnabled: Bool?
 
+    /// Bucketed total used allocation in MB (0, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384), or `nil` if unavailable.
+    let usedAllocationMB: Int?
+
+    /// Minutes elapsed since app launch (raw value, not bucketed).
+    let uptimeMinutes: Int
+
     /// Returns context parameters as a dictionary suitable for pixel firing.
     /// Parameters with `nil` values are sent as `"unknown"`.
     var parameters: [String: String] {
         [
             "browser_memory_mb": String(browserMemoryMB),
             "windows": windows.map(String.init) ?? "unknown",
-            "tabs": tabs.map(String.init) ?? "unknown",
+            "standard_tabs": standardTabs.map(String.init) ?? "unknown",
+            "pinned_tabs": pinnedTabs.map(String.init) ?? "unknown",
             "architecture": architecture,
-            "sync_enabled": syncEnabled.map(String.init) ?? "unknown"
+            "sync_enabled": syncEnabled.map(String.init) ?? "unknown",
+            "used_allocation": usedAllocationMB.map(String.init) ?? "unknown",
+            "uptime": String(uptimeMinutes)
         ]
     }
 
@@ -67,23 +80,35 @@ struct MemoryReportingContext {
     ///     window and tab counts will be sent as `"unknown"`.
     ///   - isSyncEnabled: Whether sync is currently enabled. Pass `nil` if unavailable;
     ///     sync status will be sent as `"unknown"`.
+    ///   - usedAllocationBytes: Total used bytes from malloc zones. Pass `nil` if unavailable.
+    ///   - launchDate: The date the app was launched, used to compute uptime in minutes.
     @MainActor
     static func collect(
         memoryUsageMonitor: MemoryUsageMonitoring,
         windowContext: WindowContext?,
-        isSyncEnabled: Bool?
+        isSyncEnabled: Bool?,
+        usedAllocationBytes: UInt64?,
+        launchDate: Date
     ) -> MemoryReportingContext {
         let report = memoryUsageMonitor.getCurrentMemoryUsage()
         let browserMemoryMB = MemoryReportingBuckets.bucketMemoryMB(report.physFootprintMB)
         let windows = windowContext.map(\.windows).map(MemoryReportingBuckets.bucketWindowCount)
-        let tabs = windowContext.map(\.tabs).map(MemoryReportingBuckets.bucketTabCount)
+        let standardTabs = windowContext.map(\.standardTabs).map(MemoryReportingBuckets.bucketStandardTabCount)
+        let pinnedTabs = windowContext.map(\.pinnedTabs).map(MemoryReportingBuckets.bucketPinnedTabCount)
+        let usedAllocationMB = usedAllocationBytes.map { bytes in
+            MemoryReportingBuckets.bucketUsedAllocationMB(Double(bytes) / 1_048_576.0)
+        }
+        let uptimeMinutes = Int(Date().timeIntervalSince(launchDate) / 60.0)
 
         return MemoryReportingContext(
             browserMemoryMB: browserMemoryMB,
             windows: windows,
-            tabs: tabs,
+            standardTabs: standardTabs,
+            pinnedTabs: pinnedTabs,
             architecture: MemoryReportingBuckets.currentArchitecture,
-            syncEnabled: isSyncEnabled
+            syncEnabled: isSyncEnabled,
+            usedAllocationMB: usedAllocationMB,
+            uptimeMinutes: uptimeMinutes
         )
     }
 }

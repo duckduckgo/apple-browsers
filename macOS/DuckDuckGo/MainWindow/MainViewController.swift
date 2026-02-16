@@ -1177,7 +1177,8 @@ extension MainViewController {
 
         tabBarViewController.fireButton.isEnabled = !prevented
         tabBarViewController.isInteractionPrevented = prevented
-        navigationBarViewController.controlsForUserPrevention.forEach { $0?.isEnabled = !prevented }
+
+        navigationBarViewController.userInteraction(prevented: prevented)
         bookmarksBarViewController.userInteraction(prevented: prevented)
     }
 }

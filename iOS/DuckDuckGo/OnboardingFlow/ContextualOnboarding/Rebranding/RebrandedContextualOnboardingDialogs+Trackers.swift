@@ -65,10 +65,19 @@ extension OnboardingRebranding {
                 } label: {
                     Text(cta)
                 }
+                .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
                 .buttonStyle(theme.primaryButtonStyle.style)
             }
         }
 
+    }
+
+}
+
+private extension OnboardingRebranding.OnboardingTrackersBlockedDialog {
+
+    enum Metrics {
+        static let buttonMaxWidth = MetricBuilder<CGFloat?>(default: nil).iPhone(landscape: 156.0).iPad(156.0)
     }
 
 }

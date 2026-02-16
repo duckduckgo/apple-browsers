@@ -70,6 +70,7 @@ extension OnboardingRebranding {
                 } label: {
                     Text(cta)
                 }
+                .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
                 .buttonStyle(theme.primaryButtonStyle.style)
             }
         }
@@ -78,6 +79,14 @@ extension OnboardingRebranding {
             OnboardingRebranding.OnboardingTrySiteDialogContent(message: message, viewModel: viewModel)
         }
 
+    }
+
+}
+
+private extension OnboardingRebranding.OnboardingSearchDoneDialog {
+
+    enum Metrics {
+        static let buttonMaxWidth = MetricBuilder<CGFloat?>(default: nil).iPhone(landscape: 174.0).iPad(174.0)
     }
 
 }

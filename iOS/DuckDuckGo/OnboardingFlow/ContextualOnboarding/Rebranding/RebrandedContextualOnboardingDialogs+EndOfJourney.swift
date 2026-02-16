@@ -47,6 +47,7 @@ extension OnboardingRebranding {
                         Button(action: dismissAction) {
                             Text(cta)
                         }
+                        .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
                         .buttonStyle(theme.primaryButtonStyle.style)
                     }
                 }
@@ -54,6 +55,14 @@ extension OnboardingRebranding {
             }
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
         }
+    }
+
+}
+
+private extension OnboardingRebranding.OnboardingEndOfJourneyDialog {
+
+    enum Metrics {
+        static let buttonMaxWidth = MetricBuilder<CGFloat?>(default: nil).iPhone(landscape: 170.0).iPad(170.0)
     }
 
 }

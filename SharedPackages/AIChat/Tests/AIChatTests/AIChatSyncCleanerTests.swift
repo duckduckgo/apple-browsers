@@ -28,6 +28,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     private var mockFeatureFlagProvider: MockAIChatFeatureFlagProvider!
     private var fixedDate: Date!
     private var sut: AIChatSyncCleaner!
+    private var capturedErrors: [Error] = []
 
     override func setUp() {
         super.setUp()
@@ -35,6 +36,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
         mockKeyValueStore = MockThrowingKeyValueStore()
         mockFeatureFlagProvider = MockAIChatFeatureFlagProvider()
         fixedDate = Date(timeIntervalSince1970: 1000)
+        capturedErrors = []
     }
 
     override func tearDown() {
@@ -43,15 +45,18 @@ final class AIChatSyncCleanerTests: XCTestCase {
         mockFeatureFlagProvider = nil
         fixedDate = nil
         sut = nil
+        capturedErrors = []
         super.tearDown()
     }
 
-    private func makeSUT(dateProvider: @escaping () -> Date = { Date(timeIntervalSince1970: 1000) }) -> AIChatSyncCleaner {
+    private func makeSUT(dateProvider: @escaping () -> Date = { Date(timeIntervalSince1970: 1000) },
+                         httpRequestErrorHandler: ((Error) -> Void)? = nil) -> AIChatSyncCleaner {
         AIChatSyncCleaner(
             sync: mockSync,
             keyValueStore: mockKeyValueStore,
             featureFlagProvider: mockFeatureFlagProvider,
-            dateProvider: dateProvider
+            dateProvider: dateProvider,
+            httpRequestErrorHandler: httpRequestErrorHandler
         )
     }
 
@@ -263,15 +268,20 @@ final class AIChatSyncCleanerTests: XCTestCase {
         mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
-        mockSync.deleteAIChatsError = NSError(domain: "test", code: 1)
+        let expectedError = NSError(domain: "test", code: 1)
+        mockSync.deleteAIChatsError = expectedError
         try? mockKeyValueStore.set(fixedDate.timeIntervalSince1970, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
-        sut = makeSUT()
+        sut = makeSUT(httpRequestErrorHandler: { [weak self] error in
+            self?.capturedErrors.append(error)
+        })
 
         // When
         await sut.deleteIfNeeded()
 
         // Then
         XCTAssertEqual(mockSync.deleteAIChatsCallCount, 1, "Delete should be called once")
+        XCTAssertEqual(capturedErrors.count, 1, "Error handler should be called once")
+        XCTAssertEqual(capturedErrors.first as NSError?, expectedError)
 
         let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp) as? Double
         XCTAssertEqual(storedValue, fixedDate.timeIntervalSince1970, "Timestamp should be retained for retry after failed delete")
@@ -452,14 +462,19 @@ final class AIChatSyncCleanerTests: XCTestCase {
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
-        mockSync.deleteAIChatsByChatIdsError = NSError(domain: "test", code: 1)
+        let expectedError = NSError(domain: "test", code: 1)
+        mockSync.deleteAIChatsByChatIdsError = expectedError
         try? mockKeyValueStore.set(["chat-1", "chat-2"], forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
-        sut = makeSUT()
+        sut = makeSUT(httpRequestErrorHandler: { [weak self] error in
+            self?.capturedErrors.append(error)
+        })
 
         // When
         await sut.deleteIfNeeded()
 
         // Then
+        XCTAssertEqual(capturedErrors.count, 1, "Error handler should be called once")
+        XCTAssertEqual(capturedErrors.first as NSError?, expectedError)
         let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.chatIDsToDelete) as? [String]
         XCTAssertEqual(Set(storedValue ?? []), Set(["chat-1", "chat-2"]), "Chat IDs should be retained for retry after failed delete")
     }

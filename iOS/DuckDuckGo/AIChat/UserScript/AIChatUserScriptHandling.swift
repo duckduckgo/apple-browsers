@@ -399,6 +399,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync unavailable")
         }
 
+        DailyPixel.fire(pixel: .syncAiChatTokenRequestedDaily)
+
         do {
             return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
         } catch {

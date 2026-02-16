@@ -353,6 +353,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync unavailable")
         }
 
+        PixelKit.fire(GeneralPixel.syncAiChatTokenRequestedDaily, frequency: .legacyDailyNoSuffix)
+
         func makeErrorResponse(_ reason: String) -> AIChatErrorResponse {
             pixelFiring?.fire(AIChatPixel.aiChatSyncScopedSyncTokenError(reason: reason), frequency: .dailyAndStandard)
             return AIChatErrorResponse(reason: reason)

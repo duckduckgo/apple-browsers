@@ -18,17 +18,9 @@
 //
 
 import SwiftUI
-import DuckUI
 import Onboarding
-import UIKit
-import Core
 import DesignResourcesKit
 import Lottie
-
-private enum AddToDockContentMetrics {
-    static let messageFont = Font.system(size: 16)
-    static let additionalTopMargin: CGFloat = 0
-}
 
 extension OnboardingRebranding.OnboardingView {
 
@@ -41,9 +33,12 @@ extension OnboardingRebranding.OnboardingView {
         private let skipAction: (_ fromAddToDock: Bool) -> Void
         private let isSkipped: Binding<Bool>
 
-        private struct Constants {
-            static var imagePadding: CGFloat = 9.0
-        }
+        /// Desired horizontal padding between the content images and the bubble border.
+        /// The bubble's own `contentInsets` are larger (e.g. 20 pt) so the images use negative
+        /// horizontal padding to extend past the text content area and land at this distance
+        /// from the bubble edge.
+        private static let imagePaddingFromBubbleBorder: CGFloat = 9.0
+        private static let lottiePaddingFromBubbleBorder: CGFloat = 31.0
 
         init(
             isSkipped: Binding<Bool>,
@@ -64,21 +59,32 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         private var promoContent: some View {
-            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                Text(Copy.Promo.title)
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
-
-                Text(Copy.Promo.introMessage)
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.contextualBody)
-                    .multilineTextAlignment(.center)
-
-                OnboardingRebrandingImages.AddToDock.promo
-                    .frame(width: 306, height: 100)
-
-                VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(Copy.Tutorial.message)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
+                ),
+                content: AnyView(
+                    OnboardingRebrandingImages.AddToDock.promo
+                        .resizable()
+                        .scaledToFit()
+                        .padding(.horizontal, -3)
+                ),
+                title: {
+                    Text(Copy.Promo.title)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.title)
+                        .multilineTextAlignment(.center)
+                },
+                actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: {
                             showTutorialAction()
@@ -92,46 +98,59 @@ extension OnboardingRebranding.OnboardingView {
                         .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }
                 }
-            }
+            )
         }
 
         private var tutorialContent: some View {
-            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                Text(Copy.Tutorial.title)
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
-
-                Text(Copy.Tutorial.message)
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.contextualBody)
-                    .multilineTextAlignment(.center)
-
-                ZStack(alignment: .center) {
-                    OnboardingRebrandingImages.AddToDock.tutorialBazel
-                        .frame(width: 308, height: 231)
-                    LottieView(
-                        lottieFile: "add-to-dock-promo",
-//                        isAnimating: $isAnimating,
-//                        animationImageProvider: model,
-//                        valueProvider: .init(
-//                            provider: ColorValueProvider(model.color),
-//                            keypath: AnimationKeypath(keypath: Self.appIconFillKeyPath)
-//                        )
-                    )
-                    .frame(width: 248, height: 225)
-                    .onFirstAppear {
-//                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-//                            isAnimating = true
-//                        }
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(Copy.Tutorial.message)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
+                ),
+                content: AnyView( tutorialContentView ),
+                title: {
+                    Text(Copy.Tutorial.title)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.title)
+                        .multilineTextAlignment(.center)
+                },
+                actions: {
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                        Button(action: { skipAction(true) }) { Text(Copy.Buttons.gotIt) }
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                     }
                 }
+            )
+        }
 
-                Button(action: {
-                    showTutorialAction()
-                    showTutorial = true
-                }) { Text(Copy.Buttons.gotIt) }
-                .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+        private var tutorialContentView: some View {
+            return ZStack(alignment: .center) {
+                OnboardingRebrandingImages.AddToDock.tutorial
+                    .resizable()
+                    .scaledToFit()
+                    .padding(.horizontal, -3)
+//                LottieView(
+//                    lottieFile: "add-to-dock-promo"
+////                        isAnimating: $isAnimating,
+////                        animationImageProvider: model,
+////                        valueProvider: .init(
+////                            provider: ColorValueProvider(model.color),
+////                            keypath: AnimationKeypath(keypath: Self.appIconFillKeyPath)
+////                        )
+//                )
+//                //                .onFirstAppear {
+//                //                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//                //                            isAnimating = true
+//                //                        }
+//                //                }
             }
         }
     }

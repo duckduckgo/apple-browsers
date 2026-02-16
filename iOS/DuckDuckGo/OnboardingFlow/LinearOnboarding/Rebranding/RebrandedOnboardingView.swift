@@ -39,12 +39,38 @@ private enum BubbleBackedDialogMetrics {
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// A theme-driven layout container for rebranded onboarding dialog steps.
+    ///
+    /// `LinearDialogContentContainer` arranges dialog content into a standardised vertical
+    /// stack without applying any visual chrome (backgrounds, shadows, or mascot elements).
+    /// The outer visual container — typically an ``OnboardingBubbleView`` — is responsible
+    /// for the surrounding decoration; this view handles **inner layout only**.
+    ///
+    /// The layout is split into two top-level groups separated by ``Metrics/outerSpacing``:
+    ///
+    /// ```
+    /// ┌──────────────────────────┐
+    /// │  Title                   │  ← required
+    /// │  Message                 │  ← optional
+    /// ├──────────────────────────┤  ← outerSpacing
+    /// │  Content                 │  ← optional (e.g. image, picker)
+    /// │  Actions                 │  ← required (buttons)
+    /// └──────────────────────────┘
+    /// ```
+    ///
+    /// All spacing values are supplied through ``Metrics`` and should be sourced from the
+    /// current ``OnboardingTheme`` to stay consistent with the 2026 design system.
     struct LinearDialogContentContainer<Title: View, Actions: View>: View {
 
+        /// Spacing values that control the vertical gaps between each region of the container.
         struct Metrics {
+            /// Spacing between the text group (title + message) and the content group (content + actions).
             let outerSpacing: CGFloat
+            /// Spacing between the title and the optional message within the text group.
             let textSpacing: CGFloat
+            /// Spacing between the optional content and the actions within the content group.
             let contentSpacing: CGFloat
+            /// Additional top padding applied above the actions view.
             let actionsSpacing: CGFloat
         }
 
@@ -54,6 +80,15 @@ extension OnboardingRebranding.OnboardingView {
         private let title: Title
         private let actions: Actions
 
+        /// Creates a new dialog content container.
+        ///
+        /// - Parameters:
+        ///   - metrics: Spacing configuration sourced from the current onboarding theme.
+        ///   - message: An optional subtitle or description displayed below the title.
+        ///   - content: An optional main content area (e.g. an illustration, picker, or comparison table)
+        ///              displayed above the action buttons.
+        ///   - title: A view builder producing the primary heading.
+        ///   - actions: A view builder producing the call-to-action buttons.
         init(
             metrics: Metrics,
             message: AnyView? = nil,
@@ -83,7 +118,8 @@ extension OnboardingRebranding.OnboardingView {
                         content
                     }
 
-                    actions.padding(.top, metrics.actionsSpacing)
+                    actions
+                        .padding(.top, metrics.actionsSpacing)
                 }
             }
         }

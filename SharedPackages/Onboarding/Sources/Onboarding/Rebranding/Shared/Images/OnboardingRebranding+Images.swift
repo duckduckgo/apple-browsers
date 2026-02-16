@@ -39,7 +39,7 @@ public enum OnboardingRebrandingImages {
 
     public enum AddToDock {
         public static let promo = Image("Rebranding/AddToDock-Promo", bundle: .module)
-        public static let tutorialBazel = Image("Rebranding/AddToDock-TourBazel", bundle: .module)
+        public static let tutorial = Image("Rebranding/AddToDock-Tutorial", bundle: .module)
     }
 
     public enum SearchExperience {

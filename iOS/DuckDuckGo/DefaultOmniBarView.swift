@@ -25,12 +25,15 @@ import UIComponents
 
 public enum OmniBarIcon {
     case duckPlayer
+    case duckAI
     case specialError
 
     var image: UIImage {
         switch self {
         case .duckPlayer:
             return UIImage(resource: .duckPlayerURLIcon)
+        case .duckAI:
+            return DesignSystemImages.Color.Size24.aiChatGradient
         case .specialError:
             return DesignSystemImages.Glyphs.Size24.globe
         }

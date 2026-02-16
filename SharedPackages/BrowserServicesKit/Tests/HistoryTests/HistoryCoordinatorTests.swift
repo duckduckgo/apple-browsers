@@ -298,18 +298,22 @@ class HistoryCoordinatorTests: XCTestCase {
         let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL(string: "https://duckduckgo.com")!
+        let firstSaveExpectation = expectation(description: "Visit added")
+        historyStoringMock.saveCompletion = {
+            firstSaveExpectation.fulfill()
+        }
         historyCoordinator.addVisit(of: url)
+        await fulfillment(of: [firstSaveExpectation], timeout: 1.0)
 
         historyCoordinator.markFailedToLoadUrl(url)
 
-        let expectation = expectation(description: "Changes committed")
-        expectation.expectedFulfillmentCount = 2
+        let secondSaveExpectation = expectation(description: "Changes committed")
         historyStoringMock.saveCompletion = {
-            expectation.fulfill()
+            secondSaveExpectation.fulfill()
         }
         historyCoordinator.commitChanges(url: url)
 
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [secondSaveExpectation], timeout: 1.0)
 
         XCTAssertEqual(historyStoringMock.savedHistoryEntries.last?.url, url)
         XCTAssertEqual(historyStoringMock.savedHistoryEntries.last?.failedToLoad, true)

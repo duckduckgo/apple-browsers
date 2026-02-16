@@ -85,7 +85,7 @@ jobs:
           build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
           echo "app_version=${app_version}" >> $GITHUB_ENV
           echo "build_number=${build_number}" >> $GITHUB_ENV
-          
+
           lane_to_use="adhoc"
           if [[ "${{ github.event.inputs.build-type }}" == "Release" ]]; then
             lane_to_use="release_adhoc"
@@ -141,33 +141,71 @@ jobs:
           name: ${{ env.dsyms_filename }}
           path: ${{ env.dsyms_path }}
 
-      - name: Upload dSYM to S3
+      - name: Upload dSYMs to S3
+        id: upload-dsyms-to-s3
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
           AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
-          DSYM_S3_PATH: s3://${{ vars.DSYM_BUCKET_NAME }}/${{ vars.IOS_DSYM_BUCKET_PREFIX }}/
+          DSYM_LOCAL_PATH: "${{ env.dsyms_path }}"
+          DSYM_NAME: ${{ env.dsyms_filename }}
+          DSYM_URL_ROOT: ${{ vars.IPA_URL_ROOT }}
+          RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
+          RELEASE_BUCKET_PREFIX: ${{ vars.IOS_RELEASE_BUCKET_PREFIX }}
+          REVIEW_BUILDS_BUCKET_PREFIX: ${{ vars.REVIEW_BUILDS_BUCKET_PREFIX }}
         run: |
-          aws s3 cp "${{ env.dsyms_path }}" ${{ env.DSYM_S3_PATH }}
+          ref_sha="$(git rev-parse --short HEAD)"
+          test_build_s3_path="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/${REVIEW_BUILDS_BUCKET_PREFIX}/${ref_sha}/"
+          dsym_s3_path="${test_build_s3_path}${DSYM_NAME}"
+          echo "test-build-s3-path=${test_build_s3_path}" >> $GITHUB_OUTPUT
 
-      - name: Get Asana Task ID
-        if: inputs.asana-task-url
-        id: get-task-id
+          # Calculate the URL for the dSYM to report it later
+          s3_bucket_url="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/"
+          dsym_url="${dsym_s3_path/#${s3_bucket_url}/${DSYM_URL_ROOT}}" # replace S3 bucket url with CDN URL
+          echo "dsym-url=${dsym_url}" >> $GITHUB_OUTPUT
+          aws s3 cp $DSYM_LOCAL_PATH $dsym_s3_path --acl public-read
+          echo "dsym-s3-path=${dsym_s3_path}" >> $GITHUB_OUTPUT
+
+      - name: Upload IPA to S3
+        id: upload-ipa-to-s3
         env:
-          ASANA_TASK_URL: ${{ inputs.asana-task-url }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+          TEST_BUILD_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.test-build-s3-path }}
+          IPA_LOCAL_PATH: ${{ env.ipa_path }}
+          IPA_NAME: ${{ env.ipa_filename }}
+          IPA_URL_ROOT: ${{ vars.IPA_URL_ROOT }}
+          RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
+          RELEASE_BUCKET_PREFIX: ${{ vars.IOS_RELEASE_BUCKET_PREFIX }}
         run: |
-          task_id=$(echo "$ASANA_TASK_URL" \
-            | perl -pe 's|.*https://app.asana.com/0/[0-9]+/([0-9]+)(?:/f)?|\1|; \
-              s|.*https://app.asana.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+)(:?/[0-9a-z/]*)?(?:\?focus=true)?|\1|; \
-              s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)(?:\?focus=true)?|\1|'
-          )
-          echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
+          ipa_s3_path="${TEST_BUILD_S3_PATH}${IPA_NAME}"
 
-      - name: Upload IPA to Asana
-        if: inputs.asana-task-url
+          # Calculate the URL for the dSYM to report it later
+          s3_bucket_url="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/"
+          ipa_url="${ipa_s3_path/#${s3_bucket_url}/${IPA_URL_ROOT}}" # replace S3 bucket url with CDN URL
+          echo "ipa-url=${ipa_url}" >> $GITHUB_OUTPUT
+
+          aws s3 cp $IPA_LOCAL_PATH $ipa_s3_path --acl public-read
+          echo "ipa-s3-path=${ipa_s3_path}" >> $GITHUB_OUTPUT
+
+      - name: Report success
         env:
+          ASANA_TASK_URL: ${{ github.event.inputs.asana-task-url }}
+          IPA_URL: ${{ steps.upload-ipa-to-s3.outputs.ipa-url }}
+          IPA_S3_PATH: ${{ steps.upload-ipa-to-s3.outputs.ipa-s3-path }}
+          DSYM_URL: ${{ steps.upload-dsyms-to-s3.outputs.dsym-url }}
+          DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
+          WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
-          curl -s "https://app.asana.com/api/1.0/tasks/${{ steps.get-task-id.outputs.task_id }}/attachments" \
-            -H "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
-            --form "file=@${{ env.ipa_path }};type=application/zip"
+          echo "## Build Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [${IPA_S3_PATH}](${IPA_URL})" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [${DSYM_S3_PATH}](${DSYM_URL})" >> $GITHUB_STEP_SUMMARY
+
+          if [[ -n "$ASANA_TASK_URL" ]]; then
+            bundle exec fastlane run asana_add_comment \
+              task_url:"$ASANA_TASK_URL" \
+              comment:"New build is available at ${IPA_URL}."
+          fi

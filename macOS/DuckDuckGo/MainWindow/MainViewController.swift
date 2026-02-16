@@ -82,6 +82,8 @@ final class MainViewController: NSViewController {
         themeManager.theme
     }
 
+    private(set) var allowsUserInteraction: Bool = true
+
     var shouldShowBookmarksBar: Bool {
         return !isInPopUpWindow
         && bookmarksBarVisibilityManager.isBookmarksBarVisible
@@ -1162,6 +1164,23 @@ extension MainViewController {
         windowController.showWindow(nil)
     }
 
+}
+
+// MARK: - Preventing User Interaction
+
+extension MainViewController {
+
+    func userInteraction(prevented: Bool) {
+        allowsUserInteraction = !prevented
+        tabCollectionViewModel.changesEnabled = !prevented
+        tabCollectionViewModel.selectedTabViewModel?.tab.contentChangeEnabled = !prevented
+
+        tabBarViewController.fireButton.isEnabled = !prevented
+        tabBarViewController.isInteractionPrevented = prevented
+
+        navigationBarViewController.userInteraction(prevented: prevented)
+        bookmarksBarViewController.userInteraction(prevented: prevented)
+    }
 }
 
 // MARK: - Performance Testing

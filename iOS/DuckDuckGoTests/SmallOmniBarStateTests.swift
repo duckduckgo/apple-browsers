@@ -542,6 +542,46 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(isEnabledWithMenuSetting)
     }
     
+    // MARK: - AI Chat Tab Mode State Tests
+
+    func testWhenInAIChatTabModeStateThenCorrectButtonsAreShown() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = SmallOmniBarState.AIChatTabModeState(dependencies: dependencies, isLoading: false)
+
+        XCTAssertTrue(testee.showBackground)
+        XCTAssertTrue(testee.showPrivacyIcon)
+        XCTAssertFalse(testee.showClear)
+        XCTAssertFalse(testee.showMenu)
+        XCTAssertFalse(testee.showSettings)
+        XCTAssertFalse(testee.showCancel)
+        XCTAssertFalse(testee.showSearchLoupe)
+        XCTAssertFalse(testee.showAbort)
+        XCTAssertTrue(testee.showRefresh)
+        XCTAssertTrue(testee.showCustomizableButton)
+        XCTAssertFalse(testee.showDismiss)
+        XCTAssertFalse(testee.showVoiceSearch)
+
+        XCTAssertFalse(testee.hasLargeWidth)
+        XCTAssertFalse(testee.showBackButton)
+        XCTAssertFalse(testee.showForwardButton)
+        XCTAssertFalse(testee.showBookmarksButton)
+        XCTAssertFalse(testee.showAIChatButton)
+        XCTAssertFalse(testee.allowsTrackersAnimation)
+        XCTAssertTrue(testee.isBrowsing)
+    }
+
+    func testWhenInAIChatTabModeStateThenTransitionsToPadAIChatModeState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = SmallOmniBarState.AIChatTabModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.onEnterPadState is LargeOmniBarState.AIChatModeState)
+    }
+
+    func testWhenBrowsingStartsFromAIChatTabModeThenTransitionsToBrowsingNonEditingState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = SmallOmniBarState.AIChatTabModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertEqual(testee.onBrowsingStartedState.name, SmallOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false).name)
+    }
+
     // MARK: - AI Chat Mode State Tests
 
     func testWhenInAIChatModeStateThenCorrectPropertiesAreSet() {
@@ -652,7 +692,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertEqual(targetState.name, (SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)).name)
     }
 
-    func testWhenEnteringPadStateFromAIChatModeThenMaintainsAIChatMode() {
+    func testWhenEnteringPadStateFromAIChatModeThenTransitionsToLargeAIChatModeState() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
         let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
@@ -661,7 +701,7 @@ class SmallOmniBarStateTests: XCTestCase {
         let targetState = sut.onEnterPadState
 
         // Then
-        XCTAssertTrue(targetState is SmallOmniBarState.AIChatModeState)
+        XCTAssertTrue(targetState is LargeOmniBarState.AIChatModeState)
     }
 
     func testWhenEnteringPhoneStateFromAIChatModeThenMaintainsAIChatMode() {

@@ -218,4 +218,72 @@ final class SupportedOSCheckerTests: XCTestCase {
         }
         XCTAssertEqual(version, "12.3")
     }
+
+    // MARK: - Hardware OS Support Tests
+
+    func testWhenModelSupportsNewerOSThanCurrentThenCapable() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        let sequoiaVersion = 15
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.venturaVersion,
+            hardwareModel: "MacBookPro18,3",
+            maxSupportedVersionByModelOverride: ["MacBookPro18,3": sequoiaVersion])
+
+        // Then
+        XCTAssertEqual(checker.osUpgradeCapability, .capable)
+    }
+
+    func testWhenModelMaxVersionEqualsCurrentThenIncapable() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.venturaVersion,
+            hardwareModel: "MacBookPro18,3",
+            maxSupportedVersionByModelOverride: ["MacBookPro18,3": Self.venturaVersion.majorVersion])
+
+        // Then
+        XCTAssertEqual(checker.osUpgradeCapability, .incapable)
+    }
+
+    func testWhenModelMaxVersionIsLowerThanCurrentThenIncapable() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.venturaVersion,
+            hardwareModel: "MacBookPro18,3",
+            maxSupportedVersionByModelOverride: ["MacBookPro18,3": Self.montereyVersion.majorVersion])
+
+        // Then
+        XCTAssertEqual(checker.osUpgradeCapability, .incapable)
+    }
+
+    func testWhenModelNotInLookupTableThenCapable() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.venturaVersion,
+            hardwareModel: "UnknownModel",
+            maxSupportedVersionByModelOverride: [:])
+
+        // Then
+        XCTAssertEqual(checker.osUpgradeCapability, .capable)
+    }
+
+    func testWhenNoHardwareModelThenUnknown() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.venturaVersion,
+            hardwareModel: nil,
+            maxSupportedVersionByModelOverride: [:])
+
+        // Then
+        XCTAssertEqual(checker.osUpgradeCapability, .unknown)
+    }
 }

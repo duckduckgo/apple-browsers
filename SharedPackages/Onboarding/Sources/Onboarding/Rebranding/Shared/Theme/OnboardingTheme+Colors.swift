@@ -47,6 +47,10 @@ public extension OnboardingTheme {
         public let primaryButtonBackgroundColor: Color
         /// Primary button foreground/text color.
         public let primaryButtonTextColor: Color
+        /// Secondary button background color.
+        public let secondaryButtonBackgroundColor: Color
+        /// Secondary button foreground/text color.
+        public let secondaryButtonTextColor: Color
 
         /// Creates a color palette for onboarding surfaces, text, and controls.
         public init(
@@ -61,6 +65,8 @@ public extension OnboardingTheme {
             optionsListTextColor: Color,
             primaryButtonBackgroundColor: Color,
             primaryButtonTextColor: Color,
+            secondaryButtonBackgroundColor: Color,
+            secondaryButtonTextColor: Color
         ) {
             self.background = background
             self.bubbleBorder = bubbleBorder
@@ -73,6 +79,39 @@ public extension OnboardingTheme {
             self.optionsListTextColor = optionsListTextColor
             self.primaryButtonBackgroundColor = primaryButtonBackgroundColor
             self.primaryButtonTextColor = primaryButtonTextColor
+            self.secondaryButtonBackgroundColor = secondaryButtonBackgroundColor
+            self.secondaryButtonTextColor = secondaryButtonTextColor
+        }
+
+        /// Backward-compatible initializer for themes that do not define dedicated secondary button colors.
+        public init(
+            background: Color,
+            bubbleBorder: Color,
+            bubbleBackground: Color,
+            bubbleShadow: Color,
+            textPrimary: Color,
+            textSecondary: Color,
+            optionsListBorderColor: Color,
+            optionsListIconColor: Color,
+            optionsListTextColor: Color,
+            primaryButtonBackgroundColor: Color,
+            primaryButtonTextColor: Color
+        ) {
+            self.init(
+                background: background,
+                bubbleBorder: bubbleBorder,
+                bubbleBackground: bubbleBackground,
+                bubbleShadow: bubbleShadow,
+                textPrimary: textPrimary,
+                textSecondary: textSecondary,
+                optionsListBorderColor: optionsListBorderColor,
+                optionsListIconColor: optionsListIconColor,
+                optionsListTextColor: optionsListTextColor,
+                primaryButtonBackgroundColor: primaryButtonBackgroundColor,
+                primaryButtonTextColor: primaryButtonTextColor,
+                secondaryButtonBackgroundColor: primaryButtonBackgroundColor,
+                secondaryButtonTextColor: primaryButtonTextColor
+            )
         }
     }
 

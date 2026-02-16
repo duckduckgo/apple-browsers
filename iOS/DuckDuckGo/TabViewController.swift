@@ -40,7 +40,6 @@ import SpecialErrorPages
 import VPN
 import Onboarding
 import os.log
-import Navigation
 import Subscription
 import WKAbstractions
 import SERPSettings
@@ -1892,8 +1891,9 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
               
-        /// Never show onboarding Dax on Youtube or DuckPlayer, unless DuckPlayer is disabled
+        /// Never show onboarding Dax on Duck.ai, Youtube or DuckPlayer (unless DuckPlayer is disabled)
         guard let url = link?.url,
+              !url.isDuckAIURL,
               !url.isDuckPlayer,
               !(url.isYoutube && duckPlayerNavigationHandler.duckPlayer.settings.mode != .disabled) else {
             scheduleTrackerNetworksAnimation(collapsing: true)
@@ -3035,7 +3035,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autofillUserScript.vaultDelegate = vaultManager
         userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
         userScripts.faviconScript.delegate = faviconUpdater
-        userScripts.printingUserScript.delegate = self
+        userScripts.printingSubfeature.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
         userScripts.contentScopeUserScript.delegate = self
@@ -3152,12 +3152,22 @@ extension TabViewController: SurrogatesUserScriptDelegate {
 
 }
 
-// MARK: - PrintingUserScriptDelegate
-extension TabViewController: PrintingUserScriptDelegate {
+// MARK: - PrintingSubfeatureDelegate
+extension TabViewController: PrintingSubfeatureDelegate {
 
-    func printingUserScriptDidRequestPrintController(_ script: PrintingUserScript) {
+    func printingSubfeatureDidRequestPrint(for frameHandle: Any?, in webView: WKWebView?) {
+        // Use explicit if-let to avoid type inference issues with IUO (WKWebView!)
+        let targetWebView: WKWebView
+        if let providedWebView = webView {
+            targetWebView = providedWebView
+        } else if let ownWebView = self.webView {
+            targetWebView = ownWebView
+        } else {
+            return
+        }
+
         let controller = UIPrintInteractionController.shared
-        controller.printFormatter = webView.viewPrintFormatter()
+        controller.printFormatter = targetWebView.viewPrintFormatter()
         controller.present(animated: true, completionHandler: nil)
     }
 

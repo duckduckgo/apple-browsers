@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DuckUI
 import Onboarding
 
 extension OnboardingRebranding.OnboardingView {
@@ -25,27 +26,35 @@ extension OnboardingRebranding.OnboardingView {
     struct SearchExperienceContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
+        private var animateTitle: Binding<Bool>
+        private var isSkipped: Binding<Bool>
         private let action: () -> Void
 
+        @State private var showContent = false
         @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
 
-        init(action: @escaping () -> Void) {
+        init(animateTitle: Binding<Bool> = .constant(true),
+             isSkipped: Binding<Bool>,
+             action: @escaping () -> Void) {
+            self.animateTitle = animateTitle
+            self.isSkipped = isSkipped
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
-                Text(UserText.Onboarding.SearchExperience.title)
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.title)
-                    .multilineTextAlignment(.center)
+                AnimatableTypingText(UserText.Onboarding.SearchExperience.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
+                    showContent = true
+                }
+                .foregroundColor(.primary)
+                .font(SearchExperienceContentMetrics.titleFont)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     RebrandedOnboardingView.OnboardingSearchExperiencePicker(viewModel: viewModel)
 
                     Text(AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()))
-                        .foregroundColor(onboardingTheme.colorPalette.textSecondary)
-                        .font(onboardingTheme.typography.small)
+                        .foregroundColor(.secondary)
+                        .font(.footnote)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Button(action: {
@@ -54,10 +63,18 @@ extension OnboardingRebranding.OnboardingView {
                     }) {
                         Text(UserText.Onboarding.SearchExperience.cta)
                     }
-                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+                    .buttonStyle(PrimaryButtonStyle())
                 }
+                .padding(.top, 8)
+                .visibility(showContent ? .visible : .invisible)
             }
         }
     }
 
+}
+
+private enum SearchExperienceContentMetrics {
+    static let titleFont = Font.system(size: 20, weight: .semibold)
+    static let messageFont = Font.system(size: 16)
+    static let additionalTopMargin: CGFloat = 0
 }

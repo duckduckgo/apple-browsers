@@ -274,7 +274,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
     case aiChatAutoAttachContextByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
@@ -313,7 +313,7 @@ public enum FeatureFlag: String {
     /// Test-only experiment for verifying UI test experiment override mechanism.
     /// Used in Debug > UI Test Overrides screen.
     case uiTestExperiment
-    
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
 
@@ -328,6 +328,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true
     case webExtensions
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692854?focus=true
+    case supportsSyncChatsDeletion
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -445,7 +448,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .freeTrialConversionWideEvent,
              .uiTestExperiment,
              .onboardingRebranding,
-             .webExtensions:
+             .webExtensions,
+             .supportsSyncChatsDeletion:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -691,6 +695,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .webExtensions:
             return .internalOnly()
+        case .supportsSyncChatsDeletion:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         }
     }
 }

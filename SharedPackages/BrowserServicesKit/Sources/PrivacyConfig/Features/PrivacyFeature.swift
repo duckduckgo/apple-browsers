@@ -377,6 +377,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
     case iPadDuckaiOnTab
+
+    /// Controls deletion of Synced chats
+    case supportsSyncChatsDeletion
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

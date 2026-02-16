@@ -265,7 +265,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
     case memoryUsageReporting
 
-    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case aiChatSync
 
     /// Autoconsent heuristic action experiment
@@ -293,6 +293,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
+    case supportsSyncChatsDeletion
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -419,7 +422,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .nextStepsListWidget,
                 .nextStepsListAdvancedCardOrdering,
                 .wideEventPostEndpoint,
-                .freeTrialConversionWideEvent:
+                .freeTrialConversionWideEvent,
+                .supportsSyncChatsDeletion:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -604,6 +608,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
         case .freeTrialConversionWideEvent:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
+        case .supportsSyncChatsDeletion:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         }
     }
 }

@@ -927,17 +927,21 @@ extension Pixel {
         case syncBookmarksObjectLimitExceededDaily
         case syncCredentialsObjectLimitExceededDaily
         case syncCreditCardsObjectLimitExceededDaily
+        case syncAiChatsObjectLimitExceededDaily
         case syncBookmarksRequestSizeLimitExceededDaily
         case syncCredentialsRequestSizeLimitExceededDaily
         case syncCreditCardsRequestSizeLimitExceededDaily
+        case syncAiChatsRequestSizeLimitExceededDaily
         case syncBookmarksTooManyRequestsDaily
         case syncCredentialsTooManyRequestsDaily
         case syncCreditCardsTooManyRequestsDaily
         case syncSettingsTooManyRequestsDaily
+        case syncAiChatsTooManyRequestsDaily
         case syncBookmarksValidationErrorDaily
         case syncCredentialsValidationErrorDaily
         case syncCreditCardsValidationErrorDaily
         case syncSettingsValidationErrorDaily
+        case syncAiChatsValidationErrorDaily
 
         case syncSentUnauthenticatedRequest
         case syncMetadataCouldNotLoadDatabase
@@ -952,6 +956,8 @@ extension Pixel {
         case syncSettingsFailed
         case syncSettingsMetadataUpdateFailed
         case syncSettingsPatchCompressionFailed
+        case syncAiChatsFailed
+        case syncAiChatsPatchCompressionFailed
         case syncSignupError
         case syncLoginError
         case syncLogoutError
@@ -2526,16 +2532,20 @@ extension Pixel.Event {
         case .syncBookmarksObjectLimitExceededDaily: return "m_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_sync_credentials_object_limit_exceeded_daily"
         case .syncCreditCardsObjectLimitExceededDaily: return "m_sync_credit_cards_object_limit_exceeded_daily"
+        case .syncAiChatsObjectLimitExceededDaily: return "m_sync_ai_chats_object_limit_exceeded_daily"
         case .syncBookmarksRequestSizeLimitExceededDaily: return "m_sync_bookmarks_request_size_limit_exceeded_daily"
         case .syncCredentialsRequestSizeLimitExceededDaily: return "m_sync_credentials_request_size_limit_exceeded_daily"
         case .syncCreditCardsRequestSizeLimitExceededDaily: return "m_sync_credit_cards_request_size_limit_exceeded_daily"
+        case .syncAiChatsRequestSizeLimitExceededDaily: return "m_sync_ai_chats_request_size_limit_exceeded_daily"
         case .syncBookmarksTooManyRequestsDaily: return "m_sync_bookmarks_too_many_requests_daily"
         case .syncCredentialsTooManyRequestsDaily: return "m_sync_credentials_too_many_requests_daily"
         case .syncCreditCardsTooManyRequestsDaily: return "m_sync_credit_cards_too_many_requests_daily"
+        case .syncAiChatsTooManyRequestsDaily: return "m_sync_ai_chats_too_many_requests_daily"
         case .syncSettingsTooManyRequestsDaily: return "m_sync_settings_too_many_requests_daily"
         case .syncBookmarksValidationErrorDaily: return "m_sync_bookmarks_validation_error_daily"
         case .syncCredentialsValidationErrorDaily: return "m_sync_credentials_validation_error_daily"
         case .syncCreditCardsValidationErrorDaily: return "m_sync_credit_cards_validation_error_daily"
+        case .syncAiChatsValidationErrorDaily: return "m_sync_ai_chats_validation_error_daily"
         case .syncSettingsValidationErrorDaily: return "m_sync_settings_validation_error_daily"
 
         case .syncSentUnauthenticatedRequest: return "m_d_sync_sent_unauthenticated_request"
@@ -2548,6 +2558,8 @@ extension Pixel.Event {
         case .syncCreditCardsProviderInitializationFailed: return "m_d_sync_credit_cards_provider_initialization_failed"
         case .syncCreditCardsFailed: return "m_d_sync_credit_cards_failed"
         case .syncCreditCardsPatchCompressionFailed: return "m_d_sync_credit_cards_patch_compression_failed"
+        case .syncAiChatsFailed: return "m_d_sync_ai_chats_failed"
+        case .syncAiChatsPatchCompressionFailed: return "m_d_sync_ai_chats_patch_compression_failed"
         case .syncSettingsFailed: return "m_d_sync_settings_failed"
         case .syncSettingsMetadataUpdateFailed: return "m_d_sync_settings_metadata_update_failed"
         case .syncSettingsPatchCompressionFailed: return "m_d_sync_settings_patch_compression_failed"
@@ -3339,6 +3351,10 @@ public extension Pixel.Event {
         case settingToggled(to: Bool)
         case matchesApiTimeout
         case failedToDownloadInitialDataSets(category: ThreatKind, type: DataManager.StoredDataType.Kind)
+        case singleDataSetUpdatePerformance(MaliciousSiteProtection.SingleDataSetUpdatePerformanceInfo)
+        case singleDataSetUpdateDiskUsage(MaliciousSiteProtection.SingleDataSetUpdateDiskUsageInfo)
+        case aggregateDataSetUpdatePerformance(MaliciousSiteProtection.AggregateDataSetPerformanceInfo)
+        case aggregateDataSetUpdateDiskUsage(MaliciousSiteProtection.AggregateDataSetUpdateDiskUsageInfo)
 
         public init?(_ pixelKitEvent: MaliciousSiteProtection.Event) {
             switch pixelKitEvent {
@@ -3356,6 +3372,14 @@ public extension Pixel.Event {
                 return nil
             case .failedToDownloadInitialDataSets(category: let category, type: let type):
                 self = .failedToDownloadInitialDataSets(category: category, type: type)
+            case .singleDataSetUpdatePerformance(let dataSetUpdateInfo):
+                self = .singleDataSetUpdatePerformance(dataSetUpdateInfo)
+            case .singleDataSetUpdateDiskUsage(let dataSetUpdateInfo):
+                self = .singleDataSetUpdateDiskUsage(dataSetUpdateInfo)
+            case .aggregateDataSetUpdatePerformance(let aggregateDataSetsUpdateInfo):
+                self = .aggregateDataSetUpdatePerformance(aggregateDataSetsUpdateInfo)
+            case .aggregateDataSetUpdateDiskUsage(let aggregateDataSetsUpdateInfo):
+                self = .aggregateDataSetUpdateDiskUsage(aggregateDataSetsUpdateInfo)
             }
         }
 
@@ -3373,12 +3397,20 @@ public extension Pixel.Event {
                 return MaliciousSiteProtection.Event.matchesApiTimeout
             case .failedToDownloadInitialDataSets(let category, let type):
                 return MaliciousSiteProtection.Event.failedToDownloadInitialDataSets(category: category, type: type)
+            case .singleDataSetUpdatePerformance(let info):
+                return MaliciousSiteProtection.Event.singleDataSetUpdatePerformance(info)
+            case .singleDataSetUpdateDiskUsage(let info):
+                return MaliciousSiteProtection.Event.singleDataSetUpdateDiskUsage(info)
+            case .aggregateDataSetUpdatePerformance(let info):
+                return MaliciousSiteProtection.Event.aggregateDataSetUpdatePerformance(info)
+            case .aggregateDataSetUpdateDiskUsage(let info):
+                return MaliciousSiteProtection.Event.aggregateDataSetUpdateDiskUsage(info)
             }
         }
 
         var name: String {
             switch self {
-            case .failedToDownloadInitialDataSets:
+            case .failedToDownloadInitialDataSets, .singleDataSetUpdatePerformance, .singleDataSetUpdateDiskUsage, .aggregateDataSetUpdatePerformance, .aggregateDataSetUpdateDiskUsage:
                 return "debug_\(event.name)"
             default:
                 return event.name

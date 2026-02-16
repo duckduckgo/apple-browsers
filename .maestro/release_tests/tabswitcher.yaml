@@ -53,6 +53,8 @@ tags:
 - tapOn: "Done"
 
 - tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element: "Bookmarks"
 - tapOn: "Bookmarks"
 - assertVisible: "Privacy Test Pages - Home"
 - assertVisible: "Ad Click Flow"

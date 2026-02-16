@@ -42,6 +42,8 @@ tags:
 # Verify site has been bookmarked
 - assertVisible: "Browsing menu"
 - tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element: "Bookmarks"
 - assertVisible: "Bookmarks"
 - tapOn: "Bookmarks"
 - assertVisible: "Privacy Test Pages - Home"

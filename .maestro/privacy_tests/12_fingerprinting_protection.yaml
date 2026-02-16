@@ -27,6 +27,8 @@ tags:
 # Verify site has been bookmarked
 - assertVisible: "Browsing menu"
 - tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element: "Bookmarks"
 - assertVisible: "Bookmarks"
 - tapOn: "Bookmarks"
 - assertVisible: "DuckDuckGo - Protection. Privacy. Peace of mind."
@@ -61,6 +63,8 @@ tags:
 
 # Run the bookmarklet
 - tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element: "Bookmarks"
 - tapOn: "Bookmarks"
 - tapOn: "DuckDuckGo - Protection. Privacy. Peace of mind."
 
@@ -71,6 +75,8 @@ tags:
 
 # Delete bookmark
 - tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element: "Bookmarks"
 - tapOn: "Bookmarks"
 - tapOn: "Edit"
 - tapOn: "chevron"

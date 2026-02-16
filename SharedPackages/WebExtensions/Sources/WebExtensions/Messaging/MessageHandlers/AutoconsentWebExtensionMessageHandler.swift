@@ -182,11 +182,27 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
         Logger.webExtensions.debug("📦 Get Resource If New - name: \(requestedResource), version: \(requestedVersion)")
 
-        guard let privacyConfigData = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig) else {
+        guard requestedResource == "config" else {
+            return .success(Self.successResponse)
+        }
+        switch requestedResource {
+        case "config":
+            return privacyConfigIfNewerThan(lastVersion: requestedVersion)
+        default:
+            // TODO: add error for unsupported resource type
             return .failure(WebExtensionMessageHandlerError.missingParameter("add another error for missing config or smth"))
         }
 
-        if privacyConfigData.version == requestedVersion {
+    }
+
+    private func privacyConfigIfNewerThan(lastVersion: String) -> WebExtensionMessageResult {
+        guard let privacyConfigData = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig),
+              let currentVersion = privacyConfigData.version else {
+            // TODO: add error for error reading privacy config data
+            return .failure(WebExtensionMessageHandlerError.missingParameter("add another error for missing config or smth"))
+        }
+
+        if currentVersion == lastVersion {
             return .success([
                 "updated": false
             ])
@@ -194,7 +210,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return .success([
                 "updated": true,
                 "data": privacyConfigData.toJSONDictionary(),
-                "version": privacyConfigData.version
+                "version": currentVersion
             ])
         }
     }

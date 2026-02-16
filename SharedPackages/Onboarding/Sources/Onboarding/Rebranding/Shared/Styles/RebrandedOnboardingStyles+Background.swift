@@ -79,7 +79,7 @@ extension OnboardingRebranding.OnboardingStyles {
                     backgroundType.image
                         .resizable()
                         .scaledToFit()
-                        .frame(maxHeight: Self.maxHeightMetrics)
+                        .frame(maxHeight: maxHeightMetrics)
                         .background(
                             GeometryReader { proxy in
                                 Color.clear
@@ -100,10 +100,10 @@ extension OnboardingRebranding.OnboardingStyles {
         private static let maxHeightMetricsBuilder = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200)
         #endif
 
-        static var maxHeightMetrics: CGFloat? {
+        var maxHeightMetrics: CGFloat? {
             #if os(iOS)
             // iOS uses responsive metrics based on device type
-            return maxHeightMetricsBuilder.build()
+            return Self.maxHeightMetricsBuilder.build(v: vSizeClass, h: hSizeClass)
             #else
             // macOS: Fixed value. Customise when implementing macOS contextual onboarding.
             return nil

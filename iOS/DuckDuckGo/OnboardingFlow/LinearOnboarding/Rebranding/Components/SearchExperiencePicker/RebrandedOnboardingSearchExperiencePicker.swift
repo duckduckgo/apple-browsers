@@ -104,10 +104,13 @@ private struct RadioIndicator: View {
             }
         } else {
             Circle()
-                .fill(Color.primary.opacity(PickerMetrics.radioFillOpacity))
+                .fill(onboardingTheme.colorPalette.textPrimary.opacity(PickerMetrics.radioFillOpacity))
                 .overlay(
                     Circle()
-                        .stroke(Color.primary.opacity(PickerMetrics.radioStrokeOpacity), lineWidth: PickerMetrics.radioStrokeWidth)
+                        .stroke(
+                            onboardingTheme.colorPalette.textPrimary.opacity(PickerMetrics.radioStrokeOpacity),
+                            lineWidth: PickerMetrics.radioStrokeWidth
+                        )
                 )
         }
     }

@@ -44,11 +44,16 @@ struct AutofillViews {
                     Button {
                         action()
                     } label: {
-                        Image.close
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: Const.Size.closeButtonSize, height: Const.Size.closeButtonSize)
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                        ZStack {
+                            Circle()
+                                .fill(Color(designSystemColor: .controlsFillPrimary))
+                                .frame(width: Const.Size.closeButtonSize, height: Const.Size.closeButtonSize)
+                            Image.close
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: Const.Size.closeButtonIconSize, height: Const.Size.closeButtonIconSize)
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                        }
                     }
                     .frame(width: Const.Size.closeButtonTappableArea, height: Const.Size.closeButtonTappableArea)
                     .contentShape(Rectangle())
@@ -80,6 +85,19 @@ struct AutofillViews {
         }
     }
 
+    struct SemiboldHeadline: View {
+        let title: String
+
+        var body: some View {
+            Text(title)
+                .daxHeadline()
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .frame(maxWidth: Const.Size.maxWidth)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     struct Description: View {
         let text: String
 
@@ -97,27 +115,48 @@ struct AutofillViews {
         let text: String
 
         var body: some View {
-            (Text("\(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)) ").baselineOffset(-1.0)
-                +
-                Text(text))
-            .daxFootnoteRegular()
-            .foregroundColor(Color(designSystemColor: .textSecondary))
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: Const.Size.maxWidth)
+            (iconText + Text(text))
+                .font(Font(UIFont.daxFootnoteRegular()))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: Const.Size.maxWidth)
+        }
+
+        private var iconText: Text {
+            Text("\(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)) ").baselineOffset(-1.0)
+        }
+    }
+
+    struct SecureDescriptionVariant: View {
+        let text: String
+
+        var body: some View {
+            Text(text)
+                .daxSubheadRegular()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: Const.Size.maxWidth)
         }
     }
 
     struct PrimaryButton: View {
         let title: String
+        var image: Image?
         let action: () -> Void
 
         var body: some View {
             Button {
                 action()
             } label: {
-                Text(title)
-                    .daxButton()
+                HStack(spacing: 8) {
+                    if let image {
+                        image
+                    }
+                    Text(title)
+                        .daxButton()
+                }
             }
             .buttonStyle(PrimaryButtonStyle())
         }
@@ -240,7 +279,8 @@ extension View {
 private enum Const {
     enum Size {
         static let closeButtonPadding: CGFloat = 5.0
-        static let closeButtonSize: CGFloat = 24.0
+        static let closeButtonSize: CGFloat = 32.0
+        static let closeButtonIconSize: CGFloat = 24.0
         static let closeButtonTappableArea: CGFloat = 44.0
         static let logoImage: CGFloat = 20.0
         static let buttonCornerRadius: CGFloat = 12.0

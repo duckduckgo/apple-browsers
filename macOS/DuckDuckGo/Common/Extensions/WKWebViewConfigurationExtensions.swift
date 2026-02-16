@@ -86,7 +86,7 @@ private extension WKWebViewConfiguration {
     static let processNameKey: String = "processDisplayName"
 
     var supportsProcessNameSelector: Bool {
-        responds(to: NSSelectorFromString("_" + Self.processNameKey))
+        responds(to: NSSelectorFromString("_" + Self.processNameKey)) || responds(to: NSSelectorFromString(Self.processNameKey))
     }
 
     var systemProcessName: String? {

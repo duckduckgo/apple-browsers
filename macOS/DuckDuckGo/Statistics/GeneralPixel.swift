@@ -1668,6 +1668,7 @@ enum GeneralPixel: PixelKitEvent {
                 .syncDuckAddressOverride,
                 .syncSuccessRateDaily,
                 .syncLocalTimestampResolutionTriggered,
+                .syncAiChatTokenRequestedDaily,
                 .syncBookmarksObjectLimitExceededDaily,
                 .syncCredentialsObjectLimitExceededDaily,
                 .syncCreditCardsObjectLimitExceededDaily,

@@ -170,38 +170,41 @@ extension OnboardingRebranding {
 
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
             GeometryReader { geometry in
-                VStack(alignment: .center) {
-                    if let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type) {
-                        bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
-                            .frame(width: geometry.size.width, alignment: .center)
-                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
-                    } else {
-                        DaxDialogView(
-                            logoPosition: .top,
-                            matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
-                            showDialogBox: $model.introState.showDaxDialogBox,
-                            onTapGesture: {
-                                model.tapped()
-                            },
-                            content: {
-                                switch state.type {
-                                case .browsersComparisonDialog:
-                                    EmptyView()
-                                case .addToDockPromoDialog:
-                                    addToDockPromoView
-                                case .chooseAppIconDialog:
-                                    appIconPickerView
-                                default:
-                                    EmptyView()
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .center) {
+                        if let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type) {
+                            bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
+                                .frame(width: geometry.size.width, alignment: .center)
+                                .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
+                        } else {
+                            DaxDialogView(
+                                logoPosition: .top,
+                                matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
+                                showDialogBox: $model.introState.showDaxDialogBox,
+                                onTapGesture: {
+                                    model.tapped()
+                                },
+                                content: {
+                                    switch state.type {
+                                    case .browsersComparisonDialog:
+                                        EmptyView()
+                                    case .addToDockPromoDialog:
+                                        addToDockPromoView
+                                    case .chooseAppIconDialog:
+                                        appIconPickerView
+                                    default:
+                                        EmptyView()
+                                    }
                                 }
+                            )
+                            .frame(width: geometry.size.width, alignment: .center)
+                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin)
+                            .onAppear {
+                                model.introState.showDaxDialogBox = true
                             }
-                        )
-                        .frame(width: geometry.size.width, alignment: .center)
-                        .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin)
-                        .onAppear {
-                            model.introState.showDaxDialogBox = true
                         }
                     }
+                    .frame(minHeight: geometry.size.height, alignment: .top)
                 }
             }
             .padding()

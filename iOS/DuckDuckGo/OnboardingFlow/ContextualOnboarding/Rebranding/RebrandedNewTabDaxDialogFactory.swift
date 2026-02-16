@@ -160,14 +160,35 @@ private extension RebrandedNewTabDaxDialogFactory {
 private extension RebrandedNewTabDaxDialogFactory {
 
     func createSubscriptionPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+        func createSubscriptionPromoMessage() -> AttributedString {
+            let fullText = String(
+                format: UserText.SubscriptionPromotionOnboarding.Promo.messageFormat,
+                UserText.SubscriptionPromotionOnboarding.Promo.optionalSubscriptionBold,
+                UserText.SubscriptionPromotionOnboarding.Promo.vpnBold,
+                UserText.SubscriptionPromotionOnboarding.Promo.privateAIBold
+            )
+
+            return AttributedString(fullText)
+        }
+
+        func createSubscriptionPromoMessageDeprecated() -> AttributedString {
+            let fullText = String(
+                format: UserText.SubscriptionPromotionOnboarding.Promo.messageFormatDeprecated,
+                UserText.SubscriptionPromotionOnboarding.Promo.vpnAndTwoMoreBold,
+                UserText.SubscriptionPromotionOnboarding.Promo.optionalSubscriptionBoldDeprecated
+            )
+
+            return AttributedString(fullText)
+        }
+
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
-        let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? UserText.SubscriptionPromotionOnboarding.Promo.message() : UserText.SubscriptionPromotionOnboarding.Promo.messageDeprecated()
+        let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
         let dismissText = "No Thanks"
 
         return FadeInView {
             OnboardingRebranding.OnboardingSubscriptionPromoDialog(
                 title: title,
-                message: AttributedString(message),
+                message: message,
                 proceedText: proceedButtonText,
                 dismissText: dismissText,
                 proceedAction: { [weak self] in

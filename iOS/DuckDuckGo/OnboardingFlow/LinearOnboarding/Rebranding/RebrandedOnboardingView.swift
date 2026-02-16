@@ -357,7 +357,7 @@ extension OnboardingRebranding {
                 )
             case .addToDockPromoDialog:
                 BubbleBackedDialogConfiguration(
-                    tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin,
                     isVisible: true,

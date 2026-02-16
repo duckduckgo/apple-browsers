@@ -101,12 +101,12 @@ extension OnboardingRebranding {
                 switch orientation {
                 case .verticalStack:
                     VStack(alignment: .leading, spacing: theme.contentSpacing) {
-                        TitleMessageStack(title: title, message: message, titleTextAlignment: titleTextAlignment, messageTextAlignment: messageTextAlignment)
+                        TitleMessageStack(title: title, message: message, titleBodyVerticalSpacing: theme.titleBodyVerticalSpacingVerticalLayout, titleTextAlignment: titleTextAlignment, messageTextAlignment: messageTextAlignment)
                         content
                     }
                 case let .horizontalStack(alignment):
                     HStack(alignment: alignment) {
-                        TitleMessageStack(title: title, message: message, titleTextAlignment: titleTextAlignment, messageTextAlignment: messageTextAlignment)
+                        TitleMessageStack(title: title, message: message, titleBodyVerticalSpacing: theme.titleBodyVerticalSpacingHorizontalLayout, titleTextAlignment: titleTextAlignment, messageTextAlignment: messageTextAlignment)
                         Spacer(minLength: theme.contentSpacing)
                         content
                     }
@@ -187,11 +187,13 @@ private extension OnboardingRebranding {
         let message: NSAttributedString
         #endif
 
+        let titleBodyVerticalSpacing: CGFloat
+
         var titleTextAlignment: TextAlignment?
         var messageTextAlignment: TextAlignment?
 
         var body: some View {
-            VStack(alignment: .leading, spacing: theme.contextualOnboardingMetrics.titleBodyVerticalSpacing) {
+            VStack(alignment: .leading, spacing: titleBodyVerticalSpacing) {
                 if let title {
                     let titleAlignment = titleTextAlignment ?? theme.contextualOnboardingMetrics.contextualTitleTextAlignment
                     StyledAttributedText(title)

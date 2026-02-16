@@ -107,7 +107,8 @@ public extension OnboardingTheme {
             contextualOnboardingMetrics: ContextualOnboardingMetrics(
                 containerPadding: containerPadding,
                 contentSpacing: 20,
-                titleBodyVerticalSpacing: 28,
+                titleBodyVerticalSpacingVerticalLayout: 28,
+                titleBodyVerticalSpacingHorizontalLayout: 10,
                 titleBodyInset: contextualTitleBodyContentInsets,
                 contextualTitleTextAlignment: .leading,
                 contextualBodyTextAlignment: .leading,

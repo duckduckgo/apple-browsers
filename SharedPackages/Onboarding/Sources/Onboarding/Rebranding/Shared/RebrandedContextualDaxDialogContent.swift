@@ -232,7 +232,7 @@ private struct StyledAttributedText: View {
 
 #if os(macOS)
 private struct StyledAttributedText: View {
-    private let nsAttributedString: NSAttributedString
+    private let attributedString: NSAttributedString
 
     init(_ attributedString: NSAttributedString) {
         self.attributedString = attributedString

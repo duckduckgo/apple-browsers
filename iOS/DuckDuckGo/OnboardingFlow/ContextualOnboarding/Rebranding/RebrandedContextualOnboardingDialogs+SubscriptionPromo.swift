@@ -59,7 +59,7 @@ extension OnboardingRebranding {
                                 }
                                 .buttonStyle(theme.primaryButtonStyle.style)
 
-                                Button(action: onManualDismiss) {
+                                Button(action: dismissAction) {
                                     Text(dismissText)
                                 }
                                 .buttonStyle(theme.secondaryButtonStyle.style)

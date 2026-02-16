@@ -34,6 +34,8 @@ private enum OnboardingViewCopy {
 private enum BubbleBackedDialogMetrics {
     static let introAdditionalTopMargin: CGFloat = 40
     static let browsersComparisonAdditionalTopMargin: CGFloat = 0
+    static let addressBarPositionAdditionalTopMargin: CGFloat = 0
+    static let searchExperienceAdditionalTopMargin: CGFloat = 0
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -102,28 +104,37 @@ extension OnboardingRebranding {
         static let daxGeometryEffectID = "DaxIcon"
 
         @Namespace var animationNamespace
+        @Environment(\.onboardingTheme) private var onboardingTheme
         @ObservedObject private var model: OnboardingIntroViewModel
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
         }
 
-        private enum BubbleTailDirection {
-            case leading
-            case trailing
-        }
-
+        /// Layout configuration for a bubble-backed onboarding dialog step.
+        ///
+        /// Each onboarding step that renders inside an ``OnboardingBubbleView`` uses this
+        /// configuration to control the bubble's tail position, vertical placement, visibility,
+        /// and whether a step progress indicator is shown.
+        ///
+        /// Steps that return `nil` from ``bubbleBackedDialogConfiguration(for:)`` fall through
+        /// to the legacy Dax dialog path instead.
         private struct BubbleBackedDialogConfiguration {
+            /// Horizontal offset of the bubble tail arrow from the leading/trailing edge.
             let tailOffset: CGFloat
-            let tailDirection: BubbleTailDirection
+            /// Which side the tail arrow points toward.
+            let tailDirection: OnboardingBubbleView<AnyView>.HorizontalTailDirection
+            /// Extra top padding added on top of the base minimum top margin.
             let additionalTopMargin: CGFloat
+            /// Whether the dialog content is visible (used for entrance sequencing).
             let isVisible: Bool
+            /// Whether to display the step progress indicator (e.g. "3 of 5").
             let showsStepCounter: Bool
         }
 
         var body: some View {
             ZStack(alignment: .topTrailing) {
-                OnboardingTheme.rebranding2026.colorPalette.background
+                onboardingTheme.colorPalette.background
                     .ignoresSafeArea()
 
                 switch model.state {
@@ -145,8 +156,8 @@ extension OnboardingRebranding {
             }
             .overlay(alignment: .topLeading) {
                 RebrandingBadge()
-                    .padding(.leading, OnboardingTheme.rebranding2026.linearOnboardingMetrics.rebrandingBadgeLeadingPadding)
-                    .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.rebrandingBadgeTopPadding)
+                    .padding(.leading, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeLeadingPadding)
+                    .padding(.top, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeTopPadding)
             }
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
         }
@@ -157,7 +168,7 @@ extension OnboardingRebranding {
                     if let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type) {
                         bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
                             .frame(width: geometry.size.width, alignment: .center)
-                            .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
+                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
                     } else {
                         DaxDialogView(
                             logoPosition: .top,
@@ -170,17 +181,13 @@ extension OnboardingRebranding {
                                 switch state.type {
                                 case .chooseAppIconDialog:
                                     appIconPickerView
-                                case .chooseAddressBarPositionDialog:
-                                    addressBarPreferenceSelectionView
-                                case .chooseSearchExperienceDialog:
-                                    searchExperienceSelectionView
                                 default:
                                     EmptyView()
                                 }
                             }
                         )
                         .frame(width: geometry.size.width, alignment: .center)
-                        .padding(.top, OnboardingTheme.rebranding2026.linearOnboardingMetrics.minTopMargin)
+                        .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin)
                         .onAppear {
                             model.introState.showDaxDialogBox = true
                         }
@@ -247,42 +254,40 @@ extension OnboardingRebranding {
             return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
                 bubbleBackedDialogContent(for: state.type)
             }
-            .frame(maxWidth: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleMaxWidth)
+            .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth)
             .frame(maxWidth: .infinity, alignment: .center)
             .visibility(configuration.isVisible ? .visible : .invisible)
         }
 
+        @ViewBuilder
         private func makeBubbleView<Content: View>(
             configuration: BubbleBackedDialogConfiguration,
             stepInfo: ViewState.Intro.StepInfo?,
             @ViewBuilder content: @escaping () -> Content
-        ) -> AnyView {
-            let tailPosition: OnboardingBubbleView<Content>.TailPosition
-            switch configuration.tailDirection {
-            case .leading:
-                tailPosition = .bottom(offset: configuration.tailOffset, direction: .leading)
-            case .trailing:
-                tailPosition = .bottom(offset: configuration.tailOffset, direction: .trailing)
-            }
+        ) -> some View {
+            let tailPosition: OnboardingBubbleView<Content>.TailPosition = .bottom(
+                offset: configuration.tailOffset,
+                direction: configuration.tailDirection
+            )
 
             if let stepInfo {
-                return AnyView(OnboardingBubbleView.withStepProgressIndicator(
+                OnboardingBubbleView.withStepProgressIndicator(
                     tailPosition: tailPosition,
                     currentStep: stepInfo.currentStep,
                     totalSteps: stepInfo.totalSteps
                 ) {
                     content()
-                })
+                }
+            } else {
+                OnboardingBubbleView(
+                    tailPosition: tailPosition,
+                    contentInsets: onboardingTheme.linearBubbleMetrics.contentInsets,
+                    arrowLength: onboardingTheme.linearBubbleMetrics.arrowLength,
+                    arrowWidth: onboardingTheme.linearBubbleMetrics.arrowWidth
+                ) {
+                    content()
+                }
             }
-
-            return AnyView(OnboardingBubbleView(
-                tailPosition: tailPosition,
-                contentInsets: OnboardingTheme.rebranding2026.linearBubbleMetrics.contentInsets,
-                arrowLength: OnboardingTheme.rebranding2026.linearBubbleMetrics.arrowLength,
-                arrowWidth: OnboardingTheme.rebranding2026.linearBubbleMetrics.arrowWidth
-            ) {
-                content()
-            })
         }
 
         @ViewBuilder
@@ -294,6 +299,10 @@ extension OnboardingRebranding {
                 browsersComparisonView
             case .addToDockPromoDialog:
                 addToDockPromoView
+            case .chooseAddressBarPositionDialog:
+                addressBarPositionView
+            case .chooseSearchExperienceDialog:
+                searchExperienceSelectionView
             default:
                 EmptyView()
             }
@@ -303,7 +312,7 @@ extension OnboardingRebranding {
             switch type {
             case .startOnboardingDialog:
                 BubbleBackedDialogConfiguration(
-                    tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
                     isVisible: model.introState.showIntroViewContent,
@@ -311,7 +320,7 @@ extension OnboardingRebranding {
                 )
             case .browsersComparisonDialog:
                 BubbleBackedDialogConfiguration(
-                    tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.browsersComparisonAdditionalTopMargin,
                     isVisible: true,
@@ -322,6 +331,19 @@ extension OnboardingRebranding {
                     tailOffset: OnboardingTheme.rebranding2026.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.browsersComparisonAdditionalTopMargin,
+            case .chooseAddressBarPositionDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseSearchExperienceDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
                     isVisible: true,
                     showsStepCounter: true
                 )
@@ -353,23 +375,16 @@ extension OnboardingRebranding {
             .onboardingDaxDialogStyle()
         }
 
-        private var addressBarPreferenceSelectionView: some View {
+        private var addressBarPositionView: some View {
             AddressBarPositionContent(
-                animateTitle: $model.addressBarPositionContentState.animateTitle,
-                showContent: $model.addressBarPositionContentState.showContent,
-                isSkipped: $model.isSkipped,
                 action: model.selectAddressBarPositionAction
             )
-            .onboardingDaxDialogStyle()
         }
 
         private var searchExperienceSelectionView: some View {
             SearchExperienceContent(
-                animateTitle: $model.searchExperienceContentState.animateTitle,
-                isSkipped: $model.isSkipped,
                 action: model.selectSearchExperienceAction
             )
-            .onboardingDaxDialogStyle()
         }
 
         private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {

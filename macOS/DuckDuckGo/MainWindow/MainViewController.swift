@@ -424,8 +424,7 @@ final class MainViewController: NSViewController {
     func showBookmarkPromptIfNeeded() {
         guard !isInPopUpWindow,
               !bookmarksBarViewController.bookmarksBarPromptShown,
-              OnboardingActionsManager.isOnboardingFinished,
-              AppVersion.runType != .uiTests
+              OnboardingActionsManager.isOnboardingFinished
         else {
             return
         }

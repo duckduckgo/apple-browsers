@@ -251,14 +251,6 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-isOnboardingCompleted 1"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = " -ff.onboardingRebranding true"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-com.apple.CoreData.SQLDebug 1"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -271,12 +263,12 @@
          <EnvironmentVariable
             key = "ONBOARDING"
             value = "true"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "VARIANT"
             value = "ma"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
       </EnvironmentVariables>
       <LocationScenarioReference

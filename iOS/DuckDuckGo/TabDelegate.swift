@@ -22,6 +22,12 @@ import Core
 import BrowserServicesKit
 import PrivacyDashboard
 
+enum TabClosingBehavior {
+    case createEmptyTabAtSamePosition
+    case createOrReuseEmptyTab
+    case onlyClose
+}
+
 protocol TabDelegate: AnyObject {
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
@@ -38,7 +44,7 @@ protocol TabDelegate: AnyObject {
              inheritingAttribution: AdClickAttributionLogic.State?) -> WKWebView?
 
     func tabDidRequestClose(_ tab: Tab,
-                            shouldCreateEmptyTabAtSamePosition: Bool,
+                            behavior: TabClosingBehavior,
                             clearTabHistory: Bool)
 
     func tab(_ tab: TabViewController,
@@ -142,7 +148,7 @@ protocol TabDelegate: AnyObject {
 extension TabDelegate {
 
     func tabDidRequestClose(_ tab: TabViewController) {
-        tabDidRequestClose(tab.tabModel, shouldCreateEmptyTabAtSamePosition: false, clearTabHistory: true)
+        tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
     }
     
 }

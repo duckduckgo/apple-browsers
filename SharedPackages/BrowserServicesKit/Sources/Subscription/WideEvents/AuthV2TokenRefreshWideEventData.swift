@@ -30,7 +30,8 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         pixelName: "auth_v2_token_refresh",
         featureName: "authv2-token-refresh",
         mobileMetaType: "ios-authv2-token-refresh",
-        desktopMetaType: "macos-authv2-token-refresh"
+        desktopMetaType: "macos-authv2-token-refresh",
+        version: "1.0.0"
     )
 
     public var globalData: WideEventGlobalData

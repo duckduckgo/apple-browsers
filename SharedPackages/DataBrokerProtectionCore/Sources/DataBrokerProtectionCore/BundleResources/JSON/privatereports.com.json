@@ -1,7 +1,7 @@
 {
   "name": "PrivateReports",
   "url": "privatereports.com",
-  "version": "0.991.0",
+  "version": "0.992.0",
   "optOutUrl": "https://www.privatereports.com/optOut/name/landingPage",
   "steps": [
     {
@@ -155,6 +155,43 @@
             }
           ],
           "id": "945c717f-cb61-406f-a12c-3fafdac10bdc"
+        },
+        {
+          "actionType": "condition",
+          "_comment": "captcha is not always present at this stage",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#svg-captcha-rendering svg",
+              "failSilently": true
+            }
+          ],
+          "actions": [
+            {
+              "actionType": "getCaptchaInfo",
+              "captchaType": "image",
+              "selector": "#svg-captcha-rendering svg",
+              "id": "1f123c7a-aef4-ae11-bccc-0a11b2c3d4e5"
+            },
+            {
+              "actionType": "solveCaptcha",
+              "captchaType": "image",
+              "selector": "#svgCaptchaInputId",
+              "id": "fa1237a1-b1f3-ab11-ff16-3c1112223333"
+            },
+            {
+              "actionType": "click",
+              "failSilently": true,
+              "elements": [
+                {
+                  "type": "button",
+                  "selector": "#svgCaptchaButtonId"
+                }
+              ],
+              "id": "ec12d19f-2ba9-4255-af3d-86454aa91817"
+            }
+          ],
+          "id": "24156607-e720-4e68-b464-5eb2f75ba5a0"
         },
         {
           "actionType": "expectation",
@@ -706,6 +743,18 @@
             }
           ],
           "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        },
+        {
+          "actionType": "expectation",
+          "_comment": "repeated action to extend wait time for CF captchas to be solved",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//body[not(.//*[contains(@class, 'btn-primary')])]",
+              "failSilently": true
+            }
+          ],
+          "id": "3322b1c4-3f2d-4e6a-9b7c-2f1e8d5c6a7b"
         },
         {
           "actionType": "expectation",

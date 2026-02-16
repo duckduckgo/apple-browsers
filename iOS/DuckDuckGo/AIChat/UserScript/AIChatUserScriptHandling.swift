@@ -220,7 +220,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativeChatInput: defaults.supportsNativeChatInput,
             supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
-            supportsPageContext: aichatContextualModeFeature.isAvailable ? true : defaults.supportsPageContext,
+            supportsPageContext: supportsContextualMode,
             supportsAIChatFullMode: supportsFullMode,
             supportsAIChatContextualMode: supportsContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,

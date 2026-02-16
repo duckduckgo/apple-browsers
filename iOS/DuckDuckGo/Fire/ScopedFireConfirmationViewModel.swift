@@ -28,7 +28,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     
     private enum Keys {
         static let signOutWarningShowCount = "com.duckduckgo.fire.signOutWarningShowCount"
-        static let aiTabDescriptionShowCount = "com.duckduckgo.fire.aiTabDescriptionShowCount"
     }
     
     private static let maxSubtitleShowCount = 2
@@ -47,10 +46,12 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     private let keyValueStore: KeyValueStoring
     private let appSettings: AppSettings
     private let daxDialogsManager: DaxDialogsManaging
+    private let source: FireRequest.Source
     
     // MARK: - Initializer
     
     init(tabViewModel: TabViewModel?,
+         source: FireRequest.Source,
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          keyValueStore: KeyValueStoring = UserDefaults.standard,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
@@ -58,6 +59,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
          onConfirm: @escaping (FireRequest) -> Void,
          onCancel: @escaping () -> Void) {
         self.tabViewModel = tabViewModel
+        self.source = source
         self.downloadManager = downloadManager
         self.keyValueStore = keyValueStore
         self.appSettings = appSettings
@@ -83,10 +85,17 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         return shouldIncludeAIChat ? UserText.scopedFireConfirmationAlertTitleWithAIChat : UserText.scopedFireConfirmationAlertTitle
     }
     
+    var tabScopeButtonTitle: String {
+        guard let tab = tabViewModel?.tab, tab.isAITab else {
+            return UserText.scopedFireConfirmationDeleteThisTabButton
+        }
+        return UserText.scopedFireConfirmationDeleteThisChatButton
+    }
+    
     // MARK: - Public Functions
     
     func burnAllTabs() {
-        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all)
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: source)
         onConfirm(request)
     }
     
@@ -94,7 +103,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         guard let tabViewModel else {
             return
         }
-        let request = FireRequest(options: .all, trigger: .manualFire, scope: .tab(viewModel: tabViewModel))
+        let request = FireRequest(options: .all, trigger: .manualFire, scope: .tab(viewModel: tabViewModel), source: source)
         onConfirm(request)
     }
     
@@ -160,13 +169,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     }
     
     private func aiTabSubtitle() -> String? {
-        let showCount = keyValueStore.object(forKey: Keys.aiTabDescriptionShowCount) as? Int ?? 0
-        
-        guard showCount < Self.maxSubtitleShowCount else {
-            return nil
-        }
-        
-        keyValueStore.set(showCount + 1, forKey: Keys.aiTabDescriptionShowCount)
-        return UserText.scopedFireConfirmationDeleteThisTabDescription
+        return appSettings.autoClearAIChatHistory ? nil : UserText.scopedFireConfirmationDeleteThisChatDescription
     }
 }

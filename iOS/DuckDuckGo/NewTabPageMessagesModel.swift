@@ -32,17 +32,23 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let pixelFiring: PixelFiring.Type
     private let subscriptionDataReporter: SubscriptionDataReporting?
     private let messageActionHandler: RemoteMessagingActionHandling
+    private let imageLoader: RemoteMessagingImageLoading
+    private let pixelReporter: RemoteMessagingPixelReporting?
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
          pixelFiring: PixelFiring.Type = Pixel.self,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
-         messageActionHandler: RemoteMessagingActionHandling) {
+         messageActionHandler: RemoteMessagingActionHandling,
+         imageLoader: RemoteMessagingImageLoading,
+         pixelReporter: RemoteMessagingPixelReporting? = nil) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
         self.subscriptionDataReporter = subscriptionDataReporter
         self.messageActionHandler = messageActionHandler
+        self.imageLoader = imageLoader
+        self.pixelReporter = pixelReporter
     }
 
     func load() {
@@ -81,9 +87,10 @@ final class NewTabPageMessagesModel: ObservableObject {
         switch message {
         case .placeholder:
             return HomeMessageViewModel(messageId: "",
-                                        sendPixels: false,
                                         modelType: .small(titleText: "", descriptionText: ""),
-                                        messageActionHandler: messageActionHandler) { [weak self] _ in
+                                        messageActionHandler: messageActionHandler,
+                                        preloadedImage: nil,
+                                        loadRemoteImage: nil) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
                 // no-op
@@ -98,7 +105,9 @@ final class NewTabPageMessagesModel: ObservableObject {
 
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
                                                      with: subscriptionDataReporter,
-                                                     messageActionHandler: messageActionHandler) { @MainActor [weak self] action in
+                                                     messageActionHandler: messageActionHandler,
+                                                     imageLoader: imageLoader,
+                                                     pixelReporter: pixelReporter) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
 

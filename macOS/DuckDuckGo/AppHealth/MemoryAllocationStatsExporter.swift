@@ -39,9 +39,15 @@ enum MemoryAllocationStatsError: Error {
     case errorSavingSnapshot
 }
 
+/// Provides the current total used bytes from malloc zones.
+/// Conform to this protocol to mock allocation stats in tests.
+protocol MemoryAllocationStatsProviding {
+    func currentTotalUsedBytes() -> UInt64?
+}
+
 /// Exports the`MemoryAllocationStatsSnapshot` as calculated in a given time.
 ///
-final class MemoryAllocationStatsExporter {
+final class MemoryAllocationStatsExporter: MemoryAllocationStatsProviding {
 
     /// Exports a fresh MemoryAllocationStats to the specified URL
     ///
@@ -60,9 +66,15 @@ final class MemoryAllocationStatsExporter {
         try exportSnapshot(targetURL: targetURL)
         return targetURL
     }
+
+    /// Returns the current total used bytes across all malloc zones.
+    /// Returns `nil` if the stats cannot be read (e.g. zone access failure).
+    func currentTotalUsedBytes() -> UInt64? {
+        try? buildStatsSnapshot().totalUsedBytes
+    }
 }
 
-private extension MemoryAllocationStatsExporter {
+extension MemoryAllocationStatsExporter {
 
     func buildStatsSnapshot() throws -> MemoryAllocationStatsSnapshot {
         var zonesAddresses: UnsafeMutablePointer<vm_address_t>?

@@ -33,9 +33,10 @@ struct HomeMessageViewModelTests {
     ) -> HomeMessageViewModel {
         HomeMessageViewModel(
             messageId: "test-message",
-            sendPixels: true,
             modelType: modelType,
             messageActionHandler: mockActionHandler,
+            preloadedImage: nil,
+            loadRemoteImage: nil,
             onDidClose: onDidClose,
             onDidAppear: {},
             onAttachAdditionalParameters: nil
@@ -88,19 +89,19 @@ struct HomeMessageViewModelTests {
                 nil
             ),
             (
-                .medium(titleText: "", descriptionText: "", placeholder: .announce),
+                .medium(titleText: "", descriptionText: "", placeholder: .announce, imageUrl: nil),
                 RemotePlaceholder.announce.rawValue
             ),
             (
-                .bigSingleAction(titleText: "", descriptionText: "", placeholder: .criticalUpdate, primaryActionText: "", primaryAction: .dismiss),
+                .bigSingleAction(titleText: "", descriptionText: "", placeholder: .criticalUpdate, imageUrl: nil, primaryActionText: "", primaryAction: .dismiss),
                 RemotePlaceholder.criticalUpdate.rawValue
             ),
             (
-                .bigTwoAction(titleText: "", descriptionText: "", placeholder: .ddgAnnounce, primaryActionText: "", primaryAction: .dismiss, secondaryActionText: "", secondaryAction: .dismiss),
+                .bigTwoAction(titleText: "", descriptionText: "", placeholder: .ddgAnnounce, imageUrl: nil, primaryActionText: "", primaryAction: .dismiss, secondaryActionText: "", secondaryAction: .dismiss),
                 RemotePlaceholder.ddgAnnounce.rawValue
             ),
             (
-                .promoSingleAction(titleText: "", descriptionText: "", placeholder: .macComputer, actionText: "", action: .dismiss),
+                .promoSingleAction(titleText: "", descriptionText: "", placeholder: .macComputer, imageUrl: nil, actionText: "", action: .dismiss),
                 RemotePlaceholder.macComputer.rawValue
             )
         ] as [(HomeSupportedMessageDisplayType, String?)]
@@ -124,19 +125,19 @@ struct HomeMessageViewModelTests {
                 "Small Title"
             ),
             (
-                .medium(titleText: "Medium Title", descriptionText: "", placeholder: .announce),
+                .medium(titleText: "Medium Title", descriptionText: "", placeholder: .announce, imageUrl: nil),
                 "Medium Title"
             ),
             (
-                .bigSingleAction(titleText: "Big Single Title", descriptionText: "", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss),
+                .bigSingleAction(titleText: "Big Single Title", descriptionText: "", placeholder: .announce, imageUrl: nil, primaryActionText: "", primaryAction: .dismiss),
                 "Big Single Title"
             ),
             (
-                .bigTwoAction(titleText: "Big Two Title", descriptionText: "", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss, secondaryActionText: "", secondaryAction: .dismiss),
+                .bigTwoAction(titleText: "Big Two Title", descriptionText: "", placeholder: .announce, imageUrl: nil, primaryActionText: "", primaryAction: .dismiss, secondaryActionText: "", secondaryAction: .dismiss),
                 "Big Two Title"
             ),
             (
-                .promoSingleAction(titleText: "Promo Title", descriptionText: "", placeholder: .announce, actionText: "", action: .dismiss),
+                .promoSingleAction(titleText: "Promo Title", descriptionText: "", placeholder: .announce, imageUrl: nil, actionText: "", action: .dismiss),
                 "Promo Title"
             )
         ] as [(HomeSupportedMessageDisplayType, String)]
@@ -160,19 +161,19 @@ struct HomeMessageViewModelTests {
                 "**Small** Description"
             ),
             (
-                .medium(titleText: "", descriptionText: "<b>Medium</b> Description", placeholder: .announce),
+                .medium(titleText: "", descriptionText: "<b>Medium</b> Description", placeholder: .announce, imageUrl: nil),
                 "**Medium** Description"
             ),
             (
-                .bigSingleAction(titleText: "", descriptionText: "<b>Big Single</b> Description", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss),
+                .bigSingleAction(titleText: "", descriptionText: "<b>Big Single</b> Description", placeholder: .announce, imageUrl: nil, primaryActionText: "", primaryAction: .dismiss),
                 "**Big Single** Description"
             ),
             (
-                .bigTwoAction(titleText: "", descriptionText: "<b>Big Two</b> Description", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss, secondaryActionText: "", secondaryAction: .dismiss),
+                .bigTwoAction(titleText: "", descriptionText: "<b>Big Two</b> Description", placeholder: .announce, imageUrl: nil, primaryActionText: "", primaryAction: .dismiss, secondaryActionText: "", secondaryAction: .dismiss),
                 "**Big Two** Description"
             ),
             (
-                .promoSingleAction(titleText: "", descriptionText: "<b>Promo</b> Description", placeholder: .announce, actionText: "", action: .dismiss),
+                .promoSingleAction(titleText: "", descriptionText: "<b>Promo</b> Description", placeholder: .announce, imageUrl: nil, actionText: "", action: .dismiss),
                 "**Promo** Description"
             )
         ] as [(HomeSupportedMessageDisplayType, String)]

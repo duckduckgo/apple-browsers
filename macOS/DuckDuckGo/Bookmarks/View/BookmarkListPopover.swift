@@ -29,8 +29,10 @@ final class BookmarkListPopover: NSPopover {
 
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
+    private let pinningManager: PinningManager
 
-    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
+    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager, pinningManager: PinningManager) {
+        self.pinningManager = pinningManager
         super.init()
 
         self.animates = false
@@ -57,7 +59,7 @@ final class BookmarkListPopover: NSPopover {
     var viewController: BookmarkListViewController { contentViewController as! BookmarkListViewController }
 
     private func setupContentController(using bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
-        let controller = BookmarkListViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let controller = BookmarkListViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager)
         controller.delegate = self
         contentViewController = controller
     }

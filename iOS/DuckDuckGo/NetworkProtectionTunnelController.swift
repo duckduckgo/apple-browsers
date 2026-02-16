@@ -52,7 +52,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     // Wide Event
     private let wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
-    private let freeTrialConversionService: FreeTrialConversionWideEventService
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     // MARK: - Manager, Session, & Connection
 
@@ -157,7 +157,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          persistentPixel: PersistentPixelFiring,
          settings: VPNSettings,
          wideEvent: WideEventManaging,
-         freeTrialConversionService: FreeTrialConversionWideEventService
+         freeTrialConversionService: FreeTrialConversionInstrumentationService
     ) {
 
         self.featureFlagger = featureFlagger

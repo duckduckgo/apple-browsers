@@ -58,13 +58,13 @@ extension NewTabPageDataModel {
             case let .small(titleText, descriptionText):
                 self = .small(.init(id: remoteMessageModel.id, titleText: titleText, descriptionText: descriptionText))
 
-            case let .medium(titleText, descriptionText, placeholder):
+            case let .medium(titleText, descriptionText, placeholder, _):
                 self = .medium(.init(id: remoteMessageModel.id, titleText: titleText, descriptionText: descriptionText, icon: .init(placeholder)))
 
-            case let .bigSingleAction(titleText, descriptionText, placeholder, primaryActionText, _):
+            case let .bigSingleAction(titleText, descriptionText, placeholder, _, primaryActionText, _):
                 self = .bigSingleAction(.init(id: remoteMessageModel.id, titleText: titleText, descriptionText: descriptionText, icon: .init(placeholder), primaryActionText: primaryActionText))
 
-            case let .bigTwoAction(titleText, descriptionText, placeholder, primaryActionText, _, secondaryActionText, _):
+            case let .bigTwoAction(titleText, descriptionText, placeholder, _, primaryActionText, _, secondaryActionText, _):
                 self = .bigTwoAction(.init(id: remoteMessageModel.id, titleText: titleText, descriptionText: descriptionText, icon: .init(placeholder), primaryActionText: primaryActionText, secondaryActionText: secondaryActionText))
 
             default:

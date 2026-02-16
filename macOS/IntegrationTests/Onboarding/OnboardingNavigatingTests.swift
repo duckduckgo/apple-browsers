@@ -58,7 +58,7 @@ final class OnboardingNavigatingTests: XCTestCase {
         let mockWindow = MockWindow(isVisible: false)
         let mvc = MainWindowController(
             window: mockWindow,
-            mainViewController: MainViewController(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()), fireCoordinator: fireCoordinator),
+            mainViewController: MainViewController(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()), aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()), fireCoordinator: fireCoordinator),
             fireViewModel: fireCoordinator.fireViewModel,
             themeManager: MockThemeManager())
         mvc.window = mockWindow
@@ -80,7 +80,7 @@ final class OnboardingNavigatingTests: XCTestCase {
         let mockWindow = MockWindow(isVisible: false)
         let mvc = MainWindowController(
             window: mockWindow,
-            mainViewController: MainViewController(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()), fireCoordinator: fireCoordinator),
+            mainViewController: MainViewController(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()), aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()), fireCoordinator: fireCoordinator),
             fireViewModel: fireCoordinator.fireViewModel,
             themeManager: MockThemeManager()
         )

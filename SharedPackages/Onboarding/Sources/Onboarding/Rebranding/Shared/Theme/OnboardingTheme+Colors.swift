@@ -22,6 +22,8 @@ public extension OnboardingTheme {
 
     /// Color tokens used by onboarding components.
     struct ColorPalette: Equatable {
+        /// Background color used behind onboarding surfaces and contextual illustrations.
+        public let background: Color
         /// Bubble border color.
         public let bubbleBorder: Color
         /// Bubble background color.
@@ -34,27 +36,82 @@ public extension OnboardingTheme {
         /// Secondary text color.
         public let textSecondary: Color
 
+        /// Border color for contextual onboarding multiple option list rows.
+        public let optionsListBorderColor: Color
+        /// Icon tint color for contextual onboarding option list rows.
+        public let optionsListIconColor: Color
+        /// Text color for contextual onboarding option list rows.
+        public let optionsListTextColor: Color
+
         /// Primary button background color.
         public let primaryButtonBackgroundColor: Color
         /// Primary button foreground/text color.
         public let primaryButtonTextColor: Color
+        /// Secondary button background color.
+        public let secondaryButtonBackgroundColor: Color
+        /// Secondary button foreground/text color.
+        public let secondaryButtonTextColor: Color
 
         /// Creates a color palette for onboarding surfaces, text, and controls.
         public init(
+            background: Color,
             bubbleBorder: Color,
             bubbleBackground: Color,
             bubbleShadow: Color,
-            textPrimary: Color, textSecondary: Color,
+            textPrimary: Color,
+            textSecondary: Color,
+            optionsListBorderColor: Color,
+            optionsListIconColor: Color,
+            optionsListTextColor: Color,
             primaryButtonBackgroundColor: Color,
-            primaryButtonTextColor: Color
+            primaryButtonTextColor: Color,
+            secondaryButtonBackgroundColor: Color,
+            secondaryButtonTextColor: Color
         ) {
+            self.background = background
             self.bubbleBorder = bubbleBorder
             self.bubbleBackground = bubbleBackground
             self.bubbleShadow = bubbleShadow
             self.textPrimary = textPrimary
             self.textSecondary = textSecondary
+            self.optionsListBorderColor = optionsListBorderColor
+            self.optionsListIconColor = optionsListIconColor
+            self.optionsListTextColor = optionsListTextColor
             self.primaryButtonBackgroundColor = primaryButtonBackgroundColor
             self.primaryButtonTextColor = primaryButtonTextColor
+            self.secondaryButtonBackgroundColor = secondaryButtonBackgroundColor
+            self.secondaryButtonTextColor = secondaryButtonTextColor
+        }
+
+        /// Backward-compatible initializer for themes that do not define dedicated secondary button colors.
+        public init(
+            background: Color,
+            bubbleBorder: Color,
+            bubbleBackground: Color,
+            bubbleShadow: Color,
+            textPrimary: Color,
+            textSecondary: Color,
+            optionsListBorderColor: Color,
+            optionsListIconColor: Color,
+            optionsListTextColor: Color,
+            primaryButtonBackgroundColor: Color,
+            primaryButtonTextColor: Color
+        ) {
+            self.init(
+                background: background,
+                bubbleBorder: bubbleBorder,
+                bubbleBackground: bubbleBackground,
+                bubbleShadow: bubbleShadow,
+                textPrimary: textPrimary,
+                textSecondary: textSecondary,
+                optionsListBorderColor: optionsListBorderColor,
+                optionsListIconColor: optionsListIconColor,
+                optionsListTextColor: optionsListTextColor,
+                primaryButtonBackgroundColor: primaryButtonBackgroundColor,
+                primaryButtonTextColor: primaryButtonTextColor,
+                secondaryButtonBackgroundColor: primaryButtonBackgroundColor,
+                secondaryButtonTextColor: primaryButtonTextColor
+            )
         }
     }
 

@@ -24,7 +24,8 @@ public final class OptOutSubmissionWideEventData: WideEventData {
         pixelName: "pir_opt_out_submission",
         featureName: "pir-opt-out-submission",
         mobileMetaType: "ios-pir-opt-out-submission",
-        desktopMetaType: "macos-pir-opt-out-submission"
+        desktopMetaType: "macos-pir-opt-out-submission",
+        version: "1.0.0"
     )
 
     public var globalData: WideEventGlobalData

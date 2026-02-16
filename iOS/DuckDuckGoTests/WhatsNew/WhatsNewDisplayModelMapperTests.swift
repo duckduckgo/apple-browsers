@@ -21,6 +21,7 @@ import Foundation
 import Testing
 import RemoteMessaging
 import RemoteMessagingTestsUtils
+import UIKit
 @testable import DuckDuckGo
 
 @Suite("What's New - Display Model Mapper")
@@ -651,6 +652,115 @@ struct WhatsNewDisplayModelActionHandlingTests {
 
         // THEN
         #expect(itemAppearedId == "featured-1")
+    }
+}
+
+@Suite("What's New - Display Model Mapper Image Loading Tests")
+struct WhatsNewDisplayModelMapperImageLoadingTests {
+
+    @Test("When cardsList has imageUrl and image is cached then preloadedHeaderImage is set")
+    func whenCardsListHasImageUrlAndCachedThenPreloadedHeaderImageSet() throws {
+        let imageUrl = URL(string: "https://example.com/header.png")!
+        let expectedImage = UIImage()
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.cachedImageToReturn = expectedImage
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: nil)
+
+        let message = RemoteMessageModel.makeCardsListMessage(imageUrl: imageUrl)
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        #expect(displayModel.preloadedHeaderImage === expectedImage)
+        #expect(imageLoader.cachedImageCalledWithUrl == imageUrl)
+    }
+
+    @Test("When cardsList has imageUrl and image is cached then success pixel is fired")
+    func whenCardsListHasImageUrlAndCachedThenSuccessPixelFired() throws {
+        let imageUrl = URL(string: "https://example.com/header.png")!
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.cachedImageToReturn = UIImage()
+        let pixelReporter = MockRemoteMessagingPixelReporter()
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
+
+        let message = RemoteMessageModel.makeCardsListMessage(imageUrl: imageUrl)
+
+        _ = sut.makeDisplayModel(
+            from: message,
+            onMessageAppear: { },
+            onItemAppear: { _ in },
+            onItemAction: { _, _ in },
+            onPrimaryAction: { _ in },
+            onDismiss: { }
+        )
+
+        #expect(pixelReporter.didCallMeasureRemoteMessageImageLoadSuccess)
+        #expect(pixelReporter.capturedImageLoadSuccessMessage?.id == message.id)
+    }
+
+    @Test("When loadHeaderImage succeeds then success pixel is fired")
+    func whenLoadHeaderImageSucceedsThenSuccessPixelFired() async throws {
+        let imageUrl = URL(string: "https://example.com/header.png")!
+        let expectedImage = UIImage()
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.imageToReturn = expectedImage
+        let pixelReporter = MockRemoteMessagingPixelReporter()
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
+
+        let message = RemoteMessageModel.makeCardsListMessage(imageUrl: imageUrl)
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        let loadedImage = try await displayModel.loadHeaderImage?(imageUrl)
+
+        #expect(loadedImage === expectedImage)
+        displayModel.onHeaderImageLoadSuccess?()
+        #expect(pixelReporter.didCallMeasureRemoteMessageImageLoadSuccess)
+    }
+
+    @Test("When loadHeaderImage fails then failure pixel is fired")
+    func whenLoadHeaderImageFailsThenFailurePixelFired() async throws {
+        let imageUrl = URL(string: "https://example.com/header.png")!
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.errorToThrow = RemoteMessagingImageLoadingError.invalidImageData
+        let pixelReporter = MockRemoteMessagingPixelReporter()
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
+
+        let message = RemoteMessageModel.makeCardsListMessage(imageUrl: imageUrl)
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        let loadedImage = try? await displayModel.loadHeaderImage?(imageUrl)
+
+        #expect(loadedImage == nil)
+        displayModel.onHeaderImageLoadFailed?()
+        #expect(pixelReporter.didCallMeasureRemoteMessageImageLoadFailed)
     }
 }
 

@@ -63,7 +63,8 @@ extension NewTabPageActionsManager {
         nextStepsCardsPersistor: NewTabPageNextStepsCardsPersisting,
         subscriptionCardPersistor: HomePageSubscriptionCardPersisting,
         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
-        syncService: DDGSyncing?
+        syncService: DDGSyncing?,
+        pinningManager: PinningManager
     ) {
         self.init(
             appearancePreferences: appearancePreferences,
@@ -93,7 +94,8 @@ extension NewTabPageActionsManager {
             nextStepsCardsPersistor: nextStepsCardsPersistor,
             subscriptionCardPersistor: subscriptionCardPersistor,
             duckPlayerPreferences: duckPlayerPreferences,
-            syncService: syncService
+            syncService: syncService,
+            pinningManager: pinningManager
         )
     }
 
@@ -126,7 +128,8 @@ extension NewTabPageActionsManager {
         nextStepsCardsPersistor: NewTabPageNextStepsCardsPersisting,
         subscriptionCardPersistor: HomePageSubscriptionCardPersisting,
         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
-        syncService: DDGSyncing?
+        syncService: DDGSyncing?,
+        pinningManager: PinningManager
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -137,16 +140,9 @@ extension NewTabPageActionsManager {
             getLegacyIsViewExpandedSetting: UserDefaultsWrapper<Bool>(key: .homePageShowAllFavorites, defaultValue: true).wrappedValue
         )
 
-        let themePopoverPersistor = ThemePopoverUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let themePopoverDecider = ThemePopoverDecider(appearancePreferences: appearancePreferences,
-                                                      featureFlagger: featureFlagger,
-                                                      firstLaunchDate: AppDelegate.firstLaunchDate,
-                                                      persistor: themePopoverPersistor)
-
         let customizationProvider = NewTabPageCustomizationProvider(
             customizationModel: customizationModel,
-            appearancePreferences: appearancePreferences,
-            themePopoverDecider: themePopoverDecider
+            appearancePreferences: appearancePreferences
         )
         let freemiumDBPBannerProvider = NewTabPageFreemiumDBPBannerProvider(model: freemiumDBPPromotionViewCoordinator)
         let winBackOfferBannerProvider = NewTabPageWinBackOfferBannerProvider(model: winBackOfferPromotionViewCoordinator)
@@ -191,7 +187,7 @@ extension NewTabPageActionsManager {
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger
         )
-        let dataImportProvider = BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager)
+        let dataImportProvider = BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager, pinningManager: pinningManager)
         let nextStepsPixelHandler = NewTabPageNextStepsCardsPixelHandler()
 
         self.init(scriptClients: [

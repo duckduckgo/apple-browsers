@@ -40,7 +40,6 @@ import SpecialErrorPages
 import VPN
 import Onboarding
 import os.log
-import Navigation
 import Subscription
 import WKAbstractions
 import SERPSettings
@@ -697,16 +696,23 @@ class TabViewController: UIViewController {
     }
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
-        if appSettings.currentAddressBarPosition == .bottom {
-            /// When address bar is at bottom, offset webview to make room for the bars
+        let isLargeWidth = AppWidthObserver.shared.isLargeWidth
+
+        if appSettings.currentAddressBarPosition == .bottom && !isLargeWidth {
+            /// When address bar is at bottom on iPhone, offset webview to make room for the bars
             let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
             webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
         } else {
-            /// When address bar is at top, webview fills the container
-            /// The container already follows the toolbar position
             webViewBottomAnchorConstraint?.constant = 0
         }
-        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+        borderView.bottomAlpha = isLargeWidth ? 0 : barsVisibilityPercent
+        updateContentInsetAdjustment()
+    }
+
+    /// https://app.asana.com/1/137249556945/task/1213037676998807
+    private func updateContentInsetAdjustment() {
+        guard let webView = webView else { return }
+        webView.scrollView.contentInsetAdjustmentBehavior = AppWidthObserver.shared.isLargeWidth ? .never : .automatic
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -824,6 +830,8 @@ class TabViewController: UIViewController {
             webViewBottomAnchorConstraint!,
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
+
+        updateContentInsetAdjustment()
 
         pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
                                                             pullableView: webViewContainerView,
@@ -1564,6 +1572,12 @@ extension TabViewController: WKNavigationDelegate {
         
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
+
+        if aiChatContextualSheetCoordinator.hasActiveSheet {
+            Task { [weak self] in
+                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
+            }
+        }
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -1731,13 +1745,6 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
         specialErrorPageNavigationHandler.handleWebView(webView, didFinish: navigation)
-
-        // Notify contextual AI chat coordinator that the page changed (for context refresh)
-        if aiChatContextualSheetCoordinator.hasActiveSheet {
-            Task { [weak self] in
-                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
-            }
-        }
     }
 
     /// Fires product telemetry related to the current URL
@@ -1884,8 +1891,9 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
               
-        /// Never show onboarding Dax on Youtube or DuckPlayer, unless DuckPlayer is disabled
+        /// Never show onboarding Dax on Duck.ai, Youtube or DuckPlayer (unless DuckPlayer is disabled)
         guard let url = link?.url,
+              !url.isDuckAIURL,
               !url.isDuckPlayer,
               !(url.isYoutube && duckPlayerNavigationHandler.duckPlayer.settings.mode != .disabled) else {
             scheduleTrackerNetworksAnimation(collapsing: true)
@@ -3027,7 +3035,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autofillUserScript.vaultDelegate = vaultManager
         userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
         userScripts.faviconScript.delegate = faviconUpdater
-        userScripts.printingUserScript.delegate = self
+        userScripts.printingSubfeature.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
         userScripts.contentScopeUserScript.delegate = self
@@ -3036,7 +3044,8 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.webView = webView
         
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
-        
+        aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
+
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
             daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
@@ -3143,12 +3152,22 @@ extension TabViewController: SurrogatesUserScriptDelegate {
 
 }
 
-// MARK: - PrintingUserScriptDelegate
-extension TabViewController: PrintingUserScriptDelegate {
+// MARK: - PrintingSubfeatureDelegate
+extension TabViewController: PrintingSubfeatureDelegate {
 
-    func printingUserScriptDidRequestPrintController(_ script: PrintingUserScript) {
+    func printingSubfeatureDidRequestPrint(for frameHandle: Any?, in webView: WKWebView?) {
+        // Use explicit if-let to avoid type inference issues with IUO (WKWebView!)
+        let targetWebView: WKWebView
+        if let providedWebView = webView {
+            targetWebView = providedWebView
+        } else if let ownWebView = self.webView {
+            targetWebView = ownWebView
+        } else {
+            return
+        }
+
         let controller = UIPrintInteractionController.shared
-        controller.printFormatter = webView.viewPrintFormatter()
+        controller.printFormatter = targetWebView.viewPrintFormatter()
         controller.present(animated: true, completionHandler: nil)
     }
 
@@ -3941,7 +3960,8 @@ extension WKWebView {
 extension TabViewController: SpecialErrorPageNavigationDelegate {
 
     func closeSpecialErrorPageTab(shouldCreateNewEmptyTab: Bool) {
-        delegate?.tabDidRequestClose(tabModel, shouldCreateEmptyTabAtSamePosition: shouldCreateNewEmptyTab, clearTabHistory: true)
+        let behavior: TabClosingBehavior = shouldCreateNewEmptyTab ? .createEmptyTabAtSamePosition : .onlyClose
+        delegate?.tabDidRequestClose(tabModel, behavior: behavior, clearTabHistory: true)
     }
 
 }
@@ -4081,16 +4101,16 @@ extension TabViewController {
                 
                 switch update {
                 case .showPill(let height):
-                    if self.appSettings.currentAddressBarPosition == .bottom {
+                    if self.appSettings.currentAddressBarPosition == .bottom && !AppWidthObserver.shared.isLargeWidth {
                         let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
                         self.webViewBottomAnchorConstraint?.constant = -targetHeight - height
                     } else {
                         self.webViewBottomAnchorConstraint?.constant = -height
                     }
-                    
+
                 case .reset:
                     let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
-                    self.webViewBottomAnchorConstraint?.constant = self.appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
+                    self.webViewBottomAnchorConstraint?.constant = (self.appSettings.currentAddressBarPosition == .bottom && !AppWidthObserver.shared.isLargeWidth) ? -targetHeight : 0
                 }
                 
                 self.view.layoutIfNeeded()

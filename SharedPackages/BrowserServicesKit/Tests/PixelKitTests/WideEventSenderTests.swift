@@ -298,6 +298,21 @@ final class WideEventSenderTests: XCTestCase {
         XCTAssertEqual(parameters["feature.name"], SenderTestWideEventData.metadata.featureName)
     }
 
+    func testSendIncludesMetaVersion() {
+        let sender = makeSender()
+        let data = makeTestData()
+
+        let expectation = XCTestExpectation(description: "Pixels fired")
+        sender.send(data, status: .success, featureFlagProvider: makeFeatureFlagProvider(isPostEndpointEnabled: false)) { _, _ in
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+
+        let parameters = capturedPixels[0].parameters
+        XCTAssertEqual(parameters["meta.version"], SenderTestWideEventData.metadata.version)
+    }
+
     func testSendIncludesFeatureSpecificParameters() {
         let sender = makeSender()
         let data = makeTestData(testIdentifier: "test-id-123", testEligible: true)
@@ -764,7 +779,8 @@ final class SenderTestWideEventData: WideEventData {
         pixelName: "sender_test_event",
         featureName: "sender_test_event",
         mobileMetaType: "ios-sender-test-event",
-        desktopMetaType: "macos-sender-test-event"
+        desktopMetaType: "macos-sender-test-event",
+        version: "1.0.0"
     )
 
     var testIdentifier: String?

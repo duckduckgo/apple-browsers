@@ -28,63 +28,63 @@ extension OnboardingRebranding.OnboardingView {
 
         typealias Copy = UserText.Onboarding.Skip
 
-        private var animateTitle: Binding<Bool>
-        private var animateMessage: Binding<Bool>
-        private var showCTA: Binding<Bool>
-        private var isSkipped: Binding<Bool>
+        @Environment(\.onboardingTheme) private var onboardingTheme
+
         private let startBrowsingAction: () -> Void
         private let resumeOnboardingAction: () -> Void
 
         init(
-            animateTitle: Binding<Bool>,
-            animateMessage: Binding<Bool>,
-            showCTA: Binding<Bool>,
-            isSkipped: Binding<Bool>,
             startBrowsingAction: @escaping () -> Void,
             resumeOnboardingAction: @escaping () -> Void
         ) {
-            self.animateTitle = animateTitle
-            self.animateMessage = animateMessage
-            self.showCTA = showCTA
-            self.isSkipped = isSkipped
             self.startBrowsingAction = startBrowsingAction
             self.resumeOnboardingAction = resumeOnboardingAction
         }
 
         var body: some View {
-            VStack(spacing: 24.0) {
-                AnimatableTypingText(Copy.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    withAnimation {
-                        animateMessage.wrappedValue = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 20, weight: .bold))
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(Self.styledMessage())
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .font(onboardingTheme.typography.body)
+                ),
+                title: {
+                    Text(Copy.title)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .font(onboardingTheme.typography.title)
+                },
+                actions: {
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                        Button(action: startBrowsingAction) {
+                            Text(Copy.confirmSkipOnboardingCTA)
+                        }
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
-                AnimatableTypingText(Copy.message.attributed.withFont(.daxBodyBold(), forText: Self.fireButtonCopy), startAnimating: animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showCTA.wrappedValue = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 16))
-
-                VStack {
-                    Button(action: startBrowsingAction) {
-                        Text(Copy.confirmSkipOnboardingCTA)
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
-
-                    OnboardingBorderedButton(
-                        maxHeight: 50.0,
-                        content: {
+                        Button(action: resumeOnboardingAction) {
                             Text(Copy.resumeOnboardingCTA)
-                        },
-                        action: resumeOnboardingAction
-                    )
+                        }
+                        .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                    }
                 }
-                .visibility(showCTA.wrappedValue ? .visible : .invisible)
+            )
+        }
+
+        /// Builds the message with bold applied to "Fire Button" via SwiftUI's
+        /// attribute system so the theme's body font applies uniformly.
+        private static func styledMessage() -> AttributedString {
+            var attributed = AttributedString(Copy.message)
+            if let range = attributed.range(of: fireButtonCopy) {
+                attributed[range].inlinePresentationIntent = .stronglyEmphasized
             }
+            return attributed
         }
 
     }

@@ -24,47 +24,31 @@ import Onboarding
 extension OnboardingRebranding.OnboardingView {
 
     struct AddressBarPositionContent: View {
+        @Environment(\.onboardingTheme) private var onboardingTheme
 
-        private var animateTitle: Binding<Bool>
-        private var showContent: Binding<Bool>
-        private var isSkipped: Binding<Bool>
         private let action: () -> Void
 
-        init(
-            animateTitle: Binding<Bool> = .constant(true),
-            showContent: Binding<Bool> = .constant(true),
-            isSkipped: Binding<Bool>,
-            action: @escaping () -> Void
-        ) {
-            self.animateTitle = animateTitle
-            self.showContent = showContent
-            self.isSkipped = isSkipped
+        init(action: @escaping () -> Void) {
             self.action = action
         }
 
         var body: some View {
-            VStack(spacing: 16.0) {
-                AnimatableTypingText(UserText.Onboarding.AddressBarPosition.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    showContent.wrappedValue = true
-                }
-                .foregroundColor(.primary)
-                .font(AddressBarPositionContentMetrics.titleFont)
+            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+                Text(UserText.Onboarding.AddressBarPosition.title)
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
 
-                VStack(spacing: 24) {
+                VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     RebrandedOnboardingView.OnboardingAddressBarPositionPicker()
 
                     Button(action: action) {
                         Text(verbatim: UserText.Onboarding.AddressBarPosition.cta)
                     }
-                    .buttonStyle(PrimaryButtonStyle())
+                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
-                .visibility(showContent.wrappedValue ? .visible : .invisible)
             }
         }
     }
 
-}
-
-private enum AddressBarPositionContentMetrics {
-    static let titleFont = Font.system(size: 20, weight: .semibold)
 }

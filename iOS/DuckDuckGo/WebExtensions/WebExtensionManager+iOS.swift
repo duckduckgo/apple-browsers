@@ -23,21 +23,42 @@ import WebKit
 import PrivacyConfig
 import Core
 
+// MARK: - AutoconsentPreferencesProviding
+
+final class AutoconsentPreferencesAdapter: AutoconsentPreferencesProviding {
+    private let preferences: AutoconsentPreferences
+
+    init(preferences: AutoconsentPreferences) {
+        self.preferences = preferences
+    }
+
+    var isAutoconsentEnabled: Bool {
+        preferences.autoconsentEnabled
+    }
+}
+
 // MARK: - Factory
 
 @available(iOS 18.4, *)
 public enum WebExtensionManagerFactory {
 
     @MainActor
-    static func makeManager(mainViewController: MainViewController) -> WebExtensionManager {
-        let privacyConfigManager = AppDependencyProvider.shared.privacyConfigurationManager
+    static func makeManager(
+        mainViewController: MainViewController,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        autoconsentPreferences: AutoconsentPreferences
+    ) -> WebExtensionManager {
+        let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
 
         return WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),
             storageProvider: WebExtensionStorageProvider(),
             pixelFiring: iOSWebExtensionPixelFiring(),
-            handlerProvider: WebExtensionHandlerProvider(privacyConfigurationManager: privacyConfigManager)
+            handlerProvider: WebExtensionHandlerProvider(
+                privacyConfigurationManager: privacyConfigurationManager,
+                autoconsentPreferences: preferencesAdapter
+            )
         )
     }
 }

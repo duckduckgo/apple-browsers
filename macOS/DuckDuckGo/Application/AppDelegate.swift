@@ -1619,7 +1619,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupWebExtensions() {
         if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManagerFactory.makeManager()
+            let webExtensionManager = WebExtensionManagerFactory.makeManager(autoconsentPreferences: cookiePopupProtectionPreferences)
             self.webExtensionManager = webExtensionManager
 
             let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?

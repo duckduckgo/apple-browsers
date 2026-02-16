@@ -20,6 +20,10 @@ import Foundation
 import os.log
 import PrivacyConfig
 
+public protocol AutoconsentPreferencesProviding {
+    var isAutoconsentEnabled: Bool { get }
+}
+
 @available(macOS 15.4, iOS 18.4, *)
 public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHandler {
 
@@ -38,15 +42,21 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
     private static let successResponse: [String: String] = ["response": "ok"]
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let autoconsentPreferences: AutoconsentPreferencesProviding
 
     public var handledFeatureName: String { "autoconsent" }
 
-    public init(privacyConfigurationManager: PrivacyConfigurationManaging) {
+    public init(
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        autoconsentPreferences: AutoconsentPreferencesProviding
+    ) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.autoconsentPreferences = autoconsentPreferences
     }
 
     public func handleMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {
         Logger.webExtensions.debug("📝 AutoconsentWebExtensionMessageHandler received method: \(message.method)")
+        Logger.webExtensions.debug("📝 AutoconsentWebExtensionMessageHandler --- Params: \(String(describing: message.params))")
 
         guard let method = Method(rawValue: message.method) else {
             return .failure(WebExtensionMessageHandlerError.unknownMethod(message.method))
@@ -74,8 +84,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         case .getResourceIfNew:
             return handleGetResourceIfNew(message.params)
         case .isAutoconsentSettingEnabled:
-//            return handleIsAutoconsentSettingEnabled(message.params)
-            return .failure(WebExtensionMessageHandlerError.unknownMethod("isAutoconsentSettingEnabled"))
+            return handleIsAutoconsentSettingEnabled(message.params)
         case .extensionLog:
             return handleExtensionLog(message.params)
         }
@@ -215,11 +224,15 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         }
     }
 
-//    private func handleIsAutoconsentSettingEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
-//        Logger.webExtensions.debug("⚙️ Is Autoconsent Setting Enabled")
-//
-//        return .success(["enabled": true])
-//    }
+    private func handleIsAutoconsentSettingEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
+        let isEnabled = autoconsentPreferences.isAutoconsentEnabled
+        Logger.webExtensions.debug("⚙️ Is Autoconsent Setting Enabled: \(isEnabled)")
+
+        // TODO: Temporary until we add logic to disable old CPM when the feature flag and support for WE is present
+        return .success(["enabled": true])
+
+        return .success(["enabled": isEnabled])
+    }
 
     private func handleExtensionLog(_ params: [String: Any]?) -> WebExtensionMessageResult {
         guard let message = params?["message"] as? String else {

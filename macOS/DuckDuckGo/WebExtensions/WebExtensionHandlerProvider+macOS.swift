@@ -26,17 +26,28 @@ import PrivacyConfig
 final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let autoconsentPreferences: AutoconsentPreferencesProviding
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging) {
+    init(
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        autoconsentPreferences: AutoconsentPreferencesProviding
+    ) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.autoconsentPreferences = autoconsentPreferences
     }
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
         switch context.duckDuckGoExtensionType {
         case .ddgInternalExtension:
-            return [AutoconsentWebExtensionMessageHandler(privacyConfigurationManager: privacyConfigurationManager)]
+            return [AutoconsentWebExtensionMessageHandler(
+                privacyConfigurationManager: privacyConfigurationManager,
+                autoconsentPreferences: autoconsentPreferences
+            )]
         default:
-            return [AutoconsentWebExtensionMessageHandler(privacyConfigurationManager: privacyConfigurationManager)]
+            return [AutoconsentWebExtensionMessageHandler(
+                privacyConfigurationManager: privacyConfigurationManager,
+                autoconsentPreferences: autoconsentPreferences
+            )]
         }
     }
 }

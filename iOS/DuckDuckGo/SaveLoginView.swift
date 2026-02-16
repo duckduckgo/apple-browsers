@@ -139,12 +139,14 @@ struct SaveLoginView: View {
             }
 
         case .newUserVariant2:
-            // TODO: Implement Design #4
+            // Design #4
             VStack {
                 Spacer(minLength: Const.Size.topPadding)
                 experimentHeaderView
                 Spacer(minLength: Const.Size.contentSpacing)
                 AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
+                Spacer(minLength: Const.Size.headlineToContentSpacing)
+                AutofillViews.SecureDescriptionVariant(text: UserText.autofillSaveLoginSecurityMessage)
                 Spacer(minLength: Const.Size.contentSpacing)
                 onboardingCtaView()
             }

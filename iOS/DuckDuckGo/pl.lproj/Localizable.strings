@@ -3127,12 +3127,6 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Automatyczne wysyłanie zawartości";
 
-/* Settings screen cell subtitle for enabling chat suggestions */
-"settings.aifeatures.chat.suggestions.subtitle" = "Pokazuj najnowsze czaty Duck.ai podczas pisania";
-
-/* Settings screen cell title for enabling chat suggestions */
-"settings.aifeatures.chat.suggestions.title" = "Sugestie czatu";
-
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ukryj obrazy generowane przez AI";
 

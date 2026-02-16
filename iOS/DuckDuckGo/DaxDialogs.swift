@@ -508,6 +508,11 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
         guard let homeScreenSpec = peekNextHomeScreenMessageExperiment() else {
             currentHomeSpec = nil
+            // Recover from zombie state: final dialog was seen but dismiss() was never called
+            // (e.g. user tapped the dismiss button instead of the CTA on the final dialog).
+            if isEnabled && finalDaxDialogSeen {
+                dismiss()
+            }
             return nil
         }
         currentHomeSpec = homeScreenSpec

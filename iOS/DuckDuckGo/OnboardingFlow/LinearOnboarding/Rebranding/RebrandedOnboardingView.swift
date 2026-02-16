@@ -106,6 +106,7 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Namespace var animationNamespace
         @ObservedObject private var model: OnboardingIntroViewModel
+        @State private var dialogContentHeight: CGFloat = 0
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
@@ -205,6 +206,18 @@ extension OnboardingRebranding {
                         }
                     }
                     .frame(minHeight: geometry.size.height, alignment: .top)
+                    .background {
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: OnboardingDialogHeightPreferenceKey.self,
+                                value: proxy.size.height
+                            )
+                        }
+                    }
+                }
+                .withoutScroll(dialogContentHeight <= geometry.size.height)
+                .onPreferenceChange(OnboardingDialogHeightPreferenceKey.self) { height in
+                    dialogContentHeight = height
                 }
             }
             .padding()
@@ -419,5 +432,13 @@ private struct RebrandingBadge: View {
                     .fill(Color.black.opacity(0.7))
             )
             .accessibilityIdentifier("RebrandedBadge")
+    }
+}
+
+private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }

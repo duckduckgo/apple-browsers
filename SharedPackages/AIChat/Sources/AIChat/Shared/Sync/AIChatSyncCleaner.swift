@@ -51,6 +51,10 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
             return false
         }
 
+        guard featureFlagProvider.supportsSyncChatsDeletion() else {
+            return false
+        }
+
         guard sync.authState != .inactive else {
             return false
         }

@@ -3127,6 +3127,12 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "コンテンツを自動的に送信";
 
+/* Settings screen cell subtitle for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.subtitle" = "入力中に、Duck.aiとの最近のチャットが表示されます";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "チャットの提案";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI生成画像を非表示にする";
 

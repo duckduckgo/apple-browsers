@@ -65,6 +65,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenFeatureFlagDisabled_WhenRecordLocalClear_ThenNothingIsStored() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = false
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
         sut = makeSUT()
@@ -80,6 +81,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenSyncInactive_WhenRecordLocalClear_ThenNothingIsStored() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .inactive
         mockSync.isAIChatHistoryEnabled = true
         sut = makeSUT()
@@ -95,6 +97,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenChatHistoryDisabled_WhenRecordLocalClear_ThenNothingIsStored() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = false
         sut = makeSUT()
@@ -110,6 +113,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenAllConditionsMet_WhenRecordLocalClearWithDate_ThenTimestampIsStored() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
         sut = makeSUT()
@@ -125,6 +129,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenAllConditionsMet_WhenRecordLocalClearWithoutDate_ThenCurrentTimestampIsStored() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
         let expectedTimestamp = 2000.0
@@ -175,6 +180,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenFeatureFlagDisabled_WhenDeleteIfNeeded_ThenNoDeleteHappens() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = false
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
         try? mockKeyValueStore.set(fixedDate.timeIntervalSince1970, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
@@ -190,6 +196,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenSyncInactive_WhenDeleteIfNeeded_ThenNoDeleteHappens() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .inactive
         mockSync.isAIChatHistoryEnabled = true
         try? mockKeyValueStore.set(fixedDate.timeIntervalSince1970, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
@@ -205,6 +212,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenChatHistoryDisabled_WhenDeleteIfNeeded_ThenNoDeleteHappens() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = false
         try? mockKeyValueStore.set(fixedDate.timeIntervalSince1970, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
@@ -220,6 +228,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenNoTimestampStored_WhenDeleteIfNeeded_ThenNoDeleteHappens() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
         // No timestamp stored
@@ -235,6 +244,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenTimestampStoredAndDeleteSucceeds_WhenDeleteIfNeeded_ThenTimestampIsCleared() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
         mockSync.deleteAIChatsError = nil
@@ -255,6 +265,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenTimestampStoredAndDeleteFails_WhenDeleteIfNeeded_ThenTimestampIsRetained() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
         let expectedError = NSError(domain: "test", code: 1)
@@ -279,6 +290,7 @@ final class AIChatSyncCleanerTests: XCTestCase {
     func testGivenTimestampUpdatedAfterRead_WhenDeleteSucceeds_ThenTimestampIsNotCleared() async {
         // Given
         mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
         mockSync.authState = .active
         mockSync.isAIChatHistoryEnabled = true
         try? mockKeyValueStore.set(fixedDate.timeIntervalSince1970, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
@@ -296,6 +308,38 @@ final class AIChatSyncCleanerTests: XCTestCase {
         XCTAssertEqual(mockSync.deleteAIChatsCallCount, 1, "Delete should be called once")
         let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp) as? Double
         XCTAssertEqual(storedValue, fixedDate.timeIntervalSince1970 + 1, "Timestamp should remain because it changed after the delete started")
+    }
+
+    func testGivenSupportsSyncChatsDeletionDisabled_WhenRecordLocalClear_ThenNothingIsStored() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = false
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        sut = makeSUT()
+
+        // When
+        await sut.recordLocalClear(date: fixedDate)
+
+        // Then
+        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
+        XCTAssertNil(storedValue, "No timestamp should be stored when supportsSyncChatsDeletion is disabled")
+    }
+
+    func testGivenSupportsSyncChatsDeletionDisabled_WhenDeleteIfNeeded_ThenNoDeleteHappens() async {
+        // Given
+        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
+        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = false
+        mockSync.authState = .active
+        mockSync.isAIChatHistoryEnabled = true
+        try? mockKeyValueStore.set(fixedDate.timeIntervalSince1970, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
+        sut = makeSUT()
+
+        // When
+        await sut.deleteIfNeeded()
+
+        // Then
+        XCTAssertEqual(mockSync.deleteAIChatsCallCount, 0, "Delete should not be called when supportsSyncChatsDeletion is disabled")
     }
 
     // MARK: - recordChatDeletion Tests

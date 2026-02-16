@@ -54,126 +54,133 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
         switch method {
         case .sendPixel:
-            return handleSendPixel(message.params)
+//            return handleSendPixel(message.params)
+            return .failure(WebExtensionMessageHandlerError.unknownMethod("sendPixel"))
         case .refreshCpmDashboardState:
-            return handleRefreshCpmDashboardState(message.params)
+//            return handleRefreshCpmDashboardState(message.params)
+            return .failure(WebExtensionMessageHandlerError.unknownMethod("refreshCpmDashboardState"))
         case .showCpmAnimation:
-            return handleShowCpmAnimation(message.params)
+//            return handleShowCpmAnimation(message.params)
+            return .failure(WebExtensionMessageHandlerError.unknownMethod("showCpmAnimation"))
         case .cookiePopupHandled:
-            return handleCookiePopupHandled(message.params)
+//            return handleCookiePopupHandled(message.params)
+            return .failure(WebExtensionMessageHandlerError.unknownMethod("cookiePopupHandled"))
         case .isFeatureEnabled:
-            return handleIsFeatureEnabled(message.params)
+//            return handleIsFeatureEnabled(message.params)
+            return .failure(WebExtensionMessageHandlerError.unknownMethod("isFeatureEnabled"))
         case .isSubFeatureEnabled:
-            return handleIsSubFeatureEnabled(message.params)
+//            return handleIsSubFeatureEnabled(message.params)
+            return .failure(WebExtensionMessageHandlerError.unknownMethod("isSubFeatureEnabled"))
         case .getResourceIfNew:
             return handleGetResourceIfNew(message.params)
         case .isAutoconsentSettingEnabled:
-            return handleIsAutoconsentSettingEnabled(message.params)
+//            return handleIsAutoconsentSettingEnabled(message.params)
+            return .failure(WebExtensionMessageHandlerError.unknownMethod("isAutoconsentSettingEnabled"))
         case .extensionLog:
             return handleExtensionLog(message.params)
         }
     }
 
-    private func handleSendPixel(_ params: [String: Any]?) -> WebExtensionMessageResult {
-        guard
-            let pixelName = params?["pixelName"] as? String,
-            let type = params?["type"] as? String
-        else {
-            return .failure(WebExtensionMessageHandlerError.missingParameter("pixelName or type"))
-        }
+//    private func handleSendPixel(_ params: [String: Any]?) -> WebExtensionMessageResult {
+//        guard
+//            let pixelName = params?["pixelName"] as? String,
+//            let type = params?["type"] as? String
+//        else {
+//            return .failure(WebExtensionMessageHandlerError.missingParameter("pixelName or type"))
+//        }
+//
+//        let pixelParams = params?["params"] as? [String: String] ?? [:]
+//
+//        Logger.webExtensions.debug("📊 Send Pixel - name: \(pixelName), type: \(type), params: \(pixelParams)")
+//
+//        return .success(Self.successResponse)
+//    }
 
-        let pixelParams = params?["params"] as? [String: String] ?? [:]
+//    private func handleRefreshCpmDashboardState(_ params: [String: Any]?) -> WebExtensionMessageResult {
+//        guard
+//            let tabId = params?["tabId"] as? Int,
+//            let domain = params?["domain"] as? String,
+//            let consentStatus = params?["consentStatus"] as? [String: Any],
+//            let consentManaged = consentStatus["consentManaged"] as? Bool
+//        else {
+//            return .failure(WebExtensionMessageHandlerError.missingParameter("tabId, domain, or consentStatus"))
+//        }
+//
+//        let cosmetic = consentStatus["cosmetic"] as? Bool
+//        let optoutFailed = consentStatus["optoutFailed"] as? Bool
+//        let selftestFailed = consentStatus["selftestFailed"] as? Bool
+//        let consentReloadLoop = consentStatus["consentReloadLoop"] as? Bool
+//        let consentRule = consentStatus["consentRule"] as? String
+//        let consentHeuristicEnabled = consentStatus["consentHeuristicEnabled"] as? Bool
+//
+//        Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - tabId: \(tabId), domain: \(domain), consentManaged: \(consentManaged)")
+//
+//        return .success(Self.successResponse)
+//    }
 
-        Logger.webExtensions.debug("📊 Send Pixel - name: \(pixelName), type: \(type), params: \(pixelParams)")
+//    private func handleShowCpmAnimation(_ params: [String: Any]?) -> WebExtensionMessageResult {
+//        guard
+//            let tabId = params?["tabId"] as? Int,
+//            let topUrl = params?["topUrl"] as? String,
+//            let isCosmetic = params?["isCosmetic"] as? Bool
+//        else {
+//            return .failure(WebExtensionMessageHandlerError.missingParameter("tabId, topUrl, or isCosmetic"))
+//        }
+//
+//        Logger.webExtensions.debug("🎬 Show CPM Animation - tabId: \(tabId), topUrl: \(topUrl), isCosmetic: \(isCosmetic)")
+//
+//        return .success(Self.successResponse)
+//    }
 
-        return .success(Self.successResponse)
-    }
+//    private func handleCookiePopupHandled(_ params: [String: Any]?) -> WebExtensionMessageResult {
+//        guard
+//            let tabId = params?["tabId"] as? Int,
+//            let url = params?["url"] as? String,
+//            let msg = params?["msg"] as? [String: Any]
+//        else {
+//            return .failure(WebExtensionMessageHandlerError.missingParameter("tabId, url, or msg"))
+//        }
+//
+//        Logger.webExtensions.debug("🍪 Cookie Popup Handled - tabId: \(tabId), url: \(url)")
+//
+//        return .success(Self.successResponse)
+//    }
 
-    private func handleRefreshCpmDashboardState(_ params: [String: Any]?) -> WebExtensionMessageResult {
-        guard
-            let tabId = params?["tabId"] as? Int,
-            let domain = params?["domain"] as? String,
-            let consentStatus = params?["consentStatus"] as? [String: Any],
-            let consentManaged = consentStatus["consentManaged"] as? Bool
-        else {
-            return .failure(WebExtensionMessageHandlerError.missingParameter("tabId, domain, or consentStatus"))
-        }
+//    private func handleIsFeatureEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
+//        guard
+//            let featureName = params?["featureName"] as? String,
+//            let url = params?["url"] as? String
+//        else {
+//            return .failure(WebExtensionMessageHandlerError.missingParameter("featureName or url"))
+//        }
+//
+//        Logger.webExtensions.debug("🔍 Is Feature Enabled - feature: \(featureName), url: \(url)")
+//
+//        return .success(["enabled": true])
+//    }
 
-        let cosmetic = consentStatus["cosmetic"] as? Bool
-        let optoutFailed = consentStatus["optoutFailed"] as? Bool
-        let selftestFailed = consentStatus["selftestFailed"] as? Bool
-        let consentReloadLoop = consentStatus["consentReloadLoop"] as? Bool
-        let consentRule = consentStatus["consentRule"] as? String
-        let consentHeuristicEnabled = consentStatus["consentHeuristicEnabled"] as? Bool
-
-        Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - tabId: \(tabId), domain: \(domain), consentManaged: \(consentManaged)")
-
-        return .success(Self.successResponse)
-    }
-
-    private func handleShowCpmAnimation(_ params: [String: Any]?) -> WebExtensionMessageResult {
-        guard
-            let tabId = params?["tabId"] as? Int,
-            let topUrl = params?["topUrl"] as? String,
-            let isCosmetic = params?["isCosmetic"] as? Bool
-        else {
-            return .failure(WebExtensionMessageHandlerError.missingParameter("tabId, topUrl, or isCosmetic"))
-        }
-
-        Logger.webExtensions.debug("🎬 Show CPM Animation - tabId: \(tabId), topUrl: \(topUrl), isCosmetic: \(isCosmetic)")
-
-        return .success(Self.successResponse)
-    }
-
-    private func handleCookiePopupHandled(_ params: [String: Any]?) -> WebExtensionMessageResult {
-        guard
-            let tabId = params?["tabId"] as? Int,
-            let url = params?["url"] as? String,
-            let msg = params?["msg"] as? [String: Any]
-        else {
-            return .failure(WebExtensionMessageHandlerError.missingParameter("tabId, url, or msg"))
-        }
-
-        Logger.webExtensions.debug("🍪 Cookie Popup Handled - tabId: \(tabId), url: \(url)")
-
-        return .success(Self.successResponse)
-    }
-
-    private func handleIsFeatureEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
-        guard
-            let featureName = params?["featureName"] as? String,
-            let url = params?["url"] as? String
-        else {
-            return .failure(WebExtensionMessageHandlerError.missingParameter("featureName or url"))
-        }
-
-        Logger.webExtensions.debug("🔍 Is Feature Enabled - feature: \(featureName), url: \(url)")
-
-        return .success(["enabled": true])
-    }
-
-    private func handleIsSubFeatureEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
-        guard
-            let featureName = params?["featureName"] as? String,
-            let subfeatureName = params?["subfeatureName"] as? String
-        else {
-            return .failure(WebExtensionMessageHandlerError.missingParameter("featureName or subfeatureName"))
-        }
-
-        Logger.webExtensions.debug("🔍 Is SubFeature Enabled - feature: \(featureName), subfeature: \(subfeatureName)")
-
-        return .success(["enabled": true])
-    }
+//    private func handleIsSubFeatureEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
+//        guard
+//            let featureName = params?["featureName"] as? String,
+//            let subfeatureName = params?["subfeatureName"] as? String
+//        else {
+//            return .failure(WebExtensionMessageHandlerError.missingParameter("featureName or subfeatureName"))
+//        }
+//
+//        Logger.webExtensions.debug("🔍 Is SubFeature Enabled - feature: \(featureName), subfeature: \(subfeatureName)")
+//
+//        return .success(["enabled": true])
+//    }
 
     private func handleGetResourceIfNew(_ params: [String: Any]?) -> WebExtensionMessageResult {
         guard
-            let name = params?["name"] as? String,
+            let requestedResource = params?["name"] as? String,
             let requestedVersion = params?["version"] as? String
         else {
             return .failure(WebExtensionMessageHandlerError.missingParameter("name or version"))
         }
 
-        Logger.webExtensions.debug("📦 Get Resource If New - name: \(name), version: \(requestedVersion)")
+        Logger.webExtensions.debug("📦 Get Resource If New - name: \(requestedResource), version: \(requestedVersion)")
 
         guard let privacyConfigData = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig) else {
             return .failure(WebExtensionMessageHandlerError.missingParameter("add another error for missing config or smth"))
@@ -192,11 +199,11 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         }
     }
 
-    private func handleIsAutoconsentSettingEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
-        Logger.webExtensions.debug("⚙️ Is Autoconsent Setting Enabled")
-
-        return .success(["enabled": true])
-    }
+//    private func handleIsAutoconsentSettingEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
+//        Logger.webExtensions.debug("⚙️ Is Autoconsent Setting Enabled")
+//
+//        return .success(["enabled": true])
+//    }
 
     private func handleExtensionLog(_ params: [String: Any]?) -> WebExtensionMessageResult {
         guard let message = params?["message"] as? String else {

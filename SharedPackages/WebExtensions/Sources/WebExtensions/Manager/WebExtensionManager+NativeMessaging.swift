@@ -119,7 +119,7 @@ extension WebExtensionManager {
         let displayName = await extensionContext.webExtension.displayName ?? "(unknown)"
         Logger.webExtensions.debug("📬 Received native message from extension: \(displayName)")
 
-        Logger.webExtensions.debug("🔎 Full message received: \(String(describing: message))")
+//        Logger.webExtensions.debug("🔎 Full message received: \(String(describing: message))")
 
         let extensionMessage: WebExtensionMessage
         do {

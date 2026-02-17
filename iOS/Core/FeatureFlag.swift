@@ -214,7 +214,8 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213227027157584
     case iPadDuckaiOnTab
-    
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213313932650457
     case iPadAIToggle
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039

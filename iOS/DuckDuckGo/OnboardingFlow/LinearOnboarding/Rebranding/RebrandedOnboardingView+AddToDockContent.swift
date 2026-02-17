@@ -33,10 +33,7 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var showAddToDockTutorial = false
-        @State private var animateTitle = true
-        @State private var animateMessage = false
         @State private var showContent = false
-
         private let isAnimating: Binding<Bool>
         private let isSkipped: Binding<Bool>
         private let showTutorialAction: () -> Void
@@ -68,29 +65,44 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         private var promoContent: some View {
-            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
-                AnimatableTypingText(UserText.AddToDockOnboarding.Promo.title, startAnimating: $animateTitle, skipAnimation: isSkipped) {
-                    withAnimation {
-                        animateMessage = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Font(UIFont.daxTitle3()))
-
-                AnimatableTypingText(UserText.AddToDockOnboarding.Promo.introMessage, startAnimating: $animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showContent = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(AddToDockContentMetrics.messageFont)
-
-                VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(UserText.AddToDockOnboarding.Promo.introMessage)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
+                ),
+                content: AnyView(
                     addToDockPromoView
-                    customActionView
+                ),
+                title: {
+                    Text(UserText.AddToDockOnboarding.Promo.title)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.title)
+                        .multilineTextAlignment(.center)
+                },
+                actions: {
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                        Button(action: {
+                            showTutorialAction()
+                            isSkipped.wrappedValue = false
+                            showAddToDockTutorial = true
+                        }) { Text(UserText.AddToDockOnboarding.Buttons.tutorial) }
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+
+                        Button(action: { dismissAction(false) }) {
+                            Text(UserText.AddToDockOnboarding.Buttons.skip)
+                        }
+                        .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                    }
                 }
-                .visibility(showContent ? .visible : .invisible)
-            }
+            )
         }
 
         private var addToDockPromoView: some View {
@@ -98,29 +110,6 @@ extension OnboardingRebranding.OnboardingView {
                 .aspectRatio(contentMode: .fit)
                 .padding(.vertical)
         }
-
-        private var customActionView: some View {
-            VStack {
-                RebrandedOnboardingView.OnboardingCTAButton(
-                    title: UserText.AddToDockOnboarding.Buttons.tutorial,
-                    buttonStyle: .primary(compact: false),
-                    action: {
-                        showTutorialAction()
-                        isSkipped.wrappedValue = false
-                        showAddToDockTutorial = true
-                    }
-                )
-
-                RebrandedOnboardingView.OnboardingCTAButton(
-                    title: UserText.AddToDockOnboarding.Buttons.skip,
-                    buttonStyle: .ghost,
-                    action: {
-                        dismissAction(false)
-                    }
-                )
-            }
-        }
-
     }
 
     struct AddToDockTutorialContent: View {

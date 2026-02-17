@@ -263,12 +263,12 @@
          <EnvironmentVariable
             key = "ONBOARDING"
             value = "true"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "VARIANT"
             value = "ma"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>
       <LocationScenarioReference

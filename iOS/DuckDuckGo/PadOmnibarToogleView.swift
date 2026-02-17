@@ -28,6 +28,9 @@ final class PadOmnibarToogleView: UIView {
         static let outerWidth: CGFloat = 102
         static let innerHeight: CGFloat = 32
         static let horizontalPadding: CGFloat = 2
+        static let selectedWidth: CGFloat = 48
+        static let selectedLeadingLeft: CGFloat = horizontalPadding
+        static let selectedLeadingRight: CGFloat = outerWidth - horizontalPadding - selectedWidth
     }
 
     var onSearchTapped: (() -> Void)?
@@ -44,7 +47,7 @@ final class PadOmnibarToogleView: UIView {
     private let searchButton = BrowserChromeButton()
     private let aiChatButton = BrowserChromeButton()
     private var selectedLeadingConstraint: NSLayoutConstraint!
-    private var selectedTrailingConstraint: NSLayoutConstraint!
+    private var dragStartLeadingConstant: CGFloat = 0
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -72,9 +75,7 @@ final class PadOmnibarToogleView: UIView {
         aiChatButton.translatesAutoresizingMaskIntoConstraints = false
 
         selectedLeadingConstraint = selectedBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor,
-                                                                                    constant: Metrics.horizontalPadding)
-        selectedTrailingConstraint = selectedBackgroundView.trailingAnchor.constraint(equalTo: centerXAnchor,
-                                                                                      constant: -1)
+                                                                                    constant: Metrics.selectedLeadingLeft)
 
         NSLayoutConstraint.activate([
             widthAnchor.constraint(equalToConstant: Metrics.outerWidth),
@@ -82,8 +83,8 @@ final class PadOmnibarToogleView: UIView {
 
             selectedBackgroundView.topAnchor.constraint(equalTo: topAnchor, constant: (Metrics.outerHeight - Metrics.innerHeight) / 2),
             selectedBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -(Metrics.outerHeight - Metrics.innerHeight) / 2),
+            selectedBackgroundView.widthAnchor.constraint(equalToConstant: Metrics.selectedWidth),
             selectedLeadingConstraint,
-            selectedTrailingConstraint,
 
             searchButton.leadingAnchor.constraint(equalTo: leadingAnchor),
             searchButton.topAnchor.constraint(equalTo: topAnchor),
@@ -115,6 +116,10 @@ final class PadOmnibarToogleView: UIView {
 
         searchButton.adjustsImageWhenHighlighted = false
         aiChatButton.adjustsImageWhenHighlighted = false
+
+        let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        panGestureRecognizer.cancelsTouchesInView = false
+        addGestureRecognizer(panGestureRecognizer)
     }
 
     private func setUpAccessibility() {
@@ -129,23 +134,7 @@ final class PadOmnibarToogleView: UIView {
 
     private func updateSelection(animated: Bool) {
         let isSearchSelected = selectedMode == .search
-
-        selectedLeadingConstraint.isActive = false
-        selectedTrailingConstraint.isActive = false
-
-        if isSearchSelected {
-            selectedLeadingConstraint = selectedBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor,
-                                                                                        constant: Metrics.horizontalPadding)
-            selectedTrailingConstraint = selectedBackgroundView.trailingAnchor.constraint(equalTo: centerXAnchor,
-                                                                                          constant: -1)
-        } else {
-            selectedLeadingConstraint = selectedBackgroundView.leadingAnchor.constraint(equalTo: centerXAnchor, constant: 1)
-            selectedTrailingConstraint = selectedBackgroundView.trailingAnchor.constraint(equalTo: trailingAnchor,
-                                                                                          constant: -Metrics.horizontalPadding)
-        }
-
-        selectedLeadingConstraint.isActive = true
-        selectedTrailingConstraint.isActive = true
+        selectedLeadingConstraint.constant = isSearchSelected ? Metrics.selectedLeadingLeft : Metrics.selectedLeadingRight
 
         searchButton.setImage(isSearchSelected
                               ? DesignSystemImages.Glyphs.Size16.findSearchGradientColor
@@ -157,7 +146,10 @@ final class PadOmnibarToogleView: UIView {
                               for: .normal)
 
         if animated {
-            UIView.animate(withDuration: 0.2) {
+            UIView.animate(withDuration: 0.24,
+                           delay: 0,
+                           usingSpringWithDamping: 0.82,
+                           initialSpringVelocity: 0.2) {
                 self.layoutIfNeeded()
             }
         } else {
@@ -166,12 +158,56 @@ final class PadOmnibarToogleView: UIView {
     }
 
     @objc private func searchTapped() {
-        selectedMode = .search
-        onSearchTapped?()
+        selectMode(.search, animated: true, notify: true)
     }
 
     @objc private func aiChatTapped() {
-        selectedMode = .aiChat
-        onAIChatTapped?()
+        selectMode(.aiChat, animated: true, notify: true)
+    }
+
+    @objc private func handlePan(_ gestureRecognizer: UIPanGestureRecognizer) {
+        switch gestureRecognizer.state {
+        case .began:
+            dragStartLeadingConstant = selectedLeadingConstraint.constant
+
+        case .changed:
+            let translationX = gestureRecognizer.translation(in: self).x
+            let updatedConstant = dragStartLeadingConstant + translationX
+            selectedLeadingConstraint.constant = clampedLeadingConstant(updatedConstant)
+            layoutIfNeeded()
+
+        case .ended, .cancelled, .failed:
+            let modeToSelect = modeForCurrentPosition()
+            selectMode(modeToSelect, animated: true, notify: selectedMode != modeToSelect)
+
+        default:
+            break
+        }
+    }
+
+    private func clampedLeadingConstant(_ value: CGFloat) -> CGFloat {
+        min(max(value, Metrics.selectedLeadingLeft), Metrics.selectedLeadingRight)
+    }
+
+    private func modeForCurrentPosition() -> TextEntryMode {
+        let midpoint = (Metrics.selectedLeadingLeft + Metrics.selectedLeadingRight) / 2
+        return selectedLeadingConstraint.constant < midpoint ? .search : .aiChat
+    }
+
+    private func selectMode(_ mode: TextEntryMode, animated: Bool, notify: Bool) {
+        let didChange = selectedMode != mode
+        selectedMode = mode
+        if !didChange {
+            updateSelection(animated: animated)
+        }
+
+        guard notify else { return }
+
+        switch mode {
+        case .search:
+            onSearchTapped?()
+        case .aiChat:
+            onAIChatTapped?()
+        }
     }
 }

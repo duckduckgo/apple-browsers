@@ -265,9 +265,10 @@ final class AutofillOnboardingExperimentPixelReporter: AutofillOnboardingExperim
         }
     }
 
-    /// Buckets days to conversion: 1, 2-3, 4-5, 6-7, 8+
+    /// Buckets days to conversion: 0, 1, 2-3, 4-5, 6-7, 8+
     private func daysToConversionBucket(for days: Int) -> String {
         switch days {
+        case 0: return "0"
         case 1: return "1"
         case 2...3: return "2-3"
         case 4...5: return "4-5"

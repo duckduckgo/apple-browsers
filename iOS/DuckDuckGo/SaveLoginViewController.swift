@@ -200,11 +200,11 @@ extension SaveLoginViewController: SaveLoginViewModelDelegate {
             experimentPixels.fireImpressionCount(impressions)
         }
 
-        // Days since enrollment (minimum 1, even if enrolled today)
+        // Days since enrollment
         let subfeatureID = AutofillSubfeature.onboardingExperiment.rawValue
         if let enrollmentDate = featureFlagger.allActiveExperiments[subfeatureID]?.enrollmentDate {
             let daysSinceEnrollment = Calendar.current.dateComponents([.day], from: enrollmentDate, to: Date()).day ?? 0
-            experimentPixels.fireDaysToConversion(max(daysSinceEnrollment, 1))
+            experimentPixels.fireDaysToConversion(max(daysSinceEnrollment, 0))
         }
     }
 

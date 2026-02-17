@@ -57,12 +57,10 @@ extension TabTitleView {
     /// avoid animating the Placeholder.
     ///
     func displayTitleIfNeeded(title: String, url: URL?, isLoading: Bool, animated: Bool = true) {
-        if displayPolicy.mustSkipDisplayingTitle(title: title, url: url, previousURL: sourceURL, isLoading: isLoading) {
+        let previousTitle = titleTextField.stringValue
+        if displayPolicy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: sourceURL, isLoading: isLoading) {
             return
         }
-
-        let previousTitle = titleTextField.stringValue
-        let mustFadeInLatestTitle = displayPolicy.mustAnimateNewTitleFadeIn(targetURL: url, previousURL: sourceURL)
 
         titleTextField.stringValue = title
         previousTextField.stringValue = previousTitle
@@ -72,7 +70,7 @@ extension TabTitleView {
             return
         }
 
-        transitionToLatestTitle(fadeInTitle: mustFadeInLatestTitle)
+        transitionToLatestTitle(fadeInTitle: true)
     }
 
     func reset() {

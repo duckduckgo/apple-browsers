@@ -216,15 +216,12 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
         Logger.webExtensions.debug("📦 Get Resource If New - name: \(requestedResource), version: \(requestedVersion)")
 
-        guard requestedResource == "config" else {
-            return .success(Self.successResponse)
-        }
         switch requestedResource {
         case "config":
             return privacyConfigIfNewerThan(lastVersion: requestedVersion)
         default:
-            // TODO: add error for unsupported resource type
-            return .failure(WebExtensionMessageHandlerError.missingParameter("add another error for missing config or smth"))
+            Logger.webExtensions.error("❌ Unsupported resource type: \(requestedResource)")
+            return .failure(WebExtensionMessageHandlerError.unsupportedResourceType(requestedResource))
         }
 
     }
@@ -232,8 +229,8 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
     private func privacyConfigIfNewerThan(lastVersion: String) -> WebExtensionMessageResult {
         guard let privacyConfigData = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig),
               let currentVersion = privacyConfigData.version else {
-            // TODO: add error for error reading privacy config data
-            return .failure(WebExtensionMessageHandlerError.missingParameter("add another error for missing config or smth"))
+            Logger.webExtensions.error("❌ Failed to read privacy config data or version is missing")
+            return .failure(WebExtensionMessageHandlerError.configurationError("Failed to read privacy config data or version is missing"))
         }
 
         if currentVersion == lastVersion {

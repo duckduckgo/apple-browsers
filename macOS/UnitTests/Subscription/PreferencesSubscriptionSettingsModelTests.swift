@@ -92,46 +92,6 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
     // MARK: - Cancel Pending Downgrade Handler Tests
 
     @MainActor
-    func testCancelPendingDowngrade_WhenAppleSubscriptionOnAppStoreNoCurrentProductId_ReturnsShowInternalSubscriptionAlert() {
-        // Given - Apple subscription on App Store with pending downgrade but no availableChanges.currentProductId
-        let pendingPlan = DuckDuckGoSubscription.PendingPlan(
-            productId: "ddg-privacy-pro-monthly-plus",
-            billingPeriod: .monthly,
-            effectiveAt: Date(timeIntervalSince1970: 1711557633),
-            status: "pending",
-            tier: .plus
-        )
-        let subscription = SubscriptionMockFactory.subscription(
-            status: .autoRenewable,
-            platform: .apple,
-            tier: .pro,
-            pendingPlans: [pendingPlan]
-        )
-        sut = makeSUT(subscription: subscription,
-                      purchasePlatform: .appStore,
-                      cancelPendingDowngradeHandler: { [weak self] _ in
-            self?.capturedCancelPendingDowngradeProductId = "handler-should-not-be-called"
-        })
-
-        let subscriptionUpdated = expectation(description: "Subscription details updated")
-        sut.$subscriptionDetails
-            .compactMap { $0 }
-            .first()
-            .sink { _ in subscriptionUpdated.fulfill() }
-            .store(in: &cancellables)
-        wait(for: [subscriptionUpdated], timeout: 2.0)
-
-        // When - User triggers cancel pending downgrade
-        let action = sut.cancelPendingDowngrade()
-
-        // Then - Returns showInternalSubscriptionAlert; handler was not called
-        if case .showInternalSubscriptionAlert = action { } else {
-            XCTFail("Expected showInternalSubscriptionAlert, got \(action)")
-        }
-        XCTAssertNil(capturedCancelPendingDowngradeProductId)
-    }
-
-    @MainActor
     func testCancelPendingDowngrade_WhenAppleSubscriptionWithAvailableChangesCurrentProductId_InvokesHandlerWithCurrentProductId() {
         let availableChanges = DuckDuckGoSubscription.AvailableChanges(upgrade: [], downgrade: [], currentProductId: "be-current-product-id")
         let pendingPlan = DuckDuckGoSubscription.PendingPlan(

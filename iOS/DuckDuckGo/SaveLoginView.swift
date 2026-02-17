@@ -71,10 +71,11 @@ struct SaveLoginView: View {
     
     private func makeBodyView(_ geometry: GeometryProxy) -> some View {
         DispatchQueue.main.async { self.frame = geometry.size }
-        
+
         return ZStack {
             AutofillViews.CloseButtonHeader(action: viewModel.cancelButtonPressed)
-                .offset(x: horizontalPadding)
+                .padding(.top, Const.Size.closeButtonEdgeInset)
+                .offset(x: horizontalPadding - Const.Size.closeButtonEdgeInset)
                 .zIndex(1)
 
             innerContent
@@ -143,7 +144,7 @@ struct SaveLoginView: View {
             VStack {
                 Spacer(minLength: Const.Size.topPadding)
                 experimentHeaderView
-                Spacer(minLength: Const.Size.contentSpacing)
+                    .padding(.bottom, 4)
                 AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
                 Spacer(minLength: Const.Size.headlineToContentSpacing)
                 AutofillViews.SecureDescriptionVariant(text: UserText.autofillSaveLoginSecurityMessage)
@@ -393,6 +394,7 @@ private enum Const {
         static let featuresListTopPadding: CGFloat = 12.0
         static let featuresListBorderCornerRadius: CGFloat = 8.0
         static let variantHorizontalPadding: CGFloat = 24.0
+        static let closeButtonEdgeInset: CGFloat = 5.0
         static let variant3TitleFontSize: CGFloat = 40.0
         static let variant3MaximumTextWidth: CGFloat = 338.0
         static let variant3TitleHorizontalPadding: CGFloat = 8.0

@@ -54,7 +54,7 @@ final class DefaultOmniBarSearchView: UIView {
     let cancelButton = BrowserChromeButton(.secondary)
     let voiceSearchButton = BrowserChromeButton()
     let aiChatButton = BrowserChromeButton()
-    let modeToggleView = PadOmnibarToogleView()
+    let modeToggleView = PadOmnibarToggleView()
     private let modeToggleContainer = UIView()
     
     var isModeToggleHidden: Bool {

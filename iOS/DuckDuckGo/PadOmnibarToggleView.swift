@@ -1,5 +1,5 @@
 //
-//  PadOmnibarToogleView.swift
+//  PadOmnibarToggleView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -21,7 +21,7 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-final class PadOmnibarToogleView: UIView {
+final class PadOmnibarToggleView: UIView {
 
     private enum Metrics {
         static let outerHeight: CGFloat = 36

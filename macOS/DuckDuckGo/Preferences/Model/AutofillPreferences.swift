@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import Persistence
 import WebExtensions
 
 protocol AutofillPreferencesPersistor {
@@ -85,6 +86,10 @@ extension NSNotification.Name {
 
 final class AutofillPreferences: AutofillPreferencesPersistor {
 
+    enum Key: String {
+        case showPasswordsInMenuBar = "preferences.passwords.show-in-menu-bar"
+    }
+
     public var isAutoLockEnabled: Bool {
         get {
             return statisticsStore.autoLockEnabled
@@ -126,16 +131,13 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
     @UserDefaultsWrapper(key: .autolockLocksFormFilling, defaultValue: false)
     var autolockLocksFormFilling: Bool
 
-    @UserDefaultsWrapper(key: .showPasswordsInMenuBar, defaultValue: false)
-    private var showInMenuBarWrapped: Bool
-
     var showInMenuBar: Bool {
         get {
-            return showInMenuBarWrapped
+            return (try? keyValueStore.object(forKey: Key.showPasswordsInMenuBar.rawValue) as? Bool) ?? false
         }
         set {
-            let oldValue = showInMenuBarWrapped
-            showInMenuBarWrapped = newValue
+            let oldValue = showInMenuBar
+            try? keyValueStore.set(newValue, forKey: Key.showPasswordsInMenuBar.rawValue)
             if oldValue != newValue {
                 NotificationCenter.default.post(name: .autofillShowInMenuBarDidChange, object: nil)
             }
@@ -204,6 +206,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
     }
 
     private let injectedDependencyStore: StatisticsStore?
+    private let keyValueStore: ThrowingKeyValueStoring
     private lazy var defaultDependencyStore: StatisticsStore = {
 #if DEBUG
         // To prevent an assertion failure deep within dependencies in Database.makeDatabase
@@ -214,8 +217,10 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
         return LocalStatisticsStore()
     }()
 
-    init(statisticsStore: StatisticsStore? = nil) {
+    init(statisticsStore: StatisticsStore? = nil,
+         keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
         self.injectedDependencyStore = statisticsStore
+        self.keyValueStore = keyValueStore
     }
 
 }

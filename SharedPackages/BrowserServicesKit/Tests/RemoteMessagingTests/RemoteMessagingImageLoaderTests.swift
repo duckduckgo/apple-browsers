@@ -21,7 +21,7 @@ import XCTest
 
 final class RemoteMessagingImageLoaderTests: XCTestCase {
 
-    private let testCache = URLCache(memoryCapacity: 1024, diskCapacity: 0)
+    private let testCache = URLCache(memoryCapacity: 1024 * 1024, diskCapacity: 0)
 
     override func setUp() {
         super.setUp()

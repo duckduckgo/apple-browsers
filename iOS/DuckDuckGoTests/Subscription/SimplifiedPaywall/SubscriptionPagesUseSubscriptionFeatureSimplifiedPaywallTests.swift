@@ -28,6 +28,8 @@ import PixelExperimentKit
 import PrivacyConfig
 import PixelKitTestingUtilities
 import NetworkingTestingUtils
+import BrowserServicesKitTestsUtils
+import WebKit
 
 final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTestCase {
 
@@ -37,7 +39,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
     private var mockStorePurchaseManager: StorePurchaseManagerMock!
     private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
     private var mockAppStoreRestoreFlow: AppStoreRestoreFlowMock!
-    private var mockInternalUserDecider: MockInternalUserDecider!
+    private var mockInternalUserDecider: PrivacyConfig.MockInternalUserDecider!
     private var mockWideEvent: WideEventMock!
     private var mockPendingTransactionHandler: MockPendingTransactionHandler!
     private var mockRequestValidator: ScriptRequestValidatorMock!
@@ -53,7 +55,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
 
         mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
         mockAppStoreRestoreFlow = AppStoreRestoreFlowMock()
-        mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
+        mockInternalUserDecider = PrivacyConfig.MockInternalUserDecider(isInternalUser: true)
         mockWideEvent = WideEventMock()
         mockPendingTransactionHandler = MockPendingTransactionHandler()
         mockRequestValidator = ScriptRequestValidatorMock()
@@ -91,7 +93,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
         ]
 
         // When
-        _ = await sut.subscriptionSelected(params: params, original: MockWKScriptMessage(name: "", body: ""))
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock(name: "", body: ""))
 
         // Then
         guard let additionalParams = mockAppStorePurchaseFlow.completeSubscriptionAdditionalParams else {
@@ -122,7 +124,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
         ]
 
         // When
-        _ = await sut.subscriptionSelected(params: params, original: MockWKScriptMessage(name: "", body: ""))
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock(name: "", body: ""))
 
         // Then
         guard let additionalParams = mockAppStorePurchaseFlow.completeSubscriptionAdditionalParams else {

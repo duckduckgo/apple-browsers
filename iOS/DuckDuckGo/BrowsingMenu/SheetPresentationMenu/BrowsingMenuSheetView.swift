@@ -33,7 +33,7 @@ struct BrowsingMenuSheetView: View {
     enum Metrics {
         static let headerButtonVerticalPadding: CGFloat = {
             if #available(iOS 26, *) {
-                return 22
+                return 16
             } else {
                 return 12
             }
@@ -435,10 +435,10 @@ private struct BrowsingMenuHeaderView: View {
             }
         }
         .frame(width: MenuHeaderConstant.faviconSize, height: MenuHeaderConstant.faviconSize)
-        .menuHeaderEntryShape()
+        .faviconShape()
         .padding(MenuHeaderConstant.faviconPadding)
         .background(Color.rowBackgroundColor)
-        .menuHeaderEntryShape()
+        .faviconShape()
     }
 
     @ViewBuilder
@@ -463,6 +463,7 @@ private struct BrowsingMenuHeaderView: View {
 
 private enum MenuHeaderConstant {
     static let cornerRadius: CGFloat = 10
+    static let iOS26CornerRadius: CGFloat = 24
     static let faviconSize: CGFloat = 32
     static let faviconPadding: CGFloat = 8
     static let contentSpacing: CGFloat = 12
@@ -473,10 +474,23 @@ private enum MenuHeaderConstant {
 private extension View {
     @ViewBuilder
     func menuHeaderEntryShape() -> some View {
+        if #available(iOS 26, *) {
+            self
+                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.iOS26CornerRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.iOS26CornerRadius, style: .continuous))
+        } else {
+            self
+                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.cornerRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.cornerRadius, style: .continuous))
+        }
+    }
+
+    @ViewBuilder
+    func faviconShape() -> some View {
         if #available(iOS 17, *) {
             self
-                .clipShape(ButtonBorderShape.automatic)
-                .contentShape(ButtonBorderShape.automatic)
+                .clipShape(ButtonBorderShape.roundedRectangle)
+                .contentShape(ButtonBorderShape.roundedRectangle)
         } else {
             self
                 .clipShape(RoundedRectangle(cornerRadius: MenuHeaderConstant.cornerRadius, style: .continuous))

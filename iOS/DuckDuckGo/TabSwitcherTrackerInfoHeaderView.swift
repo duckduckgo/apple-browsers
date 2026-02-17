@@ -23,9 +23,10 @@ import SwiftUI
 final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
 
     static let reuseIdentifier = "TabSwitcherTrackerInfoHeaderView"
-    static let estimatedHeight: CGFloat = 44
+    static let estimatedHeight: CGFloat = 50
 
     private enum Constants {
+        static let topPadding: CGFloat = 6
         static let horizontalPadding: CGFloat = 14
     }
 
@@ -71,7 +72,7 @@ final class TabSwitcherTrackerInfoHeaderView: UICollectionReusableView {
         host.didMove(toParent: parent)
 
         NSLayoutConstraint.activate([
-            host.view.topAnchor.constraint(equalTo: topAnchor),
+            host.view.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
             host.view.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             host.view.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
             host.view.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor)

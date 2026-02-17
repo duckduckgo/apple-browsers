@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import XCTest
 @testable import Core
 @testable import DuckDuckGo
@@ -566,6 +567,10 @@ class LargeOmniBarStateTests: XCTestCase {
     }
 
     func testWhenIPadAIToggleEnabledAndAIChatButtonVisibleThenShowAIChatModeToggleIsTrue() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+
         mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
                                                  featureFlagger: mockFeatureFlagger,
@@ -585,6 +590,10 @@ class LargeOmniBarStateTests: XCTestCase {
     }
 
     func testWhenAIChatButtonHiddenThenShowAIChatModeToggleIsFalseEvenIfFlagEnabled() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+
         mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
                                                  featureFlagger: mockFeatureFlagger)
@@ -594,6 +603,10 @@ class LargeOmniBarStateTests: XCTestCase {
     }
 
     func testWhenIPadAIToggleEnabledAndRefreshEnabledThenShowRefreshOutsideAddressBarIsTrue() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+
         mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
         let appSettings = AppSettingsMock()
         appSettings.currentRefreshButtonPosition = .addressBar

@@ -147,6 +147,16 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         get { searchAreaView.aiChatButton.isHidden }
         set { searchAreaView.aiChatButton.isHidden = newValue }
     }
+    
+    var isModeToggleHidden: Bool {
+        get { searchAreaView.isModeToggleHidden }
+        set { searchAreaView.isModeToggleHidden = newValue }
+    }
+    
+    var selectedModeToggleState: TextEntryMode {
+        get { searchAreaView.modeToggleView.selectedMode }
+        set { searchAreaView.modeToggleView.selectedMode = newValue }
+    }
 
     var isSearchLoupeHidden: Bool {
         get { searchLoupe.isHidden }
@@ -215,6 +225,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var onBookmarksPressed: (() -> Void)?
     var onAIChatPressed: (() -> Void)?
     var onDismissPressed: (() -> Void)?
+    var onSearchModePressed: (() -> Void)?
+    var onAIChatModePressed: (() -> Void)?
     
     /// Callback fired when the AI Chat left button is tapped
     var onAIChatLeftButtonPressed: (() -> Void)?
@@ -510,6 +522,12 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         bookmarksButtonView.addTarget(self, action: #selector(bookmarksButtonTap), for: .touchUpInside)
         menuButtonView.addTarget(self, action: #selector(menuButtonTap), for: .touchUpInside)
         externalRefreshButtonView.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
+        searchAreaView.modeToggleView.onSearchTapped = { [weak self] in
+            self?.onSearchModePressed?()
+        }
+        searchAreaView.modeToggleView.onAIChatTapped = { [weak self] in
+            self?.onAIChatModePressed?()
+        }
 
         searchAreaView.textField.addTarget(self, action: #selector(textFieldTextEntered), for: .primaryActionTriggered)
 

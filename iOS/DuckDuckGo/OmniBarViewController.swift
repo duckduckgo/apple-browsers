@@ -59,6 +59,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode = .search
+    private var selectedTextEntryMode: TextEntryMode = .search
 
     // MARK: - Animation
 
@@ -173,11 +174,8 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func configureTextField() {
-        let theme = ThemeManager.shared.currentTheme
-
         textField.delegate = self
-        textField.attributedPlaceholder = NSAttributedString(string: UserText.searchDuckDuckGo,
-                                                             attributes: [.foregroundColor: theme.searchBarTextPlaceholderColor])
+        updateTextFieldPlaceholderForSelectedMode()
 
         textField.textDragInteraction?.isEnabled = false
 
@@ -258,6 +256,14 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
         barView.onAIChatBrandingPressed = { [weak self] in
             self?.onAIChatBrandingPressed()
+        }
+        if let defaultOmniBarView = barView as? DefaultOmniBarView {
+            defaultOmniBarView.onSearchModePressed = { [weak self] in
+                self?.setSelectedTextEntryMode(.search)
+            }
+            defaultOmniBarView.onAIChatModePressed = { [weak self] in
+                self?.setSelectedTextEntryMode(.aiChat)
+            }
         }
     }
 
@@ -677,6 +683,15 @@ class OmniBarViewController: UIViewController, OmniBar {
         if let defaultOmniBarView = barView as? DefaultOmniBarView {
             defaultOmniBarView.isExternalRefreshButtonHidden = !state.showRefreshOutsideAddressBar
             defaultOmniBarView.externalRefreshButtonView.isEnabled = state.isBrowsing
+            defaultOmniBarView.selectedModeToggleState = selectedTextEntryMode
+
+            let shouldShowModeToggle = state.showAIChatButton
+                && state.hasLargeWidth
+                && dependencies.featureFlagger.isFeatureOn(.iPadAIToggle)
+            defaultOmniBarView.isModeToggleHidden = !shouldShowModeToggle
+            if shouldShowModeToggle {
+                barView.isAIChatButtonHidden = true
+            }
         }
 
         applyCustomization()
@@ -716,7 +731,12 @@ class OmniBarViewController: UIViewController, OmniBar {
             resignFirstResponder()
 
             DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
-            
+
+            if selectedTextEntryMode == .aiChat {
+                omniDelegate?.onPromptSubmitted(query, tools: nil)
+                return
+            }
+
             if let url = URL(trimmedAddressBarString: query, useUnifiedLogic: isUsingUnifiedPredictor), url.isValid(usingUnifiedLogic: isUsingUnifiedPredictor) {
                 omniDelegate?.onOmniQuerySubmitted(url.absoluteString)
             } else {
@@ -874,6 +894,25 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onAIChatPressed() {
         omniDelegate?.onAIChatPressed()
+    }
+
+    private func setSelectedTextEntryMode(_ mode: TextEntryMode) {
+        selectedTextEntryMode = mode
+        updateTextFieldPlaceholderForSelectedMode()
+    }
+
+    private func updateTextFieldPlaceholderForSelectedMode() {
+        let theme = ThemeManager.shared.currentTheme
+        let placeholder: String = {
+            if selectedTextEntryMode == .aiChat {
+                return UserText.searchInputFieldPlaceholderDuckAI
+            } else {
+                return UserText.searchDuckDuckGo
+            }
+        }()
+
+        textField.attributedPlaceholder = NSAttributedString(string: placeholder,
+                                                             attributes: [.foregroundColor: theme.searchBarTextPlaceholderColor])
     }
 
     private func onDismissPressed() {

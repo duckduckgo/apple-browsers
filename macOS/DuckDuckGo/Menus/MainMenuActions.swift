@@ -819,11 +819,6 @@ extension AppDelegate {
         persistor.hasQuitAppBefore = false
     }
 
-    @objc func resetThemesPopoverWasShown(_ sender: Any?) {
-        let persistor = ThemePopoverUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
-        persistor.themePopoverShown = false
-    }
-
     @objc func resetTipKit(_ sender: Any?) {
         TipKitDebugOptionsUIActionHandler().resetTipKitTapped()
     }
@@ -1666,12 +1661,17 @@ extension MainViewController: NSMenuItemValidation {
         case #selector(MainViewController.bookmarkAllOpenTabs(_:)):
             return tabCollectionViewModel.canBookmarkAllOpenTabs()
         case #selector(MainViewController.openBookmark(_:)),
-             #selector(MainViewController.showManageBookmarks(_:)):
+             #selector(MainViewController.showManageBookmarks(_:)),
+            #selector(MainViewController.toggleBookmarksBarFromMenu(_:)):
             return allowsUserInteraction
 
         // New Tabs
         case #selector(MainViewController.newTab(_:)):
             return allowsUserInteraction
+
+        // Duplicate Tab
+        case #selector(MainViewController.duplicateTab(_:)):
+            return getActiveTabAndIndex()?.tab.content.canBeDuplicated == true
 
         // Pin Tab
         case #selector(MainViewController.pinOrUnpinTab(_:)):
@@ -1732,7 +1732,7 @@ extension MainViewController: NSMenuItemValidation {
             let isDownloadsPopoverShown = self.navigationBarViewController.isDownloadsPopoverShown
             menuItem.title = isDownloadsPopoverShown ? UserText.closeDownloads : UserText.openDownloads
 
-            return true
+            return allowsUserInteraction
 
         case #selector(MainViewController.summarize(_:)):
             return aiChatMenuConfig.shouldDisplaySummarizationMenuItem
@@ -1758,7 +1758,8 @@ extension AppDelegate: NSMenuItemValidation {
             #selector(AppDelegate.openFile(_:)),
             #selector(AppDelegate.openLocation(_:)),
             #selector(AppDelegate.openPreferences),
-            #selector(AppDelegate.showManageBookmarks(_:)):
+            #selector(AppDelegate.showManageBookmarks(_:)),
+            #selector(AppDelegate.openImportBrowserDataWindow(_:)):
             return isUserInteractionAllowed
 
         // Reopen Last Removed Tab

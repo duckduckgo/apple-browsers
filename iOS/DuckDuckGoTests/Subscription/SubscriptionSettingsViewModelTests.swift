@@ -680,8 +680,12 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
     }
 
     func testSetCancelDowngradeStatus_WhenIdle_SetsCancelDowngradeTransactionStatusToNil() async {
-        mockSubscriptionManager.resultSubscription = .success(
-            SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus))
+        let subscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            platform: .apple,
+            tier: .plus,
+            availableChanges: DuckDuckGoSubscription.AvailableChanges(upgrade: [], downgrade: [], currentProductId: "test-product-id"))
+        mockSubscriptionManager.resultSubscription = .success(subscription)
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         let mockPerformer = MockSubscriptionFlowsExecuter()
         let performerCalled = expectation(description: "Performer called")

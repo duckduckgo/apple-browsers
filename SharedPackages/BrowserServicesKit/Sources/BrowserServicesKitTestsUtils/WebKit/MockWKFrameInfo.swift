@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import ObjectiveC
 import WebKit
 #if _FRAME_HANDLE_ENABLED
 import Navigation
@@ -28,6 +29,17 @@ public class MockWKFrameInfoObject: NSObject {
     @objc public var securityOrigin: WKSecurityOrigin
     @objc public weak var webView: WKWebView?
     @objc public var request: URLRequest
+
+    // swiftlint:disable:next identifier_name
+    @objc public var _handle: UnsafeMutableRawPointer? {
+        guard let webView else { return nil }
+        let selector = NSSelectorFromString("_mainFrame")
+        guard let method = class_getInstanceMethod(WKWebView.self, selector) else { return nil }
+        let imp = method_getImplementation(method)
+        typealias GetMainFrameType = @convention(c) (WKWebView, Selector) -> UnsafeMutableRawPointer?
+        let getMainFrame = unsafeBitCast(imp, to: GetMainFrameType.self)
+        return getMainFrame(webView, selector)
+    }
 
 #if _FRAME_HANDLE_ENABLED
     @objc public var handle: FrameHandle {

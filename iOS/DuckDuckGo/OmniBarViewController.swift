@@ -685,9 +685,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             defaultOmniBarView.externalRefreshButtonView.isEnabled = state.isBrowsing
             defaultOmniBarView.selectedModeToggleState = selectedTextEntryMode
 
-            let shouldShowModeToggle = state.showAIChatButton
-                && state.hasLargeWidth
-                && dependencies.featureFlagger.isFeatureOn(.iPadAIToggle)
+            let shouldShowModeToggle = state.showAIChatModeToggle
             defaultOmniBarView.isModeToggleHidden = !shouldShowModeToggle
             if shouldShowModeToggle {
                 barView.isAIChatButtonHidden = true

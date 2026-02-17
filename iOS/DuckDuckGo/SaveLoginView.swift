@@ -152,12 +152,17 @@ struct SaveLoginView: View {
             }
 
         case .newUserVariant3:
-            // TODO: Implement Design #7
+            // Design #7
             VStack(alignment: .leading) {
                 Spacer(minLength: Const.Size.topPadding)
                 experimentHeaderView
                 Spacer(minLength: Const.Size.contentSpacing)
-                onboardingCtaView()
+                variant3TitleView
+                onboardingCtaView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.shieldCheckSolid))
+                VStack(alignment: .center) {
+                    AutofillViews.SecureDescriptionVariant(text: UserText.autofillSaveLoginSecurityMessage)
+                }
+                .frame(maxWidth: .infinity)
             }
 
         case .saveLogin, .savePassword:
@@ -282,6 +287,49 @@ struct SaveLoginView: View {
             .frame(width: 96, height: 96)
     }
 
+    // MARK: - Variant 3 Views
+
+    private func variant3TitleAttributedString(fontSize: CGFloat) -> NSAttributedString {
+        let font = UIFont.systemFont(ofSize: fontSize, weight: .bold)
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.minimumLineHeight = fontSize
+        paragraphStyle.maximumLineHeight = fontSize
+
+        let result = NSMutableAttributedString()
+
+        result.append(NSAttributedString(string: "Store\npasswords\nsecurely\n", attributes: [
+            .font: font,
+            .foregroundColor: UIColor(designSystemColor: .textPrimary),
+            .paragraphStyle: paragraphStyle
+        ]))
+
+        result.append(NSAttributedString(string: "with DuckDuckGo", attributes: [
+            .font: font,
+            .foregroundColor: UIColor(designSystemColor: .textTertiary),
+            .paragraphStyle: paragraphStyle
+        ]))
+
+        return result
+    }
+
+    /// Calculate the font size based on the content width and the text width in the original design.
+    /// The font size will be scaled down if the text width is less than the original design width.
+    private var variant3FontSize: CGFloat {
+        let contentWidth = frame.width - (horizontalPadding * 2)
+        let textWidth = contentWidth - (Const.Size.variant3TitleHorizontalPadding * 2)
+        guard textWidth > 0 else { return Const.Size.variant3TitleFontSize }
+        let scaled = Const.Size.variant3TitleFontSize * (textWidth / Const.Size.variant3MaximumTextWidth)
+        return min(scaled, Const.Size.variant3TitleFontSize)
+    }
+
+    private var variant3TitleView: some View {
+        AttributedText(attributedString: variant3TitleAttributedString(fontSize: variant3FontSize))
+            .padding(.horizontal, Const.Size.variant3TitleHorizontalPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding([.bottom], Const.Size.featuresListPadding)
+    }
+
     // MARK: - CTA Views
 
     /// CTA buttons for onboarding flows
@@ -345,6 +393,30 @@ private enum Const {
         static let featuresListTopPadding: CGFloat = 12.0
         static let featuresListBorderCornerRadius: CGFloat = 8.0
         static let variantHorizontalPadding: CGFloat = 24.0
+        static let variant3TitleFontSize: CGFloat = 40.0
+        static let variant3MaximumTextWidth: CGFloat = 338.0
+        static let variant3TitleHorizontalPadding: CGFloat = 8.0
+    }
+}
+
+/// A view that displays an attributed string.
+/// Required because SwiftUI's attributed string support is limited.
+private struct AttributedText: UIViewRepresentable {
+    let attributedString: NSAttributedString
+
+    func makeUIView(context: Context) -> UILabel {
+        let label = UILabel()
+        label.numberOfLines = 0
+        label.lineBreakMode = .byWordWrapping
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        label.setContentHuggingPriority(.required, for: .vertical)
+        return label
+    }
+
+    func updateUIView(_ label: UILabel, context: Context) {
+        label.attributedText = attributedString
+        label.preferredMaxLayoutWidth = label.bounds.width
+        label.invalidateIntrinsicContentSize()
     }
 }
 

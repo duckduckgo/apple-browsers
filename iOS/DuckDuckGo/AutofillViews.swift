@@ -153,6 +153,7 @@ struct AutofillViews {
                 HStack(spacing: 8) {
                     if let image {
                         image
+                            .renderingMode(.template)
                     }
                     Text(title)
                         .daxButton()

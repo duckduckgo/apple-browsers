@@ -93,7 +93,7 @@ final class PasswordsStatusBarMenu: NSObject {
 
             PixelKit.fire(GeneralPixel.autofillPasswordsStatusBarIconClicked)
 
-            let popover = PasswordsStatusBarPopover(pinningManager: pinningManager)
+            let popover = PasswordsStatusBarPopover(pinningManager: pinningManager, positioningButton: button)
             self.popover = popover
             popover.select(category: .allItems)
 

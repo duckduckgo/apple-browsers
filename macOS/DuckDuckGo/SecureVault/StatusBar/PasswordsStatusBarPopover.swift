@@ -27,9 +27,11 @@ final class PasswordsStatusBarPopover: NSPopover {
     private var globalClickMonitor: Any?
     private var localClickMonitor: Any?
     private let pinningManager: PinningManager
+    private weak var positioningButton: NSView?
 
-    init(pinningManager: PinningManager) {
+    init(pinningManager: PinningManager, positioningButton: NSView?) {
         self.pinningManager = pinningManager
+        self.positioningButton = positioningButton
         super.init()
 
         self.animates = false
@@ -84,7 +86,8 @@ final class PasswordsStatusBarPopover: NSPopover {
         localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             guard let self, self.isShown, self.canDismiss else { return event }
             let popoverWindow = self.contentViewController?.view.window
-            if event.window !== popoverWindow {
+            let statusBarButtonWindow = self.positioningButton?.window
+            if event.window !== popoverWindow && event.window !== statusBarButtonWindow {
                 self.close()
             }
             return event

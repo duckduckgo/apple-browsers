@@ -37,6 +37,7 @@ private enum BubbleBackedDialogMetrics {
     static let addressBarPositionAdditionalTopMargin: CGFloat = 0
     static let searchExperienceAdditionalTopMargin: CGFloat = 0
     static let addToDockAdditionalTopMargin: CGFloat = 0
+    static let appIconPickerAdditionalTopMargin: CGFloat = 0
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -224,8 +225,6 @@ extension OnboardingRebranding {
                             },
                             content: {
                                 switch state.type {
-                                case .chooseAppIconDialog:
-                                    appIconPickerView
                                 case .chooseSearchExperienceDialog:
                                     searchExperienceSelectionView
                                 default:
@@ -366,8 +365,8 @@ extension OnboardingRebranding {
                 addressBarPositionView
             case .chooseSearchExperienceDialog:
                 searchExperienceSelectionView
-            default:
-                EmptyView()
+            case .chooseAppIconDialog:
+                appIconPickerView
             }
         }
 
@@ -413,8 +412,14 @@ extension OnboardingRebranding {
                     isVisible: true,
                     showsStepCounter: true
                 )
-            default:
-                nil
+            case .chooseAppIconDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .trailing,
+                    additionalTopMargin: BubbleBackedDialogMetrics.appIconPickerAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
             }
         }
 
@@ -433,8 +438,6 @@ extension OnboardingRebranding {
 
         private var appIconPickerView: some View {
             AppIconPickerContent(
-                animateTitle: $model.appIconPickerContentState.animateTitle,
-                animateMessage: $model.appIconPickerContentState.animateMessage,
                 showContent: $model.appIconPickerContentState.showContent,
                 isSkipped: $model.isSkipped,
                 action: model.appIconPickerContinueAction

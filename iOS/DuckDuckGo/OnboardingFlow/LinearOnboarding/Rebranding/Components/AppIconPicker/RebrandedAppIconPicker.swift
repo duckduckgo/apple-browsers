@@ -24,23 +24,40 @@ import Onboarding
 extension OnboardingRebranding.OnboardingView {
 
     struct AppIconPicker: View {
-        @StateObject private var viewModel = AppIconPickerViewModel()
 
-        let layout = [GridItem(.adaptive(minimum: AppIconPickerMetrics.iconSize), spacing: AppIconPickerMetrics.spacing, alignment: .leading)]
+        @Environment(\.onboardingTheme) private var onboardingTheme
+
+        private enum Metrics {
+            // App icon
+            static let cornerRadius: CGFloat = 13.0
+            static let iconSize: CGFloat = 80.0
+            // Color circle
+            static let colorCircleSize: CGFloat = 36.0
+            static let accentBorderWidth: CGFloat = 1.0
+            static let borderWidth: CGFloat = 1.0
+            // Selected circle
+            static let strokeFrameSize: CGFloat = 40.0
+            static let strokeWidth: CGFloat = 2.0
+            static let strokeInset: CGFloat = 2.0
+            // Layout
+            static let spacing: CGFloat = 44.0
+        }
+
+        @StateObject private var viewModel = RebrandedAppIconPickerViewModel()
 
         var body: some View {
-            LazyVGrid(columns: layout, spacing: AppIconPickerMetrics.spacing) {
-                ForEach(viewModel.items, id: \.icon) { item in
-                    Image(uiImage: item.icon.mediumImage ?? UIImage())
-                        .resizable()
-                        .frame(width: AppIconPickerMetrics.iconSize, height: AppIconPickerMetrics.iconSize)
-                        .cornerRadius(AppIconPickerMetrics.cornerRadius)
-                        .overlay {
-                            strokeOverlay(isSelected: item.isSelected)
-                        }
-                        .onTapGesture {
-                            viewModel.changeApp(icon: item.icon)
-                        }
+            VStack(spacing: Metrics.spacing) {
+                Image(uiImage: viewModel.selectedIcon.mediumImage)
+                    .resizable()
+                    .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+                    .cornerRadius(Metrics.cornerRadius)
+                HStack {
+                    ForEach(viewModel.items, id: \.icon) { item in
+                        colorCircle(color: item.color, isSelected: item.isSelected)
+                            .onTapGesture {
+                                viewModel.changeApp(icon: item.icon)
+                            }
+                    }
                 }
             }
         }
@@ -48,25 +65,54 @@ extension OnboardingRebranding.OnboardingView {
         @ViewBuilder
         private func strokeOverlay(isSelected: Bool) -> some View {
             if isSelected {
-                RoundedRectangle(cornerRadius: AppIconPickerMetrics.cornerRadius)
+                Circle()
                     .foregroundColor(.clear)
-                    .frame(width: AppIconPickerMetrics.strokeFrameSize, height: AppIconPickerMetrics.strokeFrameSize)
+                    .frame(width: Metrics.strokeFrameSize, height: Metrics.strokeFrameSize)
                     .overlay(
-                        RoundedRectangle(cornerRadius: AppIconPickerMetrics.cornerRadius)
-                            .inset(by: -AppIconPickerMetrics.strokeInset)
-                            .stroke(.blue, lineWidth: AppIconPickerMetrics.strokeWidth)
+                        Circle()
+                            .inset(by: -Metrics.strokeInset)
+                            .stroke(.blue, lineWidth: Metrics.strokeWidth)
                     )
             }
         }
+
+        @ViewBuilder
+        private func colorCircle(color: Color, isSelected: Bool) -> some View {
+            Circle()
+                .frame(width: Metrics.colorCircleSize, height: Metrics.colorCircleSize)
+                .foregroundStyle(.green)
+                .overlay {
+                    Circle()
+                        .foregroundColor(color)
+                        .frame(width: Metrics.colorCircleSize, height: Metrics.colorCircleSize)
+                        .overlay(
+                            Circle()
+                                .inset(by: Metrics.borderWidth/2.0)
+                                .stroke(.black, lineWidth: Metrics.borderWidth)
+                                .opacity(0.16)
+
+                        )
+                    strokeOverlay(isSelected: isSelected)
+                }
+
+//            Circle()
+//                .strokeBorder(lineWidth: 1, antialiased: true)
+//                .border(.black, width: 1.0)
+//                .frame(width: Metrics.colorCircleSize, height: Metrics.colorCircleSize)
+//                .foregroundStyle(color)
+//                .overlay {
+//                    Circle()
+//                        .foregroundColor(.clear)
+//                        .frame(width: Metrics.colorCircleSize, height: Metrics.colorCircleSize)
+//                        .overlay(
+//                            Circle()
+////                                .inset(by: -Metrics.strokeInset)
+//                                .stroke(.black, lineWidth: Metrics.strokeWidth)
+//                                .opacity(0.16)
+//
+//                        )
+//                    strokeOverlay(isSelected: isSelected)
+//                }
+        }
     }
-
-}
-
-private enum AppIconPickerMetrics {
-    static let cornerRadius: CGFloat = 13.0
-    static let iconSize: CGFloat = 56.0
-    static let spacing: CGFloat = 16.0
-    static let strokeFrameSize: CGFloat = 60
-    static let strokeWidth: CGFloat = 3
-    static let strokeInset: CGFloat = 1.5
 }

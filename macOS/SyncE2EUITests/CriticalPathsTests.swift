@@ -438,9 +438,9 @@ final class CriticalPathsTests: XCTestCase {
 
     private func checkBookmarks() {
         let settingsWindow = syncSettingsWindow()
-        let bookmarksWindow = bookmarkManagerWindow()
         settingsWindow.popUpButtons["Settings"].click()
         settingsWindow.menuItems["Bookmarks"].click()
+        let bookmarksWindow = bookmarkManagerWindow()
         if bookmarksWindow.sheets.buttons["Not Now"].exists {
             bookmarksWindow.sheets.buttons["Not Now"].click()
         }

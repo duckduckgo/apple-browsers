@@ -44,8 +44,8 @@ enum AttributedMetricPixel: PixelKitEvent {
     case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int, bucketVersion: Int)
     case userRetentionMonth(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int, bucketVersion: Int)
     case userActivePastWeek(origin: String?, installDate: String?, days: Int, daysSinceInstalled: Int?, bucketVersion: Int)
-    case userAverageSearchesPastWeekFirstMonth(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
-    case userAverageSearchesPastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
+    case userAverageSearchesPastWeekFirstMonth(origin: String?, installDate: String?, count: Int, dayAverage: Int, bucketVersion: Int)
+    case userAverageSearchesPastWeek(origin: String?, installDate: String?, count: Int, dayAverage: Int, bucketVersion: Int)
     case userAverageAdClicksPastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
     case userAverageDuckAiUsagePastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
     case userSubscribed(origin: String?, installDate: String?, month: Int, bucketVersion: Int)
@@ -89,6 +89,7 @@ enum AttributedMetricPixel: PixelKitEvent {
         static let origin = "origin"
         static let installDate = "install_date"
         static let bucketVersion = "version"
+        static let dayAverage = "day_average"
     }
 
     var parameters: [String: String]? {
@@ -112,13 +113,14 @@ enum AttributedMetricPixel: PixelKitEvent {
             }
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
-        case .userAverageSearchesPastWeekFirstMonth(origin: let origin, installDate: let installDate, count: let count, bucketVersion: let bucketVersion):
+        case .userAverageSearchesPastWeekFirstMonth(origin: let origin, installDate: let installDate, count: let count, dayAverage: let dayAverage, bucketVersion: let bucketVersion),
+                .userAverageSearchesPastWeek(origin: let origin, installDate: let installDate, count: let count, dayAverage: let dayAverage, bucketVersion: let bucketVersion):
             var result = [ConstantKeys.count: count.payloadString,
-                          ConstantKeys.bucketVersion: bucketVersion.payloadString]
+                          ConstantKeys.bucketVersion: bucketVersion.payloadString,
+                          ConstantKeys.dayAverage: dayAverage.payloadString]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
-        case .userAverageSearchesPastWeek(origin: let origin, installDate: let installDate, count: let count, bucketVersion: let bucketVersion),
-                .userAverageAdClicksPastWeek(origin: let origin, installDate: let installDate, count: let count, bucketVersion: let bucketVersion),
+        case .userAverageAdClicksPastWeek(origin: let origin, installDate: let installDate, count: let count, bucketVersion: let bucketVersion),
                 .userAverageDuckAiUsagePastWeek(origin: let origin, installDate: let installDate, count: let count, bucketVersion: let bucketVersion):
             var result = [ConstantKeys.count: count.payloadString,
                           ConstantKeys.bucketVersion: bucketVersion.payloadString]

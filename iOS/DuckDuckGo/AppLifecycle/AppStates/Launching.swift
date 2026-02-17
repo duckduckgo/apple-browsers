@@ -90,7 +90,8 @@ struct Launching: LaunchingHandling {
                                                             sync: syncService.sync,
                                                             fireproofing: fireproofing,
                                                             contentScopeExperimentsManager: contentScopeExperimentsManager,
-                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
+                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                            syncErrorHandler: syncService.syncErrorHandler)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()

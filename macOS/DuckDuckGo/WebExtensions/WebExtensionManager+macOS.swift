@@ -96,7 +96,8 @@ enum WebExtensionManagerFactory {
             windowTabProvider: WebExtensionWindowTabProvider(),
             storageProvider: WebExtensionStorageProvider(),
             internalSiteHandler: internalSiteHandler,
-            pixelFiring: MacOSWebExtensionPixelFiring()
+            pixelFiring: MacOSWebExtensionPixelFiring(),
+            handlerProvider: WebExtensionHandlerProvider()
         )
 
         internalSiteHandler.dataSource = manager

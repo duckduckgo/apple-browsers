@@ -43573,13 +43573,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lesezeichen importieren …"
+            "value" : "Lesezeichen importieren"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Import Bookmarks…"
+            "value" : "Import Bookmarks"
           }
         },
         "es" : {
@@ -43591,37 +43591,37 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importer les signets…"
+            "value" : "Importer les signets"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importa segnalibri…"
+            "value" : "Importa segnalibri"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bladwijzers importeren …"
+            "value" : "Bladwijzers importeren"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importuj zakładki..."
+            "value" : "Importuj zakładki"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importar marcadores…"
+            "value" : "Importar marcadores"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Импортировать закладки..."
+            "value" : "Импортировать закладки"
           }
         }
       }

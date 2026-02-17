@@ -29,7 +29,7 @@ import SwiftUI
 private struct TempPlaceholderModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .opacity(0.4) // Temp waiting for proper animations
+            .opacity(0.4)
             .overlay(alignment: .center) {
                 Text("Temp")
                     .font(.caption2.weight(.semibold))

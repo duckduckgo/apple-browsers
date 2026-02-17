@@ -122,7 +122,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
         let origin = "some_origin"
         let params = ["origin": origin]
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: SubscriptionUserScript.MessageName.openSubscriptionPurchase.rawValue))
-        _ = try await handler(params, WKScriptMessage.mock(name: "", body: ""))
+        _ = try await handler(params, WKScriptMessage.mock())
 
         let mockHandler = try XCTUnwrap(self.handler)
         XCTAssertEqual(mockHandler.handshakeCallCount, 0)
@@ -143,7 +143,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
         let origin = "some_origin"
         let params = ["origin": origin]
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: SubscriptionUserScript.MessageName.openSubscriptionUpgrade.rawValue))
-        _ = try await handler(params, WKScriptMessage.mock(name: "", body: ""))
+        _ = try await handler(params, WKScriptMessage.mock())
 
         let mockHandler = try XCTUnwrap(self.handler)
         XCTAssertEqual(mockHandler.handshakeCallCount, 0)
@@ -161,7 +161,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
     }
 
     func testThatHandshakeIncludesAuthUpdateInAvailableMessages() async throws {
-        let response = try await handler.handshake(params: [], message: WKScriptMessage.mock(name: "", body: ""))
+        let response = try await handler.handshake(params: [], message: WKScriptMessage.mock())
         XCTAssertTrue(response.availableMessages.contains(.authUpdate), "authUpdate should be included in available messages")
     }
 
@@ -221,7 +221,7 @@ final class SubscriptionUserScriptTests: XCTestCase {
     ) async throws where MessageName.RawValue == String {
 
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: messageName.rawValue), file: file, line: line)
-        _ = try await handler([], WKScriptMessage.mock(name: "", body: ""))
+        _ = try await handler([], WKScriptMessage.mock())
     }
 }
 

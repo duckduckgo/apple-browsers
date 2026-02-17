@@ -86,7 +86,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
 
         // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
 
         // Then
         guard let featureValue = result as? GetFeatureConfigurationResponse else {
@@ -103,7 +103,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = false
 
         // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
 
         // Then
         guard let featureValue = result as? GetFeatureConfigurationResponse else {
@@ -120,7 +120,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
 
         // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
 
         // Then
         guard let featureValue = result as? GetFeatureConfigurationResponse else {
@@ -137,7 +137,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = false
 
         // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
 
         // Then
         guard let featureValue = result as? GetFeatureConfigurationResponse else {
@@ -155,7 +155,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
 
         // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
 
         // Then
         guard let featureValue = result as? GetFeatureConfigurationResponse else {
@@ -175,7 +175,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = false
 
         // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
 
         // Then
         guard let featureValue = result as? GetFeatureConfigurationResponse else {
@@ -215,7 +215,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
-        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
         XCTAssertEqual(mockStorePurchaseManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier when Pro tier is enabled")
@@ -256,7 +256,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
-        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
         XCTAssertEqual(mockStorePurchaseManager.subscriptionTierOptionsIncludeProTierCalled, false, "Should pass false to includeProTier when Pro tier is disabled")
@@ -295,7 +295,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
-        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
         XCTAssertEqual(mockStorePurchaseManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should still pass Pro tier flag correctly")
@@ -316,7 +316,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
-        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
         guard let tierOptions = result as? SubscriptionTierOptions else {
@@ -347,7 +347,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
-        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
         XCTAssertTrue(mockTierEventReporter.requestedCalled, "Should fire requested pixel")
@@ -370,7 +370,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
-        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
         XCTAssertTrue(mockTierEventReporter.successCalled, "Should fire success pixel")
@@ -384,7 +384,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
-        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
         XCTAssertTrue(mockTierEventReporter.failureCalled, "Should fire failure pixel")
@@ -414,7 +414,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
-        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
         XCTAssertTrue(mockTierEventReporter.unexpectedProTierCalled, "Should fire unexpected pro tier pixel")
@@ -437,7 +437,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
-        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock(name: "", body: ""))
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
         XCTAssertFalse(mockTierEventReporter.unexpectedProTierCalled, "Should not fire unexpected pro tier pixel")

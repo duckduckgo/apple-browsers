@@ -41,7 +41,7 @@ final class DuckPlayerUserScriptPlayerTests: XCTestCase {
         viewModel = DuckPlayerViewModel(videoID: "testVideo")
         userScriptPlayer = DuckPlayerUserScriptPlayer(viewModel: viewModel)
         userScriptPlayer.webView = mockWebView
-        mockScriptMessage = WKScriptMessage.mock(name: "", body: "")
+        mockScriptMessage = WKScriptMessage.mock()
     }
     
     override func tearDown() {

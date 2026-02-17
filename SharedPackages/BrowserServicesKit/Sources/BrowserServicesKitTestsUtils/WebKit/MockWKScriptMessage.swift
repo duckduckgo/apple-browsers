@@ -45,7 +45,7 @@ extension WKScriptMessage {
         return MockWKScriptMessageObject(webView: webView, frameInfo: frameInfo, name: name, body: body).scriptMessage
     }
 
-    public static func mock(name: String, body: Any = [:], webView: WKWebView? = nil) -> WKScriptMessage {
+    public static func mock(name: String = "", body: Any = [:], webView: WKWebView? = nil) -> WKScriptMessage {
         let frameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         return MockWKScriptMessageObject(webView: webView, frameInfo: frameInfo, name: name, body: body).scriptMessage
     }

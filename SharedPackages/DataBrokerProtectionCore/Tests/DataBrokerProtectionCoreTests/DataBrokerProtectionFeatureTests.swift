@@ -170,7 +170,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
 
         let completionParams = ["result": ["success": ["actionID": "expectation-1", "actionType": "expectation"] as [String: Any]]]
-        _ = try? await sut.onActionCompleted(params: completionParams, original: WKScriptMessage.mock(name: "", body: ""))
+        _ = try? await sut.onActionCompleted(params: completionParams, original: WKScriptMessage.mock())
 
         XCTAssertNil(mockCSSDelegate.lastError)
         XCTAssertEqual(mockCSSDelegate.successActionId, "expectation-1")
@@ -186,7 +186,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
 
         let errorParams = ["error": "No action found."]
-        _ = try? await sut.onActionError(params: errorParams, original: WKScriptMessage.mock(name: "", body: ""))
+        _ = try? await sut.onActionError(params: errorParams, original: WKScriptMessage.mock())
 
         XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, .noActionFound)
     }

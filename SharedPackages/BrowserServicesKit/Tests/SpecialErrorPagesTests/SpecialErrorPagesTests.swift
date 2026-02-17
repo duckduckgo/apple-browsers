@@ -117,7 +117,7 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         // WHEN
         let handler = userScript.handler(forMethodNamed: "initialSetup")
         if let handler {
-            encodable = try? await handler(Data(), WKScriptMessage.mock(name: "", body: ""))
+            encodable = try? await handler(Data(), WKScriptMessage.mock())
         }
 
         // THEN
@@ -137,7 +137,7 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         // WHEN
         let handler = userScript.handler(forMethodNamed: "leaveSite")
         if let handler {
-            encodable = try? await handler(Data(), WKScriptMessage.mock(name: "", body: ""))
+            encodable = try? await handler(Data(), WKScriptMessage.mock())
         }
 
         // THEN
@@ -156,7 +156,7 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         // WHEN
         let handler = userScript.handler(forMethodNamed: "visitSite")
         if let handler {
-            encodable = try? await handler(Data(), WKScriptMessage.mock(name: "", body: ""))
+            encodable = try? await handler(Data(), WKScriptMessage.mock())
         }
 
         // THEN
@@ -175,7 +175,7 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         // WHEN
         let handler = userScript.handler(forMethodNamed: "advancedInfo")
         if let handler {
-            encodable = try? await handler(Data(), WKScriptMessage.mock(name: "", body: ""))
+            encodable = try? await handler(Data(), WKScriptMessage.mock())
         }
 
         // THEN

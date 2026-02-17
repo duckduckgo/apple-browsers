@@ -154,7 +154,7 @@ class AutofillUserScriptTests: XCTestCase {
         let passwordImportDelegate = MockAutofillPasswordImportDelegate()
         userScript.passwordImportDelegate = passwordImportDelegate
 
-        userScript.startCredentialsImportFlow(WKScriptMessage.mock(name: "", body: "")) { _ in }
+        userScript.startCredentialsImportFlow(WKScriptMessage.mock()) { _ in }
         let notificationExpectation = expectation(forNotification: .passwordImportDidCloseImportDialog, object: nil)
         passwordImportDelegate.autofillUserScriptDidRequestPasswordImportFlowCompletion?()
 
@@ -222,7 +222,7 @@ class AutofillUserScriptTests: XCTestCase {
         userScript.passwordImportDelegate = passwordImportDelegate
 
         userScript.getAvailableInputTypes(userScriptMessage) { _ in }
-        userScript.startCredentialsImportFlow(WKScriptMessage.mock(name: "", body: "")) { _ in }
+        userScript.startCredentialsImportFlow(WKScriptMessage.mock()) { _ in }
         passwordImportDelegate.autofillUserScriptDidRequestPasswordImportFlowCompletion?()
     }
 

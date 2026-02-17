@@ -93,7 +93,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
         ]
 
         // When
-        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock(name: "", body: ""))
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
 
         // Then
         guard let additionalParams = mockAppStorePurchaseFlow.completeSubscriptionAdditionalParams else {
@@ -124,7 +124,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
         ]
 
         // When
-        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock(name: "", body: ""))
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
 
         // Then
         guard let additionalParams = mockAppStorePurchaseFlow.completeSubscriptionAdditionalParams else {

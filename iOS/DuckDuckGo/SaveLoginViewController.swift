@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import BrowserServicesKit
 import Core
+import PrivacyConfig
 
 protocol SaveLoginViewControllerDelegate: AnyObject {
     func saveLoginViewController(_ viewController: SaveLoginViewController, didSaveCredentials credentials: SecureVaultModels.WebsiteCredentials)
@@ -34,13 +35,19 @@ class SaveLoginViewController: UIViewController {
     weak var delegate: SaveLoginViewControllerDelegate?
     private let credentialManager: SaveAutofillLoginManager
     private let appSettings: AppSettings
+    private let featureFlagger: FeatureFlagger
     private let domainLastShownOn: String?
     private let backfilled: Bool
     var viewModel: SaveLoginViewModel?
 
-    internal init(credentialManager: SaveAutofillLoginManager, appSettings: AppSettings, domainLastShownOn: String? = nil, backfilled: Bool) {
+    internal init(credentialManager: SaveAutofillLoginManager,
+                  appSettings: AppSettings,
+                  featureFlagger: FeatureFlagger,
+                  domainLastShownOn: String? = nil,
+                  backfilled: Bool) {
         self.credentialManager = credentialManager
         self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
         self.domainLastShownOn = domainLastShownOn
         self.backfilled = backfilled
         super.init(nibName: nil, bundle: nil)
@@ -74,7 +81,7 @@ class SaveLoginViewController: UIViewController {
         let backfilledParameter = [PixelParameters.backfilled: String(describing: backfilled)]
 
         switch viewModel.layoutType {
-        case .newUser:
+        case .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3:
             Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalDismissed, withAdditionalParameters: backfilledParameter)
         case .saveLogin:
             Pixel.fire(pixel: .autofillLoginsSaveLoginModalDismissed, withAdditionalParameters: backfilledParameter)
@@ -91,7 +98,10 @@ class SaveLoginViewController: UIViewController {
     }
 
     private func setupSaveLoginView() {
-        let saveViewModel = SaveLoginViewModel(credentialManager: credentialManager, appSettings: appSettings, domainLastShownOn: domainLastShownOn)
+        let saveViewModel = SaveLoginViewModel(credentialManager: credentialManager,
+                                              appSettings: appSettings,
+                                              featureFlagger: featureFlagger,
+                                              domainLastShownOn: domainLastShownOn)
         saveViewModel.delegate = self
         self.viewModel = saveViewModel
 
@@ -103,7 +113,7 @@ class SaveLoginViewController: UIViewController {
         let backfilledParameter = [PixelParameters.backfilled: String(describing: backfilled)]
 
         switch saveViewModel.layoutType {
-        case .newUser:
+        case .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3:
             Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalDisplayed, withAdditionalParameters: backfilledParameter)
         case .saveLogin:
             Pixel.fire(pixel: .autofillLoginsSaveLoginModalDisplayed, withAdditionalParameters: backfilledParameter)
@@ -129,8 +139,8 @@ extension SaveLoginViewController: SaveLoginViewModelDelegate {
 
         let backfilledParameter = [PixelParameters.backfilled: String(describing: backfilled)]
         switch viewModel.layoutType {
-        case .saveLogin, .savePassword, .newUser:
-            if case .newUser = viewModel.layoutType {
+        case .saveLogin, .savePassword, .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3:
+            if viewModel.layoutType.isNewUserVariant {
                 Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalConfirmed, withAdditionalParameters: backfilledParameter)
             } else if case .savePassword = viewModel.layoutType {
                 Pixel.fire(pixel: .autofillLoginsSavePasswordModalConfirmed, withAdditionalParameters: backfilledParameter)

@@ -43,6 +43,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     private var mockNotificationCenter: NotificationCenter!
     private var mockWideEvent: WideEventMock!
     private var mockEventReporter: MockSubscriptionEventReporter!
+    private var mockRequestValidator: ScriptRequestValidatorMock!
     private var broker: UserScriptMessageBroker!
 
     private struct Constants {
@@ -67,6 +68,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockNotificationCenter = NotificationCenter()
         mockWideEvent = WideEventMock()
         mockEventReporter = MockSubscriptionEventReporter()
+        mockRequestValidator = ScriptRequestValidatorMock()
 
         sut = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                       subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
@@ -79,7 +81,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                       aiChatURL: URL.duckDuckGo,
                                                       wideEvent: mockWideEvent,
                                                       subscriptionEventReporter: mockEventReporter,
-                                                      pendingTransactionHandler: MockPendingTransactionHandler())
+                                                      pendingTransactionHandler: MockPendingTransactionHandler(),
+                                                      requestValidator: mockRequestValidator)
         sut.with(broker: broker)
     }
 
@@ -92,6 +95,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockUIHandler = nil
         mockWideEvent = nil
         mockEventReporter = nil
+        mockRequestValidator = nil
         subscriptionManager = nil
         subscriptionSuccessPixelHandler = nil
         sut = nil
@@ -540,7 +544,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
             aiChatURL: URL.duckDuckGo,
             wideEvent: mockWideEvent,
-            pendingTransactionHandler: MockPendingTransactionHandler()
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            requestValidator: mockRequestValidator
         )
         stripeSut.with(broker: broker)
 
@@ -601,7 +606,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
             aiChatURL: URL.duckDuckGo,
             wideEvent: mockWideEvent,
-            pendingTransactionHandler: MockPendingTransactionHandler()
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            requestValidator: mockRequestValidator
         )
         stripeSut.with(broker: broker)
 

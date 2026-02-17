@@ -258,6 +258,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: background.darkColor)
         case .duckAIContextualSheetBackground:
             return DynamicColor(lightColor: .white, darkColor: .x161616)
+        case .tabSwitcherTrackerCountBackground:
+            return DynamicColor(lightColor: .green0, darkColor: .x2C3A2A)
         case let .rebranding(rebrandingColor):
             return dynamicColor(for: rebrandingColor)
         }

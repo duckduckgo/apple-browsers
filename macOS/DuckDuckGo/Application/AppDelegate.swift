@@ -116,6 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
+    private(set) var syncErrorHandler = SyncErrorHandler()
     private(set) var aiChatSyncCleaner: AIChatSyncCleaning?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
@@ -388,6 +389,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Optional `var` because its `syncServiceProvider` closure captures `self`,
     /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
     var memoryUsageIntervalReporter: MemoryUsageIntervalReporter?
+
+    /// The date this app instance was launched, used for computing uptime in memory pixels.
+    private let appLaunchDate = Date()
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
@@ -828,7 +832,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 fireCoordinator: fireCoordinator,
                 tld: tld,
                 autoconsentManagement: autoconsentManagement,
-                contentScopePreferences: contentScopePreferences
+                contentScopePreferences: contentScopePreferences,
+                syncErrorHandler: syncErrorHandler
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -858,7 +863,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fireCoordinator: fireCoordinator,
             tld: tld,
             autoconsentManagement: autoconsentManagement,
-            contentScopePreferences: contentScopePreferences
+            contentScopePreferences: contentScopePreferences,
+            syncErrorHandler: syncErrorHandler
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,
@@ -1065,7 +1071,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pixelFiring: PixelKit.shared,
             memoryUsageMonitor: memoryUsageMonitor,
             windowContext: WindowContext(
-                tabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.allTabsCount },
+                standardTabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                pinnedTabs: windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count },
                 windows: windowControllersManager.mainWindowControllers.count
             ),
             isSyncEnabled: { [weak self] in
@@ -1073,6 +1080,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
                 return syncService.authState == .active
             },
+            launchDate: appLaunchDate,
             logger: .memory
         )
 
@@ -1081,7 +1089,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             windowContext: WindowContext(
-                tabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.allTabsCount },
+                standardTabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                pinnedTabs: windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count },
                 windows: windowControllersManager.mainWindowControllers.count
             ),
             isSyncEnabled: { [weak self] in
@@ -1089,6 +1098,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
                 return syncService.authState == .active
             },
+            launchDate: appLaunchDate,
             logger: .memory
         )
 
@@ -1504,7 +1514,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             action: .quit,
             isWarningEnabled: { [tabsPreferences] in
                 tabsPreferences.warnBeforeQuitting
-            }
+            },
+            isPhysicalKeyPress: WarnBeforeQuitManager.makePhysicalKeyPressCheck(for: currentEvent)
         ) else { return nil }
 
         let presenter = WarnBeforeQuitOverlayPresenter(
@@ -1688,7 +1699,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         let environment = defaultEnvironment
 #endif
-        let syncErrorHandler = SyncErrorHandler()
         let syncDataProviders = SyncDataProvidersSource(
             bookmarksDatabase: bookmarkDatabase.db,
             bookmarkManager: bookmarkManager,
@@ -1702,9 +1712,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             environment: environment
         )
-        let aiChatSyncCleaner = AIChatSyncCleaner(sync: syncService,
-                                                   keyValueStore: keyValueStore,
-                                                   featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        let aiChatSyncCleaner = AIChatSyncCleaner(
+            sync: syncService,
+            keyValueStore: keyValueStore,
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
+            httpRequestErrorHandler: syncErrorHandler.handleAiChatsError
+        )
         syncService.setCustomOperations([AIChatDeleteOperation(cleaner: aiChatSyncCleaner)])
 
         syncService.initializeIfNeeded()

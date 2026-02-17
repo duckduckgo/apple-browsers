@@ -78,7 +78,8 @@ enum SubscriptionContainerViewFactory {
                                                                        subscriptionDataReporter: subscriptionDataReporter,
                                                                        internalUserDecider: internalUserDecider,
                                                                        wideEvent: wideEvent,
-                                                                       pendingTransactionHandler: pendingTransactionHandler),
+                                                                       pendingTransactionHandler: pendingTransactionHandler,
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
@@ -114,7 +115,8 @@ enum SubscriptionContainerViewFactory {
                                                                                                      appStoreRestoreFlow: appStoreRestoreFlow,
                                                                                                      internalUserDecider: internalUserDecider,
                                                                                                      wideEvent: wideEvent,
-                                                                                                     pendingTransactionHandler: pendingTransactionHandler)
+                                                                                                     pendingTransactionHandler: pendingTransactionHandler,
+                                                                                                     requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
 
         let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
                                                        isInternalUser: internalUserDecider.isInternalUser,
@@ -176,7 +178,8 @@ enum SubscriptionContainerViewFactory {
                                                                        appStoreRestoreFlow: appStoreRestoreFlow,
                                                                        internalUserDecider: internalUserDecider,
                                                                        wideEvent: wideEvent,
-                                                                       pendingTransactionHandler: pendingTransactionHandler),
+                                                                       pendingTransactionHandler: pendingTransactionHandler,
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
@@ -216,7 +219,8 @@ enum SubscriptionContainerViewFactory {
                                                                        appStoreRestoreFlow: appStoreRestoreFlow,
                                                                        internalUserDecider: internalUserDecider,
                                                                        wideEvent: wideEvent,
-                                                                       pendingTransactionHandler: pendingTransactionHandler),
+                                                                       pendingTransactionHandler: pendingTransactionHandler,
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
 

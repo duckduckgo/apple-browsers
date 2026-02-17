@@ -28,13 +28,13 @@ struct DefaultTitleDisplayPolicy: TitleDisplayPolicy {
 
     /// We'll avoid displaying a Page Title whenever:
     ///     1. Navigating to a URL within the same Host, and `Tab.title` switches to a placeholder (domain name)
-    ///     2. URL and Title is the same, while Loading
+    ///     2. URL and Title is the same
     ///     3. Hosts differ but the Title is the same
     ///
     func mustSkipDisplayingTitle(title: String, url: URL?, previousTitle: String?, previousURL: URL?, isLoading: Bool) -> Bool {
         (previousURL?.host == url?.host && url?.suggestedTitlePlaceholder == title && isLoading) ||
-        (url != nil && url == previousURL && title == previousTitle && isLoading) ||
-        (previousURL?.host != url?.host && title == previousTitle)
+        (url != nil && url == previousURL && title == previousTitle) ||
+        (url != nil && url?.host != previousURL?.host && title == previousTitle)
     }
 
     /// We avoid animating title transitions when the actual text didn't change

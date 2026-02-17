@@ -113,6 +113,7 @@ final class MainWindowController: NSWindowController {
  #elseif REVIEW
         if AppVersion.runType == .uiTests {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
+            OnboardingActionsManager.isOnboardingFinished = true
             return false
         } else {
             if AppVersion.runType == .uiTestsOnboarding {

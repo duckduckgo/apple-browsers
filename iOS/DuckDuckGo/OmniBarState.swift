@@ -111,7 +111,6 @@ extension OmniBarState {
     var showRefreshOutsideAddressBar: Bool {
         hasLargeWidth
             && dependencies.featureFlagger.isFeatureOn(.iPadAIToggle)
-            && dependencies.isRefreshButtonEnabled
     }
 }
 

@@ -30,25 +30,28 @@ final class TitleDisplayPolicyTests: XCTestCase {
         let url = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://www.example.com/")
         let title = "example.com"
+        let previousTitle = "example.com"
 
-        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: true))
+        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: true))
     }
 
     func testTitleIsNotSkippedWhenHostMatchesAndTitleIsPlaceholderAfterLoading() {
         let url = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://www.example.com/")
-        let title = "example.com"
+        let title = "example.com page"
+        let previousTitle = title
 
-        XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: false))
+        XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: false))
     }
 
     func testTitleIsNotSkippedWhenHostDiffers() {
         let url = URL(string: "https://example.com/page")
         let previousURL = URL(string: "https://different.com/")
-        let title = "example.com"
+        let title = "example.com page"
+        let previousTitle = title
 
         for isLoading in [true, false] {
-            XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: isLoading))
+            XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: isLoading))
         }
     }
 
@@ -56,9 +59,19 @@ final class TitleDisplayPolicyTests: XCTestCase {
         let url = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://www.example.com/")
         let title = "Custom Page Title"
+        let previousTitle = "example.com"
 
         for isLoading in [true, false] {
-            XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: isLoading))
+            XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: isLoading))
+        }
+    }
+
+    func testTitleIsSkippedWhenNothingChangedAndTitleIsNotPlaceholder() {
+        let url = URL(string: "https://www.example.com/")
+        let title = "Custom Page Title"
+
+        for isLoading in [true, false] {
+            XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: title, previousURL: url, isLoading: isLoading))
         }
     }
 

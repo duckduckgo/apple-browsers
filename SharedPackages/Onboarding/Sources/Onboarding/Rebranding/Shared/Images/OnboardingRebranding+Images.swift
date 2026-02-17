@@ -22,6 +22,8 @@ public enum OnboardingRebrandingImages {
 
     public enum Contextual {
         public static let tryASearchBackground = Image("Rebranding/contextual-bg-try-search", bundle: .module)
+        public static let tryASiteBackground = Image("Rebranding/contextual-bg-try-site", bundle: .module)
+        public static let searchDoneBackground = Image("Rebranding/contextual-bg-search-done", bundle: .module)
     }
 
     public enum Comparison {
@@ -46,22 +48,6 @@ public enum OnboardingRebrandingImages {
 
     public enum Branding {
         public static let duckDuckGoLogo = Image("Rebranding/DuckDuckGoLogo", bundle: .module)
-    }
-
-}
-
-extension OnboardingRebranding {
-
-    enum OnboardingImages {
-
-        enum Contextual {
-            static let tryASearchBackground = OnboardingRebrandingImages.Contextual.tryASearchBackground
-        }
-
-        enum Branding {
-            static let duckDuckGoLogo = OnboardingRebrandingImages.Branding.duckDuckGoLogo
-        }
-
     }
 
 }

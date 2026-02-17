@@ -26,9 +26,10 @@ tags:
 
 # Verify site has been bookmarked
 - assertVisible: "Browsing menu"
-- tapOn: "Browsing menu"
-- assertVisible: "Bookmarks"
-- tapOn: "Bookmarks"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Bookmarks"
 - assertVisible: "DuckDuckGo - Protection. Privacy. Peace of mind."
 
 # Edit bookmark to become bookmarklet
@@ -60,8 +61,10 @@ tags:
     timeout: 10000
 
 # Run the bookmarklet
-- tapOn: "Browsing menu"
-- tapOn: "Bookmarks"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Bookmarks"
 - tapOn: "DuckDuckGo - Protection. Privacy. Peace of mind."
 
 # Verify test passed
@@ -70,8 +73,10 @@ tags:
     timeout: 10000
 
 # Delete bookmark
-- tapOn: "Browsing menu"
-- tapOn: "Bookmarks"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Bookmarks"
 - tapOn: "Edit"
 - tapOn: "chevron"
 - hideKeyboard

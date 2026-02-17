@@ -53,9 +53,6 @@ protocol AutofillOnboardingExperimentPixelFiring {
     /// Fires at threshold milestones (1, 2, 3, 5) when the user taps "Never ask for this site".
     func fireNeverAskTap()
 
-    /// Fires once per user when they exit first-time-user status (autofillFirstTimeUser → false).
-    func fireOnboardingEnded()
-
     // MARK: - Secondary Metrics
 
     /// Fires when a password is saved, with the current account count bucketed (none, few, some, many, lots).
@@ -117,7 +114,6 @@ final class AutofillOnboardingExperimentPixelReporter: AutofillOnboardingExperim
         static let saveTap = "save_tap"
         static let dismissTap = "dismiss_tap"
         static let neverAskTap = "never_ask_tap"
-        static let onboardingEnded = "onboarding_ended"
         static let passwordsSaved = "passwords_saved"
         static let importCompleted = "import_completed"
         static let autofillEnabled = "autofill_enabled"
@@ -173,16 +169,6 @@ final class AutofillOnboardingExperimentPixelReporter: AutofillOnboardingExperim
                     conversionWindowDays: window,
                     threshold: threshold)
             }
-        }
-    }
-
-    func fireOnboardingEnded() {
-        for window in Window.primary {
-            PixelKit.fireExperimentPixel(
-                for: subfeatureID,
-                metric: Metric.onboardingEnded,
-                conversionWindowDays: window,
-                value: "1")
         }
     }
 

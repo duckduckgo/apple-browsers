@@ -23,7 +23,6 @@ final class MockAutofillOnboardingExperimentPixelFiring: AutofillOnboardingExper
     func fireSaveTap() {}
     func fireDismissTap() {}
     func fireNeverAskTap() {}
-    func fireOnboardingEnded() {}
     func firePasswordsSaved() {}
     func fireImportCompleted() {}
     func fireAutofillEnabled(_ enabled: Bool) {}

@@ -28,10 +28,7 @@ final class AutofillUsageMonitor {
                                                       tld: AppDependencyProvider.shared.storageCache.tld)
     }()
 
-    private let experimentPixels: AutofillOnboardingExperimentPixelFiring
-
-    init(experimentPixels: AutofillOnboardingExperimentPixelFiring = AutofillOnboardingExperimentPixelReporter()) {
-        self.experimentPixels = experimentPixels
+    init() {
         NotificationCenter.default.addObserver(self, selector: #selector(didReceiveSaveEvent), name: .autofillSaveEvent, object: nil)
 
         ASCredentialIdentityStore.shared.getState({ [weak self] state in
@@ -59,6 +56,5 @@ final class AutofillUsageMonitor {
 
     @objc private func didReceiveSaveEvent() {
         autofillFirstTimeUser = false
-        experimentPixels.fireOnboardingEnded()
     }
 }

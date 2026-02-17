@@ -82,7 +82,6 @@ final class AutofillSettingsViewModel: ObservableObject {
         didSet {
             appSettings.autofillCredentialsEnabled = savePasswordsEnabled
             keyValueStore.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autofillFirstTimeUser.rawValue)
-            experimentPixels.fireOnboardingEnded()
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
 
             if savePasswordsEnabled {

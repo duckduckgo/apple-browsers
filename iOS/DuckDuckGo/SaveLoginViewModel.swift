@@ -58,7 +58,6 @@ final class SaveLoginViewModel: ObservableObject {
     private let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
     private let biometryType: LABiometryType
-    private let experimentPixels: AutofillOnboardingExperimentPixelFiring
 
     private var dismissButtonWasPressed = false
     var didSave = false
@@ -169,15 +168,13 @@ final class SaveLoginViewModel: ObservableObject {
                   featureFlagger: FeatureFlagger,
                   layoutType: SaveLoginView.LayoutType? = nil,
                   domainLastShownOn: String? = nil,
-                  biometryType: LABiometryType = LAContext().biometryType,
-                  experimentPixels: AutofillOnboardingExperimentPixelFiring = AutofillOnboardingExperimentPixelReporter()) {
+                  biometryType: LABiometryType = LAContext().biometryType) {
         self.credentialManager = credentialManager
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.attributedLayoutType = layoutType
         self.domainLastShownOn = domainLastShownOn
         self.biometryType = biometryType
-        self.experimentPixels = experimentPixels
     }
     
     private func updateRejectionCountIfNeeded() {
@@ -220,7 +217,6 @@ final class SaveLoginViewModel: ObservableObject {
     func save() {
         didSave = true
         autofillFirstTimeUser = false
-        experimentPixels.fireOnboardingEnded()
         delegate?.saveLoginViewModelDidSave(self)
     }
 
@@ -236,7 +232,6 @@ final class SaveLoginViewModel: ObservableObject {
             delegate?.saveLoginViewModelConfirmKeepUsing(self)
             autofillSaveModalDisablePromptShown = true
             autofillFirstTimeUser = false
-            experimentPixels.fireOnboardingEnded()
         }
     }
 }

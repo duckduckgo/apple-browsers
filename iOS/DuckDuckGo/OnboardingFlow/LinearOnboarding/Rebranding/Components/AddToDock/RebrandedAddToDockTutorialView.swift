@@ -96,7 +96,7 @@ extension OnboardingRebranding.OnboardingView {
                     Button(action: action) {
                         Text(cta)
                     }
-                    .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                     .visibility(showContent ? .visible : .invisible)
                 }
             )

@@ -33,7 +33,6 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var showAddToDockTutorial = false
-        @State private var showContent = false
         private let isAnimating: Binding<Bool>
         private let isSkipped: Binding<Bool>
         private let showTutorialAction: () -> Void

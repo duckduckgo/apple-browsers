@@ -40,7 +40,6 @@ public struct WebExtensionMessage {
     /// Extension identifier that sent the message
     public let extensionIdentifier: String
 
-
     public init(
         featureName: String,
         method: String,

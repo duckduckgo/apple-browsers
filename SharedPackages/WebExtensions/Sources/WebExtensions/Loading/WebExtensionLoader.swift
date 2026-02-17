@@ -63,11 +63,11 @@ public final class WebExtensionLoader: WebExtensionLoading {
         // Check if extension is already loaded (idempotent operation)
         if let existingContext = controller.extensionContexts.first(where: { $0.uniqueIdentifier == identifier }) {
             Logger.webExtensions.debug("✓ Extension '\(identifier)' already loaded, skipping")
-            
+
             guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: identifier) else {
                 throw WebExtensionLoaderError.extensionNotFound(identifier: identifier)
             }
-            
+
             return WebExtensionLoadResult(
                 identifier: identifier,
                 filename: extensionURL.lastPathComponent,

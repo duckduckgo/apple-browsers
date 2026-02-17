@@ -389,19 +389,27 @@ extension OnboardingRebranding {
                     isVisible: true,
                     showsStepCounter: true
                 )
-            case .addToDockPromoDialog:
-                BubbleBackedDialogConfiguration(
-                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
-                    tailDirection: .leading,
-                    additionalTopMargin: BubbleBackedDialogMetrics.addToDockAdditionalTopMargin,
-                    isVisible: true,
-                    showsStepCounter: true
-                )
             case .chooseAddressBarPositionDialog:
                 BubbleBackedDialogConfiguration(
                     tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseSearchExperienceDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .addToDockPromoDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.addToDockAdditionalTopMargin,
                     isVisible: true,
                     showsStepCounter: true
                 )

@@ -167,6 +167,9 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.refreshButton.isPointerInteractionEnabled = true
         barView.customizableButton.isPointerInteractionEnabled = true
         barView.clearButton.isPointerInteractionEnabled = true
+        if let defaultOmniBarView = barView as? DefaultOmniBarView {
+            defaultOmniBarView.externalRefreshButtonView.isPointerInteractionEnabled = true
+        }
     }
 
     private func configureTextField() {
@@ -662,7 +665,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isMenuButtonHidden = !state.showMenu
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
-        barView.isRefreshButtonHidden = !state.showRefresh
+        barView.isRefreshButtonHidden = !state.showRefresh || state.showRefreshOutsideAddressBar
         barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
@@ -670,6 +673,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isForwardButtonHidden = !state.showForwardButton
         barView.isBookmarksButtonHidden = !state.showBookmarksButton
         barView.isAIChatButtonHidden = !state.showAIChatButton
+        
+        if let defaultOmniBarView = barView as? DefaultOmniBarView {
+            defaultOmniBarView.isExternalRefreshButtonHidden = !state.showRefreshOutsideAddressBar
+            defaultOmniBarView.externalRefreshButtonView.isEnabled = state.isBrowsing
+        }
 
         applyCustomization()
 

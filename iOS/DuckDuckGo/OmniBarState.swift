@@ -39,6 +39,7 @@ protocol OmniBarState: CustomStringConvertible {
     var showBackground: Bool { get }
     var showClear: Bool { get }
     var showRefresh: Bool { get }
+    var showRefreshOutsideAddressBar: Bool { get }
     var showCustomizableButton: Bool { get }
     var showMenu: Bool { get }
     var showSettings: Bool { get }
@@ -98,6 +99,12 @@ extension OmniBarState {
     var showAIChatFullModeBranding: Bool { false }
     
     var allowCustomization: Bool { true }
+    
+    var showRefreshOutsideAddressBar: Bool {
+        hasLargeWidth
+            && dependencies.featureFlagger.isFeatureOn(.iPadAIToggle)
+            && dependencies.isRefreshButtonEnabled
+    }
 }
 
 protocol OmniBarLoadingBearerStateCreating {

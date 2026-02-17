@@ -83,7 +83,7 @@ final class PasswordsStatusBarMenu: NSObject {
     // MARK: - Popover
 
     private func togglePopover() {
-        if let popover {
+        if let popover, popover.isShown {
             popover.close()
             self.popover = nil
         } else {

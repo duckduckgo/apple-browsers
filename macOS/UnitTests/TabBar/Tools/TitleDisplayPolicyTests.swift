@@ -44,15 +44,13 @@ final class TitleDisplayPolicyTests: XCTestCase {
         XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: false))
     }
 
-    func testTitleIsNotSkippedWhenHostDiffers() {
+    func testTitleIsNotSkippedWhenHostDifferAndTitleIsPlaceholderWhileLoading() {
         let url = URL(string: "https://example.com/page")
         let previousURL = URL(string: "https://different.com/")
-        let title = "example.com page"
-        let previousTitle = title
+        let title = "example.com"
+        let previousTitle = "example.com page"
 
-        for isLoading in [true, false] {
-            XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: isLoading))
-        }
+        XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: true))
     }
 
     func testTitleIsNotSkippedWhenLatestTitleIsNotPlaceholder() {
@@ -66,12 +64,14 @@ final class TitleDisplayPolicyTests: XCTestCase {
         }
     }
 
-    func testTitleIsSkippedWhenNothingChangedAndTitleIsNotPlaceholder() {
+    func testTitleIsSkippedWhenNothingChanged() {
         let url = URL(string: "https://www.example.com/")
+        let previousURL = URL(string: "https://www.different.com/")
         let title = "Custom Page Title"
+        let previousTitle = title
 
         for isLoading in [true, false] {
-            XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: title, previousURL: url, isLoading: isLoading))
+            XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: isLoading))
         }
     }
 

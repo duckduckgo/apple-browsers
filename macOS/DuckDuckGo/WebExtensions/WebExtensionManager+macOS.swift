@@ -93,8 +93,10 @@ enum WebExtensionManagerFactory {
 
     /// Creates a fully configured WebExtensionManager with all macOS-specific providers.
     @MainActor
-    static func makeManager(autoconsentPreferences: AutoconsentPreferencesProviding) -> WebExtensionManager {
-        let privacyConfigurationManager = DefaultScriptSourceProvider().privacyConfigurationManager
+    static func makeManager(
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        autoconsentPreferences: AutoconsentPreferencesProviding
+    ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
 
         let manager = WebExtensionManager(

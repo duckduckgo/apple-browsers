@@ -47,42 +47,237 @@ final class RebrandedContextualDaxDialogFactory: ContextualDaxDialogsFactory {
         switch spec.type {
         case .afterSearch:
             rootView = AnyView(
-                Button(action: delegate.didAcknowledgeContextualOnboardingSearch) {
-                    Text(verbatim: "Ok")
-                }
+                afterSearchDialog(
+                    shouldFollowUpToWebsiteSearch: !contextualOnboardingSettings.userHasSeenTrackersDialog && !contextualOnboardingSettings.userHasSeenTryVisitSiteDialog,
+                    delegate: delegate,
+                    afterSearchPixelEvent: spec.pixelName,
+                    onSizeUpdate: onSizeUpdate
+                )
             )
         case .visitWebsite:
             rootView = AnyView(
-                Button(action: { delegate.navigateFromOnboarding(to: URL(string: "https://apple.com")!) }) {
-                    Text(verbatim: "Try apple.com")
-                }
+                tryVisitingSiteDialog(
+                    delegate: delegate
+                )
             )
         case .siteIsMajorTracker, .siteOwnedByMajorTracker, .withMultipleTrackers, .withOneTracker, .withoutTrackers:
             rootView = AnyView(
-                Button(action: delegate.didAcknowledgeContextualOnboardingTrackersDialog) {
-                    Text(verbatim: "Ok")
-                }
+                withTrackersDialog(
+                    for: spec,
+                    shouldFollowUpToFireDialog: !contextualOnboardingSettings.userHasSeenFireDialog,
+                    delegate: delegate,
+                    onSizeUpdate: onSizeUpdate
+                )
             )
         case .fire:
             rootView = AnyView(
-                Button(action: delegate.didTapDismissContextualOnboardingAction) {
-                    Text(verbatim: "Dismiss Dialog")
-                }
+                fireDialog(
+                    delegate: delegate,
+                    pixelName: spec.pixelName
+                )
             )
         case .final:
             rootView = AnyView(
-                Button(action: delegate.didTapDismissContextualOnboardingAction) {
-                    Text(verbatim: "Dismiss Dialog")
-                }
+                endOfJourneyDialog(
+                    delegate: delegate,
+                    pixelName: spec.pixelName
+                )
             )
         }
 
-        let hostingController = UIHostingController(rootView: AnyView(rootView))
+        let hostingController = UIHostingController(rootView: rootView)
         if #available(iOS 16.0, *) {
             hostingController.sizingOptions = [.intrinsicContentSize]
         }
 
         return hostingController
+    }
+
+}
+
+// MARK: - Anonymous Search Completed
+
+private extension RebrandedContextualDaxDialogFactory {
+
+    func afterSearchDialog(
+        shouldFollowUpToWebsiteSearch: Bool,
+        delegate: ContextualOnboardingDelegate,
+        afterSearchPixelEvent: Pixel.Event,
+        onSizeUpdate: @escaping () -> Void
+    ) -> some View {
+
+        let viewModel = OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider, delegate: delegate)
+
+        // If should not show websites search after searching inform the delegate that the user dismissed the dialog, otherwise let the dialog handle it.
+        let gotItAction: () -> Void = if shouldFollowUpToWebsiteSearch {
+            { [weak delegate, weak self] in
+                onSizeUpdate()
+                delegate?.didAcknowledgeContextualOnboardingSearch()
+                self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            }
+        } else {
+            { [weak delegate] in
+                delegate?.didTapDismissContextualOnboardingAction()
+            }
+        }
+
+        let onManualDismiss: (_ isShowingTryVisitSiteDialog: Bool) -> Void = { [weak delegate, weak self] isShowingTryVisitSiteDialog in
+            if isShowingTryVisitSiteDialog {
+                self?.contextualOnboardingPixelReporter.measureTryVisitSiteDialogDismissButtonTapped()
+            } else {
+                self?.contextualOnboardingPixelReporter.measureSearchResultDialogDismissButtonTapped()
+            }
+            delegate?.didTapDismissContextualOnboardingAction()
+        }
+
+        return OnboardingConditionalCenteredScrollableContainerView {
+            OnboardingRebranding.OnboardingSearchDoneDialog(
+                shouldFollowUp: shouldFollowUpToWebsiteSearch,
+                viewModel: viewModel,
+                gotItAction: gotItAction,
+                onManualDismiss: onManualDismiss
+            )
+        }
+        .applyContextualOnboardingBackground(backgroundType: .tryASearchCompleted, animationContext: .default)
+        .onFirstAppear { [weak self] in
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: afterSearchPixelEvent)
+        }
+    }
+
+}
+
+// MARK: - Try Visiting Site
+
+private extension RebrandedContextualDaxDialogFactory {
+
+    // This could be removed. Originally this was in place to represent the dialog if the user refreshed or quit and relaunched the app.
+    func tryVisitingSiteDialog(delegate: ContextualOnboardingDelegate) -> some View {
+        let viewModel = OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider,
+            delegate: delegate
+        )
+
+        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
+            self?.contextualOnboardingPixelReporter.measureTryVisitSiteDialogDismissButtonTapped()
+            delegate?.didTapDismissContextualOnboardingAction()
+        }
+
+        return OnboardingRebranding.OnboardingTrySiteDialog(
+            viewModel: viewModel,
+            onManualDismiss: onManualDismiss
+        )
+        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP, animationContext: .default)
+        .onFirstAppear { [weak self] in
+            self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+        }
+    }
+
+}
+
+// MARK: - Trackers Blocked
+
+private extension RebrandedContextualDaxDialogFactory {
+
+    func withTrackersDialog(
+        for spec: DaxDialogs.BrowsingSpec,
+        shouldFollowUpToFireDialog: Bool,
+        delegate: ContextualOnboardingDelegate,
+        onSizeUpdate: @escaping () -> Void
+    ) -> some View {
+        let attributedMessage = spec.message.attributedStringFromMarkdown(color: ThemeManager.shared.currentTheme.daxDialogTextColor)
+
+        let onManualDismiss: (_ isShowingFireDialog: Bool) -> Void = { [weak delegate, weak self] isShowingFireDialog in
+            // Hide Pulsing animation for Privacy Shield or Fire Dialog
+            ViewHighlighter.hideAll()
+
+            if isShowingFireDialog {
+                self?.contextualOnboardingPixelReporter.measureFireDialogDismissButtonTapped()
+            } else {
+                // Set Fire dialog seen. In this way when we open a new tab we show the final dialog.
+                self?.contextualOnboardingLogic.setFireEducationMessageSeen()
+                self?.contextualOnboardingPixelReporter.measureTrackersDialogDismissButtonTapped()
+            }
+            delegate?.didTapDismissContextualOnboardingAction()
+        }
+
+        return OnboardingTrackersDoneDialog(
+            shouldFollowUp: shouldFollowUpToFireDialog,
+            message: attributedMessage,
+            blockedTrackersCTAAction: { [weak self, weak delegate] in
+                // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
+                if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
+                    delegate?.didTapDismissContextualOnboardingAction()
+                } else {
+                    onSizeUpdate()
+                    delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
+                    self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
+                }
+            },
+            onManualDismiss: onManualDismiss
+        )
+        .onAppear { [weak delegate] in
+            delegate?.didShowContextualOnboardingTrackersDialog()
+        }
+        .onFirstAppear { [weak self] in
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
+        }
+    }
+
+}
+
+// MARK: - Fire
+
+private extension RebrandedContextualDaxDialogFactory {
+
+    func fireDialog(
+        delegate: ContextualOnboardingDelegate,
+        pixelName: Pixel.Event
+    ) -> some View {
+        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
+            self?.contextualOnboardingPixelReporter.measureFireDialogDismissButtonTapped()
+            delegate?.didTapDismissContextualOnboardingAction()
+        }
+
+        return OnboardingFireDialog(onManualDismiss: onManualDismiss)
+            .onFirstAppear { [weak self] in
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+            }
+    }
+
+}
+
+// MARK: - End Of Journey (You've got This!)
+
+private extension RebrandedContextualDaxDialogFactory {
+
+    func endOfJourneyDialog(
+        delegate: ContextualOnboardingDelegate,
+        pixelName: Pixel.Event
+    ) -> some View {
+        let dismissAction = { [weak delegate, weak self] in
+            delegate?.didTapDismissContextualOnboardingAction()
+            self?.contextualOnboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
+        }
+
+        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
+            self?.contextualOnboardingPixelReporter.measureEndOfJourneyDialogDismissButtonTapped()
+            delegate?.didTapDismissContextualOnboardingAction()
+        }
+
+        return OnboardingFinalDialog(
+            logoPosition: .left,
+            message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+            cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+            dismissAction: dismissAction,
+            onManualDismiss: onManualDismiss
+        )
+        .onFirstAppear { [weak self] in
+            self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+        }
     }
 
 }

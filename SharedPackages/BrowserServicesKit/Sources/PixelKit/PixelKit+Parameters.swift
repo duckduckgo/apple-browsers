@@ -27,6 +27,7 @@ public extension PixelKit {
         public static let appVersion = "appVersion"
         public static let pixelSource = "pixelSource"
         public static let osMajorVersion = "osMajorVersion"
+        public static let osUpgradeCapability = "can_update"
 
         public static let errorCode = "e"
         public static let errorDomain = "d"

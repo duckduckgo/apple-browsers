@@ -31,10 +31,12 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         var handleAppTerminationCallCount = 0
         var fetchDelayNanoseconds: UInt64?
         var fetchCallCount = 0
+        var onFetchStarted: (() -> Void)?
 
         func recordBlockedTracker(_ name: String) async { recordCalls.append(name) }
         func fetchPrivacyStatsTotalCount() async -> Int64 {
             fetchCallCount += 1
+            onFetchStarted?()
             if let delay = fetchDelayNanoseconds {
                 try? await Task.sleep(nanoseconds: delay)
             }
@@ -122,10 +124,14 @@ final class TabSwitcherTrackerCountViewModelTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabSwitcherTrackerCount])
         let viewModel = TabSwitcherTrackerCountViewModel(settings: settings, privacyStats: stats, featureFlagger: featureFlagger, initialState: .hidden)
 
-        // Start first refresh (will be slow due to delay)
+        // Start first refresh
+        let firstFetchStarted = expectation(description: "First fetch started")
+        stats.onFetchStarted = { firstFetchStarted.fulfill() }
         viewModel.refresh()
+        await fulfillment(of: [firstFetchStarted], timeout: 3.0)
+        stats.onFetchStarted = nil
 
-        // Immediately start second refresh which should cancel the first
+        // Start second refresh which should cancel the first
         stats.total = 200
         let state = await viewModel.refreshAsync()
 

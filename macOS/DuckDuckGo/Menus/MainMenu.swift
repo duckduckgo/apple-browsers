@@ -673,11 +673,11 @@ final class MainMenu: NSMenu {
             return
         }
         self.toggleBookmarksBarMenuItem = toggleBookmarksBarMenuItem
-        toggleBookmarksBarMenuItem.target = self
-        toggleBookmarksBarMenuItem.action = #selector(toggleBookmarksBarFromMenu(_:))
+        toggleBookmarksBarMenuItem.action = #selector(MainViewController.toggleBookmarksBarFromMenu)
         toggleBookmarksBarMenuItem.setAccessibilityIdentifier("MainMenu.toggleBookmarksBar")
 
         self.bookmarksMenuToggleBookmarksBarMenuItem = bookmarksMenuToggleBookmarksBarMenuItem
+        bookmarksMenuToggleBookmarksBarMenuItem.action = #selector(MainViewController.toggleBookmarksBarFromMenu)
     }
 
     private func updateHomeButtonMenuItem() {
@@ -694,13 +694,6 @@ final class MainMenu: NSMenu {
             return
         }
         self.showTabsAndBookmarksBarOnFullScreenMenuItem = showTabsAndBookmarksBarOnFullScreenMenuItem
-    }
-
-    @MainActor
-    @objc
-    private func toggleBookmarksBarFromMenu(_ sender: Any) {
-        guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
-        mainVC.toggleBookmarksBarFromMenu(sender)
     }
 
     private func updateShortcutMenuItems() {
@@ -792,7 +785,6 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
                 NSMenuItem(title: "Set Launch Date A Month In the Past", action: #selector(AppDelegate.setLaunchDayAMonthInThePast))
                 NSMenuItem(title: "Reset Quit Survey Was Shown", action: #selector(AppDelegate.resetQuitSurveyWasShown))
-                NSMenuItem(title: "Reset Themes Popover Was Shown", action: #selector(AppDelegate.resetThemesPopoverWasShown))
 
             }.withAccessibilityIdentifier("MainMenu.resetData")
             NSMenuItem(title: "UI Triggers") {
@@ -866,6 +858,8 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))
                 NSMenuItem(title: "Clear Simulated Memory", action: #selector(AppDelegate.clearSimulatedMemory))
                 NSMenuItem(title: "Start Reporter Immediately (Skip 5min Delay)", action: #selector(AppDelegate.startMemoryReporterImmediately))
+                NSMenuItem.separator()
+                NSMenuItem(title: "Fire Interval Pixel Now...", action: #selector(AppDelegate.fireIntervalPixelNow))
             }
 
             NSMenuItem(title: "Hang Debugging") {
@@ -915,7 +909,7 @@ final class MainMenu: NSMenu {
                             uiHandler: Application.appDelegate.subscriptionUIHandler,
                             aiChatURL: AIChatRemoteSettings().aiChatURL,
                             wideEvent: Application.appDelegate.wideEvent,
-                            pendingTransactionHandler: pendingTransactionHandler
+                            pendingTransactionHandler: pendingTransactionHandler, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
                         )
 
                         // Create params matching what the web would send
@@ -955,7 +949,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
 #if SPARKLE
-            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
+            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
 #endif
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)")

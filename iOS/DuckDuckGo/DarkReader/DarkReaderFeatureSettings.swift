@@ -46,7 +46,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     }
 
     var isFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.forceWebsiteDarkMode)
+        featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
     }
 
     var isDarkModeEnabled: Bool {

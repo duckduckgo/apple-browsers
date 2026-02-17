@@ -18,14 +18,36 @@
 
 import SwiftUI
 
-extension OnboardingRebranding {
+public enum OnboardingRebrandingImages {
 
-    enum OnboardingImages {
+    public enum Contextual {
+        public static let tryASearchBackground = Image("Rebranding/contextual-bg-try-search", bundle: .module)
+        public static let tryASiteBackground = Image("Rebranding/contextual-bg-try-site", bundle: .module)
+        public static let searchDoneBackground = Image("Rebranding/contextual-bg-search-done", bundle: .module)
+    }
 
-        enum Contextual {
-            static let tryASearchBackground = Image("Rebranding/contextual-bg-try-search", bundle: .module)
-        }
+    public enum Comparison {
+        public static let safariIcon = Image("SafariBrowserIcon", bundle: .module)
+        public static let ddgIcon = Image("DDGBrowserIcon", bundle: .module)
+        public static let availableIcon = Image("Rebranding/Onboarding-Check", bundle: .module)
+        public static let partialIcon = Image("Rebranding/Onboarding-Stop", bundle: .module)
+        public static let unavailableIcon = Image("Rebranding/Onboarding-Cross", bundle: .module)
+        public static let privateSearchIcon = Image("Rebranding/Comparison-PrivateSearch", bundle: .module)
+        public static let blockTrackersIcon = Image("Rebranding/Comparison-BlockTrackers", bundle: .module)
+        public static let blockCookiesIcon = Image("Rebranding/Comparison-BlockCookies", bundle: .module)
+        public static let blockAdsIcon = Image("Rebranding/Comparison-BlockAds", bundle: .module)
+        public static let eraseDataIcon = Image("Rebranding/Comparison-EraseData", bundle: .module)
+    }
 
+    public enum SearchExperience {
+        public static let searchOff = Image("Rebranding/OnboardingSearchOff", bundle: .module)
+        public static let searchOn = Image("Rebranding/OnboardingSearchOn", bundle: .module)
+        public static let searchAIOff = Image("Rebranding/OnboardingSearchAIOff", bundle: .module)
+        public static let searchAIOn = Image("Rebranding/OnboardingSearchAIOn", bundle: .module)
+    }
+
+    public enum Branding {
+        public static let duckDuckGoLogo = Image("Rebranding/DuckDuckGoLogo", bundle: .module)
     }
 
 }

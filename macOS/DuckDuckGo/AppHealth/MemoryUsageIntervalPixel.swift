@@ -22,7 +22,8 @@ import Foundation
 /// Interval memory usage pixel that fires at startup and scheduled intervals with context parameters.
 ///
 /// Each trigger (startup, 1h, 2h, 4h, 8h, 24h) fires at most once per app session.
-/// Context parameters include bucketed memory usage, window count, tab count, and architecture.
+/// Context parameters include bucketed memory usage, window count, standard/pinned tab counts,
+/// architecture, allocation usage, and uptime.
 ///
 enum MemoryUsageIntervalPixel: PixelKitEvent {
 
@@ -51,7 +52,7 @@ enum MemoryUsageIntervalPixel: PixelKitEvent {
     }
 
     var name: String {
-        "m_mac_memory_usage"
+        "m_mac_memory_usage_interval"
     }
 
     var parameters: [String: String]? {

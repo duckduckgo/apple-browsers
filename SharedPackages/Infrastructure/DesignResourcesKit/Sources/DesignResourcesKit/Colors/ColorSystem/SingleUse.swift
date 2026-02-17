@@ -47,6 +47,9 @@ extension Color {
     // UnifiedFeedback fields background
     static let x1C1C1E = Color(0x1C1C1E)
 
+    // Tab switcher tracker count info panel background dark mode
+    static let x2C3A2A = Color(0x2C3A2A)
+
     static let xF7F7F7 = Color(0xF7F7F7)
 
     // Duck.ai contextual sheet background color

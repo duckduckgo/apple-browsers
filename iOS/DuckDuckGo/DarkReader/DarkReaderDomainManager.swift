@@ -46,7 +46,7 @@ final class DarkReaderDomainManager {
     var blockedDomains: Set<String> {
         let serverExceptions = Set(
             privacyConfigurationManager.privacyConfig
-                .exceptionsList(forFeature: .forceWebsiteDarkMode)
+                .exceptionsList(forFeature: .forceDarkModeOnWebsites)
         )
         return Self.hardcodedBlockedDomains.union(serverExceptions)
     }

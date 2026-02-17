@@ -18,7 +18,6 @@
 //
 
 import SwiftUI
-import DuckUI
 import Onboarding
 
 extension OnboardingRebranding.OnboardingView {
@@ -42,14 +41,16 @@ extension OnboardingRebranding.OnboardingView {
             }
         }
 
+        @Environment(\.onboardingTheme) private var onboardingTheme
+
         var body: some View {
-            VStack(spacing: 8) {
+            VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                 Button(action: {
                     self.primaryAction?()
                 }, label: {
                     Text(viewModel.primaryButtonTitle)
                 })
-                .buttonStyle(PrimaryButtonStyle())
+                .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 .disabled(!viewModel.isContinueEnabled)
                 .accessibilityIdentifier("Continue")
 
@@ -58,7 +59,7 @@ extension OnboardingRebranding.OnboardingView {
                 }, label: {
                     Text(viewModel.secondaryButtonTitle)
                 })
-                .buttonStyle(GhostButtonStyle())
+                .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                 .accessibilityIdentifier("Skip")
             }
         }

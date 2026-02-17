@@ -103,10 +103,9 @@ private extension RebrandedNewTabDaxDialogFactory {
         }
 
         return FadeInView {
-            OnboardingTryVisitingSiteDialog(logoPosition: .top, viewModel: viewModel, onManualDismiss: manualDismissAction)
-                .onboardingDaxDialogStyle()
+            OnboardingRebranding.OnboardingTrySiteDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
         }
-        .onboardingContextualBackgroundStyle(background: .illustratedGradient)
+        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
@@ -121,15 +120,9 @@ private extension RebrandedNewTabDaxDialogFactory {
 
     func createAddFavoriteDialog(message: String) -> some View {
         FadeInView {
-            ScrollView(.vertical) {
-                DaxDialogView(logoPosition: .top) {
-                    ContextualDaxDialogContent(message: NSAttributedString(string: message), messageFont: Font.system(size: 16))
-                }
-                .padding()
-            }
-            .onboardingDaxDialogStyle()
+            OnboardingRebranding.OnboardingAddFavorite(message: message)
         }
-        .onboardingContextualBackgroundStyle(background: .illustratedGradient)
+        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
     }
 
 }

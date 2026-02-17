@@ -192,8 +192,10 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             content.threadIdentifier = tag
         }
 
-        if let iconURLString = payload.icon, let iconURL = URL(string: iconURLString) {
-            if let attachment = await iconFetcher.fetchIcon(from: iconURL) {
+        if let iconURLString = payload.icon,
+           let iconURL = URL(string: iconURLString),
+           let originURLObject = URL(string: originURL) {
+            if let attachment = await iconFetcher.fetchIcon(from: iconURL, originURL: originURLObject) {
                 content.attachments = [attachment]
             }
         }

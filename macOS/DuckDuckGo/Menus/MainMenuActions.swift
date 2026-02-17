@@ -619,8 +619,8 @@ extension AppDelegate {
         throwTestCppException()
     }
 
-    @objc func simulateMemoryPressureCritical(_ sender: Any?) {
-        memoryPressureReporter.simulateMemoryPressureEvent(level: .critical)
+    @MainActor @objc func simulateMemoryPressureCritical(_ sender: Any?) {
+        memoryPressureReporter?.simulateMemoryPressureEvent(level: .critical)
     }
 
     @objc func simulateMemoryUsageReport(_ sender: Any?) {
@@ -659,7 +659,7 @@ extension AppDelegate {
     }
 
     @objc func clearSimulatedMemory(_ sender: Any?) {
-        NSApp.delegateTyped.memoryUsageMonitor.clearSimulatedMemoryReport()
+        memoryUsageMonitor.clearSimulatedMemoryReport()
         Logger.memory.info("Cleared simulated memory report, reverting to real system memory")
 
         let alert = NSAlert()
@@ -670,7 +670,7 @@ extension AppDelegate {
     }
 
     @objc func startMemoryReporterImmediately(_ sender: Any?) {
-        NSApp.delegateTyped.memoryUsageThresholdReporter.startMonitoringImmediately()
+        memoryUsageThresholdReporter.startMonitoringImmediately()
         Logger.memory.info("Memory usage threshold reporter started immediately (skipped 5-minute delay)")
 
         let alert = NSAlert()
@@ -678,6 +678,33 @@ extension AppDelegate {
         alert.informativeText = "Memory usage threshold reporter is now monitoring (5-minute delay skipped)."
         alert.alertStyle = .informational
         alert.runModal()
+    }
+
+    @objc func fireIntervalPixelNow(_ sender: Any?) {
+        let alert = NSAlert()
+        alert.messageText = "Fire Interval Pixel"
+        alert.informativeText = "Select a trigger to fire. The reporter will collect current context and fire the m_mac_memory_usage_interval pixel."
+        alert.alertStyle = .informational
+
+        let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 200, height: 24), pullsDown: false)
+        for trigger in MemoryUsageIntervalPixel.Trigger.allCases {
+            popup.addItem(withTitle: trigger.rawValue)
+        }
+        alert.accessoryView = popup
+
+        alert.addButton(withTitle: "Fire")
+        alert.addButton(withTitle: "Cancel")
+
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn else { return }
+
+        let selectedIndex = popup.indexOfSelectedItem
+        let trigger = MemoryUsageIntervalPixel.Trigger.allCases[selectedIndex]
+
+        Task {
+            await memoryUsageIntervalReporter?.fireTriggerNow(trigger)
+            Logger.memory.info("Interval pixel fired for trigger: \(trigger.rawValue, privacy: .public)")
+        }
     }
 
     @objc func resetSecureVaultData(_ sender: Any?) {
@@ -790,11 +817,6 @@ extension AppDelegate {
     @objc func resetQuitSurveyWasShown(_ sender: Any?) {
         let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         persistor.hasQuitAppBefore = false
-    }
-
-    @objc func resetThemesPopoverWasShown(_ sender: Any?) {
-        let persistor = ThemePopoverUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
-        persistor.themePopoverShown = false
     }
 
     @objc func resetTipKit(_ sender: Any?) {
@@ -1046,7 +1068,8 @@ extension MainViewController {
         guard let manager = WarnBeforeQuitManager(
             currentEvent: currentEvent,
             action: .close,
-            isWarningEnabled: { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs }
+            isWarningEnabled: { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs },
+            isPhysicalKeyPress: WarnBeforeQuitManager.makePhysicalKeyPressCheck(for: currentEvent)
         ) else {
             completion(false)
             return
@@ -1618,6 +1641,10 @@ extension MainViewController: NSMenuItemValidation {
         case #selector(findInPageDone):
             return getActiveTabAndIndex()?.tab.findInPage?.isActive == true
 
+        // Location
+        case #selector(MainViewController.openLocation(_:)):
+            return allowsUserInteraction
+
         // Zoom
         case #selector(MainViewController.zoomIn(_:)):
             return getActiveTabAndIndex()?.tab.webView.canZoomIn == true
@@ -1634,8 +1661,17 @@ extension MainViewController: NSMenuItemValidation {
         case #selector(MainViewController.bookmarkAllOpenTabs(_:)):
             return tabCollectionViewModel.canBookmarkAllOpenTabs()
         case #selector(MainViewController.openBookmark(_:)),
-             #selector(MainViewController.showManageBookmarks(_:)):
-            return true
+             #selector(MainViewController.showManageBookmarks(_:)),
+            #selector(MainViewController.toggleBookmarksBarFromMenu(_:)):
+            return allowsUserInteraction
+
+        // New Tabs
+        case #selector(MainViewController.newTab(_:)):
+            return allowsUserInteraction
+
+        // Duplicate Tab
+        case #selector(MainViewController.duplicateTab(_:)):
+            return getActiveTabAndIndex()?.tab.content.canBeDuplicated == true
 
         // Pin Tab
         case #selector(MainViewController.pinOrUnpinTab(_:)):
@@ -1658,6 +1694,10 @@ extension MainViewController: NSMenuItemValidation {
         // Save Content
         case #selector(MainViewController.saveAs(_:)):
             return activeTabViewModel?.canSaveContent == true
+
+        // Preferences:
+        case #selector(MainViewController.openPreferences(_:)):
+            return allowsUserInteraction
 
         // Printing
         case #selector(MainViewController.printWebView(_:)):
@@ -1692,7 +1732,7 @@ extension MainViewController: NSMenuItemValidation {
             let isDownloadsPopoverShown = self.navigationBarViewController.isDownloadsPopoverShown
             menuItem.title = isDownloadsPopoverShown ? UserText.closeDownloads : UserText.openDownloads
 
-            return true
+            return allowsUserInteraction
 
         case #selector(MainViewController.summarize(_:)):
             return aiChatMenuConfig.shouldDisplaySummarizationMenuItem
@@ -1708,7 +1748,19 @@ extension AppDelegate: NSMenuItemValidation {
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
         case #selector(AppDelegate.closeAllWindows(_:)):
-            return !Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty
+            return isDisplayingOneOrMoreWindows
+
+        case #selector(AppDelegate.newWindow(_:)):
+            return isUserInteractionAllowed || !isDisplayingOneOrMoreWindows
+
+        case #selector(AppDelegate.newBurnerWindow(_:)),
+            #selector(AppDelegate.newAIChat(_:)),
+            #selector(AppDelegate.openFile(_:)),
+            #selector(AppDelegate.openLocation(_:)),
+            #selector(AppDelegate.openPreferences),
+            #selector(AppDelegate.showManageBookmarks(_:)),
+            #selector(AppDelegate.openImportBrowserDataWindow(_:)):
+            return isUserInteractionAllowed
 
         // Reopen Last Removed Tab
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
@@ -1728,9 +1780,20 @@ extension AppDelegate: NSMenuItemValidation {
 
         case #selector(AppDelegate.openReportBrokenSite(_:)):
             return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+
         default:
             return true
         }
+    }
+
+    @MainActor
+    private var isDisplayingOneOrMoreWindows: Bool {
+        Application.appDelegate.windowControllersManager.mainWindowControllers.count > 0
+    }
+
+    @MainActor
+    private var isUserInteractionAllowed: Bool {
+        OnboardingActionsManager.isOnboardingFinished
     }
 
     private var areTherePasswords: Bool {

@@ -136,7 +136,7 @@ extension XCUIApplication {
     /// - Parameter buttonIdentifier: The button identifier we want to tap from the popover
     func dismissPopover(buttonIdentifier: String) {
         let popover = popovers.firstMatch
-        guard popover.waitForExistence(timeout: UITests.Timeouts.elementExistence) else {
+        guard popover.wait(for: .keyPath(\.exists, equalTo: true), timeout: UITests.Timeouts.elementExistence) else {
             return
         }
 

@@ -280,8 +280,6 @@ extension NewTabPageViewController {
                     return
                 }
                 dialogProvider.dismiss()
-            } else if spec == .subscriptionPromotion {
-                dialogProvider.dismiss()
             }
 
             // Show keyboard when manually dismiss the Dax tips.

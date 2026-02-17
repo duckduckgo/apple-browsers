@@ -92,8 +92,8 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
     // MARK: - Cancel Pending Downgrade Handler Tests
 
     @MainActor
-    func testCancelPendingDowngrade_WhenAppleSubscriptionOnAppStore_InvokesHandlerWithCurrentProductId() {
-        // Given - Apple subscription on App Store app with pending downgrade
+    func testCancelPendingDowngrade_WhenAppleSubscriptionOnAppStoreNoCurrentProductId_ReturnsShowInternalSubscriptionAlert() {
+        // Given - Apple subscription on App Store with pending downgrade but no availableChanges.currentProductId
         let pendingPlan = DuckDuckGoSubscription.PendingPlan(
             productId: "ddg-privacy-pro-monthly-plus",
             billingPeriod: .monthly,
@@ -107,15 +107,12 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             tier: .pro,
             pendingPlans: [pendingPlan]
         )
-        let handlerExpectation = expectation(description: "Cancel pending downgrade handler called")
         sut = makeSUT(subscription: subscription,
                       purchasePlatform: .appStore,
-                      cancelPendingDowngradeHandler: { [weak self] productId in
-            self?.capturedCancelPendingDowngradeProductId = productId
-            handlerExpectation.fulfill()
+                      cancelPendingDowngradeHandler: { [weak self] _ in
+            self?.capturedCancelPendingDowngradeProductId = "handler-should-not-be-called"
         })
 
-        // Wait for subscription update so currentProductID is set
         let subscriptionUpdated = expectation(description: "Subscription details updated")
         sut.$subscriptionDetails
             .compactMap { $0 }
@@ -124,7 +121,49 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             .store(in: &cancellables)
         wait(for: [subscriptionUpdated], timeout: 2.0)
 
-        // When - User triggers cancel pending downgrade and invokes the returned action
+        // When - User triggers cancel pending downgrade
+        let action = sut.cancelPendingDowngrade()
+
+        // Then - Returns showInternalSubscriptionAlert; handler was not called
+        if case .showInternalSubscriptionAlert = action { } else {
+            XCTFail("Expected showInternalSubscriptionAlert, got \(action)")
+        }
+        XCTAssertNil(capturedCancelPendingDowngradeProductId)
+    }
+
+    @MainActor
+    func testCancelPendingDowngrade_WhenAppleSubscriptionWithAvailableChangesCurrentProductId_InvokesHandlerWithCurrentProductId() {
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(upgrade: [], downgrade: [], currentProductId: "be-current-product-id")
+        let pendingPlan = DuckDuckGoSubscription.PendingPlan(
+            productId: "ddg-privacy-pro-monthly-plus",
+            billingPeriod: .monthly,
+            effectiveAt: Date(timeIntervalSince1970: 1711557633),
+            status: "pending",
+            tier: .plus
+        )
+        let subscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            platform: .apple,
+            tier: .pro,
+            availableChanges: availableChanges,
+            pendingPlans: [pendingPlan]
+        )
+        let handlerExpectation = expectation(description: "Cancel pending downgrade handler called")
+        sut = makeSUT(subscription: subscription,
+                      purchasePlatform: .appStore,
+                      cancelPendingDowngradeHandler: { [weak self] productId in
+            self?.capturedCancelPendingDowngradeProductId = productId
+            handlerExpectation.fulfill()
+        })
+
+        let subscriptionUpdated = expectation(description: "Subscription details updated")
+        sut.$subscriptionDetails
+            .compactMap { $0 }
+            .first()
+            .sink { _ in subscriptionUpdated.fulfill() }
+            .store(in: &cancellables)
+        wait(for: [subscriptionUpdated], timeout: 2.0)
+
         let action = sut.cancelPendingDowngrade()
         if case .cancelApplePendingDowngrade(let closure) = action {
             closure()
@@ -135,8 +174,7 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
 
         wait(for: [handlerExpectation], timeout: 1.0)
 
-        // Then - Handler was called with the current subscription product ID
-        XCTAssertEqual(capturedCancelPendingDowngradeProductId, subscription.productId)
+        XCTAssertEqual(capturedCancelPendingDowngradeProductId, "be-current-product-id")
     }
 
     @MainActor

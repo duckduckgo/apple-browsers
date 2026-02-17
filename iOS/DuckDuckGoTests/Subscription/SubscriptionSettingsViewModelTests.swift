@@ -617,8 +617,29 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
 
     // MARK: - Cancel Pending Downgrade
 
-    func testCancelPendingDowngrade_WhenAppleSubscription_InvokesPerformerWithCurrentProductId() async {
+    func testCancelPendingDowngrade_WhenAppleSubscriptionNoCurrentProductId_DoesNotInvokePerformer() async {
         let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus)
+        mockSubscriptionManager.resultSubscription = .success(subscription)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        let mockPerformer = MockSubscriptionFlowsExecuter()
+        sut = makeSUT(subscriptionFlowsExecuter: mockPerformer)
+        await waitForSubscriptionUpdate()
+
+        sut.cancelPendingDowngrade()
+
+        try? await Task.sleep(nanoseconds: 100_000_000) // Allow runCancelHandler task to complete
+        XCTAssertNil(mockPerformer.capturedProductId)
+    }
+
+    func testCancelPendingDowngrade_WhenAppleSubscriptionWithAvailableChangesCurrentProductId_InvokesPerformerWithCurrentProductId() async {
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(upgrade: [], downgrade: [], currentProductId: "be-current-product-id")
+        let subscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            platform: .apple,
+            tier: .plus,
+            availableChanges: availableChanges
+        )
         mockSubscriptionManager.resultSubscription = .success(subscription)
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
 
@@ -629,11 +650,10 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         sut = makeSUT(subscriptionFlowsExecuter: mockPerformer)
         await waitForSubscriptionUpdate()
 
-        let expectedProductId = subscription.productId
         sut.cancelPendingDowngrade()
 
         await fulfillment(of: [performerCalled], timeout: 5.0)
-        XCTAssertEqual(mockPerformer.capturedProductId, expectedProductId)
+        XCTAssertEqual(mockPerformer.capturedProductId, "be-current-product-id")
     }
 
     func testCancelPendingDowngrade_WhenGoogleSubscription_ShowsGoogleView() async {

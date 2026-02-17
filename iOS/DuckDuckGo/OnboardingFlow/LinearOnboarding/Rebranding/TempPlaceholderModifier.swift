@@ -19,7 +19,7 @@
 
 import SwiftUI
 
-/// Overlays a small yellow "Temp" badge on the bottom-trailing corner of a view.
+/// Overlays a small yellow "Temp" badge on any view.
 ///
 /// Use this modifier to flag any SwiftUI View as temporary when the content will be replaced with final assets in a later milestone.
 /// ```swift

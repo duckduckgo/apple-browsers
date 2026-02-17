@@ -28,13 +28,12 @@ public enum WebExtensionManagerFactory {
 
     @MainActor
     static func makeManager(mainViewController: MainViewController) -> WebExtensionManager {
-        let manager = WebExtensionManager(
+        WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),
             storageProvider: WebExtensionStorageProvider(),
-            pixelFiring: iOSWebExtensionPixelFiring()
+            pixelFiring: iOSWebExtensionPixelFiring(),
+            handlerProvider: WebExtensionHandlerProvider()
         )
-
-        return manager
     }
 }

@@ -206,9 +206,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
     case productTelemetrySurfaceUsage
 
-    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211661206210892?focus=true
-    case experimentalBrowsingMenu
-
     ///  https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
     case appRatingPrompt
 
@@ -279,6 +276,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
+    case onboardingExperiment
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -380,6 +378,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
     case iPadDuckaiOnTab
+
+    /// Controls deletion of Synced chats
+    case supportsSyncChatsDeletion
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

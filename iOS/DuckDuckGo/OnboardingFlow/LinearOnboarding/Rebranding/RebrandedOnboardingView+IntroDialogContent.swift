@@ -21,10 +21,6 @@ import SwiftUI
 import DuckUI
 import Onboarding
 
-private enum IntroDialogContentMetrics {
-    static let additionalTopMargin: CGFloat = 40
-}
-
 private enum IntroDialogContentCopy {
     static let continueCTA = "Let's do it!"
     static let skipCTA = "I've been here before"
@@ -64,75 +60,57 @@ extension OnboardingRebranding.OnboardingView {
             if showSkipOnboarding {
                 skipOnboardingView
             } else {
-                ZStack(alignment: .top) {
-                    VStack(spacing: 0) {
-                        bubbleContent
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
-                }
-                .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + IntroDialogContentMetrics.additionalTopMargin)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .onAppear {
-                    guard !showCTA.wrappedValue else { return }
-                    withAnimation {
-                        showCTA.wrappedValue = true
-                    }
-                }
-            }
-        }
-
-        private var bubbleContent: some View {
-            OnboardingBubbleView(
-                tailPosition: .bottom(offset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset, direction: .leading),
-                contentInsets: onboardingTheme.linearBubbleMetrics.contentInsets,
-                arrowLength: onboardingTheme.linearBubbleMetrics.arrowLength,
-                arrowWidth: onboardingTheme.linearBubbleMetrics.arrowWidth
-            ) {
-                LinearDialogContentContainer(
-                    metrics: .init(
-                        outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
-                        textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
-                        contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
-                        actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
-                    ),
-                    message: AnyView(
-                        Text(message)
-                            .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                            .font(onboardingTheme.typography.body)
-                            .multilineTextAlignment(.center)
-                    ),
-                    title: {
-                        Text(title)
-                            .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                            .font(onboardingTheme.typography.title)
-                            .multilineTextAlignment(.center)
-                    },
-                    actions: {
-                        VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
-                            Button(action: continueAction) {
-                                Text(IntroDialogContentCopy.continueCTA)
-                            }
-                            .buttonStyle(onboardingTheme.primaryButtonStyle.style)
-
-                            if skipOnboardingView != nil {
-                                Button(action: {
-                                    showSkipOnboarding = true
-                                    skipAction()
-                                }) {
-                                    Text(IntroDialogContentCopy.skipCTA)
-                                }
-                                .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
-                            }
+                content
+                    .onAppear {
+                        guard !showCTA.wrappedValue else { return }
+                        withAnimation {
+                            showCTA.wrappedValue = true
                         }
-                        .visibility(showCTA.wrappedValue ? .visible : .invisible)
                     }
-                )
             }
-            .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth)
-            .frame(maxWidth: .infinity, alignment: .center)
         }
 
+        private var content: some View {
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(message)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
+                ),
+                title: {
+                    Text(title)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.title)
+                        .multilineTextAlignment(.center)
+                },
+                actions: {
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                        Button(action: continueAction) {
+                            Text(IntroDialogContentCopy.continueCTA)
+                        }
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+
+                        if skipOnboardingView != nil {
+                            Button(action: {
+                                showSkipOnboarding = true
+                                skipAction()
+                            }) {
+                                Text(IntroDialogContentCopy.skipCTA)
+                            }
+                            .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                        }
+                    }
+                    .visibility(showCTA.wrappedValue ? .visible : .invisible)
+                }
+            )
+        }
 
     }
 }

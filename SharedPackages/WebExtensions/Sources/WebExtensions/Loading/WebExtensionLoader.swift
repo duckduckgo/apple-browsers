@@ -19,8 +19,24 @@
 import os.log
 import WebKit
 
+/// Delegate protocol for receiving notifications about extension loading lifecycle.
+@available(macOS 15.4, iOS 18.4, *)
+public protocol WebExtensionLoadingDelegate: AnyObject {
+    /// Called immediately before an extension context is loaded into the controller.
+    /// This is the appropriate time to register message handlers or perform other setup.
+    /// - Parameters:
+    ///   - loader: The loader about to load the extension
+    ///   - context: The extension context that will be loaded
+    ///   - identifier: The unique identifier for the extension
+    func webExtensionLoader(_ loader: WebExtensionLoading,
+                            willLoad context: WKWebExtensionContext,
+                            identifier: String)
+}
+
 @available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionLoading: AnyObject {
+    var delegate: WebExtensionLoadingDelegate? { get set }
+
     @discardableResult
     func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
@@ -36,6 +52,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
     }
 
     private let storageProvider: WebExtensionStorageProviding
+    public weak var delegate: WebExtensionLoadingDelegate?
 
     public init(storageProvider: WebExtensionStorageProviding) {
         self.storageProvider = storageProvider
@@ -50,9 +67,18 @@ public final class WebExtensionLoader: WebExtensionLoading {
         let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
 
         let context = makeContext(for: webExtension, identifier: identifier)
+
+        // Notify delegate before loading to allow handler registration
+        delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
+
         try controller.load(context)
 
-        return WebExtensionLoadResult(context: context, identifier: identifier)
+        return WebExtensionLoadResult(
+            identifier: identifier,
+            filename: extensionURL.lastPathComponent,
+            displayName: webExtension.displayName,
+            version: webExtension.version
+        )
     }
 
     public func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {

@@ -44,27 +44,9 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - isExperimentalMenuOptInEnabled
-
-    func testExperimentalMenuOptInEnabledReturnsTrueWhenBrowsingMenuSheetPresentationFlagIsEnabled() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetPresentation]
-
-        let capability = createCapability()
-
-        XCTAssertTrue(capability.isExperimentalMenuOptInEnabled)
-    }
-
-    func testExperimentalMenuOptInEnabledReturnsFalseWhenBrowsingMenuSheetPresentationFlagIsDisabled() {
-        mockFeatureFlagger.enabledFeatureFlags = []
-
-        let capability = createCapability()
-
-        XCTAssertFalse(capability.isExperimentalMenuOptInEnabled)
-    }
-
     // MARK: - isEnabled (when isEnabledByDefault is false)
 
-    func testIsEnabledReturnsFalseWhenExperimentalMenuOptInEnabledIsFalse() {
+    func testIsEnabledReturnsFalseWhenNotEnabledByDefaultAndNoStoredValue() {
         mockFeatureFlagger.enabledFeatureFlags = []
 
         let capability = createCapability()
@@ -72,16 +54,8 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
         XCTAssertFalse(capability.isEnabled)
     }
 
-    func testIsEnabledReturnsFalseWhenExperimentalMenuOptInEnabledIsTrueButNoStoredValue() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetPresentation]
-
-        let capability = createCapability()
-
-        XCTAssertFalse(capability.isEnabled)
-    }
-
-    func testIsEnabledReturnsTrueWhenExperimentalMenuOptInEnabledIsTrueAndStoredValueIsTrue() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetPresentation]
+    func testIsEnabledReturnsTrueWhenNotEnabledByDefaultAndStoredValueIsTrue() {
+        mockFeatureFlagger.enabledFeatureFlags = []
         try? mockKeyValueStore.set(true, forKey: "com_duckduckgo_experimentalBrowsingMenu_enabled")
 
         let capability = createCapability()
@@ -89,8 +63,8 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
         XCTAssertTrue(capability.isEnabled)
     }
 
-    func testIsEnabledReturnsFalseWhenExperimentalMenuOptInEnabledIsTrueAndStoredValueIsFalse() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetPresentation]
+    func testIsEnabledReturnsFalseWhenNotEnabledByDefaultAndStoredValueIsFalse() {
+        mockFeatureFlagger.enabledFeatureFlags = []
         try? mockKeyValueStore.set(false, forKey: "com_duckduckgo_experimentalBrowsingMenu_enabled")
 
         let capability = createCapability()
@@ -150,15 +124,7 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
 
     // MARK: - isSettingsOptionVisible (when isEnabledByDefault is false)
 
-    func testIsSettingsOptionVisibleReturnsTrueWhenExperimentalMenuOptInEnabledIsTrue() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetPresentation]
-
-        let capability = createCapability()
-
-        XCTAssertTrue(capability.isSettingsOptionVisible)
-    }
-
-    func testIsSettingsOptionVisibleReturnsFalseWhenExperimentalMenuOptInEnabledIsFalse() {
+    func testIsSettingsOptionVisibleReturnsFalseWhenNotEnabledByDefault() {
         mockFeatureFlagger.enabledFeatureFlags = []
 
         let capability = createCapability()
@@ -208,7 +174,7 @@ final class BrowsingMenuSheetCapabilityTests: XCTestCase {
     }
 
     func testIsWebsiteHeaderEnabledReturnsFalseWhenNotEnabledByDefault() {
-        mockFeatureFlagger.enabledFeatureFlags = [.browsingMenuSheetPresentation]
+        mockFeatureFlagger.enabledFeatureFlags = []
 
         let capability = createCapability()
 

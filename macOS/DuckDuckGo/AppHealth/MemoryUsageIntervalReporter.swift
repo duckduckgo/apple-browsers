@@ -28,8 +28,8 @@ import PrivacyConfig
 /// `.memoryUsageReporting` feature flag is enabled and ends when the flag is disabled.
 /// Disabling and re-enabling the flag starts a fresh session.
 ///
-/// Context parameters (memory, windows, tabs, architecture, sync) are collected at the
-/// moment of firing each pixel, on the `MainActor`.
+/// Context parameters (memory, windows, standard/pinned tabs, architecture, sync,
+/// allocation, uptime) are collected at the moment of firing each pixel, on the `MainActor`.
 ///
 final class MemoryUsageIntervalReporter {
 
@@ -43,6 +43,8 @@ final class MemoryUsageIntervalReporter {
     private let pixelFiring: PixelFiring?
     private let windowContext: () -> WindowContext?
     private let isSyncEnabled: () -> Bool?
+    private let allocationStatsProvider: MemoryAllocationStatsProviding
+    private let launchDate: Date
     private let logger: Logger?
     private let checkInterval: TimeInterval
 
@@ -68,8 +70,10 @@ final class MemoryUsageIntervalReporter {
     ///   - memoryUsageMonitor: Provides memory usage readings via `getCurrentMemoryUsage()`.
     ///   - featureFlagger: Feature flag provider to check if reporting is enabled.
     ///   - pixelFiring: The pixel firing service for sending analytics.
-    ///   - windowContext: Closure that provides information about opened tabs and windows
+    ///   - windowContext: Closure that provides information about opened tabs and windows.
     ///   - isSyncEnabled: Closure that provides a boolean if Sync is enabled.
+    ///   - allocationStatsProvider: Provides the current total used bytes from malloc zones.
+    ///   - launchDate: The date the app was launched, used to compute uptime.
     ///   - checkInterval: The interval between checks. Defaults to 60 seconds.
     ///   - logger: Optional logger for debugging.
     init(
@@ -78,6 +82,8 @@ final class MemoryUsageIntervalReporter {
         pixelFiring: PixelFiring?,
         windowContext: @autoclosure @escaping () -> WindowContext?,
         isSyncEnabled: @escaping () -> Bool?,
+        allocationStatsProvider: MemoryAllocationStatsProviding = MemoryAllocationStatsExporter(),
+        launchDate: Date = Date(),
         checkInterval: TimeInterval = MemoryUsageIntervalReporter.defaultCheckInterval,
         logger: Logger? = nil
     ) {
@@ -86,6 +92,8 @@ final class MemoryUsageIntervalReporter {
         self.pixelFiring = pixelFiring
         self.windowContext = windowContext
         self.isSyncEnabled = isSyncEnabled
+        self.allocationStatsProvider = allocationStatsProvider
+        self.launchDate = launchDate
         self.checkInterval = checkInterval
         self.logger = logger
         subscribeToFeatureFlagUpdates()
@@ -177,11 +185,14 @@ final class MemoryUsageIntervalReporter {
             guard shouldFire else { continue }
 
             // Collect context on MainActor and fire
-            let context = await MainActor.run { [memoryUsageMonitor, windowContext, isSyncEnabled] in
+            let allocationBytes = allocationStatsProvider.currentTotalUsedBytes()
+            let context = await MainActor.run { [memoryUsageMonitor, windowContext, isSyncEnabled, launchDate] in
                 MemoryReportingContext.collect(
                     memoryUsageMonitor: memoryUsageMonitor,
                     windowContext: windowContext(),
-                    isSyncEnabled: isSyncEnabled()
+                    isSyncEnabled: isSyncEnabled(),
+                    usedAllocationBytes: allocationBytes,
+                    launchDate: launchDate
                 )
             }
 
@@ -210,11 +221,22 @@ final class MemoryUsageIntervalReporter {
 
 extension MemoryUsageIntervalReporter {
 
-    /// For testing: sets up monitoring state without starting the background task.
+    /// For testing: cancels any Combine-driven monitoring and sets up state manually.
+    ///
+    /// This cancels the feature-flag subscription and any background task so that
+    /// only explicit `checkIntervalsNow()` calls fire pixels — avoiding races between
+    /// the Combine-driven path and the test's manual control flow.
     ///
     /// - Parameter startTime: The simulated session start time.
     func startMonitoringForTesting(startTime: Date = Date()) {
-        lock.withLock { self.startTime = startTime }
+        featureFlagCancellable?.cancel()
+        featureFlagCancellable = nil
+        monitoringTask?.cancel()
+        monitoringTask = nil
+        lock.withLock {
+            self.startTime = startTime
+            self.firedTriggers.removeAll()
+        }
     }
 
     /// For testing and debug menu: triggers an immediate interval check.
@@ -233,11 +255,14 @@ extension MemoryUsageIntervalReporter {
     /// checks, deduplication, and feature-flag checks. This is intentional to allow
     /// developers to validate pixel content without enabling the flag or waiting for intervals.
     func fireTriggerNow(_ trigger: MemoryUsageIntervalPixel.Trigger) async {
-        let context = await MainActor.run { [memoryUsageMonitor, windowContext, isSyncEnabled] in
+        let allocationBytes = allocationStatsProvider.currentTotalUsedBytes()
+        let context = await MainActor.run { [memoryUsageMonitor, windowContext, isSyncEnabled, launchDate] in
             MemoryReportingContext.collect(
                 memoryUsageMonitor: memoryUsageMonitor,
                 windowContext: windowContext(),
-                isSyncEnabled: isSyncEnabled()
+                isSyncEnabled: isSyncEnabled(),
+                usedAllocationBytes: allocationBytes,
+                launchDate: launchDate
             )
         }
 

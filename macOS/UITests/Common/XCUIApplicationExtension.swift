@@ -40,6 +40,8 @@ extension XCUIApplication {
         static let addressBarPassiveTextField = "AddressBarViewController.passiveTextField"
         static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
+        static let bookmarksBarPopoverShow = "BookmarksBarPopover.show"
+        static let bookmarksBarPopoverHide = "BookmarksBarPopover.hide"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
         static let backButton = "NavigationBarViewController.BackButton"
@@ -429,6 +431,17 @@ extension XCUIApplication {
         }
 
         bookmarksPanelShortcutButton.tap()
+    }
+
+    func dismissBookmarksBarPopover(shouldDisplayBar: Bool = false) {
+        let targetIdentifier = shouldDisplayBar ? AccessibilityIdentifiers.bookmarksBarPopoverShow : AccessibilityIdentifiers.bookmarksBarPopoverHide
+        let targetButton = buttons[targetIdentifier]
+        XCTAssertTrue(
+            targetButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Bookmarks Bar Popover didn't show within a reasonable timeframe"
+        )
+
+        targetButton.tap()
     }
 
     func verifyBookmarkOrder(expectedOrder: [String], mode: BookmarkMode) {

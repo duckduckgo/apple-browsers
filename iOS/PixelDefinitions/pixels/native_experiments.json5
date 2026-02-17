@@ -2,7 +2,7 @@
     // This file defines pixels sent by the native experiments framework
     "defaultSuffixes": [],
     "activeExperiments": {
-        "onboardingExperiment": {
+        "autofillOnboardingExperiment": {
             "cohorts": ["control", "variant1", "variant2", "variant3"],
             "metrics": {
                 "save_tap": {

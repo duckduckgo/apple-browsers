@@ -33,7 +33,7 @@ import WebKit
 final class UserScripts: UserScriptsProvider {
 
     let pageObserverScript = PageObserverUserScript()
-    let contextMenuScript = ContextMenuUserScript()
+    let contextMenuSubfeature = ContextMenuSubfeature()
     let printingUserScript = PrintingUserScript()
     let hoverUserScript = HoverUserScript()
     let debugScript = DebugUserScript()
@@ -175,6 +175,7 @@ final class UserScripts: UserScriptsProvider {
         userScripts.append(autoconsentUserScript)
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
 
         if let aiChatUserScript {
@@ -246,7 +247,6 @@ final class UserScripts: UserScriptsProvider {
 
     lazy var userScripts: [UserScript] = [
         debugScript,
-        contextMenuScript,
         surrogatesScript,
         contentBlockerRulesScript,
         pageObserverScript,

@@ -390,19 +390,23 @@ final class Fire: FireProtocol {
                 group.leave()
             }
 
-            group.notify(queue: .main) {
+            await withCheckedContinuation { continuation in
+                group.notify(queue: .main) {
+                    continuation.resume()
+                }
+            }
+
+            await MainActor.run {
                 self.dispatchGroup = nil
                 // windows are closed by MainViewController.closeWindowIfNeeded
                 self.reopenWindowIfNeeded(customURL: entity.customURLToOpen)
-
                 self.burningData = nil
-
-                self.reloadWebExtensions()
-
-                completion?()
-
-                Logger.fire.debug("Fire finished")
             }
+
+            await self.reloadWebExtensions()
+
+            completion?()
+            Logger.fire.debug("Fire finished")
         }
     }
 
@@ -469,22 +473,26 @@ final class Fire: FireProtocol {
             self.burnAutoconsentCache()
             self.burnZoomLevels()
 
-            group.notify(queue: .main) {
+            await withCheckedContinuation { continuation in
+                group.notify(queue: .main) {
+                    continuation.resume()
+                }
+            }
+
+            await MainActor.run {
                 self.dispatchGroup = nil
                 // Only close windows at the end if we didn't close them at the beginning
                 // windows are closed by MainViewController.closeWindowIfNeeded
                 if !isBurnOnExit {
                     self.reopenWindowIfNeeded(customURL: url)
                 }
-
                 self.burningData = nil
-
-                self.reloadWebExtensions()
-
-                completion?()
-
-                Logger.fire.debug("Fire finished")
             }
+
+            await self.reloadWebExtensions()
+
+            completion?()
+            Logger.fire.debug("Fire finished")
         }
     }
 
@@ -651,11 +659,9 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    private func reloadWebExtensions() {
+    private func reloadWebExtensions() async {
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            Task {
-                await webExtensionManager.loadInstalledExtensions()
-            }
+            await webExtensionManager.loadInstalledExtensions()
         }
     }
 

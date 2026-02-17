@@ -144,10 +144,11 @@ extension WebExtensionManager {
     }
 
     private func enrichResponse(_ response: Any?, with message: WebExtensionMessage) -> Any? {
-        var wrapper: [String: Any] = [
-            "featureName": message.featureName,
-            "result": response as Any
-        ]
+        var wrapper: [String: Any] = ["featureName": message.featureName]
+
+        if let response {
+            wrapper["result"] = response
+        }
 
         if let id = message.id {
             wrapper["id"] = id

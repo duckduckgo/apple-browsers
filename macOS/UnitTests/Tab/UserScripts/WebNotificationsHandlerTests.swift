@@ -126,7 +126,7 @@ private final class WebNotificationMockURLWebView: WKWebView {
     }
 }
 
-private func makemakeWebNotificationMockScriptMessage(name: String, body: Any, webView: WKWebView? = nil, isMainFrame: Bool = true) -> WKScriptMessage {
+private func makeWebNotificationMockScriptMessage(name: String, body: Any, webView: WKWebView? = nil, isMainFrame: Bool = true) -> WKScriptMessage {
     let effectiveWebView = webView ?? WebNotificationMockURLWebView(url: URL(string: "https://example.com")!)
     let frameInfo = WKFrameInfo.mock(
         for: effectiveWebView,

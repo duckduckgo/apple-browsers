@@ -71,7 +71,7 @@ extension OnboardingRebranding.OnboardingView {
                     .overlay(
                         Circle()
                             .inset(by: -Metrics.strokeInset)
-                            .stroke(.blue, lineWidth: Metrics.strokeWidth)
+                            .stroke(Color(singleUseColor: .rebranding(.accentPrimary)), lineWidth: Metrics.strokeWidth)
                     )
             }
         }
@@ -88,31 +88,12 @@ extension OnboardingRebranding.OnboardingView {
                         .overlay(
                             Circle()
                                 .inset(by: Metrics.borderWidth/2.0)
-                                .stroke(.black, lineWidth: Metrics.borderWidth)
+                                .stroke(Color(singleUseColor: .rebranding(.decorationSecondary)), lineWidth: Metrics.borderWidth)
                                 .opacity(0.16)
 
                         )
                     strokeOverlay(isSelected: isSelected)
                 }
-
-//            Circle()
-//                .strokeBorder(lineWidth: 1, antialiased: true)
-//                .border(.black, width: 1.0)
-//                .frame(width: Metrics.colorCircleSize, height: Metrics.colorCircleSize)
-//                .foregroundStyle(color)
-//                .overlay {
-//                    Circle()
-//                        .foregroundColor(.clear)
-//                        .frame(width: Metrics.colorCircleSize, height: Metrics.colorCircleSize)
-//                        .overlay(
-//                            Circle()
-////                                .inset(by: -Metrics.strokeInset)
-//                                .stroke(.black, lineWidth: Metrics.strokeWidth)
-//                                .opacity(0.16)
-//
-//                        )
-//                    strokeOverlay(isSelected: isSelected)
-//                }
         }
     }
 }

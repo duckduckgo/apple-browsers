@@ -219,7 +219,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
     // MARK: - Automatic Relaunch Tests
 
     @MainActor
-    func testApplicationDidFinishLaunching_WhenRelaunchingAutomatically_RestoresTabsRegardlessOfPreference() {
+    func testAppDidFinishLaunching_WhenRelaunchingAutomatically_ResetsRelaunchFlag() {
         // Given: Session restore preference is disabled
         mockStartupPreferences.restorePreviousSession = false
 

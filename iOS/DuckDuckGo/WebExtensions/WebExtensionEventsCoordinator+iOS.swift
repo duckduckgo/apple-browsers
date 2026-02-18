@@ -58,6 +58,12 @@ final class WebExtensionEventsCoordinator {
     // MARK: - Window Events
 
     @available(iOS 18.4, *)
+    func didOpenWindow() {
+        guard let mainViewController else { return }
+        webExtensionManager?.eventsListener.didOpenWindow(mainViewController)
+    }
+
+    @available(iOS 18.4, *)
     func didFocusWindow() {
         guard let mainViewController else { return }
         webExtensionManager?.eventsListener.didFocusWindow(mainViewController)

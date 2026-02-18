@@ -27,6 +27,7 @@ private let duckDuckGoExtensionTypeManifestKey = "_duckduckgo_extension_type"
 @available(macOS 15.4, iOS 18.4, *)
 public enum DuckDuckGoExtensionType: String {
     case ddgInternalExtension
+    case darkReader
 }
 
 @available(macOS 15.4, iOS 18.4, *)

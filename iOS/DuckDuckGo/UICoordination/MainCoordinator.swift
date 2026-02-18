@@ -66,10 +66,8 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
-    private var adaptiveDarkModeObserver: Any?
+//    private var adaptiveDarkModeObserver: Any?
     private var darkReaderFeatureSettings: DarkReaderFeatureSettings?
-    private var darkReaderDomainManager: DarkReaderDomainManager?
-    private var darkReaderDomainCancellable: AnyCancellable?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -247,76 +245,70 @@ final class MainCoordinator {
             let darkReaderSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger)
             self.darkReaderFeatureSettings = darkReaderSettings
 
-            if darkReaderSettings.isFeatureEnabled {
-                let domainManager = DarkReaderDomainManager(privacyConfigurationManager: privacyConfigurationManager)
-                self.darkReaderDomainManager = domainManager
-
-                darkReaderDomainCancellable = domainManager.blockedDomainsPublisher
-                    .receive(on: DispatchQueue.main)
-                    .sink { [weak self] _ in
-                        guard let self, let manager = self.webExtensionManager else { return }
-                        Task { @MainActor in
-                            await self.applyDarkReaderPermissionUpdates(manager: manager)
-                        }
-                    }
-            }
-
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
-                await self.updateBundledDarkReader(manager: webExtensionManager)
+                if darkReaderSettings.isFeatureEnabled {
+                    await self.updateDarkReader(manager: webExtensionManager)
+                }
+                self.registerExistingTabsWithExtensionController()
             }
 
-            adaptiveDarkModeObserver = NotificationCenter.default.addObserver(
-                forName: AppUserDefaults.Notifications.adaptiveDarkModeChanged,
-                object: nil,
-                queue: .main) { [weak self] _ in
-                    guard let self, let manager = self.webExtensionManager else { return }
-                    Task { @MainActor in
-                        await self.updateBundledDarkReader(manager: manager)
-                    }
-                }
+//            adaptiveDarkModeObserver = NotificationCenter.default.addObserver(
+//                forName: AppUserDefaults.Notifications.adaptiveDarkModeChanged,
+//                object: nil,
+//                queue: .main) { [weak self] _ in
+//                    guard let self, let manager = self.webExtensionManager else { return }
+//                    Task { @MainActor in
+//                        await self.updateDarkReader(manager: manager)
+//                    }
+//                }
         } else {
             clearWebExtensionReferences()
         }
     }
 
-    private var darkReaderBlockedDomains: Set<String> {
-        darkReaderDomainManager?.blockedDomains ?? ["duckduckgo.com"]
-    }
-
-    private func updateBundledDarkReader(manager: WebExtensionManaging) async {
+    private func updateDarkReader(manager: WebExtensionManaging) async {
         guard #available(iOS 18.4, *) else { return }
-        guard let darkReaderURL = Bundle.main.url(forResource: "darkreader", withExtension: nil) else {
-            Logger.webExtensions.error("❌ Dark Reader bundle not found")
-            return
-        }
 
         if darkReaderFeatureSettings?.isDarkModeEnabled == true {
-            let domains = darkReaderBlockedDomains
-            try? await manager.installBundledExtension(resourceURL: darkReaderURL,
-                                                       blockedDomains: domains)
-            darkReaderDomainManager?.recordAppliedDomains(domains)
+            try? await manager.installBundledExtension(.darkReader)
         } else {
-            try? manager.uninstallBundledExtension(resourceURL: darkReaderURL)
+            manager.uninstallAllExtensions()
         }
     }
 
-    private func applyDarkReaderPermissionUpdates(manager: WebExtensionManaging) async {
+    /// Registers all existing tabs with the web extension controller so that
+    /// content scripts can send messages back to the background script.
+    /// This is needed because tabs created before the extension system is set up
+    /// are not automatically known to the ``WKWebExtensionController``.
+    @MainActor
+    private func registerExistingTabsWithExtensionController() {
         guard #available(iOS 18.4, *) else { return }
-        guard let darkReaderURL = Bundle.main.url(forResource: "darkreader", withExtension: nil),
-              let domainManager = darkReaderDomainManager else { return }
+        guard let coordinator = webExtensionEventsCoordinator else { return }
 
-        let permissions = domainManager.makePermissionUpdates()
-        try? await manager.updatePermissions(permissions, forBundledExtensionAt: darkReaderURL)
+        coordinator.didOpenWindow()
+        coordinator.didFocusWindow()
+
+        var registeredCount = 0
+        for tab in tabManager.model.tabs {
+            if let tabController = tabManager.controller(for: tab) {
+                coordinator.didOpenTab(tabController)
+                registeredCount += 1
+            }
+        }
+
+        if let currentTab = tabManager.current() {
+            coordinator.didActivateTab(currentTab, previousActiveTab: nil)
+        }
+
+        Logger.webExtensions.debug("Registered \(registeredCount) existing tab(s) with web extension controller")
     }
 
     private func clearWebExtensionReferences() {
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
-        adaptiveDarkModeObserver = nil
+//        adaptiveDarkModeObserver = nil
         darkReaderFeatureSettings = nil
-        darkReaderDomainManager = nil
-        darkReaderDomainCancellable = nil
         tabManager.setWebExtensionManager(nil)
         controller.setWebExtensionEventsCoordinator(nil)
         controller.setWebExtensionManager(nil)

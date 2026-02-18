@@ -1530,6 +1530,7 @@ class MainViewController: UIViewController {
         }
 
         if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didOpenTab(tab)
             webExtensionEventsCoordinator?.didActivateTab(tab, previousActiveTab: previousTab)
         }
     }

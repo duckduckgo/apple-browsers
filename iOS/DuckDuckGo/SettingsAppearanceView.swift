@@ -78,6 +78,12 @@ struct SettingsAppearanceView: View {
                     SettingsCellView(label: UserText.settingsForceWebsiteDarkMode,
                                      accessory: .toggle(isOn: viewModel.darkModeBinding))
                 }
+            } footer: {
+                if viewModel.isForceWebsiteDarkModeEnabled {
+                    Text(UserText.settingsThemeSectionFooter)
+                } else {
+                    EmptyView()
+                }
             }
 
             // AddressBar specific settings

@@ -56,6 +56,16 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     func installExtension(from sourceURL: URL) async throws
 
+    /// Installs a bundled extension, copying it to platform storage if not already installed.
+    /// - Parameter extension: The bundled extension to install.
+    @available(macOS 15.4, iOS 18.4, *)
+    func installBundledExtension(_ extension: BundledWebExtension) async throws
+
+    /// Uninstalls a previously installed bundled extension.
+    /// - Parameter extension: The bundled extension to uninstall.
+    @available(macOS 15.4, iOS 18.4, *)
+    func uninstallBundledExtension(_ extension: BundledWebExtension) async throws
+
     /// Uninstalls an extension with the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
     func uninstallExtension(identifier: String) throws
@@ -79,28 +89,28 @@ public protocol WebExtensionManaging: AnyObject {
 
     // MARK: - Bundled Extensions
 
-    /// Installs a bundled extension directly from a resource URL without copying to storage.
-    /// - Parameters:
-    ///   - resourceURL: The URL of the extension's resource directory.
-    ///   - blockedDomains: Domains where the extension will be denied access (e.g. `["duckduckgo.com", "*.example.com"]`).
-    @available(macOS 15.4, iOS 18.4, *)
-    func installBundledExtension(resourceURL: URL, blockedDomains: Set<String>) async throws
-
-    /// Uninstalls a previously installed bundled extension.
-    @available(macOS 15.4, iOS 18.4, *)
-    func uninstallBundledExtension(resourceURL: URL) throws
-
-    /// Returns whether the given extension context is a bundled extension.
-    @available(macOS 15.4, iOS 18.4, *)
-    func isBundledExtension(_ context: WKWebExtensionContext) -> Bool
-
-    /// Applies match pattern permission changes to a bundled extension context.
-    ///
-    /// Each permission entry sets the given status on the context for the specified match pattern.
-    /// Callers are responsible for computing diffs and producing the correct grant/deny entries.
-    /// - Parameters:
-    ///   - permissions: The match pattern permissions to apply.
-    ///   - resourceURL: The resource URL used when installing the bundled extension.
-    @available(macOS 15.4, iOS 18.4, *)
-    func updatePermissions(_ permissions: [WebExtensionMatchPatternPermission], forBundledExtensionAt resourceURL: URL) async throws
+//    /// Installs a bundled extension directly from a resource URL without copying to storage.
+//    /// - Parameters:
+//    ///   - resourceURL: The URL of the extension's resource directory.
+//    ///   - blockedDomains: Domains where the extension will be denied access (e.g. `["duckduckgo.com", "*.example.com"]`).
+//    @available(macOS 15.4, iOS 18.4, *)
+//    func installBundledExtension(resourceURL: URL, blockedDomains: Set<String>) async throws
+//
+//    /// Uninstalls a previously installed bundled extension.
+//    @available(macOS 15.4, iOS 18.4, *)
+//    func uninstallBundledExtension(resourceURL: URL) throws
+//
+//    /// Returns whether the given extension context is a bundled extension.
+//    @available(macOS 15.4, iOS 18.4, *)
+//    func isBundledExtension(_ context: WKWebExtensionContext) -> Bool
+//
+//    /// Applies match pattern permission changes to a bundled extension context.
+//    ///
+//    /// Each permission entry sets the given status on the context for the specified match pattern.
+//    /// Callers are responsible for computing diffs and producing the correct grant/deny entries.
+//    /// - Parameters:
+//    ///   - permissions: The match pattern permissions to apply.
+//    ///   - resourceURL: The resource URL used when installing the bundled extension.
+//    @available(macOS 15.4, iOS 18.4, *)
+//    func updatePermissions(_ permissions: [WebExtensionMatchPatternPermission], forBundledExtensionAt resourceURL: URL) async throws
 }

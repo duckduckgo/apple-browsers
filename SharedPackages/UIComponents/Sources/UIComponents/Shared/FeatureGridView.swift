@@ -34,14 +34,14 @@ public enum FeatureGridLayoutConstants {
     public static let defaultCellMinHeight: CGFloat = 90
 
 #if os(iOS)
-    private static var isiOS24: Bool {
-        if #available(iOS 24, *) {
+    private static var isiOS26: Bool {
+        if #available(iOS 26, *) {
             return true
         } else {
             return false
         }
     }
-    public static let cornerRadius: CGFloat = Self.isiOS24 ? 24 : 8
+    public static let cornerRadius: CGFloat = Self.isiOS26 ? 24 : 8
 #elseif os(macOS)
     public static let cornerRadius: CGFloat = 8
 #endif

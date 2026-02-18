@@ -96,6 +96,12 @@ enum GeneralPixel: PixelKitEvent {
     case autofillLoginsSettingsEnabled
     case autofillLoginsSettingsDisabled
 
+    // Passwords Status Bar
+    // See macOS/PixelDefinitions/pixels/definitions/passwords_status_bar_pixels.json5
+    case autofillPasswordsStatusBarSettingEnabled
+    case autofillPasswordsStatusBarSettingDisabled
+    case autofillPasswordsStatusBarIconClicked
+
     // Warn Before Quit
     // See macOS/PixelDefinitions/pixels/warn_before_quit_pixels.json5
     // Discussion: https://app.asana.com/0/137249556945/1212837417207452
@@ -741,6 +747,13 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_autofill_logins_settings_enabled"
         case .autofillLoginsSettingsDisabled:
             return "m_mac_autofill_logins_settings_disabled"
+
+        case .autofillPasswordsStatusBarSettingEnabled:
+            return "m_mac_autofill_passwords_status-bar_setting_enabled"
+        case .autofillPasswordsStatusBarSettingDisabled:
+            return "m_mac_autofill_passwords_status-bar_setting_disabled"
+        case .autofillPasswordsStatusBarIconClicked:
+            return "m_mac_autofill_passwords_status-bar_icon_clicked"
 
         case .warnBeforeQuitShown:
             return "m_mac_warn-before-quit_shown"
@@ -1597,6 +1610,9 @@ enum GeneralPixel: PixelKitEvent {
                 .autofillManagementUpdateLogin,
                 .autofillLoginsSettingsEnabled,
                 .autofillLoginsSettingsDisabled,
+                .autofillPasswordsStatusBarSettingEnabled,
+                .autofillPasswordsStatusBarSettingDisabled,
+                .autofillPasswordsStatusBarIconClicked,
                 .warnBeforeQuitShown,
                 .warnBeforeQuitQuit,
                 .warnBeforeQuitCancelled,

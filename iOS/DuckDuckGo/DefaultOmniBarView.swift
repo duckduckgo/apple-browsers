@@ -118,6 +118,11 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         get { searchAreaView.reloadButton.isHidden }
         set { searchAreaView.reloadButton.isHidden = newValue }
     }
+    
+    var isExternalRefreshButtonHidden: Bool {
+        get { externalRefreshButtonView.isHidden }
+        set { externalRefreshButtonView.isHidden = newValue }
+    }
 
     var isCustomizableButtonHidden: Bool {
         get { searchAreaView.customizableButton.isHidden }
@@ -141,6 +146,16 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var isAIChatButtonHidden: Bool {
         get { searchAreaView.aiChatButton.isHidden }
         set { searchAreaView.aiChatButton.isHidden = newValue }
+    }
+    
+    var isModeToggleHidden: Bool {
+        get { searchAreaView.isModeToggleHidden }
+        set { searchAreaView.isModeToggleHidden = newValue }
+    }
+    
+    var selectedModeToggleState: TextEntryMode {
+        get { searchAreaView.modeToggleView.selectedMode }
+        set { searchAreaView.modeToggleView.selectedMode = newValue }
     }
 
     var isSearchLoupeHidden: Bool {
@@ -210,6 +225,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var onBookmarksPressed: (() -> Void)?
     var onAIChatPressed: (() -> Void)?
     var onDismissPressed: (() -> Void)?
+    var onSearchModePressed: (() -> Void)?
+    var onAIChatModePressed: (() -> Void)?
     
     /// Callback fired when the AI Chat left button is tapped
     var onAIChatLeftButtonPressed: (() -> Void)?
@@ -239,6 +256,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     let menuButtonView = BrowserChromeButton()
     let forwardButtonView = BrowserChromeButton()
     let backButtonView = BrowserChromeButton()
+    let externalRefreshButtonView = BrowserChromeButton()
 
     private let aiChatLeftButton = BrowserChromeButton()
     private var aiChatBrandingView: AIChatFullModeOmniBrandingView?
@@ -298,6 +316,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         leadingButtonsContainer.addArrangedSubview(backButtonView)
         leadingButtonsContainer.addArrangedSubview(forwardButtonView)
+        leadingButtonsContainer.addArrangedSubview(externalRefreshButtonView)
 
         searchAreaAlignmentView.addSubview(searchAreaStackView)
 
@@ -391,6 +410,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         DefaultOmniBarView.activateItemSizeConstraints(for: backButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: forwardButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: externalRefreshButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: bookmarksButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: menuButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: settingsButtonView)
@@ -463,6 +483,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         forwardButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowRight)
         DefaultOmniBarView.setUpCommonProperties(for: forwardButtonView)
+        
+        externalRefreshButtonView.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall)
+        DefaultOmniBarView.setUpCommonProperties(for: externalRefreshButtonView)
 
         bookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
         DefaultOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
@@ -498,6 +521,13 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         settingsButtonView.addTarget(self, action: #selector(settingsButtonTap), for: .touchUpInside)
         bookmarksButtonView.addTarget(self, action: #selector(bookmarksButtonTap), for: .touchUpInside)
         menuButtonView.addTarget(self, action: #selector(menuButtonTap), for: .touchUpInside)
+        externalRefreshButtonView.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
+        searchAreaView.modeToggleView.onSearchTapped = { [weak self] in
+            self?.onSearchModePressed?()
+        }
+        searchAreaView.modeToggleView.onAIChatTapped = { [weak self] in
+            self?.onAIChatModePressed?()
+        }
 
         searchAreaView.textField.addTarget(self, action: #selector(textFieldTextEntered), for: .primaryActionTriggered)
 
@@ -526,6 +556,10 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         forwardButtonView.accessibilityLabel = "Browse forward"
         forwardButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BrowseForward"
         forwardButtonView.accessibilityTraits = .button
+        
+        externalRefreshButtonView.accessibilityLabel = "Refresh page"
+        externalRefreshButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.RefreshExternal"
+        externalRefreshButtonView.accessibilityTraits = .button
 
         bookmarksButtonView.accessibilityLabel = "Bookmarks"
         bookmarksButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Bookmarks"

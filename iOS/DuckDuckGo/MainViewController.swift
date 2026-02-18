@@ -555,7 +555,10 @@ class MainViewController: UIViewController {
 
         presentSyncRecoveryPromptIfNeeded()
 
-        view.needsUpdateConstraints()
+        // Should be safe to call anyway but only really need for this specific scenario
+        if #available(iOS 26, *), isPad {
+            view.setNeedsUpdateConstraints()
+        }
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {

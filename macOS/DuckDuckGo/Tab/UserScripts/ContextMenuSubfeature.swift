@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import UserScript
 import WebKit
 

@@ -64,15 +64,13 @@ public enum DefaultBrowserAndDockPromptFeatureSettings: String {
 
 final class DefaultBrowserAndDockPromptFeatureFlag {
     private let privacyConfigManager: PrivacyConfigurationManaging
-    private let featureFlagger: FeatureFlagger
 
     private var remoteSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigManager.privacyConfig.settings(for: .setAsDefaultAndAddToDock)
     }
 
-    public init(privacyConfigManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+    public init(privacyConfigManager: PrivacyConfigurationManaging) {
         self.privacyConfigManager = privacyConfigManager
-        self.featureFlagger = featureFlagger
     }
 }
 

@@ -28,7 +28,6 @@ final class DefaultBrowserAndDockPromptService {
     let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting
 
     init(
-        featureFlagger: FeatureFlagger,
         privacyConfigManager: PrivacyConfigurationManaging,
         keyValueStore: ThrowingKeyValueStoring,
         notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting,
@@ -46,7 +45,7 @@ final class DefaultBrowserAndDockPromptService {
         let defaultBrowserAndDockInstallDateProvider: () -> Date? = { LocalStatisticsStore().installDate }
 #endif
 
-        self.featureFlagger = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManager, featureFlagger: featureFlagger)
+        self.featureFlagger = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManager)
         self.notificationPresenter = notificationPresenter
         let userActivityStore = DefaultBrowserAndDockPromptUserActivityStore(keyValueFilesStore: keyValueStore)
         userActivityManager = DefaultBrowserAndDockPromptUserActivityManager(store: userActivityStore, dateProvider: defaultBrowserAndDockPromptDateProvider)

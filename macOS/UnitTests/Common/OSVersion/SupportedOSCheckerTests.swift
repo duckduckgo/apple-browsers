@@ -299,7 +299,7 @@ final class SupportedOSCheckerTests: XCTestCase {
             maxSupportedVersionByModelOverride: ["iMac19,1": 15])
 
         // Then
-        XCTAssertEqual(checker.maxSupportedOSVersionPixelValue, "15")
+        XCTAssertEqual(checker.maxSupportedOSVersion, "15")
     }
 
     func testWhenModelNotInLookupTableThenMaxSupportedOSVersionPixelValueReturnsLatest() {
@@ -312,7 +312,7 @@ final class SupportedOSCheckerTests: XCTestCase {
             maxSupportedVersionByModelOverride: [:])
 
         // Then
-        XCTAssertEqual(checker.maxSupportedOSVersionPixelValue, "latest")
+        XCTAssertEqual(checker.maxSupportedOSVersion, "latest")
     }
 
     func testWhenNoHardwareModelThenMaxSupportedOSVersionPixelValueReturnsLatest() {
@@ -325,7 +325,7 @@ final class SupportedOSCheckerTests: XCTestCase {
             maxSupportedVersionByModelOverride: [:])
 
         // Then
-        XCTAssertEqual(checker.maxSupportedOSVersionPixelValue, "latest")
+        XCTAssertEqual(checker.maxSupportedOSVersion, "latest")
     }
 
     func testWhenModelMapsToOlderOSThenMaxSupportedOSVersionPixelValueReturnsCorrectValue() {
@@ -338,6 +338,6 @@ final class SupportedOSCheckerTests: XCTestCase {
             maxSupportedVersionByModelOverride: ["MacBookAir7,1": 12])
 
         // Then
-        XCTAssertEqual(checker.maxSupportedOSVersionPixelValue, "12")
+        XCTAssertEqual(checker.maxSupportedOSVersion, "12")
     }
 }

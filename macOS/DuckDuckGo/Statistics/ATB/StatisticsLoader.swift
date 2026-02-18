@@ -331,7 +331,7 @@ final class StatisticsLoader {
                           frequency: .legacyDailyNoSuffix,
                           withAdditionalParameters: [
                             PixelKit.Parameters.osUpgradeCapability: checker.osUpgradeCapability.pixelValue,
-                            PixelKit.Parameters.maxSupportedOSVersion: checker.maxSupportedOSVersionPixelValue,
+                            PixelKit.Parameters.maxSupportedOSVersion: checker.maxSupportedOSVersion,
                           ])
         }
     }

@@ -2068,10 +2068,6 @@ public struct UserText {
             public static let title = NSLocalizedString("onboarding.highlights.appIconSelection.title", value: "Which color looks best on me?", comment: "The title of the onboarding dialog popup to select the preferred App icon.")
             public static let message = NSLocalizedString("onboarding.highlights.appIconSelection.message", value: "Pick your app icon:", comment: "The subheader of the onboarding dialog popup to select the preferred App icon.")
             public static let cta = NSLocalizedString("onboarding.highlights.appIconSelection.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
-
-//            enum Rebranding { // TBT
-//                public static let message = NSLocalizedString("onboarding.highlights.rebranding.appIconSelection.message", value: "Customize your app icon.", comment: "The subheader of the onboarding dialog popup to select the preferred App icon color.")
-//            }
         }
 
         enum AddressBarPosition {

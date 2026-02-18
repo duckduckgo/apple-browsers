@@ -68,7 +68,7 @@ extension OnboardingRebranding.OnboardingView {
                 .overlay( // Darker border
                     Circle()
                         .inset(by: Metrics.borderWidth / 2.0)
-                        .stroke(Color(singleUseColor: .rebranding(.decorationSecondary)).opacity(0.16), lineWidth: Metrics.borderWidth))
+                        .stroke(Color(singleUseColor: .rebranding(.decorationSecondary)), lineWidth: Metrics.borderWidth))
                 .overlay( // Selected marker
                     Circle()
                         .inset(by: -Metrics.selectionRingInset)

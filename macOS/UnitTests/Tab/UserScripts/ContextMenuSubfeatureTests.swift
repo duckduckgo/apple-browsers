@@ -75,13 +75,14 @@ final class ContextMenuSubfeatureTests: XCTestCase {
     func testWhenContextMenuEventHasNullFieldsThenDelegateReceivesNils() async throws {
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "contextMenuEvent"))
 
-        let params: [String: Any?] = [
-            "selectedText": nil,
-            "linkUrl": nil
+        let params: [String: Any] = [
+            "selectedText": NSNull(),
+            "linkUrl": NSNull()
         ]
 
         _ = try await handler(params, WKScriptMessage())
 
+        XCTAssertTrue(mockDelegate.willShowContextMenuCalled)
         XCTAssertNil(mockDelegate.receivedSelectedText)
         XCTAssertNil(mockDelegate.receivedLinkURL)
     }

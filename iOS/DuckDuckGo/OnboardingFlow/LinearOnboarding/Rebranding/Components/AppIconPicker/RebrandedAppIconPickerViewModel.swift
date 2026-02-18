@@ -42,7 +42,9 @@ final class RebrandedAppIconPickerViewModel: ObservableObject {
     func changeApp(icon: AppIcon) {
         appIconManager.changeAppIcon(icon) { [weak self] error in
             guard let self, error == nil else { return }
-            items = makeDisplayModels()
+            DispatchQueue.main.async {
+                self.items = self.makeDisplayModels()
+            }
         }
     }
 

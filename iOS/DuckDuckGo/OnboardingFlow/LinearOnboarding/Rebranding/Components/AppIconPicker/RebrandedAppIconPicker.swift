@@ -35,10 +35,9 @@ extension OnboardingRebranding.OnboardingView {
             static let colorCircleSize: CGFloat = 36.0
             static let accentBorderWidth: CGFloat = 1.0
             static let borderWidth: CGFloat = 1.0
-            // Selected circle
-            static let strokeFrameSize: CGFloat = 40.0
-            static let strokeWidth: CGFloat = 2.0
-            static let strokeInset: CGFloat = 2.0
+            // Selection ring
+            static let selectionRingInset: CGFloat = 4.0
+            static let selectionRingWidth: CGFloat = 2.0
             // Layout
             static let spacing: CGFloat = 44.0
         }
@@ -62,38 +61,19 @@ extension OnboardingRebranding.OnboardingView {
             }
         }
 
-        @ViewBuilder
-        private func strokeOverlay(isSelected: Bool) -> some View {
-            if isSelected {
-                Circle()
-                    .foregroundColor(.clear)
-                    .frame(width: Metrics.strokeFrameSize, height: Metrics.strokeFrameSize)
-                    .overlay(
-                        Circle()
-                            .inset(by: -Metrics.strokeInset)
-                            .stroke(Color(singleUseColor: .rebranding(.accentPrimary)), lineWidth: Metrics.strokeWidth)
-                    )
-            }
-        }
-
-        @ViewBuilder
         private func colorCircle(color: Color, isSelected: Bool) -> some View {
             Circle()
+                .foregroundColor(color)
                 .frame(width: Metrics.colorCircleSize, height: Metrics.colorCircleSize)
-                .foregroundStyle(.green)
-                .overlay {
+                .overlay( // Darker border
                     Circle()
-                        .foregroundColor(color)
-                        .frame(width: Metrics.colorCircleSize, height: Metrics.colorCircleSize)
-                        .overlay(
-                            Circle()
-                                .inset(by: Metrics.borderWidth/2.0)
-                                .stroke(Color(singleUseColor: .rebranding(.decorationSecondary)), lineWidth: Metrics.borderWidth)
-                                .opacity(0.16)
-
-                        )
-                    strokeOverlay(isSelected: isSelected)
-                }
+                        .inset(by: Metrics.borderWidth / 2.0)
+                        .stroke(Color(singleUseColor: .rebranding(.decorationSecondary)).opacity(0.16), lineWidth: Metrics.borderWidth))
+                .overlay( // Selected marker
+                    Circle()
+                        .inset(by: -Metrics.selectionRingInset)
+                        .stroke(Color(singleUseColor: .rebranding(.accentPrimary)), lineWidth: Metrics.selectionRingWidth)
+                        .opacity(isSelected ? 1 : 0))
         }
     }
 }

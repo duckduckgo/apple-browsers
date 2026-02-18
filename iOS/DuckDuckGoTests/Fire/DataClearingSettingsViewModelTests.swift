@@ -22,6 +22,11 @@ import XCTest
 @testable import Core
 import AIChat
 
+final class MockDataClearingCapability: DataClearingCapable {
+    var isEnhancedDataClearingEnabled: Bool = false
+    var isBurnSingleTabEnabled: Bool = false
+}
+
 @MainActor
 final class DataClearingSettingsViewModelTests: XCTestCase {
 
@@ -48,7 +53,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
     // MARK: - Properties
 
     private var mockAppSettings: AppSettingsMock!
-    private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockDataClearingCapability: MockDataClearingCapability!
     private var mockAIChatSettings: MockAIChatSettingsProvider!
     private var mockFireproofing: GranularFireConfirmationViewModelTests.TestFireproofing!
     private var mockDelegate: MockDelegate!
@@ -58,7 +63,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockAppSettings = AppSettingsMock()
-        mockFeatureFlagger = MockFeatureFlagger()
+        mockDataClearingCapability = MockDataClearingCapability()
         mockAIChatSettings = MockAIChatSettingsProvider()
         mockFireproofing = GranularFireConfirmationViewModelTests.TestFireproofing()
         mockDelegate = MockDelegate()
@@ -66,7 +71,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     override func tearDown() {
         mockAppSettings = nil
-        mockFeatureFlagger = nil
+        mockDataClearingCapability = nil
         mockAIChatSettings = nil
         mockFireproofing = nil
         mockDelegate = nil
@@ -78,7 +83,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
     private func makeViewModel() -> DataClearingSettingsViewModel {
         DataClearingSettingsViewModel(
             appSettings: mockAppSettings,
-            featureFlagger: mockFeatureFlagger,
+            dataClearingCapability: mockDataClearingCapability,
             aiChatSettings: mockAIChatSettings,
             fireproofing: mockFireproofing,
             delegate: mockDelegate
@@ -89,7 +94,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenEnhancedDataClearingSettingsFlagIsOnThenNewUIEnabledIsTrue() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockDataClearingCapability.isEnhancedDataClearingEnabled = true
 
         // When
         let viewModel = makeViewModel()
@@ -100,7 +105,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenEnhancedDataClearingSettingsFlagIsOffThenNewUIEnabledIsFalse() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
+        mockDataClearingCapability.isEnhancedDataClearingEnabled = false
 
         // When
         let viewModel = makeViewModel()
@@ -137,7 +142,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenNoFireproofedSitesThenSubtitleShowsZeroCount() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockDataClearingCapability.isEnhancedDataClearingEnabled = true
         mockFireproofing.fireproofedDomains = []
 
         // When
@@ -149,7 +154,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenFireproofedSitesExistThenSubtitleShowsCount() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockDataClearingCapability.isEnhancedDataClearingEnabled = true
         mockFireproofing.fireproofedDomains = ["example.com"]
 
         // When
@@ -161,7 +166,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenNewUIDisabledThenSubtitleIsNil() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
+        mockDataClearingCapability.isEnhancedDataClearingEnabled = false
         mockFireproofing.fireproofedDomains = ["example.com"]
 
         // When

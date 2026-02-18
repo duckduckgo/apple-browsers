@@ -66,7 +66,7 @@ class BookmarkSortTests: UITestCase {
 
     func testWhenChangingSortingInTheManagerIsReflectedInThePanel() {
         addBookmark(pageTitle: "Bookmark #1")
-        app.dismissPopover(buttonIdentifier: "Hide")
+        app.dismissBookmarksBarPopover()
         app.openBookmarksManager()
         selectSortByName(mode: .manager)
         app.openBookmarksPanel()
@@ -150,6 +150,7 @@ class BookmarkSortTests: UITestCase {
 
     func testThatSortIsPersistedThroughBrowserRestarts() {
         addBookmark(pageTitle: "Bookmark #1")
+        app.dismissBookmarksBarPopover()
         app.openBookmarksPanel()
         selectSortByName(mode: .panel)
 

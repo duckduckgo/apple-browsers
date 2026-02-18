@@ -205,7 +205,7 @@ public final class StatusBarMenu: NSObject {
         // across all systems.  I'm seeing an issue where the menu looks right for me but not for others testing
         // this, and this seems to fix it:
         // Ref: https://app.asana.com/0/0/1206318017787812/1206336583680668/f
-        let yPosition = statusItem.statusBar!.thickness + 8
+        let yPosition = (statusItem.statusBar?.thickness ?? NSStatusBar.system.thickness) + 8
 
         menu.popUp(positioning: nil,
                    at: NSPoint(x: 0, y: yPosition),

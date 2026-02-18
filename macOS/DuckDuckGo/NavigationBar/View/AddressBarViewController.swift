@@ -271,6 +271,8 @@ final class AddressBarViewController: NSViewController {
         setupAddressBarPlaceHolder()
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
+        passiveTextField.setAccessibilityIdentifier("AddressBarViewController.passiveTextField")
+
         passiveTextField.isSelectable = !isInPopUpWindow
         /// Passive Address Bar text field is centered by the constraints
         /// Left alignment is used to prevent jumping of the text field in overflow mode when the buttons width changes

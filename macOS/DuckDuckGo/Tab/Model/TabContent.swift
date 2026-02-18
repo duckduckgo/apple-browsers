@@ -339,7 +339,7 @@ extension TabContent {
 
     var canBeDuplicated: Bool {
         switch self {
-        case .settings, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes:
+        case .settings, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .onboarding:
             return false
         default:
             return true

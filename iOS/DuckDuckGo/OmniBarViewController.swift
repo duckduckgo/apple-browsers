@@ -19,6 +19,7 @@
 
 import UIKit
 import PrivacyDashboard
+import AIChat
 import Core
 import Kingfisher
 import DesignResourcesKitIcons
@@ -58,12 +59,14 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode = .search
+    private var selectedTextEntryMode: TextEntryMode = .search
 
     // MARK: - Animation
 
     var isUsingUnifiedPredictor: Bool {
         dependencies.featureFlagger.isFeatureOn(.unifiedURLPredictor)
     }
+
     var dismissButtonAnimator: UIViewPropertyAnimator?
     private var notificationAnimator = OmniBarNotificationAnimator()
     private let privacyIconContextualOnboardingAnimator = PrivacyIconContextualOnboardingAnimator()
@@ -165,14 +168,14 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.refreshButton.isPointerInteractionEnabled = true
         barView.customizableButton.isPointerInteractionEnabled = true
         barView.clearButton.isPointerInteractionEnabled = true
+        if let defaultOmniBarView = barView as? DefaultOmniBarView {
+            defaultOmniBarView.externalRefreshButtonView.isPointerInteractionEnabled = true
+        }
     }
 
     private func configureTextField() {
-        let theme = ThemeManager.shared.currentTheme
-
         textField.delegate = self
-        textField.attributedPlaceholder = NSAttributedString(string: UserText.searchDuckDuckGo,
-                                                             attributes: [.foregroundColor: theme.searchBarTextPlaceholderColor])
+        updateTextFieldPlaceholderForSelectedMode()
 
         textField.textDragInteraction?.isEnabled = false
 
@@ -253,6 +256,14 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
         barView.onAIChatBrandingPressed = { [weak self] in
             self?.onAIChatBrandingPressed()
+        }
+        if let defaultOmniBarView = barView as? DefaultOmniBarView {
+            defaultOmniBarView.onSearchModePressed = { [weak self] in
+                self?.setSelectedTextEntryMode(.search)
+            }
+            defaultOmniBarView.onAIChatModePressed = { [weak self] in
+                self?.setSelectedTextEntryMode(.aiChat)
+            }
         }
     }
 
@@ -472,6 +483,11 @@ class OmniBarViewController: UIViewController, OmniBar {
             return
         }
 
+        if privacyInfo.url.isDuckAIURL, dependencies.aichatIPadTabFeature.isAvailable {
+            showCustomIcon(icon: .duckAI)
+            return
+        }
+
         if privacyInfo.isSpecialErrorPageVisible {
             showCustomIcon(icon: .specialError)
             return
@@ -655,7 +671,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isMenuButtonHidden = !state.showMenu
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
-        barView.isRefreshButtonHidden = !state.showRefresh
+        barView.isRefreshButtonHidden = !state.showRefresh || state.showRefreshOutsideAddressBar
         barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
@@ -663,6 +679,18 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isForwardButtonHidden = !state.showForwardButton
         barView.isBookmarksButtonHidden = !state.showBookmarksButton
         barView.isAIChatButtonHidden = !state.showAIChatButton
+        
+        if let defaultOmniBarView = barView as? DefaultOmniBarView {
+            defaultOmniBarView.isExternalRefreshButtonHidden = !state.showRefreshOutsideAddressBar
+            defaultOmniBarView.externalRefreshButtonView.isEnabled = state.isBrowsing
+            defaultOmniBarView.selectedModeToggleState = selectedTextEntryMode
+
+            let shouldShowModeToggle = state.showAIChatModeToggle
+            defaultOmniBarView.isModeToggleHidden = !shouldShowModeToggle
+            if shouldShowModeToggle {
+                barView.isAIChatButtonHidden = true
+            }
+        }
 
         applyCustomization()
 
@@ -701,7 +729,12 @@ class OmniBarViewController: UIViewController, OmniBar {
             resignFirstResponder()
 
             DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
-            
+
+            if selectedTextEntryMode == .aiChat {
+                omniDelegate?.onPromptSubmitted(query, tools: nil)
+                return
+            }
+
             if let url = URL(trimmedAddressBarString: query, useUnifiedLogic: isUsingUnifiedPredictor), url.isValid(usingUnifiedLogic: isUsingUnifiedPredictor) {
                 omniDelegate?.onOmniQuerySubmitted(url.absoluteString)
             } else {
@@ -859,6 +892,25 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onAIChatPressed() {
         omniDelegate?.onAIChatPressed()
+    }
+
+    private func setSelectedTextEntryMode(_ mode: TextEntryMode) {
+        selectedTextEntryMode = mode
+        updateTextFieldPlaceholderForSelectedMode()
+    }
+
+    private func updateTextFieldPlaceholderForSelectedMode() {
+        let theme = ThemeManager.shared.currentTheme
+        let placeholder: String = {
+            if selectedTextEntryMode == .aiChat {
+                return UserText.searchInputFieldPlaceholderDuckAI
+            } else {
+                return UserText.searchDuckDuckGo
+            }
+        }()
+
+        textField.attributedPlaceholder = NSAttributedString(string: placeholder,
+                                                             attributes: [.foregroundColor: theme.searchBarTextPlaceholderColor])
     }
 
     private func onDismissPressed() {

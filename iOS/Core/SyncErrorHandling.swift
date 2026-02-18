@@ -25,6 +25,7 @@ public protocol SyncErrorHandling {
     func handleCredentialError(_ error: Error)
     func handleCreditCardsError(_ error: Error)
     func handleSettingsError(_ error: Error)
+    func handleAiChatsError(_ error: Error)
     func syncBookmarksSucceded()
     func syncCredentialsSucceded()
     func syncCreditCardsSucceded()

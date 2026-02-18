@@ -49,4 +49,20 @@ public extension OnboardingTheme {
         }
     }
 
+    /// Content insets and tail dimensions for bubbles in the linear onboarding flow.
+    struct LinearBubbleMetrics: Equatable {
+        /// Internal content padding for linear onboarding bubbles.
+        public let contentInsets: EdgeInsets
+        /// Length of the bubble tail arrow.
+        public let arrowLength: CGFloat
+        /// Width of the bubble tail arrow.
+        public let arrowWidth: CGFloat
+
+        public init(contentInsets: EdgeInsets, arrowLength: CGFloat, arrowWidth: CGFloat) {
+            self.contentInsets = contentInsets
+            self.arrowLength = arrowLength
+            self.arrowWidth = arrowWidth
+        }
+    }
+
 }

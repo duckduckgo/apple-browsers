@@ -56,7 +56,8 @@ class StatisticsLoaderTests: XCTestCase {
     func testWhenAppRefreshHappensButNotInstalledAndReturningUser_ThenRetentionSegmentationNotified() {
         mockStatisticsStore.variant = "ru"
         mockStatisticsStore.atb = "v101-1"
-        
+
+        loadSuccessfulAtbStub(version: "v101-1")
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
@@ -84,6 +85,7 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func testWhenSearchRefreshHappensButNotInstalled_ThenRetentionSegmentationNotified() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
@@ -96,6 +98,7 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func testWhenAppRefreshHappensButNotInstalled_ThenRetentionSegmentationNotified() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
@@ -108,6 +111,7 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func testWhenStatisticsInstalled_ThenRetentionSegmentationNotNotified() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "install complete")
@@ -288,6 +292,7 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func testWhenInstallStatisticsRequestedThenInstallPixelIsFired() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
@@ -300,8 +305,13 @@ class StatisticsLoaderTests: XCTestCase {
         XCTAssertEqual(mockPixelFiring.lastPixelName, Pixel.Event.appInstall.name)
     }
 
-    func loadSuccessfulAtbStub() {
+    func loadSuccessfulAtbStub(version: String? = nil) {
         stub(condition: isHost(URL.atb.host!)) { _ in
+            if let version {
+                let json = "{\"version\":\"\(version)\"}".data(using: .utf8)!
+                return HTTPStubsResponse(data: json, statusCode: 200, headers: nil)
+            }
+
             let path = OHPathForFile("MockFiles/atb.json", type(of: self))!
             return fixture(filePath: path, status: 200, headers: nil)
         }
@@ -402,6 +412,7 @@ class StatisticsLoaderTests: XCTestCase {
 
     func testWhenDuckAIRefreshHappensButNotInstalledThenRetentionSegmentationNotified() {
         // When
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")

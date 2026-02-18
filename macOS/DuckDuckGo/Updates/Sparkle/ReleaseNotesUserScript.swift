@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Persistence
 import UserScript
 import WebKit
 import Combine
@@ -37,6 +38,7 @@ final class ReleaseNotesUserScript: NSObject, Subfeature {
     }
     private var cancellables = Set<AnyCancellable>()
     private var isInitialized = false
+    private let keyValueStore: ThrowingKeyValueStoring
 
     // MARK: - MessageNames
     enum MessageNames: String, CaseIterable {
@@ -47,7 +49,8 @@ final class ReleaseNotesUserScript: NSObject, Subfeature {
         case retryUpdate
     }
 
-    override init() {
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
         super.init()
     }
 
@@ -82,7 +85,7 @@ final class ReleaseNotesUserScript: NSObject, Subfeature {
             return
         }
 
-        let values = ReleaseNotesValues(from: updateController)
+        let values = ReleaseNotesValues(from: updateController, keyValueStore: keyValueStore)
         broker?.push(method: "onUpdate", params: values, for: self, into: webView)
     }
 

@@ -298,10 +298,6 @@ final class AppearancePreferences: ObservableObject {
         return featureFlagger?.isFeatureOn(.newTabPageOmnibar) ?? true
     }
 
-    var areThemesAvailable: Bool {
-        return featureFlagger?.isFeatureOn(.themes) ?? true
-    }
-
     @Published var isOmnibarVisible: Bool {
         didSet {
             persistor.isOmnibarVisible = isOmnibarVisible

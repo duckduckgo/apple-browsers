@@ -367,6 +367,10 @@
 		316913292BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316913282BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift */; };
 		3169132A2BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316913282BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift */; };
 		316AC7892DC28DDA003D9770 /* UIComponents in Frameworks */ = {isa = PBXBuildFile; productRef = 316AC7882DC28DDA003D9770 /* UIComponents */; };
+		3170D0E72F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3170D0E52F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift */; };
+		3170D0E82F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3170D0E42F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift */; };
+		3170D0E92F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3170D0E52F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift */; };
+		3170D0EA2F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3170D0E42F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift */; };
 		317295D22AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317295D02AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift */; };
 		317295D32AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317295D02AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift */; };
 		317295D42AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317295D12AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift */; };
@@ -4661,6 +4665,8 @@
 		316913222BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionMacOSPixelsHandler.swift; sourceTree = "<group>"; };
 		316913252BD2B76F0051B46D /* DataBrokerPrerequisitesStatusVerifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerPrerequisitesStatusVerifier.swift; sourceTree = "<group>"; };
 		316913282BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionErrorViewController.swift; sourceTree = "<group>"; };
+		3170D0E42F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordsStatusBarMenu.swift; sourceTree = "<group>"; };
+		3170D0E52F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordsStatusBarPopover.swift; sourceTree = "<group>"; };
 		317295D02AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockWaitlistTermsAndConditionsActionHandler.swift; sourceTree = "<group>"; };
 		317295D12AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockWaitlistFeatureSetupHandler.swift; sourceTree = "<group>"; };
 		317307252CD248DA00C492AB /* AutofillToolbarOnboardingPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillToolbarOnboardingPopover.swift; sourceTree = "<group>"; };
@@ -7329,6 +7335,15 @@
 			path = ErrorView;
 			sourceTree = "<group>";
 		};
+		3170D0E62F2A9D6600CFE563 /* StatusBar */ = {
+			isa = PBXGroup;
+			children = (
+				3170D0E42F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift */,
+				3170D0E52F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift */,
+			);
+			path = StatusBar;
+			sourceTree = "<group>";
+		};
 		317307242CD2489900C492AB /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
@@ -9626,6 +9641,7 @@
 				85CC1D7F26A05F6C0062F04E /* Services */,
 				85CC1D7926A05E820062F04E /* View */,
 				B642738127B65BAC0005DFD1 /* SecureVaultReporter.swift */,
+				3170D0E62F2A9D6600CFE563 /* StatusBar */,
 			);
 			path = SecureVault;
 			sourceTree = "<group>";
@@ -14986,6 +15002,8 @@
 				C1DAF3B62B9A44860059244F /* AutofillPopoverPresenter.swift in Sources */,
 				BB4147D12E798ACB0075AA72 /* UpdateCheckActor.swift in Sources */,
 				3706FC0D293F65D500E42796 /* AnimationView.swift in Sources */,
+				3170D0E92F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift in Sources */,
+				3170D0EA2F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift in Sources */,
 				1E4EDA2E2DE9ED710019B6E8 /* AIChatSidebarViewController.swift in Sources */,
 				9FA173DB2B79BD8A00EE4E6E /* BookmarkDialogContainerView.swift in Sources */,
 				3706FC0E293F65D500E42796 /* NSRectExtension.swift in Sources */,
@@ -17083,6 +17101,8 @@
 				EECA36BD2E869E49005A42EE /* SafariArchiveImporter.swift in Sources */,
 				C168B9AC2B31DC7E001AFAD9 /* AutofillNeverPromptWebsitesManager.swift in Sources */,
 				9FA173E72B7B122E00EE4E6E /* BookmarkDialogStackedContentView.swift in Sources */,
+				3170D0E72F2A9D6600CFE563 /* PasswordsStatusBarPopover.swift in Sources */,
+				3170D0E82F2A9D6600CFE563 /* PasswordsStatusBarMenu.swift in Sources */,
 				F1C70D7C2BFF510000599292 /* SubscriptionEnvironment+Default.swift in Sources */,
 				7B60AFFF2C51426A008E32A3 /* VPNURLEventHandler.swift in Sources */,
 				37A6A8F62AFCCA59008580A3 /* FaviconsFetcherOnboardingViewController.swift in Sources */,

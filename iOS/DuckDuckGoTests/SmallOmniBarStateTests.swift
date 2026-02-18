@@ -541,6 +541,17 @@ class SmallOmniBarStateTests: XCTestCase {
         // Then
         XCTAssertFalse(isEnabledWithMenuSetting)
     }
+
+    func testWhenStateIsNotLargeWidthThenShowRefreshOutsideAddressBarIsFalse() {
+        mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
+        let appSettings = AppSettingsMock()
+        appSettings.currentRefreshButtonPosition = .addressBar
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 appSettings: appSettings)
+        let testee = SmallOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertFalse(testee.showRefreshOutsideAddressBar)
+    }
     
     // MARK: - AI Chat Tab Mode State Tests
 

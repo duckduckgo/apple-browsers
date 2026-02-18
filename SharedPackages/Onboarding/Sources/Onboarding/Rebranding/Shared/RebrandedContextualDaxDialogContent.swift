@@ -33,11 +33,13 @@ extension OnboardingRebranding {
         let message: NSAttributedString
         let content: Content
 
+        @State private var shouldShowContent = false
+
         public init(
             orientation: ContextualDaxDialogOrientation = .verticalStack,
             title: String? = nil,
             message: NSAttributedString,
-            @ViewBuilder content: () -> Content,
+            @ViewBuilder content: () -> Content
         ) {
             self.orientation = orientation
             self.title = title
@@ -58,6 +60,15 @@ extension OnboardingRebranding {
                         TitleMessageStack(title: title, message: message.string)
                         Spacer(minLength: theme.contentSpacing)
                         content
+                    }
+                }
+            }
+            .opacity(shouldShowContent ? 1 : 0)
+            .onAppear {
+                Task { @MainActor in
+                    try await Task.sleep(interval: theme.contentFadeInDelay)
+                    withAnimation(.easeIn(duration: theme.contentFadeInDuration)) {
+                        shouldShowContent = true
                     }
                 }
             }

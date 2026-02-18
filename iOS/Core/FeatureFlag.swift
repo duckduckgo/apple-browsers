@@ -215,6 +215,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213227027157584
     case iPadDuckaiOnTab
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213313932650457
+    case iPadAIToggle
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039
     case fadeOutOnToggle
 
@@ -428,6 +431,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .onboardingSearchExperience,
              .fullDuckAIMode,
              .iPadDuckaiOnTab,
+             .iPadAIToggle,
              .fadeOutOnToggle,
              .attributedMetrics,
              .storeSerpSettings,
@@ -634,6 +638,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
         case .iPadDuckaiOnTab:
             return .remoteReleasable(.subfeature(AIChatSubfeature.iPadDuckaiOnTab))
+        case .iPadAIToggle:
+            return .internalOnly()
         case .fadeOutOnToggle:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
         case .attributedMetrics:

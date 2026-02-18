@@ -19,6 +19,7 @@
 import AppKit
 import WebExtensions
 import WebKit
+import PrivacyConfig
 
 // MARK: - macOS-specific WebExtensionManager Extensions
 
@@ -81,6 +82,10 @@ extension WebExtensionManager {
     }
 }
 
+// MARK: - AutoconsentPreferencesProviding
+
+extension CookiePopupProtectionPreferences: AutoconsentPreferencesProviding {}
+
 // MARK: - Factory
 
 @available(macOS 15.4, *)
@@ -88,7 +93,10 @@ enum WebExtensionManagerFactory {
 
     /// Creates a fully configured WebExtensionManager with all macOS-specific providers.
     @MainActor
-    static func makeManager() -> WebExtensionManager {
+    static func makeManager(
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        autoconsentPreferences: AutoconsentPreferencesProviding
+    ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
 
         let manager = WebExtensionManager(
@@ -97,7 +105,10 @@ enum WebExtensionManagerFactory {
             storageProvider: WebExtensionStorageProvider(),
             internalSiteHandler: internalSiteHandler,
             pixelFiring: MacOSWebExtensionPixelFiring(),
-            handlerProvider: WebExtensionHandlerProvider()
+            handlerProvider: WebExtensionHandlerProvider(
+                privacyConfigurationManager: privacyConfigurationManager,
+                autoconsentPreferences: autoconsentPreferences
+            )
         )
 
         internalSiteHandler.dataSource = manager

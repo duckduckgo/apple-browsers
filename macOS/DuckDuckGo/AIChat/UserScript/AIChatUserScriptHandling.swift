@@ -353,8 +353,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync unavailable")
         }
 
-        PixelKit.fire(GeneralPixel.syncAiChatTokenRequestedDaily, frequency: .legacyDailyNoSuffix)
-
         func makeErrorResponse(_ reason: String) -> AIChatErrorResponse {
             pixelFiring?.fire(AIChatPixel.aiChatSyncScopedSyncTokenError(reason: reason), frequency: .dailyAndStandard)
             return AIChatErrorResponse(reason: reason)
@@ -364,7 +362,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             guard let syncHandler = makeSyncHandler() else {
                 return makeErrorResponse("internal error")
             }
-            return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
+            let payload = try await syncHandler.getScopedToken()
+            PixelKit.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -423,16 +423,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync off")
         }
 
-        // Report usage here too, because getScopedSyncAuthToken can be too infrequent for reliable daily counts.
-        PixelKit.fire(GeneralPixel.syncAiChatTokenRequestedDaily, frequency: .legacyDailyNoSuffix)
-
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
             pixelFiring?.fire(AIChatPixel.aiChatSyncDecryptionError(reason: "invalid parameters"), frequency: .dailyAndStandard)
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.decrypt(data))
+            let payload = try syncHandler.decrypt(data)
+            PixelKit.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason = error.localizedDescription
             pixelFiring?.fire(AIChatPixel.aiChatSyncDecryptionError(reason: reason), frequency: .dailyAndStandard)

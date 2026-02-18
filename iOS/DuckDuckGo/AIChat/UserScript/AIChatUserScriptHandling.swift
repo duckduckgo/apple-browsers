@@ -399,10 +399,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync unavailable")
         }
 
-        DailyPixel.fire(pixel: .syncAiChatTokenRequestedDaily)
-
         do {
-            return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
+            let payload = try await syncHandler.getScopedToken()
+            DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -463,16 +463,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync off")
         }
 
-        // Report usage here too, because getScopedSyncAuthToken can be too infrequent for reliable daily counts.
-        DailyPixel.fire(pixel: .syncAiChatTokenRequestedDaily)
-
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSyncDecryptionError, withAdditionalParameters: ["reason": "invalid parameters"])
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.decrypt(data))
+            let payload = try syncHandler.decrypt(data)
+            DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason = error.localizedDescription
             DailyPixel.fireDailyAndCount(pixel: .aiChatSyncDecryptionError, withAdditionalParameters: ["reason": reason])

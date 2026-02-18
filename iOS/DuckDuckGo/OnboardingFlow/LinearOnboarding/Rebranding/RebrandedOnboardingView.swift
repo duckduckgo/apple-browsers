@@ -139,8 +139,6 @@ extension OnboardingRebranding {
 
         typealias ViewState = LegacyOnboardingViewState
 
-        static let daxGeometryEffectID = "DaxIcon"
-
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Namespace var animationNamespace
         @ObservedObject private var model: OnboardingIntroViewModel
@@ -211,10 +209,15 @@ extension OnboardingRebranding {
             GeometryReader { geometry in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .center) {
-                        let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type)
-                        bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
-                            .frame(width: geometry.size.width, alignment: .center)
-                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
+                        OnboardingBubbleView(tailPosition: .bottom(offset: 0.25, direction: .leading)) {
+                            VStack {
+                                bubbleBackedDialogContent(for: state.type)
+                            }
+                        }
+                        //bubbleBackedDialogView(state: state, configuration: bubbleBackedDialogConfiguration(for: state.type))
+                        .animation(.default, value: state.type)
+                        .frame(width: geometry.size.width, alignment: .center)
+                        .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin)
                     }
                     .frame(minHeight: geometry.size.height, alignment: .top)
                     .background {
@@ -338,12 +341,12 @@ extension OnboardingRebranding {
                 browsersComparisonView
             case .addToDockPromoDialog:
                 addToDockPromoView
+            case .chooseAppIconDialog:
+                appIconPickerView
             case .chooseAddressBarPositionDialog:
                 addressBarPositionView
             case .chooseSearchExperienceDialog:
                 searchExperienceSelectionView
-            case .chooseAppIconDialog:
-                appIconPickerView
             }
         }
 
@@ -365,22 +368,6 @@ extension OnboardingRebranding {
                     isVisible: true,
                     showsStepCounter: true
                 )
-            case .chooseAddressBarPositionDialog:
-                BubbleBackedDialogConfiguration(
-                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
-                    tailDirection: .leading,
-                    additionalTopMargin: BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin,
-                    isVisible: true,
-                    showsStepCounter: true
-                )
-            case .chooseSearchExperienceDialog:
-                BubbleBackedDialogConfiguration(
-                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
-                    tailDirection: .leading,
-                    additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
-                    isVisible: true,
-                    showsStepCounter: true
-                )
             case .addToDockPromoDialog:
                 BubbleBackedDialogConfiguration(
                     tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
@@ -394,6 +381,22 @@ extension OnboardingRebranding {
                     tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .trailing,
                     additionalTopMargin: BubbleBackedDialogMetrics.appIconPickerAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseAddressBarPositionDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseSearchExperienceDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
                     isVisible: true,
                     showsStepCounter: true
                 )
@@ -433,9 +436,31 @@ extension OnboardingRebranding {
         }
 
         private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
-            model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
-            model.browserComparisonState.showComparisonButton = true
-            model.browserComparisonState.animateComparisonText = true
+            // Hide content of Intro dialog before animating
+            model.introState.showIntroViewContent = false
+
+            // Animation with small delay for a better effect when intro content disappear
+            let animationDuration = 0.25
+            let animation = Animation
+                .linear(duration: animationDuration)
+                .delay(0.2)
+
+
+            if #available(iOS 17, *) {
+                withAnimation(animation) {
+                    model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
+                } completion: {
+                    model.browserComparisonState.animateComparisonText = true
+                    model.browserComparisonState.showComparisonButton = true
+                }
+            } else {
+                withAnimation(animation) {
+                    model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
+                    model.browserComparisonState.animateComparisonText = true
+                }
+            }
         }
 
     }

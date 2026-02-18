@@ -18,7 +18,6 @@
 
 import Foundation
 import PrivacyConfig
-import FeatureFlags
 
 public protocol DefaultBrowserAndDockPromptActiveUserFeatureFlagsSettingsProvider {
     /// The number of days to wait after app installation before showing the first popover

@@ -293,6 +293,8 @@
 		1E7E2E942902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7E2E932902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift */; };
 		1E8995E02DCD05280093EFBA /* PreferencesSectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8995DF2DCD05280093EFBA /* PreferencesSectionTests.swift */; };
 		1E8995E12DCD05280093EFBA /* PreferencesSectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8995DF2DCD05280093EFBA /* PreferencesSectionTests.swift */; };
+		1EA1DA222F46063F005387D0 /* AutoconsentMessageHandlerDelegate+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA1DA212F46063F005387D0 /* AutoconsentMessageHandlerDelegate+macOS.swift */; };
+		1EA1DA232F46063F005387D0 /* AutoconsentMessageHandlerDelegate+macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA1DA212F46063F005387D0 /* AutoconsentMessageHandlerDelegate+macOS.swift */; };
 		1EA7B8D32B7E078C000330A4 /* SubscriptionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 1EA7B8D22B7E078C000330A4 /* SubscriptionUI */; };
 		1EB01D912E61DF2B006CB411 /* AIChatTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB01D902E61DF2B006CB411 /* AIChatTranslator.swift */; };
 		1EB01D922E61DF2B006CB411 /* AIChatTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB01D902E61DF2B006CB411 /* AIChatTranslator.swift */; };
@@ -4632,6 +4634,7 @@
 		1E7E2E932902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardPermissionHandler.swift; sourceTree = "<group>"; };
 		1E862A882A9FC01200F84D4B /* SubscriptionUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SubscriptionUI; sourceTree = "<group>"; };
 		1E8995DF2DCD05280093EFBA /* PreferencesSectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesSectionTests.swift; sourceTree = "<group>"; };
+		1EA1DA212F46063F005387D0 /* AutoconsentMessageHandlerDelegate+macOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AutoconsentMessageHandlerDelegate+macOS.swift"; sourceTree = "<group>"; };
 		1EB01D902E61DF2B006CB411 /* AIChatTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTranslator.swift; sourceTree = "<group>"; };
 		1EB714EF2EDA30CA00B6F589 /* AutoconsentStatsPopoverPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentStatsPopoverPresenter.swift; sourceTree = "<group>"; };
 		1EC320912F23F12A00A38D09 /* WebExtensionConfigurationProvider+macOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionConfigurationProvider+macOS.swift"; sourceTree = "<group>"; };
@@ -7062,6 +7065,7 @@
 				1D3A2B622D2D225B00F06679 /* WebExtensionInternalSiteNavigationDelegate.swift */,
 				1EC320922F23F12A00A38D09 /* WebExtensionManager+macOS.swift */,
 				1EEBF90E2F3E16DD00DF90F3 /* WebExtensionHandlerProvider+macOS.swift */,
+				1EA1DA212F46063F005387D0 /* AutoconsentMessageHandlerDelegate+macOS.swift */,
 				7BE33DCC2DC12C0300A96502 /* WebExtensionNavigationBarUpdater.swift */,
 				1EC320932F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift */,
 			);
@@ -14410,6 +14414,7 @@
 				B313C04F2E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */,
 				3706FEB8293F6EFB00E42796 /* ConnectBitwardenView.swift in Sources */,
 				1DFAB51E2A8982A600A0F7F6 /* SetExtension.swift in Sources */,
+				1EA1DA232F46063F005387D0 /* AutoconsentMessageHandlerDelegate+macOS.swift in Sources */,
 				B60C6F8E29B200AB007BFAA8 /* SavePanelAccessoryView.swift in Sources */,
 				372D15ED2D00FA1A00A11576 /* AppearancePreferences+NewTabPage.swift in Sources */,
 				4B9579222AC687170062CA31 /* HardwareModel.swift in Sources */,
@@ -16781,6 +16786,7 @@
 				BB4AA67A2E96FD600008CC12 /* WinBackOfferPromptView.swift in Sources */,
 				BB4AA67B2E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */,
 				9FDA6C212B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */,
+				1EA1DA222F46063F005387D0 /* AutoconsentMessageHandlerDelegate+macOS.swift in Sources */,
 				AAC5E4C725D6A6E8007F5990 /* AddBookmarkPopover.swift in Sources */,
 				B6F7127E29F6779000594A45 /* QRSharingService.swift in Sources */,
 				1DD6A7B12D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */,

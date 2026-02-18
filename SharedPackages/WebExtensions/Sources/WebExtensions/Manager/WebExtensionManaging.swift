@@ -65,6 +65,11 @@ public protocol WebExtensionManaging: AnyObject {
     @discardableResult
     func uninstallAllExtensions() -> [Result<Void, Error>]
 
+    /// Unloads all currently loaded extensions from memory without uninstalling them.
+    /// This is useful when clearing browser data to ensure extensions don't interfere.
+    @available(macOS 15.4, iOS 18.4, *)
+    func unloadAllExtensions()
+
     /// Returns the extension name from the given path.
     @available(macOS 15.4, iOS 18.4, *)
     func extensionName(for identifier: String) -> String?

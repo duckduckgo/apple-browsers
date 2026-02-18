@@ -139,21 +139,18 @@ final class SiteThemeColorManager {
     }
 
     private func applyThemeColor(_ color: UIColor?) {
+        UIView.performWithoutAnimation {
+            let newColor = color ?? UIColor(designSystemColor: .background)
 
-        var newColor = UIColor(designSystemColor: .background)
-
-        if let color {
-            newColor = color
+            if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
+                viewCoordinator.statusBackground.backgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
+            } else {
+                viewCoordinator.statusBackground.backgroundColor = newColor
+            }
+            tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
+            tabViewController?.webView?.underPageBackgroundColor = newColor
+            tabViewController?.webView?.scrollView.backgroundColor = newColor
         }
-
-        if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
-            viewCoordinator.statusBackground.backgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
-        } else {
-            viewCoordinator.statusBackground.backgroundColor = newColor
-        }
-        tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
-        tabViewController?.webView?.underPageBackgroundColor = newColor
-        tabViewController?.webView?.scrollView.backgroundColor = newColor
     }
 
 }

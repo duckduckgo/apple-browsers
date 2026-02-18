@@ -81,7 +81,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     lazy var plusButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandNewTab, image: DesignSystemImages.Glyphs.Size24.add)
     lazy var fireButton = BrowserChromeButton.createToolbarButtonItem(title: "Close all tabs and clear data", image: DesignSystemImages.Glyphs.Size24.fireSolid)
     lazy var doneButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil)
-    lazy var closeTabsButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil)
+    lazy var closeTabsButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: DesignSystemImages.Glyphs.Size24.trash)
     lazy var menuButton = BrowserChromeButton.createToolbarButtonItem(title: "More Menu", image: DesignSystemImages.Glyphs.Size24.moreApple)
     lazy var addAllBookmarksButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.bookmarkAllTabs, image: DesignSystemImages.Glyphs.Size24.bookmarkNew)
     lazy var tabSwitcherStyleButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil)
@@ -195,8 +195,9 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         // Configure select all button
         if let button = selectAllButton.customView as? BrowserChromeButton {
             button.removeTarget(nil, action: nil, for: .allEvents)
+            button.setTitle(UserText.selectAllTabs, for: .normal)
             if let action = onSelectAllTapped {
-                button.addAction(UIAction { _ in action() }, for: .touchUpInside)
+                button.addAction(UIAction(title: UserText.selectAllTabs) { _ in action() }, for: .touchUpInside)
             }
         }
 
@@ -257,20 +258,6 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         } else {
             configureDoneButtonAsBackArrow()
         }
-
-        // Configure close tabs button title
-        configureCloseTabsButton(selectedCount: selectedCount)
-
-        // Configure tint colors
-        if let button = tabSwitcherStyleButton.customView as? BrowserChromeButton {
-            button.tintColor = UIColor(designSystemColor: .icons)
-        }
-        if let button = menuButton.customView as? BrowserChromeButton {
-            button.tintColor = UIColor(designSystemColor: .icons)
-        }
-        if let button = duckChatButton.customView as? BrowserChromeButton {
-            button.tintColor = UIColor(designSystemColor: .icons)
-        }
     }
 
     private func configureDoneButtonAsText() {
@@ -283,21 +270,11 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     private func configureDoneButtonAsBackArrow() {
         if let button = doneButton.customView as? BrowserChromeButton {
             button.setTitle(nil, for: .normal)
-            if #available(iOS 26, *) {
-                button.setImage(DesignSystemImages.Glyphs.Size24.chevronLeft)
-            } else {
-                button.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
-            }
+            button.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
         }
     }
 
-    private func configureCloseTabsButton(selectedCount: Int) {
-        if let button = closeTabsButton.customView as? BrowserChromeButton {
-            button.setTitle(UserText.closeTabs(withCount: selectedCount), for: .normal)
-        }
-    }
-
-    func updateBottomBar() {
+    func updateBottomBar() {    
         var newItems: [UIBarButtonItem]
 
         switch interfaceMode {

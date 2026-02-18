@@ -101,6 +101,7 @@ final class BrowserTabViewController: NSViewController {
     private let duckPlayer: DuckPlayer
     private let subscriptionManager: any SubscriptionManager
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    private let pinningManager: PinningManager
 
     private let tld: TLD
 
@@ -156,6 +157,7 @@ final class BrowserTabViewController: NSViewController {
          duckPlayer: DuckPlayer,
          subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManager,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
+         pinningManager: PinningManager,
          tld: TLD = NSApp.delegateTyped.tld
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -181,6 +183,7 @@ final class BrowserTabViewController: NSViewController {
         self.duckPlayer = duckPlayer
         self.subscriptionManager = subscriptionManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.pinningManager = pinningManager
 
         self.tld = tld
         containerStackView = NSStackView()
@@ -596,6 +599,8 @@ final class BrowserTabViewController: NSViewController {
             onboardingDialogTypeProvider.turnOffFeature()
             return
         }
+
+        guard !isInPopUpWindow else { return }
 
         guard let tab = tabViewModel?.tab else { return }
 
@@ -1203,7 +1208,8 @@ final class BrowserTabViewController: NSViewController {
                 accessibilityPreferences: accessibilityPreferences,
                 duckPlayerPreferences: duckPlayer.preferences,
                 subscriptionManager: subscriptionManager,
-                winBackOfferVisibilityManager: winBackOfferVisibilityManager
+                winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                pinningManager: pinningManager
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController
@@ -1216,7 +1222,7 @@ final class BrowserTabViewController: NSViewController {
     var bookmarksViewController: BookmarkManagementSplitViewController?
     private func bookmarksViewControllerCreatingIfNeeded() -> BookmarkManagementSplitViewController {
         return bookmarksViewController ?? {
-            let bookmarksViewController = BookmarkManagementSplitViewController(bookmarkManager: bookmarkManager, dragDropManager: bookmarkDragDropManager)
+            let bookmarksViewController = BookmarkManagementSplitViewController(bookmarkManager: bookmarkManager, dragDropManager: bookmarkDragDropManager, pinningManager: pinningManager)
             bookmarksViewController.delegate = self
             self.bookmarksViewController = bookmarksViewController
             return bookmarksViewController
@@ -1231,7 +1237,8 @@ final class BrowserTabViewController: NSViewController {
                 privacyConfigurationManager: privacyConfigurationManager,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 featureFlagger: featureFlagger,
-                tld: tld
+                tld: tld,
+                pinningManager: pinningManager
             )
             self.contentOverlayPopover = overlayPopover
             self.contentOverlayDismissalCancellable = windowControllersManager.stateChanged
@@ -1377,11 +1384,12 @@ extension BrowserTabViewController: TabDelegate {
         subscribeToPinnedTabs()
         hideWebViewSnapshotIfNeeded()
 
-        // When a windows become key it will reload the last contextual onboarding dialog if needed
+        // When a window becomes key it will reload the last contextual onboarding dialog if needed
         // This helps keep dialogs consistent when moving between Windows
         //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
         //  - It tells presentContextualOnboarding that should show the lastDialog if possible
-        if !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted {
+        //  - Skip for pop-up windows; contextual onboarding is excluded there
+        if !isInPopUpWindow && !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted {
             presentContextualOnboarding(showLastDialog: true)
         }
     }
@@ -1755,7 +1763,8 @@ extension BrowserTabViewController {
         aiChatPreferences: Application.appDelegate.aiChatPreferences,
         aboutPreferences: Application.appDelegate.aboutPreferences,
         accessibilityPreferences: Application.appDelegate.accessibilityPreferences,
-        duckPlayer: Application.appDelegate.duckPlayer
+        duckPlayer: Application.appDelegate.duckPlayer,
+        pinningManager: Application.appDelegate.pinningManager
     )
 }
 

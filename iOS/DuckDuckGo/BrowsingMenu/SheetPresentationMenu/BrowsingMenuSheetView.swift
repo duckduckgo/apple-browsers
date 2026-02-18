@@ -227,6 +227,7 @@ extension BrowsingMenuModel {
 
         enum Tag {
             case favorite
+            case fire
         }
 
         enum Detail {
@@ -249,7 +250,7 @@ extension BrowsingMenuModel.Entry {
 
             return nil
 
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detail, let action):
+        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detail, let tag, let action):
             self.init(
                 name: name,
                 accessibilityLabel: accessibilityLabel,
@@ -258,7 +259,7 @@ extension BrowsingMenuModel.Entry {
                 customDotColor: customDotColor,
                 detail: detail.map { .text($0) },
                 action: action,
-                tag: tag
+                tag: tag,
             )
         }
     }
@@ -279,7 +280,7 @@ private struct MenuRowButton: View {
                         if isHighlighted {
                             LottieView(lottieFile: "view_highlight", loopMode: .mode(.loop), isAnimating: .constant(true))
                                 .scaledToFill()
-                                .scaleEffect(1.3)
+                                .scaleEffect(2.0)
                         }
                     }
 

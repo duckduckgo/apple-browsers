@@ -177,6 +177,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             subscriptionCardPersistor: MockHomePageSubscriptionCardPersisting(),
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            pinningManager: MockPinningManager(),
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }

@@ -24,7 +24,7 @@ public enum OAuthClientError: DDGError {
     case internalError(String)
     case missingTokenContainer
     case unauthenticated
-    case invalidTokenRequest
+    case invalidTokenRequest(OAuthRequest.TokenStatus?)
     case unknownAccount
 
     public var description: String {
@@ -35,8 +35,8 @@ public enum OAuthClientError: DDGError {
             return "No tokens available"
         case .unauthenticated:
             return "The account is not authenticated, please re-authenticate"
-        case .invalidTokenRequest:
-            return "Invalid token request"
+        case .invalidTokenRequest(let tokenStatus):
+            return "Invalid token request: \(tokenStatus?.description ?? "Unknown")"
         case .unknownAccount:
             return "Unknown account"
         }
@@ -58,6 +58,15 @@ public enum OAuthClientError: DDGError {
             return 11005
         }
     }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .invalidTokenRequest(let tokenStatus):
+            return tokenStatus
+        default:
+            return nil
+        }
+    }
 }
 
 /// Provides the locally stored tokens container
@@ -66,7 +75,7 @@ public protocol AuthTokenStoring {
     func saveTokenContainer(_ tokenContainer: TokenContainer?) throws
 }
 
-public enum AuthTokensCachePolicy {
+public enum AuthTokensCachePolicy: CustomStringConvertible {
     /// The token container from the local storage
     case local
     /// The token container from the local storage, refreshed if needed
@@ -304,13 +313,13 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     refreshEventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
 
                     return refreshedTokens
-                } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyErrorCode == .invalidTokenRequest {
-                    Logger.OAuthClient.error("Failed to refresh token: invalidTokenRequest")
-                    let error = OAuthClientError.invalidTokenRequest
+                } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyError.errorCode == .invalidTokenRequest {
+                    let error = OAuthClientError.invalidTokenRequest(apiError.bodyError.tokenStatus)
+                    Logger.OAuthClient.error("Failed to refresh token: \(apiError.description, privacy: .public)")
                     refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
                     throw error
-                } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyErrorCode == .unknownAccount {
-                    Logger.OAuthClient.error("Failed to refresh token: unknownAccount")
+                } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyError.errorCode == .unknownAccount {
+                    Logger.OAuthClient.error("Failed to refresh token: \(apiError.description, privacy: .public)")
                     let error = OAuthClientError.unknownAccount
                     refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
                     throw error

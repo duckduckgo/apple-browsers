@@ -41,7 +41,7 @@ struct DefaultVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     private let defaults: UserDefaults
     private let subscriptionManager: any SubscriptionManager
 
-    init(vpnUninstaller: VPNUninstalling = VPNUninstaller(),
+    init(vpnUninstaller: VPNUninstalling,
          defaults: UserDefaults = .netP,
          subscriptionManager: any SubscriptionManager) {
         self.vpnUninstaller = vpnUninstaller

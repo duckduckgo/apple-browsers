@@ -39,10 +39,6 @@ class TabSwitcherViewController: UIViewController {
 
         static let cellMinHeight: CGFloat = 140.0
         static let cellMaxHeight: CGFloat = 209.0
-
-        static let trackerInfoTopSpacing: CGFloat = 8
-        static let trackerInfoHorizontalPadding: CGFloat = 16
-        static let trackerInfoBottomSpacing: CGFloat = 0
     }
 
     struct BookmarkAllResult {
@@ -99,7 +95,7 @@ class TabSwitcherViewController: UIViewController {
 
     weak var delegate: TabSwitcherDelegate!
     weak var previewsSource: TabPreviewsSource!
-    
+
     var selectedTabs: [IndexPath] {
         collectionView.indexPathsForSelectedItems ?? []
     }
@@ -141,8 +137,11 @@ class TabSwitcherViewController: UIViewController {
     private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
     private var trackerInfoModel: InfoPanelView.Model?
+
+    private let initialTrackerCountState: TabSwitcherTrackerCountViewModel.State
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private(set) var aichatIPadTabFeature: AIChatIPadTabFeatureProviding
 
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
@@ -155,13 +154,15 @@ class TabSwitcherViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
                    aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature(),
                    privacyStats: PrivacyStatsProviding,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    historyManager: HistoryManaging,
                    fireproofing: Fireproofing,
                    keyValueStore: ThrowingKeyValueStoring,
                    tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
-                   daxDialogsManager: DaxDialogsManaging) {
+                   daxDialogsManager: DaxDialogsManaging,
+                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -171,12 +172,14 @@ class TabSwitcherViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.privacyStats = privacyStats
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.historyManager = historyManager
         self.fireproofing = fireproofing
         self.tabSwitcherSettings = tabSwitcherSettings
         self.daxDialogsManager = daxDialogsManager
+        self.initialTrackerCountState = initialTrackerCountState
         super.init(coder: coder)
     }
 
@@ -206,7 +209,7 @@ class TabSwitcherViewController: UIViewController {
             isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: topOffset) : nil,
             !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: bottomOffset) : nil,
 
-            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor, constant: Constants.trackerInfoTopSpacing),
+            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 
@@ -289,6 +292,12 @@ class TabSwitcherViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         productSurfaceTelemetry.tabManagerUsed()
+        showFireButtonPulseIfNeeded()
+    }
+
+    private func showFireButtonPulseIfNeeded() {
+        guard daxDialogsManager.isShowingFireDialog, let window = view.window else { return }
+        ViewHighlighter.showIn(window, focussedOnButton: barsHandler.fireButton)
     }
 
     private func setupBackgroundView() {
@@ -305,7 +314,8 @@ class TabSwitcherViewController: UIViewController {
         let viewModel = TabSwitcherTrackerCountViewModel(
             settings: tabSwitcherSettings,
             privacyStats: privacyStats,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            initialState: initialTrackerCountState
         )
         trackerCountViewModel = viewModel
         trackerCountCancellable = viewModel.$state
@@ -511,13 +521,17 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func dismiss() {
+        ViewHighlighter.hideAll()
         dismiss(animated: true, completion: nil)
     }
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
         canUpdateCollection = false
         tabsModel.tabs.forEach { $0.removeObserver(self) }
-        super.dismiss(animated: animated, completion: completion)
+        super.dismiss(animated: animated) {
+            completion?()
+            self.delegate?.tabSwitcherDidDismiss(tabSwitcher: self)
+        }
     }
 }
 

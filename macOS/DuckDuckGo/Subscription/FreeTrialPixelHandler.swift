@@ -35,4 +35,8 @@ public struct FreeTrialPixelHandler: FreeTrialPixelHandling {
     public func fireFreeTrialPIRActivation(activationDay: FreeTrialActivationDay) {
         PixelKit.fire(SubscriptionPixel.freeTrialPIRActivation(activationDay: activationDay))
     }
+
+    public func fireFreeTrialDuckAIActivation(activationDay: FreeTrialActivationDay) {
+        PixelKit.fire(SubscriptionPixel.freeTrialDuckAIActivation(activationDay: activationDay))
+    }
 }

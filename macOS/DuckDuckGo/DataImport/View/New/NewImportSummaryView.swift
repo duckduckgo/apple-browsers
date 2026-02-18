@@ -28,8 +28,8 @@ struct NewImportSummaryView: View {
     private let sourceImage: NSImage
     let onShowDetail: ((DataImport.DataType) -> Void)?
 
-    init(summary: DataImportSummary, sourceImage: NSImage, reportModel: Binding<DataImportReportModel>, onShowDetail: ((DataImport.DataType) -> Void)? = nil) {
-        _viewModel = .init(wrappedValue: .init(summary: summary))
+    init(summary: DataImportSummary, sourceImage: NSImage, reportModel: Binding<DataImportReportModel>, pinningManager: PinningManager, onShowDetail: ((DataImport.DataType) -> Void)? = nil) {
+        _viewModel = .init(wrappedValue: .init(summary: summary, pinningManager: pinningManager))
         _reportModel = reportModel
         self.sourceImage = sourceImage
         self.onShowDetail = onShowDetail

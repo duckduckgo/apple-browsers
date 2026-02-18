@@ -66,7 +66,9 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
             isFireWindowDefault: delegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
             configurationURLProvider: delegate.configurationURLProvider,
             contentScopePreferences: delegate.contentScopePreferences,
-            quitSurveyPersistor: QuitSurveyUserDefaultsPersistor(keyValueStore: delegate.keyValueStore)
+            quitSurveyPersistor: QuitSurveyUserDefaultsPersistor(keyValueStore: delegate.keyValueStore),
+            pinningManager: delegate.pinningManager,
+            subscriptionManager: delegate.subscriptionManager
         )
         self.mainMenu = mainMenu
 

@@ -37,7 +37,11 @@ extension XCUIApplication {
     enum AccessibilityIdentifiers {
         static let okButton = "OKButton"
         static let addressBarTextField = "AddressBarViewController.addressBarTextField"
+        static let addressBarPassiveTextField = "AddressBarViewController.passiveTextField"
+        static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
+        static let bookmarksBarPopoverShow = "BookmarksBarPopover.show"
+        static let bookmarksBarPopoverHide = "BookmarksBarPopover.hide"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
         static let backButton = "NavigationBarViewController.BackButton"
@@ -126,22 +130,6 @@ extension XCUIApplication {
 
     var bundleID: String? {
         value(forKey: "bundleID") as? String
-    }
-
-    /// Dismiss popover with the passed button identifier if exists. If it does not exist it continues the execution without failing.
-    /// - Parameter buttonIdentifier: The button identifier we want to tap from the popover
-    func dismissPopover(buttonIdentifier: String) {
-        let popover = popovers.firstMatch
-        guard popover.exists else {
-            return
-        }
-
-        let button = popover.buttons[buttonIdentifier]
-        guard button.exists else {
-            return
-        }
-
-        button.tap()
     }
 
     /// Enforces single a single window by:
@@ -340,7 +328,7 @@ extension XCUIApplication {
             )
         }
         let tab = windows.firstMatch.tabs.element(matching: \.isSelected, equalTo: true)
-        let progressIndicator = windows.firstMatch.progressIndicators["LoadingProgressIndicator"]
+        let progressIndicator = tab.progressIndicators["TabFaviconView.spinner"]
 
         let naked = (url.nakedString ?? url.absoluteString).droppingWwwPrefix()
         let scheme = url.navigationalScheme?.separated() ?? ""
@@ -353,8 +341,9 @@ extension XCUIApplication {
             ]), timeout: UITests.Timeouts.navigation),
             "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
         )
+        _=progressIndicator.waitForExistence(timeout: 1)
         XCTAssertTrue(
-            progressIndicator.wait(for: .keyPath(\.value, equalTo: 1.0), timeout: UITests.Timeouts.navigation),
+            progressIndicator.waitForNonExistence(timeout: UITests.Timeouts.navigation),
             "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
         )
     }
@@ -426,6 +415,17 @@ extension XCUIApplication {
         }
 
         bookmarksPanelShortcutButton.tap()
+    }
+
+    func dismissBookmarksBarPopover(shouldDisplayBar: Bool = false) {
+        let targetIdentifier = shouldDisplayBar ? AccessibilityIdentifiers.bookmarksBarPopoverShow : AccessibilityIdentifiers.bookmarksBarPopoverHide
+        let targetButton = buttons[targetIdentifier]
+        XCTAssertTrue(
+            targetButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Bookmarks Bar Popover didn't show within a reasonable timeframe"
+        )
+
+        targetButton.tap()
     }
 
     func verifyBookmarkOrder(expectedOrder: [String], mode: BookmarkMode) {

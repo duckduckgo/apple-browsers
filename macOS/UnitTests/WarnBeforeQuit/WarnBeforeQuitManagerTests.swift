@@ -171,6 +171,117 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         XCTAssertNotNil(manager, "Manager should successfully filter device-dependent flags")
     }
 
+    // MARK: - Simulated Key Event Tests
+
+    func testSimulatedKeyEventSkipsWarningAndProceeds() {
+        // Given - isPhysicalKeyPress returns false (simulated event, e.g. from mouse button remapping)
+        let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+        let manager = WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            isPhysicalKeyPress: { false },
+            delegate: mockDelegate
+        )!
+
+        // When
+        let query = manager.shouldTerminate(isAsync: false)
+
+        // Then - should skip warning and proceed immediately
+        guard case .sync(let decision) = query else {
+            XCTFail("Expected sync decision, got: \(query)")
+            return
+        }
+        XCTAssertEqual(decision, .next)
+    }
+
+    func testPhysicalKeyEventShowsWarning() async throws {
+        // Given - isPhysicalKeyPress returns true (real keyboard press)
+        let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        let totalDuration = WarnBeforeQuitManager.Constants.requiredHoldDuration + WarnBeforeQuitManager.Constants.animationBufferDuration
+        let eventReceiver = makeEventReceiver(events: [
+            (event: nil, timeAdvance: totalDuration + Constants.earlyReleaseTimeAdvance)
+        ])
+
+        mockDelegate.eventReceiver = eventReceiver
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            now: { self.now },
+            animationDelay: 0,
+            isPhysicalKeyPress: { true },
+            delegate: mockDelegate
+        ))
+
+        // When
+        let expectations = setupExpectationsForStateChanges(3, manager: manager)
+        let query = manager.shouldTerminate(isAsync: false)
+        await fulfillment(of: expectations, timeout: Constants.expectationTimeout)
+
+        // Then - should show warning (enters keyDown/holding/completed states)
+        guard case .async = query else {
+            XCTFail("Expected async decision for quit action (fires pixel), got: \(query)")
+            return
+        }
+        XCTAssertEqual(collectedStates.first, .keyDown)
+    }
+
+    func testNilPhysicalKeyPressCheckShowsWarning() async throws {
+        // Given - isPhysicalKeyPress is nil (default, no check performed — assumes physical)
+        let event = createKeyEvent(type: .keyDown, character: "q", modifierFlags: .command)
+
+        let totalDuration = WarnBeforeQuitManager.Constants.requiredHoldDuration + WarnBeforeQuitManager.Constants.animationBufferDuration
+        let eventReceiver = makeEventReceiver(events: [
+            (event: nil, timeAdvance: totalDuration + Constants.earlyReleaseTimeAdvance)
+        ])
+
+        mockDelegate.eventReceiver = eventReceiver
+        let manager = try XCTUnwrap(WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .quit,
+            isWarningEnabled: { self.isWarningEnabled },
+            now: { self.now },
+            animationDelay: 0,
+            delegate: mockDelegate
+        ))
+
+        // When
+        let expectations = setupExpectationsForStateChanges(3, manager: manager)
+        let query = manager.shouldTerminate(isAsync: false)
+        await fulfillment(of: expectations, timeout: Constants.expectationTimeout)
+
+        // Then - should show warning (nil means no check, proceeds as normal)
+        guard case .async = query else {
+            XCTFail("Expected async decision for quit action, got: \(query)")
+            return
+        }
+        XCTAssertEqual(collectedStates.first, .keyDown)
+    }
+
+    func testSimulatedKeyEventForCloseSkipsWarningAndProceeds() {
+        // Given - simulated Cmd+W for closing pinned tab
+        let event = createKeyEvent(type: .keyDown, character: "w", modifierFlags: .command)
+        let manager = WarnBeforeQuitManager(
+            currentEvent: event,
+            action: .close,
+            isWarningEnabled: { self.isWarningEnabled },
+            isPhysicalKeyPress: { false },
+            delegate: mockDelegate
+        )!
+
+        // When
+        let query = manager.shouldTerminate(isAsync: false)
+
+        // Then - should skip warning and proceed
+        guard case .sync(let decision) = query else {
+            XCTFail("Expected sync decision, got: \(query)")
+            return
+        }
+        XCTAssertEqual(decision, .next)
+    }
+
     // MARK: - State Stream Tests
 
     func testStateStreamEmitsHoldingAndCompletedStatesWhenHoldDurationReached() async throws {

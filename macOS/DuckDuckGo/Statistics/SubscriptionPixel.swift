@@ -124,6 +124,7 @@ enum SubscriptionPixel: PixelKitEvent {
     case freeTrialStart
     case freeTrialVPNActivation(activationDay: FreeTrialActivationDay)
     case freeTrialPIRActivation(activationDay: FreeTrialActivationDay)
+    case freeTrialDuckAIActivation(activationDay: FreeTrialActivationDay)
 
     var name: String {
         switch self {
@@ -221,11 +222,11 @@ enum SubscriptionPixel: PixelKitEvent {
         case .freeTrialStart: return "m_mac_\(appDistribution)_privacy-pro_freetrial_start"
         case .freeTrialVPNActivation: return "m_mac_\(appDistribution)_privacy-pro_freetrial_vpn_activation"
         case .freeTrialPIRActivation: return "m_mac_\(appDistribution)_privacy-pro_freetrial_pir_activation"
+        case .freeTrialDuckAIActivation: return "m_mac_\(appDistribution)_privacy-pro_freetrial_duck_ai_activation"
         }
     }
 
     private struct SubscriptionPixelsDefaults {
-        static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
         static let platformKey = "platform"
@@ -242,14 +243,14 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionKeychainManagerDataWroteFromBacklog(let source),
                 .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.description]
-        case .subscriptionAuthV2GetTokensError(let policy, let source, let error):
-            return [SubscriptionPixelsDefaults.errorKey: error.localizedDescription,
-                    SubscriptionPixelsDefaults.policyCacheKey: policy.description,
+        case .subscriptionAuthV2GetTokensError(let policy, let source, _):
+            return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.description]
         case .subscriptionActive(let authVersion):
             return [AuthVersion.key: authVersion.rawValue]
         case .freeTrialVPNActivation(let activationDay),
-             .freeTrialPIRActivation(let activationDay):
+             .freeTrialPIRActivation(let activationDay),
+             .freeTrialDuckAIActivation(let activationDay):
             return [SubscriptionPixelsDefaults.activationDayKey: activationDay.rawValue]
         default:
             return nil
@@ -334,7 +335,8 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionUpgradeClick,
                 .freeTrialStart,
                 .freeTrialVPNActivation,
-                .freeTrialPIRActivation:
+                .freeTrialPIRActivation,
+                .freeTrialDuckAIActivation:
             return [.pixelSource]
         }
     }

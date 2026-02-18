@@ -98,6 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
+    let pinningManager = LocalPinningManager()
     let tabDragAndDropManager: TabDragAndDropManager
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
@@ -112,9 +113,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
+    private var passwordsStatusBarMenu: PasswordsStatusBarMenu?
+    private var passwordsMenuBarCancellable: AnyCancellable?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
+    private(set) var syncErrorHandler = SyncErrorHandler()
     private(set) var aiChatSyncCleaner: AIChatSyncCleaning?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
@@ -201,7 +205,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
         subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
         duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
-        syncService: syncService
+        syncService: syncService,
+        pinningManager: pinningManager
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -240,8 +245,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let themeManager: ThemeManager
 
-    let displaysTabsProgressIndicator: Bool
-
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     let subscriptionManager: any SubscriptionManager
@@ -265,7 +268,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     public let vpnSettings = VPNSettings(defaults: .netP)
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
-        featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
+        featureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
         featureFlagOverridesPublisher: featureFlagOverridesPublishingHandler.flagDidChangePublisher,
         loginItemsManager: LoginItemsManager(),
         defaults: .netP)
@@ -277,7 +280,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = {
         return VPNUpsellVisibilityManager(
-            isFirstLaunch: false,
             isNewUser: AppDelegate.isNewUser,
             subscriptionManager: subscriptionManager,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
@@ -382,7 +384,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     let memoryUsageMonitor: MemoryUsageMonitor
-    let memoryPressureReporter: MemoryPressureReporter
+    /// Optional `var` because its `syncServiceProvider` closure captures `self`,
+    /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
+    var memoryPressureReporter: MemoryPressureReporter?
+    let memoryUsageThresholdReporter: MemoryUsageThresholdReporter
+    /// Optional `var` because its `syncServiceProvider` closure captures `self`,
+    /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
+    var memoryUsageIntervalReporter: MemoryUsageIntervalReporter?
+
+    /// The date this app instance was launched, used for computing uptime in memory pixels.
+    private let appLaunchDate = Date()
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
@@ -541,7 +552,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
         )
         freeTrialConversionService.startObservingSubscriptionChanges()
-        displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
@@ -605,7 +615,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
 
         // Configuring V2 for migration
-        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: .mainApp)
+        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared)
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
@@ -705,7 +715,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
             ),
             internalUserDecider: internalUserDecider,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            pinningManager: pinningManager
         )
         tabsPreferences = TabsPreferences(
             persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
@@ -768,6 +779,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(
+            pinningManager: pinningManager,
             persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
             appearancePreferences: appearancePreferences
         )
@@ -776,7 +788,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aboutPreferences = AboutPreferences(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            keyValueStore: UserDefaults.standard
         )
         accessibilityPreferences = AccessibilityPreferences()
         duckPlayer = DuckPlayer(
@@ -815,12 +828,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 duckPlayer: duckPlayer,
                 windowControllersManager: windowControllersManager,
                 bookmarkManager: bookmarkManager,
+                pinningManager: pinningManager,
                 historyCoordinator: historyCoordinator,
                 fireproofDomains: fireproofDomains,
                 fireCoordinator: fireCoordinator,
                 tld: tld,
                 autoconsentManagement: autoconsentManagement,
-                contentScopePreferences: contentScopePreferences
+                contentScopePreferences: contentScopePreferences,
+                syncErrorHandler: syncErrorHandler
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -844,12 +859,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             duckPlayer: duckPlayer,
             windowControllersManager: windowControllersManager,
             bookmarkManager: bookmarkManager,
+            pinningManager: pinningManager,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,
             tld: tld,
             autoconsentManagement: autoconsentManagement,
-            contentScopePreferences: contentScopePreferences
+            contentScopePreferences: contentScopePreferences,
+            syncErrorHandler: syncErrorHandler
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,
@@ -1041,10 +1058,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 
-        memoryUsageMonitor = MemoryUsageMonitor(logger: .memory)
-        memoryPressureReporter = MemoryPressureReporter(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared, logger: .memory)
+        memoryUsageMonitor = MemoryUsageMonitor(internalUserDecider: internalUserDecider, logger: .memory)
+        memoryUsageThresholdReporter = MemoryUsageThresholdReporter(
+            memoryUsageMonitor: memoryUsageMonitor,
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            logger: .memory
+        )
 
         super.init()
+
+        memoryPressureReporter = MemoryPressureReporter(
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            memoryUsageMonitor: memoryUsageMonitor,
+            windowContext: WindowContext(
+                standardTabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                pinnedTabs: windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                windows: windowControllersManager.mainWindowControllers.count
+            ),
+            isSyncEnabled: { [weak self] in
+                guard let syncService = self?.syncService else { return nil }
+
+                return syncService.authState == .active
+            },
+            launchDate: appLaunchDate,
+            logger: .memory
+        )
+
+        memoryUsageIntervalReporter = MemoryUsageIntervalReporter(
+            memoryUsageMonitor: memoryUsageMonitor,
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            windowContext: WindowContext(
+                standardTabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                pinnedTabs: windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                windows: windowControllersManager.mainWindowControllers.count
+            ),
+            isSyncEnabled: { [weak self] in
+                guard let syncService = self?.syncService else { return nil }
+
+                return syncService.authState == .active
+            },
+            launchDate: appLaunchDate,
+            logger: .memory
+        )
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
     }
@@ -1079,9 +1137,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if AppVersion.runType != .uiTests {
             let controller: any SparkleUpdateControllerProtocol
             if featureFlagger.isFeatureOn(.updatesSimplifiedFlow) {
-                controller = SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider)
+                controller = SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider, keyValueStore: UserDefaults.standard)
             } else {
-                controller = SparkleUpdateController(internalUserDecider: internalUserDecider)
+                controller = SparkleUpdateController(internalUserDecider: internalUserDecider, keyValueStore: UserDefaults.standard)
             }
             self.updateController = controller
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: controller.willRelaunchAppPublisher)
@@ -1092,8 +1150,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if AppVersion.runType.requiresEnvironment {
             // Configure Event handlers
-            let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
-            let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
+            let vpnUninstaller = VPNUninstaller(pinningManager: pinningManager, ipcClient: vpnXPCClient)
+            let featureGatekeeper = DefaultVPNFeatureGatekeeper(vpnUninstaller: vpnUninstaller, subscriptionManager: subscriptionManager)
+            let tunnelController = NetworkProtectionIPCTunnelController(featureGatekeeper: featureGatekeeper, ipcClient: vpnXPCClient)
 
             vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionManager,
                                                                        tunnelController: tunnelController,
@@ -1146,7 +1205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupWebExtensions()
 
-        vpnUpsellVisibilityManager.setup(isFirstLaunch: isFirstLaunch)
+        vpnUpsellVisibilityManager.setup(isFirstLaunch: isFirstLaunch, isOnboardingFinished: OnboardingActionsManager.isOnboardingFinished)
 
         AtbAndVariantCleanup.cleanup()
         DefaultVariantManager().assignVariantIfNeeded { _ in
@@ -1250,6 +1309,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         TipKitAppEventHandler(featureFlagger: featureFlagger).appDidFinishLaunching()
 
         setUpAutofillPixelReporter()
+        setUpPasswordsMenuBarVisibility()
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
@@ -1360,7 +1420,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireThemeDailyPixel() {
-        guard featureFlagger.isFeatureOn(.themes) else { return }
         PixelKit.fire(ThemePixels.themeNameDaily(themeName: themeManager.theme.name), frequency: .daily)
     }
 
@@ -1457,7 +1516,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             action: .quit,
             isWarningEnabled: { [tabsPreferences] in
                 tabsPreferences.warnBeforeQuitting
-            }
+            },
+            isPhysicalKeyPress: WarnBeforeQuitManager.makePhysicalKeyPressCheck(for: currentEvent)
         ) else { return nil }
 
         let presenter = WarnBeforeQuitOverlayPresenter(
@@ -1564,7 +1624,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupWebExtensions() {
         if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManagerFactory.makeManager()
+            let webExtensionManager = WebExtensionManagerFactory.makeManager(
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+                autoconsentPreferences: cookiePopupProtectionPreferences
+            )
             self.webExtensionManager = webExtensionManager
 
             let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
@@ -1641,7 +1704,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         let environment = defaultEnvironment
 #endif
-        let syncErrorHandler = SyncErrorHandler()
         let syncDataProviders = SyncDataProvidersSource(
             bookmarksDatabase: bookmarkDatabase.db,
             bookmarkManager: bookmarkManager,
@@ -1655,9 +1717,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             environment: environment
         )
-        let aiChatSyncCleaner = AIChatSyncCleaner(sync: syncService,
-                                                   keyValueStore: keyValueStore,
-                                                   featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        let aiChatSyncCleaner = AIChatSyncCleaner(
+            sync: syncService,
+            keyValueStore: keyValueStore,
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
+            httpRequestErrorHandler: syncErrorHandler.handleAiChatsError
+        )
         syncService.setCustomOperations([AIChatDeleteOperation(cleaner: aiChatSyncCleaner)])
 
         syncService.initializeIfNeeded()
@@ -1850,6 +1915,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.autofillPixelReporter?.updateAutofillEnabledStatus(AutofillPreferences().askToSaveUsernamesAndPasswords)
         }
     }
+
+    @MainActor
+    private func setUpPasswordsMenuBarVisibility() {
+        guard featureFlagger.isFeatureOn(.autofillPasswordsStatusBar) else {
+            passwordsStatusBarMenu?.hide()
+            passwordsStatusBarMenu = nil
+            passwordsMenuBarCancellable = nil
+            return
+        }
+
+        let preferences = AutofillPreferences()
+        if passwordsStatusBarMenu == nil {
+            passwordsStatusBarMenu = PasswordsStatusBarMenu(preferences: preferences, pinningManager: pinningManager)
+        }
+
+        if preferences.showInMenuBar {
+            passwordsStatusBarMenu?.show()
+        } else {
+            passwordsStatusBarMenu?.hide()
+        }
+
+        passwordsMenuBarCancellable = NotificationCenter.default.publisher(for: .autofillShowInMenuBarDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    let showInMenuBar = AutofillPreferences().showInMenuBar
+                    if showInMenuBar {
+                        self?.passwordsStatusBarMenu?.show()
+                    } else {
+                        self?.passwordsStatusBarMenu?.hide()
+                    }
+                }
+            }
+    }
 }
 
 // MARK: - UNUserNotificationCenterDelegate
@@ -1915,7 +2014,8 @@ extension AppDelegate: UserScriptDependenciesProviding {
             nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
             subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
             duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
-            syncService: syncService
+            syncService: syncService,
+            pinningManager: pinningManager
         )
     }
 }

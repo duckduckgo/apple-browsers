@@ -66,10 +66,12 @@ final class MockNotificationIconFetcher: NotificationIconFetching {
 
     private(set) var fetchIconCalled = false
     private(set) var fetchedURL: URL?
+    private(set) var fetchedOriginURL: URL?
 
-    func fetchIcon(from url: URL) async -> UNNotificationAttachment? {
+    func fetchIcon(from url: URL, originURL: URL) async -> UNNotificationAttachment? {
         fetchIconCalled = true
         fetchedURL = url
+        fetchedOriginURL = originURL
         return attachmentToReturn
     }
 }

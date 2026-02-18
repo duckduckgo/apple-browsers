@@ -88,7 +88,8 @@ import AIChatTestingUtilities
                                                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
                                                                               fireproofing: fireproofing,
                                                                               contentScopeExperimentsManager: MockContentScopeExperimentManager(),
-                                                                              internalUserDecider: MockInternalUserDecider())
+                                                                              internalUserDecider: MockInternalUserDecider(),
+                                                                              syncErrorHandler: CapturingAdapterErrorHandler())
 
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
@@ -169,6 +170,8 @@ import AIChatTestingUtilities
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            remoteMessagingPixelReporter: MockRemoteMessagingPixelReporter(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),

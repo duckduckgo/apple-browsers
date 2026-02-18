@@ -150,6 +150,7 @@ private extension SpinnerView {
 
     func setupInitialState() {
         gradientLayer.isHidden = hidesWhenStopped
+        self.isHidden = hidesWhenStopped
     }
 
     func refreshGradientBounds() {
@@ -167,10 +168,11 @@ private extension SpinnerView {
     }
 
     func ensureGradientLayerIsVisible() {
-        guard gradientLayer.isHidden || gradientLayer.opacity < 1 else {
+        guard isHidden || gradientLayer.isHidden || gradientLayer.opacity < 1 else {
             return
         }
 
+        self.isHidden = false
         gradientLayer.isHidden = false
         gradientLayer.opacity = 1
     }
@@ -191,6 +193,7 @@ private extension SpinnerView {
     func removeRotationAnimationAndHide() {
         gradientLayer.removeAnimation(forKey: SpinnerConstants.rotationAnimationKey)
         gradientLayer.isHidden = hidesWhenStopped
+        self.isHidden = true
     }
 }
 

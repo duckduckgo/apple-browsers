@@ -201,21 +201,27 @@ final class MainCoordinator {
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
                                         remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
+                                        remoteMessagingImageLoader: remoteMessagingService.remoteMessagingImageLoader,
+                                        remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
                                         productSurfaceTelemetry: productSurfaceTelemetry,
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
                                         whatsNewRepository: whatsNewRepository)
-        setupWebExtensions()
+        setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
     }
 
     func start() {
         controller.loadViewIfNeeded()
     }
 
-    private func setupWebExtensions() {
+    private func setupWebExtensions(privacyConfigurationManager: PrivacyConfigurationManaging) {
         if #available(iOS 18.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManagerFactory.makeManager(mainViewController: controller)
+            let webExtensionManager = WebExtensionManagerFactory.makeManager(
+                mainViewController: controller,
+                privacyConfigurationManager: privacyConfigurationManager,
+                autoconsentPreferences: AppUserDefaults()
+            )
             self.webExtensionManager = webExtensionManager
 
             self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(webExtensionManager: webExtensionManager,
@@ -377,7 +383,7 @@ extension MainCoordinator: URLHandling {
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:
-            let request = FireRequest(options: .all, trigger: .manualFire, scope: .all)
+            let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .deeplink)
             controller.forgetAllWithAnimation(request: request)
         case .voiceSearch:
             controller.onVoiceSearchPressed()

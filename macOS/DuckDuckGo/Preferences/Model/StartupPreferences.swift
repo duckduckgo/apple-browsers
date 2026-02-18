@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Combine
+import AppKit
 import BrowserServicesKit
+import Combine
+import Foundation
 import FeatureFlags
 import Persistence
 
@@ -104,12 +105,12 @@ struct StartupPreferencesUserDefaultsPersistor: StartupPreferencesPersistor {
 
 final class StartupPreferences: ObservableObject {
 
-    private let pinningManager: LocalPinningManager
+    private let pinningManager: PinningManager
     private var appearancePreferences: AppearancePreferences
     private var persistor: StartupPreferencesPersistor
     private var pinnedViewsNotificationCancellable: AnyCancellable?
 
-    init(pinningManager: LocalPinningManager = .shared,
+    init(pinningManager: PinningManager,
          persistor: StartupPreferencesPersistor,
          appearancePreferences: AppearancePreferences) {
         self.pinningManager = pinningManager

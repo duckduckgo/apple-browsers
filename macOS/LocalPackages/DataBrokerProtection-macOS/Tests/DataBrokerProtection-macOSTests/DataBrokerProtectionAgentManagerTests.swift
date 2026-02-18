@@ -23,6 +23,7 @@ import Persistence
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
@@ -40,7 +41,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockProfile: DataBrokerProtectionProfile!
     private var mockAgentStopper: MockAgentStopper!
     private var mockConfigurationManager: MockConfigurationManager!
-    private var mockPrivacyConfigurationManager: DBPPrivacyConfigurationManager!
+    private var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
     private var mockAuthenticationManager: MockAuthenticationManager!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     private var mockEngagementPixelRepository: DataBrokerProtectionCoreTestsUtils.MockDataBrokerProtectionEngagementPixelsRepository!
@@ -62,7 +63,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockConfigurationManager = MockConfigurationManager()
         let mockInternalUserStore = InternalUserDeciderStoreMock(isInternalUser: false)
         mockInternalUserDecider = DefaultInternalUserDecider(store: mockInternalUserStore)
-        mockPrivacyConfigurationManager = DBPPrivacyConfigurationManager(internalUserDecider: mockInternalUserDecider)
+        mockPrivacyConfigurationManager = MockPrivacyConfigurationManager(internalUserDecider: mockInternalUserDecider)
         mockEngagementPixelRepository = MockDataBrokerProtectionEngagementPixelsRepository()
         mockEventPixelRepository = MockDataBrokerProtectionEventPixelsRepository()
         mockStatsPixelRepository = MockDataBrokerProtectionStatsPixelsRepository()

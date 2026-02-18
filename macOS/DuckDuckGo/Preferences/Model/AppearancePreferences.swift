@@ -298,10 +298,6 @@ final class AppearancePreferences: ObservableObject {
         return featureFlagger?.isFeatureOn(.newTabPageOmnibar) ?? true
     }
 
-    var areThemesAvailable: Bool {
-        return featureFlagger?.isFeatureOn(.themes) ?? true
-    }
-
     @Published var isOmnibarVisible: Bool {
         didSet {
             persistor.isOmnibarVisible = isOmnibarVisible
@@ -323,7 +319,13 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var maxNextStepsCardsDemonstrationDays: Int {
-        (featureFlagger?.isFeatureOn(.nextStepsListWidget) ?? true) ? Constants.maxNextStepsCardsDemonstrationDays : Constants.legacyDismissNextStepsCardsAfterDays
+        if let featureFlagger,
+           featureFlagger.isFeatureOn(.nextStepsListWidget) &&
+            featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) {
+            return Constants.maxNextStepsCardsDemonstrationDays
+        } else {
+            return Constants.legacyDismissNextStepsCardsAfterDays
+        }
     }
 
     /// Number of active usage days the New Tab Page "Next Steps" cards have been shown.

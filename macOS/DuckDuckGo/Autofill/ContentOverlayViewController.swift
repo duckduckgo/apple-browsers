@@ -66,12 +66,14 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         privacyConfigurationManager: PrivacyConfigurationManaging,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         featureFlagger: FeatureFlagger,
-        tld: TLD
+        tld: TLD,
+        pinningManager: PinningManager
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.featureFlagger = featureFlagger
         self.tld = tld
+        self.pinningManager = pinningManager
         super.init(coder: coder)
     }
 
@@ -85,6 +87,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let featureFlagger: FeatureFlagger
     private let tld: TLD
+    private let pinningManager: PinningManager
 
     lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
 
@@ -435,6 +438,6 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true, onFinished: onFinished, onCancelled: onCancelled)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true, onFinished: onFinished, onCancelled: onCancelled)
     }
 }

@@ -67,6 +67,10 @@ extension Pixel {
         case forgetAllPressedBrowsingDaily
         case forgetAllPressedTabSwitcherDaily
         case forgetAllExecutedDaily
+
+        // MARK: Single Tab Burn
+        case singleTabBurnExecuted
+        case singleTabDataCleared
         
         case privacyDashboardOpened
         case privacyDashboardFirstTimeOpenedUnique
@@ -762,6 +766,8 @@ extension Pixel {
         case remoteMessageSheet
         case remoteMessageCardShown
         case remoteMessageCardClicked
+        case remoteMessageImageLoadSuccess
+        case remoteMessageImageLoadFailed
 
         // MARK: debug pixels
         case dbCrashDetected(appIdentifier: String?)
@@ -921,17 +927,21 @@ extension Pixel {
         case syncBookmarksObjectLimitExceededDaily
         case syncCredentialsObjectLimitExceededDaily
         case syncCreditCardsObjectLimitExceededDaily
+        case syncAiChatsObjectLimitExceededDaily
         case syncBookmarksRequestSizeLimitExceededDaily
         case syncCredentialsRequestSizeLimitExceededDaily
         case syncCreditCardsRequestSizeLimitExceededDaily
+        case syncAiChatsRequestSizeLimitExceededDaily
         case syncBookmarksTooManyRequestsDaily
         case syncCredentialsTooManyRequestsDaily
         case syncCreditCardsTooManyRequestsDaily
         case syncSettingsTooManyRequestsDaily
+        case syncAiChatsTooManyRequestsDaily
         case syncBookmarksValidationErrorDaily
         case syncCredentialsValidationErrorDaily
         case syncCreditCardsValidationErrorDaily
         case syncSettingsValidationErrorDaily
+        case syncAiChatsValidationErrorDaily
 
         case syncSentUnauthenticatedRequest
         case syncMetadataCouldNotLoadDatabase
@@ -946,6 +956,8 @@ extension Pixel {
         case syncSettingsFailed
         case syncSettingsMetadataUpdateFailed
         case syncSettingsPatchCompressionFailed
+        case syncAiChatsFailed
+        case syncAiChatsPatchCompressionFailed
         case syncSignupError
         case syncLoginError
         case syncLogoutError
@@ -1222,6 +1234,7 @@ extension Pixel {
         case privacyProFreeTrialStart
         case privacyProFreeTrialVPNActivation
         case privacyProFreeTrialPIRActivation
+        case privacyProFreeTrialDuckAIActivation
 
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
@@ -1425,7 +1438,8 @@ extension Pixel {
         case aiChatMetricDuckAIKeyboardReturnPressed
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
-        
+        case aiChatContextualAutoAttachDAU
+
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
         
@@ -1477,6 +1491,8 @@ extension Pixel {
         // MARK: AI Chat History Deletion
         case aiChatHistoryDeleteSuccessful
         case aiChatHistoryDeleteFailed
+        case aiChatSingleDeleteSuccessful
+        case aiChatSingleDeleteFailed
 
         // MARK: AI Chat Contextual Onboarding
         case aiChatContextualOnboardingDisplayed
@@ -1504,6 +1520,8 @@ extension Pixel {
         case aiChatContextualPromptSubmittedWithContextNative
         case aiChatContextualPromptSubmittedWithoutContextNative
         case aiChatContextualSessionRestored
+        case aiChatContextualPageContextCollectionEmpty
+        case aiChatContextualPageContextCollectionUnavailable
 
         // MARK: Customization
         case customizationAddressBarStarted
@@ -1580,6 +1598,7 @@ extension Pixel {
         case dbpNotificationOpenedFirstRemoval
         case dbpNotificationOpenedAllRecordsRemoved
         case dbpNotificationOpened1WeekCheckIn
+        case dbpNotificationOpenedGoToMarketFirstScan
 
         // MARK: - App Intent
         case appIntentPerformed
@@ -1614,6 +1633,16 @@ extension Pixel {
         case productTelemeterySurfaceUsageSettings
         case productTelemeterySurfaceUsageBookmarksPage
         case productTelemeterySurfaceUsagePasswordsPage
+
+        // MARK: - Web Extensions
+        case webExtensionInstalled
+        case webExtensionInstallError
+        case webExtensionUninstalled
+        case webExtensionUninstallError
+        case webExtensionUninstalledAll
+        case webExtensionUninstallAllError
+        case webExtensionLoaded
+        case webExtensionLoadError
     }
 
 }
@@ -1653,6 +1682,10 @@ extension Pixel.Event {
         case .forgetAllPressedBrowsingDaily: return "m_forget-all-pressed_browsing_daily"
         case .forgetAllPressedTabSwitcherDaily: return "m_forget-all-pressed_tab-switcher_daily"
         case .forgetAllExecutedDaily: return "m_forget-all-executed_daily"
+
+        // MARK: Single Tab Burn
+        case .singleTabBurnExecuted: return "m_single-tab-burn_executed"
+        case .singleTabDataCleared: return "m_single-tab-data_cleared"
             
         case .privacyDashboardOpened: return "mp"
         case .privacyDashboardFirstTimeOpenedUnique: return "m_privacy_dashboard_first_time_used_unique"
@@ -2269,6 +2302,8 @@ extension Pixel.Event {
         case .remoteMessageSheet: return "m_remote_message_sheet"
         case .remoteMessageCardShown: return "m_remote_message_card_shown"
         case .remoteMessageCardClicked: return "m_remote_message_card_clicked"
+        case .remoteMessageImageLoadSuccess: return "m_remote_message_image_load_success"
+        case .remoteMessageImageLoadFailed: return "m_remote_message_image_load_failed"
 
             // MARK: debug pixels
 
@@ -2497,16 +2532,20 @@ extension Pixel.Event {
         case .syncBookmarksObjectLimitExceededDaily: return "m_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_sync_credentials_object_limit_exceeded_daily"
         case .syncCreditCardsObjectLimitExceededDaily: return "m_sync_credit_cards_object_limit_exceeded_daily"
+        case .syncAiChatsObjectLimitExceededDaily: return "m_sync_ai_chats_object_limit_exceeded_daily"
         case .syncBookmarksRequestSizeLimitExceededDaily: return "m_sync_bookmarks_request_size_limit_exceeded_daily"
         case .syncCredentialsRequestSizeLimitExceededDaily: return "m_sync_credentials_request_size_limit_exceeded_daily"
         case .syncCreditCardsRequestSizeLimitExceededDaily: return "m_sync_credit_cards_request_size_limit_exceeded_daily"
+        case .syncAiChatsRequestSizeLimitExceededDaily: return "m_sync_ai_chats_request_size_limit_exceeded_daily"
         case .syncBookmarksTooManyRequestsDaily: return "m_sync_bookmarks_too_many_requests_daily"
         case .syncCredentialsTooManyRequestsDaily: return "m_sync_credentials_too_many_requests_daily"
         case .syncCreditCardsTooManyRequestsDaily: return "m_sync_credit_cards_too_many_requests_daily"
+        case .syncAiChatsTooManyRequestsDaily: return "m_sync_ai_chats_too_many_requests_daily"
         case .syncSettingsTooManyRequestsDaily: return "m_sync_settings_too_many_requests_daily"
         case .syncBookmarksValidationErrorDaily: return "m_sync_bookmarks_validation_error_daily"
         case .syncCredentialsValidationErrorDaily: return "m_sync_credentials_validation_error_daily"
         case .syncCreditCardsValidationErrorDaily: return "m_sync_credit_cards_validation_error_daily"
+        case .syncAiChatsValidationErrorDaily: return "m_sync_ai_chats_validation_error_daily"
         case .syncSettingsValidationErrorDaily: return "m_sync_settings_validation_error_daily"
 
         case .syncSentUnauthenticatedRequest: return "m_d_sync_sent_unauthenticated_request"
@@ -2519,6 +2558,8 @@ extension Pixel.Event {
         case .syncCreditCardsProviderInitializationFailed: return "m_d_sync_credit_cards_provider_initialization_failed"
         case .syncCreditCardsFailed: return "m_d_sync_credit_cards_failed"
         case .syncCreditCardsPatchCompressionFailed: return "m_d_sync_credit_cards_patch_compression_failed"
+        case .syncAiChatsFailed: return "m_d_sync_ai_chats_failed"
+        case .syncAiChatsPatchCompressionFailed: return "m_d_sync_ai_chats_patch_compression_failed"
         case .syncSettingsFailed: return "m_d_sync_settings_failed"
         case .syncSettingsMetadataUpdateFailed: return "m_d_sync_settings_metadata_update_failed"
         case .syncSettingsPatchCompressionFailed: return "m_d_sync_settings_patch_compression_failed"
@@ -2713,6 +2754,7 @@ extension Pixel.Event {
         case .privacyProFreeTrialStart: return "m_privacy-pro_freetrial_start"
         case .privacyProFreeTrialVPNActivation: return "m_privacy-pro_freetrial_vpn_activation"
         case .privacyProFreeTrialPIRActivation: return "m_privacy-pro_freetrial_pir_activation"
+        case .privacyProFreeTrialDuckAIActivation: return "m_privacy-pro_freetrial_duck_ai_activation"
 
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"
@@ -2919,6 +2961,7 @@ extension Pixel.Event {
         case .aiChatMetricDuckAIKeyboardReturnPressed: return "m_aichat_duckai_keyboard_return_pressed"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
+        case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
 
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
@@ -2964,6 +3007,8 @@ extension Pixel.Event {
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
         case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
+        case .aiChatSingleDeleteSuccessful: return "m_aichat_single_delete_successful"
+        case .aiChatSingleDeleteFailed: return "m_aichat_single_delete_failed"
 
         // MARK: AI Chat Contextual Onboarding
         case .aiChatContextualOnboardingDisplayed: return "m_aichat_contextual_onboarding_displayed"
@@ -2991,6 +3036,8 @@ extension Pixel.Event {
         case .aiChatContextualPromptSubmittedWithContextNative: return "m_aichat_contextual_prompt_submitted_with_context_native"
         case .aiChatContextualPromptSubmittedWithoutContextNative: return "m_aichat_contextual_prompt_submitted_without_context_native"
         case .aiChatContextualSessionRestored: return "m_aichat_contextual_session_restored"
+        case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
+        case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
 
         // MARK: AI Chat Sync
 
@@ -3115,11 +3162,12 @@ extension Pixel.Event {
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
 
         // MARK: Data Broker Protection Notifications
-        case .dbpNotificationOpenedFirstScanComplete: return "m_ios_dbp_notification_opened_first_scan_complete"
-        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_ios_dbp_freemium_notification_opened_first_scan_complete"
-        case .dbpNotificationOpenedFirstRemoval: return "m_ios_dbp_notification_opened_first_removal"
-        case .dbpNotificationOpenedAllRecordsRemoved: return "m_ios_dbp_notification_opened_all_records_removed"
-        case .dbpNotificationOpened1WeekCheckIn: return "m_ios_dbp_notification_opened_1_week_check_in"
+        case .dbpNotificationOpenedFirstScanComplete: return "m_dbp_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_dbp_freemium_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstRemoval: return "m_dbp_notification_opened_first_removal"
+        case .dbpNotificationOpenedAllRecordsRemoved: return "m_dbp_notification_opened_all_records_removed"
+        case .dbpNotificationOpened1WeekCheckIn: return "m_dbp_notification_opened_1_week_check_in"
+        case .dbpNotificationOpenedGoToMarketFirstScan: return "m_dbp_notification_opened_go_to_market_first_scan"
 
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"
@@ -3160,12 +3208,22 @@ extension Pixel.Event {
         case .productTelemeterySurfaceUsageSettings: return "m_product_telemetry_surface_usage_settings"
         case .productTelemeterySurfaceUsageBookmarksPage: return "m_product_telemetry_surface_usage_bookmarks_page"
         case .productTelemeterySurfaceUsagePasswordsPage: return "m_product_telemetry_surface_usage_passwords_page"
+
+        // MARK: - Web Extensions
+        case .webExtensionInstalled: return "m_web_extension_installed"
+        case .webExtensionInstallError: return "m_web_extension_install_error"
+        case .webExtensionUninstalled: return "m_web_extension_uninstalled"
+        case .webExtensionUninstallError: return "m_web_extension_uninstall_error"
+        case .webExtensionUninstalledAll: return "m_web_extension_uninstalled_all"
+        case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
+        case .webExtensionLoaded: return "m_web_extension_loaded"
+        case .webExtensionLoadError: return "m_web_extension_load_error"
         }
     }
 }
 
 extension Pixel.Event {
-    
+
     public enum BucketAggregation: String, CustomStringConvertible {
 
         public var description: String { rawValue }
@@ -3293,6 +3351,10 @@ public extension Pixel.Event {
         case settingToggled(to: Bool)
         case matchesApiTimeout
         case failedToDownloadInitialDataSets(category: ThreatKind, type: DataManager.StoredDataType.Kind)
+        case singleDataSetUpdatePerformance(MaliciousSiteProtection.SingleDataSetUpdatePerformanceInfo)
+        case singleDataSetUpdateDiskUsage(MaliciousSiteProtection.SingleDataSetUpdateDiskUsageInfo)
+        case aggregateDataSetUpdatePerformance(MaliciousSiteProtection.AggregateDataSetPerformanceInfo)
+        case aggregateDataSetUpdateDiskUsage(MaliciousSiteProtection.AggregateDataSetUpdateDiskUsageInfo)
 
         public init?(_ pixelKitEvent: MaliciousSiteProtection.Event) {
             switch pixelKitEvent {
@@ -3310,6 +3372,14 @@ public extension Pixel.Event {
                 return nil
             case .failedToDownloadInitialDataSets(category: let category, type: let type):
                 self = .failedToDownloadInitialDataSets(category: category, type: type)
+            case .singleDataSetUpdatePerformance(let dataSetUpdateInfo):
+                self = .singleDataSetUpdatePerformance(dataSetUpdateInfo)
+            case .singleDataSetUpdateDiskUsage(let dataSetUpdateInfo):
+                self = .singleDataSetUpdateDiskUsage(dataSetUpdateInfo)
+            case .aggregateDataSetUpdatePerformance(let aggregateDataSetsUpdateInfo):
+                self = .aggregateDataSetUpdatePerformance(aggregateDataSetsUpdateInfo)
+            case .aggregateDataSetUpdateDiskUsage(let aggregateDataSetsUpdateInfo):
+                self = .aggregateDataSetUpdateDiskUsage(aggregateDataSetsUpdateInfo)
             }
         }
 
@@ -3327,12 +3397,20 @@ public extension Pixel.Event {
                 return MaliciousSiteProtection.Event.matchesApiTimeout
             case .failedToDownloadInitialDataSets(let category, let type):
                 return MaliciousSiteProtection.Event.failedToDownloadInitialDataSets(category: category, type: type)
+            case .singleDataSetUpdatePerformance(let info):
+                return MaliciousSiteProtection.Event.singleDataSetUpdatePerformance(info)
+            case .singleDataSetUpdateDiskUsage(let info):
+                return MaliciousSiteProtection.Event.singleDataSetUpdateDiskUsage(info)
+            case .aggregateDataSetUpdatePerformance(let info):
+                return MaliciousSiteProtection.Event.aggregateDataSetUpdatePerformance(info)
+            case .aggregateDataSetUpdateDiskUsage(let info):
+                return MaliciousSiteProtection.Event.aggregateDataSetUpdateDiskUsage(info)
             }
         }
 
         var name: String {
             switch self {
-            case .failedToDownloadInitialDataSets:
+            case .failedToDownloadInitialDataSets, .singleDataSetUpdatePerformance, .singleDataSetUpdateDiskUsage, .aggregateDataSetUpdatePerformance, .aggregateDataSetUpdateDiskUsage:
                 return "debug_\(event.name)"
             default:
                 return event.name

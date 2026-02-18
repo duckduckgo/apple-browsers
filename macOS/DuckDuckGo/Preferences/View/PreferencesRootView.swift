@@ -65,6 +65,7 @@ enum Preferences {
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         let blackFridayCampaignProvider: BlackFridayCampaignProviding
         let pixelHandler: (SubscriptionPixel, PixelKit.Frequency) -> Void
+        let pinningManager: PinningManager
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
         }
@@ -76,6 +77,7 @@ enum Preferences {
             featureFlagger: FeatureFlagger,
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             wideEvent: WideEventManaging,
+            pinningManager: PinningManager,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
@@ -93,6 +95,7 @@ enum Preferences {
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
+            self.pinningManager = pinningManager
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -154,14 +157,13 @@ enum Preferences {
                 case .appearance:
                     AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
                                    aiChatModel: model.aiChatPreferences,
-                                   themeManager: themeManager,
-                                   isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
+                                   themeManager: themeManager)
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .subscription:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
-                    VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
+                    VPNView(model: VPNPreferencesModel(pinningManager: pinningManager), status: model.vpnProtectionStatus())
                 case .personalInformationRemoval:
                     SubscriptionUI.PreferencesPersonalInformationRemovalView(model: personalInformationRemovalModel!)
                 case .paidAIChat:

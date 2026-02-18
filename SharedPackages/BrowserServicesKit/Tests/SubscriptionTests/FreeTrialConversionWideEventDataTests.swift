@@ -32,6 +32,8 @@ final class FreeTrialConversionWideEventDataTests: XCTestCase {
         XCTAssertFalse(data.vpnActivatedD2ToD7)
         XCTAssertFalse(data.pirActivatedD1)
         XCTAssertFalse(data.pirActivatedD2ToD7)
+        XCTAssertFalse(data.duckAIActivatedD1)
+        XCTAssertFalse(data.duckAIActivatedD2ToD7)
     }
 
     // MARK: - VPN Activation Tests
@@ -127,6 +129,59 @@ final class FreeTrialConversionWideEventDataTests: XCTestCase {
         XCTAssertFalse(data.pirActivatedD2ToD7)
     }
 
+    // MARK: - Duck.ai Activation Tests
+
+    func testMarkDuckAIActivated_OnDay1_SetsD1Flag() {
+        // Given - trial started now (day 1)
+        let data = FreeTrialConversionWideEventData(trialStartDate: Date())
+
+        // When
+        data.markDuckAIActivated()
+
+        // Then
+        XCTAssertTrue(data.duckAIActivatedD1)
+        XCTAssertFalse(data.duckAIActivatedD2ToD7)
+    }
+
+    func testMarkDuckAIActivated_OnDay2OrLater_SetsD2ToD7Flag() {
+        // Given - trial started 2 days ago
+        let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: Date())!
+        let data = FreeTrialConversionWideEventData(trialStartDate: twoDaysAgo)
+
+        // When
+        data.markDuckAIActivated()
+
+        // Then
+        XCTAssertFalse(data.duckAIActivatedD1)
+        XCTAssertTrue(data.duckAIActivatedD2ToD7)
+    }
+
+    func testMarkDuckAIActivated_WhenAlreadyActivatedD1_DoesNotChange() {
+        // Given - already activated on D1
+        let data = FreeTrialConversionWideEventData()
+        data.duckAIActivatedD1 = true
+
+        // When - try to activate again
+        data.markDuckAIActivated()
+
+        // Then - should not change
+        XCTAssertTrue(data.duckAIActivatedD1)
+        XCTAssertFalse(data.duckAIActivatedD2ToD7)
+    }
+
+    func testMarkDuckAIActivated_WhenAlreadyActivatedD2ToD7_DoesNotChange() {
+        // Given - already activated on D2-D7
+        let data = FreeTrialConversionWideEventData()
+        data.duckAIActivatedD2ToD7 = true
+
+        // When - try to activate again
+        data.markDuckAIActivated()
+
+        // Then - should not change
+        XCTAssertFalse(data.duckAIActivatedD1)
+        XCTAssertTrue(data.duckAIActivatedD2ToD7)
+    }
+
     // MARK: - Should Fire Pixel Tests
 
     func testShouldFireVPNActivationPixel_WhenNotActivated_ReturnsTrue() {
@@ -172,6 +227,32 @@ final class FreeTrialConversionWideEventDataTests: XCTestCase {
         XCTAssertFalse(data.shouldFirePIRActivationPixel)
     }
 
+    func testShouldFireDuckAIActivationPixel_WhenNotActivated_ReturnsTrue() {
+        // Given
+        let data = FreeTrialConversionWideEventData()
+
+        // Then
+        XCTAssertTrue(data.shouldFireDuckAIActivationPixel)
+    }
+
+    func testShouldFireDuckAIActivationPixel_WhenD1Activated_ReturnsFalse() {
+        // Given
+        let data = FreeTrialConversionWideEventData()
+        data.duckAIActivatedD1 = true
+
+        // Then
+        XCTAssertFalse(data.shouldFireDuckAIActivationPixel)
+    }
+
+    func testShouldFireDuckAIActivationPixel_WhenD2ToD7Activated_ReturnsFalse() {
+        // Given
+        let data = FreeTrialConversionWideEventData()
+        data.duckAIActivatedD2ToD7 = true
+
+        // Then
+        XCTAssertFalse(data.shouldFireDuckAIActivationPixel)
+    }
+
     // MARK: - Activation Day Tests
 
     func testActivationDay_OnDay1_ReturnsD1() {
@@ -198,6 +279,7 @@ final class FreeTrialConversionWideEventDataTests: XCTestCase {
         let data = FreeTrialConversionWideEventData()
         data.vpnActivatedD1 = true
         data.pirActivatedD2ToD7 = true
+        data.duckAIActivatedD1 = true
 
         // When
         let params = data.pixelParameters()
@@ -207,5 +289,7 @@ final class FreeTrialConversionWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.step.vpn_activated_d2_to_d7"], "false")
         XCTAssertEqual(params["feature.data.ext.step.pir_activated_d1"], "false")
         XCTAssertEqual(params["feature.data.ext.step.pir_activated_d2_to_d7"], "true")
+        XCTAssertEqual(params["feature.data.ext.step.duck_ai_activated_d1"], "true")
+        XCTAssertEqual(params["feature.data.ext.step.duck_ai_activated_d2_to_d7"], "false")
     }
 }

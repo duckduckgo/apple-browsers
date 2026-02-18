@@ -23,6 +23,7 @@ import Common
 import PixelKitTestingUtilities
 import PrivacyConfig
 import SharedTestUtilities
+import Subscription
 import Testing
 import UserScript
 import WebKit
@@ -64,8 +65,10 @@ struct AIChatUserScriptHandlerTests {
     private var windowControllersManager: WindowControllersManagerMock
     private var notificationCenter = NotificationCenter()
     private var pixelFiring = PixelKitMock()
+    private var syncErrorHandler = SyncErrorHandler()
     private var handler: AIChatUserScriptHandler
     private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
+    private var mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
 
     @MainActor
     init() {
@@ -78,7 +81,9 @@ struct AIChatUserScriptHandlerTests {
             pixelFiring: pixelFiring,
             statisticsLoader: statisticsLoader,
             syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
+            freeTrialConversionService: mockFreeTrialConversionService,
             notificationCenter: notificationCenter
         )
     }
@@ -314,6 +319,7 @@ struct AIChatUserScriptHandlerTests {
                 pixelFiring: pixelFiring,
                 statisticsLoader: loader,
                 syncServiceProvider: { nil },
+                syncErrorHandler: syncErrorHandler,
                 featureFlagger: MockFeatureFlagger(),
                 notificationCenter: notificationCenter
             )
@@ -344,6 +350,7 @@ struct AIChatUserScriptHandlerTests {
                 pixelFiring: pixelFiring,
                 statisticsLoader: loader,
                 syncServiceProvider: { nil },
+                syncErrorHandler: syncErrorHandler,
                 featureFlagger: MockFeatureFlagger(),
                 notificationCenter: notificationCenter
             )
@@ -371,6 +378,7 @@ struct AIChatUserScriptHandlerTests {
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
             syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -397,6 +405,7 @@ struct AIChatUserScriptHandlerTests {
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
             syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -422,6 +431,7 @@ struct AIChatUserScriptHandlerTests {
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
             syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -710,9 +720,45 @@ struct AIChatUserScriptHandlerTests {
             pixelFiring: pixelFiring,
             statisticsLoader: statisticsLoader,
             syncServiceProvider: syncServiceProvider,
+            syncErrorHandler: syncErrorHandler,
             featureFlagger: featureFlagger,
+            freeTrialConversionService: mockFreeTrialConversionService,
             notificationCenter: notificationCenter
         )
+    }
+
+    // MARK: - Free Trial Conversion Tracking
+
+    @Test("When plus model tier prompt submitted, markDuckAIActivated is called")
+    @MainActor
+    func testWhenPlusModelTierPromptSubmittedThenMarkDuckAIActivatedIsCalled() async {
+        await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt", "modelTier": "plus"], message: MockWKScriptMessage())
+
+        #expect(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    @Test("When plus model tier first prompt submitted, markDuckAIActivated is called")
+    @MainActor
+    func testWhenPlusModelTierFirstPromptSubmittedThenMarkDuckAIActivatedIsCalled() async {
+        await handler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt", "modelTier": "plus"], message: MockWKScriptMessage())
+
+        #expect(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    @Test("When free model tier prompt submitted, markDuckAIActivated is not called")
+    @MainActor
+    func testWhenFreeModelTierPromptSubmittedThenMarkDuckAIActivatedIsNotCalled() async {
+        await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt", "modelTier": "free"], message: MockWKScriptMessage())
+
+        #expect(!mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    @Test("When no model tier prompt submitted, markDuckAIActivated is not called")
+    @MainActor
+    func testWhenNoModelTierPromptSubmittedThenMarkDuckAIActivatedIsNotCalled() async {
+        await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt"], message: MockWKScriptMessage())
+
+        #expect(!mockFreeTrialConversionService.markDuckAIActivatedCalled)
     }
 }
 // swiftlint:enable inclusive_language

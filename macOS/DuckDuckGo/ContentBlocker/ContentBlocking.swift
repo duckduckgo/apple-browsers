@@ -80,12 +80,14 @@ final class AppContentBlocking {
         duckPlayer: DuckPlayer,
         windowControllersManager: WindowControllersManagerProtocol,
         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+        pinningManager: PinningManager,
         historyCoordinator: HistoryDataSource,
         fireproofDomains: DomainFireproofStatusProviding,
         fireCoordinator: FireCoordinator,
         tld: TLD,
         autoconsentManagement: AutoconsentManagement,
-        contentScopePreferences: ContentScopePreferences
+        contentScopePreferences: ContentScopePreferences,
+        syncErrorHandler: SyncErrorHandling
     ) {
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
                                                                       fetchedData: configurationStore.loadData(for: .privacyConfiguration),
@@ -108,12 +110,14 @@ final class AppContentBlocking {
             duckPlayer: duckPlayer,
             windowControllersManager: windowControllersManager,
             bookmarkManager: bookmarkManager,
+            pinningManager: pinningManager,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,
             tld: tld,
             autoconsentManagement: autoconsentManagement,
-            contentScopePreferences: contentScopePreferences
+            contentScopePreferences: contentScopePreferences,
+            syncErrorHandler: syncErrorHandler
         )
     }
 
@@ -133,12 +137,14 @@ final class AppContentBlocking {
         duckPlayer: DuckPlayer,
         windowControllersManager: WindowControllersManagerProtocol,
         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+        pinningManager: PinningManager,
         historyCoordinator: HistoryDataSource,
         fireproofDomains: DomainFireproofStatusProviding,
         fireCoordinator: FireCoordinator,
         tld: TLD,
         autoconsentManagement: AutoconsentManagement,
-        contentScopePreferences: ContentScopePreferences
+        contentScopePreferences: ContentScopePreferences,
+        syncErrorHandler: SyncErrorHandling
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
@@ -173,11 +179,13 @@ final class AppContentBlocking {
                                                   startupPreferences: startupPreferences,
                                                   windowControllersManager: windowControllersManager,
                                                   bookmarkManager: bookmarkManager,
+                                                  pinningManager: pinningManager,
                                                   historyCoordinator: historyCoordinator,
                                                   fireproofDomains: fireproofDomains,
                                                   fireCoordinator: fireCoordinator,
                                                   autoconsentManagement: autoconsentManagement,
-                                                  contentScopePreferences: contentScopePreferences)
+                                                  contentScopePreferences: contentScopePreferences,
+                                                  syncErrorHandler: syncErrorHandler)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

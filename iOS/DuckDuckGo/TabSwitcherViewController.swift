@@ -39,9 +39,6 @@ class TabSwitcherViewController: UIViewController {
 
         static let cellMinHeight: CGFloat = 140.0
         static let cellMaxHeight: CGFloat = 209.0
-
-        static let trackerInfoHorizontalPadding: CGFloat = 16
-        static let trackerInfoBottomSpacing: CGFloat = 0
     }
 
     struct BookmarkAllResult {

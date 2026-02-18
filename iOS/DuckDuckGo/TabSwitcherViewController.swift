@@ -84,9 +84,9 @@ class TabSwitcherViewController: UIViewController {
         var image: UIImage {
             switch self {
             case .list:
-                return DesignSystemImages.Glyphs.Size24.viewList // UIImage(resource: .tabsToggleList)
+                return DesignSystemImages.Glyphs.Size24.viewList
             case .grid:
-                return DesignSystemImages.Glyphs.Size24.viewGrid // UIImage(resource: .tabsToggleGrid)
+                return DesignSystemImages.Glyphs.Size24.viewGrid
             }
         }
 

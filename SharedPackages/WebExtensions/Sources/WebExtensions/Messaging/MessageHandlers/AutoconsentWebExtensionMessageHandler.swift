@@ -138,9 +138,9 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
     private func handleCookiePopupHandled(_ params: [String: Any]?) -> WebExtensionMessageResult {
         guard
-            let urlString = params?["url"] as? String,
-            let url = URL(string: urlString),
-            let msg = params?["msg"] as? [String: Any]
+            let msg = params?["msg"] as? [String: Any],
+            let urlString = msg["url"] as? String,
+            let url = URL(string: urlString)
         else {
             return .failure(WebExtensionMessageHandlerError.missingParameter("url or msg"))
         }

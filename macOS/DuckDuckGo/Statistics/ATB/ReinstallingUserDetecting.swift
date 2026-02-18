@@ -174,6 +174,7 @@ final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
     /// If this metadata exists, Sparkle initiated the update.
     private func wasSparkleUpdate() -> Bool {
         // Check if Sparkle stored pending update metadata
-        return standardDefaults.string(forKey: UserDefaultsWrapper<Any>.Key.pendingUpdateSourceVersion.rawValue) != nil
+        let settings = standardDefaults.throwingKeyedStoring() as any ThrowingKeyedStoring<UpdateControllerSettings>
+        return (try? settings.pendingUpdateSourceVersion) != nil
     }
 }

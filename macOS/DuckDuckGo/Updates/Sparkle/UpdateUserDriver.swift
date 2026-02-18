@@ -21,6 +21,7 @@ import Combine
 import Foundation
 import os.log
 import PixelKit
+import Persistence
 import PrivacyConfig
 #if SPARKLE
 import Sparkle
@@ -108,6 +109,7 @@ enum UpdateCycleProgress: CustomStringConvertible {
 final class UpdateUserDriver: NSObject, SPUUserDriver {
     private var internalUserDecider: InternalUserDecider
     var areAutomaticUpdatesEnabled: Bool
+    private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
     // Resume the update process when the user explicitly chooses to do so
     private var onResuming: (() -> Void)? {
@@ -118,8 +120,10 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
         }
     }
 
-    @UserDefaultsWrapper(key: .pendingUpdateSince, defaultValue: .distantPast)
-    private var pendingUpdateSince: Date
+    private var pendingUpdateSince: Date {
+        get { (try? settings.pendingUpdateSince) ?? .distantPast }
+        set { try? settings.set(newValue, for: \.pendingUpdateSince) }
+    }
 
     func updateLastUpdateDownloadedDate() {
         pendingUpdateSince = Date()
@@ -150,11 +154,13 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     init(internalUserDecider: InternalUserDecider,
          areAutomaticUpdatesEnabled: Bool,
-         useLegacyAutoRestartLogic: Bool) {
+         useLegacyAutoRestartLogic: Bool,
+         settings: (any ThrowingKeyedStoring<UpdateControllerSettings>)) {
 
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
         self.useLegacyAutoRestartLogic = useLegacyAutoRestartLogic
+        self.settings = settings
     }
 
     func resume() {
@@ -327,7 +333,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
         // We do this here (not in WideEvent completion) because this callback happens
         // AFTER successful installation, making it the authoritative source.
         // Future update flows will use this to calculate time_since_last_update_ms.
-        SparkleUpdateWideEvent.lastSuccessfulUpdateDate = Date()
+        try? settings.set(Date(), for: \.lastSuccessfulUpdateDate)
         acknowledgement()
     }
 

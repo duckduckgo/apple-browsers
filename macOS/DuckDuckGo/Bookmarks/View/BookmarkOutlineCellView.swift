@@ -252,27 +252,8 @@ final class BookmarkOutlineCellView: NSTableCellView {
             urlLabel.isHidden = true
         }
 
-        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.themes) {
-            applyThemedLabelStyles()
-        } else {
-            applyLegacyLabelStyles()
-        }
-
+        applyThemedLabelStyles()
         updateUIAtNarrowWidths()
-    }
-
-    private func applyLegacyLabelStyles() {
-        if !titleLabel.isEnabled {
-            titleLabel.textColor = .disabledControlTextColor
-
-        } else if highlight && contentMode != .foldersOnly && isInKeyWindow {
-            titleLabel.textColor = .selectedMenuItemTextColor
-            urlLabel.textColor = .selectedMenuItemTextColor
-
-        } else {
-            titleLabel.textColor = .controlTextColor
-            urlLabel.textColor = .secondaryLabelColor
-        }
     }
 
     private func applyThemedLabelStyles() {

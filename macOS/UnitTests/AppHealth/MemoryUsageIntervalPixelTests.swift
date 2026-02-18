@@ -27,27 +27,33 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         let context = MemoryReportingContext(
             browserMemoryMB: 1024,
             windows: 2,
-            tabs: 7,
+            standardTabs: 7,
+            pinnedTabs: 2,
             architecture: "ARM",
-            syncEnabled: false
+            syncEnabled: false,
+            usedAllocationMB: 256,
+            uptimeMinutes: 5
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .startup, context: context)
 
-        XCTAssertEqual(pixel.name, "m_mac_memory_usage")
+        XCTAssertEqual(pixel.name, "m_mac_memory_usage_interval")
     }
 
     func testPixelNameIsSameForAllTriggers() {
         let context = MemoryReportingContext(
             browserMemoryMB: 512,
             windows: 1,
-            tabs: 4,
+            standardTabs: 4,
+            pinnedTabs: 1,
             architecture: "Intel",
-            syncEnabled: true
+            syncEnabled: true,
+            usedAllocationMB: 128,
+            uptimeMinutes: 10
         )
 
         for trigger in MemoryUsageIntervalPixel.Trigger.allCases {
             let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: trigger, context: context)
-            XCTAssertEqual(pixel.name, "m_mac_memory_usage", "Name should be the same for trigger \(trigger)")
+            XCTAssertEqual(pixel.name, "m_mac_memory_usage_interval", "Name should be the same for trigger \(trigger)")
         }
     }
 
@@ -57,9 +63,12 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         let context = MemoryReportingContext(
             browserMemoryMB: 2048,
             windows: 4,
-            tabs: 11,
+            standardTabs: 11,
+            pinnedTabs: 4,
             architecture: "ARM",
-            syncEnabled: true
+            syncEnabled: true,
+            usedAllocationMB: 512,
+            uptimeMinutes: 240
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .h4, context: context)
 
@@ -68,18 +77,24 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         XCTAssertEqual(params?["trigger"], "4h")
         XCTAssertEqual(params?["browser_memory_mb"], "2048")
         XCTAssertEqual(params?["windows"], "4")
-        XCTAssertEqual(params?["tabs"], "11")
+        XCTAssertEqual(params?["standard_tabs"], "11")
+        XCTAssertEqual(params?["pinned_tabs"], "4")
         XCTAssertEqual(params?["architecture"], "ARM")
         XCTAssertEqual(params?["sync_enabled"], "true")
+        XCTAssertEqual(params?["used_allocation"], "512")
+        XCTAssertEqual(params?["uptime"], "240")
     }
 
     func testParametersForStartupTrigger() {
         let context = MemoryReportingContext(
             browserMemoryMB: 0,
             windows: 1,
-            tabs: 1,
+            standardTabs: 1,
+            pinnedTabs: 0,
             architecture: "Intel",
-            syncEnabled: false
+            syncEnabled: false,
+            usedAllocationMB: 64,
+            uptimeMinutes: 0
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .startup, context: context)
 
@@ -87,9 +102,12 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         XCTAssertEqual(params?["trigger"], "startup")
         XCTAssertEqual(params?["browser_memory_mb"], "0")
         XCTAssertEqual(params?["windows"], "1")
-        XCTAssertEqual(params?["tabs"], "1")
+        XCTAssertEqual(params?["standard_tabs"], "1")
+        XCTAssertEqual(params?["pinned_tabs"], "0")
         XCTAssertEqual(params?["architecture"], "Intel")
         XCTAssertEqual(params?["sync_enabled"], "false")
+        XCTAssertEqual(params?["used_allocation"], "64")
+        XCTAssertEqual(params?["uptime"], "0")
     }
 
     func testAllTriggerRawValues() {
@@ -124,32 +142,41 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         let context = MemoryReportingContext(
             browserMemoryMB: 512,
             windows: 2,
-            tabs: 4,
+            standardTabs: 4,
+            pinnedTabs: 1,
             architecture: "ARM",
-            syncEnabled: true
+            syncEnabled: true,
+            usedAllocationMB: 128,
+            uptimeMinutes: 30
         )
         let params = context.parameters
 
-        XCTAssertEqual(params.count, 5)
+        XCTAssertEqual(params.count, 8)
         XCTAssertNotNil(params["browser_memory_mb"])
         XCTAssertNotNil(params["windows"])
-        XCTAssertNotNil(params["tabs"])
+        XCTAssertNotNil(params["standard_tabs"])
+        XCTAssertNotNil(params["pinned_tabs"])
         XCTAssertNotNil(params["architecture"])
         XCTAssertNotNil(params["sync_enabled"])
+        XCTAssertNotNil(params["used_allocation"])
+        XCTAssertNotNil(params["uptime"])
     }
 
     func testPixelParametersCount() {
         let context = MemoryReportingContext(
             browserMemoryMB: 1024,
             windows: 1,
-            tabs: 2,
+            standardTabs: 2,
+            pinnedTabs: 0,
             architecture: "ARM",
-            syncEnabled: false
+            syncEnabled: false,
+            usedAllocationMB: 256,
+            uptimeMinutes: 60
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .h1, context: context)
 
-        // 5 context params + 1 trigger = 6 total
-        XCTAssertEqual(pixel.parameters?.count, 6)
+        // 8 context params + 1 trigger = 9 total
+        XCTAssertEqual(pixel.parameters?.count, 9)
     }
 
     // MARK: - Unknown Fallback
@@ -158,30 +185,39 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         let context = MemoryReportingContext(
             browserMemoryMB: 512,
             windows: nil,
-            tabs: nil,
+            standardTabs: nil,
+            pinnedTabs: nil,
             architecture: "ARM",
-            syncEnabled: nil
+            syncEnabled: nil,
+            usedAllocationMB: nil,
+            uptimeMinutes: 5
         )
         let params = context.parameters
 
         XCTAssertEqual(params["browser_memory_mb"], "512")
         XCTAssertEqual(params["windows"], "unknown")
-        XCTAssertEqual(params["tabs"], "unknown")
+        XCTAssertEqual(params["standard_tabs"], "unknown")
+        XCTAssertEqual(params["pinned_tabs"], "unknown")
         XCTAssertEqual(params["architecture"], "ARM")
         XCTAssertEqual(params["sync_enabled"], "unknown")
+        XCTAssertEqual(params["used_allocation"], "unknown")
+        XCTAssertEqual(params["uptime"], "5")
     }
 
     func testWhenDependenciesAreNil_ThenParameterCountIsUnchanged() {
         let context = MemoryReportingContext(
             browserMemoryMB: 1024,
             windows: nil,
-            tabs: nil,
+            standardTabs: nil,
+            pinnedTabs: nil,
             architecture: "Intel",
-            syncEnabled: nil
+            syncEnabled: nil,
+            usedAllocationMB: nil,
+            uptimeMinutes: 0
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .startup, context: context)
 
         // All keys are still present even when values are "unknown"
-        XCTAssertEqual(pixel.parameters?.count, 6)
+        XCTAssertEqual(pixel.parameters?.count, 9)
     }
 }

@@ -113,6 +113,7 @@ final class MainWindowController: NSWindowController {
  #elseif REVIEW
         if AppVersion.runType == .uiTests {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
+            OnboardingActionsManager.isOnboardingFinished = true
             return false
         } else {
             if AppVersion.runType == .uiTestsOnboarding {
@@ -212,25 +213,18 @@ final class MainWindowController: NSWindowController {
     }
 
     func userInteraction(prevented: Bool, forBurning: Bool = false) {
-        mainViewController.tabCollectionViewModel.changesEnabled = !prevented
-        mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.contentChangeEnabled = !prevented
+        mainViewController.userInteraction(prevented: prevented)
 
-        mainViewController.tabBarViewController.fireButton.isEnabled = !prevented
-        mainViewController.tabBarViewController.isInteractionPrevented = prevented
-        mainViewController.navigationBarViewController.controlsForUserPrevention.forEach { $0?.isEnabled = !prevented }
-        mainViewController.bookmarksBarViewController.userInteraction(prevented: prevented)
-
-        NSApplication.shared.mainMenuTyped.autoupdatingMenusForUserPrevention.forEach { $0.autoenablesItems = !prevented }
         NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !prevented }
 
         guard forBurning else { return }
         if prevented {
-             window?.styleMask.remove(.closable)
-             mainViewController.view.makeMeFirstResponder()
-         } else {
-             window?.styleMask.update(with: .closable)
-             mainViewController.adjustFirstResponder()
-         }
+            window?.styleMask.remove(.closable)
+            mainViewController.view.makeMeFirstResponder()
+        } else {
+            window?.styleMask.update(with: .closable)
+            mainViewController.adjustFirstResponder()
+        }
     }
 
     private func moveTabBarView(toTitlebarView: Bool) {
@@ -551,14 +545,6 @@ fileprivate extension MainMenu {
             preferencesMenuItem
         ]
     }
-
-    var autoupdatingMenusForUserPrevention: [NSMenu] {
-        return [
-            preferencesMenuItem.menu,
-            manageBookmarksMenuItem.menu
-        ].compactMap { $0 }
-    }
-
 }
 
 extension NSWindow {

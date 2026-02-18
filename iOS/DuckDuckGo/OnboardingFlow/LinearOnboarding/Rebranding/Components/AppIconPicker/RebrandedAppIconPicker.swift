@@ -25,8 +25,6 @@ extension OnboardingRebranding.OnboardingView {
 
     struct AppIconPicker: View {
 
-        @Environment(\.onboardingTheme) private var onboardingTheme
-
         private enum Metrics {
             // App icon
             static let cornerRadius: CGFloat = 13.0

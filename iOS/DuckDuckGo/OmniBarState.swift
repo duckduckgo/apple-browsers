@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import Core
 import BrowserServicesKit
 
@@ -39,6 +40,7 @@ protocol OmniBarState: CustomStringConvertible {
     var showBackground: Bool { get }
     var showClear: Bool { get }
     var showRefresh: Bool { get }
+    var showRefreshOutsideAddressBar: Bool { get }
     var showCustomizableButton: Bool { get }
     var showMenu: Bool { get }
     var showSettings: Bool { get }
@@ -46,6 +48,7 @@ protocol OmniBarState: CustomStringConvertible {
     var showAbort: Bool { get }
     var showDismiss: Bool { get } // < button inside the address bar
     var showAIChatFullModeBranding: Bool { get } // Unique omnibar view displayed with in full duck.ai mode
+    var showAIChatModeToggle: Bool { get }
     
     var allowCustomization: Bool { get } // If the state allows customization
 
@@ -97,7 +100,18 @@ extension OmniBarState {
     // Default to false
     var showAIChatFullModeBranding: Bool { false }
     
+    var showAIChatModeToggle: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+            && dependencies.featureFlagger.isFeatureOn(.iPadAIToggle)
+            && showAIChatButton
+    }
+    
     var allowCustomization: Bool { true }
+    
+    var showRefreshOutsideAddressBar: Bool {
+        hasLargeWidth
+            && dependencies.featureFlagger.isFeatureOn(.iPadAIToggle)
+    }
 }
 
 protocol OmniBarLoadingBearerStateCreating {

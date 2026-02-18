@@ -276,6 +276,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
+    case onboardingExperiment
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -398,6 +399,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to display autoconsent stats on New Tab Page
     case autoconsentStats
+
+    /// Controls whether the Next Steps List widget is enabled on New Tab Page
+    case nextStepsListWidget
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

@@ -30,6 +30,21 @@ struct SaveLoginView: View {
         case savePassword
         case updateUsername
         case updatePassword
+
+        // Part of experiment "iOS: A/B test autofill onboarding"
+        // https://app.asana.com/1/137249556945/project/72649045549333/task/1208707884599795
+        case newUserVariant1
+        case newUserVariant2
+        case newUserVariant3
+        
+        var isNewUserVariant: Bool {
+            switch self {
+            case .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3:
+                return true
+            default:
+                return false
+            }
+        }
     }
     @State var frame: CGSize = .zero
     @ObservedObject var viewModel: SaveLoginViewModel
@@ -47,7 +62,7 @@ struct SaveLoginView: View {
 
     private var title: String {
         switch layoutType {
-        case .newUser, .saveLogin, .savePassword:
+        case .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3, .saveLogin, .savePassword:
             return UserText.autofillSaveLoginTitleNewUser
         case .updateUsername:
             return UserText.autofillUpdateUsernameTitle
@@ -58,7 +73,7 @@ struct SaveLoginView: View {
     
     private var confirmButton: String {
         switch layoutType {
-        case .newUser, .saveLogin, .savePassword:
+        case .newUser, .newUserVariant1, .newUserVariant2, .newUserVariant3, .saveLogin, .savePassword:
             return UserText.autofillSavePasswordSaveCTA
         case .updateUsername:
             return UserText.autofillUpdateUsernameSaveCTA
@@ -92,9 +107,7 @@ struct SaveLoginView: View {
                 Spacer(minLength: Const.Size.headlineToContentSpacing)
                 contentView
                 Spacer(minLength: Const.Size.contentSpacing)
-                if case .newUser = layoutType {
-                    featuresView.padding([.bottom], Const.Size.featuresListPadding)
-                }
+                onboardingContentView
                 ctaView
             }
             .padding([.bottom], Const.Size.bodyBottomPadding)
@@ -124,28 +137,10 @@ struct SaveLoginView: View {
         return useScrollView
     }
 
-    @ViewBuilder private func featuresListItem(image: Image, title: String, subtitle: String) -> some View {
-        HStack(alignment: .top, spacing: Const.Size.featuresListItemHorizontalSpacing) {
-            image.frame(width: Const.Size.featuresListItemImageWidthHeight, height: Const.Size.featuresListItemImageWidthHeight)
-            VStack(alignment: .leading, spacing: Const.Size.featuresListItemVerticalSpacing) {
-                Text(title)
-                    .daxSubheadSemibold()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                Text(subtitle)
-                    .daxSubheadRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(0)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-        }
-        .padding(0)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-    }
+    // MARK: - Control View (Features List)
 
-    @ViewBuilder private var featuresView: some View {
+    @ViewBuilder
+    private var featuresView: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center) {
                 Text(UserText.autofillOnboardingKeyFeaturesTitle)
@@ -180,7 +175,6 @@ struct SaveLoginView: View {
             .padding(.top, Const.Size.featuresListTopPadding)
             .padding(.bottom, Const.Size.featuresListPadding)
         }
-        .padding(0)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .cornerRadius(Const.Size.featuresListBorderCornerRadius)
         .overlay(
@@ -190,20 +184,42 @@ struct SaveLoginView: View {
         )
         .fixedSize(horizontal: false, vertical: true)
     }
+    
+    @ViewBuilder
+    private func featuresListItem(image: Image, title: String, subtitle: String) -> some View {
+        HStack(alignment: .top, spacing: Const.Size.featuresListItemHorizontalSpacing) {
+            image.frame(width: Const.Size.featuresListItemImageWidthHeight, height: Const.Size.featuresListItemImageWidthHeight)
+            VStack(alignment: .leading, spacing: Const.Size.featuresListItemVerticalSpacing) {
+                Text(title)
+                    .daxSubheadSemibold()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                Text(subtitle)
+                    .daxSubheadRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .padding(0)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
 
-    @ViewBuilder private var ctaView: some View {
+    // MARK: - CTA View
+
+    @ViewBuilder
+    private var ctaView: some View {
         VStack(spacing: Const.Size.ctaVerticalSpacing) {
             AutofillViews.PrimaryButton(title: confirmButton,
                                         action: viewModel.save)
-            switch layoutType {
-            case .newUser:
+            if layoutType.isNewUserVariant {
                 AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNoThanksCTA,
                                              action: viewModel.cancelButtonPressed)
-            default:
+            } else {
                 AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNeverPromptCTA,
                                              action: viewModel.neverPrompt)
             }
-
         }
     }
 
@@ -219,14 +235,40 @@ struct SaveLoginView: View {
         }
     }
 
+    // MARK: - Content Views
+    
+    /// Main content section - shown for all layout types
     @ViewBuilder
     private var contentView: some View {
         switch layoutType {
-        case .newUser, .saveLogin, .savePassword, .updatePassword:
-            let text = layoutType == .updatePassword ? UserText.autoUpdatePasswordMessage : UserText.autofillSaveLoginSecurityMessage
-            AutofillViews.SecureDescription(text: text)
         case .updateUsername:
             updateUsernameContentView
+        default:
+            let text = layoutType == .updatePassword ? UserText.autoUpdatePasswordMessage : UserText.autofillSaveLoginSecurityMessage
+            AutofillViews.SecureDescription(text: text)
+        }
+    }
+    
+    /// Onboarding-specific content - only shown for new user variants
+    @ViewBuilder
+    private var onboardingContentView: some View {
+        switch layoutType {
+        case .newUser:
+            // Control: Full feature list (Design #1)
+            featuresView.padding([.bottom], Const.Size.featuresListPadding)
+            
+        case .newUserVariant1:
+            Text(verbatim: "VARIANT 1")
+
+        case .newUserVariant2:
+            Text(verbatim: "VARIANT 2")
+
+        case .newUserVariant3:
+            Text(verbatim: "VARIANT 3")
+
+        case .saveLogin, .savePassword, .updateUsername, .updatePassword:
+            // Non-onboarding flows: no additional content
+            EmptyView()
         }
     }
 
@@ -281,11 +323,14 @@ struct SaveLoginView_Previews: PreviewProvider {
     
     static var previews: some View {
         Group {
+            let featureFlagger = AppDependencyProvider.shared.featureFlagger
             let viewModelNewUser = SaveLoginViewModel(credentialManager: MockManager(),
                                                       appSettings: AppDependencyProvider.shared.appSettings,
+                                                      featureFlagger: featureFlagger,
                                                       layoutType: .newUser)
             let viewModelSaveLogin = SaveLoginViewModel(credentialManager: MockManager(),
                                                         appSettings: AppDependencyProvider.shared.appSettings,
+                                                        featureFlagger: featureFlagger,
                                                         layoutType: .saveLogin)
 
             VStack {
@@ -301,11 +346,13 @@ struct SaveLoginView_Previews: PreviewProvider {
             VStack {
                 let viewModelUpdatePassword = SaveLoginViewModel(credentialManager: MockManager(),
                                                                  appSettings: AppDependencyProvider.shared.appSettings,
+                                                                 featureFlagger: featureFlagger,
                                                                  layoutType: .updatePassword)
                 SaveLoginView(viewModel: viewModelUpdatePassword)
                 
                 let viewModelUpdateUsername = SaveLoginViewModel(credentialManager: MockManager(),
                                                                  appSettings: AppDependencyProvider.shared.appSettings,
+                                                                 featureFlagger: featureFlagger,
                                                                  layoutType: .updateUsername)
                 SaveLoginView(viewModel: viewModelUpdateUsername)
             }
@@ -313,11 +360,13 @@ struct SaveLoginView_Previews: PreviewProvider {
             VStack {
                 let viewModelAdditionalLogin = SaveLoginViewModel(credentialManager: MockManager(),
                                                                   appSettings: AppDependencyProvider.shared.appSettings,
+                                                                  featureFlagger: featureFlagger,
                                                                   layoutType: .saveLogin)
                 SaveLoginView(viewModel: viewModelAdditionalLogin)
                 
                 let viewModelSavePassword = SaveLoginViewModel(credentialManager: MockManager(),
                                                                appSettings: AppDependencyProvider.shared.appSettings,
+                                                               featureFlagger: featureFlagger,
                                                                layoutType: .savePassword)
                 SaveLoginView(viewModel: viewModelSavePassword)
             }

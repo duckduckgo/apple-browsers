@@ -15,6 +15,7 @@ tags:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         "autoclear-ui-test": true
         isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
 
 # Enable autoclear
 

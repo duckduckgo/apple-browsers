@@ -35,6 +35,7 @@ private enum BubbleBackedDialogMetrics {
     static let introAdditionalTopMargin: CGFloat = 40
     static let browsersComparisonAdditionalTopMargin: CGFloat = 0
     static let addressBarPositionAdditionalTopMargin: CGFloat = 0
+    static let searchExperienceAdditionalTopMargin: CGFloat = 0
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -105,21 +106,36 @@ extension OnboardingRebranding {
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Namespace var animationNamespace
         @ObservedObject private var model: OnboardingIntroViewModel
+        @State private var dialogContentHeight: CGFloat = 0
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
         }
 
+        /// Direction the bubble's tail arrow points toward.
         private enum BubbleTailDirection {
             case leading
             case trailing
         }
 
+        /// Layout configuration for a bubble-backed onboarding dialog step.
+        ///
+        /// Each onboarding step that renders inside an ``OnboardingBubbleView`` uses this
+        /// configuration to control the bubble's tail position, vertical placement, visibility,
+        /// and whether a step progress indicator is shown.
+        ///
+        /// Steps that return `nil` from ``bubbleBackedDialogConfiguration(for:)`` fall through
+        /// to the legacy Dax dialog path instead.
         private struct BubbleBackedDialogConfiguration {
+            /// Horizontal offset of the bubble tail arrow from the leading/trailing edge.
             let tailOffset: CGFloat
+            /// Which side the tail arrow points toward.
             let tailDirection: BubbleTailDirection
+            /// Extra top padding added on top of the base minimum top margin.
             let additionalTopMargin: CGFloat
+            /// Whether the dialog content is visible (used for entrance sequencing).
             let isVisible: Bool
+            /// Whether to display the step progress indicator (e.g. "3 of 5").
             let showsStepCounter: Bool
         }
 
@@ -155,38 +171,53 @@ extension OnboardingRebranding {
 
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
             GeometryReader { geometry in
-                VStack(alignment: .center) {
-                    if let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type) {
-                        bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
-                            .frame(width: geometry.size.width, alignment: .center)
-                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
-                    } else {
-                        DaxDialogView(
-                            logoPosition: .top,
-                            matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
-                            showDialogBox: $model.introState.showDaxDialogBox,
-                            onTapGesture: {
-                                model.tapped()
-                            },
-                            content: {
-                                switch state.type {
-                                case .addToDockPromoDialog:
-                                    addToDockPromoView
-                                case .chooseAppIconDialog:
-                                    appIconPickerView
-                                case .chooseSearchExperienceDialog:
-                                    searchExperienceSelectionView
-                                default:
-                                    EmptyView()
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .center) {
+                        if let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type) {
+                            bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
+                                .frame(width: geometry.size.width, alignment: .center)
+                                .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
+                        } else {
+                            DaxDialogView(
+                                logoPosition: .top,
+                                matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
+                                showDialogBox: $model.introState.showDaxDialogBox,
+                                onTapGesture: {
+                                    model.tapped()
+                                },
+                                content: {
+                                    switch state.type {
+                                    case .browsersComparisonDialog:
+                                        EmptyView()
+                                    case .addToDockPromoDialog:
+                                        addToDockPromoView
+                                    case .chooseAppIconDialog:
+                                        appIconPickerView
+                                    default:
+                                        EmptyView()
+                                    }
                                 }
+                            )
+                            .frame(width: geometry.size.width, alignment: .center)
+                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin)
+                            .onAppear {
+                                model.introState.showDaxDialogBox = true
                             }
-                        )
-                        .frame(width: geometry.size.width, alignment: .center)
-                        .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin)
-                        .onAppear {
-                            model.introState.showDaxDialogBox = true
                         }
                     }
+                    .frame(minHeight: geometry.size.height, alignment: .top)
+                    .background {
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: OnboardingDialogHeightPreferenceKey.self,
+                                value: proxy.size.height
+                            )
+                        }
+                    }
+                }
+                .withoutScroll(dialogContentHeight <= geometry.size.height)
+                .onPreferenceChange(OnboardingDialogHeightPreferenceKey.self) { height in
+                    dialogContentHeight = height
                 }
             }
             .padding()
@@ -296,6 +327,8 @@ extension OnboardingRebranding {
                 browsersComparisonView
             case .chooseAddressBarPositionDialog:
                 addressBarPositionView
+            case .chooseSearchExperienceDialog:
+                searchExperienceSelectionView
             default:
                 EmptyView()
             }
@@ -324,6 +357,14 @@ extension OnboardingRebranding {
                     tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
                     tailDirection: .leading,
                     additionalTopMargin: BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseSearchExperienceDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,
                     isVisible: true,
                     showsStepCounter: true
                 )
@@ -364,11 +405,8 @@ extension OnboardingRebranding {
 
         private var searchExperienceSelectionView: some View {
             SearchExperienceContent(
-                animateTitle: $model.searchExperienceContentState.animateTitle,
-                isSkipped: $model.isSkipped,
                 action: model.selectSearchExperienceAction
             )
-            .onboardingDaxDialogStyle()
         }
 
         private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
@@ -394,5 +432,13 @@ private struct RebrandingBadge: View {
                     .fill(Color.black.opacity(0.7))
             )
             .accessibilityIdentifier("RebrandedBadge")
+    }
+}
+
+private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }

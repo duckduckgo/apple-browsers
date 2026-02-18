@@ -363,7 +363,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 return makeErrorResponse("internal error")
             }
             let payload = try await syncHandler.getScopedToken()
-            PixelKit.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
             return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
@@ -400,7 +400,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.encrypt(data))
+            let payload = try syncHandler.encrypt(data)
+            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -430,7 +432,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         do {
             let payload = try syncHandler.decrypt(data)
-            PixelKit.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
             return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason = error.localizedDescription

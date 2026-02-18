@@ -440,7 +440,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.encrypt(data))
+            let payload = try syncHandler.encrypt(data)
+            DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {

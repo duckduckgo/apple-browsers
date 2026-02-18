@@ -4084,8 +4084,9 @@ extension MainViewController {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
-        updateStatusBarBackgroundColor()
-        themeColorManager.updateThemeColor()
+        if !themeColorManager.updateThemeColor() {
+            updateStatusBarBackgroundColor()
+        }
     }
 
     private func updateStatusBarBackgroundColor() {

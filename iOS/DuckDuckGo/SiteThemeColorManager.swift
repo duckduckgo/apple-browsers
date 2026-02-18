@@ -52,24 +52,24 @@ final class SiteThemeColorManager {
         startObservingThemeColor()
     }
 
-    func updateThemeColor() {
+    func updateThemeColor() -> Bool {
         guard isCurrentTabShowingAIChat == false else {
             resetThemeColor()
-            return
+            return false
         }
 
         guard isCurrentTabShowingDaxPlayer == false else {
-            return
+            return false
         }
 
         guard let host = currentTabViewController()?.url?.host,
               let cachedColor = colorCache[host],
               shouldApplyColorToCurrentTab else {
             resetThemeColor()
-            return
+            return false
         }
 
-        updateThemeColor(cachedColor)
+        return updateThemeColor(cachedColor)
     }
 
     func resetThemeColor() {
@@ -124,13 +124,14 @@ final class SiteThemeColorManager {
         currentTabViewController()?.url?.isDuckAIURL == true
     }
 
-    private func updateThemeColor(_ color: UIColor) {
+    private func updateThemeColor(_ color: UIColor) -> Bool {
         guard viewCoordinator.suggestionTrayContainer.isHidden else {
             resetThemeColor()
-            return
+            return false
         }
 
         applyThemeColor(adjustColor(color))
+        return true
     }
 
     private func adjustColor(_ color: UIColor) -> UIColor {
@@ -139,18 +140,16 @@ final class SiteThemeColorManager {
     }
 
     private func applyThemeColor(_ color: UIColor?) {
-        UIView.performWithoutAnimation {
-            let newColor = color ?? UIColor(designSystemColor: .background)
+        let newColor = color ?? UIColor(designSystemColor: .background)
 
-            if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
-                viewCoordinator.statusBackground.backgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
-            } else {
-                viewCoordinator.statusBackground.backgroundColor = newColor
-            }
-            tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
-            tabViewController?.webView?.underPageBackgroundColor = newColor
-            tabViewController?.webView?.scrollView.backgroundColor = newColor
+        if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
+            viewCoordinator.statusBackground.backgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
+        } else {
+            viewCoordinator.statusBackground.backgroundColor = newColor
         }
+        tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
+        tabViewController?.webView?.underPageBackgroundColor = newColor
+        tabViewController?.webView?.scrollView.backgroundColor = newColor
     }
 
 }

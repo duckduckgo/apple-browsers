@@ -262,6 +262,10 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         decorate()
 
         navigationItem.title = isNested ? viewModel.currentFolder?.title : UserText.sectionTitleBookmarks
+
+        if #available(iOS 26, *) {
+            doneButton.style = .plain
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -1027,8 +1031,6 @@ extension BookmarksViewController {
         navigationController?.view.backgroundColor = tableView.backgroundColor
 
         tableView.reloadData()
-
-        doneButton.tintColor = UIColor(designSystemColor: .accent)
     }
 }
 

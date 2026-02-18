@@ -34,18 +34,15 @@ extension OnboardingRebranding.OnboardingView {
 
         @State private var showAddToDockTutorial = false
         private let isAnimating: Binding<Bool>
-        private let isSkipped: Binding<Bool>
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
 
         init(
             isAnimating: Binding<Bool> = .constant(true),
-            isSkipped: Binding<Bool>,
             showTutorialAction: @escaping () -> Void,
             dismissAction: @escaping (_ fromAddToDock: Bool) -> Void
         ) {
             self.isAnimating = isAnimating
-            self.isSkipped = isSkipped
             self.showTutorialAction = showTutorialAction
             self.dismissAction = dismissAction
         }
@@ -53,7 +50,7 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             Group {
                 if showAddToDockTutorial {
-                    RebrandedOnboardingView.AddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt, isSkipped: isSkipped) {
+                    RebrandedOnboardingView.AddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
                         dismissAction(true)
                     }
                 } else {
@@ -90,7 +87,6 @@ extension OnboardingRebranding.OnboardingView {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: {
                             showTutorialAction()
-                            isSkipped.wrappedValue = false
                             showAddToDockTutorial = true
                         }) { Text(UserText.AddToDockOnboarding.Buttons.tutorial) }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
@@ -116,7 +112,6 @@ extension OnboardingRebranding.OnboardingView {
         let message = UserText.AddToDockOnboarding.Tutorial.message
 
         let cta: String
-        let isSkipped: Binding<Bool>
         let dismissAction: () -> Void
 
         var body: some View {
@@ -124,7 +119,6 @@ extension OnboardingRebranding.OnboardingView {
                 title: title,
                 message: message,
                 cta: cta,
-                isSkipped: isSkipped,
                 action: dismissAction
             )
         }

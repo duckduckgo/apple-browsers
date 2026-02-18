@@ -226,8 +226,6 @@ extension OnboardingRebranding {
                                 switch state.type {
                                 case .chooseAppIconDialog:
                                     appIconPickerView
-                                case .chooseSearchExperienceDialog:
-                                    searchExperienceSelectionView
                                 default:
                                     EmptyView()
                                 }
@@ -421,7 +419,6 @@ extension OnboardingRebranding {
         private var addToDockPromoView: some View {
             AddToDockPromoContent(
                 isAnimating: $model.addToDockState.isAnimating,
-                isSkipped: $model.isSkipped,
                 showTutorialAction: {
                     model.addToDockShowTutorialAction()
                 },

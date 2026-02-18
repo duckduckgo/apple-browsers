@@ -216,11 +216,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         var failureCount = 0
 
         for context in contexts {
+            let identifier = context.uniqueIdentifier
+            unregisterHandlers(for: identifier)
             do {
                 try controller.unload(context)
                 successCount += 1
             } catch {
-                Logger.webExtensions.error("❌ Failed to unload extension '\(context.uniqueIdentifier)': \(error.localizedDescription)")
+                Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
                 failureCount += 1
             }
         }

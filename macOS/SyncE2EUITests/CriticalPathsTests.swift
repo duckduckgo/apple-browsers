@@ -340,7 +340,7 @@ final class CriticalPathsTests: XCTestCase {
 
         newBookmarkButton.click()
 
-        let sheetsQuery = bookmarkManagerWindow().sheets
+        let sheetsQuery = bookmarksWindow.sheets
         let titleTextField = sheetsQuery.textFields["bookmark.add.name.textfield"].assertExists()
         let urlTextField = sheetsQuery.textFields["bookmark.add.url.textfield"].assertExists()
         let addButton = sheetsQuery.buttons["BookmarkDialogButtonsView.defaultButton"].assertExists()

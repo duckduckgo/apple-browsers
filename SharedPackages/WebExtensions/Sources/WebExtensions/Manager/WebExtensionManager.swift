@@ -217,9 +217,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
         for context in contexts {
             let identifier = context.uniqueIdentifier
-            unregisterHandlers(for: identifier)
             do {
                 try controller.unload(context)
+                unregisterHandlers(for: identifier)
                 successCount += 1
             } catch {
                 Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")

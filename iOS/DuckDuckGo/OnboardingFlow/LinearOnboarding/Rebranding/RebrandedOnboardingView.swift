@@ -415,7 +415,6 @@ extension OnboardingRebranding {
         private var appIconPickerView: some View {
             AppIconPickerContent(
                 showContent: $model.appIconPickerContentState.showContent,
-                isSkipped: $model.isSkipped,
                 action: model.appIconPickerContinueAction
             )
             .onboardingDaxDialogStyle()

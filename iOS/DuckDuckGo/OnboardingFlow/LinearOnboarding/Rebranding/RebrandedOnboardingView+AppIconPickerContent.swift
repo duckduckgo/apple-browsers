@@ -27,7 +27,6 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
         
         private var showContent: Binding<Bool>
-        private var isSkipped: Binding<Bool>
         private let action: () -> Void
 
         struct UntranslatedText {
@@ -35,10 +34,8 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         init(showContent: Binding<Bool> = .constant(false),
-             isSkipped: Binding<Bool>,
              action: @escaping () -> Void) {
             self.showContent = showContent
-            self.isSkipped = isSkipped
             self.action = action
         }
 

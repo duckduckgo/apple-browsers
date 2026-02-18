@@ -554,6 +554,8 @@ class MainViewController: UIViewController {
         }
 
         presentSyncRecoveryPromptIfNeeded()
+
+        view.needsUpdateConstraints()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {

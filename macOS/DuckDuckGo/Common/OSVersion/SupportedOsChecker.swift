@@ -62,6 +62,13 @@ protocol SupportedOSChecking {
     /// For models not present in the hardcoded mapping, this returns `.capable`, assuming newer hardware.
     ///
     var osUpgradeCapability: OSUpgradeCapability { get }
+
+    /// The maximum supported macOS major version for the current hardware as a string, for use as a pixel parameter.
+    ///
+    /// Returns the major version number (e.g. `"15"`) when the hardware model is in the lookup table,
+    /// or `"latest"` when the model is unknown or not in the table.
+    ///
+    var maxSupportedOSVersionPixelValue: String { get }
 }
 
 extension SupportedOSChecking {
@@ -247,5 +254,13 @@ extension SupportedOSChecker: SupportedOSChecking {
         let maxVersion = maxSupportedOS
         let currentVersion = currentOSVersion.majorVersion
         return maxVersion > currentVersion ? .capable : .incapable
+    }
+
+    var maxSupportedOSVersionPixelValue: String {
+        guard let model = hardwareModel,
+              let maxVersion = maxSupportedVersionByModel[model] else {
+            return "latest"
+        }
+        return "\(maxVersion)"
     }
 }

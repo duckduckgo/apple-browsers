@@ -30,6 +30,10 @@ extension OnboardingRebranding.OnboardingView {
         private var isSkipped: Binding<Bool>
         private let action: () -> Void
 
+        struct UntranslatedText {
+            static var message = "Customize your app icon."
+        }
+
         init(showContent: Binding<Bool> = .constant(false),
              isSkipped: Binding<Bool>,
              action: @escaping () -> Void) {
@@ -47,7 +51,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(UserText.Onboarding.AppIconSelection.Rebranding.message)
+                    Text(UntranslatedText.message) //UserText.Onboarding.AppIconSelection.Rebranding.message)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)

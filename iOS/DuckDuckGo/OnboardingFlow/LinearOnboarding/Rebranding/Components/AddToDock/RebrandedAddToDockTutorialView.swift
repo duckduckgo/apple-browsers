@@ -33,7 +33,6 @@ extension OnboardingRebranding.OnboardingView {
         private let message: String
         private let cta: String
         private let action: () -> Void
-        private let isSkipped: Binding<Bool>
 
         @State private var showContent = true
         @State private var videoPlayerWidth: CGFloat = 0.0
@@ -42,12 +41,10 @@ extension OnboardingRebranding.OnboardingView {
         init(title: String,
              message: String,
              cta: String,
-             isSkipped: Binding<Bool>,
              action: @escaping () -> Void) {
             self.title = title
             self.message = message
             self.cta = cta
-            self.isSkipped = isSkipped
             self.action = action
         }
 

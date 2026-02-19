@@ -99,7 +99,9 @@ extension OnboardingRebranding.OnboardingView {
 
                         if skipOnboardingView != nil {
                             Button(action: {
-                                showSkipOnboarding = true
+                                withAnimation {
+                                    showSkipOnboarding = true
+                                }
                                 skipAction()
                             }) {
                                 Text(IntroDialogContentCopy.skipCTA)

@@ -120,6 +120,17 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         XCTAssertTrue(testee.shouldShowModeToggle)
     }
 
+    func testWhenIPadAndIPadAIToggleEnabledAndAddressBarDisabledAndSearchInputEnabledThenModeToggleIsShown() {
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadAIToggle])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: false,
+                                                        isAIChatSearchInputUserSettingsEnabled: true)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings)
+
+        XCTAssertTrue(testee.shouldShowModeToggle)
+    }
+
     func testWhenIPadAndIPadAIToggleDisabledAndSearchInputEnabledThenModeToggleIsHidden() {
         MockUIDevice.mockUserInterfaceIdiom = .pad
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])

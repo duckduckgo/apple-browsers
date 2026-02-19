@@ -64,7 +64,6 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
 
     var shouldShowModeToggle: Bool {
         isIPadAIToggleExperienceEnabled
-            && aiChatSettings.isAIChatAddressBarUserSettingsEnabled
             && aiChatSettings.isAIChatSearchInputUserSettingsEnabled
     }
 

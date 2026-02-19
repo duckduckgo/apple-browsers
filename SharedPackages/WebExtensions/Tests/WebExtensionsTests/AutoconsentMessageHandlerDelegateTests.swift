@@ -18,6 +18,7 @@
 
 import XCTest
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -69,12 +70,15 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
 
         switch result {
         case .success(let response):
-            XCTAssertEqual(response["response"] as? String, "ok")
+            let dict = response as? [String: Any]
+            XCTAssertEqual(dict?["response"] as? String, "ok")
             XCTAssertNotNil(mockDelegate.animationShown)
             XCTAssertEqual(mockDelegate.animationShown?.0.absoluteString, "https://example.com")
             XCTAssertEqual(mockDelegate.animationShown?.1, true)
         case .failure(let error):
             XCTFail("Expected success but got failure: \(error)")
+        case .noHandler:
+            XCTFail("Expected success but got noHandler")
         }
     }
 
@@ -98,6 +102,8 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
             XCTFail("Expected failure but got success")
         case .failure(let error):
             XCTAssertEqual(error.localizedDescription, WebExtensionMessageHandlerError.missingParameter("topUrl or isCosmetic").localizedDescription)
+        case .noHandler:
+            XCTFail("Expected failure but got noHandler")
         }
     }
 
@@ -128,7 +134,8 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
 
         switch result {
         case .success(let response):
-            XCTAssertEqual(response["response"] as? String, "ok")
+            let dict = response as? [String: Any]
+            XCTAssertEqual(dict?["response"] as? String, "ok")
             XCTAssertNotNil(mockDelegate.dashboardRefreshed)
             XCTAssertEqual(mockDelegate.dashboardRefreshed?.0, "example.com")
             XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.consentManaged, true)
@@ -136,6 +143,8 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
             XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.consentRule, "test-rule")
         case .failure(let error):
             XCTFail("Expected success but got failure: \(error)")
+        case .noHandler:
+            XCTFail("Expected success but got noHandler")
         }
     }
 
@@ -158,23 +167,26 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
 
         switch result {
         case .success(let response):
-            XCTAssertEqual(response["response"] as? String, "ok")
+            let dict = response as? [String: Any]
+            XCTAssertEqual(dict?["response"] as? String, "ok")
             XCTAssertNotNil(mockDelegate.pixelSent)
             XCTAssertEqual(mockDelegate.pixelSent?.name, "autoconsent_test")
             XCTAssertEqual(mockDelegate.pixelSent?.type, "unique")
             XCTAssertEqual(mockDelegate.pixelSent?.params["key1"], "value1")
         case .failure(let error):
             XCTFail("Expected success but got failure: \(error)")
+        case .noHandler:
+            XCTFail("Expected success but got noHandler")
         }
     }
 
     func testHandleCookiePopup() async {
         let msg: [String: Any] = [
+            "url": "https://example.com/page",
             "cmp": "test-cmp",
             "result": true
         ]
         let params: [String: Any] = [
-            "url": "https://example.com/page",
             "msg": msg
         ]
         let message = WebExtensionMessage(
@@ -190,12 +202,15 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
 
         switch result {
         case .success(let response):
-            XCTAssertEqual(response["response"] as? String, "ok")
+            let dict = response as? [String: Any]
+            XCTAssertEqual(dict?["response"] as? String, "ok")
             XCTAssertNotNil(mockDelegate.popupHandled)
             XCTAssertEqual(mockDelegate.popupHandled?.url.absoluteString, "https://example.com/page")
             XCTAssertEqual(mockDelegate.popupHandled?.message["cmp"] as? String, "test-cmp")
         case .failure(let error):
             XCTFail("Expected success but got failure: \(error)")
+        case .noHandler:
+            XCTFail("Expected success but got noHandler")
         }
     }
 }
@@ -222,62 +237,4 @@ final class MockAutoconsentDelegate: AutoconsentMessageHandlerDelegate {
     func sendPixel(_ pixelInfo: PixelInfo) {
         pixelSent = pixelInfo
     }
-}
-
-final class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
-    var currentConfig: Data = Data()
-    var updatesPublisher: AnyPublisher<Void, Never> = Just(()).eraseToAnyPublisher()
-    var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
-
-    func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
-        return .downloaded
-    }
-}
-
-final class MockPrivacyConfiguration: PrivacyConfiguration {
-    var identifier: String = "mock"
-    var version: String? = "1.0"
-    var userUnprotectedDomains: [String] = []
-    var tempUnprotectedDomains: [String] = []
-    var trackerAllowlist: PrivacyConfigurationData.TrackerAllowlist = .init(json: [:])!
-
-    func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> Bool {
-        return true
-    }
-
-    func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
-        return .enabled
-    }
-
-    func isFeature(_ feature: PrivacyFeature, enabledForDomain domain: String?) -> Bool {
-        return true
-    }
-
-    func isProtected(domain: String?) -> Bool {
-        return true
-    }
-
-    func isUserUnprotected(domain: String?) -> Bool {
-        return false
-    }
-
-    func isTempUnprotected(domain: String?) -> Bool {
-        return false
-    }
-
-    func isInExceptionList(domain: String?, forFeature featureKey: PrivacyFeature) -> Bool {
-        return false
-    }
-
-    func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
-        return [:]
-    }
-
-    func userEnabledProtection(forDomain domain: String) {}
-    func userDisabledProtection(forDomain domain: String) {}
-}
-
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
 }

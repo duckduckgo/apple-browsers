@@ -99,6 +99,7 @@ public final class AttributedMetricManager {
         updateBucketSettings()
 
         if dataStorage.installDate == nil {
+            Logger.attributedMetric.debug("First install, storing Install Date")
             dataStorage.installDate = self.dateProvider.now()
         }
 
@@ -113,6 +114,27 @@ public final class AttributedMetricManager {
         featureFlagger.isFeatureOn(for: AttributedMetricFeatureFlag.attributedMetrics)
     }
 
+    /// The number of whole days elapsed since the app was first installed.
+    ///
+    /// Uses the stored `installDate` and the current date from `dateProvider`,
+    /// converting the `TimeInterval` between them into full days (truncated, not rounded).
+    /// Returns `0` if the install date has not been recorded yet, or if the current
+    /// date is still within the first calendar day of installation.
+    ///
+    /// ## Examples
+    /// ```
+    /// // Install date: Jan 10, 12:00 — Current date: Jan 10, 23:59
+    /// daysSinceInstalled // → 0 (same day, less than 24 h)
+    ///
+    /// // Install date: Jan 10, 12:00 — Current date: Jan 11, 11:59
+    /// daysSinceInstalled // → 0 (less than 24 h elapsed)
+    ///
+    /// // Install date: Jan 10, 12:00 — Current date: Jan 11, 12:00
+    /// daysSinceInstalled // → 1 (exactly 24 h)
+    ///
+    /// // Install date: Jan 10, 12:00 — Current date: Jan 17, 15:30
+    /// daysSinceInstalled // → 7
+    /// ```
     var daysSinceInstalled: Int {
         guard let installDate = dataStorage.installDate else {
             return 0
@@ -120,6 +142,31 @@ public final class AttributedMetricManager {
         return Int(dateProvider.now().timeIntervalSince(installDate) / .day)
     }
 
+    /// The quantised time period elapsed since the app was installed.
+    ///
+    /// Delegates to ``QuantisedTimePast/timePastFrom(date:andInstallationDate:)`` which
+    /// buckets the elapsed time into weeks (1–4) then 28-day months (2+), providing
+    /// a privacy-preserving approximation used by retention and average-usage pixels.
+    ///
+    /// Returns `nil` when the install date has not been recorded yet.
+    ///
+    /// ## Examples
+    /// ```
+    /// // Install date: Jan 1 — Current date: Jan 1 (same day)
+    /// timePastFromInstall // → .none
+    ///
+    /// // Install date: Jan 1 — Current date: Jan 5 (4 days later)
+    /// timePastFromInstall // → .weeks(1)
+    ///
+    /// // Install date: Jan 1 — Current date: Jan 10 (9 days later)
+    /// timePastFromInstall // → .weeks(2)
+    ///
+    /// // Install date: Jan 1 — Current date: Feb 5 (35 days later)
+    /// timePastFromInstall // → .months(2)  (month 1 is skipped)
+    ///
+    /// // Install date not set
+    /// timePastFromInstall // → nil
+    /// ```
     var timePastFromInstall: QuantisedTimePast? {
         guard let installDate = dataStorage.installDate else {
             Logger.attributedMetric.error("Install date missing")
@@ -203,7 +250,7 @@ public final class AttributedMetricManager {
         }
 
         guard isLessThanSixMonths else {
-            dataStorage.removeAll()
+            dataStorage.removeAllExceptInstallDate()
             return
         }
 

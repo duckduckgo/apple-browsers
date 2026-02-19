@@ -975,7 +975,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.attributionManager.process(trigger: .appDidStart)
 
         // Verify all data has been removed at exactly 6 months (168 days)
-        XCTAssertNil(fixture.dataStorage.installDate, "Install date should be removed at 6 months (168 days)")
+        XCTAssertNotNil(fixture.dataStorage.installDate, "Install date should be present")
         XCTAssertNil(fixture.dataStorage.lastRetentionThreshold, "Last retention threshold should be removed")
         XCTAssertEqual(fixture.dataStorage.search8Days.countPast7Days, 0, "Search data should be cleared")
         XCTAssertEqual(fixture.dataStorage.adClick8Days.countPast7Days, 0, "Ad click data should be cleared")

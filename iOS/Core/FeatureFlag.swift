@@ -474,7 +474,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .webExtensions,
              .autofillOnboardingExperiment,
              .supportsSyncChatsDeletion,
-             .fireMode:
+             .fireMode,
              .suppressTrackerAnimationOnColdStart:
             return true
         case .showSettingsCompleteSetupSection:

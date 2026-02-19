@@ -655,7 +655,7 @@ extension TabManager {
             }
         case .URL, .shortcut:
             // For external launches, only the newly created tab (marked via markTabAsExternalLaunch)
-            // should have tracker animation suppression applied, which is handled elsewhere
+            // should have tracker animations, all other tabs must have animations suppressed (which is handled elsewhere)
             break
         }
     }

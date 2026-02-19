@@ -642,7 +642,7 @@ class MockAIChatSidebarHosting: AIChatSidebarHosting {
 
 class MockAIChatSidebarProvider: AIChatSidebarProviding {
     var defaultSidebarWidth: CGFloat = 400
-    var minSidebarWidth: CGFloat = 310
+    var minSidebarWidth: CGFloat = 320
     var maxSidebarWidth: CGFloat = 900
     private(set) var lastSetWidth: CGFloat?
     private(set) var lastSetWidthTabID: TabIdentifier?

@@ -134,7 +134,7 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
             if await model.autoconsentStats.isEnabled() {
                 return NewTabPageDataModel.ProtectionsData(
                     totalCount: await model.calculateTotalCount(),
-                    totalCookiePopUpsBlocked: model.isAutoconsentEnabled() ? await model.autoconsentStats.fetchTotalCookiePopUpsBlocked() : nil
+                    totalCookiePopUpsBlocked: await model.autoconsentStats.fetchTotalCookiePopUpsBlocked() // model.isAutoconsentEnabled() ? await model.autoconsentStats.fetchTotalCookiePopUpsBlocked() : nil
                 )
             } else {
                 return NewTabPageDataModel.ProtectionsDataLegacy(totalCount: await model.calculateTotalCount())

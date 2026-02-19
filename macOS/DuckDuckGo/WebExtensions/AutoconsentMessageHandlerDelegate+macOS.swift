@@ -40,6 +40,23 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
 
     func handleCookiePopup(_ popupInfo: CookiePopupHandledInfo) {
         Logger.webExtensions.debug("macOS: Cookie popup handled for \(popupInfo.url.absoluteString)")
+
+        let message = popupInfo.message
+        let userInfo = AutoconsentPopupManagedEvent.makeNotificationUserInfo(
+            url: popupInfo.url,
+            cmpName: message["cmp"] as? String ?? "unknown",
+            isCosmetic: message["isCosmetic"] as? Bool ?? false,
+            totalClicks: message["totalClicks"] as? Int ?? 0,
+            duration: message["duration"] as? TimeInterval ?? 0
+        )
+
+        print("--- handleCookiePopup")
+
+        NotificationCenter.default.post(
+            name: AutoconsentPopupManagedEvent.webExtensionPopupManagedNotification,
+            object: self,
+            userInfo: userInfo
+        )
     }
 
     func sendPixel(_ pixelInfo: PixelInfo) {

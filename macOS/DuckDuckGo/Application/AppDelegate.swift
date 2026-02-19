@@ -219,6 +219,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let privacyStats: PrivacyStatsCollecting
     let autoconsentStats: AutoconsentStatsCollecting
+    private var autoconsentEventCoordinator: AutoconsentEventCoordinator?
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let newTabPageCustomizationModel: NewTabPageCustomizationModel
     private(set) lazy var newTabPageProtectionsReportModel: NewTabPageProtectionsReportModel = NewTabPageProtectionsReportModel(
@@ -979,6 +980,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
         autoconsentStats = AutoconsentStats(keyValueStore: keyValueStore, isFeatureEnabled: { featureFlagger.isFeatureOn(.newTabPageAutoconsentStats) })
+        autoconsentEventCoordinator = Self.makeAutoconsentEventCoordinator(
+            autoconsentStats: autoconsentStats,
+            historyCoordinating: historyCoordinator,
+            featureFlagger: featureFlagger
+        )
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
 #if !APPSTORE
@@ -2016,6 +2022,31 @@ extension AppDelegate: UserScriptDependenciesProviding {
             duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
             syncService: syncService,
             pinningManager: pinningManager
+        )
+    }
+
+    private static func makeAutoconsentEventCoordinator(
+        autoconsentStats: AutoconsentStatsCollecting,
+        historyCoordinating: HistoryCoordinating,
+        featureFlagger: FeatureFlagger
+    ) -> AutoconsentEventCoordinator {
+        let sourceSelector: AutoconsentPopupManagedSourceSelecting
+        if #available(macOS 15.4, *) {
+            sourceSelector = DefaultAutoconsentPopupManagedSourceSelector(
+                featureFlagger: featureFlagger,
+                webExtensionManagerProvider: {
+                    NSApp.delegateTyped.webExtensionManager as? WebExtensionManager
+                }
+            )
+        } else {
+            sourceSelector = LegacyAutoconsentPopupManagedSourceSelector()
+        }
+
+        return AutoconsentEventCoordinator(
+            autoconsentStats: autoconsentStats,
+            historyCoordinating: historyCoordinating,
+            featureFlagger: featureFlagger,
+            sourceSelector: sourceSelector
         )
     }
 }

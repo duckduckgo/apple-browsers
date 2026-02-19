@@ -33,7 +33,6 @@ import SpecialErrorPages
 import UserScript
 import WebKit
 import SERPSettings
-import AutoconsentStats
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
     var isInPopUpWindow: Bool { get }
@@ -68,7 +67,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var tabCrashAggregator: TabCrashAggregator
         var tabsPreferences: TabsPreferences
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
-        var autoconsentStats: AutoconsentStatsCollecting
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -153,7 +151,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      aiChatSidebarProvider: AIChatSidebarProviding? = nil,
                      newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
-                     autoconsentStats: AutoconsentStatsCollecting? = nil,
                      themeManager: ThemeManaging? = nil
     ) {
 
@@ -220,7 +217,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   aiChatSidebarProvider: aiChatSidebarProvider ?? NSApp.delegateTyped.aiChatSidebarProvider,
                   newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
-                  autoconsentStats: autoconsentStats ?? NSApp.delegateTyped.autoconsentStats,
                   themeManager: themeManager ?? NSApp.delegateTyped.themeManager
         )
     }
@@ -272,7 +268,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          aiChatSidebarProvider: AIChatSidebarProviding,
          newTabPageShownPixelSender: NewTabPageShownPixelSender,
          tabCrashAggregator: TabCrashAggregator,
-         autoconsentStats: AutoconsentStatsCollecting,
          themeManager: ThemeManaging
     ) {
         self._id = id
@@ -377,8 +372,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                        aiChatSidebarProvider: aiChatSidebarProvider,
                                                        tabCrashAggregator: tabCrashAggregator,
                                                        tabsPreferences: tabsPreferences,
-                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                       autoconsentStats: autoconsentStats)
+                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences)
             )
         super.init()
         tabGetter = { [weak self] in self }

@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Combine
 import Common
 import os.log
 import PixelKit
@@ -58,11 +57,6 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private let config: PrivacyConfiguration
     weak var delegate: AutoconsentUserScriptDelegate?
 
-    // Publisher for cookie popup managed events
-    private let popupManagedSubject = PassthroughSubject<AutoconsentDoneMessage, Never>()
-    public var popupManagedPublisher: AnyPublisher<AutoconsentDoneMessage, Never> {
-        popupManagedSubject.eraseToAnyPublisher()
-    }
 
     // Reload loop detection state (per-tab)
     private var lastHandledCMPName: String?
@@ -542,7 +536,17 @@ extension AutoconsentUserScript {
             firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
         }
 
-        popupManagedSubject.send(messageData)
+        NotificationCenter.default.post(
+            name: AutoconsentPopupManagedEvent.userScriptPopupManagedNotification,
+            object: self,
+            userInfo: AutoconsentPopupManagedEvent.makeNotificationUserInfo(
+                url: url,
+                cmpName: messageData.cmp,
+                isCosmetic: messageData.isCosmetic,
+                totalClicks: messageData.totalClicks,
+                duration: messageData.duration
+            )
+        )
 
         // Show animation and remember that we did it for this site
         management.sitesNotifiedCache.insert(host)

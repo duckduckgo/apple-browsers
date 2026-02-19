@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Usuń wszystko";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Usuń ten czat";
-"scoped.fire.confirmation.delete.this.chat.description" = "Opcja „Usuń wszystkie” nie usunie Twojej historii czatów Duck.ai.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Usuń tę kartę";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "Opcja „Usuń wszystkie” nie usunie Twojej historii czatów Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Usuń tę kartę";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Spowoduje to anulowanie trwającego pobierania.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Automatyczne wysyłanie zawartości";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Sugestie czatu";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ukryj obrazy generowane przez AI";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Wyświetlaj sugestie wyszukiwania podczas wpisywania, łącznie z zakładkami. Wszystkie wyszukiwania są prywatne.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Wyświetlaj sugestie z Twojej historii, zakładek i (opcjonalnie) historii czatu Duck.ai podczas wpisywania w pasku wyszukiwania. Wszystkie wyszukiwania są prywatne.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Blokada aplikacji";

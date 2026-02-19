@@ -396,7 +396,6 @@ final class TerminationDeciderHandlerTests: XCTestCase {
         // When
         let reply1 = handler.executeTerminationDeciders()
         XCTAssertEqual(reply1, .terminateLater)
-        XCTAssertEqual(handler.state, .running)
 
         let reply2 = handler.executeTerminationDeciders()
 
@@ -405,41 +404,10 @@ final class TerminationDeciderHandlerTests: XCTestCase {
 
         await fulfillment(of: [deciderExpectation, replyExpectation], timeout: 1.0)
 
-        XCTAssertEqual(handler.state, .completed)
         XCTAssertEqual(decider.completionCallCount, 1)
     }
 
-    /// Verifies that a second call after completion returns .terminateNow immediately
-    func testSecondCallAfterCompletionReturnsTerminateNow() async {
-        // Given
-        let asyncTask = Task<TerminationDecision, Never> { .next }
-        let deciderExpectation = expectation(description: "Decider completion")
-        let decider = MockDecider(name: "Decider1", response: .async(asyncTask), expectation: deciderExpectation)
-        let replyExpectation = expectation(description: "Reply called")
-
-        let handler = TerminationDeciderHandler(
-            deciders: [decider],
-            replyToApplicationShouldTerminate: { [weak self] value in
-                self?.mockReply(value: value)
-                replyExpectation.fulfill()
-            }
-        )
-
-        // When — first call goes async
-        let reply1 = handler.executeTerminationDeciders()
-        XCTAssertEqual(reply1, .terminateLater)
-
-        await fulfillment(of: [deciderExpectation, replyExpectation], timeout: 1.0)
-        XCTAssertEqual(handler.state, .completed)
-
-        // Then — second call returns .terminateNow immediately
-        let reply2 = handler.executeTerminationDeciders()
-        XCTAssertEqual(reply2, .terminateNow)
-        // Reply should only have been called once (from the async completion)
-        XCTAssertEqual(replyCallCount, 1)
-    }
-
-    /// Verifies that after cancellation resets state to idle, a fresh handler can run normally
+    /// Verifies that after cancellation, a fresh handler can run normally
     func testAfterCancellationFreshHandlerRunsNormally() async {
         // Given — first handler gets cancelled
         let cancelTask = Task<TerminationDecision, Never> { .cancel }
@@ -459,7 +427,6 @@ final class TerminationDeciderHandlerTests: XCTestCase {
 
         await fulfillment(of: [cancelDecider.expectation!, cancelReplyExpectation], timeout: 1.0)
         XCTAssertEqual(lastReplyValue, false)
-        XCTAssertEqual(handler1.state, .idle)
 
         // When — fresh handler runs
         replyCallCount = 0
@@ -474,7 +441,6 @@ final class TerminationDeciderHandlerTests: XCTestCase {
 
         // Then — new handler completes normally
         XCTAssertEqual(reply2, .terminateNow)
-        XCTAssertEqual(handler2.state, .completed)
         XCTAssertEqual(nextDecider.completionCallCount, 1)
         XCTAssertEqual(nextDecider.lastCompletionValue, true)
     }

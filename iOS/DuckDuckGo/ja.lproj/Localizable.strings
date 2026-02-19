@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "すべて削除";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "このチャットを削除";
-"scoped.fire.confirmation.delete.this.chat.description" = "「すべて削除」はDuck.aiのチャット履歴を削除しません。";
-"scoped.fire.confirmation.delete.this.tab.button" = "このタブを削除";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "「すべて削除」はDuck.aiのチャット履歴を削除しません。";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "このタブを削除";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "これにより、進行中のダウンロードがキャンセルされます。";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "コンテンツを自動的に送信";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "チャットの提案";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI生成画像を非表示にする";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "入力に応じて検索候補を表示し、ブックマークも含めます。すべての検索は非公開です。";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "検索バーに入力する際に、履歴、ブックマーク、（オプションで）Duck.aiのチャット履歴からの提案が表示されます。すべての検索は非公開です。";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "アプリケーションロック";

@@ -16,14 +16,12 @@
 //  limitations under the License.
 //
 
-#if SPARKLE
-
 import Combine
 import Foundation
 import os.log
 
 /// Protocol for managing update progress state transitions.
-protocol UpdateProgressManaging: AnyObject {
+public protocol UpdateProgressManaging: AnyObject {
     var updateProgress: UpdateCycleProgress { get }
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { get }
 
@@ -52,12 +50,12 @@ protocol UpdateProgressManaging: AnyObject {
 ///
 /// Encapsulates state transition logic, ensuring invalid transitions are rejected
 /// (e.g., don't overwrite error state with "dismissed").
-final class UpdateProgressState: UpdateProgressManaging {
-    @Published private(set) var updateProgress = UpdateCycleProgress.default
-    var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
-    private(set) var resumeCallback: (() -> Void)?
+public final class UpdateProgressState: UpdateProgressManaging {
+    @Published public private(set) var updateProgress = UpdateCycleProgress.default
+    public var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
+    public private(set) var resumeCallback: (() -> Void)?
 
-    var isResumable: Bool { resumeCallback != nil }
+    public var isResumable: Bool { resumeCallback != nil }
 
     private var isIdleOrTerminal: Bool {
         switch updateProgress {
@@ -76,13 +74,15 @@ final class UpdateProgressState: UpdateProgressManaging {
         }
     }
 
+    public init() {}
+
     @discardableResult
-    func transition(to newProgress: UpdateCycleProgress) -> Bool {
+    public func transition(to newProgress: UpdateCycleProgress) -> Bool {
         transition(to: newProgress, resume: nil)
     }
 
     @discardableResult
-    func transition(to newProgress: UpdateCycleProgress, resume: (() -> Void)?) -> Bool {
+    public func transition(to newProgress: UpdateCycleProgress, resume: (() -> Void)?) -> Bool {
         // Preserve error state so UI can show the error instead of clearing it
         if case .updaterError = updateProgress,
            case .updateCycleDone(.dismissedWithNoError) = newProgress {
@@ -103,11 +103,11 @@ final class UpdateProgressState: UpdateProgressManaging {
         return true
     }
 
-    func reset() {
+    public func reset() {
         updateProgress = .updateCycleNotStarted
     }
 
-    var isAtRestartCheckpoint: Bool {
+    public var isAtRestartCheckpoint: Bool {
         switch updateProgress {
         case .readyToInstallAndRelaunch:
             return true
@@ -118,7 +118,7 @@ final class UpdateProgressState: UpdateProgressManaging {
         }
     }
 
-    var isAtDownloadCheckpoint: Bool {
+    public var isAtDownloadCheckpoint: Bool {
         if case .updateCycleDone(let reason) = updateProgress,
            reason == .pausedAtDownloadCheckpoint {
             return true
@@ -126,9 +126,7 @@ final class UpdateProgressState: UpdateProgressManaging {
         return false
     }
 
-    func handleProgressChange(_ progress: UpdateCycleProgress, _ resume: (() -> Void)?) {
+    public func handleProgressChange(_ progress: UpdateCycleProgress, _ resume: (() -> Void)?) {
         transition(to: progress, resume: resume)
     }
 }
-
-#endif

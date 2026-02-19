@@ -18,30 +18,19 @@
 
 import Foundation
 
-#if SPARKLE
-import Sparkle
-#endif
-
-/// Protocol abstracting updater capabilities for update checking.
-///
-/// This protocol allows UpdateCheckState to work with different updater implementations
-/// (Sparkle, App Store, etc.) without being tightly coupled to any specific framework.
-protocol UpdaterAvailabilityChecking {
-    /// Whether the updater is currently available for checking updates
-    var canCheckForUpdates: Bool { get }
-}
-
 /// Actor responsible for managing update check state and rate limiting.
 ///
 /// Handles rate limiting to prevent concurrent update checks.
 /// Each UpdateController instance has its own UpdateCheckState for isolated state management.
 /// 
-actor UpdateCheckState {
+public actor UpdateCheckState {
 
     /// Default minimum interval between update checks
-    static let defaultMinimumCheckInterval: TimeInterval = .minutes(5)
+    public static let defaultMinimumCheckInterval: TimeInterval = .minutes(5)
 
     private var lastUpdateCheckTime: Date?
+
+    public init() {}
 
     /// Determines whether a new update check can be started.
     ///
@@ -51,7 +40,7 @@ actor UpdateCheckState {
     ///     Defaults to `UpdateCheckState.defaultMinimumCheckInterval`.
     /// - Returns: `true` if the updater allows checks and enough time has passed since the last check, `false` otherwise.
     ///
-    func canStartNewCheck(updater: UpdaterAvailabilityChecking?, latestUpdate: Update?, minimumInterval: TimeInterval = UpdateCheckState.defaultMinimumCheckInterval) -> Bool {
+    public func canStartNewCheck(updater: UpdaterAvailabilityChecking?, latestUpdate: Update?, minimumInterval: TimeInterval = UpdateCheckState.defaultMinimumCheckInterval) -> Bool {
         // Check if updater allows checking for updates
         if let updater = updater, !updater.canCheckForUpdates {
             return false
@@ -74,15 +63,7 @@ actor UpdateCheckState {
     ///
     /// Used for rate limiting to ensure update checks don't happen too frequently.
     ///
-    func recordCheckTime() {
+    public func recordCheckTime() {
         lastUpdateCheckTime = Date()
     }
 }
-
-// MARK: - SPUUpdater Conformance
-
-#if SPARKLE
-extension SPUUpdater: UpdaterAvailabilityChecking {
-    // SPUUpdater already has canCheckForUpdates property, so no implementation needed
-}
-#endif

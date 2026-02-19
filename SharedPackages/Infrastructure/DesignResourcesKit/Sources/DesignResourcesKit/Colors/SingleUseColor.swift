@@ -70,6 +70,7 @@ public extension SingleUseColor {
         case buttonsSecondaryText
 
         case decorationPrimary
+        case decorationSecondary
     }
 
 }

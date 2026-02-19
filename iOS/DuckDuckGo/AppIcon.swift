@@ -89,17 +89,17 @@ enum AppIcon: String, CaseIterable {
     var color: Color {
         switch self {
         case .red:
-            return Color(hex: "#DE5833") ?? .black
+            return Color(0xDE5833)
         case .pink:
-            return Color(hex: "#E37089") ?? .black
+            return Color(0xE37089)
         case .yellow:
-            return Color(hex: "#E2A412") ?? .black
+            return Color(0xE2A412)
         case .green:
-            return Color(hex: "#4CBA3C") ?? .black
+            return Color(0x4CBA3C)
         case .blue:
-            return Color(hex: "#3969EF") ?? .black
+            return Color(0x3969EF)
         case .purple:
-            return Color(hex: "#5132A9") ?? .black
+            return Color(0x5132A9)
         case .black:
             return .black
         }

@@ -41,43 +41,4 @@ public extension Color {
                   opacity: opacity)
     }
 
-    /// Creates a color by parsing a hex string in the sRGB color space.
-    ///
-    /// Accepts 6-character (`RRGGBB`) or 8-character (`RRGGBBAA`) hex strings,
-    /// with or without a leading `#`. Returns `nil` if the string is not a valid
-    /// hex color representation.
-    ///
-    /// ```swift
-    /// Color(hex: "#FF6600")     // bright orange, fully opaque
-    /// Color(hex: "FF660080")    // bright orange, ~50% opacity
-    /// Color(hex: "ZZZ")         // nil – invalid input
-    /// ```
-    ///
-    /// - Parameter hex: A hex color string, e.g. `"#3969EF"` or `"3969EFFF"`.
-    /// - Returns: A `Color` if parsing succeeds, otherwise `nil`.
-    init?(hex: String) {
-        var sanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        if sanitized.hasPrefix("#") {
-            sanitized.removeFirst()
-        }
-
-        // Normalize RRGGBB → RRGGBBFF so both formats share a single extraction path
-        let rgba: UInt64
-        switch sanitized.count {
-        case 6:
-            guard let value = UInt64(sanitized, radix: 16) else { return nil }
-            rgba = (value << 8) | 0xFF
-        case 8:
-            guard let value = UInt64(sanitized, radix: 16) else { return nil }
-            rgba = value
-        default:
-            return nil
-        }
-
-        self.init(.sRGB,
-                  red: Double((rgba >> 24) & 0xFF) / 255.0,
-                  green: Double((rgba >> 16) & 0xFF) / 255.0,
-                  blue: Double((rgba >> 8) & 0xFF) / 255.0,
-                  opacity: Double(rgba & 0xFF) / 255.0)
-    }
 }

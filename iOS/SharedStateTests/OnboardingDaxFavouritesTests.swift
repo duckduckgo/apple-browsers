@@ -119,7 +119,8 @@ import AIChatTestingUtilities
                                     aiChatSettings: MockAIChatSettingsProvider(),
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     privacyStats: MockPrivacyStats(),
-                                    voiceSearchHelper: MockVoiceSearchHelper()
+                                    voiceSearchHelper: MockVoiceSearchHelper(),
+                                    launchSourceManager: MockLaunchSourceManager()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,

@@ -91,4 +91,34 @@ class MockTabManager: TabManaging {
         closeTabAndNavigateToHomepageCalledWith = tab
         closeTabAndNavigateToHomepageClearTabHistory = clearTabHistory
     }
+
+    // MARK: - External Launch Management
+
+    private(set) var markTabAsExternalLaunchCalled = false
+    private(set) var markTabAsExternalLaunchCalledWith: Tab?
+
+    func markTabAsExternalLaunch(_ tab: Tab) {
+        markTabAsExternalLaunchCalled = true
+        markTabAsExternalLaunchCalledWith = tab
+    }
+
+    private(set) var clearExternalLaunchFlagsCalled = false
+
+    func clearExternalLaunchFlags() {
+        clearExternalLaunchFlagsCalled = true
+    }
+
+    private(set) var setSuppressTrackerAnimationOnFirstLoadCalled = false
+    private(set) var setSuppressTrackerAnimationOnFirstLoadCalledWith: (tab: Tab, shouldSuppress: Bool)?
+
+    func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool) {
+        setSuppressTrackerAnimationOnFirstLoadCalled = true
+        setSuppressTrackerAnimationOnFirstLoadCalledWith = (tab, shouldSuppress)
+    }
+
+    private(set) var applyTrackerAnimationSuppressionBasedOnLaunchSourceCalled = false
+
+    func applyTrackerAnimationSuppressionBasedOnLaunchSource() {
+        applyTrackerAnimationSuppressionBasedOnLaunchSourceCalled = true
+    }
 }

@@ -62,5 +62,12 @@
                 "enum": ["invalid parameters"]
             }
         ]
+    },
+    "m_mac_sync_ai_chat_active_daily": {
+        "description": "Fired daily when AI Chat Sync is active",
+        "owners": ["amddg44", "bwaresiak"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

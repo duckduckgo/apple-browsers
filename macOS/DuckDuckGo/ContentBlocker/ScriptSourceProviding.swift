@@ -29,6 +29,7 @@ import PixelKit
 import PrivacyConfig
 import enum UserScript.UserScriptError
 import DDGSync
+import WebExtensions
 
 protocol ScriptSourceProviding {
 

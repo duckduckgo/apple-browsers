@@ -26,6 +26,7 @@ import PrivacyConfig
 import UserScript
 import Configuration
 import DDGSync
+import WebExtensions
 
 extension ContentBlockerRulesIdentifier.Difference {
     static let notification = ContentBlockerRulesIdentifier.Difference(rawValue: 1 << 8)

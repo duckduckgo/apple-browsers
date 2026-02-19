@@ -349,8 +349,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           aiChatSidebarProvider: aiChatSidebarProvider,
                                                           tabCrashAggregator: tabCrashAggregator,
                                                           tabsPreferences: tabsPreferences,
-                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                          autoconsentStats: autoconsentStats)
+                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences)
         let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
                                                                             tabID: self.uuid,
                                                                             isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },

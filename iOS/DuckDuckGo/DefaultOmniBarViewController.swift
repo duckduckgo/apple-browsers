@@ -46,6 +46,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        omniBarView.duckAITextViewDelegate = self
+
         // Handle address bar position changes to set the shadow correctly
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(addressBarPositionChanged),
@@ -60,6 +62,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        if omniBarView.isSearchAreaExpanded {
+            return false
+        }
+
         if dependencies.aiChatAddressBarExperience.shouldUseExperimentalEditingState {
             if textFieldTapped {
                 omniDelegate?.onExperimentalAddressBarTapped()
@@ -134,6 +140,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     override func textFieldDidEndEditing(_ textField: UITextField) {
+        guard !omniBarView.isSearchAreaExpanded else { return }
+
         super.textFieldDidEndEditing(textField)
 
         omniBarView.layoutIfNeeded()
@@ -160,6 +168,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     override func endEditing() {
+        if omniBarView.isSearchAreaExpanded {
+            omniBarView.duckAITextView.resignFirstResponder()
+        }
         super.endEditing()
         editingStateViewController?.dismissAnimated()
     }
@@ -305,6 +316,68 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     func onDismissRequested() {
         // Fire cancel pixel only (no other side effects) when experimental bar is dismissed via back button
         omniDelegate?.onExperimentalAddressBarCancelPressed()
+    }
+}
+
+// MARK: - UITextViewDelegate (iPad AI Chat Expanded Text View)
+
+extension DefaultOmniBarViewController: UITextViewDelegate {
+
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        if text == "\n" {
+            let query = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !query.isEmpty else { return false }
+
+            if selectedTextEntryMode == .aiChat {
+                omniDelegate?.onPromptSubmitted(query, tools: nil)
+            } else {
+                omniDelegate?.onOmniQuerySubmitted(query)
+            }
+            return false
+        }
+        return true
+    }
+
+    func textViewDidChange(_ textView: UITextView) {
+        let newQuery = textView.text ?? ""
+        omniDelegate?.onOmniQueryUpdated(newQuery)
+        if newQuery.isEmpty {
+            refreshState(state.onTextClearedState)
+        } else {
+            refreshState(state.onTextEnteredState)
+        }
+    }
+
+    func textViewDidEndEditing(_ textView: UITextView) {
+        omniBarView.setSearchAreaExpanded(false, animated: true)
+
+        switch omniDelegate?.onEditingEnd() {
+        case .dismissed, .none:
+            refreshState(state.onEditingStoppedState)
+        case .suspended:
+            refreshState(state.onEditingSuspendedState)
+        }
+        omniDelegate?.onDidEndEditing()
+
+        omniBarView.layoutIfNeeded()
+        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
+            self.omniBarView.isActiveState = false
+            self.omniBarView.layoutIfNeeded()
+        }
+    }
+
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        DispatchQueue.main.async {
+            _ = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView)
+            self.refreshState(self.state.onEditingStartedState)
+            self.omniDelegate?.onDidBeginEditing()
+        }
+
+        omniBarView.layoutIfNeeded()
+        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
+            self.omniBarView.isActiveState = true
+            self.omniBarView.layoutIfNeeded()
+        }
     }
 }
 

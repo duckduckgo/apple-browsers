@@ -59,7 +59,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode = .search
-    private var selectedTextEntryMode: TextEntryMode = .search
+    private(set) var selectedTextEntryMode: TextEntryMode = .search
 
     // MARK: - Animation
 
@@ -642,7 +642,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         cancelAllAnimations()
     }
 
-    private func refreshState(_ newState: any OmniBarState) {
+    func refreshState(_ newState: any OmniBarState) {
         let oldState: OmniBarState = self.state
         if state.requiresUpdate(transitioningInto: newState) {
             Logger.general.debug("OmniBar entering \(newState.description) from \(self.state.description)")
@@ -652,6 +652,13 @@ class OmniBarViewController: UIViewController, OmniBar {
                     clear()
                 }
                 cancelAllAnimations()
+
+                let isExpanded = (barView as? DefaultOmniBarView)?.isSearchAreaExpanded == true
+                let isNewStateResting = !newState.isDifferentState(than: newState.onEditingStoppedState)
+                if !isExpanded && (isNewStateResting || !newState.showAIChatModeToggle) {
+                    selectedTextEntryMode = .search
+                    updateTextFieldPlaceholderForSelectedMode()
+                }
             }
             state = newState
         }
@@ -690,6 +697,9 @@ class OmniBarViewController: UIViewController, OmniBar {
             if shouldShowModeToggle {
                 barView.isAIChatButtonHidden = true
             }
+
+            let shouldExpand = shouldShowModeToggle && selectedTextEntryMode == .aiChat
+            defaultOmniBarView.setSearchAreaExpanded(shouldExpand, animated: false)
         }
 
         applyCustomization()
@@ -894,9 +904,14 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onAIChatPressed()
     }
 
-    private func setSelectedTextEntryMode(_ mode: TextEntryMode) {
+    func setSelectedTextEntryMode(_ mode: TextEntryMode) {
         selectedTextEntryMode = mode
         updateTextFieldPlaceholderForSelectedMode()
+
+        if let defaultOmniBarView = barView as? DefaultOmniBarView,
+           state.showAIChatModeToggle {
+            defaultOmniBarView.setSearchAreaExpanded(mode == .aiChat, animated: true)
+        }
     }
 
     private func updateTextFieldPlaceholderForSelectedMode() {

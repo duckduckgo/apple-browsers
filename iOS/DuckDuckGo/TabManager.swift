@@ -644,8 +644,13 @@ extension TabManager {
 
         switch source {
         case .standard:
-            // On cold start with standard launch, suppress tracker animations for all existing tabs
+            // On cold start with standard launch, suppress tracker animations for existing tabs with content
             for tab in model.tabs {
+                // Only suppress for tabs with non-DDG URLs (not NTP, not DDG search)
+                guard let url = tab.link?.url, !url.isDuckDuckGoSearch else {
+                    continue
+                }
+
                 tab.shouldSuppressTrackerAnimationOnFirstLoad = true
 
                 // Also set on TabViewController if it exists

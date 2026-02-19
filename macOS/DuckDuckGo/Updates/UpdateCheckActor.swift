@@ -23,6 +23,6 @@ import Foundation
 /// Provides a shared execution context for update checks to ensure thread-safe coordination
 /// and prevents race conditions between different update checking methods.
 @globalActor
-actor UpdateCheckActor {
-    static let shared = UpdateCheckActor()
+public actor UpdateCheckActor {
+    public static let shared = UpdateCheckActor()
 }

@@ -51,7 +51,7 @@ class BookmarkSortTests: UITestCase {
 
     func testWhenChangingSortingInThePanelIsReflectedInTheManager() {
         addBookmark(pageTitle: "Bookmark #1")
-        app.dismissPopover(buttonIdentifier: "Hide")
+        app.dismissBookmarksBarPopover()
         app.openBookmarksPanel()
         selectSortByName(mode: .panel)
         app.openBookmarksPanel() // Here we do not open the panel, we close it by tapping the shortcut button again.
@@ -84,7 +84,6 @@ class BookmarkSortTests: UITestCase {
             app.openNewTab()
         }
 
-        closeShowBookmarksBarAlert()
         app.openBookmarksPanel()
         app.verifyBookmarkOrder(expectedOrder: ["Bookmark #2", "Bookmark #3", "Bookmark #1"], mode: .panel)
     }
@@ -95,7 +94,6 @@ class BookmarkSortTests: UITestCase {
             app.openNewTab()
         }
 
-        closeShowBookmarksBarAlert()
         app.openBookmarksManager()
         app.verifyBookmarkOrder(expectedOrder: ["Bookmark #2", "Bookmark #3", "Bookmark #1"], mode: .manager)
     }
@@ -106,7 +104,6 @@ class BookmarkSortTests: UITestCase {
             app.openNewTab()
         }
 
-        closeShowBookmarksBarAlert()
         app.openBookmarksPanel()
         selectSortByName(mode: .panel)
         app.verifyBookmarkOrder(expectedOrder: ["Bookmark #1", "Bookmark #2", "Bookmark #3"], mode: .panel)
@@ -118,7 +115,6 @@ class BookmarkSortTests: UITestCase {
             app.openNewTab()
         }
 
-        closeShowBookmarksBarAlert()
         app.openBookmarksManager()
         selectSortByName(mode: .manager)
         app.verifyBookmarkOrder(expectedOrder: ["Bookmark #1", "Bookmark #2", "Bookmark #3"], mode: .manager)
@@ -130,7 +126,6 @@ class BookmarkSortTests: UITestCase {
             app.openNewTab()
         }
 
-        closeShowBookmarksBarAlert()
         app.openBookmarksPanel()
         selectSortByName(mode: .panel, descending: true)
         app.verifyBookmarkOrder(expectedOrder: ["Bookmark #3", "Bookmark #2", "Bookmark #1"], mode: .panel)
@@ -142,7 +137,6 @@ class BookmarkSortTests: UITestCase {
             app.openNewTab()
         }
 
-        closeShowBookmarksBarAlert()
         app.openBookmarksManager()
         selectSortByName(mode: .manager, descending: true)
         app.verifyBookmarkOrder(expectedOrder: ["Bookmark #3", "Bookmark #2", "Bookmark #1"], mode: .manager)
@@ -218,9 +212,5 @@ class BookmarkSortTests: UITestCase {
                                bookmarkingViaDialog: true,
                                escapingDialog: true,
                                folderName: folder)
-    }
-
-    private func closeShowBookmarksBarAlert() {
-        app.dismissPopover(buttonIdentifier: "Hide")
     }
 }

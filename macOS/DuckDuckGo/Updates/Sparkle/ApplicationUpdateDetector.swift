@@ -16,17 +16,12 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import Persistence
-import Common
 
-enum AppUpdateStatus {
-    case noChange
-    case updated
-    case downgraded
-}
+public final class ApplicationUpdateDetector {
 
-final class ApplicationUpdateDetector {
     private var hasCheckedForUpdate = false
     private var updateStatus: AppUpdateStatus = .noChange
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>

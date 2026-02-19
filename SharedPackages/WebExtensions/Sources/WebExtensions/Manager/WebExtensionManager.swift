@@ -207,6 +207,33 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         return results
     }
 
+    @MainActor
+    public func unloadAllExtensions() {
+        let contexts = controller.extensionContexts
+        Logger.webExtensions.debug("🔄 Unloading all extensions from memory (count: \(contexts.count))")
+
+        var successCount = 0
+        var failureCount = 0
+
+        for context in contexts {
+            let identifier = context.uniqueIdentifier
+            do {
+                try controller.unload(context)
+                unregisterHandlers(for: identifier)
+                successCount += 1
+            } catch {
+                Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
+                failureCount += 1
+            }
+        }
+
+        if failureCount > 0 {
+            Logger.webExtensions.warning("⚠️ Unload all completed with \(failureCount) error(s): \(successCount) succeeded, \(failureCount) failed")
+        } else {
+            Logger.webExtensions.debug("✅ Successfully unloaded \(successCount) extension(s) from memory")
+        }
+    }
+
     // MARK: - Loading
 
     @MainActor
@@ -226,7 +253,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         for (installedExtension, result) in zip(extensions, results) {
             switch result {
             case .success:
-                Logger.webExtensions.debug("✅ Loaded extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier))")
+                Logger.webExtensions.debug("✅ Loaded extension `\(installedExtension.name ?? "")` | \(installedExtension.filename) | \(installedExtension.uniqueIdentifier)")
                 successCount += 1
             case .failure(let failure):
                 Logger.webExtensions.error("❌ Failed to load web extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier)): \(failure.localizedDescription)")

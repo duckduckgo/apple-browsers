@@ -3700,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Abonnementet ditt er fjernet fra denne enheten.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Avbryt nedgraderingen";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Abonnementet ditt blir nedgradert til %1$@ den %2$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Oppdater eller avslutt abonnementet";
 
@@ -3793,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Abonnementer";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Fullfører endring av abonnement…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Fullfører kjøpet...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Endring av abonnement pågår…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Kjøpet behandles...";

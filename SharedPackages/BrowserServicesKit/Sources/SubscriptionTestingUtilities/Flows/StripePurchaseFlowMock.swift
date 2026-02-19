@@ -20,19 +20,10 @@ import Foundation
 import Subscription
 
 public final class StripePurchaseFlowMock: StripePurchaseFlow {
-    public var subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StripePurchaseFlowError>?
     public var prepareSubscriptionPurchaseResult: Result<PrepareResult, StripePurchaseFlowError>
-    public var subscriptionTierOptionsIncludeProTierCalled: Bool?
 
-    public init(prepareSubscriptionPurchaseResult: Result<PrepareResult, StripePurchaseFlowError>,
-                subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StripePurchaseFlowError>? = nil) {
+    public init(prepareSubscriptionPurchaseResult: Result<PrepareResult, StripePurchaseFlowError>) {
         self.prepareSubscriptionPurchaseResult = prepareSubscriptionPurchaseResult
-        self.subscriptionTierOptionsResult = subscriptionTierOptionsResult
-    }
-
-    public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StripePurchaseFlowError> {
-        subscriptionTierOptionsIncludeProTierCalled = includeProTier
-        return subscriptionTierOptionsResult ?? .failure(.noProductsFound)
     }
 
     public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError> {

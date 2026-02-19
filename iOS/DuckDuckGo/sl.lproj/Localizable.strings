@@ -3700,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Vaša naročnina je bila odstranjena iz te naprave.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Prekliči znižanje";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Vaša naročnina se bo znižala na %1$@ dne %2$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Posodobitev paketa ali preklic";
 
@@ -3793,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Naročniški paketi";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Dokončevanje spremembe naročnine …";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Dokončujem nakup ...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Poteka sprememba naročnine ...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Nakup je v teku ...";

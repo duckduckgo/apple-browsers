@@ -3439,8 +3439,14 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Subscription Plans";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Cancel Downgrade";
+
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Your subscription has been removed from this device.";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Your plan will downgrade to %1$@ on %2$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Update Plan or Cancel";
@@ -3535,8 +3541,14 @@ Take back control of your personal information with the browser designed for dat
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Subscription Plans";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Completing plan change…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Completing purchase...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Plan change in progress…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Purchase in progress...";

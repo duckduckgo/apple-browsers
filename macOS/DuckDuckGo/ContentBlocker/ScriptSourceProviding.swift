@@ -143,7 +143,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          autoconsentManagement: AutoconsentManagement,
          newTabPageActionsManager: NewTabPageActionsManager?,
          syncServiceProvider: @escaping () -> DDGSyncing?,
-         syncErrorHandler: SyncErrorHandling
+         syncErrorHandler: SyncErrorHandling,
+         webExtensionAvailability: WebExtensionAvailabilityProviding?
     ) {
 
         self.configStorage = configStorage
@@ -163,6 +164,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.autoconsentManagement = autoconsentManagement
         self.syncServiceProvider = syncServiceProvider
         self.syncErrorHandler = syncErrorHandler
+        self.webExtensionAvailability = webExtensionAvailability
 
         self.newTabPageActionsManager = newTabPageActionsManager
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()

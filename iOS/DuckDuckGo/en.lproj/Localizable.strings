@@ -2890,6 +2890,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Automatically Send Content";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Chat Suggestions";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
 
@@ -2976,6 +2979,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Show search suggestions as you type, including your bookmarks. All searches are private.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Show suggestions from your history, bookmarks, and (optionally) Duck.ai chat history as you type in the search bar. All searches are private.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Application Lock";

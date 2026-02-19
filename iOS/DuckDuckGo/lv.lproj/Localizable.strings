@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Dzēst visus";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Dzēst šo tērzēšanas sarunu";
-"scoped.fire.confirmation.delete.this.chat.description" = "\"Dzēst visu\" neizdzēsīs tavu Duck.ai tērzēšanas vēsturi.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Dzēst šo cilni";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "\"Dzēst visu\" neizdzēsīs tavu Duck.ai tērzēšanas vēsturi.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Dzēst šo cilni";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Tas atcels notiekošās lejupielādes.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Automātiski nosūtīt saturu";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Tērzēšanas ieteikumi";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Paslēpt MI ģenerētus attēlus";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Rakstīšanas laikā tiks rādīti meklēšanas ieteikumi, tostarp tavas grāmatzīmes. Visi meklējumi ir privāti.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Rādīt ieteikumus no tavas vēstures, grāmatzīmēm un (pēc izvēles) Duck.ai tērzēšanas vēstures, rakstot meklēšanas joslā. Visi meklējumi ir privāti.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Lietojumprogrammas bloķēšana";

@@ -162,8 +162,10 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     func applicationDidFinishLaunching() {
         let isRelaunchingAutomatically = self.isRelaunchingAutomatically
         self.isRelaunchingAutomatically = false
-        // don‘t automatically restore windows if relaunched 2nd time with no recently updated app session state
-        readLastSessionState(restoreWindows: !service.isAppStateFileStale || isRelaunchingAutomatically, restoreRegularTabs: shouldRestoreRegularTabs || isRelaunchingAutomatically)
+        let restoreWindows = !service.isAppStateFileStale || isRelaunchingAutomatically
+        let restoreRegularTabs = shouldRestoreRegularTabs || isRelaunchingAutomatically
+        // don't automatically restore windows if relaunched 2nd time with no recently updated app session state
+        readLastSessionState(restoreWindows: restoreWindows, restoreRegularTabs: restoreRegularTabs)
 
         detectUnexpectedAppTermination(didRestoreRegularTabs: shouldRestoreRegularTabs || isRelaunchingAutomatically)
 
@@ -180,10 +182,11 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     }
 
     func applicationWillTerminate() {
+        let isInInitialState = Application.appDelegate.windowControllersManager.isInInitialState
         stateChangedCancellable?.cancel()
         appDidTerminateAsExpected = true
         sessionRestorePromptCoordinator.applicationWillTerminate()
-        if Application.appDelegate.windowControllersManager.isInInitialState {
+        if isInInitialState {
             service.clearState(sync: true)
         } else {
             persistAppState(sync: true)

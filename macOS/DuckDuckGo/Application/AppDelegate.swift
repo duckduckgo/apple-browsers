@@ -1425,13 +1425,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SyncDiagnosisHelper(syncService: syncService).diagnoseAccountStatus()
     }
 
+    private var terminationHandler: TerminationDeciderHandler?
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard featureFlagger.isFeatureOn(.terminationDeciderSequence) else {
             return applicationShouldTerminateFallback()
         }
 
-        let handler = TerminationDeciderHandler(deciders: createTerminationDeciders())
-        return handler.executeTerminationDeciders()
+        // Reuse existing handler if chain is already running/completed
+        if let handler = terminationHandler {
+            return handler.executeTerminationDeciders()
+        }
+
+        let handler = TerminationDeciderHandler(
+            deciders: createTerminationDeciders(),
+            replyToApplicationShouldTerminate: { [weak self] shouldTerminate in
+                if !shouldTerminate {
+                    // Cancellation — discard handler so next quit creates fresh deciders
+                    self?.terminationHandler = nil
+                }
+                NSApp.reply(toApplicationShouldTerminate: shouldTerminate)
+            }
+        )
+        terminationHandler = handler
+        let reply = handler.executeTerminationDeciders()
+
+        if reply == .terminateCancel {
+            // Synchronous cancellation — discard handler
+            terminationHandler = nil
+        }
+        return reply
     }
 
     @MainActor

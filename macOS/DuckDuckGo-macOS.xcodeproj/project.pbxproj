@@ -1971,6 +1971,8 @@
 		5681ED462BDBAF6E00F59729 /* SyncErrorHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5681ED452BDBAF6E00F59729 /* SyncErrorHandlerTests.swift */; };
 		5681ED472BDBAF6E00F59729 /* SyncErrorHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5681ED452BDBAF6E00F59729 /* SyncErrorHandlerTests.swift */; };
 		5682C69429B79B57004DE3C8 /* TabBarViewItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5601FECC29B7973D00068905 /* TabBarViewItemTests.swift */; };
+		5687F6482F30CD1000A5C9B3 /* DefaultSubscriptionFlowsExecuter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5687F6472F30CD1000A5C9B3 /* DefaultSubscriptionFlowsExecuter.swift */; };
+		5687F6492F30CD1000A5C9B3 /* DefaultSubscriptionFlowsExecuter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5687F6472F30CD1000A5C9B3 /* DefaultSubscriptionFlowsExecuter.swift */; };
 		569277C129DDCBB500B633EF /* HomePageContinueSetUpModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569277C029DDCBB500B633EF /* HomePageContinueSetUpModel.swift */; };
 		569277C229DDCBB500B633EF /* HomePageContinueSetUpModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569277C029DDCBB500B633EF /* HomePageContinueSetUpModel.swift */; };
 		569277C429DEE09D00B633EF /* ContinueSetUpModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569277C329DEE09D00B633EF /* ContinueSetUpModelTests.swift */; };
@@ -5288,6 +5290,7 @@
 		5681ED3F2BDB955100F59729 /* SyncCredentialsAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCredentialsAdapterTests.swift; sourceTree = "<group>"; };
 		5681ED422BDBA5F900F59729 /* SyncBookmarksAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBookmarksAdapterTests.swift; sourceTree = "<group>"; };
 		5681ED452BDBAF6E00F59729 /* SyncErrorHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorHandlerTests.swift; sourceTree = "<group>"; };
+		5687F6472F30CD1000A5C9B3 /* DefaultSubscriptionFlowsExecuter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultSubscriptionFlowsExecuter.swift; sourceTree = "<group>"; };
 		569277C029DDCBB500B633EF /* HomePageContinueSetUpModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePageContinueSetUpModel.swift; sourceTree = "<group>"; };
 		569277C329DEE09D00B633EF /* ContinueSetUpModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinueSetUpModelTests.swift; sourceTree = "<group>"; };
 		56A053FB2C19E8F7007D8FAB /* OnboardingActionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingActionsManager.swift; sourceTree = "<group>"; };
@@ -12469,6 +12472,7 @@
 				5677BB6F2E0D641F001EB83B /* SubscriptionNavigationCoordinator.swift */,
 				56BFE2092ED5D89F003B007D /* SubscriptionPageFeatureFlagAdapter.swift */,
 				56D60AA62EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift */,
+				5687F6472F30CD1000A5C9B3 /* DefaultSubscriptionFlowsExecuter.swift */,
 			);
 			path = Subscription;
 			sourceTree = "<group>";
@@ -14422,6 +14426,8 @@
 				B5E7B6C02ED4A52E00094EDF /* TitleDisplayPolicy.swift in Sources */,
 				31BFDB6E2ECA423900ADFABD /* MouseBlockingBackgroundView.swift in Sources */,
 				F1B33DF72BAD970E001128B3 /* SubscriptionEventReporter.swift in Sources */,
+				5687F6482F30CD1000A5C9B3 /* DefaultSubscriptionFlowsExecuter.swift in Sources */,
+				1D9297C02C1B062900A38521 /* ApplicationUpdateDetector.swift in Sources */,
 				3706FEC0293F6EFF00E42796 /* BWRequest.swift in Sources */,
 				3706FAF7293F65D500E42796 /* FireproofDomainsViewController.swift in Sources */,
 				BBDAA9202DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */,
@@ -16905,6 +16911,7 @@
 				3168506D2AF3AD1D009A2828 /* WaitlistViewControllerPresenter.swift in Sources */,
 				7B1E819E27C8874900FF0E60 /* ContentOverlayPopover.swift in Sources */,
 				C172E72F2C9329D300521D9A /* FlippedView.swift in Sources */,
+				5687F6492F30CD1000A5C9B3 /* DefaultSubscriptionFlowsExecuter.swift in Sources */,
 				3154FD1428E6011A00909769 /* TabShadowView.swift in Sources */,
 				1D43EB3C292B664A0065E5D6 /* BWMessageIdGenerator.swift in Sources */,
 				BBDE001F2D6DE6F500109F88 /* DefaultBrowserAndDockPromptContent.swift in Sources */,

@@ -71,6 +71,7 @@ import AIChatTestingUtilities
         let historyManager = MockHistoryManager()
         let syncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
         let featureFlagger = MockFeatureFlagger()
+        let aiChatSettings = MockAIChatSettingsProvider()
         let fireproofing = MockFireproofing()
         let textZoomCoordinator = MockTextZoomCoordinator()
         let subscriptionDataReporter = MockSubscriptionDataReporter()
@@ -116,7 +117,7 @@ import AIChatTestingUtilities
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                     keyValueStore: MockKeyValueFileStore(),
                                     daxDialogsManager: DummyDaxDialogsManager(),
-                                    aiChatSettings: MockAIChatSettingsProvider(),
+                                    aiChatSettings: aiChatSettings,
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     privacyStats: MockPrivacyStats(),
                                     voiceSearchHelper: MockVoiceSearchHelper()
@@ -159,7 +160,9 @@ import AIChatTestingUtilities
             websiteDataManager: mockWebsiteDataManager,
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-            aiChatSettings: MockAIChatSettingsProvider(),
+            aiChatSettings: aiChatSettings,
+            aiChatAddressBarExperience: AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                                   aiChatSettings: aiChatSettings),
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider(),

@@ -166,6 +166,7 @@ final class MainCoordinator {
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner)
+        let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -191,6 +192,7 @@ final class MainCoordinator {
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
+                                        aiChatAddressBarExperience: aiChatAddressBarExperience,
                                         themeManager: ThemeManager.shared,
                                         keyValueStore: keyValueStore,
                                         customConfigurationURLProvider: customConfigurationURLProvider,

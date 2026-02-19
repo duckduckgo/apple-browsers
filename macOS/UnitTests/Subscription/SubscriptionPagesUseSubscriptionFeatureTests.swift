@@ -71,6 +71,13 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockEventReporter = MockSubscriptionEventReporter()
         mockRequestValidator = ScriptRequestValidatorMock()
 
+        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: subscriptionManager,
+            uiHandler: mockUIHandler,
+            wideEvent: mockWideEvent,
+            subscriptionEventReporter: mockEventReporter,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
         sut = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                       subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
                                                       stripePurchaseFlow: mockStripePurchaseFlowV2,
@@ -83,6 +90,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                       wideEvent: mockWideEvent,
                                                       subscriptionEventReporter: mockEventReporter,
                                                       pendingTransactionHandler: MockPendingTransactionHandler(),
+                                                      flowPerformer: flowPerformer,
                                                       requestValidator: mockRequestValidator)
         sut.with(broker: broker)
     }
@@ -390,13 +398,13 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             ]
         )
 
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+        subscriptionManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(mockStorePurchaseManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier when Pro tier is enabled")
+        XCTAssertEqual(subscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier when Pro tier is enabled")
 
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
@@ -429,13 +437,13 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             ]
         )
 
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
+        subscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(mockStorePurchaseManager.subscriptionTierOptionsIncludeProTierCalled, false, "Should pass false to includeProTier when Pro tier is disabled")
+        XCTAssertEqual(subscriptionManager.subscriptionTierOptionsIncludeProTierCalled, false, "Should pass false to includeProTier when Pro tier is disabled")
 
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
@@ -466,13 +474,13 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             ]
         )
 
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
+        subscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(mockStorePurchaseManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should still pass Pro tier flag correctly")
+        XCTAssertEqual(subscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should still pass Pro tier flag correctly")
 
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
@@ -485,7 +493,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     func testGetSubscriptionTierOptions_WhenNoOptionsAvailable_ReturnsEmpty() async throws {
         // Given
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
+        subscriptionManager.subscriptionTierOptionsResult = .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
@@ -524,8 +532,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         )
 
         let mockStripePurchaseFlow = StripePurchaseFlowMock(
-            prepareSubscriptionPurchaseResult: .failure(.noProductsFound),
-            subscriptionTierOptionsResult: .success(expectedTierOptions)
+            prepareSubscriptionPurchaseResult: .failure(.noProductsFound)
         )
 
         // Set environment to use Stripe
@@ -533,7 +540,15 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         stripeSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
         stripeSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
         stripeSubscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
+        stripeSubscriptionManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
 
+        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: stripeSubscriptionManager,
+            uiHandler: mockUIHandler,
+            wideEvent: mockWideEvent,
+            subscriptionEventReporter: mockEventReporter,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
         let stripeSut = SubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: stripeSubscriptionManager,
             subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
@@ -546,6 +561,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             aiChatURL: URL.duckDuckGo,
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
+            flowPerformer: flowPerformer,
             requestValidator: mockRequestValidator
         )
         stripeSut.with(broker: broker)
@@ -554,7 +570,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let result = try await stripeSut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(mockStripePurchaseFlow.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier for Stripe when Pro tier is enabled")
+        XCTAssertEqual(stripeSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier for Stripe when Pro tier is enabled")
 
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
@@ -586,8 +602,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         )
 
         let mockStripePurchaseFlow = StripePurchaseFlowMock(
-            prepareSubscriptionPurchaseResult: .failure(.noProductsFound),
-            subscriptionTierOptionsResult: .success(expectedTierOptions)
+            prepareSubscriptionPurchaseResult: .failure(.noProductsFound)
         )
 
         // Set environment to use Stripe
@@ -595,7 +610,15 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         stripeSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
         stripeSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
         stripeSubscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
+        stripeSubscriptionManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
 
+        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: stripeSubscriptionManager,
+            uiHandler: mockUIHandler,
+            wideEvent: mockWideEvent,
+            subscriptionEventReporter: mockEventReporter,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
         let stripeSut = SubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: stripeSubscriptionManager,
             subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
@@ -608,6 +631,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             aiChatURL: URL.duckDuckGo,
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
+            flowPerformer: flowPerformer,
             requestValidator: mockRequestValidator
         )
         stripeSut.with(broker: broker)
@@ -616,7 +640,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let result = try await stripeSut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(mockStripePurchaseFlow.subscriptionTierOptionsIncludeProTierCalled, false, "Should pass false to includeProTier for Stripe when Pro tier is disabled")
+        XCTAssertEqual(stripeSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, false, "Should pass false to includeProTier for Stripe when Pro tier is disabled")
 
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
@@ -640,7 +664,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 )
             ]
         )
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+        subscriptionManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
 
         // When
         _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
@@ -661,7 +685,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 )
             ]
         )
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+        subscriptionManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
 
         // When
         _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
@@ -673,7 +697,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixel() async throws {
         // Given
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
+        subscriptionManager.subscriptionTierOptionsResult = .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
 
         // When
         _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
@@ -685,7 +709,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixelWithError() async throws {
         // Given
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
+        subscriptionManager.subscriptionTierOptionsResult = .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
 
         // When
         _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
@@ -699,7 +723,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     func testGetSubscriptionTierOptions_OnFailure_DoesNotFireSuccessPixel() async throws {
         // Given
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
+        subscriptionManager.subscriptionTierOptionsResult = .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
 
         // When
         _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
@@ -725,7 +749,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 )
             ]
         )
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithProTier)
+        subscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithProTier)
 
         // When
         _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
@@ -746,7 +770,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 )
             ]
         )
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithoutProTier)
+        subscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithoutProTier)
 
         // When
         _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
@@ -880,16 +904,15 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         }, "Should report purchase failed error")
     }
 
+    /// No current subscription; app environment is Stripe → effectivePlatform = .stripe from fallback.
     @MainActor
     func testSubscriptionChangeSelected_Stripe_CompletesWithoutAlert() async throws {
-        // Given
+        // Given: no current subscription (getSubscription not set), environment is Stripe
+        // effectivePlatform = currentSubscription?.platform ?? (.stripe) = .stripe
         let params: [String: Any] = ["id": "stripe-yearly-pro", "change": "upgrade"]
         let message = Constants.mockScriptMessage
 
-        // Set environment to Stripe
         subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
-
-        // Set up authenticated user
         subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
 
         var didShowAlert = false
@@ -914,6 +937,53 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertTrue(didDismissProgress, "Should dismiss progress view")
         // Note: For Stripe, the handler sends a redirect with the access token via pushPurchaseUpdate
         // The actual redirect message can't be easily verified without mocking the broker
+    }
+
+    /// When the user has an existing Stripe subscription, we use the Stripe path (token + redirect)
+    /// even if app environment is Apple. effectivePlatform = currentSubscription.platform, so Stripe wins.
+    @MainActor
+    func testSubscriptionChangeSelected_WhenEnvironmentIsAppleButCurrentSubscriptionIsStripe_UsesStripePath_DoesNotCallAppStorePurchase() async throws {
+        // Given: app environment is Apple, but current subscription is Stripe
+        // (effectivePlatform = currentSubscription.platform = .stripe, so we use Stripe flow)
+        subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+
+        let params: [String: Any] = ["id": "stripe-yearly-pro", "change": "upgrade"]
+        let message = Constants.mockScriptMessage
+
+        let stripeSubscription = DuckDuckGoSubscription(
+            productId: "stripe-plus-monthly",
+            name: "Plus Monthly",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60),
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .plus,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        subscriptionManager.resultSubscription = .success(stripeSubscription)
+        subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        mockStorePurchaseManager.purchaseSubscriptionCalled = false
+
+        var didDismissProgress = false
+        mockUIHandler.setDidPerformActionCallback { action in
+            if case .didDismissProgressViewController = action { didDismissProgress = true }
+        }
+
+        // When
+        _ = try await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then: Stripe path was used (no App Store purchase), wide event started with .stripe
+        XCTAssertFalse(mockStorePurchaseManager.purchaseSubscriptionCalled, "Stripe path must not call App Store purchase")
+        XCTAssertTrue(didDismissProgress, "Should dismiss progress view")
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(started.purchasePlatform, .stripe)
+        XCTAssertEqual(started.fromPlan, "stripe-plus-monthly")
+        XCTAssertEqual(started.toPlan, "stripe-yearly-pro")
     }
 
     @MainActor

@@ -1376,6 +1376,66 @@
         }
       }
     },
+    "subscription.cancel.pending.downgrade.banner.caption" : {
+      "comment" : "Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Tarif wird am %2$@ auf %1$@ herabgestuft."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your plan will downgrade to %1$@ on %2$@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu plan se se revertirá a %1$@ el %2$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre forfait passera à %1$@ le %2$@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo piano sarà declassato a %1$@ il giorno %2$@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je abonnement wordt op %2$@ gedowngraded naar %1$@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W dniu %2$@ Twój plan zostanie obniżony do poziomu %1$@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Será feito o downgrade do teu plano para %1$@ a %2$@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш тарифный план будет понижен до %1$@ %2$@."
+          }
+        }
+      }
+    },
     "subscription.dialog.change.apple.description" : {
       "comment" : "Change plan or billing dialog subtitle description for subscription purchased via Apple",
       "extractionState" : "extracted_with_value",
@@ -2092,6 +2152,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Просмотреть тарифы"
+          }
+        }
+      }
+    },
+    "subscription.preferences.cancel.downgrade.button" : {
+      "comment" : "Button to cancel a pending downgrade of the subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downgrade abbrechen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel Downgrade"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar degradación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler le changement de forfait"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annulla il downgrade"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downgrade annuleren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anuluj obniżenie poziomu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar alteração para versão inferior"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить понижение"
           }
         }
       }
@@ -6255,7 +6375,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Unlock smarter more powerful AI"
+            "value" : "Unlock smarter, more powerful AI"
           }
         },
         "es" : {

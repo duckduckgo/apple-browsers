@@ -248,9 +248,6 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         let isEnabled = autoconsentPreferences.isAutoconsentEnabled
         Logger.webExtensions.debug("⚙️ Is Autoconsent Setting Enabled: \(isEnabled)")
 
-        // Uncomment to force-enable web extension CPM regardless of app settings (required for testing as a replacement to native CPM)
-         return .success(["enabled": true])
-
         return .success(["enabled": isEnabled])
     }
 

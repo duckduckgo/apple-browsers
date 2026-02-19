@@ -63,6 +63,7 @@ class TabViewController: UIViewController {
     @IBOutlet private(set) weak var errorHeader: UILabel!
     @IBOutlet private(set) weak var errorMessage: UILabel!
     @IBOutlet weak var containerStackView: UIStackView!
+    @IBOutlet weak var outerContainer: UIView!
     @IBOutlet weak var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?

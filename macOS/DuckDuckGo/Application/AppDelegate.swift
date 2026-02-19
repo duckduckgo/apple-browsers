@@ -361,8 +361,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
-    private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding!
+    private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
+    private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
+
+    /// Holder class that allows `WebExtensionAvailability` to be created before `super.init()`,
+    /// while still providing access to `webExtensionManager` which is set on `self` after `super.init()`.
+    private final class WebExtensionManagerHolder {
+        weak var appDelegate: AppDelegate?
+        var manager: WebExtensionManaging? {
+            appDelegate?.webExtensionManager
+        }
+    }
 
     private var didFinishLaunching = false
 
@@ -549,8 +559,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,
-            webExtensionManagerProvider: { [weak self] in
-                self?.webExtensionManager
+            webExtensionManagerProvider: { [webExtensionManagerHolder] in
+                webExtensionManagerHolder.manager
             }
         )
 
@@ -1084,6 +1094,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         super.init()
+
+        webExtensionManagerHolder.appDelegate = self
 
         memoryPressureReporter = MemoryPressureReporter(
             featureFlagger: featureFlagger,

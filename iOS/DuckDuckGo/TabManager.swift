@@ -46,12 +46,10 @@ protocol TabManaging {
     /// Closes the tab and navigates to homepage reusing an existing homepage or creating a new one
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
 
-    // External launch tracking
     func markTabAsExternalLaunch(_ tab: Tab)
     func clearExternalLaunchFlags()
-    func setSuppressAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool)
-    func applyAnimationSuppressionBasedOnLaunchSource()
-
+    func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool)
+    func applyTrackerAnimationSuppressionBasedOnLaunchSource()
 }
 
 class TabManager: TabManaging {
@@ -60,10 +58,6 @@ class TabManager: TabManaging {
     private(set) var persistence: TabsModelPersisting
 
     private var tabControllerCache = [TabViewController]()
-
-    // External launch tracking: stores tab IDs that were created from external launches
-    // This prevents race conditions when multiple tabs exist during external launches
-    private var externalLaunchTabIds: Set<String> = []
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let bookmarksDatabase: CoreDataDatabase
@@ -482,33 +476,6 @@ class TabManager: TabManaging {
         persistence.save(model: model)
     }
 
-    // MARK: - External Launch Tracking
-
-    /// Marks a tab as being created from an external launch
-    /// - Parameter tabID: The unique identifier of the tab
-    func markTabAsExternalLaunch(_ tabID: String) {
-        externalLaunchTabIds.insert(tabID)
-    }
-
-    /// Checks if a tab was created from an external launch
-    /// - Parameter tabID: The unique identifier of the tab to check
-    /// - Returns: true if the tab was created from an external launch, false otherwise
-    func isExternalLaunch(tabID: String) -> Bool {
-        return externalLaunchTabIds.contains(tabID)
-    }
-
-    /// Clears all external launch flags. Should be called on app relaunch
-    /// to ensure existing tabs are not treated as external launches.
-    @MainActor
-    func clearExternalLaunchFlags() {
-        Logger.lifecycle.debug("Clearing external launch flags for all tabs")
-        externalLaunchTabIds.removeAll()
-        for tab in model.tabs {
-            tab.isExternalLaunch = false
-        }
-        save()
-    }
-
     @MainActor
     func prepareAllTabsExceptCurrentForDataClearing() {
         tabControllerCache.filter { $0 !== current() }.forEach { $0.prepareForDataClearing() }
@@ -633,46 +600,62 @@ extension TabManager {
         }
     }
 
-    // MARK: - External Launch Tracking
+    // MARK: - External Launch Management
+
+    /// Clears all external launch flags. Should be called on app relaunch
+    /// to ensure existing tabs are not treated as external launches.
+    @MainActor
+    func clearExternalLaunchFlags() {
+        Logger.lifecycle.debug("Clearing external launch flags for all tabs")
+        for tab in model.tabs {
+            tab.isExternalLaunch = false
+        }
+    }
 
     @MainActor
     func markTabAsExternalLaunch(_ tab: Tab) {
+        guard !tab.isExternalLaunch else {
+            return
+        }
         Logger.lifecycle.debug("Marking tab \(tab.uid) as external launch")
-        externalLaunchTabIds.insert(tab.uid)
         tab.isExternalLaunch = true
-        save()
     }
 
     @MainActor
-    func setSuppressAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool) {
-        Logger.lifecycle.debug("Setting suppressAnimation=\(shouldSuppress) for tab \(tab.uid)")
-        tab.shouldSuppressAnimationOnFirstLoad = shouldSuppress
-        save()
+    func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool) {
+        guard tab.shouldSuppressTrackerAnimationOnFirstLoad != shouldSuppress else {
+            return
+        }
+        Logger.lifecycle.debug("Setting suppressTrackerAnimation=\(shouldSuppress) for tab \(tab.uid)")
+        tab.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppress
     }
 
-    /// Applies animation suppression logic to all tabs based on current launch source.
-    /// - On cold start with standard launch: suppress animations for all tabs
-    /// - On external launch: animation suppression handled per-tab via markTabAsExternalLaunch
+    /// Applies tracker animation suppression logic to all tabs based on current launch source.
+    /// - On cold start with standard launch: suppress tracker animations for all tabs
+    /// - On external launch: tracker animation suppression handled per-tab via markTabAsExternalLaunch
     @MainActor
-    func applyAnimationSuppressionBasedOnLaunchSource() {
+    func applyTrackerAnimationSuppressionBasedOnLaunchSource() {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
         let source = launchSourceManager.source
-        Logger.lifecycle.debug("Applying animation suppression for launch source: \(source.rawValue)")
+        Logger.lifecycle.debug("Applying tracker animation suppression for launch source: \(source.rawValue)")
 
         switch source {
         case .standard:
-            // On cold start with standard launch, suppress animations for all existing tabs
+            // On cold start with standard launch, suppress tracker animations for all existing tabs
             for tab in model.tabs {
-                tab.shouldSuppressAnimationOnFirstLoad = true
+                tab.shouldSuppressTrackerAnimationOnFirstLoad = true
 
                 // Also set on TabViewController if it exists
                 if let controller = controller(for: tab) {
-                    controller.shouldSuppressAnimationOnFirstLoad = true
+                    controller.shouldSuppressTrackerAnimationOnFirstLoad = true
                 }
             }
-            save()
         case .URL, .shortcut:
             // For external launches, only the newly created tab (marked via markTabAsExternalLaunch)
-            // should have animation suppression applied, which is handled elsewhere
+            // should have tracker animation suppression applied, which is handled elsewhere
             break
         }
     }

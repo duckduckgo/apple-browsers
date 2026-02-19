@@ -340,6 +340,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/task/1213314048601761
     case fireMode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
+    case suppressTrackerAnimationOnColdStart
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -368,7 +371,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .freeTrialConversionWideEvent,
              .crashCollectionLimitCallStackTreeDepth,
              .tabSwitcherTrackerCount,
-             .iPadDuckaiOnTab:
+             .iPadDuckaiOnTab,
+             .suppressTrackerAnimationOnColdStart:
             true
         default:
             false
@@ -471,6 +475,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillOnboardingExperiment,
              .supportsSyncChatsDeletion,
              .fireMode:
+             .suppressTrackerAnimationOnColdStart:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -724,6 +729,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .fireMode:
             return .disabled
+        case .suppressTrackerAnimationOnColdStart:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.suppressTrackerAnimationOnColdStart))
         }
     }
 }

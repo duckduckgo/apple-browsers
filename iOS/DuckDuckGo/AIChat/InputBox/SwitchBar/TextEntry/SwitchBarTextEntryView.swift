@@ -521,6 +521,14 @@ class SwitchBarTextEntryView: UIView {
         canExpandOnSelectionChange = true
     }
 
+    func setQueryText(_ text: String) {
+        textView.text = text
+        updatePlaceholderVisibility()
+        updateButtonState()
+        updateTextViewHeight()
+        handler.updateCurrentText(text)
+    }
+
     private func disableAutoCorrectionAndSpellChecking() {
         textView.autocorrectionType = .no
         textView.spellCheckingType = .no

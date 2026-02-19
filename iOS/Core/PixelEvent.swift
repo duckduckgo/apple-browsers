@@ -919,6 +919,7 @@ extension Pixel {
         case syncDuckAddressOverride
         case syncSuccessRateDaily
         case syncLocalTimestampResolutionTriggered(Feature)
+        case syncAiChatActiveDaily
         case syncMigratedToFileStore
         case syncFailedToMigrateToFileStore
         case syncFailedToInitFileStore
@@ -2524,6 +2525,7 @@ extension Pixel.Event {
         case .syncDuckAddressOverride: return "m_sync_duck_address_override"
         case .syncSuccessRateDaily: return "m_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature): return "m_sync_\(feature.name)_local_timestamp_resolution_triggered"
+        case .syncAiChatActiveDaily: return "m_sync_ai_chat_active_daily"
         case .syncMigratedToFileStore: return "m_debug_sync_migrated_to_file_store"
         case .syncFailedToInitFileStore: return "m_debug_sync_failed_to_init_file_store"
         case .syncFailedToMigrateToFileStore: return "m_debug_sync_failed_to_migrate_to_file_store"

@@ -189,6 +189,14 @@ extension Preferences {
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                     TextMenuItemCaption(UserText.autofillNeverLockWarning)
                 }
+
+                if Application.appDelegate.featureFlagger.isFeatureOn(.autofillPasswordsStatusBar) {
+                    // SECTION 5: Menu Bar
+                    PreferencePaneSection {
+                        TextMenuItemHeader(UserText.passwordsMenuBarSection)
+                        ToggleMenuItem(UserText.showPasswordsInMenuBar, isOn: $model.showInMenuBar)
+                    }
+                }
             }
         }
 

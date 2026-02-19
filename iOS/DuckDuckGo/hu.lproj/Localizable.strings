@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Összes törlése";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Csevegés törlése";
-"scoped.fire.confirmation.delete.this.chat.description" = "Az „Összes törlése” lehetőség választása esetén a Duck.ai csevegési előzményei nem törlődnek.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Lap törlése";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "Az „Összes törlése” lehetőség választása esetén a Duck.ai csevegési előzményei nem törlődnek.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Lap törlése";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Ez megszakítja a folyamatban lévő letöltéseket.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Tartalom automatikus küldése";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Csevegési javaslatok";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI által generált képek elrejtése";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Keresési javaslatok megjelenítése gépelés közben, beleértve a könyvjelzőket is. Minden keresés privát.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Az előzményekből, a könyvjelzőkből és (opcionálisan) a Duck.ai csevegési előzményekből származó javaslatok megjelenítése a keresősávba való gépeléskor. Minden keresés privát.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Alkalmazás zárolás";

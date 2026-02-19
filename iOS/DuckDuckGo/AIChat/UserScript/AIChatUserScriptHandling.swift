@@ -400,7 +400,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         do {
-            return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
+            let payload = try await syncHandler.getScopedToken()
+            DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -438,7 +440,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.encrypt(data))
+            let payload = try syncHandler.encrypt(data)
+            DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -467,7 +471,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.decrypt(data))
+            let payload = try syncHandler.decrypt(data)
+            DailyPixel.fire(pixel: .syncAiChatActiveDaily)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason = error.localizedDescription
             DailyPixel.fireDailyAndCount(pixel: .aiChatSyncDecryptionError, withAdditionalParameters: ["reason": reason])

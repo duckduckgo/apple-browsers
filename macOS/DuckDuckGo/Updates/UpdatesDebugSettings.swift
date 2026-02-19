@@ -23,47 +23,47 @@ import Persistence
 
 /// Debug settings for testing update functionality
 /// Only available to internal users
-protocol UpdatesDebugSettingsPersistor {
+public protocol UpdatesDebugSettingsPersistor {
     var forceUpdateAvailable: Bool { get set }
 
     func reset()
 }
 
-final class UpdatesDebugSettingsUserDefaultsPersistor: UpdatesDebugSettingsPersistor {
+public final class UpdatesDebugSettingsUserDefaultsPersistor: UpdatesDebugSettingsPersistor {
 
-    enum Key: String {
+    public enum Key: String {
         case forceUpdateAvailable = "updates.debug.force-update-available"
     }
 
     private let keyValueStore: KeyValueStoring
 
-    init(keyValueStore: KeyValueStoring = UserDefaults.standard) {
+    public init(keyValueStore: KeyValueStoring = UserDefaults.standard) {
         self.keyValueStore = keyValueStore
     }
 
-    var forceUpdateAvailable: Bool {
+    public var forceUpdateAvailable: Bool {
         get { (keyValueStore.object(forKey: Key.forceUpdateAvailable.rawValue) as? Bool) ?? false }
         set { keyValueStore.set(newValue, forKey: Key.forceUpdateAvailable.rawValue) }
     }
 
-    func reset() {
+    public func reset() {
         forceUpdateAvailable = false
     }
 }
 
-final class UpdatesDebugSettings {
+public final class UpdatesDebugSettings {
     private var persistor: UpdatesDebugSettingsPersistor
 
-    init(persistor: UpdatesDebugSettingsPersistor = UpdatesDebugSettingsUserDefaultsPersistor()) {
+    public init(persistor: UpdatesDebugSettingsPersistor = UpdatesDebugSettingsUserDefaultsPersistor()) {
         self.persistor = persistor
     }
 
-    var forceUpdateAvailable: Bool {
+    public var forceUpdateAvailable: Bool {
         get { persistor.forceUpdateAvailable }
         set { persistor.forceUpdateAvailable = newValue }
     }
 
-    func reset() {
+    public func reset() {
         persistor.reset()
     }
 }

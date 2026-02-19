@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import Persistence
 import WebExtensions
 
 protocol AutofillPreferencesPersistor {
@@ -29,6 +30,7 @@ protocol AutofillPreferencesPersistor {
     var autolockLocksFormFilling: Bool { get set }
     var passwordManager: PasswordManager { get set }
     var debugScriptEnabled: Bool { get set }
+    var showInMenuBar: Bool { get set }
 }
 
 enum PasswordManager: String, CaseIterable {
@@ -79,9 +81,14 @@ extension NSNotification.Name {
     static let autofillAutoLockSettingsDidChange = NSNotification.Name("autofillAutoLockSettingsDidChange")
     static let autofillUserSettingsDidChange = NSNotification.Name("autofillUserSettingsDidChange")
     static let autofillScriptDebugSettingsDidChange = NSNotification.Name("autofillScriptDebugSettingsDidChange")
+    static let autofillShowInMenuBarDidChange = NSNotification.Name("autofillShowInMenuBarDidChange")
 }
 
 final class AutofillPreferences: AutofillPreferencesPersistor {
+
+    enum Key: String {
+        case showPasswordsInMenuBar = "preferences.passwords.show-in-menu-bar"
+    }
 
     public var isAutoLockEnabled: Bool {
         get {
@@ -123,6 +130,19 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
 
     @UserDefaultsWrapper(key: .autolockLocksFormFilling, defaultValue: false)
     var autolockLocksFormFilling: Bool
+
+    var showInMenuBar: Bool {
+        get {
+            return (try? keyValueStore.object(forKey: Key.showPasswordsInMenuBar.rawValue) as? Bool) ?? false
+        }
+        set {
+            let oldValue = showInMenuBar
+            try? keyValueStore.set(newValue, forKey: Key.showPasswordsInMenuBar.rawValue)
+            if oldValue != newValue {
+                NotificationCenter.default.post(name: .autofillShowInMenuBarDidChange, object: nil)
+            }
+        }
+    }
 
 #if APPSTORE
     var passwordManager: PasswordManager {
@@ -186,6 +206,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
     }
 
     private let injectedDependencyStore: StatisticsStore?
+    private let keyValueStore: ThrowingKeyValueStoring
     private lazy var defaultDependencyStore: StatisticsStore = {
 #if DEBUG
         // To prevent an assertion failure deep within dependencies in Database.makeDatabase
@@ -196,8 +217,10 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
         return LocalStatisticsStore()
     }()
 
-    init(statisticsStore: StatisticsStore? = nil) {
+    init(statisticsStore: StatisticsStore? = nil,
+         keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
         self.injectedDependencyStore = statisticsStore
+        self.keyValueStore = keyValueStore
     }
 
 }

@@ -18,26 +18,22 @@
 
 import Foundation
 
-#if SPARKLE
-import Sparkle
-#endif
-
 /// Represents an available app update from any source (Sparkle, App Store, etc.)
-final class Update {
+public final class Update {
 
-    enum UpdateType {
+    public enum UpdateType {
         case regular
         case critical
     }
 
-    let isInstalled: Bool
-    let type: UpdateType
-    let version: String
-    let build: String
-    let date: Date
-    let releaseNotes: [String]
-    let releaseNotesSubscription: [String]
-    let needsLatestReleaseNote: Bool
+    public let isInstalled: Bool
+    public let type: UpdateType
+    public let version: String
+    public let build: String
+    public let date: Date
+    public let releaseNotes: [String]
+    public let releaseNotesSubscription: [String]
+    public let needsLatestReleaseNote: Bool
     private let dateFormatterProvider: () -> DateFormatter
 
     /// Returns a date formatter configured with the standard date visualization format for release dates.
@@ -46,26 +42,26 @@ final class Update {
     /// date formatting across all update display contexts.
     ///
     /// - Returns: A configured `DateFormatter` instance for release date formatting.
-    static func releaseDateFormatter() -> DateFormatter {
+    public static func releaseDateFormatter() -> DateFormatter {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
         formatter.timeStyle = .none
         return formatter
     }
 
-    var title: String {
+    public var title: String {
         dateFormatterProvider().string(from: date)
     }
 
-    internal init(isInstalled: Bool,
-                  type: Update.UpdateType,
-                  version: String,
-                  build: String,
-                  date: Date,
-                  releaseNotes: [String],
-                  releaseNotesSubscription: [String],
-                  needsLatestReleaseNote: Bool,
-                  dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
+    public init(isInstalled: Bool,
+                type: Update.UpdateType,
+                version: String,
+                build: String,
+                date: Date,
+                releaseNotes: [String],
+                releaseNotesSubscription: [String],
+                needsLatestReleaseNote: Bool,
+                dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
         self.isInstalled = isInstalled
         self.type = type
         self.version = version
@@ -78,46 +74,10 @@ final class Update {
     }
 }
 
-// MARK: - Sparkle Integration
-
-#if SPARKLE
-extension Update {
-    convenience init(appcastItem: SUAppcastItem, isInstalled: Bool, needsLatestReleaseNote: Bool, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
-        let isCritical = appcastItem.isCriticalUpdate
-        let version = appcastItem.displayVersionString
-        let build = appcastItem.versionString
-        let date = appcastItem.date ?? Date()
-        let (releaseNotes, releaseNotesSubscription) = ReleaseNotesParser.parseReleaseNotes(from: appcastItem.itemDescription)
-
-        self.init(isInstalled: isInstalled,
-                  type: isCritical ? .critical : .regular,
-                  version: version,
-                  build: build,
-                  date: date,
-                  releaseNotes: releaseNotes,
-                  releaseNotesSubscription: releaseNotesSubscription,
-                  needsLatestReleaseNote: needsLatestReleaseNote,
-                  dateFormatterProvider: dateFormatterProvider())
-    }
-
-    convenience init(pendingUpdateInfo: SparkleUpdateController.PendingUpdateInfo, isInstalled: Bool, needsLatestReleaseNote: Bool = false, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
-        self.init(isInstalled: isInstalled,
-                  type: pendingUpdateInfo.isCritical ? .critical : .regular,
-                  version: pendingUpdateInfo.version,
-                  build: pendingUpdateInfo.build,
-                  date: pendingUpdateInfo.date,
-                  releaseNotes: pendingUpdateInfo.releaseNotes,
-                  releaseNotesSubscription: pendingUpdateInfo.releaseNotesSubscription,
-                  needsLatestReleaseNote: needsLatestReleaseNote,
-                  dateFormatterProvider: dateFormatterProvider())
-    }
-}
-#endif
-
 // MARK: - App Store Integration
 
 extension Update {
-    convenience init(releaseMetadata: ReleaseMetadata, isInstalled: Bool, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
+    public convenience init(releaseMetadata: ReleaseMetadata, isInstalled: Bool, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
         // Parse release date
         let iso8601Formatter = ISO8601DateFormatter()
         let date = iso8601Formatter.date(from: releaseMetadata.releaseDate) ?? Date()

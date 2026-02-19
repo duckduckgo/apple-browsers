@@ -309,6 +309,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
     case burnSingleTab
 
+   /// https://app.asana.com/1/137249556945/task/1213076120133808
+    case showNTPAfterIdleReturn
+
     /// Test-only feature flag for verifying UI test override mechanism.
     /// Used in Debug > UI Test Overrides screen.
     case uiTestFeatureFlag
@@ -418,6 +421,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .personalInformationRemoval,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .inactivityNotification,
+             .showNTPAfterIdleReturn,
              .daxEasterEggLogos,
              .daxEasterEggPermanentLogo,
              .dbpEmailConfirmationDecoupling,
@@ -618,6 +622,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
+        case .showNTPAfterIdleReturn:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
         case .daxEasterEggLogos:
             return .remoteReleasable(.feature(.daxEasterEggLogos))
         case .daxEasterEggPermanentLogo:

@@ -312,7 +312,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.pageRefreshMonitor = pageRefreshMonitor
 
-        webView = WebView(frame: CGRect(origin: .zero, size: webViewSize), configuration: configuration)
+        webView = WebView(frame: CGRect(origin: .zero, size: webViewSize),
+                          configuration: configuration,
+                          privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig)
         webView.allowsLinkPreview = false
         webView.addsVisitedLinks = true
         webView.setAccessibilityIdentifier("WebView")

@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Combine
 import PixelKit
 import PixelKitTestingUtilities
+import FeatureFlags
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -35,6 +36,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
     private var mockAIChatTabOpener: MockAIChatTabOpener!
     private var mockWindowControllersManager: WindowControllersManagerMock!
     private var mockPixelFiring: PixelKitMock!
+    private var mockFeatureFlagger: MockFeatureFlagger!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -45,6 +47,8 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         mockAIChatTabOpener = MockAIChatTabOpener()
         mockWindowControllersManager = WindowControllersManagerMock()
         mockPixelFiring = PixelKitMock()
+        mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enableFeatures([.aiChatSidebarResizable])
         cancellables = Set<AnyCancellable>()
 
         presenter = AIChatSidebarPresenter(
@@ -53,13 +57,15 @@ final class AIChatSidebarPresenterTests: XCTestCase {
             aiChatMenuConfig: mockAIChatMenuConfig,
             aiChatTabOpener: mockAIChatTabOpener,
             windowControllersManager: mockWindowControllersManager,
-            pixelFiring: mockPixelFiring
+            pixelFiring: mockPixelFiring,
+            featureFlagger: mockFeatureFlagger
         )
     }
 
     override func tearDown() {
         cancellables = nil
         presenter = nil
+        mockFeatureFlagger = nil
         mockPixelFiring = nil
         mockWindowControllersManager = nil
         mockAIChatTabOpener = nil
@@ -86,7 +92,8 @@ final class AIChatSidebarPresenterTests: XCTestCase {
             aiChatMenuConfig: mockAIChatMenuConfig,
             aiChatTabOpener: mockAIChatTabOpener,
             windowControllersManager: mockWindowControllersManager,
-            pixelFiring: mockPixelFiring
+            pixelFiring: mockPixelFiring,
+            featureFlagger: mockFeatureFlagger
         )
 
         // Then
@@ -602,6 +609,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
 class MockAIChatSidebarHosting: AIChatSidebarHosting {
     var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate?
+    var aiChatSidebarResizeDelegate: AIChatSidebarResizeDelegate?
     var isInKeyWindow: Bool = true
     var currentTabID: TabIdentifier? = "test-tab-id"
     var sidebarContainerLeadingConstraint: NSLayoutConstraint?
@@ -609,6 +617,7 @@ class MockAIChatSidebarHosting: AIChatSidebarHosting {
     var burnerMode: BurnerMode = .regular
 
     var embeddedViewController: NSViewController?
+    private(set) var isResizeHandleVisible = false
 
     init() {
         sidebarContainerLeadingConstraint = NSLayoutConstraint()
@@ -618,11 +627,32 @@ class MockAIChatSidebarHosting: AIChatSidebarHosting {
     func embedSidebarViewController(_ vc: NSViewController) {
         embeddedViewController = vc
     }
+
+    func applySidebarWidth(_ width: CGFloat) {
+        sidebarContainerWidthConstraint?.constant = width
+        sidebarContainerLeadingConstraint?.constant = -width
+    }
+
+    func setResizeHandleVisible(_ visible: Bool) {
+        isResizeHandleVisible = visible
+    }
+
+    var availableWidth: CGFloat = 1200
 }
 
 class MockAIChatSidebarProvider: AIChatSidebarProviding {
-    var sidebarWidth: CGFloat = 400
+    var defaultSidebarWidth: CGFloat = 400
+    var minSidebarWidth: CGFloat = 320
+    var maxSidebarWidth: CGFloat = 900
+    private(set) var lastSetWidth: CGFloat?
+    private(set) var lastSetWidthTabID: TabIdentifier?
     @Published var sidebarsByTab: AIChatSidebarsByTab = [:]
+
+    func setSidebarWidth(_ width: CGFloat, for tabID: TabIdentifier) {
+        sidebarsByTab[tabID]?.sidebarWidth = width
+        lastSetWidth = width
+        lastSetWidthTabID = tabID
+    }
 
     var sidebarsByTabPublisher: AnyPublisher<DuckDuckGo_Privacy_Browser.AIChatSidebarsByTab, Never> {
         $sidebarsByTab.eraseToAnyPublisher()

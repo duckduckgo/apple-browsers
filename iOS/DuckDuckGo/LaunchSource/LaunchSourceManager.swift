@@ -47,7 +47,7 @@ final class LaunchSourceManager: LaunchSourceManaging {
             setSource(.shortcut)
         case .openURL:
             setSource(.URL)
-        case .showKeyboard:
+        case .standardLaunch:
             setSource(.standard)
         }
     }

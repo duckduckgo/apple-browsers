@@ -2990,7 +2990,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.autolock.description" = "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.";
 
 /* Section title in automatic data clearing settings */
-"settings.automatic.data.clearing.delete.section.title" = "DELETE";
+"settings.automatic.data.clearing.delete.section.title" = "Delete";
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatic Data Clearing";

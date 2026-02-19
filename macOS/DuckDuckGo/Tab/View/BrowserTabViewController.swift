@@ -600,6 +600,8 @@ final class BrowserTabViewController: NSViewController {
             return
         }
 
+        guard !isInPopUpWindow else { return }
+
         guard let tab = tabViewModel?.tab else { return }
 
         // if showLastDialog is true it asks the onboardingDialogTypeProvider for the lastDialog if the last dialog was shown on this tab
@@ -1382,11 +1384,12 @@ extension BrowserTabViewController: TabDelegate {
         subscribeToPinnedTabs()
         hideWebViewSnapshotIfNeeded()
 
-        // When a windows become key it will reload the last contextual onboarding dialog if needed
+        // When a window becomes key it will reload the last contextual onboarding dialog if needed
         // This helps keep dialogs consistent when moving between Windows
         //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
         //  - It tells presentContextualOnboarding that should show the lastDialog if possible
-        if !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted {
+        //  - Skip for pop-up windows; contextual onboarding is excluded there
+        if !isInPopUpWindow && !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted {
             presentContextualOnboarding(showLastDialog: true)
         }
     }

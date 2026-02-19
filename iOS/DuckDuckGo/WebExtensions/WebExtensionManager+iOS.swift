@@ -20,6 +20,22 @@
 import UIKit
 import WebExtensions
 import WebKit
+import PrivacyConfig
+import Core
+
+// MARK: - AutoconsentPreferencesProviding
+
+final class AutoconsentPreferencesAdapter: AutoconsentPreferencesProviding {
+    private let preferences: AutoconsentPreferences
+
+    init(preferences: AutoconsentPreferences) {
+        self.preferences = preferences
+    }
+
+    var isAutoconsentEnabled: Bool {
+        preferences.autoconsentEnabled
+    }
+}
 
 // MARK: - Factory
 
@@ -27,13 +43,22 @@ import WebKit
 public enum WebExtensionManagerFactory {
 
     @MainActor
-    static func makeManager(mainViewController: MainViewController) -> WebExtensionManager {
-        WebExtensionManager(
+    static func makeManager(
+        mainViewController: MainViewController,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        autoconsentPreferences: AutoconsentPreferences
+    ) -> WebExtensionManager {
+        let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
+
+        return WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),
             storageProvider: WebExtensionStorageProvider(),
             pixelFiring: iOSWebExtensionPixelFiring(),
-            handlerProvider: WebExtensionHandlerProvider()
+            handlerProvider: WebExtensionHandlerProvider(
+                privacyConfigurationManager: privacyConfigurationManager,
+                autoconsentPreferences: preferencesAdapter
+            )
         )
     }
 }

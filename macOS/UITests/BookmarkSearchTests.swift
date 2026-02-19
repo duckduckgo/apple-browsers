@@ -58,7 +58,6 @@ class BookmarkSearchTests: UITestCase {
 
     func testFilteredResultsInPanel() {
         addThreeBookmarks()
-        closeShowBookmarksBarAlert()
         app.openBookmarksPanel()
         searchInBookmarksPanel(for: "Bookmark #2")
         assertOnlyBookmarkExists(on: app.outlines.firstMatch, bookmarkTitle: "Bookmark #2")
@@ -101,7 +100,7 @@ class BookmarkSearchTests: UITestCase {
 
     private func addBookmarkAndOpenBookmarksPanel(bookmarkPageTitle: String, in folder: String? = nil) {
         addBookmark(pageTitle: bookmarkPageTitle, in: folder)
-        closeShowBookmarksBarAlert()
+        app.dismissBookmarksBarPopover()
         app.openBookmarksPanel()
     }
 
@@ -184,7 +183,7 @@ class BookmarkSearchTests: UITestCase {
         createFolderWithSubFolder()
         openNewTab()
         addBookmark(pageTitle: "Bookmark #1", in: "Folder #2")
-        closeShowBookmarksBarAlert()
+        app.dismissBookmarksBarPopover()
 
         if mode == .panel {
             app.openBookmarksPanel()
@@ -235,7 +234,6 @@ class BookmarkSearchTests: UITestCase {
     private func testDragAndDropToReorder(in mode: BookmarkMode) {
         addThreeBookmarks()
         if mode == .panel {
-            closeShowBookmarksBarAlert()
             app.openBookmarksPanel()
         } else {
             openBookmarksManager()
@@ -318,9 +316,5 @@ class BookmarkSearchTests: UITestCase {
         folderLocationButton.tap()
         folderLocationButton.menuItems["Folder #1"].tap()
         app.buttons["Add Folder"].tap()
-    }
-
-    private func closeShowBookmarksBarAlert() {
-        app.dismissPopover(buttonIdentifier: "Hide")
     }
 }

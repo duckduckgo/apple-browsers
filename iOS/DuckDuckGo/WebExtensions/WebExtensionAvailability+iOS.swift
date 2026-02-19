@@ -1,5 +1,6 @@
 //
-//  WebExtensionAvailability.swift
+//  WebExtensionAvailability+iOS.swift
+//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,22 +19,10 @@
 
 import Foundation
 import WebKit
-import PrivacyConfig
+import Core
 import WebExtensions
 
-/// Protocol for checking web extension availability.
-protocol WebExtensionAvailabilityProviding {
-    /// Whether web extensions are available (macOS 15.4+ and feature flag enabled)
-    var isAvailable: Bool { get }
-
-    /// Whether web extensions are available AND have any installed extensions
-    var hasInstalledExtensions: Bool { get }
-
-    /// Whether the embedded autoconsent web extension is loaded and active
-    var isAutoconsentExtensionAvailable: Bool { get }
-}
-
-/// Determines whether web extensions are available and should be used.
+/// Determines whether web extensions are available and should be used on iOS.
 final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
 
     private let featureFlagger: FeatureFlagger
@@ -48,14 +37,14 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     }
 
     var isAvailable: Bool {
-        guard #available(macOS 15.4, *) else { return false }
+        guard #available(iOS 18.4, *) else { return false }
         return featureFlagger.isFeatureOn(.webExtensions)
     }
 
     var hasInstalledExtensions: Bool {
         guard isAvailable else { return false }
 
-        if #available(macOS 15.4, *) {
+        if #available(iOS 18.4, *) {
             return webExtensionManagerProvider()?.hasInstalledExtensions ?? false
         }
         return false
@@ -64,7 +53,7 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     var isAutoconsentExtensionAvailable: Bool {
         guard isAvailable else { return false }
 
-        if #available(macOS 15.4, *) {
+        if #available(iOS 18.4, *) {
             guard let manager = webExtensionManagerProvider() else { return false }
 
             return manager.loadedExtensions.contains { context in

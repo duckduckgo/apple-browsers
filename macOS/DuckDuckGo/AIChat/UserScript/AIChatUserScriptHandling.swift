@@ -434,8 +434,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         do {
             let payload = try syncHandler.decrypt(data)
-            Task { @MainActor in
-                self.fireSyncAiChatActiveDailyIfNeeded()
+            Task { @MainActor [weak self] in
+                self?.fireSyncAiChatActiveDailyIfNeeded()
             }
             return AIChatPayloadResponse(payload: payload)
         } catch {
@@ -500,8 +500,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     private func fireSyncDailyAndStandardPixelOnMainActor(_ pixel: PixelKitEvent) {
-        Task { @MainActor in
-            self.fireSyncDailyAndStandardPixel(pixel)
+        Task { @MainActor [weak self] in
+            self?.fireSyncDailyAndStandardPixel(pixel)
         }
     }
 }

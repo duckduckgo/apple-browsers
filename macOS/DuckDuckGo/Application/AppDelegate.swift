@@ -1872,8 +1872,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
               let sparkleUpdateController = updateController as? any SparkleUpdateController else { return }
 
         updateProgressCancellable = sparkleUpdateController.updateProgressPublisher
-            .sink { progress in
-                sparkleUpdateController.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+            .sink { [weak sparkleUpdateController] progress in
+                sparkleUpdateController?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
     }
 

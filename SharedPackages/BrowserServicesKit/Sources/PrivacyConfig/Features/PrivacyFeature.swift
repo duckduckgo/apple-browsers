@@ -146,10 +146,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
 
-    /// Feature flag for Themes
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
-    case themes
-
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
@@ -276,6 +272,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
+    case onboardingExperiment
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -377,6 +374,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
     case iPadDuckaiOnTab
+
+    /// Controls deletion of Synced chats
+    case supportsSyncChatsDeletion
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -395,6 +395,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to display autoconsent stats on New Tab Page
     case autoconsentStats
+
+    /// Controls whether the Next Steps List widget is enabled on New Tab Page
+    case nextStepsListWidget
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

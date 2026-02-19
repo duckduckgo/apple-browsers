@@ -50,7 +50,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(AttributedString(Copy.message.attributed.withFont(.daxBodyBold(), forText: Self.fireButtonCopy)))
+                    Text(Self.styledMessage())
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .multilineTextAlignment(.center)
                         .font(onboardingTheme.typography.body)
@@ -75,6 +75,16 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
+        }
+
+        /// Builds the message with bold applied to "Fire Button" via SwiftUI's
+        /// attribute system so the theme's body font applies uniformly.
+        private static func styledMessage() -> AttributedString {
+            var attributed = AttributedString(Copy.message)
+            if let range = attributed.range(of: fireButtonCopy) {
+                attributed[range].inlinePresentationIntent = .stronglyEmphasized
+            }
+            return attributed
         }
 
     }

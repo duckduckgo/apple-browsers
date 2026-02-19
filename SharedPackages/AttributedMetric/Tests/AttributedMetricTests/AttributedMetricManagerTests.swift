@@ -401,13 +401,19 @@ final class AttributedMetricManagerTests: XCTestCase {
     func testProcessAverageSearchCountFirstMonth() {
         let pixelExpectation = XCTestExpectation(description: "Average search count pixel fired")
         var capturedCount: Int?
+        var capturedDayAverage: Int?
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
             case "attributed_metric_average_searches_past_week_first_month":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
+                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
+                    return
+                }
+                if capturedDayAverage == nil {
+                    XCTFail("Missing or invalid day_average parameter")
                     return
                 }
                 pixelExpectation.fulfill()
@@ -432,38 +438,44 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
+        XCTAssertNotNil(capturedDayAverage, "Should capture day average")
     }
 
-    /// Tests average search count pixel after first month (NO day_average parameter)
+    /// Tests average search count pixel after first month (includes day_average parameter)
     ///
     /// ## Input → Output Mapping
     ///
     /// | Days Since Install | Raw Average | Bucketed Count | Parameters |
     /// |-------------------|-------------|----------------|------------|
-    /// | 29-31 (≥ 28 days) | varies      | varies         | count=bucketed, origin/installDate |
+    /// | 29-31 (≥ 28 days) | varies      | varies         | count=bucketed, day_average=raw_count, origin/installDate |
     ///
     /// ## Bucket Configuration
     /// - user_average_searches_past_week: [5, 9] → ≤5 maps to 0, ≤9 maps to 1, >9 maps to 2
     ///
     /// ## Test Validation
-    /// - Pixel fires after 28 days WITHOUT day_average parameter
+    /// - Pixel fires after 28 days with day_average parameter
     /// - count parameter is bucketed
+    /// - day_average parameter contains raw search count
     /// - Different pixel name than first month version
     /// - Trigger: .userDidSearch calls processAverageSearchCount()
     func testProcessAverageSearchCountAfterFirstMonth() {
         let pixelExpectation = XCTestExpectation(description: "Average search count pixel fired")
         var capturedCount: Int?
-        var hasDayAverage: Bool = false
+        var capturedDayAverage: Int?
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
             case "attributed_metric_average_searches_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
+                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
                     return
                 }
-                hasDayAverage = parameters["day_average"] != nil
+                if capturedDayAverage == nil {
+                    XCTFail("Missing or invalid day_average parameter")
+                    return
+                }
                 pixelExpectation.fulfill()
             case "attributed_metric_data_store_error":
                 break
@@ -486,7 +498,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
-        XCTAssertFalse(hasDayAverage, "Should not include day average after first month")
+        XCTAssertNotNil(capturedDayAverage, "Should capture day average")
     }
 
     // MARK: - Average AD Click Tests

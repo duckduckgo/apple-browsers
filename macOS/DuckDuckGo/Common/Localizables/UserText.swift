@@ -774,7 +774,7 @@ struct UserText {
     static let passwordManagerAlertRemoveIdentityConfirmation = NSLocalizedString("passsword.manager.alert.remove-identity.confirmation", value: "Are you sure you want to delete this saved autofill info?", comment: "Text of the alert that asks the user to confirm they want to delete an identity")
     static let passwordManagerAlertRemoveNoteConfirmation = NSLocalizedString("passsword.manager.alert.remove-note.confirmation", value: "Are you sure you want to delete this note?", comment: "Text of the alert that asks the user to confirm they want to delete a note")
 
-    static let importBookmarks = NSLocalizedString("import.browser.data.bookmarks", value: "Import Bookmarks…", comment: "Opens Import Browser Data dialog")
+    static let importBookmarks = NSLocalizedString("import.browser.data.bookmarks", value: "Import Bookmarks", comment: "Opens Import Browser Data dialog")
     static let importPasswords = NSLocalizedString("import.browser.data.passwords", value: "Import Passwords…", comment: "Opens Import Browser Data dialog")
 
     static let importDataTitle = NSLocalizedString("import.browser.data", value: "Import to DuckDuckGo", comment: "Import Browser Data dialog title")

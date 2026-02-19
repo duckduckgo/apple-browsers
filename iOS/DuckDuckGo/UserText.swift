@@ -1567,7 +1567,7 @@ public struct UserText {
     public static let settingsPreviews = NSLocalizedString("settings.previews", value: "Long-Press Previews", comment: "Settings screen cell for long press previews")
     public static let settingsAutocompleteLabel = NSLocalizedString("settings.autocomplete", value: "Search Suggestions", comment: "Settings screen cell for autocomplete")
     public static let settingsAutocompleteSubtitle = NSLocalizedString("settings.autocomplete.subtitle", value: "Show search suggestions as you type, including your bookmarks. All searches are private.", comment: "Subtitle for Search Suggestions setting")
-    public static let settingsAutocompleteWithChatSubtitle = NotLocalizedString("settings.autocomplete.with.chat.subtitle", value: "Show suggestions from your history, bookmarks, and (optionally) Duck.ai chat history as you type in the search bar. All searches are private.", comment: "Subtitle for Search Suggestions setting when chat suggestions are available")
+    public static let settingsAutocompleteWithChatSubtitle = NSLocalizedString("settings.autocomplete.with.chat.subtitle", value: "Show suggestions from your history, bookmarks, and (optionally) Duck.ai chat history as you type in the search bar. All searches are private.", comment: "Subtitle for Search Suggestions setting when chat suggestions are available")
 
     public static let settingsAutocompleteRecentlyVisitedLabel = NSLocalizedString("settings.autocomplete.recentlyvisited", value: "Recently Visited Sites", comment: "Settings label for enabling or disabling recently visited sites")
 
@@ -1939,9 +1939,7 @@ public struct UserText {
 
     public static let settingsAutomaticPageContextSubtitle = NSLocalizedString("settings.aifeatures.automatic.context.subtitle", value: "Automatically send page content to Duck.ai", comment: "Settings screen cell subtitle for enabling automatic page content attachment")
 
-    public static let settingsChatSuggestionsTitle = NotLocalizedString("settings.aifeatures.chat.suggestions.title", value: "Chat Suggestions", comment: "Settings screen cell title for enabling chat suggestions")
-
-    public static let settingsChatSuggestionsSubtitle = NotLocalizedString("settings.aifeatures.chat.suggestions.subtitle", value: "Show recent Duck.ai chats as you type", comment: "Settings screen cell subtitle for enabling chat suggestions")
+    public static let settingsChatSuggestionsTitle = NSLocalizedString("settings.aifeatures.chat.suggestions.title", value: "Chat Suggestions", comment: "Settings screen cell title for enabling chat suggestions")
 
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 

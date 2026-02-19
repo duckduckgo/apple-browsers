@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Удалить все";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Удалить этот чат";
-"scoped.fire.confirmation.delete.this.chat.description" = "Функция «Удалить все» не стирает историю чатов с Duck.ai.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Удалить эту вкладку";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "Функция «Удалить все» не стирает историю чатов с Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Удалить эту вкладку";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Текущие загрузки будут отменены.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Автоматически отправлять содержимое";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Рекомендации в чате";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скрыть ИИ-картинки";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Показывать поисковые рекомендации (включая закладки) по мере ввода текста. Все поисковые запросы конфиденциальны.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "При вводе запроса в адресную строку показывать рекомендации из поисковой истории, закладок и (по желанию) журнала чатов Duck.ai. Все поисковые запросы конфиденциальны.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Блокировка";

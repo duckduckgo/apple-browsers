@@ -95,6 +95,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let pixelFiring: PixelFiring?
     private let statisticsLoader: StatisticsLoader?
     private let syncServiceProvider: () -> DDGSyncing?
+    private let syncErrorHandler: SyncErrorHandling
     private let featureFlagger: FeatureFlagger
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let migrationStore = AIChatMigrationStore()
@@ -106,6 +107,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         pixelFiring: PixelFiring?,
         statisticsLoader: StatisticsLoader?,
         syncServiceProvider: @escaping () -> DDGSyncing?,
+        syncErrorHandler: SyncErrorHandling,
         featureFlagger: FeatureFlagger,
         freeTrialConversionService: FreeTrialConversionInstrumentationService = Application.appDelegate.freeTrialConversionService,
         notificationCenter: NotificationCenter = .default
@@ -116,6 +118,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.pixelFiring = pixelFiring
         self.statisticsLoader = statisticsLoader
         self.syncServiceProvider = syncServiceProvider
+        self.syncErrorHandler = syncErrorHandler
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
@@ -362,7 +365,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             guard let syncHandler = makeSyncHandler() else {
                 return makeErrorResponse("internal error")
             }
-            return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
+            let payload = try await syncHandler.getScopedToken()
+            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -398,7 +403,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.encrypt(data))
+            let payload = try syncHandler.encrypt(data)
+            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -427,7 +434,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.decrypt(data))
+            let payload = try syncHandler.decrypt(data)
+            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason = error.localizedDescription
             pixelFiring?.fire(AIChatPixel.aiChatSyncDecryptionError(reason: reason), frequency: .dailyAndStandard)
@@ -476,7 +485,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         guard sync.authState != .initializing else {
             return nil
         }
-        return AIChatSyncHandler(sync: sync)
+        return AIChatSyncHandler(sync: sync, httpRequestErrorHandler: syncErrorHandler.handleAiChatsError)
     }
 }
 // swiftlint:enable inclusive_language

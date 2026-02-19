@@ -113,9 +113,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
+    private var passwordsStatusBarMenu: PasswordsStatusBarMenu?
+    private var passwordsMenuBarCancellable: AnyCancellable?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
+    private(set) var syncErrorHandler = SyncErrorHandler()
     private(set) var aiChatSyncCleaner: AIChatSyncCleaning?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
@@ -831,7 +834,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 fireCoordinator: fireCoordinator,
                 tld: tld,
                 autoconsentManagement: autoconsentManagement,
-                contentScopePreferences: contentScopePreferences
+                contentScopePreferences: contentScopePreferences,
+                syncErrorHandler: syncErrorHandler
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -861,7 +865,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fireCoordinator: fireCoordinator,
             tld: tld,
             autoconsentManagement: autoconsentManagement,
-            contentScopePreferences: contentScopePreferences
+            contentScopePreferences: contentScopePreferences,
+            syncErrorHandler: syncErrorHandler
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,
@@ -1304,6 +1309,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         TipKitAppEventHandler(featureFlagger: featureFlagger).appDidFinishLaunching()
 
         setUpAutofillPixelReporter()
+        setUpPasswordsMenuBarVisibility()
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
@@ -1414,7 +1420,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireThemeDailyPixel() {
-        guard featureFlagger.isFeatureOn(.themes) else { return }
         PixelKit.fire(ThemePixels.themeNameDaily(themeName: themeManager.theme.name), frequency: .daily)
     }
 
@@ -1619,7 +1624,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupWebExtensions() {
         if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManagerFactory.makeManager()
+            let webExtensionManager = WebExtensionManagerFactory.makeManager(
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+                autoconsentPreferences: cookiePopupProtectionPreferences
+            )
             self.webExtensionManager = webExtensionManager
 
             let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
@@ -1696,7 +1704,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         let environment = defaultEnvironment
 #endif
-        let syncErrorHandler = SyncErrorHandler()
         let syncDataProviders = SyncDataProvidersSource(
             bookmarksDatabase: bookmarkDatabase.db,
             bookmarkManager: bookmarkManager,
@@ -1710,9 +1717,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             environment: environment
         )
-        let aiChatSyncCleaner = AIChatSyncCleaner(sync: syncService,
-                                                   keyValueStore: keyValueStore,
-                                                   featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        let aiChatSyncCleaner = AIChatSyncCleaner(
+            sync: syncService,
+            keyValueStore: keyValueStore,
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
+            httpRequestErrorHandler: syncErrorHandler.handleAiChatsError
+        )
         syncService.setCustomOperations([AIChatDeleteOperation(cleaner: aiChatSyncCleaner)])
 
         syncService.initializeIfNeeded()
@@ -1904,6 +1914,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                    queue: nil) { [weak self] _ in
             self?.autofillPixelReporter?.updateAutofillEnabledStatus(AutofillPreferences().askToSaveUsernamesAndPasswords)
         }
+    }
+
+    @MainActor
+    private func setUpPasswordsMenuBarVisibility() {
+        guard featureFlagger.isFeatureOn(.autofillPasswordsStatusBar) else {
+            passwordsStatusBarMenu?.hide()
+            passwordsStatusBarMenu = nil
+            passwordsMenuBarCancellable = nil
+            return
+        }
+
+        let preferences = AutofillPreferences()
+        if passwordsStatusBarMenu == nil {
+            passwordsStatusBarMenu = PasswordsStatusBarMenu(preferences: preferences, pinningManager: pinningManager)
+        }
+
+        if preferences.showInMenuBar {
+            passwordsStatusBarMenu?.show()
+        } else {
+            passwordsStatusBarMenu?.hide()
+        }
+
+        passwordsMenuBarCancellable = NotificationCenter.default.publisher(for: .autofillShowInMenuBarDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    let showInMenuBar = AutofillPreferences().showInMenuBar
+                    if showInMenuBar {
+                        self?.passwordsStatusBarMenu?.show()
+                    } else {
+                        self?.passwordsStatusBarMenu?.hide()
+                    }
+                }
+            }
     }
 }
 

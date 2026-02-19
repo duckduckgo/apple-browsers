@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Common
 import DuckUI
 import BrowserServicesKit
 import DesignResourcesKit
@@ -299,13 +300,13 @@ struct SaveLoginView: View {
 
         let result = NSMutableAttributedString()
 
-        result.append(NSAttributedString(string: "Store\npasswords\nsecurely\n", attributes: [
+        result.append(NSAttributedString(string: NotLocalizedString("autofill.save-login.variant3.title", value: "Store\npasswords\nsecurely\n", comment: "Title text on the variant 3 save login prompt"), attributes: [
             .font: font,
             .foregroundColor: UIColor(designSystemColor: .textPrimary),
             .paragraphStyle: paragraphStyle
         ]))
 
-        result.append(NSAttributedString(string: "with DuckDuckGo", attributes: [
+        result.append(NSAttributedString(string: NotLocalizedString("autofill.save-login.variant3.subtitle", value: "with DuckDuckGo", comment: "Subtitle on the variant 3 save login prompt, displayed below the title"), attributes: [
             .font: font,
             .foregroundColor: UIColor(designSystemColor: .textTertiary),
             .paragraphStyle: paragraphStyle

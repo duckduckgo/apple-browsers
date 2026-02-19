@@ -33,69 +33,70 @@ extension OnboardingRebranding.OnboardingView {
         private let message: String
         private let cta: String
         private let action: () -> Void
-        private let isSkipped: Binding<Bool>
 
-        @State private var animateTitle = true
-        @State private var animateMessage = false
-        @State private var showContent = false
+        @State private var showContent = true
         @State private var videoPlayerWidth: CGFloat = 0.0
         @StateObject private var videoPlayerModel = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
 
-        init(
-            title: String,
-            message: String,
-            cta: String,
-            isSkipped: Binding<Bool>,
-            action: @escaping () -> Void
-        ) {
+        init(title: String,
+             message: String,
+             cta: String,
+             action: @escaping () -> Void) {
             self.title = title
             self.message = message
             self.cta = cta
-            self.isSkipped = isSkipped
             self.action = action
         }
 
         var body: some View {
-            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
-                AnimatableTypingText(title, startAnimating: $animateTitle, skipAnimation: isSkipped) {
-                    withAnimation {
-                        animateMessage = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 20, weight: .bold))
-
-                AnimatableTypingText(message, startAnimating: $animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showContent = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 16))
-
-                videoPlayer
-                    .visibility(showContent ? .visible : .invisible)
-                    .onChange(of: showContent) { newValue in
-                        if newValue {
-                            // Need to delay playing a video. If calling play too early the video won't play.
-                            DispatchQueue.main.async {
-                                videoPlayerModel.play()
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(message)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
+                ),
+                content: AnyView(
+                    ZStack(alignment: .center) {
+                        OnboardingRebrandingImages.AddToDock.tutorialBorder
+                            .resizable()
+                            .scaledToFit()
+                            .padding(.horizontal, -11)
+                        videoPlayer
+                            .tempPlaceholder()
+                            .visibility(showContent ? .visible : .invisible)
+                            .onFirstAppear {
+                                videoPlayerModel.loadAsset(url: Self.videoURL, shouldLoopVideo: true)
+                                // Need to delay playing a video. If calling play too early the video won't play.
+                                DispatchQueue.main.async {
+                                    videoPlayerModel.play()
+                                }
                             }
+                    }
+                        .onFrameUpdate(in: .global, using: VideoPlayerFramePreferenceKey.self) { rect in
+                            videoPlayerWidth = rect.width
                         }
+                ),
+                title: {
+                    Text(title)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.title)
+                        .multilineTextAlignment(.center)
+                },
+                actions: {
+                    Button(action: action) {
+                        Text(cta)
                     }
-                    .onFirstAppear {
-                        videoPlayerModel.loadAsset(url: Self.videoURL, shouldLoopVideo: true)
-                    }
-
-                Button(action: action) {
-                    Text(cta)
+                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+                    .visibility(showContent ? .visible : .invisible)
                 }
-                .buttonStyle(PrimaryButtonStyle())
-                .visibility(showContent ? .visible : .invisible)
-            }
-            .onFrameUpdate(in: .global, using: VideoPlayerFramePreferenceKey.self) { rect in
-                videoPlayerWidth = rect.width
-            }
+            )
         }
 
         private var videoPlayer: some View {

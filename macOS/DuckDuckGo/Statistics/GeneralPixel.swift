@@ -481,13 +481,6 @@ enum GeneralPixel: PixelKitEvent {
     case bitwardenSendingOfMessageFailed
     case bitwardenSharedKeyInjectionFailed
 
-    case updaterAborted(reason: String)
-    case updaterDidFindUpdate
-    case updaterDidDownloadUpdate
-    case updaterDidRunUpdate
-    case updaterAttemptToRestartWithoutResumeBlock
-    case releaseNotesEmpty
-
     case faviconDecryptionFailedUnique
     case downloadListItemDecryptionFailedUnique
     case historyEntryDecryptionFailedUnique
@@ -1265,19 +1258,6 @@ enum GeneralPixel: PixelKitEvent {
         case .bitwardenSharedKeyInjectionFailed:
             return "bitwarden_shared_key_injection_failed"
 
-        case .updaterAborted:
-            return "updater_aborted"
-        case .updaterDidFindUpdate:
-            return "updater_did_find_update"
-        case .updaterDidDownloadUpdate:
-            return "updater_did_download_update"
-        case .updaterDidRunUpdate:
-            return "updater_did_run_update"
-        case .updaterAttemptToRestartWithoutResumeBlock:
-            return "updater_attempt_to_restart_without_resume_block"
-        case .releaseNotesEmpty:
-            return "m_mac_release_notes_empty"
-
         case .faviconDecryptionFailedUnique:
             return "favicon_decryption_failed_unique"
         case .downloadListItemDecryptionFailedUnique:
@@ -1540,9 +1520,6 @@ enum GeneralPixel: PixelKitEvent {
                 return ["suggestionCategory": category.rawValue]
             }
             return nil
-
-        case .updaterAborted(let reason):
-            return ["reason": reason]
 
         case let .userScriptLoadJSFailed(jsFile, error):
             var params = error.pixelParameters
@@ -1865,12 +1842,6 @@ enum GeneralPixel: PixelKitEvent {
                 .bitwardenDecryptionFailed,
                 .bitwardenSendingOfMessageFailed,
                 .bitwardenSharedKeyInjectionFailed,
-                .updaterAborted,
-                .updaterDidFindUpdate,
-                .updaterDidDownloadUpdate,
-                .updaterDidRunUpdate,
-                .updaterAttemptToRestartWithoutResumeBlock,
-                .releaseNotesEmpty,
                 .faviconDecryptionFailedUnique,
                 .downloadListItemDecryptionFailedUnique,
                 .historyEntryDecryptionFailedUnique,

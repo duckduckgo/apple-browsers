@@ -30,7 +30,7 @@ import UserScript
 import WebKit
 
 @MainActor
-final class UserScripts: UserScriptsProvider {
+final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
     let contextMenuScript = ContextMenuUserScript()
@@ -51,9 +51,7 @@ final class UserScripts: UserScriptsProvider {
     let youtubePlayerUserScript: YoutubePlayerUserScript?
     let specialErrorPageUserScript: SpecialErrorPageUserScript?
     let onboardingUserScript: OnboardingUserScript?
-#if SPARKLE
-    let releaseNotesUserScript: ReleaseNotesUserScript?
-#endif
+    let releaseNotesUserScript: Subfeature? /*ReleaseNotesUserScript*/
     let aiChatUserScript: AIChatUserScript?
     let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
@@ -168,9 +166,16 @@ final class UserScripts: UserScriptsProvider {
             youtubePlayerUserScript = nil
         }
 
-#if SPARKLE
-        releaseNotesUserScript = ReleaseNotesUserScript(keyValueStore: UserDefaults.standard)
-#endif
+        // Release notes user script - only available for Sparkle builds
+        if let updateController = Application.appDelegate.updateController as? any SparkleUpdateController {
+            releaseNotesUserScript = updateController.makeReleaseNotesUserScript(
+                pixelFiring: PixelKit.shared,
+                keyValueStore: UserDefaults.standard,
+                releaseNotesURL: .releaseNotes
+            )
+        } else {
+            releaseNotesUserScript = nil
+        }
 
         userScripts.append(autoconsentUserScript)
 
@@ -207,11 +212,9 @@ final class UserScripts: UserScriptsProvider {
             if let youtubePlayerUserScript {
                 specialPages.registerSubfeature(delegate: youtubePlayerUserScript)
             }
-#if SPARKLE
             if let releaseNotesUserScript {
                 specialPages.registerSubfeature(delegate: releaseNotesUserScript)
             }
-#endif
             if let onboardingUserScript {
                 specialPages.registerSubfeature(delegate: onboardingUserScript)
             }
@@ -231,12 +234,20 @@ final class UserScripts: UserScriptsProvider {
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: subscriptionManager,
+            uiHandler: Application.appDelegate.subscriptionUIHandler,
+            wideEvent: Application.appDelegate.wideEvent,
+            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+            pendingTransactionHandler: pendingTransactionHandler
+        )
+
         delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                            stripePurchaseFlow: stripePurchaseFlow,
                                                            uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                            aiChatURL: AIChatRemoteSettings().aiChatURL,
                                                            wideEvent: Application.appDelegate.wideEvent,
-                                                           pendingTransactionHandler: pendingTransactionHandler, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
+                                                           pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)

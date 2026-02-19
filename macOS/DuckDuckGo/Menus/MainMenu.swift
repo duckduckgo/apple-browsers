@@ -903,13 +903,22 @@ final class MainMenu: NSMenu {
                         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
                         let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: nil)
                         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults, pixelHandler: pixelHandler)
+
+                        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+                            subscriptionManager: subscriptionManager,
+                            uiHandler: Application.appDelegate.subscriptionUIHandler,
+                            wideEvent: Application.appDelegate.wideEvent,
+                            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+                            pendingTransactionHandler: pendingTransactionHandler
+                        )
+
                         let feature = SubscriptionPagesUseSubscriptionFeature(
                             subscriptionManager: subscriptionManager,
                             stripePurchaseFlow: stripePurchaseFlow,
                             uiHandler: Application.appDelegate.subscriptionUIHandler,
                             aiChatURL: AIChatRemoteSettings().aiChatURL,
                             wideEvent: Application.appDelegate.wideEvent,
-                            pendingTransactionHandler: pendingTransactionHandler, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
+                            pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
                         )
 
                         // Create params matching what the web would send

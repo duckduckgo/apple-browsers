@@ -36,17 +36,14 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     }
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
-        switch context.duckDuckGoExtensionType {
-        case .ddgInternalExtension:
+        switch context.duckDuckGoWebExtensionType {
+        case .embedded:
             return [AutoconsentWebExtensionMessageHandler(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences
             )]
         default:
-            return [AutoconsentWebExtensionMessageHandler(
-                privacyConfigurationManager: privacyConfigurationManager,
-                autoconsentPreferences: autoconsentPreferences
-            )]
+            return []
         }
     }
 }

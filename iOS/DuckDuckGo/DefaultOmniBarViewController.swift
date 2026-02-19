@@ -61,7 +61,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+        let shouldUseDefaultAddressBarEditingOnIPad = UIDevice.current.userInterfaceIdiom == .pad
+            && dependencies.featureFlagger.isFeatureOn(.iPadAIToggle)
+
+        if aiChatSettings.isAIChatSearchInputUserSettingsEnabled && !shouldUseDefaultAddressBarEditingOnIPad {
             if textFieldTapped {
                 omniDelegate?.onExperimentalAddressBarTapped()
             }

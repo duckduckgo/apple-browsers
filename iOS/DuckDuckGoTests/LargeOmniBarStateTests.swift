@@ -567,7 +567,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertEqual(testee.onBrowsingStoppedState.name, LargeOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false).name)
     }
 
-    func testWhenIPadAIToggleEnabledAndAIChatButtonVisibleThenShowAIChatModeToggleIsTrue() {
+    func testWhenIPadAIToggleEnabledThenAIChatButtonIsHiddenAndShowAIChatModeToggleIsTrue() {
         UIDevice.swizzleCurrent()
         defer { UIDevice.unswizzleCurrent() }
         MockUIDevice.mockUserInterfaceIdiom = .pad
@@ -577,7 +577,7 @@ class LargeOmniBarStateTests: XCTestCase {
                                                  featureFlagger: mockFeatureFlagger,
                                                  aiChatSettings: mockAIChatSettingsEnabled)
         let testee = LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)
-        XCTAssertTrue(testee.showAIChatButton)
+        XCTAssertFalse(testee.showAIChatButton)
         XCTAssertTrue(testee.showAIChatModeToggle)
     }
 
@@ -603,7 +603,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showAIChatModeToggle)
     }
 
-    func testWhenAIChatSearchInputSettingDisabledThenShowAIChatModeToggleIsFalseEvenIfFlagEnabled() {
+    func testWhenAIChatSearchInputSettingDisabledThenAIChatButtonAndModeToggleAreHiddenIfFlagEnabled() {
         UIDevice.swizzleCurrent()
         defer { UIDevice.unswizzleCurrent() }
         MockUIDevice.mockUserInterfaceIdiom = .pad
@@ -616,7 +616,7 @@ class LargeOmniBarStateTests: XCTestCase {
                                                  featureFlagger: mockFeatureFlagger,
                                                  aiChatSettings: aiChatSettings)
         let testee = LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)
-        XCTAssertTrue(testee.showAIChatButton)
+        XCTAssertFalse(testee.showAIChatButton)
         XCTAssertFalse(testee.showAIChatModeToggle)
     }
 

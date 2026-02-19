@@ -177,6 +177,10 @@ class SwitchBarTextEntryViewController: UIViewController {
         textEntryView.selectAllText()
     }
 
+    func setQueryText(_ text: String) {
+        textEntryView.setQueryText(text)
+    }
+
     private struct Metrics {
         static let containerCornerRadius: CGFloat = 16
     }

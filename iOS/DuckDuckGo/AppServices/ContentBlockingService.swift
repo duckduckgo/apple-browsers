@@ -33,7 +33,8 @@ final class ContentBlockingService {
          sync: DDGSyncing,
          fireproofing: Fireproofing,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
-         internalUserDecider: InternalUserDecider) {
+         internalUserDecider: InternalUserDecider,
+         syncErrorHandler: SyncErrorHandler) {
 
         common = contentBlocking
 
@@ -43,7 +44,8 @@ final class ContentBlockingService {
                                                                            contentBlockingManager: common.contentBlockingManager,
                                                                            fireproofing: fireproofing,
                                                                            contentScopeExperimentsManager: contentScopeExperimentsManager,
-                                                                           internalUserDecider: internalUserDecider)
+                                                                           internalUserDecider: internalUserDecider,
+                                                                           syncErrorHandler: syncErrorHandler)
 
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies)
     }

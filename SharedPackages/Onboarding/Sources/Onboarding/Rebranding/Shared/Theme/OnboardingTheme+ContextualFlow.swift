@@ -22,6 +22,10 @@ public extension OnboardingTheme {
 
     /// Layout and text-alignment metrics used by contextual onboarding screens.
     struct ContextualOnboardingMetrics: Equatable {
+
+        /// Outer padding applied to the contextual onboarding content container.
+        public let containerPadding: EdgeInsets
+
         /// Spacing between the copy block and CTA content.
         public let contentSpacing: CGFloat
 
@@ -41,15 +45,32 @@ public extension OnboardingTheme {
         /// [Figma Selector  Buttons](https://www.figma.com/design/wMxBpe0mKrRS0nVhtwMGO7/%F0%9F%9A%80-Onboarding-Components--2026-?node-id=2-1521)
         public let optionsListButtonStyle: OnboardingButtonStyle
 
+        /// Maximum width for the contextual dialog container.
+        /// When `nil`, the container uses full available width.
+        public let maxContainerWidth: CGFloat?
+
+        /// Time delay (in seconds) before the contextual content starts to fade in.
+        /// This creates a brief pause after the dialog appears before animating the content.
+        public let contentFadeInDelay: TimeInterval
+
+        /// Duration (in seconds) of the fade-in animation for contextual content.
+        /// Controls how quickly the content transitions from invisible to fully visible.
+        public let contentFadeInDuration: TimeInterval
+
         public init(
+            containerPadding: EdgeInsets,
             contentSpacing: CGFloat,
             titleBodyVerticalSpacing: CGFloat,
             titleBodyInset: EdgeInsets,
             contextualTitleTextAlignment: TextAlignment,
             contextualBodyTextAlignment: TextAlignment,
             optionsListMetrics: OptionsListMetrics,
-            optionsListButtonStyle: OnboardingButtonStyle
+            optionsListButtonStyle: OnboardingButtonStyle,
+            maxContainerWidth: CGFloat? = nil,
+            contentFadeInDelay: TimeInterval = 0.3,
+            contentFadeInDuration: TimeInterval = 0.25
         ) {
+            self.containerPadding = containerPadding
             self.contentSpacing = contentSpacing
             self.titleBodyVerticalSpacing = titleBodyVerticalSpacing
             self.titleBodyInset = titleBodyInset
@@ -57,6 +78,9 @@ public extension OnboardingTheme {
             self.contextualBodyTextAlignment = contextualBodyTextAlignment
             self.optionsListMetrics = optionsListMetrics
             self.optionsListButtonStyle = optionsListButtonStyle
+            self.maxContainerWidth = maxContainerWidth
+            self.contentFadeInDelay = contentFadeInDelay
+            self.contentFadeInDuration = contentFadeInDuration
         }
     }
 

@@ -30,7 +30,8 @@ extension DefaultScriptSourceProvider.Dependencies {
              contentBlockingManager: ContentBlockerRulesManagerMock(),
              fireproofing: MockFireproofing(),
              contentScopeExperimentsManager: MockContentScopeExperimentManager(),
-             internalUserDecider: MockInternalUserDecider())
+             internalUserDecider: MockInternalUserDecider(),
+             syncErrorHandler: CapturingAdapterErrorHandler())
     }
 
     static func makeMock(privacyConfig: PrivacyConfigurationManaging) -> Self {
@@ -40,6 +41,7 @@ extension DefaultScriptSourceProvider.Dependencies {
              contentBlockingManager: ContentBlockerRulesManagerMock(),
              fireproofing: MockFireproofing(),
              contentScopeExperimentsManager: MockContentScopeExperimentManager(),
-             internalUserDecider: MockInternalUserDecider())
+             internalUserDecider: MockInternalUserDecider(),
+             syncErrorHandler: CapturingAdapterErrorHandler())
     }
 }

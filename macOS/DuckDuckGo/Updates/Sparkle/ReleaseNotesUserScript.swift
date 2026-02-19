@@ -16,21 +16,28 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Persistence
-import UserScript
-import WebKit
 import Combine
 import Common
+import Foundation
+import Persistence
+import PixelKit
+import UserScript
+import WebKit
 
-#if SPARKLE
+/// Sparkle-specific implementation of release notes user script.
+///
+/// Handles communication between the release notes web page and the update controller,
+/// providing update status, progress, and triggering update actions.
+public final class ReleaseNotesUserScript: NSObject, Subfeature {
 
-final class ReleaseNotesUserScript: NSObject, Subfeature {
+    private let updateController: any SparkleUpdateController
+    private let pixelFiring: PixelFiring?
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let releaseNotesURL: URL
 
-    lazy var updateController: (any SparkleUpdateControllerProtocol)? = Application.appDelegate.updateController as? any SparkleUpdateControllerProtocol
-    var messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "release-notes")])
-    let featureName: String = "release-notes"
-    weak var broker: UserScriptMessageBroker?
+    public var messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "release-notes")])
+    public let featureName: String = "release-notes"
+    public weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView? {
         didSet {
             onUpdate()
@@ -38,7 +45,6 @@ final class ReleaseNotesUserScript: NSObject, Subfeature {
     }
     private var cancellables = Set<AnyCancellable>()
     private var isInitialized = false
-    private let keyValueStore: ThrowingKeyValueStoring
 
     // MARK: - MessageNames
     enum MessageNames: String, CaseIterable {
@@ -49,8 +55,14 @@ final class ReleaseNotesUserScript: NSObject, Subfeature {
         case retryUpdate
     }
 
-    init(keyValueStore: ThrowingKeyValueStoring) {
+    public init(updateController: any SparkleUpdateController,
+                pixelFiring: PixelFiring?,
+                keyValueStore: ThrowingKeyValueStoring,
+                releaseNotesURL: URL) {
+        self.updateController = updateController
+        self.pixelFiring = pixelFiring
         self.keyValueStore = keyValueStore
+        self.releaseNotesURL = releaseNotesURL
         super.init()
     }
 
@@ -67,32 +79,17 @@ final class ReleaseNotesUserScript: NSObject, Subfeature {
     ]
 
     @MainActor
-    func handler(forMethodNamed methodName: String) -> Handler? {
+    public func handler(forMethodNamed methodName: String) -> Handler? {
         guard let messageName = MessageNames(rawValue: methodName) else { return nil }
         return methodHandlers[messageName]
     }
 
     public func onUpdate() {
-        guard AppVersion.runType != .uiTests, isInitialized, let webView = webView else {
-            return
-        }
+        guard AppVersion.runType != .uiTests, isInitialized,
+              let webView, webView.url == releaseNotesURL else { return }
 
-        guard webView.url == .releaseNotes else {
-            return
-        }
-
-        guard let updateController = Application.appDelegate.updateController as? any SparkleUpdateControllerProtocol else {
-            return
-        }
-
-        let values = ReleaseNotesValues(from: updateController, keyValueStore: keyValueStore)
+        let values = ReleaseNotesValues(from: updateController, pixelFiring: pixelFiring, keyValueStore: keyValueStore)
         broker?.push(method: "onUpdate", params: values, for: self, into: webView)
-    }
-
-    // MARK: - UserValuesNotification
-
-    struct UserValuesNotification: Encodable {
-        let userValuesNotification: UserValues
     }
 
 }
@@ -120,7 +117,7 @@ extension ReleaseNotesUserScript {
     @MainActor
     private func retryUpdate(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         DispatchQueue.main.async { [weak self] in
-            self?.updateController?.checkForUpdateSkippingRollout()
+            self?.updateController.checkForUpdateSkippingRollout()
         }
         return nil
     }
@@ -142,7 +139,7 @@ extension ReleaseNotesUserScript {
 
     private func browserRestart(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         DispatchQueue.main.async { [weak self] in
-            self?.updateController?.runUpdate()
+            self?.updateController.runUpdate()
         }
         return nil
     }
@@ -150,5 +147,3 @@ extension ReleaseNotesUserScript {
     struct Result: Encodable {}
 
 }
-
-#endif

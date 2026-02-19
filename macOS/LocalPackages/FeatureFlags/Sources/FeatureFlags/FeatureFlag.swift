@@ -154,9 +154,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720018164
     case syncFeatureLevel3
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
-    case themes
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619633097
     case appStoreUpdateFlow
 
@@ -248,6 +245,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Prioritize results where the domain matches the search query when searching passwords & autofill
     case autofillPasswordSearchPrioritizeDomain
 
+    /// Controls visibility of the Passwords menu bar feature
+    case autofillPasswordsStatusBar
+
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit
@@ -296,6 +296,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case supportsSyncChatsDeletion
+
+    /// https://app.asana.com/1/137249556945/task/1213316822018797
+    case aiChatSidebarResizable
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -327,10 +330,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .warnBeforeQuit,
                 .wideEventPostEndpoint,
                 .memoryPressureReporting,
-                .themes,
                 .crashCollectionDisableKeysSorting,
                 .crashCollectionLimitCallStackTreeDepth,
-                .memoryUsageReporting:
+                .memoryUsageReporting,
+                .aiChatSidebarResizable,
+                .nextStepsListWidget:
             true
         default:
             false
@@ -386,7 +390,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dbpRemoteBrokerDelivery,
                 .dbpClickActionDelayReductionOptimization,
                 .syncFeatureLevel3,
-                .themes,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
                 .webKitPerformanceReporting,
@@ -412,6 +415,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newPermissionView,
                 .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain,
+                .autofillPasswordsStatusBar,
                 .warnBeforeQuit,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
@@ -423,7 +427,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .nextStepsListAdvancedCardOrdering,
                 .wideEventPostEndpoint,
                 .freeTrialConversionWideEvent,
-                .supportsSyncChatsDeletion:
+                .supportsSyncChatsDeletion,
+                .aiChatSidebarResizable:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -528,8 +533,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
-        case .themes:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.themes))
         case .appStoreUpdateFlow:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
@@ -582,6 +585,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.terminationDeciderSequence))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
+        case .autofillPasswordsStatusBar:
+            return .internalOnly()
         case .warnBeforeQuit:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
         case .dataImportWideEventMeasurement:
@@ -597,7 +602,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .heuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         case .nextStepsListWidget:
-            return .disabled
+            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.nextStepsListWidget))
         case .nextStepsListAdvancedCardOrdering:
             return .disabled
         case .wideEventPostEndpoint:
@@ -610,6 +615,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .supportsSyncChatsDeletion:
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
+        case .aiChatSidebarResizable:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         }
     }
 }

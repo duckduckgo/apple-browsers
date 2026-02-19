@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Radera allt";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Radera den här chatten";
-"scoped.fire.confirmation.delete.this.chat.description" = "Din Duck.ai-chatthistorik raderas inte om du väljer Radera alla.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Ta bort denna flik";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "Din Duck.ai-chatthistorik raderas inte om du väljer Radera alla.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Ta bort denna flik";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Detta kommer att avbryta pågående nerladdningar.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Skicka innehåll automatiskt";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Chattförslag";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Dölj AI-genererade bilder";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Visa sökförslag medan du skriver, inklusive dina bokmärken. Alla sökningar är privata.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Visa förslag från din historik, dina bokmärken och (valfritt) chatthistoriken från Duck.ai när du skriver i sökfältet. Alla sökningar är privata.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "App-lås";

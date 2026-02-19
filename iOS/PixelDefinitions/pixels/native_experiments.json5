@@ -27,15 +27,15 @@
                 },
                 "autofill_enabled": {
                     "description": "Fires when the user enables or disables autofill",
-                    "enum": ["true", "false"]
+                    "type": "boolean"
                 },
                 "sync_enabled": {
                     "description": "Fires when the user enables or disables sync",
-                    "enum": ["true", "false"]
+                    "type": "boolean"
                 },
                 "autofill_other_apps_enabled": {
                     "description": "Fires when the user enables or disables Autofill in Other Apps (autofill provider extension)",
-                    "enum": ["true", "false"]
+                    "type": "boolean"
                 },
                 "impression_count": {
                     "description": "Bucketed number of onboarding prompt impressions before the user saved",

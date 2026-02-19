@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Tümünü Sil";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Bu Sohbeti Sil";
-"scoped.fire.confirmation.delete.this.chat.description" = "\"Tümünü Sil\" seçeneği Duck.ai sohbet geçmişini silmeyecek.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Bu Sekmeyi Sil";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "\"Tümünü Sil\" seçeneği Duck.ai sohbet geçmişini silmeyecek.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Bu Sekmeyi Sil";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Bu işlem devam eden indirmeleri iptal edecektir.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "İçeriği Otomatik Olarak Gönder";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Sohbet Önerileri";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Yapay Zeka Tarafından Oluşturulan Görselleri Gizle";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Yazarken yer imleriniz de dahil olmak üzere arama önerilerini gösterin. Tüm aramalar özeldir.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Arama çubuğuna yazarken geçmişinizden, yer işaretlerinizden ve (isteğe bağlı olarak) Duck.ai sohbet geçmişinizden öneriler gösterin. Tüm aramalar gizlidir.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Uygulama Kilidi";

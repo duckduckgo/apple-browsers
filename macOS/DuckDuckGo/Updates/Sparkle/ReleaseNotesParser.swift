@@ -18,10 +18,10 @@
 
 import Foundation
 
-final class ReleaseNotesParser {
+public final class ReleaseNotesParser {
 
-    static func parseReleaseNotes(from description: String?) -> ([String], [String]) {
-        guard let description = description else { return ([], []) }
+    public static func parseReleaseNotes(from description: String?) -> ([String], [String]) {
+        guard let description else { return ([], []) }
 
         var standardReleaseNotes = [String]()
         var subscriptionReleaseNotes = [String]()

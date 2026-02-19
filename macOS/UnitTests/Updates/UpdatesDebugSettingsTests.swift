@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
+import AppUpdaterShared
 import Common
 import Persistence
 import PersistenceTestingUtils

@@ -22,14 +22,12 @@ import os.log
 import Persistence
 import PixelKit
 import PrivacyConfig
-#if SPARKLE
 import Sparkle
-#endif
 
-#if SPARKLE
-final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
+public final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     private var internalUserDecider: InternalUserDecider
-    var areAutomaticUpdatesEnabled: Bool
+    public var areAutomaticUpdatesEnabled: Bool
+
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
     private var pendingUpdateSince: Date {
@@ -37,11 +35,11 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         set { try? settings.set(newValue, for: \.pendingUpdateSince) }
     }
 
-    func updateLastUpdateDownloadedDate() {
+    public func updateLastUpdateDownloadedDate() {
         pendingUpdateSince = Date()
     }
 
-    var timeIntervalSinceLastUpdateDownloaded: TimeInterval {
+    public var timeIntervalSinceLastUpdateDownloaded: TimeInterval {
         Date().timeIntervalSince(pendingUpdateSince)
     }
 
@@ -52,14 +50,14 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
 
     let onProgressChange: (UpdateCycleProgress, (() -> Void)?) -> Void
 
-    private(set) var sparkleUpdateState: SPUUserUpdateState?
+    public private(set) var sparkleUpdateState: SPUUserUpdateState?
 
     // MARK: - Initializers
 
-    init(internalUserDecider: InternalUserDecider,
-         areAutomaticUpdatesEnabled: Bool,
-         settings: (any ThrowingKeyedStoring<UpdateControllerSettings>),
-         onProgressChange: @escaping (UpdateCycleProgress, (() -> Void)?) -> Void) {
+    public init(internalUserDecider: InternalUserDecider,
+                areAutomaticUpdatesEnabled: Bool,
+                settings: (any ThrowingKeyedStoring<UpdateControllerSettings>),
+                onProgressChange: @escaping (UpdateCycleProgress, (() -> Void)?) -> Void) {
 
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
@@ -77,11 +75,11 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     /// User dismissal (via this method) still allows the update to install on quit because
     /// Sparkle preserves downloaded updates. Other cancellation reasons (settings changed,
     /// build expired) discard the update entirely.
-    func cancelAndDismissCurrentUpdate() {
+    public func cancelAndDismissCurrentUpdate() {
         dismissCurrentUpdate()
     }
 
-    func show(_ request: SPUUpdatePermissionRequest) async -> SUUpdatePermissionResponse {
+    public func show(_ request: SPUUpdatePermissionRequest) async -> SUUpdatePermissionResponse {
 #if DEBUG
         .init(automaticUpdateChecks: false, sendSystemProfile: false)
 #else
@@ -89,12 +87,12 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
 #endif
     }
 
-    func showUserInitiatedUpdateCheck(cancellation: @escaping () -> Void) {
+    public func showUserInitiatedUpdateCheck(cancellation: @escaping () -> Void) {
         Logger.updates.log("Updater started performing the update check. (isInternalUser: \(self.internalUserDecider.isInternalUser, privacy: .public))")
         onProgressChange(.updateCycleDidStart, nil)
     }
 
-    func showUpdateFound(with appcastItem: SUAppcastItem, state: SPUUserUpdateState, reply: @escaping (SPUUserUpdateChoice) -> Void) {
+    public func showUpdateFound(with appcastItem: SUAppcastItem, state: SPUUserUpdateState, reply: @escaping (SPUUserUpdateChoice) -> Void) {
         Logger.updates.log("Updater shown update found: (userInitiated:  \(state.userInitiated, privacy: .public), stage: \(state.stage.rawValue, privacy: .public))")
         sparkleUpdateState = state
 
@@ -120,19 +118,19 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         }
     }
 
-    func showUpdateReleaseNotes(with downloadData: SPUDownloadData) {
+    public func showUpdateReleaseNotes(with downloadData: SPUDownloadData) {
         // no-op
     }
 
-    func showUpdateReleaseNotesFailedToDownloadWithError(_ error: any Error) {
+    public func showUpdateReleaseNotesFailedToDownloadWithError(_ error: any Error) {
         // no-op
     }
 
-    func showUpdateNotFoundWithError(_ error: any Error, acknowledgement: @escaping () -> Void) {
+    public func showUpdateNotFoundWithError(_ error: any Error, acknowledgement: @escaping () -> Void) {
         acknowledgement()
     }
 
-    func showUpdaterError(_ error: any Error, acknowledgement: @escaping () -> Void) {
+    public func showUpdaterError(_ error: any Error, acknowledgement: @escaping () -> Void) {
         Logger.updates.error("Updater encountered an error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
 
         let errorCode = (error as NSError).code
@@ -146,16 +144,16 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         acknowledgement()
     }
 
-    func showDownloadInitiated(cancellation: @escaping () -> Void) {
+    public func showDownloadInitiated(cancellation: @escaping () -> Void) {
         onProgressChange(.downloadDidStart, nil)
     }
 
-    func showDownloadDidReceiveExpectedContentLength(_ expectedContentLength: UInt64) {
+    public func showDownloadDidReceiveExpectedContentLength(_ expectedContentLength: UInt64) {
         bytesDownloaded = 0
         bytesToDownload = expectedContentLength
     }
 
-    func showDownloadDidReceiveData(ofLength length: UInt64) {
+    public func showDownloadDidReceiveData(ofLength length: UInt64) {
         bytesDownloaded += length
         if bytesDownloaded > bytesToDownload {
             bytesToDownload = bytesDownloaded
@@ -163,15 +161,15 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         onProgressChange(.downloading(Double(bytesDownloaded) / Double(bytesToDownload)), nil)
     }
 
-    func showDownloadDidStartExtractingUpdate() {
+    public func showDownloadDidStartExtractingUpdate() {
         onProgressChange(.extractionDidStart, nil)
     }
 
-    func showExtractionReceivedProgress(_ progress: Double) {
+    public func showExtractionReceivedProgress(_ progress: Double) {
         onProgressChange(.extracting(progress), nil)
     }
 
-    func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
+    public func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
         onDismiss = { [weak self] in
             // Cancel the current update that has begun installing and dismiss the update
             // This doesn't actually skip the update in the future (‽)
@@ -182,7 +180,7 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         onProgressChange(.updateCycleDone(.pausedAtRestartCheckpoint), { reply(.install) })
     }
 
-    func showInstallingUpdate(withApplicationTerminated applicationTerminated: Bool, retryTerminatingApplication: @escaping () -> Void) {
+    public func showInstallingUpdate(withApplicationTerminated applicationTerminated: Bool, retryTerminatingApplication: @escaping () -> Void) {
         Logger.updates.info("Updater started the installation")
         onProgressChange(.installationDidStart, nil)
 
@@ -201,7 +199,7 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
     /// - Parameters:
     ///   - relaunched: Whether the app was relaunched
     ///   - acknowledgement: Callback to acknowledge completion
-    func showUpdateInstalledAndRelaunched(_ relaunched: Bool, acknowledgement: @escaping () -> Void) {
+    public func showUpdateInstalledAndRelaunched(_ relaunched: Bool, acknowledgement: @escaping () -> Void) {
         onProgressChange(.installing, nil)
         // Record successful update timestamp for future time-since-update tracking.
         // We do this here (not in WideEvent completion) because this callback happens
@@ -211,13 +209,11 @@ final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
         acknowledgement()
     }
 
-    func showUpdateInFocus() {
+    public func showUpdateInFocus() {
         // no-op
     }
 
-    func dismissUpdateInstallation() {
+    public func dismissUpdateInstallation() {
         onProgressChange(.updateCycleDone(.dismissedWithNoError), nil)
     }
 }
-
-#endif

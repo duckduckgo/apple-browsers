@@ -2972,7 +2972,7 @@
 "prompt.custom.url.scheme.title" = "Ouvrir dans une autre application ?";
 
 /* No comment provided by engineer. */
-"REBRANDED" = "REBRANDED";
+"REBRANDED" = "RENOMMÉ";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Journaux de traitement récents";
@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Tout supprimer";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Supprimer cette discussion";
-"scoped.fire.confirmation.delete.this.chat.description" = "« Tout supprimer » ne supprimera pas l'historique de vos discussions Duck.ai.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Supprimer cet onglet";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "« Tout supprimer » ne supprimera pas l'historique de vos discussions Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Supprimer cet onglet";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Cela annulera les téléchargements en cours.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Envoyer automatiquement le contenu";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Suggestions de chat";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Masquer les images générées par l'IA";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Affichez les suggestions de recherche au fur et à mesure que vous tapez, y compris vos signets. Toutes les recherches sont privées.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Afficher les suggestions issues de votre historique, de vos signets et de votre historique de discussion Duck.ai (facultatif) au fur et à mesure que vous saisissez vos termes de recherche. Toutes les recherches sont privées.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Verrouillage de l'application";

@@ -17,7 +17,7 @@
 //
 import PixelKit
 
-enum UpdateFlowPixels: PixelKitEvent {
+public enum UpdateFlowPixels: PixelKitEvent {
 
     /**
      * Event Trigger: Check for Updates tapped on App Store builds
@@ -111,7 +111,17 @@ enum UpdateFlowPixels: PixelKitEvent {
         osVersion: String
     )
 
-    var name: String {
+    // Debug Sparkle updater pixels
+    case updaterDidRunUpdate
+    case updaterAttemptToRestartWithoutResumeBlock
+    case updaterAborted(reason: String)
+    case updaterDidFindUpdate
+    case updaterDidDownloadUpdate
+
+    // Release notes pixel
+    case releaseNotesEmpty
+
+    public var name: String {
         switch self {
         case .checkForUpdate:
             return "m_mac_app_store_check_for_update"
@@ -129,10 +139,22 @@ enum UpdateFlowPixels: PixelKitEvent {
             return "m_mac_update_application_failure"
         case .updateApplicationUnexpected:
             return "m_mac_update_application_unexpected"
+        case .updaterDidRunUpdate:
+            return "updater_did_run_update"
+        case .updaterAttemptToRestartWithoutResumeBlock:
+            return "updater_attempt_to_restart_without_resume_block"
+        case .updaterAborted:
+            return "updater_aborted"
+        case .updaterDidFindUpdate:
+            return "updater_did_find_update"
+        case .updaterDidDownloadUpdate:
+            return "updater_did_download_update"
+        case .releaseNotesEmpty:
+            return "m_mac_release_notes_empty"
         }
     }
 
-    var parameters: [String: String]? {
+    public var parameters: [String: String]? {
         switch self {
         case .checkForUpdate(let source):
             return ["source": source.rawValue]
@@ -170,12 +192,22 @@ enum UpdateFlowPixels: PixelKitEvent {
                 "targetBuild": targetBuild,
                 "osVersion": osVersion
             ]
-        case .updateNotificationShown, .updateNotificationTapped, .updateDuckDuckGoButtonTapped, .releaseMetadataFetchFailed:
+        case .updaterAborted(let reason):
+            return ["reason": reason]
+        case .updateNotificationShown,
+                .updateNotificationTapped,
+                .updateDuckDuckGoButtonTapped,
+                .releaseMetadataFetchFailed,
+                .updaterDidRunUpdate,
+                .updaterAttemptToRestartWithoutResumeBlock,
+                .updaterDidFindUpdate,
+                .updaterDidDownloadUpdate,
+                .releaseNotesEmpty:
             return nil
         }
     }
 
-    var error: (any Error)? {
+    public var error: (any Error)? {
         switch self {
         case .releaseMetadataFetchFailed(let error):
             return error
@@ -183,13 +215,13 @@ enum UpdateFlowPixels: PixelKitEvent {
         }
     }
 
-    enum Source: String {
+    public enum Source: String {
         case mainMenu = "main_menu"
         case moreOptionsMenu = "more_options"
         case aboutMenu = "about"
     }
 
-    var standardParameters: [PixelKitStandardParameter]? {
+    public var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .checkForUpdate,
                 .updateNotificationShown,
@@ -198,7 +230,13 @@ enum UpdateFlowPixels: PixelKitEvent {
                 .releaseMetadataFetchFailed,
                 .updateApplicationSuccess,
                 .updateApplicationFailure,
-                .updateApplicationUnexpected:
+                .updateApplicationUnexpected,
+                .updaterDidRunUpdate,
+                .updaterAttemptToRestartWithoutResumeBlock,
+                .updaterAborted,
+                .updaterDidFindUpdate,
+                .updaterDidDownloadUpdate,
+                .releaseNotesEmpty:
             return [.pixelSource]
         }
     }

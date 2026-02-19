@@ -34,6 +34,22 @@ protocol AIChatSidebarHostingDelegate: AnyObject {
     func sidebarHostDidUpdateTabs()
 }
 
+/// Receives live resize events from the sidebar resize handle and layout changes.
+@MainActor
+protocol AIChatSidebarResizeDelegate: AnyObject {
+    /// Called continuously during a drag with the proposed width.
+    /// Returns the actual (clamped) width that was applied.
+    @discardableResult
+    func sidebarHostDidResize(to width: CGFloat) -> CGFloat
+
+    /// Called once when the drag ends with the final width.
+    func sidebarHostDidFinishResize(to width: CGFloat)
+
+    /// Called when the host's available width changes (e.g. window resize).
+    /// The presenter uses this to shrink the sidebar proportionally when space is tight.
+    func sidebarHostDidChangeAvailableWidth(_ availableWidth: CGFloat)
+}
+
 /// A protocol that defines the requirements for hosting the AI Chat sidebar in a view controller.
 ///
 /// This protocol provides the necessary properties and methods to manage the AI Chat sidebar's
@@ -42,6 +58,9 @@ protocol AIChatSidebarHostingDelegate: AnyObject {
 protocol AIChatSidebarHosting: AnyObject  {
     /// The delegate that receives tab-related events from the sidebar.
     var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate? { get set }
+
+    /// The delegate that receives resize events from the sidebar drag handle.
+    var aiChatSidebarResizeDelegate: AIChatSidebarResizeDelegate? { get set }
 
     /// Tells if the sidebar host is in the key application window.
     var isInKeyWindow: Bool { get }
@@ -61,6 +80,16 @@ protocol AIChatSidebarHosting: AnyObject  {
 
     /// The burner mode status of the current tab (private browsing mode).
     var burnerMode: BurnerMode { get }
+
+    /// Updates the sidebar width and leading constraint to the given value without animation.
+    /// Used during live resize drags.
+    func applySidebarWidth(_ width: CGFloat)
+
+    /// Shows or hides the resize handle on the sidebar's leading edge.
+    func setResizeHandleVisible(_ visible: Bool)
+
+    /// The total width available for both the webview and sidebar.
+    var availableWidth: CGFloat { get }
 }
 
 extension BrowserTabViewController: AIChatSidebarHosting {
@@ -81,4 +110,16 @@ extension BrowserTabViewController: AIChatSidebarHosting {
         tabViewModel?.tab.burnerMode ?? .regular
     }
 
+    func applySidebarWidth(_ width: CGFloat) {
+        sidebarContainerWidthConstraint?.constant = width
+        sidebarContainerLeadingConstraint?.constant = -width
+    }
+
+    func setResizeHandleVisible(_ visible: Bool) {
+        sidebarResizeHandle.isHidden = !visible
+    }
+
+    var availableWidth: CGFloat {
+        view.bounds.width
+    }
 }

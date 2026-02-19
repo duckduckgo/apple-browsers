@@ -4294,13 +4294,7 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 
     func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager) {
-        if let controller = tabSwitcherController {
-            controller.dismiss(animated: true) {
-                self.segueToSettingsSync()
-            }
-        } else {
-            segueToSettingsSync()
-        }
+        segueToSettingsSync()
     }
 }
 
@@ -4319,13 +4313,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: any AIChatContentHandling) {
-        if let controller = tabSwitcherController {
-            controller.dismiss(animated: true) {
-                self.segueToSettingsSync()
-            }
-        } else {
-            self.segueToSettingsSync()
-        }
+        segueToSettingsSync()
     }
 
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:

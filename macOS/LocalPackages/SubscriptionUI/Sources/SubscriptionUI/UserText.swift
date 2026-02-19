@@ -260,7 +260,7 @@ enum UserText {
     static let viewPlansExpiredButtonTitle = NSLocalizedString("subscription.preferences.button.view.plans", bundle: Bundle.module, value: "View Plans", comment: "Button for viewing subscription plans on expired subscription")
 
     // MARK: - Upgrade section
-    static let upgradeSectionCaption = NSLocalizedString("subscription.upgrade.section.caption", bundle: Bundle.module, value: "Unlock smarter more powerful AI", comment: "Caption text in the upgrade section promoting AI features")
+    static let upgradeSectionCaption = NSLocalizedString("subscription.upgrade.section.caption", bundle: Bundle.module, value: "Unlock smarter, more powerful AI", comment: "Caption text in the upgrade section promoting AI features")
     static func upgradeButton(tierName: String) -> String {
         let format = NSLocalizedString("subscription.upgrade.button", bundle: Bundle.module, value: "Upgrade to %@", comment: "Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro')")
         return String(format: format, tierName.capitalized)

@@ -338,8 +338,9 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     @MainActor
     private func runCancelHandler() async {
-        guard let productId = state.subscriptionInfo?.productId else {
+        guard let productId = state.subscriptionInfo?.availableChanges?.currentProductId else {
             state.cancelDowngradeTransactionStatus = nil
+            setCancelDowngradeError(nil)
             return
         }
         let setError: (AppStorePurchaseFlowError?) -> Void = { [weak self] in self?.setCancelDowngradeError($0) }

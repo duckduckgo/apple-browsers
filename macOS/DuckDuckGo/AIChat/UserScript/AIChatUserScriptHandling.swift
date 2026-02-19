@@ -363,7 +363,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 return makeErrorResponse("internal error")
             }
             let payload = try await syncHandler.getScopedToken()
-            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            fireSyncAiChatActiveDailyIfNeeded()
             return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
@@ -401,7 +401,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         do {
             let payload = try syncHandler.encrypt(data)
-            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            Task { @MainActor [weak self] in
+                self?.fireSyncAiChatActiveDailyIfNeeded()
+            }
             return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
@@ -432,7 +434,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         do {
             let payload = try syncHandler.decrypt(data)
-            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            Task { @MainActor [weak self] in
+                self?.fireSyncAiChatActiveDailyIfNeeded()
+            }
             return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason = error.localizedDescription
@@ -483,6 +487,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
         return AIChatSyncHandler(sync: sync)
+    }
+
+    @MainActor
+    private func fireSyncAiChatActiveDailyIfNeeded() {
+        pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
     }
 }
 // swiftlint:enable inclusive_language

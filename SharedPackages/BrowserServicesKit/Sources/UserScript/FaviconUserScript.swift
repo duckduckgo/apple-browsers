@@ -17,10 +17,11 @@
 //
 
 import Common
-import UserScript
+import Foundation
 import WebKit
 
-protocol FaviconUserScriptDelegate: AnyObject {
+/// Delegate protocol for receiving favicon link updates from pages
+public protocol FaviconUserScriptDelegate: AnyObject {
     @MainActor
     func faviconUserScript(_ faviconUserScript: FaviconUserScript,
                            didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
@@ -28,29 +29,50 @@ protocol FaviconUserScriptDelegate: AnyObject {
                            in webView: WKWebView?)
 }
 
-final class FaviconUserScript: NSObject, Subfeature {
+/// A subfeature that handles favicon link discovery from web pages via Content Scope Scripts.
+/// This script receives notifications from the C-S-S favicon feature when favicon links are found.
+public final class FaviconUserScript: NSObject, Subfeature {
 
-    struct FaviconsFoundPayload: Codable, Equatable {
-        let documentUrl: URL
-        let favicons: [FaviconLink]
+    /// Payload received from the C-S-S favicon feature
+    public struct FaviconsFoundPayload: Codable, Equatable {
+        public let documentUrl: URL
+        public let favicons: [FaviconLink]
+
+        public init(documentUrl: URL, favicons: [FaviconLink]) {
+            self.documentUrl = documentUrl
+            self.favicons = favicons
+        }
     }
 
-    struct FaviconLink: Codable, Equatable {
-        let href: URL
-        let rel: String
+    /// Represents a single favicon link element from the page
+    public struct FaviconLink: Codable, Equatable {
+        public let href: URL
+        public let rel: String
+        /// MIME type of the favicon (e.g., "image/png"). Used by C-S-S for SVG filtering on iOS.
+        public let type: String?
+
+        public init(href: URL, rel: String, type: String? = nil) {
+            self.href = href
+            self.rel = rel
+            self.type = type
+        }
     }
 
-    let messageOriginPolicy: MessageOriginPolicy = .all
-    let featureName: String = "favicon"
+    public let messageOriginPolicy: MessageOriginPolicy = .all
+    public let featureName: String = "favicon"
 
-    weak var broker: UserScriptMessageBroker?
-    weak var delegate: FaviconUserScriptDelegate?
+    public weak var broker: UserScriptMessageBroker?
+    public weak var delegate: FaviconUserScriptDelegate?
 
-    enum MessageNames: String, CaseIterable {
+    public override init() {
+        super.init()
+    }
+
+    public enum MessageNames: String, CaseIterable {
         case faviconFound
     }
 
-    func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+    public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         switch MessageNames(rawValue: methodName) {
         case .faviconFound:
             return { [weak self] in try await self?.faviconFound(params: $0, original: $1) }

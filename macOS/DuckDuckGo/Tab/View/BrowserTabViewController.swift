@@ -728,7 +728,9 @@ final class BrowserTabViewController: NSViewController {
                let configuration = context.webViewConfiguration {
 
                 // Create web view with extension's configuration
-                let webView = WebView(frame: .zero, configuration: configuration)
+                let webView = WebView(frame: .zero,
+                                      configuration: configuration,
+                                      privacyConfig: privacyConfigurationManager.privacyConfig)
                 let request = URLRequest(url: url)
                 webView.load(request)
                 return webView

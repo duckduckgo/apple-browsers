@@ -229,7 +229,7 @@ public final class UpdateWideEventData: WideEventData {
             ("feature.data.ext.update_check_duration_ms", updateCheckDuration?.stringValue(.noBucketing)),
             ("feature.data.ext.download_duration_ms", downloadDuration?.stringValue(.noBucketing)),
             ("feature.data.ext.extraction_duration_ms", extractionDuration?.stringValue(.noBucketing)),
-            ("feature.data.ext.total_duration_ms", totalDuration?.stringValue(.noBucketing))
+            ("feature.data.ext.total_duration_ms", totalDuration?.stringValue(.noBucketing)),
         ])
     }
 

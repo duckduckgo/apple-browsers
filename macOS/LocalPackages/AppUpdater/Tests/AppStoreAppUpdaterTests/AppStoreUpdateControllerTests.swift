@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
+import AppUpdaterTestHelpers
 import Combine
 import NetworkingTestingUtils
 import PrivacyConfig
 import XCTest
-import AppUpdaterShared
-import AppUpdaterTestHelpers
 
 @testable import AppStoreAppUpdater
 

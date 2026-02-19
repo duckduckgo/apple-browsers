@@ -145,4 +145,3 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
     }
 }
-

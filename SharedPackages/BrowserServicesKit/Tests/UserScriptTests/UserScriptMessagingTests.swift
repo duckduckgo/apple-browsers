@@ -305,4 +305,3 @@ struct TestDelegate: Subfeature {
         return person
     }
 }
-

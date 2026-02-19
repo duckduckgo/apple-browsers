@@ -624,4 +624,3 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var tabBarContainer: UIView = UIView()
 }
-

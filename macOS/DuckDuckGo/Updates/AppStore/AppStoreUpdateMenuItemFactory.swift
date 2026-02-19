@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-#if APPSTORE
 import Cocoa
 
 final class AppStoreUpdateMenuItemFactory {
@@ -24,10 +23,8 @@ final class AppStoreUpdateMenuItemFactory {
     static func menuItem(for update: Update) -> NSMenuItem {
         let item = NSMenuItem(title: UserText.updateAvailableMenuItemAppStore)
         item.target = Application.appDelegate.updateController
-        item.action = #selector(AppStoreUpdateController.openUpdatesPage)
+        item.action = #selector(UpdateController.openUpdatesPage)
         item.image = NSImage.updateMenuItemIcon
         return item
     }
 }
-
-#endif

@@ -17,16 +17,8 @@
 //
 
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
-
-// Mock updater for testing that implements UpdaterAvailabilityChecking
-class MockUpdater: UpdaterAvailabilityChecking {
-    var mockCanCheckForUpdates: Bool = true
-
-    var canCheckForUpdates: Bool {
-        return mockCanCheckForUpdates
-    }
-}
 
 /// Tests for UpdateCheckState actor that manages update check rate limiting.
 ///

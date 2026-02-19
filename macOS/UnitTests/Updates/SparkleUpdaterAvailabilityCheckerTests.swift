@@ -16,10 +16,9 @@
 //  limitations under the License.
 //
 
-#if SPARKLE
-
 import XCTest
 import Sparkle
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SparkleUpdaterAvailabilityCheckerTests: XCTestCase {
@@ -107,5 +106,3 @@ final class SparkleUpdaterAvailabilityCheckerTests: XCTestCase {
         XCTAssertFalse(checker.canCheckForUpdates)
     }
 }
-
-#endif

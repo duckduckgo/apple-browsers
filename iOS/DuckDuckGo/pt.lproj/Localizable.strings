@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Eliminar tudo";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Eliminar esta conversa";
-"scoped.fire.confirmation.delete.this.chat.description" = "“Apagar tudo” não apagará o histórico de conversas do Duck.ai.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Eliminar este separador";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "“Apagar tudo” não apagará o histórico de conversas do Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Eliminar este separador";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Esta ação vai cancelar as transferências em curso.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Enviar conteúdo automaticamente";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Sugestões de chat";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ocultar Imagens Geradas por IA";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Mostra sugestões de pesquisa enquanto escreves, incluindo os teus marcadores. Todas as pesquisas são privadas.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Mostra sugestões do teu histórico, marcadores e (opcionalmente) histórico de conversas Duck.ai enquanto escreves na barra de pesquisa. Todas as pesquisas são privadas.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Bloqueio de aplicações";

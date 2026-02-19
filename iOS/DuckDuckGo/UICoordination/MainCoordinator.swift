@@ -208,16 +208,20 @@ final class MainCoordinator {
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
                                         whatsNewRepository: whatsNewRepository)
-        setupWebExtensions()
+        setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
     }
 
     func start() {
         controller.loadViewIfNeeded()
     }
 
-    private func setupWebExtensions() {
+    private func setupWebExtensions(privacyConfigurationManager: PrivacyConfigurationManaging) {
         if #available(iOS 18.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManagerFactory.makeManager(mainViewController: controller)
+            let webExtensionManager = WebExtensionManagerFactory.makeManager(
+                mainViewController: controller,
+                privacyConfigurationManager: privacyConfigurationManager,
+                autoconsentPreferences: AppUserDefaults()
+            )
             self.webExtensionManager = webExtensionManager
 
             self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(webExtensionManager: webExtensionManager,
@@ -462,6 +466,19 @@ extension MainCoordinator: ShortcutItemHandling {
             self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
         }
         Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
+    }
+
+}
+
+// MARK: - IdleReturnLaunchDelegate
+
+extension MainCoordinator: IdleReturnLaunchDelegate {
+
+    func showNewTabPageAfterIdleReturn() {
+        controller.prepareForIdleReturnNTP { [weak self] in
+            guard let self else { return }
+            self.controller.newTab(reuseExisting: true, allowingKeyboard: true)
+        }
     }
 
 }

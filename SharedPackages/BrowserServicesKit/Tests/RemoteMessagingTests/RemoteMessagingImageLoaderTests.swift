@@ -21,9 +21,11 @@ import XCTest
 
 final class RemoteMessagingImageLoaderTests: XCTestCase {
 
+    private let testCache = URLCache(memoryCapacity: 1024 * 1024, diskCapacity: 0)
+
     override func setUp() {
         super.setUp()
-        URLCache.shared.removeAllCachedResponses()
+        testCache.removeAllCachedResponses()
     }
 
     func testLoadImageReturnsImageOnSuccess() async throws {
@@ -252,8 +254,7 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
 
     func testCachedImageReturnsNilWhenNotCached() {
         let mockProvider = MockRemoteMessagingImageDataProvider()
-        let cache = URLCache(memoryCapacity: 1024, diskCapacity: 1024)
-        let loader = RemoteMessagingImageLoader(dataProvider: mockProvider, cache: cache)
+        let loader = RemoteMessagingImageLoader(dataProvider: mockProvider, cache: testCache)
 
         let result = loader.cachedImage(for: testURL)
 
@@ -262,13 +263,12 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
 
     func testCachedImageReturnsImageWhenCached() {
         let mockProvider = MockRemoteMessagingImageDataProvider()
-        let cache = URLCache(memoryCapacity: 1024, diskCapacity: 1024)
-        let loader = RemoteMessagingImageLoader(dataProvider: mockProvider, cache: cache)
+        let loader = RemoteMessagingImageLoader(dataProvider: mockProvider, cache: testCache)
 
         let imageData = createValidImageData()
         let response = createSuccessResponse()
         let cachedResponse = CachedURLResponse(response: response, data: imageData)
-        cache.storeCachedResponse(cachedResponse, for: URLRequest(url: testURL))
+        testCache.storeCachedResponse(cachedResponse, for: URLRequest(url: testURL))
 
         let result = loader.cachedImage(for: testURL)
 
@@ -277,14 +277,13 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
 
     func testCachedImageReturnsNilForInvalidCachedData() {
         let mockProvider = MockRemoteMessagingImageDataProvider()
-        let cache = URLCache(memoryCapacity: 1024, diskCapacity: 1024)
-        let loader = RemoteMessagingImageLoader(dataProvider: mockProvider, cache: cache)
+        let loader = RemoteMessagingImageLoader(dataProvider: mockProvider, cache: testCache)
 
         // Manually populate the cache with invalid data
         let invalidData = Data("not an image".utf8)
         let response = createSuccessResponse()
         let cachedResponse = CachedURLResponse(response: response, data: invalidData)
-        cache.storeCachedResponse(cachedResponse, for: URLRequest(url: testURL))
+        testCache.storeCachedResponse(cachedResponse, for: URLRequest(url: testURL))
 
         let result = loader.cachedImage(for: testURL)
 

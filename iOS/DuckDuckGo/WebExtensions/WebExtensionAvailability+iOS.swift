@@ -20,7 +20,15 @@
 import Foundation
 import WebKit
 import Core
+import PrivacyConfig
 import WebExtensions
+
+/// Holds a reference to the WebExtensionManager that can be set after initialization.
+/// This allows WebExtensionAvailability to be created before the manager exists,
+/// with the manager reference populated later during app startup.
+final class WebExtensionManagerHolder {
+    weak var manager: WebExtensionManaging?
+}
 
 /// Determines whether web extensions are available and should be used on iOS.
 final class WebExtensionAvailability: WebExtensionAvailabilityProviding {

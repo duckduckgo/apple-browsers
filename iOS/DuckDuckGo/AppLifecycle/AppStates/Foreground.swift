@@ -91,12 +91,6 @@ struct Foreground: ForegroundHandling {
             autoClearService: sceneDependencies.autoClearService,
             launchActionHandler: launchActionHandler
         )
-
-        // Apply tracker animation suppression early for cold starts
-        // This must happen before tabs load their URLs
-        if isFirstForeground && appDependencies.launchSourceManager.source == .standard {
-            appDependencies.mainCoordinator.tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
-        }
     }
 
     // MARK: - Handle applicationDidBecomeActive(_:) logic here
@@ -153,17 +147,7 @@ struct Foreground: ForegroundHandling {
         services.wideEventService.resume()
         appDependencies.launchSourceManager.handleAppAction(launchAction)
 
-        // Apply tracker animation suppression based on launch source
-        // Must be called after launchSourceManager.handleAppAction sets the source
-        if isFirstForeground {
-            appDependencies.mainCoordinator.tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
-        }
-
-        // Clear external launch flags when app comes to foreground
-        // This ensures flags are reset for subsequent in-app navigations
-        appDependencies.mainCoordinator.tabManager.clearExternalLaunchFlags()
-
-        appDependencies.mainCoordinator.onForeground()
+        appDependencies.mainCoordinator.onForeground(isFirstForeground: isFirstForeground)
 
         appDependencies.backgroundTaskManager.endBackgroundTask()
 

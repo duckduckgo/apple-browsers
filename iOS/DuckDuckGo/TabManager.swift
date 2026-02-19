@@ -45,14 +45,16 @@ protocol TabManaging {
     func controller(for tab: Tab) -> TabViewController?
     /// Closes the tab and navigates to homepage reusing an existing homepage or creating a new one
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
-
-    func markTabAsExternalLaunch(_ tab: Tab)
-    func clearExternalLaunchFlags()
-    func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool)
-    func applyTrackerAnimationSuppressionBasedOnLaunchSource()
 }
 
-class TabManager: TabManaging {
+protocol TrackerAnimationSuppressing {
+    @MainActor func markTabAsExternalLaunch(_ tab: Tab)
+    @MainActor func clearExternalLaunchFlags()
+    @MainActor func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool)
+    @MainActor func applyTrackerAnimationSuppressionBasedOnLaunchSource()
+}
+
+class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private(set) var model: TabsModel
     private(set) var persistence: TabsModelPersisting
@@ -606,7 +608,11 @@ extension TabManager {
     /// to ensure existing tabs are not treated as external launches.
     @MainActor
     func clearExternalLaunchFlags() {
-        Logger.lifecycle.debug("Clearing external launch flags for all tabs")
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
+        Logger.general.debug("Clearing external launch flags for all tabs")
         for tab in model.tabs {
             tab.isExternalLaunch = false
         }
@@ -614,19 +620,27 @@ extension TabManager {
 
     @MainActor
     func markTabAsExternalLaunch(_ tab: Tab) {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
         guard !tab.isExternalLaunch else {
             return
         }
-        Logger.lifecycle.debug("Marking tab \(tab.uid) as external launch")
+        Logger.general.debug("Marking tab \(tab.uid) as external launch")
         tab.isExternalLaunch = true
     }
 
     @MainActor
     func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool) {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
         guard tab.shouldSuppressTrackerAnimationOnFirstLoad != shouldSuppress else {
             return
         }
-        Logger.lifecycle.debug("Setting suppressTrackerAnimation=\(shouldSuppress) for tab \(tab.uid)")
+        Logger.general.debug("Setting suppressTrackerAnimation=\(shouldSuppress) for tab \(tab.uid)")
         tab.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppress
     }
 
@@ -640,7 +654,7 @@ extension TabManager {
         }
 
         let source = launchSourceManager.source
-        Logger.lifecycle.debug("Applying tracker animation suppression for launch source: \(source.rawValue)")
+        Logger.general.debug("Applying tracker animation suppression for launch source: \(source.rawValue)")
 
         switch source {
         case .standard:

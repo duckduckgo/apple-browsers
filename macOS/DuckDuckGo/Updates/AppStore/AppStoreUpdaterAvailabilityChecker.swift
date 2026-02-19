@@ -22,10 +22,12 @@ import Foundation
 ///
 /// Unlike Sparkle, App Store updates don't have session restrictions or blocking states,
 /// so this implementation always returns true for canCheckForUpdates.
-final class AppStoreUpdaterAvailabilityChecker: UpdaterAvailabilityChecking {
+public final class AppStoreUpdaterAvailabilityChecker: UpdaterAvailabilityChecking {
+
+    public init() {}
 
     /// App Store can always check for updates (no session restrictions like Sparkle)
-    var canCheckForUpdates: Bool {
+    public var canCheckForUpdates: Bool {
         return true
     }
 }

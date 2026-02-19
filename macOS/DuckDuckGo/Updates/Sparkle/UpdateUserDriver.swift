@@ -20,92 +20,11 @@ import AppKit
 import Combine
 import Foundation
 import os.log
-import PixelKit
 import Persistence
+import PixelKit
 import PrivacyConfig
-#if SPARKLE
 import Sparkle
-#endif
 
-enum UpdateState {
-    case upToDate
-    case updateCycle(UpdateCycleProgress)
-
-    init(from update: Update?, progress: UpdateCycleProgress) {
-        if let update, !update.isInstalled {
-            self = .updateCycle(progress)
-        } else if progress.isFailed {
-            self = .updateCycle(progress)
-        } else {
-            self = .upToDate
-        }
-    }
-}
-
-enum UpdateCycleProgress: CustomStringConvertible {
-    enum DoneReason: Int {
-        case finishedWithNoError = 100
-        case finishedWithNoUpdateFound = 101
-        case pausedAtDownloadCheckpoint = 102
-        case pausedAtRestartCheckpoint = 103
-        case proceededToInstallationAtRestartCheckpoint = 104
-        case dismissedWithNoError = 105
-        case dismissingObsoleteUpdate = 106
-    }
-
-    case updateCycleNotStarted
-    case updateCycleDidStart
-    case updateCycleDone(DoneReason)
-    case downloadDidStart
-    case downloading(Double)
-    case extractionDidStart
-    case extracting(Double)
-    case readyToInstallAndRelaunch
-    case installationDidStart
-    case installing
-    case updaterError(Error)
-
-    static var `default` = UpdateCycleProgress.updateCycleNotStarted
-
-    var isDone: Bool {
-        switch self {
-        case .updateCycleDone: return true
-        default: return false
-        }
-    }
-
-    var isIdle: Bool {
-        switch self {
-        case .updateCycleDone, .updateCycleNotStarted, .updaterError: return true
-        default: return false
-        }
-    }
-
-    var isFailed: Bool {
-        switch self {
-        case .updaterError: return true
-        default: return false
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .updateCycleNotStarted: return "updateCycleNotStarted"
-        case .updateCycleDidStart: return "updateCycleDidStart"
-        case .updateCycleDone(let reason): return "updateCycleDone(\(reason.rawValue))"
-        case .downloadDidStart: return "downloadDidStart"
-        case .downloading(let percentage): return "downloading(\(percentage))"
-        case .extractionDidStart: return "extractionDidStart"
-        case .extracting(let percentage): return "extracting(\(percentage))"
-        case .readyToInstallAndRelaunch: return "readyToInstallAndRelaunch"
-        case .installationDidStart: return "installationDidStart"
-        case .installing: return "installing"
-        case .updaterError(let error): return "updaterError(\(error.localizedDescription))(\(error.pixelParameters))"
-        }
-    }
-}
-
-#if SPARKLE
 final class UpdateUserDriver: NSObject, SPUUserDriver {
     private var internalUserDecider: InternalUserDecider
     var areAutomaticUpdatesEnabled: Bool
@@ -346,5 +265,3 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
         updateProgress = .updateCycleDone(.dismissedWithNoError)
     }
 }
-
-#endif

@@ -1,5 +1,5 @@
 //
-//  HexColor.swift
+//  Color+Hex.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,12 +19,26 @@
 import SwiftUI
 
 public extension Color {
+
+    /// Creates a color from a 24-bit RGB hex integer in the sRGB color space.
+    ///
+    /// The value is interpreted as `0xRRGGBB` where each pair represents an 8-bit
+    /// channel value (0–255).
+    ///
+    /// ```swift
+    /// Color(0xFF6600)              // bright orange, fully opaque
+    /// Color(0xFF6600, opacity: 0.5) // bright orange, 50% opacity
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - hex: A `UInt32` encoding RGB channels, e.g. `0x3969EF`.
+    ///   - opacity: The opacity of the color, from `0` (transparent) to `1` (opaque). Defaults to `1`.
     init(_ hex: UInt32, opacity: Double = 1) {
         self.init(.sRGB,
                   red: Double((hex >> 16) & 0xFF) / 255,
                   green: Double((hex >> 8) & 0xFF) / 255,
                   blue: Double(hex & 0xFF) / 255,
-                  opacity: opacity
-        )
+                  opacity: opacity)
     }
+
 }

@@ -23,6 +23,8 @@ import WebKit
 import Navigation
 #endif
 
+/// Mock implementation for creating WKFrameInfo instances in tests.
+/// Uses unsafe pointer casting to create a mock object that can be used as WKFrameInfo.
 public class MockWKFrameInfoObject: NSObject {
 
     @objc public var isMainFrame: Bool
@@ -47,6 +49,12 @@ public class MockWKFrameInfoObject: NSObject {
     }
 #endif
 
+    /// Creates a mock frame info object.
+    ///
+    /// - Parameters:
+    ///   - isMainFrame: Whether this frame is the main frame
+    ///   - securityOrigin: The security origin for this frame
+    ///   - webView: The web view (optional)
     public init(isMainFrame: Bool, securityOrigin: WKSecurityOrigin, webView: WKWebView? = nil, request: URLRequest = URLRequest(url: URL(string: "about:blank")!)) {
         self.isMainFrame = isMainFrame
         self.securityOrigin = securityOrigin
@@ -54,6 +62,7 @@ public class MockWKFrameInfoObject: NSObject {
         self.request = request
     }
 
+    /// Returns a WKFrameInfo instance that can be used in tests.
     override public func value(forUndefinedKey key: String) -> Any? { nil }
 
     public var frameInfo: WKFrameInfo {
@@ -62,11 +71,25 @@ public class MockWKFrameInfoObject: NSObject {
 }
 
 extension WKFrameInfo {
+    /// Creates a mock WKFrameInfo for testing.
+    ///
+    /// - Parameters:
+    ///   - isMainFrame: Whether this is the main frame
+    ///   - securityOriginHost: The host for the security origin
+    ///   - webView: Optional web view
+    /// - Returns: A WKFrameInfo instance suitable for testing
     public static func mock(isMainFrame: Bool, securityOriginHost: String, webView: WKWebView? = nil, request: URLRequest? = nil) -> WKFrameInfo {
         let securityOrigin = MockWKSecurityOrigin.new(host: securityOriginHost)
         return MockWKFrameInfoObject(isMainFrame: isMainFrame, securityOrigin: securityOrigin, webView: webView, request: request ?? URLRequest(url: URL(string: "about:blank")!)).frameInfo
     }
 
+    /// Creates a mock WKFrameInfo for testing with a custom security origin.
+    ///
+    /// - Parameters:
+    ///   - isMainFrame: Whether this is the main frame
+    ///   - securityOrigin: The security origin
+    ///   - webView: Optional web view
+    /// - Returns: A WKFrameInfo instance suitable for testing
     public static func mock(isMainFrame: Bool, securityOrigin: WKSecurityOrigin, webView: WKWebView? = nil, request: URLRequest? = nil) -> WKFrameInfo {
         return MockWKFrameInfoObject(isMainFrame: isMainFrame, securityOrigin: securityOrigin, webView: webView, request: request ?? URLRequest(url: URL(string: "about:blank")!)).frameInfo
     }

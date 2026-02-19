@@ -19,6 +19,8 @@
 import Foundation
 import WebKit
 
+/// Mock implementation of WKSecurityOrigin for testing purposes.
+/// Allows setting custom security origin properties for testing security validations.
 @objc public class MockWKSecurityOrigin: WKSecurityOrigin {
     private var mockProtocol: String!
     public override var `protocol`: String { mockProtocol }
@@ -41,12 +43,20 @@ import WebKit
         self.mockPort = 443
     }
 
+    /// Creates a mock security origin with the specified URL.
+    ///
+    /// - Parameter url: The URL to extract security origin from
+    /// - Returns: A configured mock security origin
     public class func new(url: URL) -> MockWKSecurityOrigin {
         let mock = (self.perform(NSSelectorFromString("alloc")).takeUnretainedValue() as? MockWKSecurityOrigin)!
         mock.setURL(url)
         return mock
     }
 
+    /// Creates a mock security origin with the specified host.
+    ///
+    /// - Parameter host: The host string
+    /// - Returns: A configured mock security origin
     public class func new(host: String) -> MockWKSecurityOrigin {
         let mock = (self.perform(NSSelectorFromString("alloc")).takeUnretainedValue() as? MockWKSecurityOrigin)!
         mock.setHost(host)

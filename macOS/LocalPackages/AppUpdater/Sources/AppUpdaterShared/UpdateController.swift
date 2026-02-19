@@ -29,67 +29,9 @@ import Navigation
 import UserScript
 import WebKit
 
-public enum UpdateControllerFactoryMethodType {
-    case appStore((_ internalUserDecider: InternalUserDecider,
-                   _ featureFlagger: FeatureFlagger,
-                   _ pixelFiring: PixelFiring?,
-                   _ notificationPresenter: any UpdateNotificationPresenting,
-                   _ isOnboardingFinished: @escaping () -> Bool) -> any UpdateController)
-    case sparkle((_ internalUserDecider: InternalUserDecider,
-                  _ featureFlagger: FeatureFlagger,
-                  _ pixelFiring: PixelFiring?,
-                  _ notificationPresenter: any UpdateNotificationPresenting,
-                  _ keyValueStore: any Persistence.ThrowingKeyValueStoring,
-                  _ allowCustomUpdateFeed: Bool,
-                  _ wideEvent: WideEventManaging,
-                  _ isOnboardingFinished: @escaping () -> Bool) -> any UpdateController)
-}
-
-/// Protocol that concrete updater packages conform to for the factory pattern.
-///
-/// Each updater package (AppStoreAppUpdater or SparkleAppUpdater) extends
-/// `UpdateControllerFactory` to provide its concrete factory method.
-/// Only one package is linked per build configuration, avoiding conflicts.
-public protocol UpdateControllerFactoryMethodGetter {
-    /// Returns the concrete UpdateController factory method for the linked updater package.
-    static func getFactoryMethod(featureFlagger: FeatureFlagger) -> UpdateControllerFactoryMethodType
-}
-
-/// Factory for creating the appropriate UpdateController based on build configuration.
-///
-/// This factory uses a protocol extension pattern to select between App Store and Sparkle
-/// updater implementations at build time. The concrete updater package (either
-/// AppStoreAppUpdater or SparkleAppUpdater) extends this factory to provide its
-/// enum-wrapped factory method.
-///
-/// **How it works:**
-/// 1. App Store builds link only `AppStoreAppUpdater` package
-/// 2. Sparkle builds link only `SparkleAppUpdater` package
-/// 3. Each package extends `UpdateControllerFactory` with `UpdateControllerFactoryMethodGetter`
-/// 4. The factory exposes whichever factory method is available at build time through `factoryMethod`
-///
-/// **Usage:**
-/// ```swift
-/// let factory = UpdateControllerFactory(featureFlagger: featureFlagger)
-/// guard let factoryMethod = factory.factoryMethod else { return }
-///
-/// let controller: any UpdateController
-/// switch factoryMethod {
-/// case .appStore(let makeController):
-///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, isOnboardingFinished)
-/// case .sparkle(let makeController):
-///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, keyValueStore, allowCustomUpdateFeed, wideEvent, isOnboardingFinished)
-/// }
-/// ```
-public struct UpdateControllerFactory {
-    /// Enum-wrapped factory method provided by the linked updater package
-    /// (AppStoreAppUpdater or SparkleAppUpdater), or nil if none is linked.
-    public let factoryMethod: UpdateControllerFactoryMethodType?
-
-    public init(featureFlagger: FeatureFlagger) {
-        self.factoryMethod = (Self.self as? UpdateControllerFactoryMethodGetter.Type)?.getFactoryMethod(featureFlagger: featureFlagger)
-    }
-}
+/// Marker type extended by updater packages with concrete `instantiate(...)` implementations.
+/// See AppStoreUpdateController.swift and SparkleUpdateController.swift for concrete implementations.
+public struct UpdateControllerFactory {}
 
 /// Factory protocol implemented by the App Store updater package.
 public protocol AppStoreUpdateControllerFactory {

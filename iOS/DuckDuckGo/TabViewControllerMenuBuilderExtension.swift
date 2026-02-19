@@ -201,6 +201,18 @@ extension TabViewController {
         })
     }
     
+    private func buildNewFireTabEntry() -> BrowsingMenuEntry? {
+        guard featureFlagger.isFeatureOn(.fireMode) else {
+            return nil
+        }
+        return .regular(name: NotLocalizedString("action.title.newFireTabAction", value: "Fire Tab", comment: "Create New Fire Tab action"),
+                        accessibilityLabel: NotLocalizedString("Fire Tab", comment: "Create New Fire Tab action"),
+                        image: DesignSystemImages.Glyphs.Size24.add,
+                        action: { [weak self] in
+            self?.onNewFireTabAction()
+        })
+    }
+    
     private func buildDownloadsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionDownloads,
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
@@ -385,7 +397,12 @@ extension TabViewController {
 
     private func onNewTabAction() {
         Pixel.fire(pixel: .browsingMenuNewTab)
-        delegate?.tabDidRequestNewTab(self)
+        delegate?.tabDidRequestNewTab(self, fireTab: false)
+    }
+    
+    private func onNewFireTabAction() {
+        Pixel.fire(pixel: .browsingMenuNewTab)
+        delegate?.tabDidRequestNewTab(self, fireTab: true)
     }
 
     private func buildFindInPageEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
@@ -880,6 +897,10 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     
     func makeNewTabEntry() -> BrowsingMenuEntry {
         buildNewTabEntry()
+    }
+    
+    func makeNewFireTabEntry() -> BrowsingMenuEntry? {
+        buildNewFireTabEntry()
     }
 
     func makeChatEntry() -> BrowsingMenuEntry? {

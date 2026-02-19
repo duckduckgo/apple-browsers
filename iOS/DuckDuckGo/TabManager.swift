@@ -339,8 +339,9 @@ class TabManager: TabManaging {
         return controller
     }
 
-    func addHomeTab() {
-        model.add(tab: Tab())
+    // TODO: - Make fire tab required to force correct usage when applied app wide
+    func addHomeTab(fireTab: Bool = false) {
+        model.add(tab: Tab(fireTab: fireTab))
         model.select(tabAt: model.count - 1)
         save()
     }

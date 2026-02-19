@@ -2003,7 +2003,8 @@ class MainViewController: UIViewController {
         tabsBarController?.backgroundTabAdded()
     }
 
-    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true) {
+    // TODO: - Make fire tab required to force correct usage when applied app wide
+    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, fireTab: Bool = false) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -2015,7 +2016,7 @@ class MainViewController: UIViewController {
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.selectTab(existing)
         } else {
-            tabManager.addHomeTab()
+            tabManager.addHomeTab(fireTab: fireTab)
         }
         attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
@@ -3419,9 +3420,9 @@ extension MainViewController: TabDelegate {
         keyModifierFlags
     }
 
-    func tabDidRequestNewTab(_ tab: TabViewController) {
+    func tabDidRequestNewTab(_ tab: TabViewController, fireTab: Bool) {
         _ = findInPageView.resignFirstResponder()
-        newTab()
+        newTab(fireTab: fireTab)
     }
     
     func newTab(reuseExisting: Bool) {

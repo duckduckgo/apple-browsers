@@ -1202,6 +1202,21 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         }
         waitForExpectations()
 
+        // didFail for nav1 fires at a non-deterministic point depending on WKNavigationAction deallocation timing,
+        // and its isCurrent value varies based on whether nav2 has already started. Verify didFail occurred separately,
+        // then remove it from history to assert the deterministic events.
+        let didFailEvents = responder(at: 0).history.filter {
+            if case .didFail(_, let code, _) = $0, code == NSURLErrorCancelled { return true }
+            return false
+        }
+
+        XCTAssertEqual(didFailEvents.count, 1, "Expected exactly one didFail with NSURLErrorCancelled")
+
+        responder(at: 0).history.removeAll {
+            if case .didFail(_, let code, _) = $0, code == NSURLErrorCancelled { return true }
+            return false
+        }
+
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.testScheme), .other, src: main()),
             .willStart(Nav(action: navAct(1), .approved, isCurrent: false)),
@@ -1209,7 +1224,6 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
             .navigationAction(req(urls.https), .other, src: main()),
             .willStart(Nav(action: navAct(2), .approved, isCurrent: false)),
-            .didFail(Nav(action: navAct(1), .failed(WKError(NSURLErrorCancelled)), isCurrent: false), NSURLErrorCancelled),
 
             .didStart(Nav(action: navAct(2), .started)),
             .didCommit(Nav(action: navAct(2), .started, .committed)),

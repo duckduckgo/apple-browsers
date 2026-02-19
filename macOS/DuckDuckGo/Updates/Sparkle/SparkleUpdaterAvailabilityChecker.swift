@@ -15,21 +15,19 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-#if SPARKLE
 import Foundation
 import Sparkle
 
-final class SparkleUpdaterAvailabilityChecker: UpdaterAvailabilityChecking {
-    var updater: UpdaterAvailabilityChecking?
+public final class SparkleUpdaterAvailabilityChecker: UpdaterAvailabilityChecking {
+    public var updater: UpdaterAvailabilityChecking?
 
     /// When the update is not available (equal to nil) we will return true so the Updater can
     /// check for the last try instead.
-    var canCheckForUpdates: Bool {
+    public var canCheckForUpdates: Bool {
         return updater?.canCheckForUpdates ?? true
     }
 
-    init(updater: UpdaterAvailabilityChecking? = nil) {
+    public init(updater: UpdaterAvailabilityChecking? = nil) {
         self.updater = updater
     }
 }
-#endif

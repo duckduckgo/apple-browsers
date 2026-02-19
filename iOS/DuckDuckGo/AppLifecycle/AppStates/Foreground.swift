@@ -74,11 +74,17 @@ struct Foreground: ForegroundHandling {
         self.isFirstForeground = isFirstForeground
         launchAction = LaunchAction(actionToHandle: actionToHandle,
                                     lastBackgroundDate: lastBackgroundDate)
+        let idleReturnEvaluator = IdleReturnEvaluator(
+            featureFlagger: appDependencies.featureFlagger,
+            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager
+        )
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
             keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
-            launchSourceService: appDependencies.launchSourceManager
+            launchSourceService: appDependencies.launchSourceManager,
+            idleReturnEvaluator: idleReturnEvaluator,
+            idleReturnDelegate: appDependencies.mainCoordinator
         )
         interactionManager = UIInteractionManager(
             authenticationService: sceneDependencies.authenticationService,

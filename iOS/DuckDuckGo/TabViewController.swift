@@ -179,7 +179,7 @@ class TabViewController: UIViewController {
     private var trackersInfoWorkItem: DispatchWorkItem?
     private var lastVisitedTrackerAnimationDomain: String?
     private var lastNotifiedTrackerAnimationDomain: String?
-    var shouldSuppressAnimationOnFirstLoad: Bool = false
+    var shouldSuppressTrackerAnimationOnFirstLoad: Bool = false
     
     private var tabURLInterceptor: TabURLInterceptor
     private var currentlyLoadedURL: URL?
@@ -644,10 +644,10 @@ class TabViewController: UIViewController {
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
 
-        // Read animation suppression flag from Tab model on first load
+        // Read tracker animation suppression flag from Tab model on first load
         // This ensures background tabs get the flag when they're loaded for the first time
-        if tabModel.shouldSuppressAnimationOnFirstLoad {
-            shouldSuppressAnimationOnFirstLoad = true
+        if tabModel.shouldSuppressTrackerAnimationOnFirstLoad {
+            shouldSuppressTrackerAnimationOnFirstLoad = true
         }
     }
 
@@ -1984,10 +1984,10 @@ extension TabViewController: WKNavigationDelegate {
         let currentDomain = trackerAnimationDomain(for: url)
 
         // Pre-set domain on first load to suppress tracker animation on cold start
-        if shouldSuppressAnimationOnFirstLoad && url != nil {
+        if shouldSuppressTrackerAnimationOnFirstLoad && url != nil {
             lastNotifiedTrackerAnimationDomain = currentDomain
             lastVisitedTrackerAnimationDomain = currentDomain
-            shouldSuppressAnimationOnFirstLoad = false
+            shouldSuppressTrackerAnimationOnFirstLoad = false
             return
         }
 

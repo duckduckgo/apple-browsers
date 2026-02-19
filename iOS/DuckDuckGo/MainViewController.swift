@@ -1497,8 +1497,8 @@ class MainViewController: UIViewController {
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
             tabManager.markTabAsExternalLaunch(tab.tabModel)
-            // For external launches, only the new tab should suppress animations
-            tabManager.setSuppressAnimationOnFirstLoad(for: tab.tabModel, shouldSuppress: true)
+            // For external launches, only the new tab should suppress tracker animations
+            tabManager.setSuppressTrackerAnimationOnFirstLoad(for: tab.tabModel, shouldSuppress: true)
         }
 
         dismissOmniBar()

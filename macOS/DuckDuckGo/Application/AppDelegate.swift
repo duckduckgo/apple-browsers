@@ -1440,10 +1440,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let handler = TerminationDeciderHandler(
             deciders: createTerminationDeciders(),
             replyToApplicationShouldTerminate: { [weak self] shouldTerminate in
-                if !shouldTerminate {
-                    // Cancellation — discard handler so next quit creates fresh deciders
-                    self?.terminationHandler = nil
-                }
+                self?.terminationHandler = nil
                 NSApp.reply(toApplicationShouldTerminate: shouldTerminate)
             }
         )

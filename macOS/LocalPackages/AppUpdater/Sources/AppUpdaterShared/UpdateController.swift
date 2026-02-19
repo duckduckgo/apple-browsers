@@ -21,19 +21,14 @@ import Combine
 import Common
 import FeatureFlags
 import Foundation
+import Navigation
 import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
-import Navigation
 import UserScript
 import WebKit
 
-/// Marker type extended by updater packages with concrete `instantiate(...)` implementations.
-/// See AppStoreUpdateController.swift and SparkleUpdateController.swift for concrete implementations.
-public struct UpdateControllerFactory {}
-
-/// Factory protocol implemented by the App Store updater package.
 public protocol AppStoreUpdateControllerFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
                             featureFlagger: FeatureFlagger,
@@ -42,7 +37,6 @@ public protocol AppStoreUpdateControllerFactory {
                             isOnboardingFinished: @escaping () -> Bool) -> any UpdateController
 }
 
-/// Factory protocol implemented by the Sparkle updater package.
 public protocol SparkleUpdateControllerFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
                             featureFlagger: FeatureFlagger,
@@ -54,6 +48,10 @@ public protocol SparkleUpdateControllerFactory {
                             isOnboardingFinished: @escaping () -> Bool,
                             openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateController
 }
+
+/// Marker type extended by updater packages with concrete `instantiate(...)` implementations.
+/// See AppStoreUpdateController.swift and SparkleUpdateController.swift for concrete implementations.
+public struct UpdateControllerFactory {}
 
 public protocol UpdateController: UpdateControllerObjC {
 

@@ -361,6 +361,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding!
     private var webExtensionFeatureFlagHandler: AnyObject?
 
     private var didFinishLaunching = false
@@ -545,6 +546,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        webExtensionAvailability = WebExtensionAvailability(
+            featureFlagger: featureFlagger,
+            webExtensionManagerProvider: { [weak self] in
+                self?.webExtensionManager
+            }
+        )
 
         wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
@@ -836,7 +844,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 tld: tld,
                 autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences,
-                syncErrorHandler: syncErrorHandler
+                syncErrorHandler: syncErrorHandler,
+                webExtensionAvailability: webExtensionAvailability
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -867,7 +876,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             tld: tld,
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
-            syncErrorHandler: syncErrorHandler
+            syncErrorHandler: syncErrorHandler,
+            webExtensionAvailability: webExtensionAvailability
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,
@@ -983,7 +993,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         autoconsentEventCoordinator = Self.makeAutoconsentEventCoordinator(
             autoconsentStats: autoconsentStats,
             historyCoordinating: historyCoordinator,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            webExtensionAvailability: webExtensionAvailability
         )
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
@@ -2028,25 +2039,14 @@ extension AppDelegate: UserScriptDependenciesProviding {
     private static func makeAutoconsentEventCoordinator(
         autoconsentStats: AutoconsentStatsCollecting,
         historyCoordinating: HistoryCoordinating,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        webExtensionAvailability: WebExtensionAvailabilityProviding
     ) -> AutoconsentEventCoordinator {
-        let sourceSelector: AutoconsentPopupManagedSourceSelecting
-        if #available(macOS 15.4, *) {
-            sourceSelector = DefaultAutoconsentPopupManagedSourceSelector(
-                featureFlagger: featureFlagger,
-                webExtensionManagerProvider: {
-                    NSApp.delegateTyped.webExtensionManager as? WebExtensionManager
-                }
-            )
-        } else {
-            sourceSelector = LegacyAutoconsentPopupManagedSourceSelector()
-        }
-
         return AutoconsentEventCoordinator(
             autoconsentStats: autoconsentStats,
             historyCoordinating: historyCoordinating,
             featureFlagger: featureFlagger,
-            sourceSelector: sourceSelector
+            webExtensionAvailability: webExtensionAvailability
         )
     }
 }

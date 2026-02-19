@@ -124,7 +124,8 @@ final class UserScripts: UserScriptsProvider {
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             management: sourceProvider.autoconsentManagement,
             preferences: sourceProvider.cookiePopupProtectionPreferences,
-            featureFlagger: sourceProvider.featureFlagger
+            featureFlagger: sourceProvider.featureFlagger,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"

@@ -87,7 +87,8 @@ final class AppContentBlocking {
         tld: TLD,
         autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences,
-        syncErrorHandler: SyncErrorHandling
+        syncErrorHandler: SyncErrorHandling,
+        webExtensionAvailability: WebExtensionAvailabilityProviding?
     ) {
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
                                                                       fetchedData: configurationStore.loadData(for: .privacyConfiguration),
@@ -117,7 +118,8 @@ final class AppContentBlocking {
             tld: tld,
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
-            syncErrorHandler: syncErrorHandler
+            syncErrorHandler: syncErrorHandler,
+            webExtensionAvailability: webExtensionAvailability
         )
     }
 
@@ -144,7 +146,8 @@ final class AppContentBlocking {
         tld: TLD,
         autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences,
-        syncErrorHandler: SyncErrorHandling
+        syncErrorHandler: SyncErrorHandling,
+        webExtensionAvailability: WebExtensionAvailabilityProviding?
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
@@ -185,7 +188,8 @@ final class AppContentBlocking {
                                                   fireCoordinator: fireCoordinator,
                                                   autoconsentManagement: autoconsentManagement,
                                                   contentScopePreferences: contentScopePreferences,
-                                                  syncErrorHandler: syncErrorHandler)
+                                                  syncErrorHandler: syncErrorHandler,
+                                                  webExtensionAvailability: webExtensionAvailability)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

@@ -30,17 +30,17 @@ final class AutoconsentEventCoordinator {
     private let autoconsentStats: AutoconsentStatsCollecting
     private let historyCoordinating: HistoryCoordinating
     private let featureFlagger: FeatureFlagger
-    private let sourceSelector: AutoconsentPopupManagedSourceSelecting
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding
 
     init(autoconsentStats: AutoconsentStatsCollecting,
          historyCoordinating: HistoryCoordinating,
          featureFlagger: FeatureFlagger,
-         sourceSelector: AutoconsentPopupManagedSourceSelecting) {
+         webExtensionAvailability: WebExtensionAvailabilityProviding) {
 
         self.autoconsentStats = autoconsentStats
         self.historyCoordinating = historyCoordinating
         self.featureFlagger = featureFlagger
-        self.sourceSelector = sourceSelector
+        self.webExtensionAvailability = webExtensionAvailability
 
         subscribeToNotifications()
     }
@@ -54,7 +54,7 @@ final class AutoconsentEventCoordinator {
         NotificationCenter.default
             .publisher(for: AutoconsentPopupManagedEvent.userScriptPopupManagedNotification)
             .compactMap { [weak self] notification -> AutoconsentPopupManagedEvent? in
-                guard self?.sourceSelector.isWebExtensionActive == false,
+                guard self?.webExtensionAvailability.isAutoconsentExtensionAvailable == false,
                       let userInfo = notification.userInfo else {
                     return nil
                 }
@@ -71,8 +71,7 @@ final class AutoconsentEventCoordinator {
         NotificationCenter.default
             .publisher(for: AutoconsentPopupManagedEvent.webExtensionPopupManagedNotification)
             .compactMap { [weak self] notification -> AutoconsentPopupManagedEvent? in
-                print(" --- notification \(notification)")
-                guard self?.sourceSelector.isWebExtensionActive == true,
+                guard self?.webExtensionAvailability.isAutoconsentExtensionAvailable == true,
                       let userInfo = notification.userInfo else {
                     return nil
                 }
@@ -86,13 +85,11 @@ final class AutoconsentEventCoordinator {
     }
 
     private func processEvent(_ event: AutoconsentPopupManagedEvent) {
-        print(" --- processEvent")
         recordStats(from: event)
         updateHistory(from: event)
     }
 
     private func recordStats(from event: AutoconsentPopupManagedEvent) {
-        print(" --- recordStats")
         Task {
             guard featureFlagger.isFeatureOn(.newTabPageAutoconsentStats) else { return }
 

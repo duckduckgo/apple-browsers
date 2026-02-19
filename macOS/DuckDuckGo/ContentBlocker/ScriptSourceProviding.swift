@@ -50,6 +50,7 @@ protocol ScriptSourceProviding {
     var duckPlayer: DuckPlayer { get }
     var syncServiceProvider: () -> DDGSyncing? { get }
     var syncErrorHandler: SyncErrorHandling { get }
+    var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -83,7 +84,8 @@ protocol ScriptSourceProviding {
         syncServiceProvider: { [weak appDelegate = Application.appDelegate] in
             return appDelegate?.syncService
         },
-        syncErrorHandler: Application.appDelegate.syncErrorHandler
+        syncErrorHandler: Application.appDelegate.syncErrorHandler,
+        webExtensionAvailability: Application.appDelegate.webExtensionAvailability
     )
 }
 
@@ -115,6 +117,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let autoconsentManagement: AutoconsentManagement
     let syncServiceProvider: () -> DDGSyncing?
     let syncErrorHandler: SyncErrorHandling
+    let webExtensionAvailability: WebExtensionAvailabilityProviding?
 
     @MainActor
     init(configStorage: ConfigurationStoring,

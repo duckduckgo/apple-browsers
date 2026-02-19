@@ -51,12 +51,12 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private let preferences: CookiePopupProtectionPreferences
     private let management: AutoconsentManagement
     private let featureFlagger: FeatureFlagger
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding?
 
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
     private let config: PrivacyConfiguration
     weak var delegate: AutoconsentUserScriptDelegate?
-
 
     // Reload loop detection state (per-tab)
     private var lastHandledCMPName: String?
@@ -66,7 +66,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     init(config: PrivacyConfiguration,
          management: AutoconsentManagement,
          preferences: CookiePopupProtectionPreferences,
-         featureFlagger: FeatureFlagger
+         featureFlagger: FeatureFlagger,
+         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil
     ) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
@@ -81,6 +82,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.management = management
         self.preferences = preferences
         self.featureFlagger = featureFlagger
+        self.webExtensionAvailability = webExtensionAvailability
     }
 
     func userContentController(_ userContentController: WKUserContentController,
@@ -296,6 +298,12 @@ extension AutoconsentUserScript {
             // ignore special schemes
             Logger.autoconsent.debug("Ignoring special URL scheme: \(messageData.url)")
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
+            return
+        }
+
+        if webExtensionAvailability?.isAutoconsentExtensionAvailable == true {
+            Logger.autoconsent.debug("Web extension active, deferring autoconsent to extension")
+            replyHandler([ "type": "ok" ], nil)
             return
         }
 

@@ -107,7 +107,8 @@ final class UserContentUpdating {
          fireCoordinator: FireCoordinator,
          autoconsentManagement: AutoconsentManagement,
          contentScopePreferences: ContentScopePreferences,
-         syncErrorHandler: SyncErrorHandling
+         syncErrorHandler: SyncErrorHandling,
+         webExtensionAvailability: WebExtensionAvailabilityProviding?
     ) {
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
             return NotificationCenter.default.publisher(for: name)
@@ -150,7 +151,8 @@ final class UserContentUpdating {
                                                       autoconsentManagement: autoconsentManagement,
                                                       newTabPageActionsManager: self?.newTabPageActionsManager,
                                                       syncServiceProvider: self?.syncServiceProvider ?? { nil },
-                                                      syncErrorHandler: syncErrorHandler)
+                                                      syncErrorHandler: syncErrorHandler,
+                                                      webExtensionAvailability: webExtensionAvailability)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
         }
 

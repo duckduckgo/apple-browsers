@@ -69,12 +69,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     private var textAreaTopPaddingConstraint: NSLayoutConstraint?
     private var textAreaBottomPaddingConstraint: NSLayoutConstraint?
 
-    private var searchAreaCenterYConstraint: NSLayoutConstraint?
-    private var searchAreaTopPinConstraint: NSLayoutConstraint?
-    private var expandedHeightConstraint: NSLayoutConstraint?
-    private var searchStackBottomEqualConstraint: NSLayoutConstraint?
-    private var searchStackBottomGTEConstraint: NSLayoutConstraint?
-
     let fieldContainerLayoutGuide = UILayoutGuide()
 
     // iPad elements
@@ -268,7 +262,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     private var aiChatBrandingView: AIChatFullModeOmniBrandingView?
     private var aiChatModeConstraints: [NSLayoutConstraint] = []
 
-    // MARK: - iPad AI Chat Expanded Text View
+    // MARK: - iPad Duck.ai Expanded Search Area (stored properties)
 
     let duckAITextView: UITextView = {
         let textView = UITextView()
@@ -279,28 +273,23 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         textView.textContainer.lineFragmentPadding = 0
         return textView
     }()
-
     var duckAITextViewDelegate: UITextViewDelegate? {
         get { duckAITextView.delegate }
         set { duckAITextView.delegate = newValue }
     }
-
-    private var suppressExpansionUpdate = false
-
+    var onSearchAreaExpandedStateChanged: ((Bool) -> Void)?
     private(set) var isSearchAreaExpanded: Bool = false {
         didSet {
             guard oldValue != isSearchAreaExpanded, !suppressExpansionUpdate else { return }
             updateSearchAreaExpansion(animated: false)
         }
     }
-
-    func setSearchAreaExpanded(_ expanded: Bool, animated: Bool) {
-        guard expanded != isSearchAreaExpanded else { return }
-        suppressExpansionUpdate = true
-        isSearchAreaExpanded = expanded
-        suppressExpansionUpdate = false
-        updateSearchAreaExpansion(animated: animated)
-    }
+    private var suppressExpansionUpdate = false
+    private var searchAreaCenterYConstraint: NSLayoutConstraint?
+    private var searchAreaTopPinConstraint: NSLayoutConstraint?
+    private var expandedHeightConstraint: NSLayoutConstraint?
+    private var searchStackBottomEqualConstraint: NSLayoutConstraint?
+    private var searchStackBottomGTEConstraint: NSLayoutConstraint?
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
@@ -475,36 +464,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
             ]
         }
 
-        // Duck.ai multi-line text view — overlays the text field, extends to container bottom
-        NSLayoutConstraint.activate([
-            duckAITextView.topAnchor.constraint(equalTo: searchAreaView.textField.topAnchor),
-            duckAITextView.leadingAnchor.constraint(equalTo: searchAreaView.textField.leadingAnchor),
-            duckAITextView.trailingAnchor.constraint(equalTo: searchAreaView.textField.trailingAnchor),
-            duckAITextView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
-        ])
-
-        // Search stack bottom constraint — == for normal, >= for expanded (allows overflow)
-        let bottomEqual = searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
-        bottomEqual.isActive = true
-        searchStackBottomEqualConstraint = bottomEqual
-
-        let bottomGTE = searchAreaStackView.bottomAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.bottomAnchor)
-        bottomGTE.isActive = false
-        searchStackBottomGTEConstraint = bottomGTE
-
-        // Search area vertical positioning — centerY active by default, top pin for expanded mode
-        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor)
-        centerY.isActive = true
-        searchAreaCenterYConstraint = centerY
-
-        let topPin = searchAreaView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor)
-        topPin.isActive = false
-        searchAreaTopPinConstraint = topPin
-
-        // Expanded height constraint (inactive by default)
-        let expandedHeight = searchAreaContainerView.heightAnchor.constraint(equalToConstant: Metrics.expandedSearchAreaHeight)
-        expandedHeight.isActive = false
-        expandedHeightConstraint = expandedHeight
+        setUpExpandedSearchAreaConstraints()
     }
 
     private func setUpProperties() {
@@ -574,12 +534,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         progressView?.hide()
 
-        duckAITextView.font = UIFont.daxBodyRegular()
-        duckAITextView.textColor = UIColor(designSystemColor: .textPrimary)
-        duckAITextView.tintColor = UIColor(designSystemColor: .accent)
-        duckAITextView.autocapitalizationType = .sentences
-        duckAITextView.autocorrectionType = .default
-        duckAITextView.isScrollEnabled = true
+        setUpExpandedTextViewProperties()
 
         updateShadows()
     }
@@ -914,12 +869,59 @@ extension DefaultOmniBarView {
     }
 }
 
-// MARK: - Search Area Expansion (iPad)
+// MARK: - iPad Duck.ai Expanded Search Area
 
 extension DefaultOmniBarView {
 
+    func setSearchAreaExpanded(_ expanded: Bool, animated: Bool) {
+        guard expanded != isSearchAreaExpanded else { return }
+        suppressExpansionUpdate = true
+        isSearchAreaExpanded = expanded
+        suppressExpansionUpdate = false
+        updateSearchAreaExpansion(animated: animated)
+    }
+
+    func setUpExpandedSearchAreaConstraints() {
+        NSLayoutConstraint.activate([
+            duckAITextView.topAnchor.constraint(equalTo: searchAreaView.textField.topAnchor),
+            duckAITextView.leadingAnchor.constraint(equalTo: searchAreaView.textField.leadingAnchor),
+            duckAITextView.trailingAnchor.constraint(equalTo: searchAreaView.textField.trailingAnchor),
+            duckAITextView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+        ])
+
+        let bottomEqual = searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
+        bottomEqual.isActive = true
+        searchStackBottomEqualConstraint = bottomEqual
+
+        let bottomGTE = searchAreaStackView.bottomAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.bottomAnchor)
+        bottomGTE.isActive = false
+        searchStackBottomGTEConstraint = bottomGTE
+
+        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor)
+        centerY.isActive = true
+        searchAreaCenterYConstraint = centerY
+
+        let topPin = searchAreaView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor)
+        topPin.isActive = false
+        searchAreaTopPinConstraint = topPin
+
+        let expandedHeight = searchAreaContainerView.heightAnchor.constraint(equalToConstant: Metrics.expandedSearchAreaHeight)
+        expandedHeight.isActive = false
+        expandedHeightConstraint = expandedHeight
+    }
+
+    func setUpExpandedTextViewProperties() {
+        duckAITextView.font = UIFont.daxBodyRegular()
+        duckAITextView.textColor = UIColor(designSystemColor: .textPrimary)
+        duckAITextView.tintColor = UIColor(designSystemColor: .accent)
+        duckAITextView.autocapitalizationType = .sentences
+        duckAITextView.autocorrectionType = .default
+        duckAITextView.isScrollEnabled = true
+    }
+
     func updateSearchAreaExpansion(animated: Bool) {
         applyTextViewVisibility()
+        onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
 
         guard animated else {
             applyExpansionConstraints()

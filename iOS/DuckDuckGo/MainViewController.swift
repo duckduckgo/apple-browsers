@@ -418,6 +418,7 @@ class MainViewController: UIViewController {
     }
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
+    private var expandedOmniBarDismissTapGesture: UITapGestureRecognizer?
 
     lazy var newTabDaxDialogFactory: NewTabDaxDialogsProvider = {
         NewTabDaxDialogsProvider(
@@ -467,6 +468,10 @@ class MainViewController: UIViewController {
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization)
+
+        if featureFlagger.isFeatureOn(.iPadAIToggle) {
+            viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
+        }
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -3237,6 +3242,28 @@ extension MainViewController: OmniBarDelegate {
 
     func onDidBeginEditing() { }
     func onDidEndEditing() { }
+
+    // MARK: - iPad Expanded Omnibar
+
+    func onOmniBarExpandedStateChanged(isExpanded: Bool) {
+        if isExpanded {
+            guard expandedOmniBarDismissTapGesture == nil else { return }
+            //TODO: Verify why isnt working
+            let tap = UITapGestureRecognizer(target: self, action: #selector(dismissExpandedOmniBar))
+            tap.cancelsTouchesInView = false
+            viewCoordinator.contentContainer.addGestureRecognizer(tap)
+            expandedOmniBarDismissTapGesture = tap
+        } else {
+            if let tap = expandedOmniBarDismissTapGesture {
+                viewCoordinator.contentContainer.removeGestureRecognizer(tap)
+                expandedOmniBarDismissTapGesture = nil
+            }
+        }
+    }
+
+    @objc private func dismissExpandedOmniBar() {
+        performCancel()
+    }
 
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped() {

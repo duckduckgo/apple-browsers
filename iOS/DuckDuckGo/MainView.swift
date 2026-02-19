@@ -142,11 +142,15 @@ extension MainViewFactory {
     
     final class NavigationBarContainer: UIView {
 
+        /// Enables overflow hit testing for iPad expanded search area.
+        /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
+        var allowsOverflowHitTesting = false
+
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
             if let result = super.hitTest(point, with: event) {
                 return result
             }
-            guard point.y >= bounds.maxY else { return nil }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
             return Self.deepHitTest(in: self, point: point, event: event)
         }
 
@@ -154,7 +158,7 @@ extension MainViewFactory {
             if super.point(inside: point, with: event) {
                 return true
             }
-            guard point.y >= bounds.maxY else { return false }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return false }
             return Self.deepHitTest(in: self, point: point, event: event) != nil
         }
 

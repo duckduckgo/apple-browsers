@@ -47,6 +47,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         super.viewDidLoad()
 
         omniBarView.duckAITextViewDelegate = self
+        omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
+            self?.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
+        }
 
         // Handle address bar position changes to set the shadow correctly
         NotificationCenter.default.addObserver(self,

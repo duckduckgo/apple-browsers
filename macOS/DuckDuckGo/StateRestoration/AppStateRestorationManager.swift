@@ -167,7 +167,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         // don't automatically restore windows if relaunched 2nd time with no recently updated app session state
         readLastSessionState(restoreWindows: restoreWindows, restoreRegularTabs: restoreRegularTabs)
 
-        detectUnexpectedAppTermination(didRestoreRegularTabs: shouldRestoreRegularTabs || isRelaunchingAutomatically)
+        detectUnexpectedAppTermination(didRestoreRegularTabs: restoreRegularTabs)
 
         stateChangedCancellable = Publishers.Merge(
                 Application.appDelegate.windowControllersManager.stateChanged,

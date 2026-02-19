@@ -214,6 +214,7 @@ enum GeneralPixel: PixelKitEvent {
     case syncDuckAddressOverride
     case syncSuccessRateDaily
     case syncLocalTimestampResolutionTriggered(Feature)
+    case syncAiChatActiveDaily
     case syncBookmarksObjectLimitExceededDaily
     case syncCredentialsObjectLimitExceededDaily
     case syncCreditCardsObjectLimitExceededDaily
@@ -919,6 +920,7 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature):
             return "m_mac_sync_\(feature.name)_local_timestamp_resolution_triggered"
+        case .syncAiChatActiveDaily: return "m_mac_sync_ai_chat_active_daily"
         case .syncBookmarksObjectLimitExceededDaily: return "m_mac_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_mac_sync_credentials_object_limit_exceeded_daily"
         case .syncCreditCardsObjectLimitExceededDaily: return "m_mac_sync_credit_cards_object_limit_exceeded_daily"
@@ -1666,6 +1668,7 @@ enum GeneralPixel: PixelKitEvent {
                 .syncDuckAddressOverride,
                 .syncSuccessRateDaily,
                 .syncLocalTimestampResolutionTriggered,
+                .syncAiChatActiveDaily,
                 .syncBookmarksObjectLimitExceededDaily,
                 .syncCredentialsObjectLimitExceededDaily,
                 .syncCreditCardsObjectLimitExceededDaily,

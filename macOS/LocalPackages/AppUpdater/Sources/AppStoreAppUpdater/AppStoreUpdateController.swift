@@ -32,14 +32,22 @@ import Subscription
 /// Factory extension that provides the App Store updater implementation.
 ///
 /// This extension is compiled into the AppStoreAppUpdater package and provides
-/// the App Store-specific `UpdateControllerFactoryMethodType.appStore` factory method.
+/// the App Store-specific update controller instantiation.
 ///
 /// See `UpdateControllerFactory` in `UpdateController.swift` for details on
-/// how `factoryMethod` is consumed.
-extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
-    /// Returns the App Store constructor closure used by `UpdateControllerFactory.factoryMethod`.
-    public static func getFactoryMethod(featureFlagger _: FeatureFlagger) -> UpdateControllerFactoryMethodType {
-        .appStore(AppStoreUpdateController.init)
+/// how `instantiate` is consumed.
+extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
+    /// Instantiates the App Store update controller.
+    public static func instantiate(internalUserDecider: InternalUserDecider,
+                                   featureFlagger: FeatureFlagger,
+                                   pixelFiring: PixelFiring?,
+                                   notificationPresenter: any UpdateNotificationPresenting,
+                                   isOnboardingFinished: @escaping () -> Bool) -> any UpdateController {
+        AppStoreUpdateController(internalUserDecider: internalUserDecider,
+                                 featureFlagger: featureFlagger,
+                                 pixelFiring: pixelFiring,
+                                 notificationPresenter: notificationPresenter,
+                                 isOnboardingFinished: isOnboardingFinished)
     }
 }
 

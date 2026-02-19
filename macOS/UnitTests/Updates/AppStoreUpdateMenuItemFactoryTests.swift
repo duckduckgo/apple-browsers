@@ -17,8 +17,8 @@
 //
 
 import AppUpdaterShared
-import XCTest
 import Cocoa
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AppStoreUpdateMenuItemFactoryTests: XCTestCase {

@@ -20,10 +20,16 @@
                 "description": "Number of open browser windows, bucketed. 'unknown' if unavailable."
             },
             {
-                "key": "tabs",
+                "key": "standard_tabs",
                 "type": "string",
                 "enum": ["0", "1", "2", "4", "7", "11", "21", "51", "unknown"],
-                "description": "Total number of tabs across all windows, bucketed. 'unknown' if unavailable."
+                "description": "Number of standard (unpinned) tabs across all windows, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "pinned_tabs",
+                "type": "string",
+                "enum": ["0", "1", "2", "4", "7", "11", "15", "unknown"],
+                "description": "Number of pinned tabs across all windows, bucketed. 'unknown' if unavailable."
             },
             {
                 "key": "architecture",
@@ -36,6 +42,17 @@
                 "type": "string",
                 "enum": ["true", "false", "unknown"],
                 "description": "Whether Sync is currently enabled. 'unknown' if unavailable."
+            },
+            {
+                "key": "used_allocation",
+                "type": "string",
+                "enum": ["0", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "unknown"],
+                "description": "Total used allocation from malloc zones in MB, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "uptime",
+                "type": "integer",
+                "description": "Minutes elapsed since app launch (raw value, not bucketed)"
             }
         ]
     }

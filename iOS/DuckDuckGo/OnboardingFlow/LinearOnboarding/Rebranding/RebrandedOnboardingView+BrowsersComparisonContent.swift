@@ -21,10 +21,6 @@ import SwiftUI
 import DuckUI
 import Onboarding
 
-enum BrowsersComparisonContentMetrics {
-    static let additionalTopMargin: CGFloat = 0
-}
-
 private enum BrowsersComparisonContentCopy {
     static let setAsDefaultBrowserCTA = "Choose Your Browser"
     static let skipCTA = "Skip"
@@ -36,55 +32,42 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         private let title: String
-        private let currentStep: Int
-        private let totalSteps: Int
         private let setAsDefaultBrowserAction: () -> Void
         private let cancelAction: () -> Void
 
         init(
             title: String,
-            currentStep: Int,
-            totalSteps: Int,
             setAsDefaultBrowserAction: @escaping () -> Void,
             cancelAction: @escaping () -> Void
         ) {
             self.title = title
-            self.currentStep = currentStep
-            self.totalSteps = totalSteps
             self.setAsDefaultBrowserAction = setAsDefaultBrowserAction
             self.cancelAction = cancelAction
         }
 
         var body: some View {
-            OnboardingBubbleView.withStepProgressIndicator(
-                tailPosition: .bottom(offset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset, direction: .leading),
-                currentStep: currentStep,
-                totalSteps: totalSteps
-            ) {
+            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+                Text(title)
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
+
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    Text(title)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.title)
-                        .multilineTextAlignment(.center)
+                    RebrandedBrowsersComparisonTable()
 
-                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                        RebrandedBrowsersComparisonTable()
-
-                        VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
-                            Button(action: setAsDefaultBrowserAction) {
-                                Text(BrowsersComparisonContentCopy.setAsDefaultBrowserCTA)
-                            }
-                            .buttonStyle(onboardingTheme.primaryButtonStyle.style)
-
-                            Button(action: cancelAction) {
-                                Text(BrowsersComparisonContentCopy.skipCTA)
-                            }
-                            .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                        Button(action: setAsDefaultBrowserAction) {
+                            Text(BrowsersComparisonContentCopy.setAsDefaultBrowserCTA)
                         }
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+
+                        Button(action: cancelAction) {
+                            Text(BrowsersComparisonContentCopy.skipCTA)
+                        }
+                        .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }
                 }
             }
-            .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth)
         }
 
     }

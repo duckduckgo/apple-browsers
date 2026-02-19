@@ -32,19 +32,43 @@ import os.log
 /// Factory extension that provides the Sparkle updater implementation.
 ///
 /// This extension is compiled into the SparkleAppUpdater package and provides
-/// the Sparkle-specific `UpdateControllerFactoryMethodType.sparkle` factory method.
+/// the Sparkle-specific update controller instantiation.
 ///
 /// See `UpdateControllerFactory` in `UpdateController.swift` for details on
-/// how `factoryMethod` is consumed.
-extension UpdateControllerFactory: UpdateControllerFactoryMethodGetter {
-    /// Returns the Sparkle constructor closure used by `UpdateControllerFactory.factoryMethod`.
-    /// - If `updatesSimplifiedFlow` is enabled, returns `.sparkle(SimplifiedSparkleUpdateController.init)`
-    /// - Otherwise, returns `.sparkle(DefaultSparkleUpdateController.init)`
-    public static func getFactoryMethod(featureFlagger: FeatureFlagger) -> UpdateControllerFactoryMethodType {
+/// how `instantiate` is consumed.
+extension UpdateControllerFactory: SparkleUpdateControllerFactory {
+    /// Instantiates the Sparkle update controller.
+    /// - If `updatesSimplifiedFlow` is enabled, returns `SimplifiedSparkleUpdateController`
+    /// - Otherwise, returns `DefaultSparkleUpdateController`
+    public static func instantiate(internalUserDecider: InternalUserDecider,
+                                   featureFlagger: FeatureFlagger,
+                                   pixelFiring: PixelFiring?,
+                                   notificationPresenter: any UpdateNotificationPresenting,
+                                   keyValueStore: any ThrowingKeyValueStoring,
+                                   allowCustomUpdateFeed: Bool,
+                                   wideEvent: WideEventManaging,
+                                   isOnboardingFinished: @escaping () -> Bool,
+                                   openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateController {
         if featureFlagger.isFeatureOn(.updatesSimplifiedFlow) {
-            return .sparkle(SimplifiedSparkleUpdateController.init)
+            return SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider,
+                                                     featureFlagger: featureFlagger,
+                                                     pixelFiring: pixelFiring,
+                                                     notificationPresenter: notificationPresenter,
+                                                     keyValueStore: keyValueStore,
+                                                     allowCustomUpdateFeed: allowCustomUpdateFeed,
+                                                     wideEvent: wideEvent,
+                                                     isOnboardingFinished: isOnboardingFinished,
+                                                     openUpdatesPage: openUpdatesPage)
         } else {
-            return .sparkle(DefaultSparkleUpdateController.init)
+            return DefaultSparkleUpdateController(internalUserDecider: internalUserDecider,
+                                                  featureFlagger: featureFlagger,
+                                                  pixelFiring: pixelFiring,
+                                                  notificationPresenter: notificationPresenter,
+                                                  keyValueStore: keyValueStore,
+                                                  allowCustomUpdateFeed: allowCustomUpdateFeed,
+                                                  wideEvent: wideEvent,
+                                                  isOnboardingFinished: isOnboardingFinished,
+                                                  openUpdatesPage: openUpdatesPage)
         }
     }
 }
@@ -136,11 +160,11 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
 
     private var customFeedURL: String? {
         get {
-            guard allowUnsignedUpdates else { return nil }
+            guard allowCustomUpdateFeed else { return nil }
             return try? settings.debugSparkleCustomFeedURL
         }
         set {
-            guard allowUnsignedUpdates else { return }
+            guard allowCustomUpdateFeed else { return }
             try? settings.set(newValue, for: \.debugSparkleCustomFeedURL)
         }
     }
@@ -226,7 +250,7 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
     private let updateCheckState: UpdateCheckState
 
     // MARK: - Build Configuration
-    private let allowUnsignedUpdates: Bool
+    private let allowCustomUpdateFeed: Bool
 
     // MARK: - WideEvent Tracking
     private let updateWideEvent: SparkleUpdateWideEvent
@@ -241,6 +265,7 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
     private let isOnboardingFinished: () -> Bool
+    private let openUpdatesPageAction: () -> Void
 
     var useLegacyAutoRestartLogic: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
@@ -258,18 +283,20 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
                 pixelFiring: PixelFiring?,
                 notificationPresenter: any UpdateNotificationPresenting,
                 keyValueStore: any Persistence.ThrowingKeyValueStoring,
-                allowUnsignedUpdates: Bool,
+                allowCustomUpdateFeed: Bool,
                 wideEvent: WideEventManaging,
-                isOnboardingFinished: @escaping () -> Bool) {
+                isOnboardingFinished: @escaping () -> Bool,
+                openUpdatesPage: @escaping () -> Void = {}) {
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.notificationPresenter = notificationPresenter
         self.internalUserDecider = internalUserDecider
         self.isOnboardingFinished = isOnboardingFinished
+        self.openUpdatesPageAction = openUpdatesPage
         self.updateCheckState = UpdateCheckState()
         self.settings = keyValueStore.throwingKeyedStoring()
-        self.allowUnsignedUpdates = allowUnsignedUpdates
+        self.allowCustomUpdateFeed = allowCustomUpdateFeed
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
         self.applicationUpdateDetector = ApplicationUpdateDetector(settings: settings)
 
@@ -435,8 +462,7 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
     }
 
     func openUpdatesPage() {
-        // Empty method kept for protocol conformance.
-        // Opening release notes page is implemented via UpdateNotificationPresenting in the app layer.
+        openUpdatesPageAction()
     }
 
     @UpdateCheckActor
@@ -607,12 +633,12 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
     // MARK: - Debug: Custom Feed URL
 
     func setCustomFeedURL(_ urlString: String) {
-        guard allowUnsignedUpdates else { return }
+        guard allowCustomUpdateFeed else { return }
         customFeedURL = urlString
     }
 
     func resetFeedURLToDefault() {
-        guard allowUnsignedUpdates else { return }
+        guard allowCustomUpdateFeed else { return }
         customFeedURL = nil
     }
 }
@@ -622,7 +648,7 @@ extension DefaultSparkleUpdateController: SparkleCustomFeedURLProviding {}
 extension DefaultSparkleUpdateController: SPUUpdaterDelegate {
 
     func feedURLString(for updater: SPUUpdater) -> String? {
-        guard allowUnsignedUpdates else { return nil }
+        guard allowCustomUpdateFeed else { return nil }
         return customFeedURL
     }
 

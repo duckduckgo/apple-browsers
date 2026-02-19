@@ -355,8 +355,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           tabCrashAggregator: tabCrashAggregator,
                                                           tabsPreferences: tabsPreferences,
                                                           webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                          autoconsentStats: autoconsentStats,
-                                                          updateController: Application.appDelegate.updateController)
+                                                          autoconsentStats: autoconsentStats)
         let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
                                                                             tabID: self.uuid,
                                                                             isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
@@ -369,7 +368,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                                             titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
                                                                             errorPublisher: _error.projectedValue.eraseToAnyPublisher(),
                                                                             userScriptsPublisher: userScriptsPublisher,
-                                                                            updateController: extensionDependencies.updateController,
+                                                                            updateController: Application.appDelegate.updateController,
                                                                             inheritedAttribution: parentTab?.adClickAttribution?.currentAttributionState,
                                                                             userContentControllerFuture: userContentControllerPromise.future,
                                                                             permissionModel: permissions,

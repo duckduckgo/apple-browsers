@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import XCTest
 @testable import Core
 @testable import DuckDuckGo
@@ -563,6 +564,67 @@ class LargeOmniBarStateTests: XCTestCase {
     func testWhenInBrowsingNonEditingStateThenBrowsingStoppedTransitionsToHomeNonEditingState() {
         let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertEqual(testee.onBrowsingStoppedState.name, LargeOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false).name)
+    }
+
+    func testWhenIPadAIToggleEnabledAndAIChatButtonVisibleThenShowAIChatModeToggleIsTrue() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+
+        mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 aiChatSettings: mockAIChatSettingsEnabled)
+        let testee = LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.showAIChatButton)
+        XCTAssertTrue(testee.showAIChatModeToggle)
+    }
+
+    func testWhenIPadAIToggleDisabledThenShowAIChatModeToggleIsFalse() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 aiChatSettings: mockAIChatSettingsEnabled)
+        let testee = LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.showAIChatButton)
+        XCTAssertFalse(testee.showAIChatModeToggle)
+    }
+
+    func testWhenAIChatButtonHiddenThenShowAIChatModeToggleIsFalseEvenIfFlagEnabled() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+
+        mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertFalse(testee.showAIChatButton)
+        XCTAssertFalse(testee.showAIChatModeToggle)
+    }
+
+    func testWhenIPadAIToggleEnabledAndRefreshEnabledThenShowRefreshOutsideAddressBarIsTrue() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+
+        mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
+        let appSettings = AppSettingsMock()
+        appSettings.currentRefreshButtonPosition = .addressBar
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 appSettings: appSettings)
+        let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.showRefreshOutsideAddressBar)
+    }
+
+    func testWhenIPadAIToggleDisabledThenShowRefreshOutsideAddressBarIsFalse() {
+        let appSettings = AppSettingsMock()
+        appSettings.currentRefreshButtonPosition = .addressBar
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 appSettings: appSettings)
+        let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertFalse(testee.showRefreshOutsideAddressBar)
     }
 
     // MARK: - AI Chat Mode State Tests

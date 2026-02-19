@@ -45,7 +45,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
             pixelFiring: nil,
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
-            allowUnsignedUpdates: false,
+            allowCustomUpdateFeed: false,
             wideEvent: mockWideEventManager,
             isOnboardingFinished: { true }
         )
@@ -85,7 +85,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
             pixelFiring: nil,
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
-            allowUnsignedUpdates: false,
+            allowCustomUpdateFeed: false,
             wideEvent: mockWideEventManager,
             isOnboardingFinished: { true }
         )
@@ -138,7 +138,7 @@ final class SparkleUpdateControllerTests: XCTestCase {
             pixelFiring: nil,
             notificationPresenter: MockNotificationPresenter(),
             keyValueStore: keyValueStore,
-            allowUnsignedUpdates: false,
+            allowCustomUpdateFeed: false,
             wideEvent: mockWideEventManager,
             isOnboardingFinished: { true }
         )

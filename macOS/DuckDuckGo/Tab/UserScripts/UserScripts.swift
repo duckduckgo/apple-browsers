@@ -78,6 +78,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             pixelFiring: PixelKit.shared,
             statisticsLoader: StatisticsLoader.shared,
             syncServiceProvider: sourceProvider.syncServiceProvider,
+            syncErrorHandler: sourceProvider.syncErrorHandler,
             featureFlagger: sourceProvider.featureFlagger
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
@@ -237,7 +238,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                                            uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                            aiChatURL: AIChatRemoteSettings().aiChatURL,
                                                            wideEvent: Application.appDelegate.wideEvent,
-                                                           pendingTransactionHandler: pendingTransactionHandler)
+                                                           pendingTransactionHandler: pendingTransactionHandler, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)

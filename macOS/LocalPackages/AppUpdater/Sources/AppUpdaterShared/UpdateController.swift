@@ -40,7 +40,7 @@ public enum UpdateControllerFactoryMethodType {
                   _ pixelFiring: PixelFiring?,
                   _ notificationPresenter: any UpdateNotificationPresenting,
                   _ keyValueStore: any Persistence.ThrowingKeyValueStoring,
-                  _ allowUnsignedUpdates: Bool,
+                  _ allowCustomUpdateFeed: Bool,
                   _ wideEvent: WideEventManaging,
                   _ isOnboardingFinished: @escaping () -> Bool) -> any UpdateController)
 }
@@ -78,7 +78,7 @@ public protocol UpdateControllerFactoryMethodGetter {
 /// case .appStore(let makeController):
 ///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, isOnboardingFinished)
 /// case .sparkle(let makeController):
-///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, keyValueStore, allowUnsignedUpdates, wideEvent, isOnboardingFinished)
+///     controller = makeController(internalUserDecider, featureFlagger, pixelFiring, notificationPresenter, keyValueStore, allowCustomUpdateFeed, wideEvent, isOnboardingFinished)
 /// }
 /// ```
 public struct UpdateControllerFactory {
@@ -89,6 +89,28 @@ public struct UpdateControllerFactory {
     public init(featureFlagger: FeatureFlagger) {
         self.factoryMethod = (Self.self as? UpdateControllerFactoryMethodGetter.Type)?.getFactoryMethod(featureFlagger: featureFlagger)
     }
+}
+
+/// Factory protocol implemented by the App Store updater package.
+public protocol AppStoreUpdateControllerFactory {
+    static func instantiate(internalUserDecider: InternalUserDecider,
+                            featureFlagger: FeatureFlagger,
+                            pixelFiring: PixelFiring?,
+                            notificationPresenter: any UpdateNotificationPresenting,
+                            isOnboardingFinished: @escaping () -> Bool) -> any UpdateController
+}
+
+/// Factory protocol implemented by the Sparkle updater package.
+public protocol SparkleUpdateControllerFactory {
+    static func instantiate(internalUserDecider: InternalUserDecider,
+                            featureFlagger: FeatureFlagger,
+                            pixelFiring: PixelFiring?,
+                            notificationPresenter: any UpdateNotificationPresenting,
+                            keyValueStore: any ThrowingKeyValueStoring,
+                            allowCustomUpdateFeed: Bool,
+                            wideEvent: WideEventManaging,
+                            isOnboardingFinished: @escaping () -> Bool,
+                            openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateController
 }
 
 public protocol UpdateController: UpdateControllerObjC {

@@ -285,7 +285,7 @@ final class FreeTrialConversionInstrumentationServiceTests: XCTestCase {
         // Given
         let subscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
         let expectation = expectation(description: "Flow started")
-        mockWideEvent.onStart = { _ in expectation.fulfill() }
+        mockPixelHandler.onFreeTrialStart = { expectation.fulfill() }
 
         // When
         postSubscriptionChange(subscription)
@@ -446,9 +446,11 @@ private final class MockFreeTrialPixelHandler: FreeTrialPixelHandling {
     var vpnActivations: [FreeTrialActivationDay] = []
     var pirActivations: [FreeTrialActivationDay] = []
     var duckAIActivations: [FreeTrialActivationDay] = []
+    var onFreeTrialStart: (() -> Void)?
 
     func fireFreeTrialStart() {
         freeTrialStartCount += 1
+        onFreeTrialStart?()
     }
 
     func fireFreeTrialVPNActivation(activationDay: FreeTrialActivationDay) {

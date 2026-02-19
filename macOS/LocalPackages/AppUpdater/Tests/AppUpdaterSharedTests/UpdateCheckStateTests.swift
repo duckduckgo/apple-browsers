@@ -18,15 +18,7 @@
 
 import XCTest
 import AppUpdaterShared
-
-// Mock updater for testing that implements UpdaterAvailabilityChecking
-class MockUpdater: UpdaterAvailabilityChecking {
-    var mockCanCheckForUpdates: Bool = true
-
-    var canCheckForUpdates: Bool {
-        return mockCanCheckForUpdates
-    }
-}
+import AppUpdaterTestHelpers
 
 /// Tests for UpdateCheckState actor that manages update check rate limiting.
 ///

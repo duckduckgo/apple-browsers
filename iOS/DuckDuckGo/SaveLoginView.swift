@@ -75,8 +75,7 @@ struct SaveLoginView: View {
 
         return ZStack {
             AutofillViews.CloseButtonHeader(action: viewModel.cancelButtonPressed)
-                .padding(.top, Const.Size.closeButtonEdgeInset)
-                .offset(x: horizontalPadding - Const.Size.closeButtonEdgeInset)
+                .offset(x: horizontalPadding)
                 .zIndex(1)
 
             innerContent
@@ -395,7 +394,6 @@ private enum Const {
         static let featuresListTopPadding: CGFloat = 12.0
         static let featuresListBorderCornerRadius: CGFloat = 8.0
         static let variantHorizontalPadding: CGFloat = 24.0
-        static let closeButtonEdgeInset: CGFloat = 5.0
         static let variant3TitleFontSize: CGFloat = 40.0
         static let variant3MaximumTextWidth: CGFloat = 338.0
         static let variant3TitleHorizontalPadding: CGFloat = 8.0

@@ -44,16 +44,11 @@ struct AutofillViews {
                     Button {
                         action()
                     } label: {
-                        ZStack {
-                            Circle()
-                                .fill(Color(designSystemColor: .controlsFillPrimary))
-                                .frame(width: Const.Size.closeButtonSize, height: Const.Size.closeButtonSize)
-                            Image.close
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: Const.Size.closeButtonIconSize, height: Const.Size.closeButtonIconSize)
-                                .foregroundColor(Color(designSystemColor: .textPrimary))
-                        }
+                        Image.close
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: Const.Size.closeButtonSize, height: Const.Size.closeButtonSize)
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
                     }
                     .frame(width: Const.Size.closeButtonTappableArea, height: Const.Size.closeButtonTappableArea)
                     .contentShape(Rectangle())
@@ -280,8 +275,7 @@ extension View {
 private enum Const {
     enum Size {
         static let closeButtonPadding: CGFloat = 5.0
-        static let closeButtonSize: CGFloat = 32.0
-        static let closeButtonIconSize: CGFloat = 24.0
+        static let closeButtonSize: CGFloat = 24.0
         static let closeButtonTappableArea: CGFloat = 44.0
         static let logoImage: CGFloat = 20.0
         static let buttonCornerRadius: CGFloat = 12.0

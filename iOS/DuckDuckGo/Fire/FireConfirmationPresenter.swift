@@ -258,7 +258,11 @@ struct FireConfirmationPresenter {
             }
             viewController.present(alert, animated: true)
         } else if let button = source as? UIBarButtonItem {
-            viewController.present(controller: alert, fromButtonItem: button)
+            if let customView = button.customView {
+                viewController.present(controller: alert, fromView: customView)
+            } else {
+                viewController.present(controller: alert, fromButtonItem: button)
+            }
         } else {
             assertionFailure("Unexpected sender")
         }

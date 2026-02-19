@@ -34,7 +34,8 @@ class LargeOmniBarStateTests: XCTestCase {
                                                                isAIChatBrowsingMenubarShortcutFeatureEnabled: true,
                                                                isAIChatAddressBarShortcutFeatureEnabled: true,
                                                                isAIChatVoiceSearchUserSettingsEnabled: true,
-                                                               isAIChatTabSwitcherUserSettingsEnabled: true)
+                                                               isAIChatTabSwitcherUserSettingsEnabled: true,
+                                                               isAIChatSearchInputUserSettingsEnabled: true)
 
     override func setUp() {
         super.setUp()
@@ -599,6 +600,23 @@ class LargeOmniBarStateTests: XCTestCase {
                                                  featureFlagger: mockFeatureFlagger)
         let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
         XCTAssertFalse(testee.showAIChatButton)
+        XCTAssertFalse(testee.showAIChatModeToggle)
+    }
+
+    func testWhenAIChatSearchInputSettingDisabledThenShowAIChatModeToggleIsFalseEvenIfFlagEnabled() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+
+        mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: true,
+                                                        isAIChatAddressBarUserSettingsEnabled: true,
+                                                        isAIChatSearchInputUserSettingsEnabled: false)
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 aiChatSettings: aiChatSettings)
+        let testee = LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.showAIChatButton)
         XCTAssertFalse(testee.showAIChatModeToggle)
     }
 

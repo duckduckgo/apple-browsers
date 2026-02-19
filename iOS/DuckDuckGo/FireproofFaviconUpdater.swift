@@ -23,6 +23,8 @@ import Persistence
 import Bookmarks
 import CoreData
 import os.log
+import UserScript
+import WebKit
 
 protocol TabNotifying {
     func didUpdateFavicon()
@@ -81,10 +83,22 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
     }
 
     @MainActor
-    func faviconUserScript(_ script: FaviconUserScript, didRequestUpdateFaviconForHost host: String, withUrl url: URL?) {
-        assert(Thread.isMainThread)
+    func faviconUserScript(_ faviconUserScript: FaviconUserScript,
+                           didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
+                           for documentUrl: URL,
+                           in webView: WKWebView?) {
+        guard let host = documentUrl.host else { return }
 
-        favicons.loadFavicon(forDomain: host, fromURL: url, intoCache: .tabs) { [weak self] image in
+        // Note: Unlike macOS, we don't validate documentUrl matches the tab's current URL.
+        // This is safe because favicons are cached by domain, not associated with the tab directly.
+
+        // SVG favicons are filtered in C-S-S before reaching native code (iOS only)
+        let faviconURL: URL? = faviconLinks
+            .first { $0.rel.contains("icon") && !$0.rel.contains("apple-touch") }
+            .map { $0.href }
+            ?? faviconLinks.first.map { $0.href }
+
+        favicons.loadFavicon(forDomain: host, fromURL: faviconURL, intoCache: .tabs) { [weak self] image in
             guard let self = self else { return }
             self.tab.didUpdateFavicon()
             guard featureFlagger.isFeatureOn(.createFireproofFaviconUpdaterSecureVaultInBackground) else {
@@ -94,6 +108,8 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
             replaceFireproofFaviconIfNecessary(image, forHost: host)
         }
     }
+
+    // MARK: - Favicon replacement logic
 
     private func replaceFireproofFaviconIfNecessary(_ image: UIImage?, forHost host: String) {
         guard let image = image else { return }

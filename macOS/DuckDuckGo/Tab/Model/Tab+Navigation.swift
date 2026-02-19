@@ -25,7 +25,9 @@ import WebKit
 
 extension Tab: NavigationResponder {
 
-    func setupNavigationDelegate(navigationDelegate: DistributedNavigationDelegate, newWindowPolicyDecisionMakers: inout [NewWindowPolicyDecisionMaking]?) {
+    func setupNavigationDelegate(navigationDelegate: DistributedNavigationDelegate,
+                                 newWindowPolicyDecisionMakers: inout [NewWindowPolicyDecisionMaking]?,
+                                 args: TabExtensionsBuilderArguments) {
         navigationDelegate.setResponders(
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),
@@ -83,7 +85,7 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.tabSnapshots),
 
             // Release Notes
-            .weak(nullable: self.releaseNotes),
+            .strong(nullable: makeReleaseNotesNavigationResponder(args: args)),
 
             .weak(nullable: self.networkProtection),
 
@@ -114,6 +116,19 @@ extension Tab: NavigationResponder {
         let redirectManager = SubscriptionRedirectManager(subscriptionManager: subscriptionManager,
                                                                     baseURL: subscriptionManager.url(for: .baseURL))
         return RedirectNavigationResponder(redirectManager: redirectManager)
+    }
+
+    private func makeReleaseNotesNavigationResponder(args: TabExtensionsBuilderArguments) -> (any NavigationResponder & AnyObject)? {
+        guard let updateController = args.updateController as? any SparkleUpdateController else { return nil }
+
+        let scriptsPublisher = args.userScriptsPublisher
+            .compactMap { $0 as (any ReleaseNotesUserScriptProvider)? }
+            .eraseToAnyPublisher()
+        return updateController.makeReleaseNotesNavigationResponder(
+            releaseNotesURL: .releaseNotes,
+            scriptsPublisher: scriptsPublisher,
+            webViewPublisher: args.webViewFuture
+        )
     }
 
 }

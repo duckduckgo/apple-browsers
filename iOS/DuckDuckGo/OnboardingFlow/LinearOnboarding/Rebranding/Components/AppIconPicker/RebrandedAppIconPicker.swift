@@ -24,49 +24,54 @@ import Onboarding
 extension OnboardingRebranding.OnboardingView {
 
     struct AppIconPicker: View {
-        @StateObject private var viewModel = AppIconPickerViewModel()
 
-        let layout = [GridItem(.adaptive(minimum: AppIconPickerMetrics.iconSize), spacing: AppIconPickerMetrics.spacing, alignment: .leading)]
+        private enum Metrics {
+            // App icon
+            static let cornerRadius: CGFloat = 13.0
+            static let iconSize: CGFloat = 80.0
+            // Color circle
+            static let colorCircleSize: CGFloat = 36.0
+            static let accentBorderWidth: CGFloat = 1.0
+            static let borderWidth: CGFloat = 1.0
+            // Selection ring
+            static let selectionRingInset: CGFloat = 4.0
+            static let selectionRingWidth: CGFloat = 2.0
+            // Layout
+            static let spacing: CGFloat = 44.0
+        }
+
+        @StateObject private var viewModel = RebrandedAppIconPickerViewModel()
 
         var body: some View {
-            LazyVGrid(columns: layout, spacing: AppIconPickerMetrics.spacing) {
-                ForEach(viewModel.items, id: \.icon) { item in
-                    Image(uiImage: item.icon.mediumImage ?? UIImage())
-                        .resizable()
-                        .frame(width: AppIconPickerMetrics.iconSize, height: AppIconPickerMetrics.iconSize)
-                        .cornerRadius(AppIconPickerMetrics.cornerRadius)
-                        .overlay {
-                            strokeOverlay(isSelected: item.isSelected)
-                        }
-                        .onTapGesture {
-                            viewModel.changeApp(icon: item.icon)
-                        }
+            VStack(spacing: Metrics.spacing) {
+                Image(uiImage: viewModel.selectedIcon.mediumImage)
+                    .resizable()
+                    .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+                    .cornerRadius(Metrics.cornerRadius)
+                HStack {
+                    ForEach(viewModel.items, id: \.icon) { item in
+                        colorCircle(color: item.color, isSelected: item.isSelected)
+                            .onTapGesture {
+                                viewModel.changeApp(icon: item.icon)
+                            }
+                    }
                 }
             }
         }
 
-        @ViewBuilder
-        private func strokeOverlay(isSelected: Bool) -> some View {
-            if isSelected {
-                RoundedRectangle(cornerRadius: AppIconPickerMetrics.cornerRadius)
-                    .foregroundColor(.clear)
-                    .frame(width: AppIconPickerMetrics.strokeFrameSize, height: AppIconPickerMetrics.strokeFrameSize)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppIconPickerMetrics.cornerRadius)
-                            .inset(by: -AppIconPickerMetrics.strokeInset)
-                            .stroke(.blue, lineWidth: AppIconPickerMetrics.strokeWidth)
-                    )
-            }
+        private func colorCircle(color: Color, isSelected: Bool) -> some View {
+            Circle()
+                .foregroundColor(color)
+                .frame(width: Metrics.colorCircleSize, height: Metrics.colorCircleSize)
+                .overlay( // Darker border
+                    Circle()
+                        .inset(by: Metrics.borderWidth / 2.0)
+                        .stroke(Color(singleUseColor: .rebranding(.decorationSecondary)), lineWidth: Metrics.borderWidth))
+                .overlay( // Selected marker
+                    Circle()
+                        .inset(by: -Metrics.selectionRingInset)
+                        .stroke(Color(singleUseColor: .rebranding(.accentPrimary)), lineWidth: Metrics.selectionRingWidth)
+                        .opacity(isSelected ? 1 : 0))
         }
     }
-
-}
-
-private enum AppIconPickerMetrics {
-    static let cornerRadius: CGFloat = 13.0
-    static let iconSize: CGFloat = 56.0
-    static let spacing: CGFloat = 16.0
-    static let strokeFrameSize: CGFloat = 60
-    static let strokeWidth: CGFloat = 3
-    static let strokeInset: CGFloat = 1.5
 }

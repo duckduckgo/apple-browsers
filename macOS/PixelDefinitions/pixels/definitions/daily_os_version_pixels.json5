@@ -21,6 +21,12 @@
                 "description": "Hardware upgrade capability",
                 "enum": ["yes", "no", "unknown"]
             },
+            {
+                "key": "maxSupportedOS",
+                "type": "string",
+                "description": "Maximum supported macOS major version for the hardware",
+                "pattern": "^([0-9]{1,2}|latest)$"
+            },
             "appVersion",
             "pixelSource"
         ]

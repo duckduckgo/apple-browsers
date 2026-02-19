@@ -96,23 +96,11 @@ final class RoundedSelectionRowView: NSTableRowView {
         return .normal
     }
 
-    private var isThemesFeatureEnabled: Bool {
-        NSApp.delegateTyped.featureFlagger.isFeatureOn(.themes)
-    }
-
     private var selectionBackgroundColor: NSColor {
-        guard isThemesFeatureEnabled else {
-            return NSColor.rowHover
-        }
-
         return requiresAccentColors && isInKeyWindow ? palette.accentPrimary : palette.controlsFillPrimary
     }
 
     private var highlightBackgroundColor: NSColor {
-        guard isThemesFeatureEnabled else {
-            return isInKeyWindow ? NSColor.controlAccentColor : NSColor.buttonMouseOver
-        }
-
         return requiresAccentColors && isInKeyWindow ? palette.accentPrimary : palette.controlsFillPrimary
     }
 }

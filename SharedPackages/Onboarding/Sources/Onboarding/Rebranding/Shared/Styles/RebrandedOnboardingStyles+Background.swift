@@ -17,11 +17,14 @@
 //
 
 import SwiftUI
+#if os(iOS)
+import MetricBuilder
+#endif
 
 public enum ContextualOnboardingBackgroundType {
     case tryASearch
     case tryASearchCompleted
-    case tryVisitingASite
+    case tryVisitingASiteNTP
     case trackers
     case fireDialog
     case endOfJourney
@@ -29,8 +32,8 @@ public enum ContextualOnboardingBackgroundType {
 
     var alignment: Alignment {
         switch self {
-        case .tryASearch, .tryASearchCompleted, .tryVisitingASite, .trackers, .fireDialog, .endOfJourney:
-            return .trailing
+        case .tryASearch, .tryASearchCompleted, .tryVisitingASiteNTP, .trackers, .fireDialog, .endOfJourney:
+            return .bottomTrailing
         case .privacyProTrial:
             return .center
         }
@@ -39,19 +42,19 @@ public enum ContextualOnboardingBackgroundType {
     var image: Image {
         switch self {
         case .tryASearch:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.tryASearchBackground
         case .tryASearchCompleted:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
-        case .tryVisitingASite:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.searchDoneBackground
+        case .tryVisitingASiteNTP:
+            return OnboardingRebrandingImages.Contextual.tryASiteBackground
         case .trackers:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.tryASearchBackground
         case .fireDialog:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.tryASearchBackground
         case .endOfJourney:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.tryASearchBackground
         case .privacyProTrial:
-            return OnboardingRebranding.OnboardingImages.Contextual.tryASearchBackground
+            return OnboardingRebrandingImages.Contextual.tryASearchBackground
         }
     }
 }
@@ -59,6 +62,8 @@ public enum ContextualOnboardingBackgroundType {
 extension OnboardingRebranding.OnboardingStyles {
 
     struct ContextualBackgroundStyle: ViewModifier {
+        @Environment(\.horizontalSizeClass) private var hSizeClass
+        @Environment(\.verticalSizeClass) private var vSizeClass
         @Environment(\.onboardingTheme) private var theme
 
         let backgroundType: ContextualOnboardingBackgroundType
@@ -74,6 +79,7 @@ extension OnboardingRebranding.OnboardingStyles {
                     backgroundType.image
                         .resizable()
                         .scaledToFit()
+                        .frame(maxHeight: maxHeightMetrics)
                         .background(
                             GeometryReader { proxy in
                                 Color.clear
@@ -88,6 +94,20 @@ extension OnboardingRebranding.OnboardingStyles {
 
                 content
             }
+        }
+
+        #if os(iOS)
+        private static let maxHeightMetricsBuilder = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200)
+        #endif
+
+        var maxHeightMetrics: CGFloat? {
+            #if os(iOS)
+            // iOS uses responsive metrics based on device type
+            return Self.maxHeightMetricsBuilder.build(v: vSizeClass, h: hSizeClass)
+            #else
+            // macOS: Fixed value. Customise when implementing macOS contextual onboarding.
+            return nil
+            #endif
         }
     }
 
@@ -125,7 +145,7 @@ extension OnboardingRebranding.OnboardingStyles {
 private struct BackgroundIllustrationHeightPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+        value = max(value, nextValue())
     }
 }
 
@@ -154,10 +174,10 @@ public struct BackgroundAnimationContext {
 
 public extension View {
 
-    @ViewBuilder
     /// Applies the contextual onboarding background illustration.
     ///
     /// If an animation context is provided, the illustration animates in from the bottom edge.
+    @ViewBuilder
     func applyContextualOnboardingBackground(backgroundType: ContextualOnboardingBackgroundType, animationContext: BackgroundAnimationContext? = nil) -> some View {
         if let animationContext {
             self.modifier(OnboardingRebranding.OnboardingStyles.AnimatedContextualBackgroundStyle(backgroundType: backgroundType, animation: animationContext.animation, delay: animationContext.delay))

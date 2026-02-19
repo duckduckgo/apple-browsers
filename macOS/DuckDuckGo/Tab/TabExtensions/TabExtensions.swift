@@ -106,6 +106,7 @@ typealias TabExtensionsBuilderArguments = (
     titlePublisher: AnyPublisher<String?, Never>,
     errorPublisher: AnyPublisher<WKError?, Never>,
     userScriptsPublisher: AnyPublisher<UserScripts?, Never>,
+    updateController: (any UpdateController)?,
     inheritedAttribution: AdClickAttributionLogic.State?,
     userContentControllerFuture: Future<UserContentController, Never>,
     permissionModel: PermissionModel,
@@ -333,16 +334,6 @@ extension TabExtensionsBuilder {
         add {
             SubscriptionTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
         }
-
-#if SPARKLE
-        add {
-            ReleaseNotesTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
-        }
-#else
-        add {
-            ReleaseNotesTabExtension()
-        }
-#endif
 
         if let tunnelController = dependencies.tunnelController {
             add {

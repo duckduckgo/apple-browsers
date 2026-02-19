@@ -33,6 +33,9 @@ public enum SingleUseColor {
     /// Duck.ai contextual background color
     case duckAIContextualSheetBackground
 
+    /// Tab switcher tracker count info panel background color
+    case tabSwitcherTrackerCountBackground
+
     /// Color used for 2026 Rebranding. Currently used only in Onboarding, hence they're isolated to avoid bleeding in other parts of the App.
     /// DefaultColorPalette should be updated with new colors when the time comes.
     case rebranding(Rebranding)

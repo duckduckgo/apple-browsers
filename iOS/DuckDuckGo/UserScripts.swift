@@ -93,7 +93,8 @@ final class UserScripts: UserScriptsProvider {
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
         let aiChatSettings = AIChatSettings()
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
-                                                          syncHandler: AIChatSyncHandler(sync: sourceProvider.sync),
+                                                          syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
+                                                                                         httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
                                                           featureFlagger: featureFlagger)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)

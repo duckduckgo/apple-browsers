@@ -84,7 +84,7 @@ extension WebExtensionManager {
         }
     }
 
-    func parseMessage(_ message: Any, context: WKWebExtensionContext) throws -> WebExtensionMessage {
+    func parseMessage(_ message: Any, extensionContext: WKWebExtensionContext) throws -> WebExtensionMessage {
         guard let messageDict = message as? [String: Any] else {
             throw MessageParsingError.invalidMessageFormat
         }
@@ -97,13 +97,18 @@ extension WebExtensionManager {
             throw MessageParsingError.missingMethod
         }
 
+        let id = messageDict["id"] as? String
         let params = messageDict["params"] as? [String: Any]
+        let context = messageDict["context"] as? String
 
         return WebExtensionMessage(
             featureName: featureName,
             method: method,
+            id: id,
             params: params,
-            context: context.uniqueIdentifier
+            context: context,
+            extensionIdentifier: extensionContext.uniqueIdentifier
+
         )
     }
 
@@ -118,7 +123,7 @@ extension WebExtensionManager {
 
         let extensionMessage: WebExtensionMessage
         do {
-            extensionMessage = try parseMessage(message, context: extensionContext)
+            extensionMessage = try parseMessage(message, extensionContext: extensionContext)
         } catch {
             Logger.webExtensions.error("❌ Message parsing failed: \(error.localizedDescription)")
             return ["error": error.localizedDescription]
@@ -128,7 +133,7 @@ extension WebExtensionManager {
 
         switch result {
         case .success(let response):
-            return response
+            return enrichResponse(response, with: extensionMessage)
         case .failure(let error):
             Logger.webExtensions.error("❌ Message handling failed: \(error.localizedDescription)")
             return nil
@@ -136,6 +141,24 @@ extension WebExtensionManager {
             Logger.webExtensions.error("❌ No handler registered for feature: \(extensionMessage.featureName)")
             return nil
         }
+    }
+
+    private func enrichResponse(_ response: Any?, with message: WebExtensionMessage) -> Any? {
+        var wrapper: [String: Any] = ["featureName": message.featureName]
+
+        if let response {
+            wrapper["result"] = response
+        }
+
+        if let id = message.id {
+            wrapper["id"] = id
+        }
+
+        if let context = message.context {
+            wrapper["context"] = context
+        }
+
+        return wrapper
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,

@@ -50,4 +50,8 @@ public enum OnboardingRebrandingImages {
         public static let duckDuckGoLogo = Image("Rebranding/DuckDuckGoLogo", bundle: .module)
     }
 
+    public enum AddToDock {
+        public static let promoBorder = Image("Rebranding/AddToDock.promo.border", bundle: .module)
+        public static let tutorialBorder = Image("Rebranding/AddToDock.tutorial.border", bundle: .module)
+    }
 }

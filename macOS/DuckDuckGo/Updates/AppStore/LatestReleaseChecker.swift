@@ -68,27 +68,6 @@ public enum LatestReleaseError: DDGError {
     }
 }
 
-public struct ReleaseMetadata: Codable {
-    public let latestVersion: String
-    public let buildNumber: Int
-    public let releaseDate: String
-    public let isCritical: Bool
-
-    public init(latestVersion: String, buildNumber: Int, releaseDate: String, isCritical: Bool) {
-        self.latestVersion = latestVersion
-        self.buildNumber = buildNumber
-        self.releaseDate = releaseDate
-        self.isCritical = isCritical
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case latestVersion = "latest_version"
-        case buildNumber = "build_number"
-        case releaseDate = "release_date"
-        case isCritical = "is_critical"
-    }
-}
-
 private struct ReleaseMetadataCollector: Codable {
     let latestAppStoreVersion: ReleaseMetadata
 

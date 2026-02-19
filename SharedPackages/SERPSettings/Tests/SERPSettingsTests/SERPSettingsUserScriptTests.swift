@@ -34,7 +34,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
 
-        mockKeyValueStore = try MockKeyValueFileStore()
+        mockKeyValueStore = MockKeyValueFileStore()
         mockProvider = MockSERPSettingsProvider(keyValueStore: mockKeyValueStore)
         mockDelegate = MockSERPSettingsDelegate()
         userScript = SERPSettingsUserScript(serpSettingsProviding: mockProvider)

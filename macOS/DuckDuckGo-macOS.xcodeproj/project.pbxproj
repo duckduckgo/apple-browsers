@@ -2342,11 +2342,9 @@
 		840E581F2F30AA27009CFCEE /* MockUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581D2F30AA27009CFCEE /* MockUpdater.swift */; };
 		840E58212F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581A2F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift */; };
 		840E58222F30AA27009CFCEE /* MockNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581B2F30AA27009CFCEE /* MockNotificationPresenter.swift */; };
-		840E58232F30AA27009CFCEE /* MockUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581C2F30AA27009CFCEE /* MockUpdateController.swift */; };
 		840E58252F30AA27009CFCEE /* MockUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581D2F30AA27009CFCEE /* MockUpdater.swift */; };
 		840E58272F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581A2F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift */; };
 		840E58282F30AA27009CFCEE /* MockNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581B2F30AA27009CFCEE /* MockNotificationPresenter.swift */; };
-		840E58292F30AA27009CFCEE /* MockUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E581C2F30AA27009CFCEE /* MockUpdateController.swift */; };
 		841BE93B2C6F1CB200E9C2B5 /* MenuItemNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */; };
 		841BE93C2C6F1CB200E9C2B5 /* MenuItemNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */; };
 		841BE93E2C6F236000E9C2B5 /* BookmarkDragDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */; };
@@ -5475,7 +5473,6 @@
 		840E57F82F30A9E4009CFCEE /* UpdateState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateState.swift; sourceTree = "<group>"; };
 		840E581A2F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MockFeatureFlagger+AppUpdater.swift"; sourceTree = "<group>"; };
 		840E581B2F30AA27009CFCEE /* MockNotificationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNotificationPresenter.swift; sourceTree = "<group>"; };
-		840E581C2F30AA27009CFCEE /* MockUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUpdateController.swift; sourceTree = "<group>"; };
 		840E581D2F30AA27009CFCEE /* MockUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUpdater.swift; sourceTree = "<group>"; };
 		841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuItemNode.swift; sourceTree = "<group>"; };
 		841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkDragDropManager.swift; sourceTree = "<group>"; };
@@ -7253,7 +7250,6 @@
 				BB486B502E74770D0026B972 /* LatestReleaseCheckerTests.swift */,
 				840E581A2F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift */,
 				840E581B2F30AA27009CFCEE /* MockNotificationPresenter.swift */,
-				840E581C2F30AA27009CFCEE /* MockUpdateController.swift */,
 				840E581D2F30AA27009CFCEE /* MockUpdater.swift */,
 				1D838A312C44F0180078373F /* ReleaseNotesParserTests.swift */,
 				7BEA6E012F223548007025EA /* SimplifiedSparkleUpdateControllerTests.swift */,
@@ -15727,7 +15723,6 @@
 				840E581F2F30AA27009CFCEE /* MockUpdater.swift in Sources */,
 				840E58212F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift in Sources */,
 				840E58222F30AA27009CFCEE /* MockNotificationPresenter.swift in Sources */,
-				840E58232F30AA27009CFCEE /* MockUpdateController.swift in Sources */,
 				373E477C2D809EF5006F3FEC /* AddBookmarkPopoverViewModelTests.swift in Sources */,
 				56A054142C1C3796007D8FAB /* CapturingDockCustomizer.swift in Sources */,
 				CC19E9F12E82E36A0043F931 /* AIChatHistoryCleanerTests.swift in Sources */,
@@ -17783,7 +17778,6 @@
 				840E58252F30AA27009CFCEE /* MockUpdater.swift in Sources */,
 				840E58272F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift in Sources */,
 				840E58282F30AA27009CFCEE /* MockNotificationPresenter.swift in Sources */,
-				840E58292F30AA27009CFCEE /* MockUpdateController.swift in Sources */,
 				B6106BB126A7D8720013B453 /* PermissionStoreTests.swift in Sources */,
 				7B0C7F1B2EDF1D1800A338FD /* WebNotificationClickHandlerTests.swift in Sources */,
 				BB77F8CF2EB3991C00D035A7 /* WinBackOfferPromotionViewCoordinatorTests.swift in Sources */,

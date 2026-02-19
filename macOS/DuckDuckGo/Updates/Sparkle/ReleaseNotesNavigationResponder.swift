@@ -1,5 +1,5 @@
 //
-//  ReleaseNotesTabExtension.swift
+//  ReleaseNotesNavigationResponder.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -25,16 +25,6 @@ import Persistence
 import PixelKit
 import WebKit
 
-#if SPARKLE
-
-protocol ReleaseNotesUserScriptProvider {
-
-    var releaseNotesUserScript: ReleaseNotesUserScript? { get }
-
-}
-
-extension UserScripts: ReleaseNotesUserScriptProvider {}
-
 public struct ReleaseNotesValues: Codable {
     enum Status: String {
         case loaded
@@ -57,7 +47,11 @@ public struct ReleaseNotesValues: Codable {
     let automaticUpdate: Bool?
 }
 
-final class ReleaseNotesTabExtension: NavigationResponder {
+/// Sparkle-specific implementation of release notes navigation responder.
+///
+/// Handles displaying release notes, update progress, and triggering update checks
+/// for the Sparkle update system.
+public final class ReleaseNotesNavigationResponder: NavigationResponder {
 
     private var cancellables = Set<AnyCancellable>()
     private weak var webView: WKWebView? {
@@ -66,27 +60,34 @@ final class ReleaseNotesTabExtension: NavigationResponder {
         }
     }
     private weak var releaseNotesUserScript: ReleaseNotesUserScript?
+    private let updateController: any SparkleUpdateController
+    private let releaseNotesURL: URL
 
-    init(scriptsPublisher: some Publisher<some ReleaseNotesUserScriptProvider, Never>,
-         webViewPublisher: some Publisher<WKWebView, Never>) {
+    public init(updateController: any SparkleUpdateController,
+                releaseNotesURL: URL,
+                scriptsPublisher: some Publisher<any ReleaseNotesUserScriptProvider, Never>,
+                webViewPublisher: some Publisher<WKWebView, Never>) {
+        self.updateController = updateController
+        self.releaseNotesURL = releaseNotesURL
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
         }.store(in: &cancellables)
 
         scriptsPublisher.sink { [weak self] scripts in
-            self?.releaseNotesUserScript = scripts.releaseNotesUserScript
-            self?.releaseNotesUserScript?.webView = self?.webView
-
-            DispatchQueue.main.async { [weak self] in
+            DispatchQueue.main.asyncOrNow {
+                assert(scripts.releaseNotesUserScript == nil || scripts.releaseNotesUserScript is ReleaseNotesUserScript,
+                       "Unexpected ReleaseNotesUserScript type: \(scripts.releaseNotesUserScript!)")
+                self?.releaseNotesUserScript = scripts.releaseNotesUserScript as? ReleaseNotesUserScript
+                self?.releaseNotesUserScript?.webView = self?.webView
                 self?.setUpScript(for: self?.webView?.url)
             }
         }.store(in: &cancellables)
     }
 
     @MainActor
-    func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
-        if navigationAction.url == .releaseNotes {
+    public func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        if navigationAction.url == releaseNotesURL {
             return .allow
         }
         return .next
@@ -97,7 +98,6 @@ final class ReleaseNotesTabExtension: NavigationResponder {
         guard AppVersion.runType != .uiTests else {
             return
         }
-        guard let updateController = Application.appDelegate.updateController as? any SparkleUpdateControllerProtocol else { return }
         Publishers.CombineLatest(updateController.updateProgressPublisher, updateController.latestUpdatePublisher)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -108,23 +108,12 @@ final class ReleaseNotesTabExtension: NavigationResponder {
     }
 
     @MainActor
-    func navigationDidFinish(_ navigation: Navigation) {
-        guard AppVersion.runType != .uiTests, navigation.url == .releaseNotes else { return }
-        let updateController = Application.appDelegate.updateController!
+    public func navigationDidFinish(_ navigation: Navigation) {
+        guard AppVersion.runType != .uiTests, navigation.url == releaseNotesURL else { return }
         if updateController.latestUpdate?.needsLatestReleaseNote == true {
             updateController.checkForUpdateSkippingRollout()
         }
     }
-}
-
-protocol ReleaseNotesTabExtensionProtocol: AnyObject, NavigationResponder {}
-
-extension ReleaseNotesTabExtension: ReleaseNotesTabExtensionProtocol, TabExtension {
-    func getPublicProtocol() -> ReleaseNotesTabExtensionProtocol { self }
-}
-
-extension TabExtensions {
-    var releaseNotes: ReleaseNotesTabExtensionProtocol? { resolve(ReleaseNotesTabExtension.self) }
 }
 
 extension ReleaseNotesValues {
@@ -149,7 +138,7 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: any SparkleUpdateControllerProtocol, keyValueStore: ThrowingKeyValueStoring, pixelKit: PixelKit? = PixelKit.shared) {
+    init(from updateController: any SparkleUpdateController, pixelFiring: PixelFiring?, keyValueStore: ThrowingKeyValueStoring) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
@@ -184,7 +173,7 @@ extension ReleaseNotesValues {
                 return
             }
 
-            pixelKit?.fire(GeneralPixel.releaseNotesEmpty, frequency: .dailyAndCount)
+            pixelFiring?.fire(UpdateFlowPixels.releaseNotesEmpty, frequency: .dailyAndCount)
 
             self.init(status: updateController.updateProgress.toStatus,
                       currentVersion: currentVersion,
@@ -255,20 +244,3 @@ private extension UpdateCycleProgress {
         return percentage
     }
 }
-
-#else
-
-protocol ReleaseNotesTabExtensionProtocol: AnyObject, NavigationResponder {}
-
-extension ReleaseNotesTabExtension: ReleaseNotesTabExtensionProtocol, TabExtension {
-    func getPublicProtocol() -> ReleaseNotesTabExtensionProtocol { self }
-}
-
-extension TabExtensions {
-    var releaseNotes: ReleaseNotesTabExtensionProtocol? { resolve(ReleaseNotesTabExtension.self) }
-}
-
-final class ReleaseNotesTabExtension: NavigationResponder {
-}
-
-#endif

@@ -19,24 +19,29 @@
 import Foundation
 import WebKit
 
-/// Custom manifest key used to identify DuckDuckGo-specific extension types.
-/// This key can be added to an extension's manifest.json to specify its type for handler registration.
-private let duckDuckGoExtensionTypeManifestKey = "_duckduckgo_extension_type"
+private let browserSpecificSettingsKey = "browser_specific_settings"
+private let duckduckgoKey = "duckduckgo"
+private let idKey = "id"
 
-/// DuckDuckGo extension types.
+/// Extension types identified via manifest `browser_specific_settings.duckduckgo.id`.
 @available(macOS 15.4, iOS 18.4, *)
-public enum DuckDuckGoExtensionType: String {
-    case ddgInternalExtension
+public enum DuckDuckGoWebExtensionType: String {
+    /// Embedded web extension (e.g. autoconsent/CPM).
+    case embedded = "com.duckduckgo.web-extension.embedded"
 }
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WKWebExtensionContext {
 
-    /// Returns the DuckDuckGo extension type from the manifest, if present.
-    var duckDuckGoExtensionType: DuckDuckGoExtensionType? {
-        guard let extensionTypeString = webExtension.manifest[duckDuckGoExtensionTypeManifestKey] as? String else {
+    /// Returns the extension type from manifest `browser_specific_settings.duckduckgo.id`, if present and recognized.
+    /// Example manifest entry:
+    /// `"browser_specific_settings": { "duckduckgo": { "id": "com.duckduckgo.web-extension.embedded" } }`
+    var duckDuckGoWebExtensionType: DuckDuckGoWebExtensionType? {
+        guard let browserSpecific = webExtension.manifest[browserSpecificSettingsKey] as? [String: Any],
+              let duckduckgo = browserSpecific[duckduckgoKey] as? [String: Any],
+              let idString = duckduckgo[idKey] as? String else {
             return nil
         }
-        return DuckDuckGoExtensionType(rawValue: extensionTypeString)
+        return DuckDuckGoWebExtensionType(rawValue: idString)
     }
 }

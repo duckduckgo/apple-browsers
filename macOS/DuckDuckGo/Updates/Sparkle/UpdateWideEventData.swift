@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if SPARKLE
-
 import Foundation
 import PixelKit
 
@@ -40,8 +38,8 @@ import PixelKit
 /// - Start timing at milestone entry: `.startingNow()`
 /// - Complete at milestone exit: `.complete()`
 /// - Incomplete intervals (not completed before flow ends) won't be included in pixel parameters
-final class UpdateWideEventData: WideEventData {
-    static let metadata = WideEventMetadata(
+public final class UpdateWideEventData: WideEventData {
+    public static let metadata = WideEventMetadata(
         pixelName: "sparkle_update_cycle",
         featureName: "sparkle-update",
         mobileMetaType: "ios-sparkle-update",
@@ -50,55 +48,55 @@ final class UpdateWideEventData: WideEventData {
     )
 
     // Required protocol properties
-    var globalData: WideEventGlobalData
-    var contextData: WideEventContextData
-    var appData: WideEventAppData
-    var errorData: WideEventErrorData?
+    public var globalData: WideEventGlobalData
+    public var contextData: WideEventContextData
+    public var appData: WideEventAppData
+    public var errorData: WideEventErrorData?
 
     // Update-specific data
-    var fromVersion: String
-    var fromBuild: String
-    var toVersion: String?
-    var toBuild: String?
-    var updateType: UpdateType?
-    var initiationType: InitiationType
-    var updateConfiguration: UpdateConfiguration
-    var lastKnownStep: UpdateStep?
-    var isInternalUser: Bool
-    var osVersion: String
+    public var fromVersion: String
+    public var fromBuild: String
+    public var toVersion: String?
+    public var toBuild: String?
+    public var updateType: UpdateType?
+    public var initiationType: InitiationType
+    public var updateConfiguration: UpdateConfiguration
+    public var lastKnownStep: UpdateStep?
+    public var isInternalUser: Bool
+    public var osVersion: String
 
     // Optional contextual data
-    var cancellationReason: CancellationReason?
-    var diskSpaceRemainingBytes: UInt64?
-    var timeSinceLastUpdateBucket: TimeSinceUpdateBucket?
+    public var cancellationReason: CancellationReason?
+    public var diskSpaceRemainingBytes: UInt64?
+    public var timeSinceLastUpdateBucket: TimeSinceUpdateBucket?
 
     // Timing measurements for each phase of the update cycle.
     // Incomplete intervals won't be included in pixel parameters.
-    var updateCheckDuration: WideEvent.MeasuredInterval?
-    var downloadDuration: WideEvent.MeasuredInterval?
-    var extractionDuration: WideEvent.MeasuredInterval?
-    var totalDuration: WideEvent.MeasuredInterval?
+    public var updateCheckDuration: WideEvent.MeasuredInterval?
+    public var downloadDuration: WideEvent.MeasuredInterval?
+    public var extractionDuration: WideEvent.MeasuredInterval?
+    public var totalDuration: WideEvent.MeasuredInterval?
 
     /// Type of update available.
-    enum UpdateType: String, Codable {
+    public enum UpdateType: String, Codable {
         case regular
         case critical
     }
 
     /// How the update was initiated.
-    enum InitiationType: String, Codable {
+    public enum InitiationType: String, Codable {
         case automatic  // Background check
         case manual     // User-triggered check
     }
 
     /// User's automatic update preference setting.
-    enum UpdateConfiguration: String, Codable {
+    public enum UpdateConfiguration: String, Codable {
         case automatic
         case manual
     }
 
     /// Reason an update flow was cancelled.
-    enum CancellationReason: String, Codable {
+    public enum CancellationReason: String, Codable {
         case appQuit          // App terminated during update
         case settingsChanged  // Automatic updates toggled
         case buildExpired     // Current build too old
@@ -106,14 +104,14 @@ final class UpdateWideEventData: WideEventData {
     }
 
     /// Reason an update flow completed successfully.
-    enum SuccessReason: String {
+    public enum SuccessReason: String {
         case noUpdateAvailable = "no_update_available"
         case restartingToUpdate = "restarting_to_update"
         case installingOnQuit = "installing_on_quit"
     }
 
     /// Last known step in the update process before flow ended.
-    enum UpdateStep: String, Codable {
+    public enum UpdateStep: String, Codable {
         case updateCheckStarted
         case updateFound
         case noUpdateFound
@@ -125,7 +123,7 @@ final class UpdateWideEventData: WideEventData {
     }
 
     /// Time bucket for privacy-safe update frequency tracking.
-    enum TimeSinceUpdateBucket: String, Codable {
+    public enum TimeSinceUpdateBucket: String, Codable {
         case lessThan30Minutes = "<30m"
         case lessThan2Hours = "<2h"
         case lessThan6Hours = "<6h"
@@ -135,7 +133,7 @@ final class UpdateWideEventData: WideEventData {
         case lessThan1Month = "<1M"
         case greaterThanOrEqual1Month = ">=1M"
 
-        init(interval: TimeInterval) {
+        public init(interval: TimeInterval) {
             let minutes = interval / 60.0
             let hours = minutes / 60.0
             let days = hours / 24.0
@@ -162,33 +160,33 @@ final class UpdateWideEventData: WideEventData {
         }
 
         /// Convenience initializer that calculates the interval between two dates.
-        init(from lastDate: Date, to currentDate: Date = Date()) {
+        public init(from lastDate: Date, to currentDate: Date = Date()) {
             let interval = currentDate.timeIntervalSince(lastDate)
             self.init(interval: interval)
         }
     }
 
-    init(fromVersion: String,
-         fromBuild: String,
-         toVersion: String? = nil,
-         toBuild: String? = nil,
-         updateType: UpdateType? = nil,
-         initiationType: InitiationType,
-         updateConfiguration: UpdateConfiguration,
-         lastKnownStep: UpdateStep? = nil,
-         isInternalUser: Bool,
-         osVersion: String = ProcessInfo.processInfo.operatingSystemVersionString,
-         cancellationReason: CancellationReason? = nil,
-         diskSpaceRemainingBytes: UInt64? = nil,
-         timeSinceLastUpdateBucket: TimeSinceUpdateBucket? = nil,
-         updateCheckDuration: WideEvent.MeasuredInterval? = nil,
-         downloadDuration: WideEvent.MeasuredInterval? = nil,
-         extractionDuration: WideEvent.MeasuredInterval? = nil,
-         totalDuration: WideEvent.MeasuredInterval? = nil,
-         errorData: WideEventErrorData? = nil,
-         contextData: WideEventContextData,
-         appData: WideEventAppData = WideEventAppData(),
-         globalData: WideEventGlobalData = WideEventGlobalData()) {
+    public init(fromVersion: String,
+                fromBuild: String,
+                toVersion: String? = nil,
+                toBuild: String? = nil,
+                updateType: UpdateType? = nil,
+                initiationType: InitiationType,
+                updateConfiguration: UpdateConfiguration,
+                lastKnownStep: UpdateStep? = nil,
+                isInternalUser: Bool,
+                osVersion: String = ProcessInfo.processInfo.operatingSystemVersionString,
+                cancellationReason: CancellationReason? = nil,
+                diskSpaceRemainingBytes: UInt64? = nil,
+                timeSinceLastUpdateBucket: TimeSinceUpdateBucket? = nil,
+                updateCheckDuration: WideEvent.MeasuredInterval? = nil,
+                downloadDuration: WideEvent.MeasuredInterval? = nil,
+                extractionDuration: WideEvent.MeasuredInterval? = nil,
+                totalDuration: WideEvent.MeasuredInterval? = nil,
+                errorData: WideEventErrorData? = nil,
+                contextData: WideEventContextData,
+                appData: WideEventAppData = WideEventAppData(),
+                globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.fromVersion = fromVersion
         self.fromBuild = fromBuild
         self.toVersion = toVersion
@@ -212,7 +210,7 @@ final class UpdateWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    func pixelParameters() -> [String: String] {
+    public func pixelParameters() -> [String: String] {
         Dictionary(compacting: [
             ("feature.data.ext.from_version", fromVersion),
             ("feature.data.ext.from_build", fromBuild),
@@ -243,7 +241,7 @@ final class UpdateWideEventData: WideEventData {
     ///
     /// - Note: Called only on update FAILURE to help diagnose whether insufficient disk space
     ///   caused the failure.
-    static func getAvailableDiskSpace() -> UInt64? {
+    public static func getAvailableDiskSpace() -> UInt64? {
         guard let homeURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             return nil
         }
@@ -256,5 +254,3 @@ final class UpdateWideEventData: WideEventData {
         }
     }
 }
-
-#endif

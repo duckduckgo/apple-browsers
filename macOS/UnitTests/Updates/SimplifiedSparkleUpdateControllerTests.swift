@@ -35,13 +35,13 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Unsigned Updates Enabled
+    // MARK: - Custom Feed Enabled
 
-    func testResolveAutoDownload_unsignedUpdatesEnabled_flagOff_preferenceOn_returnsFalse() {
+    func testResolveAutoDownload_customFeedEnabled_flagOff_preferenceOn_returnsFalse() {
         // Flag OFF = not in enabledUpdateFeatureFlags array
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            allowUnsignedUpdates: true,
+            allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
         )
@@ -49,11 +49,11 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testResolveAutoDownload_unsignedUpdatesEnabled_debugFlagOn_preferenceOn_returnsTrue() {
+    func testResolveAutoDownload_customFeedEnabled_debugFlagOn_preferenceOn_returnsTrue() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInDEBUG]
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            allowUnsignedUpdates: true,
+            allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
         )
@@ -61,11 +61,11 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testResolveAutoDownload_unsignedUpdatesEnabled_debugFlagOn_preferenceOff_returnsFalse() {
+    func testResolveAutoDownload_customFeedEnabled_debugFlagOn_preferenceOff_returnsFalse() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInDEBUG]
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            allowUnsignedUpdates: true,
+            allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: false
         )
@@ -75,11 +75,11 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
 
     // MARK: - Non-Debug Flag Handling
 
-    func testResolveAutoDownload_unsignedUpdatesEnabled_nonDebugFlagOff_preferenceOn_returnsFalse() {
+    func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOff_preferenceOn_returnsFalse() {
         // Flag OFF = not in enabledUpdateFeatureFlags array.
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            allowUnsignedUpdates: true,
+            allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
         )
@@ -87,11 +87,11 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testResolveAutoDownload_unsignedUpdatesEnabled_nonDebugFlagOn_preferenceOn_matchesBuild() {
+    func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOn_preferenceOn_matchesBuild() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInREVIEW]
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            allowUnsignedUpdates: true,
+            allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
         )
@@ -103,11 +103,11 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
 #endif
     }
 
-    func testResolveAutoDownload_unsignedUpdatesEnabled_nonDebugFlagOn_preferenceOff_returnsFalse() {
+    func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOn_preferenceOff_returnsFalse() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInREVIEW]
 
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            allowUnsignedUpdates: true,
+            allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: false
         )
@@ -115,11 +115,11 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    // MARK: - Unsigned Updates Disabled
+    // MARK: - Custom Feed Disabled
 
-    func testResolveAutoDownload_unsignedUpdatesDisabled_preferenceOn_returnsTrue() {
+    func testResolveAutoDownload_customFeedDisabled_preferenceOn_returnsTrue() {
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            allowUnsignedUpdates: false,
+            allowCustomUpdateFeed: false,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
         )
@@ -127,9 +127,9 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testResolveAutoDownload_unsignedUpdatesDisabled_preferenceOff_returnsFalse() {
+    func testResolveAutoDownload_customFeedDisabled_preferenceOff_returnsFalse() {
         let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
-            allowUnsignedUpdates: false,
+            allowCustomUpdateFeed: false,
             featureFlagger: mockFeatureFlagger,
             userPreference: false
         )

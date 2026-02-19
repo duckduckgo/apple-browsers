@@ -44,7 +44,7 @@ extension UpdateControllerFactory: SparkleUpdateControllerFactory {
                                    pixelFiring: PixelFiring?,
                                    notificationPresenter: any UpdateNotificationPresenting,
                                    keyValueStore: any ThrowingKeyValueStoring,
-                                   allowUnsignedUpdates: Bool,
+                                   allowCustomUpdateFeed: Bool,
                                    wideEvent: WideEventManaging,
                                    isOnboardingFinished: @escaping () -> Bool,
                                    openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateController {
@@ -54,7 +54,7 @@ extension UpdateControllerFactory: SparkleUpdateControllerFactory {
                                                      pixelFiring: pixelFiring,
                                                      notificationPresenter: notificationPresenter,
                                                      keyValueStore: keyValueStore,
-                                                     allowUnsignedUpdates: allowUnsignedUpdates,
+                                                     allowCustomUpdateFeed: allowCustomUpdateFeed,
                                                      wideEvent: wideEvent,
                                                      isOnboardingFinished: isOnboardingFinished,
                                                      openUpdatesPage: openUpdatesPage)
@@ -64,7 +64,7 @@ extension UpdateControllerFactory: SparkleUpdateControllerFactory {
                                                   pixelFiring: pixelFiring,
                                                   notificationPresenter: notificationPresenter,
                                                   keyValueStore: keyValueStore,
-                                                  allowUnsignedUpdates: allowUnsignedUpdates,
+                                                  allowCustomUpdateFeed: allowCustomUpdateFeed,
                                                   wideEvent: wideEvent,
                                                   isOnboardingFinished: isOnboardingFinished,
                                                   openUpdatesPage: openUpdatesPage)
@@ -159,11 +159,11 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
 
     private var customFeedURL: String? {
         get {
-            guard allowUnsignedUpdates else { return nil }
+            guard allowCustomUpdateFeed else { return nil }
             return try? settings.debugSparkleCustomFeedURL
         }
         set {
-            guard allowUnsignedUpdates else { return }
+            guard allowCustomUpdateFeed else { return }
             try? settings.set(newValue, for: \.debugSparkleCustomFeedURL)
         }
     }
@@ -249,7 +249,7 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
     private let updateCheckState: UpdateCheckState
 
     // MARK: - Build Configuration
-    private let allowUnsignedUpdates: Bool
+    private let allowCustomUpdateFeed: Bool
 
     // MARK: - WideEvent Tracking
     private let updateWideEvent: SparkleUpdateWideEvent
@@ -282,7 +282,7 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
                 pixelFiring: PixelFiring?,
                 notificationPresenter: any UpdateNotificationPresenting,
                 keyValueStore: any Persistence.ThrowingKeyValueStoring,
-                allowUnsignedUpdates: Bool,
+                allowCustomUpdateFeed: Bool,
                 wideEvent: WideEventManaging,
                 isOnboardingFinished: @escaping () -> Bool,
                 openUpdatesPage: @escaping () -> Void = {}) {
@@ -295,7 +295,7 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
         self.openUpdatesPageAction = openUpdatesPage
         self.updateCheckState = UpdateCheckState()
         self.settings = keyValueStore.throwingKeyedStoring()
-        self.allowUnsignedUpdates = allowUnsignedUpdates
+        self.allowCustomUpdateFeed = allowCustomUpdateFeed
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
         self.applicationUpdateDetector = ApplicationUpdateDetector(settings: settings)
 
@@ -632,12 +632,12 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
     // MARK: - Debug: Custom Feed URL
 
     func setCustomFeedURL(_ urlString: String) {
-        guard allowUnsignedUpdates else { return }
+        guard allowCustomUpdateFeed else { return }
         customFeedURL = urlString
     }
 
     func resetFeedURLToDefault() {
-        guard allowUnsignedUpdates else { return }
+        guard allowCustomUpdateFeed else { return }
         customFeedURL = nil
     }
 }
@@ -647,7 +647,7 @@ extension DefaultSparkleUpdateController: SparkleCustomFeedURLProviding {}
 extension DefaultSparkleUpdateController: SPUUpdaterDelegate {
 
     func feedURLString(for updater: SPUUpdater) -> String? {
-        guard allowUnsignedUpdates else { return nil }
+        guard allowCustomUpdateFeed else { return nil }
         return customFeedURL
     }
 

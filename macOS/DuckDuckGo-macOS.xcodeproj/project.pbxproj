@@ -2318,7 +2318,6 @@
 		840E57E42F30A988009CFCEE /* LatestReleaseChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57E32F30A988009CFCEE /* LatestReleaseChecker.swift */; };
 		840E57E92F30A9AA009CFCEE /* Update+Sparkle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57E82F30A9AA009CFCEE /* Update+Sparkle.swift */; };
 		840E57EA2F30A9AA009CFCEE /* SPUUpdater+UpdaterAvailabilityChecking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57E72F30A9AA009CFCEE /* SPUUpdater+UpdaterAvailabilityChecking.swift */; };
-		840E57FB2F30A9E4009CFCEE /* UpdateValidationResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F92F30A9E4009CFCEE /* UpdateValidationResult.swift */; };
 		840E57FC2F30A9E4009CFCEE /* UpdateState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F82F30A9E4009CFCEE /* UpdateState.swift */; };
 		840E58002F30A9E4009CFCEE /* ReleaseNotesParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57EF2F30A9E4009CFCEE /* ReleaseNotesParser.swift */; };
 		840E58012F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */; };
@@ -2326,7 +2325,6 @@
 		840E58062F30A9E4009CFCEE /* UpdateNotificationPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F62F30A9E4009CFCEE /* UpdateNotificationPresenting.swift */; };
 		840E58082F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F72F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift */; };
 		840E58092F30A9E4009CFCEE /* ReleaseMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57EE2F30A9E4009CFCEE /* ReleaseMetadata.swift */; };
-		840E580A2F30A9E4009CFCEE /* UpdateValidationResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F92F30A9E4009CFCEE /* UpdateValidationResult.swift */; };
 		840E580B2F30A9E4009CFCEE /* UpdateState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F82F30A9E4009CFCEE /* UpdateState.swift */; };
 		840E58102F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F32F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift */; };
 		840E58112F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840E57F52F30A9E4009CFCEE /* UpdateCycleProgress.swift */; };
@@ -5467,7 +5465,6 @@
 		840E57F62F30A9E4009CFCEE /* UpdateNotificationPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateNotificationPresenting.swift; sourceTree = "<group>"; };
 		840E57F72F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdaterAvailabilityChecking.swift; sourceTree = "<group>"; };
 		840E57F82F30A9E4009CFCEE /* UpdateState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateState.swift; sourceTree = "<group>"; };
-		840E57F92F30A9E4009CFCEE /* UpdateValidationResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateValidationResult.swift; sourceTree = "<group>"; };
 		840E581A2F30AA27009CFCEE /* MockFeatureFlagger+AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MockFeatureFlagger+AppUpdater.swift"; sourceTree = "<group>"; };
 		840E581B2F30AA27009CFCEE /* MockNotificationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNotificationPresenter.swift; sourceTree = "<group>"; };
 		840E581C2F30AA27009CFCEE /* MockUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUpdateController.swift; sourceTree = "<group>"; };
@@ -7206,7 +7203,6 @@
 				840E57F72F30A9E4009CFCEE /* UpdaterAvailabilityChecking.swift */,
 				BB4830C92E7CB001002D320C /* UpdatesDebugSettings.swift */,
 				840E57F82F30A9E4009CFCEE /* UpdateState.swift */,
-				840E57F92F30A9E4009CFCEE /* UpdateValidationResult.swift */,
 			);
 			path = Updates;
 			sourceTree = "<group>";
@@ -15238,7 +15234,6 @@
 				B69A14FB2B4D705D00B9417D /* BookmarkFolderPicker.swift in Sources */,
 				CC0942FE2E16AF9C00E67336 /* FavoritesImportProcessor.swift in Sources */,
 				EE8C11D62E9E8347002FFD72 /* FileImportScreenView.swift in Sources */,
-				840E580A2F30A9E4009CFCEE /* UpdateValidationResult.swift in Sources */,
 				840E580B2F30A9E4009CFCEE /* UpdateState.swift in Sources */,
 				840E58102F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */,
 				840E58112F30A9E4009CFCEE /* UpdateCycleProgress.swift in Sources */,
@@ -16492,7 +16487,6 @@
 				7B7F5D212C526CE600826256 /* AddExcludedDomainView.swift in Sources */,
 				4B92929E26670D2A00AD2C21 /* BookmarkSidebarTreeController.swift in Sources */,
 				EEC4A6712B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift in Sources */,
-				840E57FB2F30A9E4009CFCEE /* UpdateValidationResult.swift in Sources */,
 				840E57FC2F30A9E4009CFCEE /* UpdateState.swift in Sources */,
 				840E58002F30A9E4009CFCEE /* ReleaseNotesParser.swift in Sources */,
 				840E58012F30A9E4009CFCEE /* ReleaseNotesUserScriptProvider.swift in Sources */,

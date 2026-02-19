@@ -1432,14 +1432,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
 
-            let allowUnsignedUpdates = buildType.isDebugBuild || buildType.isReviewBuild
+            let allowCustomUpdateFeed = buildType.isDebugBuild || buildType.isReviewBuild
             let sparkleUpdateController = sparkleFactory.instantiate(
                 internalUserDecider: internalUserDecider,
                 featureFlagger: featureFlagger,
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
-                allowUnsignedUpdates: allowUnsignedUpdates,
+                allowCustomUpdateFeed: allowCustomUpdateFeed,
                 wideEvent: wideEvent,
                 isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished },
                 openUpdatesPage: { [windowControllersManager] in

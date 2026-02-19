@@ -43,7 +43,7 @@ public protocol SparkleUpdateControllerFactory {
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
-                            allowUnsignedUpdates: Bool,
+                            allowCustomUpdateFeed: Bool,
                             wideEvent: WideEventManaging,
                             isOnboardingFinished: @escaping () -> Bool,
                             openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateController

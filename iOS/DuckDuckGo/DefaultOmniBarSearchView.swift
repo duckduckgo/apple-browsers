@@ -54,6 +54,16 @@ final class DefaultOmniBarSearchView: UIView {
     let cancelButton = BrowserChromeButton(.secondary)
     let voiceSearchButton = BrowserChromeButton()
     let aiChatButton = BrowserChromeButton()
+    let modeToggleView = PadOmnibarToggleView()
+    private let modeToggleContainer = UIView()
+    
+    var isModeToggleHidden: Bool {
+        get { modeToggleContainer.isHidden }
+        set {
+            modeToggleContainer.isHidden = newValue
+            modeToggleView.isHidden = newValue
+        }
+    }
 
     private let mainStackView = UIStackView()
 
@@ -108,6 +118,8 @@ final class DefaultOmniBarSearchView: UIView {
         trailingItemsContainer.addArrangedSubview(customizableButton)
         trailingItemsContainer.addArrangedSubview(separatorView)
         trailingItemsContainer.addArrangedSubview(aiChatButton)
+        trailingItemsContainer.addArrangedSubview(modeToggleContainer)
+        modeToggleContainer.addSubview(modeToggleView)
 
         leftIconContainer.addSubview(loupeIconView)
         leftIconContainer.addSubview(dismissButtonView)
@@ -116,6 +128,8 @@ final class DefaultOmniBarSearchView: UIView {
     private func setUpConstraints() {
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         leftIconContainer.translatesAutoresizingMaskIntoConstraints = false
+        modeToggleContainer.translatesAutoresizingMaskIntoConstraints = false
+        modeToggleView.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -136,7 +150,12 @@ final class DefaultOmniBarSearchView: UIView {
             privacyInfoContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 10),
             privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
             privacyInfoContainer.widthAnchor.constraint(equalToConstant: 28),
-            privacyInfoContainer.heightAnchor.constraint(equalToConstant: 28)
+            privacyInfoContainer.heightAnchor.constraint(equalToConstant: 28),
+
+            modeToggleContainer.heightAnchor.constraint(equalToConstant: 44),
+            modeToggleView.leadingAnchor.constraint(equalTo: modeToggleContainer.leadingAnchor, constant: 8),
+            modeToggleView.trailingAnchor.constraint(equalTo: modeToggleContainer.trailingAnchor, constant: -6),
+            modeToggleView.centerYAnchor.constraint(equalTo: modeToggleContainer.centerYAnchor)
         ])
 
         DefaultOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
@@ -171,6 +190,9 @@ final class DefaultOmniBarSearchView: UIView {
 
         aiChatButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat)
         DefaultOmniBarView.setUpCommonProperties(for: aiChatButton)
+
+        isModeToggleHidden = true
+        trailingItemsContainer.setCustomSpacing(8, after: separatorView)
 
         reloadButton.setImage(DesignSystemImages.Glyphs.Size24.reload)
         DefaultOmniBarView.setUpCommonProperties(for: reloadButton)

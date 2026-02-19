@@ -86,7 +86,8 @@ final class AppContentBlocking {
         fireCoordinator: FireCoordinator,
         tld: TLD,
         autoconsentManagement: AutoconsentManagement,
-        contentScopePreferences: ContentScopePreferences
+        contentScopePreferences: ContentScopePreferences,
+        syncErrorHandler: SyncErrorHandling
     ) {
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
                                                                       fetchedData: configurationStore.loadData(for: .privacyConfiguration),
@@ -115,7 +116,8 @@ final class AppContentBlocking {
             fireCoordinator: fireCoordinator,
             tld: tld,
             autoconsentManagement: autoconsentManagement,
-            contentScopePreferences: contentScopePreferences
+            contentScopePreferences: contentScopePreferences,
+            syncErrorHandler: syncErrorHandler
         )
     }
 
@@ -141,7 +143,8 @@ final class AppContentBlocking {
         fireCoordinator: FireCoordinator,
         tld: TLD,
         autoconsentManagement: AutoconsentManagement,
-        contentScopePreferences: ContentScopePreferences
+        contentScopePreferences: ContentScopePreferences,
+        syncErrorHandler: SyncErrorHandling
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
@@ -181,7 +184,8 @@ final class AppContentBlocking {
                                                   fireproofDomains: fireproofDomains,
                                                   fireCoordinator: fireCoordinator,
                                                   autoconsentManagement: autoconsentManagement,
-                                                  contentScopePreferences: contentScopePreferences)
+                                                  contentScopePreferences: contentScopePreferences,
+                                                  syncErrorHandler: syncErrorHandler)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

@@ -42,6 +42,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     /// Optional internal site handler for platform-specific URL handling.
     public private(set) var internalSiteHandler: (any WebExtensionInternalSiteHandling)?
 
+    /// Message router for handling native messages from extensions.
+    public let messageRouter: WebExtensionMessageRouting
+
+    /// Provider for creating extension-specific message handlers.
+    public private(set) var handlerProvider: WebExtensionHandlerProviding?
+
     /// Pixel firing for analytics.
     private let pixelFiring: WebExtensionPixelFiring
 
@@ -63,7 +69,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
                 eventsListener: WebExtensionEventsListening = WebExtensionEventsListener(),
                 lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
-                pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) {
+                pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+                messageRouter: WebExtensionMessageRouting? = nil,
+                handlerProvider: WebExtensionHandlerProviding? = nil) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
@@ -76,10 +84,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
+        self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
+        self.handlerProvider = handlerProvider
 
         super.init()
 
         controller.delegate = self
+        self.loader.delegate = self
     }
 
     // MARK: - Computed Properties
@@ -113,18 +124,20 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         do {
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
 
-            let installedExtension = await InstalledWebExtension(
+            let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,
-                filename: sourceURL.lastPathComponent,
-                name: loadResult.context.webExtension.displayName,
-                version: loadResult.context.webExtension.version
+                filename: loadResult.filename,
+                name: loadResult.displayName,
+                version: loadResult.version
             )
 
             installationStore.add(installedExtension)
+
             Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) (\(identifier))")
             pixelFiring.fire(.installed)
         } catch {
             Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
+            unregisterHandlers(for: identifier)
             try? storageProvider.removeExtension(identifier: identifier)
             pixelFiring.fire(.installError(error: error))
             throw WebExtensionError.failedToLoadWebExtension(error)
@@ -137,6 +150,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
 
         installationStore.remove(uniqueIdentifier: identifier)
+
+        unregisterHandlers(for: identifier)
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
@@ -192,6 +207,33 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         return results
     }
 
+    @MainActor
+    public func unloadAllExtensions() {
+        let contexts = controller.extensionContexts
+        Logger.webExtensions.debug("🔄 Unloading all extensions from memory (count: \(contexts.count))")
+
+        var successCount = 0
+        var failureCount = 0
+
+        for context in contexts {
+            let identifier = context.uniqueIdentifier
+            do {
+                try controller.unload(context)
+                unregisterHandlers(for: identifier)
+                successCount += 1
+            } catch {
+                Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
+                failureCount += 1
+            }
+        }
+
+        if failureCount > 0 {
+            Logger.webExtensions.warning("⚠️ Unload all completed with \(failureCount) error(s): \(successCount) succeeded, \(failureCount) failed")
+        } else {
+            Logger.webExtensions.debug("✅ Successfully unloaded \(successCount) extension(s) from memory")
+        }
+    }
+
     // MARK: - Loading
 
     @MainActor
@@ -211,7 +253,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         for (installedExtension, result) in zip(extensions, results) {
             switch result {
             case .success:
-                Logger.webExtensions.debug("✅ Loaded extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier))")
+                Logger.webExtensions.debug("✅ Loaded extension `\(installedExtension.name ?? "")` | \(installedExtension.filename) | \(installedExtension.uniqueIdentifier)")
                 successCount += 1
             case .failure(let failure):
                 Logger.webExtensions.error("❌ Failed to load web extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier)): \(failure.localizedDescription)")

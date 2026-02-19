@@ -326,9 +326,13 @@ final class StatisticsLoader {
         let randomDelay = Double.random(in: 0.5...5)
 
         DispatchQueue.global().asyncAfter(deadline: .now() + randomDelay) {
+            let checker = SupportedOSChecker()
             PixelKit.fire(GeneralPixel.dailyOsVersionCounter,
                           frequency: .legacyDailyNoSuffix,
-                          withAdditionalParameters: [PixelKit.Parameters.osUpgradeCapability: SupportedOSChecker().osUpgradeCapability.pixelValue])
+                          withAdditionalParameters: [
+                            PixelKit.Parameters.osUpgradeCapability: checker.osUpgradeCapability.pixelValue,
+                            PixelKit.Parameters.maxSupportedOSVersion: checker.maxSupportedOSVersion,
+                          ])
         }
     }
 

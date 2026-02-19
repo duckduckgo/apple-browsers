@@ -56,12 +56,12 @@ struct SettingsAIExperimentalPickerView: View {
         .frame(maxWidth: SettingsAIExperimentalPickerViewLayout.maxViewWidth)
     }
 
-    private var isIPadAIToggleOn: Bool {
-        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.iPadAIToggle)
-    }
-
     private var shouldUseIPadAssets: Bool {
         isIPadAIToggleOn && UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    private var isIPadAIToggleOn: Bool {
+        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.iPadAIToggle)
     }
 }
 

@@ -31,7 +31,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     private lazy var omniBarView = DefaultOmniBarView.create()
-    private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
     private var cancellables = Set<AnyCancellable>()
     private let sessionStateMetrics = SessionStateMetrics(storage: UserDefaults.standard)
@@ -61,10 +60,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        let shouldUseDefaultAddressBarEditingOnIPad = UIDevice.current.userInterfaceIdiom == .pad
-            && dependencies.featureFlagger.isFeatureOn(.iPadAIToggle)
-
-        if aiChatSettings.isAIChatSearchInputUserSettingsEnabled && !shouldUseDefaultAddressBarEditingOnIPad {
+        if dependencies.aiChatAddressBarExperience.shouldUseExperimentalEditingState {
             if textFieldTapped {
                 omniDelegate?.onExperimentalAddressBarTapped()
             }
@@ -232,7 +228,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
         let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
-                                                storage: UserDefaults.standard, aiChatSettings: aiChatSettings,
+                                                storage: UserDefaults.standard, aiChatSettings: dependencies.aiChatSettings,
                                                 sessionStateMetrics: sessionStateMetrics)
 
         guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty, omniBarView.isFullAIChatHidden else {

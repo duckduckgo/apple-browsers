@@ -102,6 +102,8 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
+            aiChatAddressBarExperience: AIChatAddressBarExperience(featureFlagger: MockFeatureFlagger(),
+                                                                   aiChatSettings: MockAIChatSettingsProvider()),
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider()

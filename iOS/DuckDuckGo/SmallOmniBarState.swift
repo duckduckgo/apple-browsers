@@ -18,7 +18,6 @@
 //
 
 import Foundation
-import UIKit
 import Core
 import BrowserServicesKit
 struct SmallOmniBarState {
@@ -395,12 +394,7 @@ struct SmallOmniBarState {
 
 extension OmnibarDependencyProvider {
     var isAIChatEnabledInSettings: Bool {
-        guard UIDevice.current.userInterfaceIdiom == .pad,
-              featureFlagger.isFeatureOn(.iPadAIToggle) else {
-            return aiChatSettings.isAIChatAddressBarUserSettingsEnabled
-        }
-
-        return false
+        aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton
     }
 
     var shouldShowSearchLoupeIfPossible: Bool {

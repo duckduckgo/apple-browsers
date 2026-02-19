@@ -101,10 +101,7 @@ extension OmniBarState {
     var showAIChatFullModeBranding: Bool { false }
     
     var showAIChatModeToggle: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-            && dependencies.featureFlagger.isFeatureOn(.iPadAIToggle)
-            && dependencies.aiChatSettings.isAIChatAddressBarUserSettingsEnabled
-            && dependencies.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+        dependencies.aiChatAddressBarExperience.shouldShowModeToggle
     }
     
     var allowCustomization: Bool { true }

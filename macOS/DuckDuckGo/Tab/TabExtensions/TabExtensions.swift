@@ -90,7 +90,6 @@ protocol TabExtensionDependencies {
     var tabsPreferences: TabsPreferences { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
     var autoconsentStats: AutoconsentStatsCollecting { get }
-    var updateController: (any UpdateController)? { get }
 }
 
 // swiftlint:disable:next large_tuple

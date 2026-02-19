@@ -1,5 +1,5 @@
 //
-//  AppIconPickerViewModel.swift
+//  RebrandedAppIconPickerViewModel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -18,16 +18,19 @@
 //
 
 import Foundation
+import SwiftUI
 
 @MainActor
-final class AppIconPickerViewModel: ObservableObject {
+final class RebrandedAppIconPickerViewModel: ObservableObject {
 
-    struct DisplayModel {
+    struct RebrandedDisplayModel {
         let icon: AppIcon
         let isSelected: Bool
+
+        var color: Color { icon.color }
     }
 
-    @Published private(set) var items: [DisplayModel] = []
+    @Published private(set) var items: [RebrandedDisplayModel] = []
 
     private let appIconManager: AppIconManaging
 
@@ -39,13 +42,20 @@ final class AppIconPickerViewModel: ObservableObject {
     func changeApp(icon: AppIcon) {
         appIconManager.changeAppIcon(icon) { [weak self] error in
             guard let self, error == nil else { return }
-            items = makeDisplayModels()
+            DispatchQueue.main.async {
+                self.items = self.makeDisplayModels()
+            }
         }
     }
 
-    private func makeDisplayModels() -> [DisplayModel] {
+    var selectedIcon: AppIcon {
+        appIconManager.appIcon
+    }
+
+    private func makeDisplayModels() -> [RebrandedDisplayModel] {
         AppIcon.allCases.map { appIcon in
-            DisplayModel(icon: appIcon, isSelected: appIconManager.appIcon == appIcon)
+            RebrandedDisplayModel(icon: appIcon,
+                                  isSelected: appIconManager.appIcon == appIcon)
         }
     }
 }

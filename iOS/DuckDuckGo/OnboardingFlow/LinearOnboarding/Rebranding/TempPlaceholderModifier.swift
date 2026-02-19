@@ -46,7 +46,7 @@ private struct TempPlaceholderModifier: ViewModifier {
 }
 
 extension View {
-    /// Marks this view with a yellow "Temp" badge in the bottom-trailing corner.
+    /// Marks this view with a yellow "Temp" badge.
     func tempPlaceholder() -> some View {
         modifier(TempPlaceholderModifier())
     }

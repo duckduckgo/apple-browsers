@@ -21,65 +21,54 @@ import SwiftUI
 import DuckUI
 import Onboarding
 
-private enum AppIconPickerContentMetrics {
-    static let titleFont = Font.system(size: 20, weight: .semibold)
-    static let messageFont = Font.system(size: 16)
-    static let additionalTopMargin: CGFloat = 0
-}
-
 extension OnboardingRebranding.OnboardingView {
 
     struct AppIconPickerContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
-
-        private var animateTitle: Binding<Bool>
-        private var animateMessage: Binding<Bool>
+        
         private var showContent: Binding<Bool>
-        private var isSkipped: Binding<Bool>
         private let action: () -> Void
 
-        init(
-            animateTitle: Binding<Bool> = .constant(true),
-            animateMessage: Binding<Bool> = .constant(true),
-            showContent: Binding<Bool> = .constant(false),
-            isSkipped: Binding<Bool>,
-            action: @escaping () -> Void
-        ) {
-            self.animateTitle = animateTitle
-            self.animateMessage = animateMessage
+        struct UntranslatedText {
+            static var message = "Customize your app icon."
+        }
+
+        init(showContent: Binding<Bool> = .constant(false),
+             action: @escaping () -> Void) {
             self.showContent = showContent
-            self.isSkipped = isSkipped
             self.action = action
         }
 
         var body: some View {
-            VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentOuterSpacing) {
-                AnimatableTypingText(UserText.Onboarding.AppIconSelection.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    animateMessage.wrappedValue = true
-                }
-                .foregroundColor(.primary)
-                .font(AppIconPickerContentMetrics.titleFont)
-
-                AnimatableTypingText(UserText.Onboarding.AppIconSelection.message, startAnimating: animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showContent.wrappedValue = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(AppIconPickerContentMetrics.messageFont)
-
-                VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message: AnyView(
+                    Text(UntranslatedText.message) // UserText.Onboarding.AppIconSelection.Rebranding.message)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
+                ),
+                content: AnyView(
                     RebrandedOnboardingView.AppIconPicker()
-
+                ),
+                title: {
+                    Text(UserText.Onboarding.AppIconSelection.title)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.title)
+                        .multilineTextAlignment(.center)
+                },
+                actions: {
                     Button(action: action) {
                         Text(UserText.Onboarding.AppIconSelection.cta)
                     }
-                    .buttonStyle(PrimaryButtonStyle())
+                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
-                .visibility(showContent.wrappedValue ? .visible : .invisible)
-            }
+            )
         }
-
     }
-
 }

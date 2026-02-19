@@ -37,6 +37,7 @@ private enum BubbleBackedDialogMetrics {
     static let addressBarPositionAdditionalTopMargin: CGFloat = 0
     static let searchExperienceAdditionalTopMargin: CGFloat = 0
     static let addToDockAdditionalTopMargin: CGFloat = 0
+    static let appIconPickerAdditionalTopMargin: CGFloat = 0
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -209,35 +210,12 @@ extension OnboardingRebranding {
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
             GeometryReader { geometry in
                 ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .center) {
-                    if let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type) {
+                    VStack(alignment: .center) {
+                        let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type)
                         bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
                             .frame(width: geometry.size.width, alignment: .center)
                             .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
-                    } else {
-                            DaxDialogView(
-                            logoPosition: .top,
-                            matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
-                            showDialogBox: $model.introState.showDaxDialogBox,
-                            onTapGesture: {
-                                model.tapped()
-                            },
-                            content: {
-                                switch state.type {
-                                case .chooseAppIconDialog:
-                                    appIconPickerView
-                                default:
-                                    EmptyView()
-                                }
-                            }
-                        )
-                        .frame(width: geometry.size.width, alignment: .center)
-                        .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin)
-                        .onAppear {
-                            model.introState.showDaxDialogBox = true
-                        }
                     }
-                }
                     .frame(minHeight: geometry.size.height, alignment: .top)
                     .background {
                         GeometryReader { proxy in
@@ -364,12 +342,12 @@ extension OnboardingRebranding {
                 addressBarPositionView
             case .chooseSearchExperienceDialog:
                 searchExperienceSelectionView
-            default:
-                EmptyView()
+            case .chooseAppIconDialog:
+                appIconPickerView
             }
         }
 
-        private func bubbleBackedDialogConfiguration(for type: ViewState.Intro.IntroType) -> BubbleBackedDialogConfiguration? {
+        private func bubbleBackedDialogConfiguration(for type: ViewState.Intro.IntroType) -> BubbleBackedDialogConfiguration {
             switch type {
             case .startOnboardingDialog:
                 BubbleBackedDialogConfiguration(
@@ -411,8 +389,14 @@ extension OnboardingRebranding {
                     isVisible: true,
                     showsStepCounter: true
                 )
-            default:
-                nil
+            case .chooseAppIconDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .trailing,
+                    additionalTopMargin: BubbleBackedDialogMetrics.appIconPickerAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
             }
         }
 
@@ -430,10 +414,7 @@ extension OnboardingRebranding {
 
         private var appIconPickerView: some View {
             AppIconPickerContent(
-                animateTitle: $model.appIconPickerContentState.animateTitle,
-                animateMessage: $model.appIconPickerContentState.animateMessage,
                 showContent: $model.appIconPickerContentState.showContent,
-                isSkipped: $model.isSkipped,
                 action: model.appIconPickerContinueAction
             )
             .onboardingDaxDialogStyle()

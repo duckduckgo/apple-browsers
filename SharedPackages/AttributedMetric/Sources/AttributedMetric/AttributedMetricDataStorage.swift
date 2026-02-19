@@ -147,10 +147,8 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     public func removeAllExceptInstallDate() {
         Logger.attributedMetric.log("Removing all data except Install Date")
-        for key in StorageKey.allCases {
-            if key != StorageKey.installDate {
-                userDefaults.removeObject(forKey: key.rawValue)
-            }
+        for key in StorageKey.allCases where key != StorageKey.installDate {
+            userDefaults.removeObject(forKey: key.rawValue)
         }
     }
 

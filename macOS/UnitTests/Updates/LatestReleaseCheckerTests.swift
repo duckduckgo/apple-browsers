@@ -125,7 +125,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
     func testGetLatestReleaseAvailable_whenNetworkError_throwsNetworkError() async {
         // Given
-        MockURLProtocol.requestHandler = { request in
+        MockURLProtocol.requestHandler = { _ in
             throw URLError(.notConnectedToInternet)
         }
 
@@ -149,7 +149,7 @@ final class LatestReleaseCheckerTests: XCTestCase {
 
     func testGetLatestReleaseAvailable_whenTimeoutError_throwsNetworkError() async {
         // Given
-        MockURLProtocol.requestHandler = { request in
+        MockURLProtocol.requestHandler = { _ in
             throw URLError(.timedOut)
         }
 

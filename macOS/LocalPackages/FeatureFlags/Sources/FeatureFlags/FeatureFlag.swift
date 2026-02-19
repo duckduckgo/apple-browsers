@@ -296,6 +296,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case supportsSyncChatsDeletion
+
+    /// https://app.asana.com/1/137249556945/task/1213316822018797
+    case aiChatSidebarResizable
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -330,6 +333,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .crashCollectionDisableKeysSorting,
                 .crashCollectionLimitCallStackTreeDepth,
                 .memoryUsageReporting,
+                .aiChatSidebarResizable,
                 .nextStepsListWidget:
             true
         default:
@@ -423,7 +427,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .nextStepsListAdvancedCardOrdering,
                 .wideEventPostEndpoint,
                 .freeTrialConversionWideEvent,
-                .supportsSyncChatsDeletion:
+                .supportsSyncChatsDeletion,
+                .aiChatSidebarResizable:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -610,6 +615,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .supportsSyncChatsDeletion:
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
+        case .aiChatSidebarResizable:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         }
     }
 }

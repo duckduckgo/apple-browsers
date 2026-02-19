@@ -16,10 +16,9 @@
 //  limitations under the License.
 //
 
-#if SPARKLE
-
 import XCTest
 import PixelKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class UpdateWideEventDataTests: XCTestCase {
@@ -425,5 +424,3 @@ final class UpdateWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.time_since_last_update"], "<1w")
     }
 }
-
-#endif

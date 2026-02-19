@@ -16,41 +16,66 @@
 //  limitations under the License.
 //
 
-#if APPSTORE
-
-import Foundation
-import Combine
-import os.log
-import Common
 import AppKit
-import PrivacyConfig
+import BrowserServicesKit
+import Combine
+import Common
 import FeatureFlags
+import Foundation
+import os.log
+import Persistence
 import PixelKit
+import PrivacyConfig
+import Subscription
 
-final class AppStoreUpdateController: NSObject, UpdateController {
-    @Published private(set) var latestUpdate: Update?
-    var latestUpdatePublisher: Published<Update?>.Publisher { $latestUpdate }
+/// Factory extension that provides the App Store updater implementation.
+///
+/// This extension is compiled into the AppStoreAppUpdater package and provides
+/// the App Store-specific update controller instantiation.
+///
+/// See `UpdateControllerFactory` in `UpdateController.swift` for details on
+/// how `instantiate` is consumed.
+extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
+    /// Instantiates the App Store update controller.
+    public static func instantiate(internalUserDecider: InternalUserDecider,
+                                   featureFlagger: FeatureFlagger,
+                                   pixelFiring: PixelFiring?,
+                                   notificationPresenter: any UpdateNotificationPresenting,
+                                   isOnboardingFinished: @escaping () -> Bool) -> any UpdateController {
+        AppStoreUpdateController(internalUserDecider: internalUserDecider,
+                                 featureFlagger: featureFlagger,
+                                 pixelFiring: pixelFiring,
+                                 notificationPresenter: notificationPresenter,
+                                 isOnboardingFinished: isOnboardingFinished)
+    }
+}
 
-    @Published private(set) var hasPendingUpdate = false
-    var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
+@objc public final class AppStoreUpdateController: NSObject, UpdateController {
+    @Published public private(set) var latestUpdate: Update?
+    public var latestUpdatePublisher: Published<Update?>.Publisher { $latestUpdate }
 
-    var mustShowUpdateIndicators: Bool { hasPendingUpdate }
-    let clearsNotificationDotOnMenuOpen = true
+    @Published public private(set) var hasPendingUpdate = false
+    public var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
 
-    @Published var needsNotificationDot: Bool = false
+    public var mustShowUpdateIndicators: Bool { hasPendingUpdate }
+    public let clearsNotificationDotOnMenuOpen = true
+
+    @Published public var needsNotificationDot: Bool = false
     private let notificationDotSubject = CurrentValueSubject<Bool, Never>(false)
-    lazy var notificationDotPublisher = notificationDotSubject.eraseToAnyPublisher()
+    public lazy var notificationDotPublisher = notificationDotSubject.eraseToAnyPublisher()
 
-    lazy var notificationPresenter = UpdateNotificationPresenter()
+    public let notificationPresenter: UpdateNotificationPresenting
 
-    var lastUpdateCheckDate: Date?
-    var lastUpdateNotificationShownDate: Date = .distantPast
+    public var lastUpdateCheckDate: Date?
+    public var lastUpdateNotificationShownDate: Date = .distantPast
 
     /// Automatic updates for App Store users cannot be enabled from the browser.
-    var areAutomaticUpdatesEnabled: Bool = false
+    public var areAutomaticUpdatesEnabled: Bool = false
 
-    @Published private(set) var updateProgress = UpdateCycleProgress.default
-    var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
+    @Published public private(set) var updateProgress = UpdateCycleProgress.default
+    public var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
+
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Dependencies
 
@@ -58,22 +83,28 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     private let updaterChecker: AppStoreUpdaterAvailabilityChecker
     private let releaseChecker: LatestReleaseChecker
     private let featureFlagger: FeatureFlagger
+    private let pixelFiring: PixelFiring?
     private let internalUserDecider: InternalUserDecider
-    private let appStoreOpener: AppStoreOpener
+    private let appStoreOpener: AppStoreOpener?
+    private let isOnboardingFinished: () -> Bool
 
     // MARK: - Initialization
 
-    init(updateCheckState: UpdateCheckState = UpdateCheckState(),
-         releaseChecker: LatestReleaseChecker = LatestReleaseChecker(),
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider,
-         appStoreOpener: AppStoreOpener = DefaultAppStoreOpener()) {
-        self.updateCheckState = updateCheckState
+    /// Protocol-conforming initializer for production use.
+    public init(internalUserDecider: InternalUserDecider,
+                featureFlagger: FeatureFlagger,
+                pixelFiring: PixelFiring?,
+                notificationPresenter: any UpdateNotificationPresenting,
+                isOnboardingFinished: @escaping () -> Bool) {
+        self.updateCheckState = UpdateCheckState()
         self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
-        self.releaseChecker = releaseChecker
+        self.notificationPresenter = notificationPresenter
+        self.releaseChecker = LatestReleaseChecker()
         self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
         self.internalUserDecider = internalUserDecider
-        self.appStoreOpener = appStoreOpener
+        self.appStoreOpener = DefaultAppStoreOpener()
+        self.isOnboardingFinished = isOnboardingFinished
         super.init()
 
         // Only setup cloud checking if feature flag is on
@@ -91,7 +122,26 @@ final class AppStoreUpdateController: NSObject, UpdateController {
         }
     }
 
-    private var cancellables = Set<AnyCancellable>()
+    // MARK: - Convenience Initializers
+
+    /// Convenience internal initializer for testing with minimal dependencies.
+    init(appStoreOpener: AppStoreOpener? = nil,
+         internalUserDecider: InternalUserDecider? = nil,
+         featureFlagger: FeatureFlagger? = nil,
+         pixelFiring: PixelFiring? = nil,
+         notificationPresenter: any UpdateNotificationPresenting,
+         isOnboardingFinished: @escaping () -> Bool = { true }) {
+        self.updateCheckState = UpdateCheckState()
+        self.updaterChecker = AppStoreUpdaterAvailabilityChecker()
+        self.notificationPresenter = notificationPresenter
+        self.releaseChecker = LatestReleaseChecker()
+        self.featureFlagger = featureFlagger ?? MockFeatureFlagger()
+        self.pixelFiring = pixelFiring
+        self.internalUserDecider = internalUserDecider ?? MockInternalUserDecider(isInternalUser: false)
+        self.appStoreOpener = appStoreOpener
+        self.isOnboardingFinished = isOnboardingFinished
+        super.init()
+    }
 
     // MARK: - Automatic Check for Updates Subscriptions
 
@@ -118,7 +168,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     }
 
     /// User-initiated update check (bypasses automatic update settings and rate limiting)
-    func checkForUpdateSkippingRollout() {
+    public func checkForUpdateSkippingRollout() {
         if featureFlagger.isFeatureOn(.appStoreUpdateFlow) {
             // New flow - check cloud for updates
             Task { @UpdateCheckActor in
@@ -138,7 +188,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     }
 
     /// For App Store builds given that we cannot run an update. We just check for a new by going to the App Store.
-    func runUpdate() {
+    public func runUpdate() {
         openUpdatesPage()
     }
 
@@ -189,7 +239,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
                 }
             }
 
-            showUpdateNotificationIfNeeded()
+            showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
 
             // Record check time for rate limiting
             await updateCheckState.recordCheckTime()
@@ -198,8 +248,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
             /// If we fail to fetch the latest version we do not want to show any messages to the user.
             updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
 
-            // Track release metadata fetch failures
-            PixelKit.fire(UpdateFlowPixels.releaseMetadataFetchFailed(error: error))
+            pixelFiring?.fire(UpdateFlowPixels.releaseMetadataFetchFailed(error: error))
 
             Logger.updates.error("Failed to check for App Store updates: \(error.localizedDescription)")
 
@@ -209,22 +258,22 @@ final class AppStoreUpdateController: NSObject, UpdateController {
         }
     }
 
-    @objc func openUpdatesPage() {
-        appStoreOpener.openAppStore()
+    @objc public func openUpdatesPage() {
+        appStoreOpener?.openAppStore()
     }
 
-    func handleAppTermination() {
+    public func handleAppTermination() {
         // Intentional no-op
     }
 
     // MARK: - Private Methods
 
     private func getCurrentAppVersion() -> String? {
-        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        return AppVersion().versionNumber.isEmpty ? nil : AppVersion().versionNumber
     }
 
     private func getCurrentAppBuild() -> String? {
-        return Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        return AppVersion().buildNumber.isEmpty ? nil : AppVersion().buildNumber
     }
 
     internal func isUpdateAvailable(currentVersion: String?,
@@ -239,7 +288,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
             return true
         }
 
-        guard let currentVersion = currentVersion else { return true }
+        guard let currentVersion else { return true }
 
         // Use semantic version comparison
         let result = compareSemanticVersions(currentVersion, remoteVersion)
@@ -249,7 +298,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
             return true
         } else if result == .orderedSame {
             // Same version, check build numbers
-            if let currentBuild = currentBuild {
+            if let currentBuild {
                 let buildResult = compareSemanticVersions(currentBuild, remoteBuild)
                 return buildResult == .orderedAscending
             }
@@ -280,5 +329,3 @@ final class AppStoreUpdateController: NSObject, UpdateController {
         return .orderedSame
     }
 }
-
-#endif

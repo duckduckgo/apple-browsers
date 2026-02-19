@@ -307,7 +307,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.pageRefreshMonitor = pageRefreshMonitor
 
-        webView = WebView(frame: CGRect(origin: .zero, size: webViewSize), configuration: configuration)
+        webView = WebView(frame: CGRect(origin: .zero, size: webViewSize),
+                          configuration: configuration,
+                          privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig)
         webView.allowsLinkPreview = false
         webView.addsVisitedLinks = true
         webView.setAccessibilityIdentifier("WebView")
@@ -329,56 +331,59 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             .flatMap { $0.interactionEventsPublisher }
             .eraseToAnyPublisher()
         var tabGetter: () -> Tab? = { nil }
+        let extensionDependencies = ExtensionDependencies(privacyFeatures: privacyFeatures,
+                                                          historyCoordinating: historyCoordinating,
+                                                          workspace: workspace,
+                                                          cbaTimeReporter: cbaTimeReporter,
+                                                          duckPlayer: duckPlayer,
+                                                          downloadManager: downloadManager,
+                                                          downloadsPreferences: downloadsPreferences,
+                                                          certificateTrustEvaluator: certificateTrustEvaluator,
+                                                          tunnelController: tunnelController,
+                                                          maliciousSiteDetector: maliciousSiteDetector,
+                                                          faviconManagement: faviconManagement,
+                                                          featureFlagger: featureFlagger,
+                                                          contentScopeExperimentsManager: contentScopeExperimentsManager,
+                                                          aiChatMenuConfiguration: aiChatMenuConfiguration,
+                                                          newTabPageShownPixelSender: newTabPageShownPixelSender,
+                                                          aiChatSidebarProvider: aiChatSidebarProvider,
+                                                          tabCrashAggregator: tabCrashAggregator,
+                                                          tabsPreferences: tabsPreferences,
+                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                          autoconsentStats: autoconsentStats)
+        let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
+                                                                            tabID: self.uuid,
+                                                                            isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
+                                                                            isTabBurner: burnerMode.isBurner,
+                                                                            isTabLoadedInSidebar: isLoadedInSidebar,
+                                                                            isInPopUpWindow: { tabGetter()?.delegate?.isInPopUpWindow ?? false },
+                                                                            contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
+                                                                            setContent: { tabGetter()?.setContent($0) },
+                                                                            closeTab: { tabGetter().map { $0.delegate?.closeTab($0) } },
+                                                                            titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
+                                                                            errorPublisher: _error.projectedValue.eraseToAnyPublisher(),
+                                                                            userScriptsPublisher: userScriptsPublisher,
+                                                                            updateController: Application.appDelegate.updateController,
+                                                                            inheritedAttribution: parentTab?.adClickAttribution?.currentAttributionState,
+                                                                            userContentControllerFuture: userContentControllerPromise.future,
+                                                                            permissionModel: permissions,
+                                                                            webViewFuture: webViewPromise.future,
+                                                                            interactionEventsPublisher: interactionEventsPublisher,
+                                                                            tabsPreferences: tabsPreferences,
+                                                                            burnerMode: burnerMode,
+                                                                            urlProvider: { tabGetter()?.url },
+                                                                            createChildTab: { tabGetter()?.createChildTab(with: $0, securityOrigin: $1, of: $2) },
+                                                                            presentTab: { childTab, kind in tabGetter().map { $0.delegate?.tab($0, createdChild: childTab, of: kind) } },
+                                                                            newWindowPolicyDecisionMakers: { tabGetter()?.newWindowPolicyDecisionMakers })
         self.extensions = extensionsBuilder
-            .build(with: (tabIdentifier: instrumentation.currentTabIdentifier,
-                          tabID: self.uuid,
-                          isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
-                          isTabBurner: burnerMode.isBurner,
-                          isTabLoadedInSidebar: isLoadedInSidebar,
-                          isInPopUpWindow: { tabGetter()?.delegate?.isInPopUpWindow ?? false },
-                          contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
-                          setContent: { tabGetter()?.setContent($0) },
-                          closeTab: { tabGetter().map { $0.delegate?.closeTab($0) } },
-                          titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
-                          errorPublisher: _error.projectedValue.eraseToAnyPublisher(),
-                          userScriptsPublisher: userScriptsPublisher,
-                          inheritedAttribution: parentTab?.adClickAttribution?.currentAttributionState,
-                          userContentControllerFuture: userContentControllerPromise.future,
-                          permissionModel: permissions,
-                          webViewFuture: webViewPromise.future,
-                          interactionEventsPublisher: interactionEventsPublisher,
-                          tabsPreferences: tabsPreferences,
-                          burnerMode: burnerMode,
-                          urlProvider: { tabGetter()?.url },
-                          createChildTab: { tabGetter()?.createChildTab(with: $0, securityOrigin: $1, of: $2) },
-                          presentTab: { childTab, kind in tabGetter().map { $0.delegate?.tab($0, createdChild: childTab, of: kind) } },
-                          newWindowPolicyDecisionMakers: { tabGetter()?.newWindowPolicyDecisionMakers }
-                         ),
-                   dependencies: ExtensionDependencies(privacyFeatures: privacyFeatures,
-                                                       historyCoordinating: historyCoordinating,
-                                                       workspace: workspace,
-                                                       cbaTimeReporter: cbaTimeReporter,
-                                                       duckPlayer: duckPlayer,
-                                                       downloadManager: downloadManager,
-                                                       downloadsPreferences: downloadsPreferences,
-                                                       certificateTrustEvaluator: certificateTrustEvaluator,
-                                                       tunnelController: tunnelController,
-                                                       maliciousSiteDetector: maliciousSiteDetector,
-                                                       faviconManagement: faviconManagement,
-                                                       featureFlagger: featureFlagger,
-                                                       contentScopeExperimentsManager: contentScopeExperimentsManager,
-                                                       aiChatMenuConfiguration: aiChatMenuConfiguration,
-                                                       newTabPageShownPixelSender: newTabPageShownPixelSender,
-                                                       aiChatSidebarProvider: aiChatSidebarProvider,
-                                                       tabCrashAggregator: tabCrashAggregator,
-                                                       tabsPreferences: tabsPreferences,
-                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences)
-            )
+            .build(with: tabExtensionsBuilderArguments, dependencies: extensionDependencies)
         super.init()
         tabGetter = { [weak self] in self }
         userContentController.map(userContentControllerPromise.fulfill)
 
-        setupNavigationDelegate(navigationDelegate: navigationDelegate, newWindowPolicyDecisionMakers: &newWindowPolicyDecisionMakers)
+        setupNavigationDelegate(navigationDelegate: navigationDelegate,
+                                newWindowPolicyDecisionMakers: &newWindowPolicyDecisionMakers,
+                                args: tabExtensionsBuilderArguments)
         userContentController?.delegate = self
         setupWebView(shouldLoadInBackground: shouldLoadInBackground)
         webViewPromise.fulfill(webView)

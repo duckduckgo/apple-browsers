@@ -18,6 +18,8 @@
 //
 
 import UIKit
+import SwiftUI
+import DesignResourcesKit
 
 enum AppIcon: String, CaseIterable {
     case red = "AppIcon-red"
@@ -84,4 +86,22 @@ enum AppIcon: String, CaseIterable {
         }
     }
 
+    var color: Color {
+        switch self {
+        case .red:
+            return Color(0xDE5833)
+        case .pink:
+            return Color(0xE37089)
+        case .yellow:
+            return Color(0xE2A412)
+        case .green:
+            return Color(0x4CBA3C)
+        case .blue:
+            return Color(0x3969EF)
+        case .purple:
+            return Color(0x5132A9)
+        case .black:
+            return .black
+        }
+    }
 }

@@ -48,7 +48,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(UntranslatedText.message) //UserText.Onboarding.AppIconSelection.Rebranding.message)
+                    Text(UntranslatedText.message) // UserText.Onboarding.AppIconSelection.Rebranding.message)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)

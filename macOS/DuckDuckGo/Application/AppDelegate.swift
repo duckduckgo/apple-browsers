@@ -1432,9 +1432,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return applicationShouldTerminateFallback()
         }
 
-        // Reuse existing handler if chain is already running/completed
-        if let handler = terminationHandler {
-            return handler.executeTerminationDeciders()
+        // Already running — the in-flight handler will reply() when done
+        if terminationHandler != nil {
+            return .terminateLater
         }
 
         let handler = TerminationDeciderHandler(

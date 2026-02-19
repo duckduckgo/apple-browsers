@@ -26,6 +26,7 @@ import Persistence
 import PixelKit
 import PixelExperimentKit
 import PrivacyConfig
+import WebExtensions
 
 protocol ContentBlockingProtocol {
 

@@ -24,6 +24,7 @@ import PrivacyDashboard
 import UserScript
 import WebKit
 import FeatureFlags
+import WebExtensions
 
 protocol AutoconsentUserScriptDelegate: AnyObject {
     func autoconsentUserScript(consentStatus: CookieConsentInfo)

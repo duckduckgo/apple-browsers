@@ -88,6 +88,23 @@ public struct CookiePopupHandledInfo {
     }
 }
 
+// MARK: - Notification Constants
+
+public extension Notification.Name {
+    /// Posted when the web extension requests a dashboard state refresh for cookie consent status.
+    /// UserInfo contains `AutoconsentNotification.UserInfoKeys.domain` and `AutoconsentNotification.UserInfoKeys.consentStatus`.
+    static let webExtensionAutoconsentDashboardStateRefresh = Notification.Name("webExtensionAutoconsentDashboardStateRefresh")
+}
+
+/// Constants for autoconsent notifications from web extensions
+public enum AutoconsentNotification {
+    /// Keys for notification userInfo dictionary
+    public enum UserInfoKeys {
+        public static let domain = "domain"
+        public static let consentStatus = "consentStatus"
+    }
+}
+
 // MARK: - Delegate Protocol
 
 /// Delegate protocol for handling platform-specific autoconsent operations

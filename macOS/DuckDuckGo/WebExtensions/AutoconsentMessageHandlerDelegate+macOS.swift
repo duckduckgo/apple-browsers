@@ -36,6 +36,14 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
 
     func refreshDashboardState(domain: String, consentStatus: ConsentStatusInfo) {
         Logger.webExtensions.debug("macOS: Refreshing dashboard state for \(domain)")
+        NotificationCenter.default.post(
+            name: .webExtensionAutoconsentDashboardStateRefresh,
+            object: self,
+            userInfo: [
+                AutoconsentNotification.UserInfoKeys.domain: domain,
+                AutoconsentNotification.UserInfoKeys.consentStatus: consentStatus
+            ]
+        )
     }
 
     func handleCookiePopup(_ popupInfo: CookiePopupHandledInfo) {
@@ -49,8 +57,6 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
             totalClicks: message["totalClicks"] as? Int ?? 0,
             duration: message["duration"] as? TimeInterval ?? 0
         )
-
-        print("--- handleCookiePopup")
 
         NotificationCenter.default.post(
             name: AutoconsentPopupManagedEvent.webExtensionPopupManagedNotification,

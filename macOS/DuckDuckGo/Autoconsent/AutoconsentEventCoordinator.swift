@@ -21,6 +21,7 @@ import Combine
 import AutoconsentStats
 import History
 import PrivacyConfig
+import WebExtensions
 
 /// Coordinates autoconsent events from both user scripts and web extensions,
 /// ensuring stats are recorded once and history is updated centrally.

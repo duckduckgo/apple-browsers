@@ -235,6 +235,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     private let allowUnsignedUpdates: Bool
     private let pixelFiring: PixelFiring?
     private let isOnboardingFinished: () -> Bool
+    private let openUpdatesPageAction: () -> Void
 
     /// Computes whether automatic downloads should be enabled.
     /// Static for testability - no controller state needed.
@@ -272,7 +273,8 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
                 keyValueStore: ThrowingKeyValueStoring,
                 allowUnsignedUpdates: Bool,
                 wideEvent: WideEventManaging,
-                isOnboardingFinished: @escaping () -> Bool) {
+                isOnboardingFinished: @escaping () -> Bool,
+                openUpdatesPage: @escaping () -> Void = {}) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
@@ -281,6 +283,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
         self.notificationPresenter = notificationPresenter
         self.pixelFiring = pixelFiring
         self.isOnboardingFinished = isOnboardingFinished
+        self.openUpdatesPageAction = openUpdatesPage
         self.settings = keyValueStore.throwingKeyedStoring()
         self.applicationUpdateDetector = ApplicationUpdateDetector(settings: settings)
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
@@ -460,8 +463,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     }
 
     public func openUpdatesPage() {
-        // Empty method kept for protocol conformance.
-        // Opening release notes page is implemented via UpdateNotificationPresenting in the app layer.
+        openUpdatesPageAction()
     }
 
     private func performUpdateCheckSkippingRollout() {

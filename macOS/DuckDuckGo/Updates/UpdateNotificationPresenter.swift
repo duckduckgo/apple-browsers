@@ -132,16 +132,9 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
     /// **Usage**: Called when user wants to see update details, release notes, or manually update.
     /// Provides access to detailed update information and manual update path.
     func openUpdatesPage() {
-        // Track update notification tapped
         pixelFiring?.fire(UpdateFlowPixels.updateNotificationTapped)
-        if StandardApplicationBuildType().isSparkleBuild {
-            DispatchQueue.main.async {
-                Application.appDelegate.windowControllersManager.showTab(with: .releaseNotes)
-            }
-        } else {
-            DispatchQueue.main.async {
-                Application.appDelegate.updateController?.openUpdatesPage()
-            }
+        DispatchQueue.main.async {
+            Application.appDelegate.updateController?.openUpdatesPage()
         }
     }
 }

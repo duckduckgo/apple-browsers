@@ -46,7 +46,8 @@ extension UpdateControllerFactory: SparkleUpdateControllerFactory {
                                    keyValueStore: any ThrowingKeyValueStoring,
                                    allowUnsignedUpdates: Bool,
                                    wideEvent: WideEventManaging,
-                                   isOnboardingFinished: @escaping () -> Bool) -> any SparkleUpdateController {
+                                   isOnboardingFinished: @escaping () -> Bool,
+                                   openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateController {
         if featureFlagger.isFeatureOn(.updatesSimplifiedFlow) {
             return SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider,
                                                      featureFlagger: featureFlagger,
@@ -55,7 +56,8 @@ extension UpdateControllerFactory: SparkleUpdateControllerFactory {
                                                      keyValueStore: keyValueStore,
                                                      allowUnsignedUpdates: allowUnsignedUpdates,
                                                      wideEvent: wideEvent,
-                                                     isOnboardingFinished: isOnboardingFinished)
+                                                     isOnboardingFinished: isOnboardingFinished,
+                                                     openUpdatesPage: openUpdatesPage)
         } else {
             return DefaultSparkleUpdateController(internalUserDecider: internalUserDecider,
                                                   featureFlagger: featureFlagger,
@@ -64,7 +66,8 @@ extension UpdateControllerFactory: SparkleUpdateControllerFactory {
                                                   keyValueStore: keyValueStore,
                                                   allowUnsignedUpdates: allowUnsignedUpdates,
                                                   wideEvent: wideEvent,
-                                                  isOnboardingFinished: isOnboardingFinished)
+                                                  isOnboardingFinished: isOnboardingFinished,
+                                                  openUpdatesPage: openUpdatesPage)
         }
     }
 }
@@ -261,6 +264,7 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
     private let isOnboardingFinished: () -> Bool
+    private let openUpdatesPageAction: () -> Void
 
     var useLegacyAutoRestartLogic: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
@@ -280,13 +284,15 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
                 keyValueStore: any Persistence.ThrowingKeyValueStoring,
                 allowUnsignedUpdates: Bool,
                 wideEvent: WideEventManaging,
-                isOnboardingFinished: @escaping () -> Bool) {
+                isOnboardingFinished: @escaping () -> Bool,
+                openUpdatesPage: @escaping () -> Void = {}) {
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.notificationPresenter = notificationPresenter
         self.internalUserDecider = internalUserDecider
         self.isOnboardingFinished = isOnboardingFinished
+        self.openUpdatesPageAction = openUpdatesPage
         self.updateCheckState = UpdateCheckState()
         self.settings = keyValueStore.throwingKeyedStoring()
         self.allowUnsignedUpdates = allowUnsignedUpdates
@@ -455,8 +461,7 @@ final class DefaultSparkleUpdateController: NSObject, SparkleUpdateController {
     }
 
     func openUpdatesPage() {
-        // Empty method kept for protocol conformance.
-        // Opening release notes page is implemented via UpdateNotificationPresenting in the app layer.
+        openUpdatesPageAction()
     }
 
     @UpdateCheckActor

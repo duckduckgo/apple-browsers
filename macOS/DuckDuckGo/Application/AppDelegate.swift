@@ -1441,7 +1441,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 keyValueStore: UserDefaults.standard,
                 allowUnsignedUpdates: allowUnsignedUpdates,
                 wideEvent: wideEvent,
-                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
+                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished },
+                openUpdatesPage: { [windowControllersManager] in
+                    windowControllersManager.showTab(with: .releaseNotes)
+                }
             )
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: sparkleUpdateController.willRelaunchAppPublisher)
             self.updateController = sparkleUpdateController

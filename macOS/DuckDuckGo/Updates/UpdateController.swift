@@ -45,7 +45,8 @@ public protocol SparkleUpdateControllerFactory {
                             keyValueStore: any ThrowingKeyValueStoring,
                             allowUnsignedUpdates: Bool,
                             wideEvent: WideEventManaging,
-                            isOnboardingFinished: @escaping () -> Bool) -> any SparkleUpdateController
+                            isOnboardingFinished: @escaping () -> Bool,
+                            openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateController
 }
 
 /// Marker type extended by updater packages with concrete `instantiate(...)` implementations.

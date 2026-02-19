@@ -142,7 +142,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
-        messageHandling.getDataForMessageType(.nativeConfigValues)
+        let isFireWindow = await isFireWindowMessage(message)
+        return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -486,6 +487,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
         return AIChatSyncHandler(sync: sync, httpRequestErrorHandler: syncErrorHandler.handleAiChatsError)
+    }
+
+    @MainActor
+    private func isFireWindowMessage(_ message: UserScriptMessage) -> Bool {
+        guard let windowController = message.messageWebView?.window?.windowController as? MainWindowController else {
+            return false
+        }
+
+        return windowController.mainViewController.isBurner
     }
 }
 // swiftlint:enable inclusive_language

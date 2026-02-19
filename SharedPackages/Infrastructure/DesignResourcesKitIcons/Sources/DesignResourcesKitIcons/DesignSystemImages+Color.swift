@@ -171,6 +171,7 @@ public extension DesignSystemImages {
             public static var identityBlockedPIR: DesignSystemImage { .init(resource: .identityBlockedPIRColor24) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestorationColor24) }
             public static var `import`: DesignSystemImage { .init(resource: .importColor24) }
+            public static var info: DesignSystemImage { .init(resource: .infoRecolorable24)}
             public static var key: DesignSystemImage { .init(resource: .keyColor24) }
             public static var keyAuto: DesignSystemImage { .init(resource: .keyAutoColor24) }
             public static var keyCheck: DesignSystemImage {

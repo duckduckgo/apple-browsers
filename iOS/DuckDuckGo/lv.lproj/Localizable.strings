@@ -3700,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Tavs abonements ir noņemts no šīs ierīces.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Atcelt samazināšanu";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Tavs plāns tiks pazemināts uz %1$@, sākot ar %2$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Atjaunināt plānu vai atcelt";
 
@@ -3793,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Abonēšanas plāni";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Notiek plāna maiņas pabeigšana…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Pabeidz pirkumu...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Notiek plāna maiņa...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Pirkuma apstrāde...";

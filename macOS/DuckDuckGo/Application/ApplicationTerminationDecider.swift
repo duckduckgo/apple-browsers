@@ -99,7 +99,6 @@ extension ApplicationTerminationDecider where Self == ClosureApplicationTerminat
 /// Handles the execution of termination deciders in sequence.
 @MainActor
 final class TerminationDeciderHandler {
-
     private let replyToApplicationShouldTerminate: (@MainActor (Bool) -> Void)?
     private var terminationTask: Task<Void, Never>?
     private let deciders: [ApplicationTerminationDecider]
@@ -115,6 +114,7 @@ final class TerminationDeciderHandler {
     }
 
     private func executeTerminationDeciders(_ deciders: [ApplicationTerminationDecider], isAsync: Bool) -> NSApplication.TerminateReply {
+        // Prevent reentry if already processing termination
         if !isAsync && terminationTask != nil {
             return .terminateLater
         }
@@ -163,6 +163,7 @@ final class TerminationDeciderHandler {
         }
 
         // All deciders returned .next
+        Logger.general.debug("TerminationDeciderHandler: All deciders completed, terminating")
         deciderSequenceCompleted(async: isAsync, shouldProceed: true, invokedDeciders: self.deciders.count)
         return .terminateNow
     }

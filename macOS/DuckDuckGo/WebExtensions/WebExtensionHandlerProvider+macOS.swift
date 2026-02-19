@@ -26,7 +26,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let autoconsentPreferences: AutoconsentPreferencesProviding
-    private let autoconsentDelegate: MacOSAutoconsentMessageHandlerDelegate
+    private let autoconsentMessageHandler: MacOSAutoconsentMessageHandlerDelegate
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -34,7 +34,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
-        self.autoconsentDelegate = MacOSAutoconsentMessageHandlerDelegate()
+        self.autoconsentMessageHandler = MacOSAutoconsentMessageHandlerDelegate()
     }
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
@@ -43,7 +43,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
             return [AutoconsentWebExtensionMessageHandler(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
-                delegate: autoconsentDelegate
+                delegate: autoconsentMessageHandler
             )]
         default:
             return []

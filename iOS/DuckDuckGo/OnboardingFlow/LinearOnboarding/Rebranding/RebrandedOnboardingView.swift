@@ -206,18 +206,17 @@ extension OnboardingRebranding {
         }
 
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
-            GeometryReader { geometry in
+            let configuration = bubbleBackedDialogConfiguration(for: state.type)
+
+            return GeometryReader { geometry in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .center) {
-                        OnboardingBubbleView(tailPosition: .bottom(offset: 0.25, direction: .leading)) {
-                            VStack {
-                                bubbleBackedDialogContent(for: state.type)
-                            }
-                        }
-                        //bubbleBackedDialogView(state: state, configuration: bubbleBackedDialogConfiguration(for: state.type))
+                        bubbleBackedDialogView(state: state, configuration: configuration)
                         .animation(.default, value: state.type)
+                        .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth, alignment: .center)
+                        .frame(maxWidth: .infinity, alignment: .center)
                         .frame(width: geometry.size.width, alignment: .center)
-                        .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + BubbleBackedDialogMetrics.addressBarPositionAdditionalTopMargin)
+                        .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin)
                     }
                     .frame(minHeight: geometry.size.height, alignment: .top)
                     .background {
@@ -292,11 +291,10 @@ extension OnboardingRebranding {
                 nil
             }
             return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
-                bubbleBackedDialogContent(for: state.type)
+                VStack {
+                    bubbleBackedDialogContent(for: state.type)
+                }
             }
-            .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .visibility(configuration.isVisible ? .visible : .invisible)
         }
 
         @ViewBuilder
@@ -445,9 +443,9 @@ extension OnboardingRebranding {
                 .linear(duration: animationDuration)
                 .delay(0.2)
 
-
             if #available(iOS 17, *) {
                 withAnimation(animation) {
+                    model.introState.showIntroViewContent = false
                     model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
                 } completion: {
                     model.browserComparisonState.animateComparisonText = true

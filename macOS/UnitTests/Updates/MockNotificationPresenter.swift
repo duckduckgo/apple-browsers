@@ -1,7 +1,7 @@
 //
-//  SparkleUpdaterAvailabilityChecker.swift
+//  MockNotificationPresenter.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,19 +15,17 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+
 import Foundation
-import Sparkle
 
-public final class SparkleUpdaterAvailabilityChecker: UpdaterAvailabilityChecking {
-    public var updater: UpdaterAvailabilityChecking?
+@testable import DuckDuckGo_Privacy_Browser
 
-    /// When the update is not available (equal to nil) we will return true so the Updater can
-    /// check for the last try instead.
-    public var canCheckForUpdates: Bool {
-        return updater?.canCheckForUpdates ?? true
-    }
+/// Mock notification presenter for testing - does not show any notifications.
+public struct MockNotificationPresenter: UpdateNotificationPresenting {
+    public init() {}
 
-    public init(updater: UpdaterAvailabilityChecking? = nil) {
-        self.updater = updater
-    }
+    public func showUpdateNotification(for status: AppUpdateStatus) {}
+    public func showUpdateNotification(for updateType: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {}
+    public func dismissIfPresented() {}
+    public func openUpdatesPage() {}
 }

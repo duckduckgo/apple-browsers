@@ -1,7 +1,7 @@
 //
-//  UpdateCheckActor.swift
+//  UpdateState.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,13 +16,17 @@
 //  limitations under the License.
 //
 
-import Foundation
+public enum UpdateState {
+    case upToDate
+    case updateCycle(UpdateCycleProgress)
 
-/// Global actor that coordinates update checking operations.
-///
-/// Provides a shared execution context for update checks to ensure thread-safe coordination
-/// and prevents race conditions between different update checking methods.
-@globalActor
-public actor UpdateCheckActor {
-    public static let shared = UpdateCheckActor()
+    public init(from update: Update?, progress: UpdateCycleProgress) {
+        if let update, !update.isInstalled {
+            self = .updateCycle(progress)
+        } else if progress.isFailed {
+            self = .updateCycle(progress)
+        } else {
+            self = .upToDate
+        }
+    }
 }

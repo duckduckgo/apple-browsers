@@ -1,7 +1,7 @@
 //
-//  UpdateCheckActor.swift
+//  UpdaterAvailabilityChecking.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-
-/// Global actor that coordinates update checking operations.
+/// Protocol abstracting updater capabilities for update checking.
 ///
-/// Provides a shared execution context for update checks to ensure thread-safe coordination
-/// and prevents race conditions between different update checking methods.
-@globalActor
-public actor UpdateCheckActor {
-    public static let shared = UpdateCheckActor()
+/// This protocol allows UpdateCheckState to work with different updater implementations
+/// (Sparkle, App Store, etc.) without being tightly coupled to any specific framework.
+public protocol UpdaterAvailabilityChecking {
+    /// Whether the updater is currently available for checking updates
+    var canCheckForUpdates: Bool { get }
 }

@@ -1,7 +1,7 @@
 //
-//  UpdateCheckActor.swift
+//  ReleaseNotesUserScriptProvider.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
+import UserScript
 
-/// Global actor that coordinates update checking operations.
-///
-/// Provides a shared execution context for update checks to ensure thread-safe coordination
-/// and prevents race conditions between different update checking methods.
-@globalActor
-public actor UpdateCheckActor {
-    public static let shared = UpdateCheckActor()
+@MainActor
+public protocol ReleaseNotesUserScriptProvider {
+
+    var releaseNotesUserScript: Subfeature? /*ReleaseNotesUserScript*/ { get }
+
 }

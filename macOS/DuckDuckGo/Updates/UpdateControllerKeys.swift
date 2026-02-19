@@ -19,9 +19,8 @@
 import Foundation
 import Persistence
 
-/// Storage keys for AppUpdater settings
-/// Prepared for migration to KeyValueStoring from UserDefaultsWrapper
-enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
+/// Storage keys for AppUpdater package settings
+public enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
     // Update check state
     case pendingUpdateSince = "pending.update.since"
     case updateValidityStartDate = "update.validity.start.date"
@@ -51,36 +50,33 @@ enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
 }
 
 /// StoringKeys conforming struct for typed access to UpdateController settings
-/// Prepared for migration to KeyValueStoring from UserDefaultsWrapper
-struct UpdateControllerSettings: StoringKeys {
+public struct UpdateControllerSettings: StoringKeys {
     // Update check state
-    let pendingUpdateSince = StorageKey<Date>(UpdateControllerStorageKeys.pendingUpdateSince, assertionHandler: { _ in })
-    let updateValidityStartDate = StorageKey<Date>(UpdateControllerStorageKeys.updateValidityStartDate, assertionHandler: { _ in })
+    public let pendingUpdateSince = StorageKey<Date>(UpdateControllerStorageKeys.pendingUpdateSince, assertionHandler: { _ in })
+    public let updateValidityStartDate = StorageKey<Date>(UpdateControllerStorageKeys.updateValidityStartDate, assertionHandler: { _ in })
 
     // Update preferences
-    let automaticUpdates = StorageKey<Bool>(UpdateControllerStorageKeys.automaticUpdates, assertionHandler: { _ in })
-    let pendingUpdateShown = StorageKey<Bool>(UpdateControllerStorageKeys.pendingUpdateShown, assertionHandler: { _ in })
+    public let automaticUpdates = StorageKey<Bool>(UpdateControllerStorageKeys.automaticUpdates, assertionHandler: { _ in })
+    public let pendingUpdateShown = StorageKey<Bool>(UpdateControllerStorageKeys.pendingUpdateShown, assertionHandler: { _ in })
 
     // Debug settings
-    let debugSparkleCustomFeedURL = StorageKey<String>(UpdateControllerStorageKeys.debugSparkleCustomFeedURL, assertionHandler: { _ in })
+    public let debugSparkleCustomFeedURL = StorageKey<String>(UpdateControllerStorageKeys.debugSparkleCustomFeedURL, assertionHandler: { _ in })
 
     // Version tracking
-    let previousAppVersion = StorageKey<String>(UpdateControllerStorageKeys.previousAppVersion, assertionHandler: { _ in })
-    let previousBuild = StorageKey<String>(UpdateControllerStorageKeys.previousBuild, assertionHandler: { _ in })
-    let lastSuccessfulUpdateDate = StorageKey<Date>(UpdateControllerStorageKeys.lastSuccessfulUpdateDate, assertionHandler: { _ in })
+    public let previousAppVersion = StorageKey<String>(UpdateControllerStorageKeys.previousAppVersion, assertionHandler: { _ in })
+    public let previousBuild = StorageKey<String>(UpdateControllerStorageKeys.previousBuild, assertionHandler: { _ in })
+    public let lastSuccessfulUpdateDate = StorageKey<Date>(UpdateControllerStorageKeys.lastSuccessfulUpdateDate, assertionHandler: { _ in })
 
     // Pending update metadata (for validation)
-    let pendingUpdateSourceVersion = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateSourceVersion, assertionHandler: { _ in })
-    let pendingUpdateSourceBuild = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateSourceBuild, assertionHandler: { _ in })
-    let pendingUpdateExpectedVersion = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateExpectedVersion, assertionHandler: { _ in })
-    let pendingUpdateExpectedBuild = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateExpectedBuild, assertionHandler: { _ in })
-    let pendingUpdateInitiationType = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateInitiationType, assertionHandler: { _ in })
-    let pendingUpdateConfiguration = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateConfiguration, assertionHandler: { _ in })
+    public let pendingUpdateSourceVersion = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateSourceVersion, assertionHandler: { _ in })
+    public let pendingUpdateSourceBuild = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateSourceBuild, assertionHandler: { _ in })
+    public let pendingUpdateExpectedVersion = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateExpectedVersion, assertionHandler: { _ in })
+    public let pendingUpdateExpectedBuild = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateExpectedBuild, assertionHandler: { _ in })
+    public let pendingUpdateInitiationType = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateInitiationType, assertionHandler: { _ in })
+    public let pendingUpdateConfiguration = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateConfiguration, assertionHandler: { _ in })
 
-#if SPARKLE
     // Cached pending update info (PendingUpdateInfo stored as Codable)
-    let pendingUpdateInfo = StorageKey<SparkleUpdateController.PendingUpdateInfo>(UpdateControllerStorageKeys.pendingUpdateInfo, assertionHandler: { _ in })
-#endif
+    public let pendingUpdateInfo = StorageKey<PendingUpdateInfo>(UpdateControllerStorageKeys.pendingUpdateInfo, assertionHandler: { _ in })
 
-    init() {}
+    public init() {}
 }

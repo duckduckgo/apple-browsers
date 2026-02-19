@@ -26,7 +26,7 @@ struct Bucket {
 
 protocol BucketModifier {
 
-    /// Convert a Int value in it's bucketed int version based on the bucket configuration received from the privacy configuration.
+    /// Convert a Int value in its bucketed int version based on the bucket configuration received from the privacy configuration.
     /// Returns a Bucket containing both the bucketed value and the configuration version.
     func bucket(value: Int, pixelName: AttributedMetricPixelName) throws -> Bucket
 

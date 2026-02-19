@@ -188,9 +188,9 @@ final class RollingEightDaysIntTests: XCTestCase {
         XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 3)
 
         // Add one more value to produce a non-integer average
-        rollingInt[3] = 5
-        // Average = (5+6+4+5)/4 = 5.0
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 5.0)
+        rollingInt[3] = 4
+        // Average = (5+6+4+5)/4 = 4.75
+        XCTAssertEqual(rollingInt.past7DaysAverage.average, 4.75)
         XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 4)
     }
 

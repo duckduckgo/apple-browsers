@@ -136,8 +136,9 @@ final class RollingEightDaysIntTests: XCTestCase {
         rollingInt.append(11)
         rollingInt.append(1)
         // past7DaysAverage should only count known values (excluding today)
-        // Values excluding today: [3, 8, 11], average = (3+8+11)/3 = 7.3333335
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 7.3333335)
+        // Values excluding today: [3, 8, 11], average = (3+8+11)/3
+        let expectedAverage = Float(3 + 8 + 11) / 3.0
+        XCTAssertEqual(rollingInt.past7DaysAverage.average, expectedAverage, accuracy: 0.0001)
         XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 3)
     }
 

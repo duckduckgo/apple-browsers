@@ -48,6 +48,7 @@ public class Tab: NSObject, NSCoding {
         static let contextualChatURL = "contextualChatURL"
         static let type = "type"
         static let supportsTabHistory = "supportsTabHistory"
+        static let fireTab = "fireTab"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
@@ -102,6 +103,9 @@ public class Tab: NSObject, NSCoding {
     /// - `true`: Tab was created with history tracking enabled (supports tab burning)
     /// - `false`: Legacy tab without complete history (does not support tab burning)
     let supportsTabHistory: Bool
+    
+    /// Indicates whether this tab is a fire tab or not.
+    let fireTab: Bool
 
     /// Type of tab: web or AI Chat, derived from the current URL
     private var type: TabType {
@@ -121,6 +125,7 @@ public class Tab: NSObject, NSCoding {
                 daxEasterEggLogoURL: String? = nil,
                 contextualChatURL: String? = nil,
                 supportsTabHistory: Bool = true,
+                fireTab: Bool = false,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
@@ -130,6 +135,7 @@ public class Tab: NSObject, NSCoding {
         self.daxEasterEggLogoURL = daxEasterEggLogoURL
         self.contextualChatURL = contextualChatURL
         self.supportsTabHistory = supportsTabHistory
+        self.fireTab = fireTab
         self.aichatDebugSettings = aichatDebugSettings
     }
 
@@ -143,10 +149,11 @@ public class Tab: NSObject, NSCoding {
         let contextualChatURL = decoder.decodeObject(forKey: NSCodingKeys.contextualChatURL) as? String
         // Legacy tabs created before tab history tracking will not have this key, so default to false
         let supportsTabHistory = decoder.containsValue(forKey: NSCodingKeys.supportsTabHistory) ? decoder.decodeBool(forKey: NSCodingKeys.supportsTabHistory) : false
+        let fireTab = decoder.containsValue(forKey: NSCodingKeys.fireTab) ? decoder.decodeBool(forKey: NSCodingKeys.fireTab) : false
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory)
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab)
     }
 
     public func encode(with coder: NSCoder) {
@@ -160,12 +167,13 @@ public class Tab: NSObject, NSCoding {
         coder.encode(daxEasterEggLogoURL, forKey: NSCodingKeys.daxEasterEggLogoURL)
         coder.encode(contextualChatURL, forKey: NSCodingKeys.contextualChatURL)
         coder.encode(supportsTabHistory, forKey: NSCodingKeys.supportsTabHistory)
+        coder.encode(fireTab, forKey: NSCodingKeys.fireTab)
         // Note: type is not encoded as it's now a computed property based on the link URL
     }
 
     public override func isEqual(_ other: Any?) -> Bool {
         guard let other = other as? Tab else { return false }
-        return link == other.link
+        return link == other.link && fireTab == other.fireTab
     }
     
     func toggleDesktopMode() {

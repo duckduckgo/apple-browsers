@@ -1086,7 +1086,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testSubscriptionChangeSelected_WhenEffectivePlatformIsStripe_DoesNotCallPerformTierChange_StartsStripeWideEvent() async throws {
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
         let webView = MockURLWebView(url: originURL)
-        let message = MockWKScriptMessage(name: "subscriptionChangeSelected", body: "", webView: webView)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
 
         let stripeSubscription = DuckDuckGoSubscription(
             productId: "stripe-plus-monthly",
@@ -1123,7 +1123,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testSubscriptionChangeSelected_WhenEffectivePlatformIsStripe_AndGetTokenFails_SetsErrorAndCompletesWideEventWithFailure() async throws {
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
         let webView = MockURLWebView(url: originURL)
-        let message = MockWKScriptMessage(name: "subscriptionChangeSelected", body: "", webView: webView)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
 
         let stripeSubscription = DuckDuckGoSubscription(
             productId: "stripe-plus-monthly",
@@ -1158,7 +1158,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testSubscriptionChangeSelected_WhenEffectivePlatformIsGoogle_SetsErrorAndDoesNotCallPerformTierChange() async throws {
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
         let webView = MockURLWebView(url: originURL)
-        let message = MockWKScriptMessage(name: "subscriptionChangeSelected", body: "", webView: webView)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
 
         let googleSubscription = DuckDuckGoSubscription(
             productId: "google-plus-monthly",
@@ -1188,7 +1188,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testSubscriptionChangeSelected_WhenEffectivePlatformIsUnknown_SetsErrorAndDoesNotCallPerformTierChange() async throws {
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
         let webView = MockURLWebView(url: originURL)
-        let message = MockWKScriptMessage(name: "subscriptionChangeSelected", body: "", webView: webView)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
 
         let unknownSubscription = DuckDuckGoSubscription(
             productId: "unknown-plus-monthly",

@@ -173,7 +173,9 @@ final class UserScripts: UserScriptsProvider {
         releaseNotesUserScript = ReleaseNotesUserScript(keyValueStore: UserDefaults.standard)
 #endif
 
-        userScripts.append(autoconsentUserScript)
+        if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
+            userScripts.append(autoconsentUserScript)
+        }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)

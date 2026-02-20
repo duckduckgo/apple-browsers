@@ -67,7 +67,7 @@ class MockHistoryManager: HistoryManaging {
         historyCoordinator.history
     }
     
-    func addVisit(of url: URL, tabID: String?) {
+    func addVisit(of url: URL, tabID: String?, fireTab: Bool = false) {
         addVisitCalls.append(url)
     }
     

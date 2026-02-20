@@ -346,7 +346,7 @@ final class TabViewCell: UICollectionViewCell {
 
         if isFireTab {
             // TODO: - Update this to not always show orange border.
-            border.layer.borderColor = UIColor(designSystemColor: .fireTabBorder).cgColor
+            border.layer.borderColor = UIColor(designSystemColor: .fireMode).cgColor
             border.layer.borderWidth = Constants.selectedBorderWidth
         } else {
             let showBorder = isSelectionModeEnabled ? isSelected : isCurrent

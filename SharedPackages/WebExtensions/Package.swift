@@ -40,9 +40,6 @@ let package = Package(
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit")
-            ],
-            resources: [
-                .copy("Resources/darkreader-chrome-mv3.zip")
             ]
         ),
         .testTarget(

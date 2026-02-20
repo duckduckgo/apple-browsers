@@ -67,7 +67,7 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
-//    private var adaptiveDarkModeObserver: Any?
+    private var darkModeSettingObserver: AnyObject?
     private var darkReaderFeatureSettings: DarkReaderFeatureSettings?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -260,23 +260,44 @@ final class MainCoordinator {
             self.darkReaderFeatureSettings = darkReaderSettings
 
             Task { @MainActor in
+                await self.updateDarkReaderExtensionInstallation(manager: webExtensionManager)
                 await webExtensionManager.loadInstalledExtensions()
-                await self.updateDarkReader(manager: webExtensionManager)
                 self.registerExistingTabsWithExtensionController()
             }
 
+
+            darkModeSettingObserver = NotificationCenter.default.addObserver(
+               forName: AppUserDefaults.Notifications.adaptiveDarkModeChanged,
+               object: nil,
+               queue: .main) { [weak self, weak webExtensionManager] _ in
+                   guard let self, let webExtensionManager else { return }
+                   Task { @MainActor in
+                       await self.updateDarkReaderExtensionInstallation(manager: webExtensionManager)
+                   }
+               }
         } else {
             clearWebExtensionReferences()
         }
     }
 
-    private func updateDarkReader(manager: WebExtensionManaging) async {
+    private func updateDarkReaderExtensionInstallation(manager: WebExtensionManaging) async {
         guard #available(iOS 18.4, *) else { return }
 
-        if darkReaderFeatureSettings?.isDarkModeEnabled == true {
+        let darkModeExtensionIdentifier: String? = {
+            for identifier in manager.webExtensionIdentifiers {
+                if manager.extensionName(for: identifier)?.contains("Dark") == true {
+                    return identifier
+                }
+            }
+            return nil
+        }()
+
+        if darkReaderFeatureSettings?.isDarkModeEnabled == true && darkModeExtensionIdentifier == nil {
             try? await manager.installExtension(from: DarkReaderExtenion.url)
         } else {
-//            manager.uninstallExtension(identifier: <#T##String#>)
+            if let darkModeExtensionIdentifier {
+                try? manager.uninstallExtension(identifier: darkModeExtensionIdentifier)
+            }
         }
     }
 
@@ -310,8 +331,8 @@ final class MainCoordinator {
     private func clearWebExtensionReferences() {
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
-//        adaptiveDarkModeObserver = nil
         darkReaderFeatureSettings = nil
+        darkModeSettingObserver = nil
         tabManager.setWebExtensionManager(nil)
         controller.setWebExtensionEventsCoordinator(nil)
         controller.setWebExtensionManager(nil)

@@ -1,5 +1,5 @@
 //
-//  DarkReaderExtension.swift
+//  DarkReader.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,6 +18,6 @@
 
 import Foundation
 
-public struct DarkReaderExtenion {
-    public static let url: URL = Bundle.module.url(forResource: "darkreader-chrome-mv3", withExtension: "zip")!
+public struct DarkReader {
+    public static let url: URL? = Bundle.module.url(forResource: "darkreader-chrome-mv3", withExtension: "zip")
 }

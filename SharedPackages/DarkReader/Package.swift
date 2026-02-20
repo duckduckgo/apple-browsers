@@ -19,7 +19,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "DarkReaderExtension",
+    name: "DarkReader",
     platforms: [
         .iOS("15.0"),
         .macOS("11.4")
@@ -27,20 +27,20 @@ let package = Package(
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "DarkReaderExtension",
-            targets: ["DarkReaderExtension"]
+            name: "DarkReader",
+            targets: ["DarkReader"]
         ),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "DarkReaderExtension",
+            name: "DarkReader",
             resources: [.copy("Resources/darkreader-chrome-mv3.zip")]
         ),
         .testTarget(
-            name: "DarkReaderExtensionTests",
-            dependencies: ["DarkReaderExtension"]
+            name: "DarkReaderTests",
+            dependencies: ["DarkReader"]
         ),
     ]
 )

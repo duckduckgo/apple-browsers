@@ -16,10 +16,9 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import BrowserServicesKit
 import XCTest
-
-import AppUpdaterShared
 
 final class ReleaseNotesParserTests: XCTestCase {
 

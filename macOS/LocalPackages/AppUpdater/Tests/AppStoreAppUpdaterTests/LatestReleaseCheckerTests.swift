@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Foundation
-import NetworkingTestingUtils
 import AppStoreAppUpdater
 import AppUpdaterShared
+import Foundation
+import NetworkingTestingUtils
+import XCTest
 
 final class LatestReleaseCheckerTests: XCTestCase {
 

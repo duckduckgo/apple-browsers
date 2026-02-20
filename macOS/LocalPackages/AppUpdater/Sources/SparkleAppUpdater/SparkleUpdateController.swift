@@ -17,17 +17,17 @@
 //
 
 import AppUpdaterShared
-import Foundation
-import Common
 import Combine
+import Common
 import FeatureFlags
-import Sparkle
+import Foundation
+import os.log
 import Persistence
 import PixelKit
 import PrivacyConfig
+import Sparkle
 import Subscription
 import SwiftUI
-import os.log
 
 /// Factory extension that provides the Sparkle updater implementation.
 ///

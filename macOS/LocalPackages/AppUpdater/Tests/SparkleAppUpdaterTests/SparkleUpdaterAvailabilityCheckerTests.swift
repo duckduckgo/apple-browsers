@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Sparkle
-import SparkleAppUpdater
 import AppUpdaterShared
 import AppUpdaterTestHelpers
+import Sparkle
+import SparkleAppUpdater
+import XCTest
 
 final class SparkleUpdaterAvailabilityCheckerTests: XCTestCase {
 

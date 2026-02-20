@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 import AppUpdaterShared
-import Foundation
 import BrowserServicesKit
 import Common
+import Foundation
 
 public enum LatestReleaseMetadataType {
     case macOSAppStore

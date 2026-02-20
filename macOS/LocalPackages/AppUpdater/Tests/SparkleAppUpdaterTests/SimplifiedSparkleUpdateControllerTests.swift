@@ -17,9 +17,9 @@
 //
 
 import AppUpdaterShared
-import PrivacyConfig
 import AppUpdaterTestHelpers
 import FeatureFlags
+import PrivacyConfig
 import SparkleAppUpdater
 import XCTest
 

@@ -17,11 +17,11 @@
 //
 
 import AppKit
-import PixelKit
 import BrowserServicesKit
+import Configuration
 import ContentBlocking
 import DDGSync
-import Configuration
+import PixelKit
 import Suggestions
 
 enum GeneralPixel: PixelKitEvent {

@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import Foundation
 import AppUpdaterShared
+import Foundation
 
 /// Mock updater for testing availability checking.
 public class MockUpdater: UpdaterAvailabilityChecking {

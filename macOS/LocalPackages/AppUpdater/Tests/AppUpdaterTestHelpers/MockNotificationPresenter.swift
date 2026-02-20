@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import Foundation
 import AppUpdaterShared
+import Foundation
 
 /// Mock notification presenter for testing - does not show any notifications.
 public struct MockNotificationPresenter: UpdateNotificationPresenting {

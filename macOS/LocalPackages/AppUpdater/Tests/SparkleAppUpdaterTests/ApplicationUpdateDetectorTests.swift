@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import AppUpdaterShared
+import BrowserServicesKit
 import Persistence
 import PersistenceTestingUtils
 import XCTest

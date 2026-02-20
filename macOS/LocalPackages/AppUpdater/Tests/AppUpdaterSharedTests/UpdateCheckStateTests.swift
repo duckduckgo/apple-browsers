@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import XCTest
 import AppUpdaterShared
 import AppUpdaterTestHelpers
+import XCTest
 
 /// Tests for UpdateCheckState actor that manages update check rate limiting.
 ///

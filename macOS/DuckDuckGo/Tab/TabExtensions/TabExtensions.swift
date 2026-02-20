@@ -17,6 +17,7 @@
 //
 
 import AppUpdaterShared
+import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common
@@ -28,7 +29,6 @@ import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
 import WebKit
-import AutoconsentStats
 
 /**
  Tab Extensions should conform to TabExtension protocol

@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import XCTest
 import AppStoreAppUpdater
+import XCTest
 
 final class AppStoreUpdaterAvailabilityCheckerTests: XCTestCase {
 

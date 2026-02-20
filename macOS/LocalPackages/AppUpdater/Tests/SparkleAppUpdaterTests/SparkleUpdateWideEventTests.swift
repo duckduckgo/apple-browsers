@@ -17,13 +17,13 @@
 //
 
 import AppUpdaterShared
-import SparkleAppUpdater
-import XCTest
-import PixelKitTestingUtilities
-import PixelKit
 import BrowserServicesKitTestsUtils
 import Persistence
 import PersistenceTestingUtils
+import PixelKit
+import PixelKitTestingUtilities
+import SparkleAppUpdater
+import XCTest
 
 final class SparkleUpdateWideEventTests: XCTestCase {
 

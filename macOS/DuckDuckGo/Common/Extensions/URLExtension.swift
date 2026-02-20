@@ -17,13 +17,14 @@
 //
 
 import AppKit
+import AppKitExtensions
 import BrowserServicesKit
 import Common
 import Foundation
-import AppKitExtensions
+import os.log
 import Persistence
 import URLPredictor
-import os.log
+
 #if !SANDBOX_TEST_TOOL
 import PixelKit
 #endif

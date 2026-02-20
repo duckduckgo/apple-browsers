@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
+import FeatureFlags
 import Foundation
 import PrivacyConfig
-import FeatureFlags
-import AppUpdaterShared
 
 extension MockFeatureFlagger {
     /// Convenience property for setting enabled update-related feature flags in tests.

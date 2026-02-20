@@ -17,18 +17,18 @@
 //
 
 import AppUpdaterShared
-import Foundation
-import Common
-import Combine
-import FeatureFlags
-import Sparkle
-import Persistence
 import BrowserServicesKit
+import Combine
+import Common
+import FeatureFlags
+import Foundation
+import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
+import Sparkle
 import Subscription
 import SwiftUI
-import os.log
 
 /// Simplified Sparkle update controller.
 ///

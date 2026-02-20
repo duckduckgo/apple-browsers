@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import XCTest
 import AppUpdaterShared
+import XCTest
 
 final class UpdateModelTests: XCTestCase {
 

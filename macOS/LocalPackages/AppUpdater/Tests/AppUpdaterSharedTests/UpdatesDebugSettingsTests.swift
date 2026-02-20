@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
 import AppUpdaterShared
 import Common
 import Persistence
 import PersistenceTestingUtils
+import XCTest
 
 final class UpdatesDebugSettingsTests: XCTestCase {
 

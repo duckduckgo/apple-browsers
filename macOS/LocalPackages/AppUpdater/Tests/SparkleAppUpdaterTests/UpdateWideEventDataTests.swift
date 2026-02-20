@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import XCTest
 import PixelKit
 import SparkleAppUpdater
+import XCTest
 
 final class UpdateWideEventDataTests: XCTestCase {
 

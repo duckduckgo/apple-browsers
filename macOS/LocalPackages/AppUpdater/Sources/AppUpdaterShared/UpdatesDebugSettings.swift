@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
 import BrowserServicesKit
+import Common
+import Foundation
 import Persistence
 
 /// Debug settings for testing update functionality

@@ -17,14 +17,14 @@
 //
 
 import AppUpdaterShared
-import SwiftUI
-import Common
 import Combine
+import Common
 import FeatureFlags
 import os.log
 import Persistence
 import PixelKit
 import PrivacyConfig
+import SwiftUI
 
 final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 

@@ -46,6 +46,10 @@ extension TabViewController {
         DataClearingCapability.create(using: featureFlagger)
     }
 
+    private var fireModeCapability: FireModeCapable {
+        FireModeCapability.create(using: featureFlagger)
+    }
+
     func buildBrowsingMenuHeaderContent() -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
 
@@ -202,7 +206,7 @@ extension TabViewController {
     }
     
     private func buildNewFireTabEntry() -> BrowsingMenuEntry? {
-        guard featureFlagger.isFeatureOn(.fireMode) else {
+        guard fireModeCapability.isFireModeEnabled else {
             return nil
         }
         return .regular(name: NotLocalizedString("action.title.newFireTabAction", value: "Fire Tab", comment: "Create New Fire Tab action"),

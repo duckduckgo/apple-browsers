@@ -34,7 +34,6 @@ import SERPSettings
 import SpecialErrorPages
 import UserScript
 import WebKit
-import SERPSettings
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
     var isInPopUpWindow: Bool { get }

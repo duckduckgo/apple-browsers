@@ -735,10 +735,12 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.resetNextStepsMenuItem)
                 NSMenuItem(title: "Shift top card by 10 impressions", action: #selector(MainViewController.debugShiftCardImpression))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
-            }
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
+            }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
                 NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
                 NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))

@@ -539,6 +539,8 @@ extension TabSwitcherViewController: TabViewCellDelegate {
 
     func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
         let shouldDismiss = tabsModel.count == indexPaths.count
+        let tabsToClose = indexPaths.map { tabsModel.get(tabAt: $0.row) }
+        delegate?.tabSwitcher(self, willCloseTabs: tabsToClose)
 
         collectionView.performBatchUpdates {
             isProcessingUpdates = true

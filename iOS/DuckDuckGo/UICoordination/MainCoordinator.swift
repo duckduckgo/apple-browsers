@@ -152,7 +152,8 @@ final class MainCoordinator {
                                 productSurfaceTelemetry: productSurfaceTelemetry,
                                 sharedSecureVault: sharedSecureVault,
                                 privacyStats: privacyStats,
-                                voiceSearchHelper: voiceSearchHelper)
+                                voiceSearchHelper: voiceSearchHelper,
+                                launchSourceManager: launchSourceManager)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -166,6 +167,7 @@ final class MainCoordinator {
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner)
+        let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -191,6 +193,7 @@ final class MainCoordinator {
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
+                                        aiChatAddressBarExperience: aiChatAddressBarExperience,
                                         themeManager: ThemeManager.shared,
                                         keyValueStore: keyValueStore,
                                         customConfigurationURLProvider: customConfigurationURLProvider,
@@ -209,6 +212,12 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         whatsNewRepository: whatsNewRepository)
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
+
+        // Apply tracker animation suppression early for cold starts
+        // This must happen before tabs load their URLs
+        if launchSourceManager.source == .standard {
+            tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
+        }
     }
 
     func start() {
@@ -245,6 +254,7 @@ final class MainCoordinator {
 
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
+                self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
         } else {
             clearWebExtensionReferences()
@@ -324,9 +334,23 @@ final class MainCoordinator {
 
     // MARK: App Lifecycle handling
 
-    func onForeground() {
+    func onForeground(isFirstForeground: Bool) {
+        // Apply tracker animation suppression based on launch source
+        // Must be called after launchSourceManager.handleAppAction sets the source
+        if isFirstForeground {
+            tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
+        }
+
+        // Clear external launch flags when app comes to foreground
+        // This ensures flags are reset for subsequent in-app navigations
+        tabManager.clearExternalLaunchFlags()
+
         controller.showBars()
         controller.onForeground()
+
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didFocusWindow()
+        }
     }
 
     func onBackground() {
@@ -456,7 +480,7 @@ extension MainCoordinator: ShortcutItemHandling {
 
     private func handleQuery(_ query: String) {
         controller.clearNavigationStack()
-        controller.loadQueryInNewTab(query)
+        controller.loadQueryInNewTab(query, fromExternalLink: true)
     }
 
     private func handleSearchPassword() {
@@ -466,6 +490,19 @@ extension MainCoordinator: ShortcutItemHandling {
             self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
         }
         Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
+    }
+
+}
+
+// MARK: - IdleReturnLaunchDelegate
+
+extension MainCoordinator: IdleReturnLaunchDelegate {
+
+    func showNewTabPageAfterIdleReturn() {
+        controller.prepareForIdleReturnNTP { [weak self] in
+            guard let self else { return }
+            self.controller.newTab(reuseExisting: true, allowingKeyboard: true)
+        }
     }
 
 }

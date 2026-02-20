@@ -123,7 +123,7 @@
                             <constraint firstAttribute="trailing" secondItem="ypz-s2-KJB" secondAttribute="trailing" id="bXU-Fx-c7D"/>
                             <constraint firstAttribute="trailing" secondItem="Wfg-yB-zj4" secondAttribute="trailing" id="bpw-ay-E03"/>
                             <constraint firstItem="Kd4-Oi-JP2" firstAttribute="centerX" secondItem="t0t-53-xVf" secondAttribute="centerX" id="oFL-Ft-NQV"/>
-                            <constraint firstItem="t0t-53-xVf" firstAttribute="bottom" secondItem="Wfg-yB-zj4" secondAttribute="bottom" id="reE-gN-ecB"/>
+                            <constraint firstAttribute="bottom" secondItem="Wfg-yB-zj4" secondAttribute="bottom" id="reE-gN-ecB"/>
                             <constraint firstAttribute="bottom" secondItem="gSI-9K-1Ti" secondAttribute="bottom" id="t3k-1K-dv4"/>
                             <constraint firstItem="ypz-s2-KJB" firstAttribute="leading" secondItem="Sgm-Wo-lho" secondAttribute="leading" id="ugB-DM-Oye"/>
                         </constraints>

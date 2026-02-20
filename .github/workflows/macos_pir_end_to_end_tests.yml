@@ -38,10 +38,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-xlarge]
+        runner: [macos-15-xlarge]
         include:
-          - xcode-version: "26.1"
-            runner: macos-26-xlarge
+          - xcode-version: "16.4"
+            runner: macos-15-xlarge
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
@@ -162,6 +162,7 @@ jobs:
 
     - name: Report job duration
       if: success() || (always() && steps.run-tests.outcome == 'failure')
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop

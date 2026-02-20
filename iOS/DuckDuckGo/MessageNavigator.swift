@@ -35,6 +35,7 @@ protocol MessageNavigationDelegate: AnyObject {
     func segueToFeedback(presentationStyle: PresentationContext.Style)
     func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?, presentationStyle: PresentationContext.Style)
     func segueToImportPasswords(presentationStyle: PresentationContext.Style)
+    func segueToPIR(presentationStyle: PresentationContext.Style)
 }
 
 class DefaultMessageNavigator: MessageNavigator {
@@ -61,7 +62,8 @@ class DefaultMessageNavigator: MessageNavigator {
             delegate?.segueToImportPasswords(presentationStyle: presentationStyle)
         case .appearance:
             delegate?.segueToSettingsAppearance(presentationStyle: presentationStyle)
-
+        case .personalInformationRemoval:
+            delegate?.segueToPIR(presentationStyle: presentationStyle)
         }
     }
 

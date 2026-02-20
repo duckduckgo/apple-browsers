@@ -1,8 +1,29 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
+"-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
+
+/* No comment provided by engineer. */
+"-ff.<flagRawValue> true/false" = "-ff.<flagRawValue> true/false";
+
+/* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@ items" = "%@ items";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"%@s" = "%@s";
 
 /* No comment provided by engineer. */
 "Account" = "account";
@@ -1043,13 +1064,25 @@
 "close.all.tabs" = "Закрыть все вкладки";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Когорта: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
+
+/* No comment provided by engineer. */
+"Config Rollout:" = "Config Rollout:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Конфигурация";
 
 /* No comment provided by engineer. */
 "Confirm" = "Подтвердить";
+
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Контекстное ознакомление";
+
+/* No comment provided by engineer. */
+"Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Пропустить";
@@ -1170,6 +1203,12 @@
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "СОБСТВЕННОЕ СОДЕРЖИМОЕ ЯЧЕЙКИ";
+
+/* No comment provided by engineer. */
+"Custom Duration" = "Custom Duration";
+
+/* No comment provided by engineer. */
+"Custom Session Timer Duration" = "Custom Session Timer Duration";
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Пользовательский URL: %@";
@@ -1408,8 +1447,29 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Работа проигрывателя Duck Player пострадала в результате недавних изменений на YouTube. Мы уже ищем решение и благодарим вас за понимание.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Добавить содержимое страницы";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Отправляется вместе с сообщением для Duck.ai";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai теперь отвечает на вопросы о просматриваемых страницах.\n\nСодержимое страницы добавляется только после ее прикрепления. Этот параметр всегда можно изменить в «Настройках».";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Понятно";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Задайте вопрос о странице";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Открыть настройки";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI — дополнительный конфиденциальный сервис. Ваши данные не применяются для обучения ИИ.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Добавить содержимое страницы";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Кратко изложи содержимое страницы";
@@ -1670,7 +1730,10 @@
 "empty.search" = "Ничего не найдено";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Внесено: %@";
+"Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1706,6 +1769,12 @@
 "error.unknown.try.again" = "Произошла неизвестная ошибка";
 
 /* No comment provided by engineer. */
+"Experiment:" = "Experiment:";
+
+/* No comment provided by engineer. */
+"Experiment: %@" = "Experiment: %@";
+
+/* No comment provided by engineer. */
 "External ID: %@" = "Внешний идентификатор: %@";
 
 /* No comment provided by engineer. */
@@ -1730,7 +1799,7 @@
 "favorites.settings.mobile-only" = "Только избранное с телефона";
 
 /* No comment provided by engineer. */
-"Feature: %@" = "Функция: %@";
+"Feature Flag:" = "Feature Flag:";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Блокировка рекламы и всплывающих окон";
@@ -2011,6 +2080,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.waterSwirl.name" = "Водоворот";
 
+/* No comment provided by engineer. */
+"Flag: %@" = "Flag: %@";
+
 /* Description text above the Share Link button */
 "get.browser.on-your-desktop-go-to" = "На компьютере откройте ссылку:";
 
@@ -2058,6 +2130,12 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Задать вопрос (конфиденциально)";
+
+/* No comment provided by engineer. */
+"Install Extension" = "Установить расширение";
+
+/* No comment provided by engineer. */
+"Installed Extensions (%@)" = "Установленные расширения (%@)";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Включите VPN в приложении DuckDuckGo.";
@@ -2179,6 +2257,15 @@
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "Приложение DuckDuckGo для Mac";
 
+/* No comment provided by engineer. */
+"Maestro Launch Arguments:" = "Maestro Launch Arguments:";
+
+/* No comment provided by engineer. */
+"Maestro: -experiment.uiTestExperiment control|treatment" = "Maestro: -experiment.uiTestExperiment control|treatment";
+
+/* No comment provided by engineer. */
+"Maestro: -ff.%@ true" = "Maestro: -ff.%@ true";
+
 /* Text explaining what happens when Malicious Site Protection is enabled */
 "malicious-site-protection-with-scam.settings.toggle.message" = "Предупреждать о мошеннических, фишинговых и вредоносных сайтах";
 
@@ -2205,6 +2292,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Сообщения";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Кнопка адресной строки";
@@ -2492,6 +2582,12 @@
 "No existing subscription found" = "Подписка не найдена";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
+"No extensions installed" = "Расширения браузера не установлены";
+
+/* No comment provided by engineer. */
 "No Logs" = "Нет журналов";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2598,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Нет доступных подписок";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "Хорошо";
@@ -2873,6 +2972,9 @@
 "prompt.custom.url.scheme.title" = "Открыть в другом приложении?";
 
 /* No comment provided by engineer. */
+"REBRANDED" = "РЕБРЕНДИНГ";
+
+/* No comment provided by engineer. */
 "Recent Processing Logs" = "Журналы недавней обработки";
 
 /* No comment provided by engineer. */
@@ -2888,7 +2990,46 @@
 "Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
+"Reset to Default" = "Reset to Default";
+
+/* No comment provided by engineer. */
 "Results" = "Результаты";
+
+/* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
+"Save" = "Save";
+
+/* No comment provided by engineer. */
+"Scanning..." = "Сканирование...";
+
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Удалить вкладки и данные сайтов?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Удалить вкладки, данные сайта и чаты?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Удалить все";
+
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Удалить этот чат";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "Функция «Удалить все» не стирает историю чатов с Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Удалить эту вкладку";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Текущие загрузки будут отменены.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Новые вкладки также можно удалять по отдельности.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Удаление данных сайтов может сопровождаться выходом из учетных записей.";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Введите поисковый запрос или адрес сайта";
@@ -2956,6 +3097,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Показывать полный адрес сайта";
 
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Показывать в адресной строке";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Поиск и Duck.ai";
 
@@ -2980,11 +3124,14 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Настройки Search Assist";
 
-/* Settings screen cell subtitle for enabling automatic page context */
-"settings.aifeatures.automatic.context.subtitle" = "Автоматически отправлять контекст страницы в Duck.ai";
+/* Settings screen cell subtitle for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.subtitle" = "Автоматически отправлять содержимое страницы в Duck.ai";
 
-/* Settings screen cell title for enabling automatic page context */
-"settings.aifeatures.automatic.context.title" = "Автоматически отправлять контекст";
+/* Settings screen cell title for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.title" = "Автоматически отправлять содержимое";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Рекомендации в чате";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скрыть ИИ-картинки";
@@ -3024,6 +3171,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Очистить";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Сбросить вкладки и данные";
 
@@ -3036,17 +3184,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Вкладки";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "После выхода из приложения, через 15 минут бездействия";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "После выхода из приложения, через 1 час бездействия";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "После выхода из приложения, через 30 минут бездействия";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "После выхода из приложения, через 5 минут бездействия";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "После выхода из приложения, через 15 минут бездействия";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "После выхода из приложения, через 30 минут бездействия";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Только после выхода из приложения";
@@ -3059,6 +3207,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Данные будут удалены при следующем запуске приложения.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Поисковые рекомендации";
 
@@ -3071,14 +3220,24 @@
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Показывать поисковые рекомендации (включая закладки) по мере ввода текста. Все поисковые запросы конфиденциальны.";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "При вводе запроса в адресную строку показывать рекомендации из поисковой истории, закладок и (по желанию) журнала чатов Duck.ai. Все поисковые запросы конфиденциальны.";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Блокировка";
 
 /* Section footer Autolock description */
 "settings.autolock.description" = "Если в системе работает технология Touch ID, Face ID или код-пароль, при запуске вам придется разблокировать приложение.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Удалить";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Автоматическая очистка данных";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Автоматически удалять данные";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Отзыв о браузере";
 
@@ -3090,6 +3249,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Стереть данные браузера";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Автоудаление данных";
 
@@ -3105,6 +3265,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Управление окнами выбора куки-файлов";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Удалить вкладки и данные";
+
 /* Settings title for the customize section */
 "settings.customize" = "Собственная настройка";
 
@@ -3119,8 +3282,15 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Удаление данных способствует конфиденциальности онлайн. Данные можно стирать автоматически или вручную с помощью кнопки Fire Button.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузер по умолчанию";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Удалить чаты Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Удалить вкладки и данные";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Отключить автозаполнение в рамках защиты почты";
@@ -3166,6 +3336,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Огнеупорные сайты";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Основные";
 
@@ -3183,9 +3354,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "новый";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Предпросмотр";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
@@ -3328,6 +3496,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Синхронизация и резервное копирование";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Показывать в диспетчере вкладок";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Вкладки";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Масштаб текста по умолчанию";
 
@@ -3336,6 +3510,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Настройки";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Анимация блокировки трекеров";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Помогает блокировать сторонние трекеры, которые пытаются маскироваться на сайтах с помощью DNS.";
@@ -3461,16 +3638,19 @@
 "siteFeedback.urlPlaceholder" = "На каком сайте возникает проблема?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Статус";
+
+/* No comment provided by engineer. */
+"Status:" = "Status:";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Статус: недействительный";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Сохраненное имя хоста: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Подфункция: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавление на устройство";
@@ -3519,6 +3699,12 @@
 
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Ваша подписка удалена с этого устройства.";
+
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Отменить понижение";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Ваш тарифный план будет понижен до %1$@ %2$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Изменить или отменить подписку";
@@ -3577,6 +3763,9 @@
 /* Help and support Section header */
 "subscription.help" = "Справка и поддержка";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Управление оплатой или Отмена";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Управление тарифом";
 
@@ -3610,17 +3799,20 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Тарифные планы";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Завершается смена тарифа...";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Завершение покупки...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Выполняется смена тарифа...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Оформление покупки...";
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Восстановление подписки...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Пакет Privacy Pro теперь называется просто подпиской DuckDuckGo.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Удалить с этого устройства";
@@ -3679,6 +3871,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Ваша годовая подписка завершится %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Ваш тарифный план будет понижен до %1$@ Monthly %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Ваш тарифный план будет понижен до %1$@ %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Ваш тарифный план будет понижен до %1$@ Yearly %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Ваша ежемесячная подписка продлится %@.";
 
@@ -3699,6 +3900,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Бесплатный пробный доступ активирован";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Поднимите тарифный план до %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Раскройте потенциал более умного и мощного ИИ.";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Повысить тариф";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Посмотреть все тарифы";
@@ -3726,6 +3936,12 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Настройка синхронизации";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Синхронизация и резервное копирование данных карт";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Синхронизация и резервное копирование данных";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Нет, спасибо";
@@ -3817,6 +4033,30 @@
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Добавить все вкладки в закладки";
 
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Скрыть";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Вы можете включить его снова в разделе «Настройки > Внешний вид».";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Скрыть счетчик трекеров?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Варианты подсчета трекеров";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Открыть варианты скрытия баннера двойным касанием";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Оставить";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "in last 7 days";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Масштаб текста любого сайта можно отрегулировать.";
 
@@ -3855,6 +4095,9 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Защита конфиденциальности на %@ включена";
+
+/* No comment provided by engineer. */
+"Total stored: %@" = "Total stored: %@";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
@@ -4098,6 +4341,9 @@
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Вас пригласили!";
+
+/* No comment provided by engineer. */
+"Web Extensions not available" = "Расширения браузера недоступны";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Страница удалена из избранного";

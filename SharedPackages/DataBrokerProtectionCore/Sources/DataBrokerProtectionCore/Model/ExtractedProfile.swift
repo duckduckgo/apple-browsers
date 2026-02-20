@@ -206,6 +206,24 @@ public struct ExtractedProfile: Codable, Sendable {
     }
 }
 
+extension ExtractedProfile {
+    public func with(id: Int64) -> ExtractedProfile {
+        ExtractedProfile(id: id,
+                         name: name,
+                         alternativeNames: alternativeNames,
+                         addressFull: addressFull,
+                         addresses: addresses,
+                         phoneNumbers: phoneNumbers,
+                         relatives: relatives,
+                         profileUrl: profileUrl,
+                         reportId: reportId,
+                         age: age,
+                         email: email,
+                         removedDate: removedDate,
+                         identifier: identifier)
+    }
+}
+
 extension ExtractedProfile: Equatable {
     public static func == (lhs: ExtractedProfile, rhs: ExtractedProfile) -> Bool {
         lhs.name == rhs.name

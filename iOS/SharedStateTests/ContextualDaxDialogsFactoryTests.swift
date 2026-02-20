@@ -24,7 +24,7 @@ import Onboarding
 @testable import DuckDuckGo
 
 final class ContextualDaxDialogsFactoryTests: XCTestCase {
-    private var sut: ExperimentContextualDaxDialogsFactory!
+    private var sut: ContextualDaxDialogsFactory!
     private var delegate: ContextualOnboardingDelegateMock!
     private var settingsMock: ContextualOnboardingSettingsMock!
     private var pixelReporterMock: OnboardingPixelReporterMock!
@@ -39,7 +39,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         pixelReporterMock = OnboardingPixelReporterMock()
         onboardingManagerMock = OnboardingManagerMock()
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-        sut = ExperimentContextualDaxDialogsFactory(
+        sut = DefaultContextualDaxDialogsFactory(
             contextualOnboardingLogic: contextualOnboardingLogicMock,
             contextualOnboardingSettings: settingsMock,
             contextualOnboardingPixelReporter: pixelReporterMock,
@@ -294,7 +294,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             // GIVEN
             settingsMock.userHasSeenFireDialog = false
             pixelReporterMock = OnboardingPixelReporterMock()
-            sut = ExperimentContextualDaxDialogsFactory(
+            sut = DefaultContextualDaxDialogsFactory(
                 contextualOnboardingLogic: ContextualOnboardingLogicMock(),
                 contextualOnboardingSettings: settingsMock,
                 contextualOnboardingPixelReporter: pixelReporterMock
@@ -420,7 +420,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             pixelReporterMock = OnboardingPixelReporterMock()
             delegate = ContextualOnboardingDelegateMock()
             contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-            sut = ExperimentContextualDaxDialogsFactory(
+            sut = DefaultContextualDaxDialogsFactory(
                 contextualOnboardingLogic: contextualOnboardingLogicMock,
                 contextualOnboardingSettings: settingsMock,
                 contextualOnboardingPixelReporter: pixelReporterMock
@@ -448,7 +448,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             pixelReporterMock = OnboardingPixelReporterMock()
             delegate = ContextualOnboardingDelegateMock()
             contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-            sut = ExperimentContextualDaxDialogsFactory(
+            sut = DefaultContextualDaxDialogsFactory(
                 contextualOnboardingLogic: contextualOnboardingLogicMock,
                 contextualOnboardingSettings: settingsMock,
                 contextualOnboardingPixelReporter: pixelReporterMock
@@ -521,41 +521,4 @@ final class ContextualOnboardingSettingsMock: ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool = false
     var userHasSeenFireDialog: Bool = false
     var userHasSeenTryVisitSiteDialog: Bool = false
-}
-
-
-final class ContextualOnboardingDelegateMock: ContextualOnboardingDelegate {
-    private(set) var didCallDidShowContextualOnboardingTrackersDialog = false
-    private(set) var didCallDidAcknowledgeContextualOnboardingTrackersDialog = false
-    private(set) var didCallDidTapDismissContextualOnboardingAction = false
-    private(set) var didCallSearchForQuery = false
-    private(set) var didCallNavigateToURL = false
-    private(set) var didCallDidAcknowledgeContextualOnboardingSearch = false
-    private(set) var urlToNavigateTo: URL?
-
-    func didShowContextualOnboardingTrackersDialog() {
-        didCallDidShowContextualOnboardingTrackersDialog = true
-    }
-    
-    func didAcknowledgeContextualOnboardingTrackersDialog() {
-        didCallDidAcknowledgeContextualOnboardingTrackersDialog = true
-    }
-    
-    func didTapDismissContextualOnboardingAction() {
-        didCallDidTapDismissContextualOnboardingAction = true
-    }
-
-    func searchFromOnboarding(for query: String) {
-        didCallSearchForQuery = true
-    }
-    
-    func navigateFromOnboarding(to url: URL) {
-        didCallNavigateToURL = true
-        urlToNavigateTo = url
-    }
-
-    func didAcknowledgeContextualOnboardingSearch() {
-        didCallDidAcknowledgeContextualOnboardingSearch = true
-    }
-
 }

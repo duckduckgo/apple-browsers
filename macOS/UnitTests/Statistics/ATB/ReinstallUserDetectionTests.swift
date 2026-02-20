@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
+import AppUpdaterShared
 import PersistenceTestingUtils
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 // MARK: - Mocks
@@ -25,6 +27,8 @@ import PersistenceTestingUtils
 final class MockApplicationBuildType: ApplicationBuildType {
     var isSparkleBuild: Bool = true
     var isAppStoreBuild: Bool = false
+    var isDebugBuild: Bool = false
+    var isReviewBuild: Bool = false
 }
 
 final class MockBundleURLProvider: BundleURLProviding {
@@ -73,6 +77,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         super.setUp()
 
         mockBuildType = MockApplicationBuildType()
+        mockBuildType.isSparkleBuild = true // Default to Sparkle build for reinstall detection tests
         mockFileManager = MockFileManagerForReinstallDetection()
         mockBundleURLProvider = MockBundleURLProvider()
         mockKeyValueStore = MockThrowingKeyValueStore()

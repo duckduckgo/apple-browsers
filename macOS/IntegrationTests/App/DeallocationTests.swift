@@ -68,8 +68,8 @@ final class DeallocationTests: XCTestCase {
 
             // `showWindow: false` would still open a window, but not activate it, which seems to upset CI
             WindowsManager.openNewWindow()
-            WindowsManager.openNewWindow(with: .duckDuckGo, source: .ui, isBurner: false)
-            WindowsManager.openNewWindow(with: .duckDuckGo, source: .ui, isBurner: true)
+            WindowsManager.openNewWindow(with: URL(string: "data:,Hello%2C%20World%21")!, source: .ui, isBurner: false)
+            WindowsManager.openNewWindow(with: URL(string: "data:,Hello%2C%20World%21")!, source: .ui, isBurner: true)
 
             for i in 0..<Application.appDelegate.windowControllersManager.mainWindowControllers.count {
                 Application.appDelegate.windowControllersManager.mainWindowControllers[i].mainViewController.tabCollectionViewModel

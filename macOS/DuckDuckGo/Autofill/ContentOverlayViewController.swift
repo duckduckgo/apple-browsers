@@ -66,12 +66,14 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         privacyConfigurationManager: PrivacyConfigurationManaging,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         featureFlagger: FeatureFlagger,
-        tld: TLD
+        tld: TLD,
+        pinningManager: PinningManager
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.featureFlagger = featureFlagger
         self.tld = tld
+        self.pinningManager = pinningManager
         super.init(coder: coder)
     }
 
@@ -85,6 +87,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let featureFlagger: FeatureFlagger
     private let tld: TLD
+    private let pinningManager: PinningManager
 
     lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
 
@@ -410,10 +413,12 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
     public func secureVaultManager(_: SecureVaultManager, didRequestRuntimeConfigurationForDomain domain: String, completionHandler: @escaping (String?) -> Void) {
         let isGPCEnabled = webTrackingProtectionPreferences.isGPCEnabled
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
         let properties = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                                 sessionKey: topAutofillUserScript?.sessionKey ?? "",
                                                 messageSecret: topAutofillUserScript?.messageSecret ?? "",
-                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig))
+                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig),
+                                                themeVariant: themeVariant)
 
         do {
             let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
@@ -433,6 +438,6 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true, onFinished: onFinished, onCancelled: onCancelled)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true, onFinished: onFinished, onCancelled: onCancelled)
     }
 }

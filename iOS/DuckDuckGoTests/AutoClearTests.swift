@@ -28,41 +28,38 @@ class AutoClearTests: XCTestCase {
     class MockFireExecutor: FireExecuting {
         
         var burnCallCount = 0
-        var burnOptions: FireOptions?
+        var burnRequest: FireRequest?
         var burnApplicationState: DataStoreWarmup.ApplicationState?
-        var burnFireContext: FireContext?
         
         weak var delegate: FireExecutorDelegate?
         
-        func prepare(for options: FireOptions) { }
+        func prepare(for request: FireRequest) { }
         
-        func burn(options: FireOptions,
-                  applicationState: DataStoreWarmup.ApplicationState,
-                  fireContext: FireContext) async {
+        func burn(request: FireRequest,
+                  applicationState: DataStoreWarmup.ApplicationState) async {
             burnCallCount += 1
-            burnOptions = options
+            burnRequest = request
             burnApplicationState = applicationState
-            burnFireContext = fireContext
         }
     }
     
     private var mockFireExecutor: MockFireExecutor!
     private var appSettings: AppSettingsMock!
-    private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockDataClearingCapability: MockDataClearingCapability!
 
     override func setUp() {
         super.setUp()
         mockFireExecutor = MockFireExecutor()
         appSettings = AppSettingsMock()
-        mockFeatureFlagger = MockFeatureFlagger()
+        mockDataClearingCapability = MockDataClearingCapability()
         // Enable enhanced UI by default to prevent auto-injection of AI chats
-        mockFeatureFlagger.enabledFeatureFlags = [.enhancedDataClearingSettings]
+        mockDataClearingCapability.isEnhancedDataClearingEnabled = true
     }
 
     override func tearDown() {
         mockFireExecutor = nil
         appSettings = nil
-        mockFeatureFlagger = nil
+        mockDataClearingCapability = nil
         super.tearDown()
     }
 
@@ -70,7 +67,7 @@ class AutoClearTests: XCTestCase {
     //  MainViewController to ensure that tabs are removed before the data is cleared.
 
     func testWhenTimingIsSetToTerminationThenOnlyRestartClearsData() async {
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
 
         appSettings.autoClearAction = .data
         appSettings.autoClearTiming = .termination
@@ -82,7 +79,7 @@ class AutoClearTests: XCTestCase {
     }
     
     func testWhenDesiredTimingIsSetThenDataIsClearedOnceTimeHasElapsed() async {
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
 
         appSettings.autoClearAction = .data
         
@@ -105,7 +102,7 @@ class AutoClearTests: XCTestCase {
     
     func testClearDataIfEnabledCallsWorkerBurn() async {
         // Given
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
         appSettings.autoClearAction = .data
         appSettings.autoClearTiming = .delay15min
         
@@ -115,12 +112,12 @@ class AutoClearTests: XCTestCase {
         // Then
         XCTAssertEqual(mockFireExecutor.burnCallCount, 1)
         XCTAssertEqual(mockFireExecutor.burnApplicationState, .active)
-        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnForeground)
+        XCTAssertEqual(mockFireExecutor.burnRequest?.trigger, .autoClearOnForeground)
     }
     
     func testClearDataIfEnabledWithLaunchingUsesAutoClearOnLaunchContext() async {
         // Given
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
         appSettings.autoClearAction = .data
         appSettings.autoClearTiming = .delay15min
         
@@ -128,12 +125,12 @@ class AutoClearTests: XCTestCase {
         await logic.clearDataIfEnabled(launching: true, applicationState: .active)
 
         // Then
-        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnLaunch)
+        XCTAssertEqual(mockFireExecutor.burnRequest?.trigger, .autoClearOnLaunch)
     }
     
     func testClearDataIfEnabledDoesNothingWhenAutoClearDisabled() async {
         // Given
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
         appSettings.autoClearAction = [] // Disabled
         
         // When
@@ -147,7 +144,7 @@ class AutoClearTests: XCTestCase {
     
     func testClearDataDueToTimeExpiredCallsWorkerBurn() async {
         // Given
-        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, featureFlagger: mockFeatureFlagger)
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings, dataClearingCapability: mockDataClearingCapability)
         appSettings.autoClearAction = .data
         appSettings.autoClearTiming = .delay15min
         
@@ -156,7 +153,7 @@ class AutoClearTests: XCTestCase {
 
         // Then
         XCTAssertEqual(mockFireExecutor.burnCallCount, 1)
-        XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearOnForeground)
+        XCTAssertEqual(mockFireExecutor.burnRequest?.trigger, .autoClearOnForeground)
     }
 
 }

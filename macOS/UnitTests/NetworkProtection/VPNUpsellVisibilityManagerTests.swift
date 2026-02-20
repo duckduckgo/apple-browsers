@@ -23,12 +23,13 @@ import BrowserServicesKit
 import SubscriptionTestingUtilities
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser
+import NetworkingTestingUtils
 
 @MainActor
 final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     var sut: VPNUpsellVisibilityManager!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     fileprivate var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
     var firedPixels: [SubscriptionPixel] = []
@@ -37,7 +38,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
@@ -61,15 +62,23 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenUserIsEligible_ItShowsTheUpsellOnSecondLaunch() {
         // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
 
         // Then
         XCTAssertEqual(sut.state, .visible)
     }
 
+    func testWhenOnboardingIsPending_ItDoesNotShowTheUpsell() {
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: false)
+
+        // Then
+        XCTAssertEqual(sut.state, .waitingForConditions)
+    }
+
     func testWhenUserIsIneligible_ItDoesNotShowTheUpsell() {
         // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: false)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: false, isOnboardingFinished: false)
 
         // Then
         XCTAssertEqual(sut.state, .notEligible)
@@ -77,10 +86,10 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenUserIsAuthenticated_ItDoesNotShowTheUpsell() {
         // Given
-        mockSubscriptionManager.accessTokenResult = .success("mock-token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
 
         // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: false)
 
         // Then
         XCTAssertEqual(sut.state, .notEligible)
@@ -90,7 +99,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         // Given
         let expectation = XCTestExpectation(description: "Pixel should be fired")
         // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true) { [weak self] pixel in
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true) { [weak self] pixel in
             self?.firedPixels.append(pixel)
             if pixel.name == SubscriptionPixel.subscriptionToolbarButtonShown.name {
                 expectation.fulfill()
@@ -108,7 +117,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenUserManuallyUnpinsButton_ItDismissesTheUpsell() {
         // Given
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
 
         let expectation = XCTestExpectation(description: "State should change to dismissed")
 
@@ -131,7 +140,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenUserPinsButton_ItStoresFirstPinnedDate() {
         // Given
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
 
         // When
         sut.handlePinningChange(isPinned: true)
@@ -144,7 +153,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         // Given
         let originalDate = Date().addingTimeInterval(-3600)
         mockPersistor.vpnUpsellFirstPinnedDate = originalDate
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
 
         // When
         sut.handlePinningChange(isPinned: true)
@@ -159,7 +168,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockPersistor.vpnUpsellFirstPinnedDate = eightDaysAgo
 
         // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, autoDismissDays: 7)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true, autoDismissDays: 7)
 
         // Then
         XCTAssertEqual(sut.state, .dismissed)
@@ -171,7 +180,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockPersistor.vpnUpsellFirstPinnedDate = sixDaysAgo
 
         // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, autoDismissDays: 7)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true, autoDismissDays: 7)
 
         // Then
         XCTAssertEqual(sut.state, .visible)
@@ -182,7 +191,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockPersistor.vpnUpsellDismissed = true
 
         // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
 
         // Then
         XCTAssertEqual(sut.state, .dismissed)
@@ -190,7 +199,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenUserBecomesAuthenticated_ItDoesNotShowTheUpsell() {
         // Given
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
 
         let expectation = XCTestExpectation(description: "State should change to notEligible")
 
@@ -203,7 +212,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             .store(in: &cancellables)
 
         // When
-        mockSubscriptionManager.accessTokenResult = .success("mock-token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         NotificationCenter.default.post(name: .entitlementsDidChange, object: nil)
 
         // Then
@@ -221,7 +230,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         // When
         sut = VPNUpsellVisibilityManager(
-            isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -231,7 +239,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             pixelHandler: { _ in }
         )
 
-        sut.setup(isFirstLaunch: true)
+        sut.setup(isFirstLaunch: true, isOnboardingFinished: false)
 
         sut.$state
             .sink { state in
@@ -252,7 +260,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockDefaultBrowserProvider.isDefault = true
 
         sut = VPNUpsellVisibilityManager(
-            isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -262,7 +269,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             pixelHandler: { _ in }
         )
 
-        sut.setup(isFirstLaunch: true)
+        sut.setup(isFirstLaunch: true, isOnboardingFinished: false)
 
         let expectation = XCTestExpectation(description: "State should transition to waitingForTimer")
 
@@ -289,7 +296,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockDefaultBrowserProvider.isDefault = true
 
         sut = VPNUpsellVisibilityManager(
-            isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -299,7 +305,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             pixelHandler: { _ in }
         )
 
-        sut.setup(isFirstLaunch: true)
+        sut.setup(isFirstLaunch: true, isOnboardingFinished: false)
 
         let expectation = XCTestExpectation(description: "State should transition to visible")
 
@@ -324,10 +330,10 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenUserIsNewButAuthenticated_ItDoesNotShowTheUpsell() {
         // Given
-        mockSubscriptionManager.accessTokenResult = .success("mock-token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
 
         // When
-        sut = createUpsellManager(isFirstLaunch: true, isNewUser: true)
+        sut = createUpsellManager(isFirstLaunch: true, isNewUser: true, isOnboardingFinished: false)
 
         // Then
         XCTAssertEqual(sut.state, .notEligible)
@@ -335,7 +341,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
     func testWhenUserIsNotNew_ItDoesNotShowTheUpsell() {
         // When
-        sut = createUpsellManager(isFirstLaunch: true, isNewUser: false)
+        sut = createUpsellManager(isFirstLaunch: true, isNewUser: false, isOnboardingFinished: false)
 
         // Then
         XCTAssertEqual(sut.state, .notEligible)
@@ -347,7 +353,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockDefaultBrowserProvider.isDefault = true
 
         sut = VPNUpsellVisibilityManager(
-            isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -357,7 +362,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             pixelHandler: { _ in }
         )
 
-        sut.setup(isFirstLaunch: true)
+        sut.setup(isFirstLaunch: true, isOnboardingFinished: false)
 
         let expectation = XCTestExpectation(description: "State should transition to visible")
 
@@ -383,11 +388,11 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     func testWhenUserCannotPurchaseSubscription_ItDoesNotShowTheUpsell() {
         // Given
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
         XCTAssertEqual(sut.state, .notEligible)
 
         // When
-        mockSubscriptionManager.hasAppStoreProductsAvailableSubject.send(false)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
 
         // Then
         XCTAssertEqual(sut.state, .notEligible)
@@ -396,11 +401,11 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     func testWhenUserCanPurchaseSubscription_ItShowsTheUpsell() {
         // Given
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
         XCTAssertEqual(sut.state, .notEligible)
 
         // When
-        mockSubscriptionManager.hasAppStoreProductsAvailableSubject.send(true)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
 
         // Then
         XCTAssertEqual(sut.state, .visible)
@@ -413,11 +418,11 @@ extension VPNUpsellVisibilityManagerTests {
     private func createUpsellManager(
         isFirstLaunch: Bool,
         isNewUser: Bool,
+        isOnboardingFinished: Bool,
         autoDismissDays: Int = 7,
         pixelHandler: @escaping (SubscriptionPixel) -> Void = { _ in }
     ) -> VPNUpsellVisibilityManager {
         let manager = VPNUpsellVisibilityManager(
-            isFirstLaunch: isFirstLaunch,
             isNewUser: isNewUser,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -428,7 +433,7 @@ extension VPNUpsellVisibilityManagerTests {
             pixelHandler: pixelHandler
         )
 
-        manager.setup(isFirstLaunch: isFirstLaunch)
+        manager.setup(isFirstLaunch: isFirstLaunch, isOnboardingFinished: isOnboardingFinished)
 
         return manager
     }

@@ -38,6 +38,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var setBookmarkBarCalled = false
     var setSessionRestoreCalled = false
     var setHomeButtonPositionCalled = false
+    var setDuckAiInAddressBarCalled = false
     var onboardingStartedCalled = false
     var reportExceptionCalled = false
     var exceptionParams: [String: String] = [:]
@@ -45,6 +46,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var bookmarkBarVisible: Bool?
     var homeButtonVisible: Bool?
     var sessionRestoreEnabled: Bool?
+    var duckAiInAddressBarEnabled: Bool?
 
     func onboardingStarted() {
         onboardingStartedCalled = true
@@ -84,6 +86,11 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     func setHomeButtonPosition(enabled: Bool) {
         setHomeButtonPositionCalled = true
         homeButtonVisible = enabled
+    }
+
+    func setDuckAiInAddressBar(enabled: Bool) {
+        setDuckAiInAddressBarCalled = true
+        duckAiInAddressBarEnabled = enabled
     }
 
     func stepCompleted(step: OnboardingSteps) {

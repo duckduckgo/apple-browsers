@@ -2,6 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Tab und dessen Daten gelöscht</string>
+			<key>other</key>
+			<string>%1$d Tabs und deren Daten gelöscht</string>
+		</dict>
+	</dict>
 	<key>fire.confirmation.data.subtitle.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -161,7 +177,7 @@ Ich habe sie blockiert!
 	<key>omnibar.notification.trackers-blocked</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@trackers@</string>
+		<string>%1$#@trackers@</string>
 		<key>trackers</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -642,6 +658,22 @@ Ich habe sie blockiert!
 			<string>%1$d Website vom Löschen ausgeschlossen</string>
 			<key>other</key>
 			<string>%1$d Websites vom Löschen ausgeschlossen</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Tracker blockiert</string>
+			<key>other</key>
+			<string>%2$@ Tracker blockiert</string>
 		</dict>
 	</dict>
 </dict>

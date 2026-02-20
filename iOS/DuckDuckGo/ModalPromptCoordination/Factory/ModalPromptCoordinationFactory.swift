@@ -45,7 +45,9 @@ enum ModalPromptCoordinationFactory {
             remoteMessageActionHandler: dependency.remoteMessagingActionHandler,
             isIPad: isIPad,
             pixelReporter: dependency.remoteMessagingPixelReporter,
-            userScriptsDependencies: dependency.userScriptsDependencies
+            userScriptsDependencies: dependency.userScriptsDependencies,
+            imageLoader: dependency.remoteMessagingImageLoader,
+            featureFlagger: dependency.featureFlagger
         )
 
         return ModalPromptCoordinationService(
@@ -106,6 +108,7 @@ extension ModalPromptCoordinationFactory {
         let whatsNewRepository: WhatsNewMessageRepository
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting
+        let remoteMessagingImageLoader: RemoteMessagingImageLoading
         let appSettings: AppSettings
         let aiChatSettings: AIChatSettingsProvider
         let experimentalAIChatManager: ExperimentalAIChatManager

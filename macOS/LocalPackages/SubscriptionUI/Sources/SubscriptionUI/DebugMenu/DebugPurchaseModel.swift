@@ -23,25 +23,25 @@ import Subscription
 @available(macOS 12.0, *)
 public final class DebugPurchaseModelV2: ObservableObject {
 
-    private var purchaseManager: any StorePurchaseManagerV2
-    let appStorePurchaseFlow: DefaultAppStorePurchaseFlowV2
+    private var purchaseManager: any StorePurchaseManager
+    let appStorePurchaseFlow: DefaultAppStorePurchaseFlow
 
     @Published var subscriptions: [SubscriptionRowModel]
 
-    init(manager: any StorePurchaseManagerV2,
+    init(manager: any StorePurchaseManager,
          subscriptions: [SubscriptionRowModel] = [],
-         appStorePurchaseFlow: DefaultAppStorePurchaseFlowV2) {
+         appStorePurchaseFlow: DefaultAppStorePurchaseFlow) {
         self.purchaseManager = manager
         self.subscriptions = subscriptions
         self.appStorePurchaseFlow = appStorePurchaseFlow
     }
 
     @MainActor
-    func purchase(_ product: Product) {
+    func purchase(_ product: Product, includeProTier: Bool = true) {
         print("Attempting purchase: \(product.displayName)")
 
         Task {
-            await appStorePurchaseFlow.purchaseSubscription(with: product.id)
+            await appStorePurchaseFlow.purchaseSubscription(with: product.id, includeProTier: includeProTier)
         }
     }
 }

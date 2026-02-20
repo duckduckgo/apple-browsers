@@ -241,8 +241,12 @@ final class SwitchBarHandler: SwitchBarHandling {
     private func updateButtonState(currentText: String) {
         if !currentText.isEmpty {
             buttonState = .clearOnly
-        } else if voiceSearchHelper.isVoiceSearchEnabled && !isTopBarPosition {
-            buttonState = .voiceOnly
+        } else if voiceSearchHelper.isVoiceSearchEnabled {
+            if isUsingFadeOutAnimation || !isTopBarPosition {
+                buttonState = .voiceOnly
+            } else {
+                buttonState = .noButtons
+            }
         } else {
             buttonState = .noButtons
         }

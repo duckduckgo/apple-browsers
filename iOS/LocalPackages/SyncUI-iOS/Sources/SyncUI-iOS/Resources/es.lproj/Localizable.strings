@@ -37,6 +37,9 @@
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Esto crea una copia de seguridad encriptada de tus marcadores y datos de autocompletado en el servidor seguro de DuckDuckGo que se puede sincronizar con tus otros dispositivos.";
 
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Esto crea una copia de seguridad encriptada de tus marcadores guardados, contraseñas, tarjetas de crédito y chats de Duck.ai en el servidor seguro de DuckDuckGo, que se puede sincronizar con tus otros dispositivos.";
+
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "La clave de encriptación solo se almacena en tu dispositivo, DuckDuckGo no puede acceder a ella.";
 
@@ -141,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Tus marcadores y datos de auutorrelleno se están preparando para sincronizar. Esto solo debería tardar un momento.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Tus marcadores, contraseñas y chats de Duck.ai se están preparando para sincronizarse. Esto solo debería tardar un momento.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Conectando...";
@@ -289,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Sincroniza de forma segura los marcadores y las contraseñas entre tus dispositivos.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Sincroniza de forma segura los marcadores, los datos de autocompletado y los chats de Duck.ai entre tus dispositivos.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Iniciar sincronización";
 
@@ -303,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Desactivar sincronización y copia de seguridad...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Los marcadores, los datos de autorelleno y los chats de Duck.ai están sincronizados entre tus dispositivos.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Sincronización activada";

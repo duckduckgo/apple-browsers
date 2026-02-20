@@ -28,8 +28,6 @@ struct SubscriptionPageFeatureFlagAdapterTests {
     @Test("Flag mapping correctness", arguments: [
         (SubscriptionPageFeatureFlag.paidAIChat, FeatureFlag.paidAIChat, true),
         (SubscriptionPageFeatureFlag.paidAIChat, FeatureFlag.paidAIChat, false),
-        (SubscriptionPageFeatureFlag.tierMessaging, FeatureFlag.tierMessagingEnabled, true),
-        (SubscriptionPageFeatureFlag.tierMessaging, FeatureFlag.tierMessagingEnabled, false),
         (SubscriptionPageFeatureFlag.proTierPurchase, FeatureFlag.allowProTierPurchase, true),
         (SubscriptionPageFeatureFlag.proTierPurchase, FeatureFlag.allowProTierPurchase, false),
         (SubscriptionPageFeatureFlag.supportsAlternateStripePaymentFlow, FeatureFlag.supportsAlternateStripePaymentFlow, true),
@@ -59,7 +57,6 @@ struct SubscriptionPageFeatureFlagAdapterTests {
 
         // Only paidAIChat should be enabled
         #expect(adapter.isEnabled(.paidAIChat) == true)
-        #expect(adapter.isEnabled(.tierMessaging) == false)
         #expect(adapter.isEnabled(.proTierPurchase) == false)
         #expect(adapter.isEnabled(.supportsAlternateStripePaymentFlow) == false)
     }
@@ -69,14 +66,12 @@ struct SubscriptionPageFeatureFlagAdapterTests {
         let mockFlagger = MockFeatureFlagger()
         mockFlagger.enabledFeatureFlags = [
             .paidAIChat,
-            .tierMessagingEnabled,
             .allowProTierPurchase
         ]
 
         let adapter = SubscriptionPageFeatureFlagAdapter(featureFlagger: mockFlagger)
 
         #expect(adapter.isEnabled(.paidAIChat) == true)
-        #expect(adapter.isEnabled(.tierMessaging) == true)
         #expect(adapter.isEnabled(.proTierPurchase) == true)
         #expect(adapter.isEnabled(.supportsAlternateStripePaymentFlow) == false)
     }

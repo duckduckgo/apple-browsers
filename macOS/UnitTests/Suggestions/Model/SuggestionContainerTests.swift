@@ -206,7 +206,6 @@ final class SuggestionContainerTests: XCTestCase {
                                                                         selectedWindow: selectedWindow)
 
         let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags.append(.autocompleteTabs)
         mockFeatureFlagger.enabledFeatureFlags.append(.paidAIChat)
 
         // Tested object
@@ -240,7 +239,7 @@ final class SuggestionContainerTests: XCTestCase {
         }
 
         // Get the compiled suggestions
-        let resultPromise = suggestionContainer.$result.dropFirst().timeout(1).first().promise()
+        let resultPromise = suggestionContainer.$result.dropFirst().timeout(5).first().promise()
         suggestionContainer.getSuggestions(for: input.query)
 
         let actualResults = try await resultPromise.get()

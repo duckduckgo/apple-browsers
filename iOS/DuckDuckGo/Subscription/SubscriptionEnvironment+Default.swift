@@ -23,7 +23,7 @@ import Subscription
 extension SubscriptionEnvironment {
 
     public static var `default`: SubscriptionEnvironment {
-#if ALPHA || DEBUG
+#if ALPHA || EXPERIMENTAL || DEBUG
         let environment: SubscriptionEnvironment.ServiceEnvironment = .staging
 #else
         let environment: SubscriptionEnvironment.ServiceEnvironment = .production
@@ -32,7 +32,7 @@ extension SubscriptionEnvironment {
     }
 }
 
-extension DefaultSubscriptionManagerV2 {
+extension DefaultSubscriptionManager {
 
     static public func getSavedOrDefaultEnvironment(userDefaults: UserDefaults) -> SubscriptionEnvironment {
         if let savedEnvironment = loadEnvironmentFrom(userDefaults: userDefaults) {

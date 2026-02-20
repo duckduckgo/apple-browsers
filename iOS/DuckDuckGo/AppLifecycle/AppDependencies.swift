@@ -29,6 +29,7 @@ struct AppDependencies {
     let featureFlagger: FeatureFlagger
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let appSettings: AppSettings
+    let backgroundTaskManager: BackgroundTaskManager
 
 }
 

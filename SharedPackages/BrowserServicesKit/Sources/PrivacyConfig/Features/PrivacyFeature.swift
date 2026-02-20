@@ -20,7 +20,6 @@ import Foundation
 
 /// Features whose `rawValue` should be the key to access their corresponding `PrivacyConfigurationData.PrivacyFeature` object
 public enum PrivacyFeature: String {
-    case breakageReporting
     case contentBlocking
     case duckPlayer
     case fingerprintingTemporaryStorage
@@ -46,8 +45,8 @@ public enum PrivacyFeature: String {
     case dbp
     case sync
     case privacyDashboard
+    case updates
     case updatesWontAutomaticallyRestartApp
-    case performanceMetrics
     case privacyPro
     case sslCertificates
     case toggleReports
@@ -58,7 +57,6 @@ public enum PrivacyFeature: String {
     case syncPromotion
     case autofillSurveys
     case marketplaceAdPostback
-    case autocompleteTabs
     case networkProtection
     case aiChat
     case contextualOnboarding
@@ -67,6 +65,7 @@ public enum PrivacyFeature: String {
     case forceOldAppDelegate
     case htmlHistoryPage
     case tabManager
+    case tabSwitcherTrackerCount
     case webViewStateRestoration
     case experimentalTheming
     case setAsDefaultAndAddToDock
@@ -84,10 +83,11 @@ public enum PrivacyFeature: String {
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport
-    case duckAiDataClearing
+    case duckAiChatHistory
     case serp
     case popupBlocking
     case combinedPermissionView
+    case pageContext
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -134,6 +134,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
     case appStoreUpdateFlow
 
+    /// Warn before quit confirmation overlay
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
+    case warnBeforeQuit
+
     /// Feature flag for a macOS Tahoe fix only
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
@@ -141,14 +145,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Tab closing event recreation feature flag (failsafe for removing private API)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
-
-    /// Feature Flag for the Tab Spinner
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
-    case tabProgressIndicator
-
-    /// Feature flag for Themes
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
-    case themes
 
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
@@ -161,6 +157,29 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
+
+    /// Whether the wide event POST endpoint is enabled
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
+    case wideEventPostEndpoint
+
+    /// Memory Pressure Reporter
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
+    case memoryPressureReporting
+
+    /// Memory Usage Reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
+    case memoryUsageReporting
+
+    /// Failsafe flag to bring back keys sorting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
+
+    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
+    case crashCollectionLimitCallStackTreeDepth
+
+    /// Ctrl+click compatibility fix to preserve right click behavior
+    case controlClickFix
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -186,14 +205,44 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
     case productTelemetrySurfaceUsage
 
-    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211661206210892?focus=true
-    case experimentalBrowsingMenu
-
     ///  https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
     case appRatingPrompt
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1212238464901412?focus=true
     case showWhatsNewPromptOnDemand
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
+    case genericBackgroundTask
+
+    // https://app.asana.com/1/137249556945/project/392891325557410/task/1211597475706631?focus=true
+    case webViewFlashPrevention
+
+    /// Whether the wide event POST endpoint is enabled
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
+    case wideEventPostEndpoint
+
+    /// Failsafe flag to bring back keys sorting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
+
+    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
+    case crashCollectionLimitCallStackTreeDepth
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260
+    case browsingMenuSheetEnabledByDefault
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
+    case enhancedDataClearingSettings
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091
+    case burnSingleTab
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
+    case showNTPAfterIdleReturn
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
+    case suppressTrackerAnimationOnColdStart
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -232,6 +281,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
+    case onboardingExperiment
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -248,6 +298,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case foregroundRunningWhenDashboardOpen
     case clickActionDelayReductionOptimization
     case pirRollout
+    case goToMarket
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -282,9 +333,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
-    /// Append the kbg disable parameter only when Duck AI features are not shown
-    case duckAISearchParameter
-
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
 
@@ -309,8 +357,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
 
+    /// Enables the omnibar onboarding for AI Chat
+    case omnibarOnboarding
+
     /// Enables the omnibar cluster for AI Chat
     case omnibarCluster
+
+    /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
+    case omnibarTools
 
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
@@ -320,6 +374,20 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
+
+    /// Enables ATB measurement for Duck.ai usage on iOS
+    case aiChatAtb
+
+    /// Controls whether automatic page context attachment defaults to enabled
+    case autoAttachContextByDefault
+
+    /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
+    case iPadDuckaiOnTab
+
+    /// Controls deletion of Synced chats
+    case supportsSyncChatsDeletion
+
+    case sidebarResizable
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -338,6 +406,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to display autoconsent stats on New Tab Page
     case autoconsentStats
+
+    /// Controls whether the Next Steps List widget is enabled on New Tab Page
+    case nextStepsListWidget
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -414,8 +485,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
-    case tierMessagingEnabled
     case allowProTierPurchase
+    case freeTrialConversionWideEvent
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -437,7 +508,6 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
-    case sitesSection
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
@@ -538,6 +608,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case dataImportWideEventMeasurement
     case newDataImportExperience
+    case dataImportSummarySyncPromotion
 }
 
 public enum SERPSubfeature: String, PrivacySubfeature {
@@ -567,4 +638,13 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
 
     /// Show popup permission button in inactive state when temporary allowance is active
     case popupPermissionButtonPersistence
+}
+
+public enum UpdatesSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .updates
+    }
+
+    /// Simplified update flow without expiration logic
+    case simplifiedFlow
 }

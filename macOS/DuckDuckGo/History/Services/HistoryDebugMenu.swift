@@ -24,20 +24,14 @@ final class HistoryDebugMenu: NSMenu {
 
     let historyCoordinator: HistoryCoordinating
     let featureFlagger: FeatureFlagger
-    let resetMenuItem: NSMenuItem
-    let showMenuItem: NSMenuItem
 
     private let environmentMenu = NSMenu()
 
     init(historyCoordinator: HistoryCoordinating, featureFlagger: FeatureFlagger) {
         self.historyCoordinator = historyCoordinator
         self.featureFlagger = featureFlagger
-        resetMenuItem = NSMenuItem(title: "Reset History View Onboarding", action: #selector(resetHistoryViewOnboarding))
-        showMenuItem = NSMenuItem(title: "Show History View Onboarding", action: #selector(showHistoryViewOnboarding))
 
         super.init(title: "")
-        resetMenuItem.target = self
-        showMenuItem.target = self
 
         buildItems {
             NSMenuItem(
@@ -60,8 +54,6 @@ final class HistoryDebugMenu: NSMenu {
             ).withAccessibilityIdentifier("HistoryDebugMenu.populate100slow")
 
             NSMenuItem.separator()
-            resetMenuItem
-            showMenuItem
         }
     }
 
@@ -98,20 +90,6 @@ final class HistoryDebugMenu: NSMenu {
                 visitsPerDay = 0
             }
         }
-    }
-
-    @objc func resetHistoryViewOnboarding() {
-        let persistor = UserDefaultsHistoryViewOnboardingViewSettingsPersistor()
-        persistor.didShowOnboardingView = false
-    }
-
-    @MainActor
-    @objc func showHistoryViewOnboarding() {
-        resetHistoryViewOnboarding()
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?
-            .mainViewController
-            .navigationBarViewController
-            .presentHistoryViewOnboardingIfNeeded(force: true)
     }
 
     enum FakeURLsPool {

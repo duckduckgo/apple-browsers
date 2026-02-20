@@ -32,17 +32,17 @@ final class WideEventServiceTests: XCTestCase {
     private var sut: WideEventService!
     private var mockWideEvent: WideEventMock!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mockSubscriptionBridge: SubscriptionAuthV1toV2BridgeMock!
+    private var mockSubscriptionManager: SubscriptionManagerMock!
 
     override func setUp() {
         super.setUp()
         mockWideEvent = WideEventMock()
         mockFeatureFlagger = MockFeatureFlagger()
-        mockSubscriptionBridge = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         sut = WideEventService(
             wideEvent: mockWideEvent,
             featureFlagger: mockFeatureFlagger,
-            subscriptionBridge: mockSubscriptionBridge
+            subscriptionManager: mockSubscriptionManager
         )
     }
 
@@ -50,7 +50,7 @@ final class WideEventServiceTests: XCTestCase {
         sut = nil
         mockWideEvent = nil
         mockFeatureFlagger = nil
-        mockSubscriptionBridge = nil
+        mockSubscriptionManager = nil
         super.tearDown()
     }
 
@@ -87,7 +87,7 @@ final class WideEventServiceTests: XCTestCase {
     func test_processSubscriptionPurchasePixels_inProgressWithEntitlements_completesWithSuccessAndDelayedActivationReason() async {
         let data = makeInProgressPurchaseDataWithoutEnd()
         mockWideEvent.started.append(data)
-        mockSubscriptionBridge.subscriptionFeatures = [.networkProtection]
+        mockSubscriptionManager.resultFeatures = [.networkProtection]
 
         await sut.sendPendingEvents()
 
@@ -104,7 +104,7 @@ final class WideEventServiceTests: XCTestCase {
     func test_processSubscriptionPurchasePixels_inProgressWithoutEntitlementsWithinTimeout_leavesPending() async {
         let data = makeInProgressPurchaseDataWithoutEnd()
         mockWideEvent.started.append(data)
-        mockSubscriptionBridge.subscriptionFeatures = []
+        mockSubscriptionManager.resultFeatures = []
 
         await sut.sendPendingEvents()
 
@@ -116,7 +116,7 @@ final class WideEventServiceTests: XCTestCase {
     func test_processSubscriptionPurchasePixels_inProgressWithoutEntitlementsPastTimeout_completesWithUnknownAndMissingEntitlementsReason() async {
         let data = makeInProgressPurchaseDataWithoutEnd(startDate: Date().addingTimeInterval(-TimeInterval.hours(5)))
         mockWideEvent.started.append(data)
-        mockSubscriptionBridge.subscriptionFeatures = []
+        mockSubscriptionManager.resultFeatures = []
 
         await sut.sendPendingEvents()
 
@@ -237,7 +237,7 @@ final class WideEventServiceTests: XCTestCase {
     // MARK: - checkForCurrentEntitlements - Helper Method
 
     func test_checkForCurrentEntitlements_subscriptionBridgeReturnsNonEmptyEntitlements_returnsTrue() async {
-        mockSubscriptionBridge.subscriptionFeatures = [.networkProtection, .dataBrokerProtection]
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection]
         let data = makeInProgressPurchaseDataWithoutEnd()
         mockWideEvent.started.append(data)
 
@@ -253,7 +253,7 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_checkForCurrentEntitlements_subscriptionBridgeReturnsEmptyArray_returnsFalse() async {
-        mockSubscriptionBridge.subscriptionFeatures = []
+        mockSubscriptionManager.resultFeatures = []
         let data = makeInProgressPurchaseDataWithoutEnd()
         mockWideEvent.started.append(data)
 
@@ -263,7 +263,7 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_checkForCurrentEntitlements_subscriptionBridgeThrowsError_returnsFalse() async {
-        mockSubscriptionBridge.accessTokenResult = .failure(NSError(domain: "test", code: 1))
+        mockSubscriptionManager.resultTokenContainer = nil
         let data = makeInProgressPurchaseDataWithoutEnd()
         mockWideEvent.started.append(data)
 

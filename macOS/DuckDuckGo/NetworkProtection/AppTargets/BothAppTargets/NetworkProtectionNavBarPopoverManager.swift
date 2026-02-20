@@ -68,15 +68,19 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
     private let featureFlagger = NSApp.delegateTyped.featureFlagger
     private var cancellables = Set<AnyCancellable>()
 
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
+
     init(ipcClient: VPNControllerXPCClient,
          vpnUninstaller: VPNUninstalling,
          vpnUIPresenting: VPNUIPresenting,
-         proxySettings: TransparentProxySettings = .init(defaults: .netP)) {
+         proxySettings: TransparentProxySettings = .init(defaults: .netP),
+         freeTrialConversionService: FreeTrialConversionInstrumentationService) {
 
         self.ipcClient = ipcClient
         self.vpnUninstaller = vpnUninstaller
         self.vpnUIPresenting = vpnUIPresenting
         self.proxySettings = proxySettings
+        self.freeTrialConversionService = freeTrialConversionService
 
         let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: Application.appDelegate.windowControllersManager)
 
@@ -160,7 +164,8 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
         let popover: NSPopover = {
             let vpnAppState = VPNAppState(defaults: .netP)
             let vpnSettings = VPNSettings(defaults: .netP)
-            let controller = NetworkProtectionIPCTunnelController(ipcClient: ipcClient)
+            let featureGatekeeper = DefaultVPNFeatureGatekeeper(vpnUninstaller: vpnUninstaller, subscriptionManager: Application.appDelegate.subscriptionManager)
+            let controller = NetworkProtectionIPCTunnelController(featureGatekeeper: featureGatekeeper, ipcClient: ipcClient)
 
             let statusReporter = DefaultNetworkProtectionStatusReporter(
                 vpnEnabledObserver: ipcClient.ipcVPNEnabledObserver,
@@ -179,7 +184,8 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 vpnURLEventHandler: vpnURLEventHandler,
                 tunnelController: controller,
                 proxySettings: proxySettings,
-                vpnAppState: vpnAppState)
+                vpnAppState: vpnAppState,
+                freeTrialConversionService: freeTrialConversionService)
 
             let connectionStatusPublisher = CurrentValuePublisher(
                 initialValue: statusReporter.statusObserver.recentValue,

@@ -1,8 +1,29 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
+"-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
+
+/* No comment provided by engineer. */
+"-ff.<flagRawValue> true/false" = "-ff.<flagRawValue> true/false";
+
+/* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@ items" = "%@ items";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"%@s" = "%@s";
 
 /* No comment provided by engineer. */
 "Account" = "tiliäsi";
@@ -1043,13 +1064,25 @@
 "close.all.tabs" = "Sulje kaikki välilehdet";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohortti: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
+
+/* No comment provided by engineer. */
+"Config Rollout:" = "Config Rollout:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Määritys";
 
 /* No comment provided by engineer. */
 "Confirm" = "Vahvista";
+
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontekstuaalinen perehdytys";
+
+/* No comment provided by engineer. */
+"Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Ohita";
@@ -1170,6 +1203,12 @@
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "MUKAUTETTU SOLUN SISÄLTÖ";
+
+/* No comment provided by engineer. */
+"Custom Duration" = "Custom Duration";
+
+/* No comment provided by engineer. */
+"Custom Session Timer Duration" = "Custom Session Timer Duration";
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Mukautettu URL-osoite: %@";
@@ -1408,8 +1447,29 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "YouTuben viimeaikaiset muutokset ovat vaikuttaneet Duck Playerin toimintaan. Pyrimme korjaamaan nämä ongelmat. Kiitos ymmärryksestä.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Liitä sivun sisältö";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Lähetetty viestisi mukana Duck.ai:lle";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai voi nyt auttaa vastaamaan katselemaasi sivuun liittyviin kysymyksiin.\n\nSivun sisältö sisällytetään vain, kun liität sen. Voit muuttaa tätä milloin tahansa asetuksista.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Selvä";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Kysy tästä sivusta";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Näytä asetukset";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Liitä sivun sisältö";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Yhteenveto tästä sivusta";
@@ -1670,7 +1730,10 @@
 "empty.search" = "Ei hakutuloksia";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Rekisteröitynyt: %@";
+"Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1706,6 +1769,12 @@
 "error.unknown.try.again" = "Tapahtui tuntematon virhe";
 
 /* No comment provided by engineer. */
+"Experiment:" = "Experiment:";
+
+/* No comment provided by engineer. */
+"Experiment: %@" = "Experiment: %@";
+
+/* No comment provided by engineer. */
 "External ID: %@" = "Ulkoinen tunnus: %@";
 
 /* No comment provided by engineer. */
@@ -1730,7 +1799,7 @@
 "favorites.settings.mobile-only" = "Vain mobiilisuosikit";
 
 /* No comment provided by engineer. */
-"Feature: %@" = "Ominaisuus: %@";
+"Feature Flag:" = "Feature Flag:";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Mainosten ja ponnahdusikkunoiden esto";
@@ -2011,6 +2080,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.waterSwirl.name" = "Pyörre";
 
+/* No comment provided by engineer. */
+"Flag: %@" = "Flag: %@";
+
 /* Description text above the Share Link button */
 "get.browser.on-your-desktop-go-to" = "Siirry tietokoneellasi kohtaan:";
 
@@ -2058,6 +2130,12 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Kysy yksityisesti";
+
+/* No comment provided by engineer. */
+"Install Extension" = "Asenna laajennus";
+
+/* No comment provided by engineer. */
+"Installed Extensions (%@)" = "Asennetut laajennukset (%@)";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Sinun on aktivoitava VPN DuckDuckGo-sovelluksessa.";
@@ -2179,6 +2257,15 @@
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "DuckDuckGo-sovellus Mac-laitteelle";
 
+/* No comment provided by engineer. */
+"Maestro Launch Arguments:" = "Maestro Launch Arguments:";
+
+/* No comment provided by engineer. */
+"Maestro: -experiment.uiTestExperiment control|treatment" = "Maestro: -experiment.uiTestExperiment control|treatment";
+
+/* No comment provided by engineer. */
+"Maestro: -ff.%@ true" = "Maestro: -ff.%@ true";
+
 /* Text explaining what happens when Malicious Site Protection is enabled */
 "malicious-site-protection-with-scam.settings.toggle.message" = "Varoita sivustoista, jotka on merkitty huijausten, tietojenkalastelun tai haittaohjelmien johdosta";
 
@@ -2205,6 +2292,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Viestit";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Osoitekenttä-painike";
@@ -2492,6 +2582,12 @@
 "No existing subscription found" = "Olemassa olevaa tilausta ei löytynyt";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
+"No extensions installed" = "Ei asennettuja laajennuksia";
+
+/* No comment provided by engineer. */
 "No Logs" = "Ei lokitietoja";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2598,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Tilauksia ei ole saatavilla";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2873,6 +2972,9 @@
 "prompt.custom.url.scheme.title" = "Avataanko toisessa sovelluksessa?";
 
 /* No comment provided by engineer. */
+"REBRANDED" = "UUDELLEENBRÄNDÄTTY";
+
+/* No comment provided by engineer. */
 "Recent Processing Logs" = "Viimeaikaiset käsittelylokit";
 
 /* No comment provided by engineer. */
@@ -2888,7 +2990,46 @@
 "Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
+"Reset to Default" = "Reset to Default";
+
+/* No comment provided by engineer. */
 "Results" = "Tulokset";
+
+/* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
+"Save" = "Save";
+
+/* No comment provided by engineer. */
+"Scanning..." = "Skannataan...";
+
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Poistetaanko välilehdet ja sivuston tiedot?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Poistetaanko välilehdet, sivuston tiedot ja keskustelut?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Poista kaikki";
+
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Poista tämä keskustelu";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "\"Poista kaikki\" ei poista Duck.ai-keskusteluhistoriaasi.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Poista tämä välilehti";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Tämä peruuttaa käynnissä olevat lataukset.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Luomasi uudet välilehdet voidaan myös poistaa yksitellen.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Sivustotietojen poistaminen voi kirjata sinut ulos tileiltä.";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Hae tai anna osoite";
@@ -2956,6 +3097,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Näytä sivuston osoite kokonaan";
 
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Näytä osoitekentässä";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Haku ja Duck.ai";
 
@@ -2980,11 +3124,14 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist -asetukset";
 
-/* Settings screen cell subtitle for enabling automatic page context */
-"settings.aifeatures.automatic.context.subtitle" = "Lähetä sivun konteksti automaattisesti Duck.ai:lle";
+/* Settings screen cell subtitle for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.subtitle" = "Lähetä sivun sisältö automaattisesti Duck.ai:lle";
 
-/* Settings screen cell title for enabling automatic page context */
-"settings.aifeatures.automatic.context.title" = "Lähetä konteksti automaattisesti";
+/* Settings screen cell title for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.title" = "Lähetä sisältö automaattisesti";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Chat-ehdotukset";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Piilota tekoälyn luomat kuvat";
@@ -3024,6 +3171,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Tyhjennä";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Tyhjennä välilehdet ja tiedot";
 
@@ -3036,17 +3184,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Välilehdet";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Sovelluksesta poistuttaessa, 15 minuutin toimettomuuden jälkeen";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Sovelluksesta poistuttaessa, 1 tunnin toimettomuuden jälkeen";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Sovelluksesta poistuttaessa, 30 minuutin toimettomuuden jälkeen";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Sovelluksesta poistuttaessa, 5 minuutin toimettomuuden jälkeen";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Sovelluksesta poistuttaessa, 15 minuutin toimettomuuden jälkeen";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Sovelluksesta poistuttaessa, 30 minuutin toimettomuuden jälkeen";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Vain sovelluksesta poistuttaessa";
@@ -3059,6 +3207,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Tiedot poistetaan, kun sovellus käynnistetään uudelleen.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Hakuehdotukset";
 
@@ -3071,14 +3220,24 @@
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Näytä hakuehdotuksia kirjoittaessasi, mukaan lukien kirjanmerkit. Kaikki haut ovat yksityisiä.";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Näytä ehdotuksia historiastasi, kirjanmerkeistäsi ja (valinnaisesti) Duck.ai-keskusteluhistoriastasi, kun kirjoitat hakukenttään. Kaikki haut ovat yksityisiä.";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Sovelluksen lukitus";
 
 /* Section footer Autolock description */
 "settings.autolock.description" = "Jos käytössä on Touch ID, Face ID tai järjestelmän salasana, sinua pyydetään poistamaan lukitus, kun avaat sovelluksen.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Poista";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automaattinen tietojen tyhjennys";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Poista tiedot automaattisesti";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Selainpalaute";
 
@@ -3090,6 +3249,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Poista selaustiedot";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Tyhjennä tiedot automaattisesti";
 
@@ -3105,6 +3265,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Evästeiden hallinnan ponnahdusikkunat";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Poista välilehdet ja tiedot";
+
 /* Settings title for the customize section */
 "settings.customize" = "Mukauta";
 
@@ -3119,8 +3282,15 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Tietojesi poistaminen voi auttaa suojaamaan yksityisyyttäsi verkossa. Tyhjennä tiedot manuaalisesti Fire Buttonilla tai määritä automaattinen tyhjennys.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Oletusselain";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Poista Duck.ai-keskustelut";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Poista välilehdet ja tiedot";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Poista Email Protectionin automaattinen täyttö käytöstä";
@@ -3166,6 +3336,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof-sivustot";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Yleiset";
 
@@ -3183,9 +3354,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Uusi";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Esikatselu";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Näppäimistö";
@@ -3328,6 +3496,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synkronoi ja varmuuskopioi";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Näytä välilehtien hallinnassa";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Välilehdet";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Tekstin oletuszoomaus";
 
@@ -3336,6 +3510,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Asetukset";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Seurantaohjelmien estetty animaatio";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Auttaa estämään kolmannen osapuolen seurantalaitteet, jotka yrittävät naamioida itsensä verkkosivustolla DNS:n avulla.";
@@ -3461,16 +3638,19 @@
 "siteFeedback.urlPlaceholder" = "Mikä verkkosivusto on viallinen?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Tila";
+
+/* No comment provided by engineer. */
+"Status:" = "Status:";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Tila: Mitätöity";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tallennettu isäntänimi: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Alaominaisuus: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lisää laitteeseen";
@@ -3519,6 +3699,12 @@
 
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Tilauksesi on poistettu tältä laitteelta.";
+
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Peruuta tason alennus";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Sopimuksesi alenee tasolle %1$@ alkaen %2$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Päivitä tilaus tai peruuta";
@@ -3577,6 +3763,9 @@
 /* Help and support Section header */
 "subscription.help" = "Apu ja tuki";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Hallitse maksua tai peruuta";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Hallinnoi suunnitelmaa";
 
@@ -3610,17 +3799,20 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Tilaussopimukset";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Tilauksen muutosta viimeistellään…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Ostoksen suorittaminen...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Tilauksen muutos käynnissä...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Osto käynnissä...";
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Palautetaan tilausta...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro on nyt nimeltään DuckDuckGo-tilaus";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Poista tältä laitteelta";
@@ -3679,6 +3871,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Vuositilauksesi päättyy %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Tilauksesi alenee kuukausitilaukseen %1$@ alkaen %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Sopimuksesi alenee tasolle %1$@ alkaen %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Tilauksesi alenee tasolle %1$@ vuositilaus alkaen %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Kuukausitilauksesi uusiutuu %@.";
 
@@ -3699,6 +3900,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Ilmainen kokeilujakso on aktiivinen";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Päivitä tasoon %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Avaa älykkäämpi ja tehokkaampi tekoäly";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Päivitä";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Näytä kaikki tilaukset";
@@ -3726,6 +3936,12 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Määritä synkronointi";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synkronoi ja varmuuskopioi luottokorttisi";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synkronoi ja varmuuskopioi tietosi";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Ei kiitos";
@@ -3817,6 +4033,30 @@
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Lisää kaikki välilehdet kirjanmerkkeihin";
 
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Piilota";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Voit ottaa tämän takaisin käyttöön kohdassa Asetukset > Ulkoasu.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Piilotetaanko seurantalaskuri?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Seurantalaskurin asetukset";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Näytä tämän bannerin piilotusvaihtoehdot kaksoisnapauttamalla";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Säilytä";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "in last 7 days";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Suurenna tai pienennä tekstin kokoa kaikilla sivustoilla.";
 
@@ -3855,6 +4095,9 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Yksityisyydensuoja otettu käyttöön osoitteessa %@";
+
+/* No comment provided by engineer. */
+"Total stored: %@" = "Total stored: %@";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
@@ -4098,6 +4341,9 @@
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Sinut on kutsuttu!";
+
+/* No comment provided by engineer. */
+"Web Extensions not available" = "Verkkolaajennuksia ei ole käytettävissä";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Suosikki poistettu";

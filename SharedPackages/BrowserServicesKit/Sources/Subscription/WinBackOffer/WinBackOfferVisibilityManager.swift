@@ -58,7 +58,7 @@ extension WinBackOfferVisibilityManager {
 
 /// Default implementation of the WinBackOfferVisibilityManaging protocol.
 public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private var winbackOfferStore: any WinbackOfferStoring
     private var winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider
     private let calendar: Calendar
@@ -69,7 +69,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private var hasActiveSubscription: Bool = false
     private var observer: NSObjectProtocol?
 
-    public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    public init(subscriptionManager: any SubscriptionManager,
                 winbackOfferStore: any WinbackOfferStoring,
                 winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider,
                 calendar: Calendar = Calendar.current,

@@ -33,6 +33,8 @@ import Common
 @testable import PersistenceTestingUtils
 import SystemSettingsPiPTutorialTestSupport
 import Combine
+import PrivacyConfig
+import AIChatTestingUtilities
 
 // swiftlint:disable force_try
 
@@ -66,16 +68,17 @@ import Combine
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-        let historyManager = MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true)
+        let historyManager = MockHistoryManager()
         let syncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
         let featureFlagger = MockFeatureFlagger()
+        let aiChatSettings = MockAIChatSettingsProvider()
         let fireproofing = MockFireproofing()
         let textZoomCoordinator = MockTextZoomCoordinator()
         let subscriptionDataReporter = MockSubscriptionDataReporter()
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
         let variantManager = MockVariantManager()
-        let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
+        let daxDialogsFactory = DefaultContextualDaxDialogsFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
                                                                       contextualOnboardingPixelReporter: onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let mockConfigManager = MockPrivacyConfigurationManager()
@@ -85,7 +88,9 @@ import Combine
                                                                               privacyConfigurationManager: mockConfigManager,
                                                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
                                                                               fireproofing: fireproofing,
-                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager())
+                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager(),
+                                                                              internalUserDecider: MockInternalUserDecider(),
+                                                                              syncErrorHandler: CapturingAdapterErrorHandler())
 
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
@@ -110,11 +115,13 @@ import Combine
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-                                    keyValueStore: try! MockKeyValueFileStore(),
+                                    keyValueStore: MockKeyValueFileStore(),
                                     daxDialogsManager: DummyDaxDialogsManager(),
-                                    aiChatSettings: MockAIChatSettingsProvider(),
+                                    aiChatSettings: aiChatSettings,
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
-                                    voiceSearchHelper: MockVoiceSearchHelper()
+                                    privacyStats: MockPrivacyStats(),
+                                    voiceSearchHelper: MockVoiceSearchHelper(),
+                                    launchSourceManager: MockLaunchSourceManager()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
@@ -126,7 +133,8 @@ import Combine
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: mockConfigManager,
-                                        appSettings: AppSettingsMock())
+                                        appSettings: AppSettingsMock(),
+                                        aiChatSyncCleaner: MockAIChatSyncCleaning())
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,
             bookmarksDatabase: db,
@@ -153,7 +161,9 @@ import Combine
             websiteDataManager: mockWebsiteDataManager,
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-            aiChatSettings: MockAIChatSettingsProvider(),
+            aiChatSettings: aiChatSettings,
+            aiChatAddressBarExperience: AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                                   aiChatSettings: aiChatSettings),
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider(),
@@ -164,10 +174,12 @@ import Combine
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            remoteMessagingPixelReporter: MockRemoteMessagingPixelReporter(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
-            syncAiChatsCleaner: MockSyncAIChatsCleaning(),
+            privacyStats: MockPrivacyStats(),
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
         )
         let window = UIWindow(frame: UIScreen.main.bounds)

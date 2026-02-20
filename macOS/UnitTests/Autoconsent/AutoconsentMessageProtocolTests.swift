@@ -104,11 +104,13 @@ class AutoconsentMessageProtocolTests: XCTestCase {
 
     @MainActor
     func testEval() {
+        let webView = WKWebView()
         let message = MockWKScriptMessage(name: "eval", body: [
             "type": "eval",
             "id": "some id",
             "code": "1+1==2"
-        ], webView: WKWebView())
+        ], webView: webView)
+
         let expect = expectation(description: "testEval")
         userScript.handleMessage(
             replyHandler: {(msg: Any?, _: String?) in
@@ -148,6 +150,7 @@ class MockWKScriptMessage: WKScriptMessage {
     let mockedName: String
     let mockedBody: Any
     let mockedWebView: WKWebView?
+    let mockedFrameInfo: WKFrameInfo
 
     override var name: String {
         return mockedName
@@ -161,10 +164,15 @@ class MockWKScriptMessage: WKScriptMessage {
         return mockedWebView
     }
 
-    init(name: String, body: Any, webView: WKWebView? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
+    override var frameInfo: WKFrameInfo {
+        return mockedFrameInfo
+    }
+
+    init(name: String? = nil, body: Any? = nil, webView: WKWebView? = nil, frameInfo: WKFrameInfo? = nil) {
+        self.mockedName = name ?? ""
+        self.mockedBody = body ?? ""
         self.mockedWebView = webView
+        self.mockedFrameInfo = frameInfo ?? .mock(for: webView, isMain: true, request: nil)
         super.init()
     }
 }

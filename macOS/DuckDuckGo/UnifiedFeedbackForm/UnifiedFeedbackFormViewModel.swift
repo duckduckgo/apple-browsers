@@ -28,7 +28,6 @@ protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
 }
 
 final class UnifiedFeedbackFormViewModel: ObservableObject {
-    private static let supportURL = URL(string: "https://duckduckgo.com/subscription-support")!
     private let featureFlagger: FeatureFlagger
 
     enum ViewState {
@@ -121,7 +120,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
 
     weak var delegate: UnifiedFeedbackFormViewModelDelegate?
 
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let vpnMetadataCollector: any UnifiedMetadataCollector
     private let dbpMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
@@ -138,7 +137,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         return subcategories
     }
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    init(subscriptionManager: any SubscriptionManager,
          vpnMetadataCollector: any UnifiedMetadataCollector,
          dbpMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadataCollector: any UnifiedMetadataCollector = EmptyMetadataCollector(),
@@ -293,6 +292,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
 
     @MainActor
     private func openSupport() {
-        Application.appDelegate.windowControllersManager.show(url: Self.supportURL, source: .ui, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: URL.subscriptionSupport, source: .ui, newTab: true)
     }
 }

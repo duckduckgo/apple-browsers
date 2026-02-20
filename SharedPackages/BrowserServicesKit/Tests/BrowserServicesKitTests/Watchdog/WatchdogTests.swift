@@ -64,29 +64,29 @@ final class WatchdogTests: XCTestCase {
 
     // MARK: - Basic Functionality Tests
 
-    func testInitialState() {
-        XCTAssertFalse(watchdog.isRunning, "Watchdog should not be running initially")
+    func testInitialState() async {
+        await XCTAssertAsyncFalse(await watchdog.isRunning, "Watchdog should not be running initially")
         XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
     }
 
     func testStart() async {
         await watchdog.start()
-        XCTAssertTrue(watchdog.isRunning, "Watchdog should be running after start")
+        await XCTAssertAsyncTrue(await watchdog.isRunning, "Watchdog should be running after start")
         XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
     }
 
     func testStop() async {
         await watchdog.stop()
-        XCTAssertFalse(watchdog.isRunning, "Watchdog should not be running after stop")
+        await XCTAssertAsyncFalse(await watchdog.isRunning, "Watchdog should not be running after stop")
         XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
     }
 
     func testMultipleStarts() async {
         await watchdog.start()
-        let firstState = watchdog.isRunning
+        let firstState = await watchdog.isRunning
 
         await watchdog.start() // Should cancel previous and start new
-        let secondState = watchdog.isRunning
+        let secondState = await watchdog.isRunning
 
         XCTAssertTrue(firstState, "First start should make watchdog running")
         XCTAssertTrue(secondState, "Second start should keep watchdog running")
@@ -98,7 +98,7 @@ final class WatchdogTests: XCTestCase {
         await watchdog.stop()
         await watchdog.stop() // Should be safe to call multiple times
 
-        XCTAssertFalse(watchdog.isRunning, "Multiple stops should be safe")
+        await XCTAssertAsyncFalse(await watchdog.isRunning, "Multiple stops should be safe")
         XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
     }
 
@@ -106,19 +106,19 @@ final class WatchdogTests: XCTestCase {
 
     func testPauseAndResume() async {
         await watchdog.start()
-        XCTAssertTrue(watchdog.isRunning, "Watchdog should be running")
+        await XCTAssertAsyncTrue(await watchdog.isRunning, "Watchdog should be running")
 
         var isPaused = await watchdog.isPaused
         XCTAssertFalse(isPaused, "Should not be paused initially")
 
         await watchdog.pause()
-        XCTAssertFalse(watchdog.isRunning, "Watchdog should not be running after pause")
+        await XCTAssertAsyncFalse(await watchdog.isRunning, "Watchdog should not be running after pause")
 
         isPaused = await watchdog.isPaused
         XCTAssertTrue(isPaused, "Should be paused after pause()")
 
         await watchdog.resume()
-        XCTAssertTrue(watchdog.isRunning, "Watchdog should be running after resume")
+        await XCTAssertAsyncTrue(await watchdog.isRunning, "Watchdog should be running after resume")
 
         isPaused = await watchdog.isPaused
         XCTAssertFalse(isPaused, "Should not be paused after resume()")
@@ -137,7 +137,7 @@ final class WatchdogTests: XCTestCase {
         await watchdog.stop()
         await watchdog.start()
 
-        XCTAssertTrue(watchdog.isRunning, "Should be running after restart")
+        await XCTAssertAsyncTrue(await watchdog.isRunning, "Should be running after restart")
 
         isPaused = await watchdog.isPaused
         XCTAssertFalse(isPaused, "Pause state should be reset after start()")
@@ -203,7 +203,7 @@ final class WatchdogTests: XCTestCase {
         var optionalWatchdog: Watchdog? = Watchdog(minimumHangDuration: 0.5, maximumHangDuration: 1.0, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
         await optionalWatchdog?.start()
 
-        XCTAssertTrue(optionalWatchdog?.isRunning == true)
+        await XCTAssertAsyncTrue(await optionalWatchdog?.isRunning == true)
 
         // Deinit should call stop()
         optionalWatchdog = nil
@@ -240,7 +240,7 @@ final class WatchdogTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1.0)
 
         // Should not crash and should be in a valid state
-        let finalState = watchdog.isRunning
+        let finalState = await watchdog.isRunning
         XCTAssertTrue(finalState == true || finalState == false, "Should be in a valid state")
         XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app during concurrent operations")
     }
@@ -281,9 +281,9 @@ final class WatchdogTests: XCTestCase {
             weakWatchdog = localWatchdog
 
             await localWatchdog.start()
-            XCTAssertTrue(localWatchdog.isRunning)
+            await XCTAssertAsyncTrue(await localWatchdog.isRunning)
             await localWatchdog.stop()
-            XCTAssertFalse(localWatchdog.isRunning)
+            await XCTAssertAsyncFalse(await localWatchdog.isRunning)
 
             // localWatchdog goes out of scope here
         }
@@ -301,10 +301,10 @@ final class WatchdogTests: XCTestCase {
         // No sleeps needed - just verify state transitions work repeatedly
         for cycle in 0..<20 {
             await watchdog.start()
-            XCTAssertTrue(watchdog.isRunning, "Cycle \(cycle): Should be running after start")
+            await XCTAssertAsyncTrue(await watchdog.isRunning, "Cycle \(cycle): Should be running after start")
 
             await watchdog.stop()
-            XCTAssertFalse(watchdog.isRunning, "Cycle \(cycle): Should be stopped after stop")
+            await XCTAssertAsyncFalse(await watchdog.isRunning, "Cycle \(cycle): Should be stopped after stop")
         }
         XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app during cycles")
     }
@@ -316,7 +316,7 @@ final class WatchdogTests: XCTestCase {
         let hangWatchdog = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
 
         await hangWatchdog.start()
-        XCTAssertTrue(hangWatchdog.isRunning)
+        await XCTAssertAsyncTrue(await hangWatchdog.isRunning)
         XCTAssertFalse(mockKill.wasKilled, "Should not have killed app yet")
 
         try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
@@ -354,13 +354,13 @@ final class WatchdogTests: XCTestCase {
         let cancellable = await normalWatchdog.hangStatePublisher.sink { receivedStates.append($0) }
 
         await normalWatchdog.start()
-        XCTAssertTrue(normalWatchdog.isRunning)
+        await XCTAssertAsyncTrue(await normalWatchdog.isRunning)
 
         try await Task.sleep(nanoseconds: 1_500 * NSEC_PER_MSEC)
 
         XCTAssertTrue(receivedStates.isEmpty, "Should not have any state transitions during normal operation")
         XCTAssertFalse(mockKill.wasKilled, "Should not have killed app during normal operation")
-        XCTAssertTrue(normalWatchdog.isRunning, "Watchdog should still be running")
+        await XCTAssertAsyncTrue(await normalWatchdog.isRunning, "Watchdog should still be running")
 
         cancellable.cancel()
         await normalWatchdog.stop()
@@ -371,10 +371,10 @@ final class WatchdogTests: XCTestCase {
         let stoppedWatchdog = Watchdog(minimumHangDuration: 0.1, maximumHangDuration: 0.3, checkInterval: 0.1, crashOnTimeout: true, killAppFunction: mockKill.killApp)
 
         await stoppedWatchdog.start()
-        XCTAssertTrue(stoppedWatchdog.isRunning)
+        await XCTAssertAsyncTrue(await stoppedWatchdog.isRunning)
 
         await stoppedWatchdog.stop()
-        XCTAssertFalse(stoppedWatchdog.isRunning)
+        await XCTAssertAsyncFalse(await stoppedWatchdog.isRunning)
 
         try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
 
@@ -406,7 +406,7 @@ final class WatchdogTests: XCTestCase {
             }
         }
 
-        XCTAssertTrue(optionalWatchdog?.isRunning == true, "Watchdog should be running when crashOnTimeout is false")
+        await XCTAssertAsyncTrue(await optionalWatchdog?.isRunning == true, "Watchdog should be running when crashOnTimeout is false")
         XCTAssertFalse(mockKill.wasKilled, "Should not have killed app")
     }
 
@@ -494,5 +494,18 @@ final class WatchdogTests: XCTestCase {
         }
 
         try await Task.sleep(nanoseconds: UInt64(sleepDuration * Double(NSEC_PER_SEC)))
+    }
+}
+
+private extension XCTest {
+
+    func XCTAssertAsyncTrue(_ expression: @autoclosure () async -> Bool, _ description: String = "") async {
+        let result = await expression()
+        XCTAssertTrue(result, description)
+    }
+
+    func XCTAssertAsyncFalse(_ expression: @autoclosure () async -> Bool, _ description: String = "") async {
+        let result = await expression()
+        XCTAssertFalse(result, description)
     }
 }

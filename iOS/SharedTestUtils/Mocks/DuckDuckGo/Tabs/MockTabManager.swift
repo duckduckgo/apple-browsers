@@ -26,6 +26,22 @@ class MockTabManager: TabManaging {
     private(set) var prepareAllTabsExceptCurrentCalled = false
     private(set) var prepareCurrentTabCalled = false
     nonisolated(unsafe) private(set) var removeAllCalled = false
+    var prepareTabCalled = false
+    private(set) var prepareTabCalledWith: Tab?
+    
+    /// Configurable return value for isCurrentTab
+    var isCurrentTabReturnValue = false
+    private(set) var isCurrentTabCalledWith: Tab?
+    
+    private(set) var closeTabCalled = false
+    private(set) var closeTabCalledWith: Tab?
+    private(set) var closeTabShouldCreateEmptyTab: Bool?
+    private(set) var closeTabClearTabHistory: Bool?
+    
+    /// Configurable return value for controller(for:)
+    var controllerForTabReturnValue: TabViewController?
+    private(set) var controllerForTabCalled = false
+    private(set) var controllerForTabCalledWith: Tab?
     
     func prepareAllTabsExceptCurrentForDataClearing() {
         prepareAllTabsExceptCurrentCalled = true
@@ -37,5 +53,42 @@ class MockTabManager: TabManaging {
     
     nonisolated func removeAll() {
         removeAllCalled = true
+    }
+
+    func viewModelForCurrentTab() -> DuckDuckGo.TabViewModel? {
+        return nil
+    }
+    
+    func prepareTab(_ tab: Tab) {
+        prepareTabCalled = true
+        prepareTabCalledWith = tab
+    }
+    
+    func isCurrentTab(_ tab: Tab) -> Bool {
+        isCurrentTabCalledWith = tab
+        return isCurrentTabReturnValue
+    }
+    
+    func closeTab(_ tab: Tab, shouldCreateEmptyTabAtSamePosition: Bool, clearTabHistory: Bool) {
+        closeTabCalled = true
+        closeTabCalledWith = tab
+        closeTabShouldCreateEmptyTab = shouldCreateEmptyTabAtSamePosition
+        closeTabClearTabHistory = clearTabHistory
+    }
+    
+    func controller(for tab: Tab) -> TabViewController? {
+        controllerForTabCalled = true
+        controllerForTabCalledWith = tab
+        return controllerForTabReturnValue
+    }
+
+    private(set) var closeTabAndNavigateToHomepageCalled = false
+    private(set) var closeTabAndNavigateToHomepageCalledWith: Tab?
+    private(set) var closeTabAndNavigateToHomepageClearTabHistory: Bool?
+
+    func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool) {
+        closeTabAndNavigateToHomepageCalled = true
+        closeTabAndNavigateToHomepageCalledWith = tab
+        closeTabAndNavigateToHomepageClearTabHistory = clearTabHistory
     }
 }

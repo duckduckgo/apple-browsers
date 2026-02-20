@@ -331,12 +331,7 @@ final class NavigationActionBarView: UIView {
         microphoneButton.isHidden = !shouldShowMicButton
         microphoneButton.alpha = shouldShowMicButton ? 1.0 : 0.0
 
-        let shouldShowNewLineButton: Bool
-        if isUsingFadeOutAnimation {
-            shouldShowNewLineButton = false
-        } else {
-            shouldShowNewLineButton = viewModel.isKeyboardVisible && viewModel.hasText && !viewModel.isSearchMode
-        }
+        let shouldShowNewLineButton = viewModel.isKeyboardVisible && viewModel.hasText && !viewModel.isSearchMode
         newLineButton.isHidden = !shouldShowNewLineButton
         newLineButton.alpha = shouldShowNewLineButton ? 1.0 : 0.0
 
@@ -344,6 +339,8 @@ final class NavigationActionBarView: UIView {
         if isUsingFadeOutAnimation {
             if viewModel.isSearchMode && !isFloating {
                 shouldShowSearchButton = false
+            } else if viewModel.isSearchMode && viewModel.isTopBarPosition {
+                shouldShowSearchButton = hasText
             } else {
                 shouldShowSearchButton = true
             }

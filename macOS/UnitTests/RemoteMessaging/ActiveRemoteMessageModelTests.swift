@@ -49,7 +49,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
             openURLHandler: { _ in },
-            navigateToFeedbackHandler: { }
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { }
         )
 
         XCTAssertNil(model.newTabPageRemoteMessage)
@@ -61,7 +62,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
             openURLHandler: { _ in },
-            navigateToFeedbackHandler: { }
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { }
         )
 
         XCTAssertEqual(model.newTabPageRemoteMessage, message)
@@ -73,7 +75,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
             openURLHandler: { _ in },
-            navigateToFeedbackHandler: { }
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { }
         )
         await model.dismissRemoteMessage(with: .close)
 
@@ -86,7 +89,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
             openURLHandler: { _ in },
-            navigateToFeedbackHandler: { }
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { }
         )
 
         XCTAssertFalse(store.hasShownRemoteMessage(withID: message.id))
@@ -101,6 +105,7 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             content: .bigSingleAction(titleText: "Help Us Improve!",
                                       descriptionText: "Description",
                                       placeholder: .announce,
+                                      imageUrl: nil,
                                       primaryActionText: "Test",
                                       primaryAction: .survey(value: "www.survey.com")),
             matchingRules: [],
@@ -111,7 +116,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
             openURLHandler: { _ in },
-            navigateToFeedbackHandler: { }
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { }
         )
 
         XCTAssertNotNil(model.tabBarRemoteMessage)
@@ -125,6 +131,7 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             content: .bigSingleAction(titleText: "Help Us Improve!",
                                       descriptionText: "Description",
                                       placeholder: .announce,
+                                      imageUrl: nil,
                                       primaryActionText: "Test",
                                       primaryAction: .survey(value: "www.survey.com")),
             matchingRules: [],
@@ -135,7 +142,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
             openURLHandler: { _ in },
-            navigateToFeedbackHandler: { }
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { }
         )
 
         XCTAssertNotNil(model.tabBarRemoteMessage)
@@ -148,7 +156,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
             openURLHandler: { _ in },
-            navigateToFeedbackHandler: { }
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { }
         )
 
         XCTAssertNil(model.tabBarRemoteMessage)
@@ -162,6 +171,7 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             content: .bigSingleAction(titleText: "Help Us Improve!",
                                       descriptionText: "Description",
                                       placeholder: .announce,
+                                      imageUrl: nil,
                                       primaryActionText: "Test",
                                       primaryAction: .survey(value: "www.survey.com")),
             matchingRules: [],
@@ -173,7 +183,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
             openURLHandler: { _ in },
-            navigateToFeedbackHandler: { }
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { }
         )
         XCTAssertNotNil(model.tabBarRemoteMessage)
         XCTAssertNil(model.newTabPageRemoteMessage)
@@ -210,7 +221,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
             openURLHandler: { _ in },
-            navigateToFeedbackHandler: { }
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { }
         )
 
         // THEN

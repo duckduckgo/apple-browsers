@@ -352,6 +352,47 @@ class TabTests: XCTestCase {
         XCTAssertEqual(decodedTab?.link?.url.absoluteString, "https://dev.duck.ai/chat")
     }
 
+
+    // MARK: - Contextual Chat URL Tests
+
+    func testWhenTabWithContextualChatURLEncodedThenDecodesSuccessfully() {
+        let contextualURL = "https://duck.ai/?chatId=abc123&placement=sidebar"
+        let tabToEncode = Tab(link: link(), contextualChatURL: contextualURL)
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertNotNil(decodedTab)
+        XCTAssertEqual(decodedTab?.contextualChatURL, contextualURL)
+    }
+
+    func testWhenTabEncodedWithoutContextualChatURLThenDecodesWithNil() {
+        let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.contextualChatURL)
+    }
+
+    func testWhenTabWithNilContextualChatURLEncodedThenDecodesWithNil() {
+        let tabToEncode = Tab(link: link(), contextualChatURL: nil)
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertNotNil(decodedTab)
+        XCTAssertNil(decodedTab?.contextualChatURL)
+    }
+
     private func link() -> Link {
         return Link(title: "title", url: URL(string: "http://example.com")!)
     }

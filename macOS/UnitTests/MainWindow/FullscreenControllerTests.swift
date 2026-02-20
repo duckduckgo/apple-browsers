@@ -139,7 +139,7 @@ extension MainViewControllerFactory {
 
         return MainViewController(
             tabCollectionViewModel: tabCollectionViewModel,
-            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
             aiChatSidebarProvider: aiChatSidebarProvider,
             defaultBrowserAndDockPromptPresenting: defaultBrowserPromptPresenter,
             fireCoordinator: fireCoordinator,

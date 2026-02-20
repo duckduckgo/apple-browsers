@@ -37,6 +37,9 @@
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Dette opretter en krypteret sikkerhedskopi af dine bogmærker og data til automatisk udfyldning på DuckDuckGos sikre server, som kan synkroniseres med dine andre enheder.";
 
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Dette opretter en krypteret sikkerhedskopi af dine gemte bogmærker, adgangskoder, betalingskort og Duck.ai-chats på DuckDuckGos sikre server, som kan synkroniseres med dine andre enheder.";
+
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Krypteringsnøglen gemmes kun på din enhed, DuckDuckGo har ikke adgang til den.";
 
@@ -141,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Dine bogmærker og data til automatisk udfyldning bliver forberedt til synkronisering. Det tager kun et øjeblik.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Dine bogmærker, adgangskoder og Duck.ai-chats forberedes til synkronisering. Det tager kun et øjeblik.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Forbinder ...";
@@ -289,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Synkroniser sikkert bogmærker og adgangskoder mellem dine enheder.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Synkroniser sikkert bogmærker, data til automatisk udfyldning og Duck.ai-chats mellem dine enheder.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Begynd synkronisering";
 
@@ -303,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Slå synkronisering og sikkerhedskopiering fra ...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Bogmærker, data til automatisk udfyldning og Duck.ai-chats er i øjeblikket synkroniseret på tværs af dine enheder.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Synkronisering aktiveret";

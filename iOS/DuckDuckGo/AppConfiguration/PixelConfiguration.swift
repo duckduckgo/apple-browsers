@@ -29,15 +29,9 @@ import PrivacyConfig
 final class PixelConfiguration {
 
     static func configure(with featureFlagger: FeatureFlagger) {
-
-#if DEBUG
-        Pixel.isDryRun = true
-#else
-        Pixel.isDryRun = false
-#endif
         let isPhone = UIDevice.current.userInterfaceIdiom == .phone
         let source = isPhone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS
-        PixelKit.setUp(dryRun: Pixel.isDryRun,
+        PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: source.rawValue,
                        defaultHeaders: [:],

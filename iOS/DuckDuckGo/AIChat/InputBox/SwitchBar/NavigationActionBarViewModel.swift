@@ -39,6 +39,10 @@ final class NavigationActionBarViewModel: ObservableObject {
         switchBarHandler.isUsingFadeOutAnimation
     }
 
+    var isTopBarPosition: Bool {
+        switchBarHandler.isTopBarPosition
+    }
+
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
@@ -125,7 +129,7 @@ final class NavigationActionBarViewModel: ObservableObject {
         // https://app.asana.com/1/137249556945/project/72649045549333/task/1210777323867681?focus=true
         guard isVoiceSearchEnabled else { return false }
 
-        if isUsingFadeOutAnimation && isSearchMode && !switchBarHandler.isTopBarPosition {
+        if isUsingFadeOutAnimation {
             return false
         }
 

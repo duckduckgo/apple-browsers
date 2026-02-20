@@ -20,13 +20,22 @@ import SwiftUI
 import Subscription
 import OSLog
 
+/// Closure type for handling subscription selection through the user script handler
+/// Parameters: (productId: String, changeType: String?) where changeType is "upgrade", "downgrade", or nil for new purchase
+public typealias SubscriptionSelectionHandler = (String, String?) async -> Void
+
 @available(macOS 12.0, *)
 public struct ProductionSubscriptionPurchaseDebugView: View {
     @StateObject private var viewModel: ProductionSubscriptionPurchaseViewModel
     let dismissAction: () -> Void
 
-    public init(subscriptionManager: SubscriptionManagerV2, dismissAction: @escaping () -> Void) {
-        _viewModel = StateObject(wrappedValue: ProductionSubscriptionPurchaseViewModel(subscriptionManager: subscriptionManager))
+    public init(subscriptionManager: SubscriptionManager,
+                subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil,
+                dismissAction: @escaping () -> Void) {
+        _viewModel = StateObject(wrappedValue: ProductionSubscriptionPurchaseViewModel(
+            subscriptionManager: subscriptionManager,
+            subscriptionSelectionHandler: subscriptionSelectionHandler
+        ))
         self.dismissAction = dismissAction
     }
 
@@ -52,18 +61,13 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
                 .padding()
             }
         }
-        .navigationTitle("Buy Available Subscriptions")
+        .navigationTitle("Change Tier")
         .onAppear {
             Task {
                 await viewModel.loadExistingExternalID()
                 await viewModel.loadPurchasedProductIDs()
                 await viewModel.loadAvailableProducts()
             }
-        }
-        .alert("Purchase Result", isPresented: $viewModel.showAlert) {
-            Button(UserText.okButtonTitle, role: .cancel) { }
-        } message: {
-            Text(verbatim: viewModel.alertMessage)
         }
     }
 
@@ -180,22 +184,29 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
 @available(macOS 12.0, *)
 public final class ProductionSubscriptionPurchaseViewController: NSViewController {
 
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
+    private let subscriptionSelectionHandler: SubscriptionSelectionHandler?
 
     public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    public init(subscriptionManager: SubscriptionManagerV2) {
+    public init(subscriptionManager: SubscriptionManager,
+                subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil) {
         self.subscriptionManager = subscriptionManager
+        self.subscriptionSelectionHandler = subscriptionSelectionHandler
         super.init(nibName: nil, bundle: nil)
     }
 
     public override func loadView() {
-        let purchaseView = ProductionSubscriptionPurchaseDebugView(subscriptionManager: subscriptionManager, dismissAction: { [weak self] in
-            guard let self = self else { return }
-            self.presentingViewController?.dismiss(self)
-        })
+        let purchaseView = ProductionSubscriptionPurchaseDebugView(
+            subscriptionManager: subscriptionManager,
+            subscriptionSelectionHandler: subscriptionSelectionHandler,
+            dismissAction: { [weak self] in
+                guard let self = self else { return }
+                self.presentingViewController?.dismiss(self)
+            }
+        )
         let hostingView = NSHostingView(rootView: purchaseView)
         view = NSView(frame: NSRect(x: 0, y: 0, width: 500, height: 500))
         hostingView.frame = view.bounds
@@ -211,18 +222,19 @@ final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var statusMessage: String?
     @Published var isError = false
-    @Published var showAlert = false
-    @Published var alertMessage = ""
     @Published var existingExternalID: String?
     @Published var isLoadingExternalID = true
     @Published var purchasedProductIDs: [String]?
     @Published var availableSubscriptions: [String] = []
     @Published var isLoadingProducts = true
 
-    private let subscriptionManager: SubscriptionManagerV2
+    private let subscriptionManager: SubscriptionManager
+    private let subscriptionSelectionHandler: SubscriptionSelectionHandler?
 
-    init(subscriptionManager: SubscriptionManagerV2) {
+    init(subscriptionManager: SubscriptionManager,
+         subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil) {
         self.subscriptionManager = subscriptionManager
+        self.subscriptionSelectionHandler = subscriptionSelectionHandler
     }
 
     func loadExistingExternalID() async {
@@ -249,8 +261,8 @@ final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     func loadAvailableProducts() async {
         isLoadingProducts = true
 
-        guard let defaultManager = subscriptionManager.storePurchaseManager() as? DefaultStorePurchaseManagerV2 else {
-            Logger.subscription.error("[ProductionSubscriptionDebug] Could not cast to DefaultStorePurchaseManagerV2")
+        guard let defaultManager = subscriptionManager.storePurchaseManager() as? DefaultStorePurchaseManager else {
+            Logger.subscription.error("[ProductionSubscriptionDebug] Could not cast to DefaultStorePurchaseManager")
             isLoadingProducts = false
             return
         }
@@ -282,37 +294,67 @@ final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     func purchaseSubscription(identifier: String) async {
         isLoading = true
         isError = false
-        statusMessage = "Starting purchase for \(displayName(for: identifier))..."
 
-        // Use existing external ID if available, otherwise generate new
-        let externalID = existingExternalID ?? UUID().uuidString
-        let isNewAccount = existingExternalID == nil
-        Logger.subscription.info("[ProductionSubscriptionDebug] Using external ID: \(externalID) (new: \(isNewAccount))")
+        // Determine if this is a tier change or new purchase
+        let isTierChange = existingExternalID != nil && !(purchasedProductIDs?.isEmpty ?? true)
+        let changeType: String? = isTierChange ? "upgrade" : nil
 
-        // Direct purchase bypassing AppStorePurchaseFlow
-        let result = await subscriptionManager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
+        if let handler = subscriptionSelectionHandler {
+            // Use the subscription selection handler (calls subscriptionChangeSelected or subscriptionSelected)
+            // The handler shows its own UI (progress view, alerts) so we just call it and refresh
+            let actionType = isTierChange ? "tier change" : "purchase"
+            statusMessage = "Starting \(actionType) for \(displayName(for: identifier))..."
+            Logger.subscription.info("[ProductionSubscriptionDebug] Using subscriptionSelectionHandler for \(actionType): \(identifier)")
 
-        switch result {
-        case .success:
-            let accountStatus = isNewAccount ? "NEW account created" : "Attached to EXISTING account"
-            statusMessage = "✅ Purchase successful!"
-            isError = false
-            alertMessage = "Purchase successful! \(accountStatus)\n\nExternal ID: \(externalID)"
-            showAlert = true
+            let previousProductIDs = purchasedProductIDs ?? []
+            await handler(identifier, changeType)
 
-            // Store the external ID for future purchases if this was a new account
-            if isNewAccount {
-                existingExternalID = externalID
-                Logger.subscription.info("[ProductionSubscriptionDebug] Stored new external ID for future purchases: \(externalID)")
-            }
-
-            // Refresh purchased product IDs to show the new purchase
+            // Refresh purchased product IDs after handler completes
             await loadPurchasedProductIDs()
-            Logger.subscription.info("[ProductionSubscriptionDebug] Purchase successful: \(identifier)")
-        case .failure(let error):
-            statusMessage = "❌ Purchase failed: \(error.localizedDescription)"
-            isError = true
-            Logger.subscription.error("[ProductionSubscriptionDebug] Purchase failed: \(error.localizedDescription)")
+            let currentProductIDs = purchasedProductIDs ?? []
+
+            // Check if subscription changed to show status
+            if currentProductIDs.contains(identifier) && !previousProductIDs.contains(identifier) {
+                statusMessage = "✅ \(actionType.capitalized) completed for \(displayName(for: identifier))"
+                isError = false
+            } else if currentProductIDs != previousProductIDs {
+                statusMessage = "✅ Subscription updated"
+                isError = false
+            } else {
+                // No change detected - could be cancelled or failed (handler shows its own alert for failures)
+                statusMessage = nil
+            }
+        } else {
+            // Fallback: Direct purchase bypassing the handler
+            statusMessage = "Starting purchase for \(displayName(for: identifier))..."
+
+            // Use existing external ID if available, otherwise generate new
+            let externalID = existingExternalID ?? UUID().uuidString
+            let isNewAccount = existingExternalID == nil
+            Logger.subscription.info("[ProductionSubscriptionDebug] Using external ID: \(externalID) (new: \(isNewAccount))")
+
+            // Direct purchase bypassing AppStorePurchaseFlow
+            let result = await subscriptionManager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID, includeProTier: true)
+
+            switch result {
+            case .success:
+                statusMessage = "✅ Purchase successful!"
+                isError = false
+
+                // Store the external ID for future purchases if this was a new account
+                if isNewAccount {
+                    existingExternalID = externalID
+                    Logger.subscription.info("[ProductionSubscriptionDebug] Stored new external ID for future purchases: \(externalID)")
+                }
+
+                // Refresh purchased product IDs to show the new purchase
+                await loadPurchasedProductIDs()
+                Logger.subscription.info("[ProductionSubscriptionDebug] Purchase successful: \(identifier)")
+            case .failure(let error):
+                statusMessage = "❌ Purchase failed: \(error.localizedDescription)"
+                isError = true
+                Logger.subscription.error("[ProductionSubscriptionDebug] Purchase failed: \(error.localizedDescription)")
+            }
         }
         isLoading = false
     }

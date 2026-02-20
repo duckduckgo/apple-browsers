@@ -37,6 +37,9 @@
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Tādējādi DuckDuckGo drošajā serverī tiek izveidota šifrēta grāmatzīmju un automātiskās aizpildes datu dublējumkopija, ko var sinhronizēt ar citām ierīcēm.";
 
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Tas izveido šifrētu tavu saglabāto grāmatzīmju, paroļu, kredītkaršu un Duck.ai tērzēšanas dublējumu DuckDuckGo drošajā serverī, ko var sinhronizēt ar citām tavām ierīcēm.";
+
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Šifrēšanas atslēga tiek saglabāta tikai tavā ierīcē – DuckDuckGo tai nevar piekļūt.";
 
@@ -141,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Tavas grāmatzīmes un automātiskās aizpildes dati tiek sagatavoti sinhronizēšanai. Tam vajadzētu aizņemt tikai neilgu brīdi.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Tavas grāmatzīmes, paroles un Duck.ai tērzēšanas sarunas tiek sagatavotas sinhronizācijai. Tam vajadzētu aizņemt tikai neilgu brīdi.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Notiek savienojuma izveide…";
@@ -289,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Droši sinhronizē grāmatzīmes un paroles starp ierīcēm.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Droši sinhronizē grāmatzīmes, automātiskās aizpildes datus un Duck.ai tērzēšanu starp savām ierīcēm.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Sinhronizācijas sākšana";
 
@@ -303,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Izslēgt sinhronizāciju un dublēšanu...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Grāmatzīmes, automātiskās aizpildes dati un Duck.ai tērzēšanas sarunas pašlaik ir sinhronizētas tavās ierīcēs.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Sinhronizācija iespējota";

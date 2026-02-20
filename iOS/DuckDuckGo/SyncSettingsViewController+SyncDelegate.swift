@@ -174,6 +174,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                     let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                     try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+                    AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                     self.rootView.model.syncEnabled(recoveryCode: self.recoveryCode)
                     self.refreshDevices()
                     self.navigationController?.topViewController?.dismiss(animated: true, completion: self.showRecoveryPDF)
@@ -337,7 +338,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showPreparingSync(_ completion: (() -> Void)?) {
-        let controller = UIHostingController(rootView: PreparingToSyncView())
+        let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: rootView.model.isAIChatSyncEnabled))
         navigationController?.present(controller, animated: true, completion: completion)
     }
 
@@ -463,6 +464,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     do {
                         try await self.syncService.disconnect()
                         Pixel.fire(pixel: .syncDisabled)
+                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self.rootView.model.isSyncEnabled = false
                         self.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
@@ -498,6 +500,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     do {
                         try await self?.syncService.deleteAccount()
                         Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: [PixelParameters.connectedDevices: "\(deviceCount)"])
+                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self?.rootView.model.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)

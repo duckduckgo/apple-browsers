@@ -30,6 +30,12 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         return dateFormatter
     }()
 
+    static let expirationDateFormatter: DateFormatter = {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM/yyyy"
+        return dateFormatter
+    }()
+
     var onDirtyChanged: (Bool) -> Void
     var onSaveRequested: (Model) -> Void
     var onDeleteRequested: (Model) -> Void
@@ -48,6 +54,10 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         return isEditing || isNew
     }
 
+    var isCardValid: Bool {
+        return isCardNumberValid && isExpirationDateValid
+    }
+
     @Published var isEditing = false {
         didSet {
             // Experimental change suggested by the design team to mark an item as dirty as soon as it enters the editing state.
@@ -58,6 +68,10 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
     }
 
     @Published var isNew = false
+
+    @Published var isCardNumberValid: Bool = true
+
+    @Published var isExpirationDateValid: Bool = true
 
     @Published var title: String = "" {
         didSet {
@@ -86,12 +100,28 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
     @Published var expirationMonth: Int? {
         didSet {
             isDirty = true
+            clearExpirationValidationIfNecessary()
         }
     }
 
     @Published var expirationYear: Int? {
         didSet {
             isDirty = true
+            clearExpirationValidationIfNecessary()
+        }
+    }
+
+    private var hasCompleteExpirationDate: Bool {
+        let hasMonth = expirationMonth != nil
+        let hasYear = expirationYear != nil
+        return hasMonth == hasYear  // Both or neither
+    }
+
+    private func clearExpirationValidationIfNecessary() {
+        // During editing, we clear the validation error if both fields are now set or both are nil.
+        // But we don't want to trigger the validation error if the user is just adding one field at a time.
+        if hasCompleteExpirationDate {
+            isExpirationDateValid = true
         }
     }
 
@@ -125,6 +155,7 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
                      expirationYear: nil)
 
         isEditing = true
+        isExpirationDateValid = true
     }
 
     func cancel() {
@@ -137,17 +168,41 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
         }
     }
 
-    func save() {
-        guard var card = card else { return }
+    func save() -> Bool {
+        guard var card = card else { return false }
 
-        card.title = title
-        card.cardNumberData = cardNumber.data(using: .utf8)!
+        validateCardNumber()
+        validateExpirationDate()
+
+        let normalizedCardNumber = CreditCardValidation.extractDigits(from: cardNumber)
+        guard normalizedCardNumber.isEmpty == false && isCardValid else {
+            return false
+        }
+
+        card.title =  title.trimmingCharacters(in: .whitespacesAndNewlines)
+        card.cardNumberData = normalizedCardNumber.data(using: .utf8)!
         card.cardholderName = cardholderName
         card.cardSecurityCode = cardSecurityCode
         card.expirationMonth = expirationMonth
         card.expirationYear = expirationYear
 
         onSaveRequested(card)
+        return true
+    }
+
+    func validateCardNumber() {
+        let normalizedCardNumber = CreditCardValidation.extractDigits(from: cardNumber)
+
+        guard normalizedCardNumber.isEmpty == false else {
+            isCardNumberValid = false
+            return
+        }
+
+        isCardNumberValid = CreditCardValidation.isValidCardNumber(normalizedCardNumber)
+    }
+
+    func validateExpirationDate() {
+        isExpirationDateValid = hasCompleteExpirationDate
     }
 
     func clearSecureVaultModel() {
@@ -173,15 +228,23 @@ final class PasswordManagementCreditCardModel: ObservableObject, PasswordManagem
 
     private func populateViewModelFromCard() {
         title = card?.title ?? ""
-        cardNumber = card?.cardNumber ?? ""
+        if let cardNumberValue = card?.cardNumber, !cardNumberValue.isEmpty {
+            cardNumber = CreditCardValidation.formattedCardNumber(cardNumberValue)
+        } else {
+            cardNumber = ""
+        }
         cardholderName = card?.cardholderName ?? ""
         cardSecurityCode = card?.cardSecurityCode ?? ""
         expirationMonth = card?.expirationMonth
         expirationYear = card?.expirationYear
 
         isDirty = false
-
         isNew = card?.id == nil
+
+        if !isNew {
+            validateCardNumber()
+            validateExpirationDate()
+        }
 
         if let date = card?.created {
             createdDate = Self.dateFormatter.string(from: date)

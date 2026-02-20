@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Foundation
 import NewTabPage
+import os.log
 import PrivacyConfig
 import Subscription
 
@@ -42,6 +43,9 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let dataImportProvider: DataImportStatusProviding
     private let tabOpener: NewTabPageNextStepsCardsTabOpening
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
+    private let newTabPageNavigator: NewTabPageNavigator
+    private let syncLauncher: SyncDeviceFlowLaunching?
+    private let featureFlagger: FeatureFlagger
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
@@ -53,7 +57,10 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          dataImportProvider: DataImportStatusProviding,
          tabOpener: NewTabPageNextStepsCardsTabOpening,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         pixelHandler: NewTabPageNextStepsCardsPixelHandling) {
+         pixelHandler: NewTabPageNextStepsCardsPixelHandling,
+         newTabPageNavigator: NewTabPageNavigator,
+         syncLauncher: SyncDeviceFlowLaunching? = nil,
+         featureFlagger: FeatureFlagger) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.dockCustomizer = dockCustomizer
@@ -61,6 +68,9 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.tabOpener = tabOpener
         self.privacyConfigurationManager = privacyConfigurationManager
         self.pixelHandler = pixelHandler
+        self.newTabPageNavigator = newTabPageNavigator
+        self.syncLauncher = syncLauncher
+        self.featureFlagger = featureFlagger
     }
 
     @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
@@ -69,7 +79,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         case .defaultApp:
             performDefaultBrowserAction()
         case .addAppToDockMac:
-            performDockAction()
+            performDockAction(completion: refreshCardsAction)
         case .bringStuff:
             performImportBookmarksAndPasswordsAction(completion: refreshCardsAction)
         case .duckplayer:
@@ -78,6 +88,10 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
             performEmailProtectionAction()
         case .subscription:
             performSubscriptionAction()
+        case .personalizeBrowser:
+            performPersonalizeBrowserAction()
+        case .sync:
+            performSyncAction(completion: refreshCardsAction)
         }
     }
 }
@@ -110,9 +124,11 @@ private extension NewTabPageNextStepsCardsActionHandler {
         tabOpener.openTab(tab)
     }
 
-    func performDockAction() {
+    func performDockAction(completion: (() -> Void)?) {
         pixelHandler.fireAddedToDockPixel()
-        dockCustomizer.addToDock()
+        if dockCustomizer.addToDock(), featureFlagger.isFeatureOn(.nextStepsListWidget) {
+            completion?()
+        }
     }
 
     @MainActor
@@ -124,5 +140,17 @@ private extension NewTabPageNextStepsCardsActionHandler {
 
         let tab = Tab(content: .url(url, source: .link), shouldLoadInBackground: true)
         tabOpener.openTab(tab)
+    }
+
+    func performPersonalizeBrowserAction() {
+        newTabPageNavigator.openNewTabPageBackgroundCustomizationSettings()
+    }
+
+    @MainActor
+    func performSyncAction(completion: (() -> Void)?) {
+        guard let syncLauncher = syncLauncher ?? DeviceSyncCoordinator() else {
+            return Logger.sync.error("DeviceSyncCoordinator is not available to perform Next Steps sync action")
+        }
+        syncLauncher.startDeviceSyncFlow(source: .nextStepsCard, completion: completion)
     }
 }

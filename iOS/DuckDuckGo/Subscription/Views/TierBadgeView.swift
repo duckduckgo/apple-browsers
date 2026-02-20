@@ -21,39 +21,32 @@ import SwiftUI
 import DesignResourcesKit
 
 struct TierBadgeView: View {
-    enum Variant: String {
-        case plus = "PLUS"
-        case pro = "PRO"
+    enum Variant {
+        case plus
+        case pro
+
+        var displayName: String {
+            switch self {
+            case .plus: return "PLUS"
+            case .pro: return "PRO"
+            }
+        }
+
+        var fontWeight: Font.Weight {
+            switch self {
+            case .plus: return .semibold
+            case .pro: return .bold
+            }
+        }
     }
 
     let variant: Variant
 
     var body: some View {
-        Text(variant.rawValue)
-            .font(.system(size: 11, weight: .bold))
-            .foregroundColor(textColor)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(backgroundColor)
-            .cornerRadius(12)
-    }
-
-    private var backgroundColor: Color {
-        switch variant {
-        case .plus:
-            return Color(baseColor: .blue0)
-        case .pro:
-            return Color(baseColor: .yellow40)
-        }
-    }
-
-    private var textColor: Color {
-        switch variant {
-        case .plus:
-            return Color(baseColor: .blue90)
-        case .pro:
-            return Color(baseColor: .yellow100)
-        }
+        Text(variant.displayName)
+            .font(.system(size: 13, weight: variant.fontWeight))
+            .kerning(0.12)
+            .foregroundColor(Color(designSystemColor: .textPrimary))
     }
 }
 

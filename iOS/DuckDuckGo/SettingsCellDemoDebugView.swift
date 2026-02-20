@@ -81,8 +81,13 @@ struct SettingsCellDemoDebugView: View {
 
                 SettingsCellView(label: "Multi-line Cell with disclosure \nLine 2\nLine 3",
                                  subtitle: "Curabitur erat massa, cursus sed velit",
-                                 image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                                  disclosureIndicator: true)
+
+                SettingsCellView(label: "Greyed out cell with status indicator",
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
+                                 statusIndicator: StatusIndicatorView(status: .off),
+                                 isGreyedOut: true)
 
                 SettingsCellView(label: "Image cell with disclosure ",
                                  accessory: .image(Image(systemName: "person.circle")),

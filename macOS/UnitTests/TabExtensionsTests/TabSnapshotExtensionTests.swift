@@ -84,7 +84,7 @@ class TabSnapshotExtensionTests: XCTestCase {
 
         await Task.yield()
 
-        tabSnapshotExtension.didFinishLoad(with: URLRequest(url: URL.aURL), in: WKFrameInfo())
+        tabSnapshotExtension.didFinishLoad(with: URLRequest(url: URL.aURL), in: .mock())
 
         await Task.yield()
 
@@ -107,7 +107,7 @@ class TabSnapshotExtensionTests: XCTestCase {
         let snapshot2 = NSImage()
         mockWebViewSnapshotRenderer.nextSnapshot = snapshot2
 
-        tabSnapshotExtension.didFinishLoad(with: URLRequest(url: URL.aURL), in: WKFrameInfo())
+        tabSnapshotExtension.didFinishLoad(with: URLRequest(url: URL.aURL), in: .mock())
 
         await Task.yield()
 

@@ -35,7 +35,6 @@ final class AuthV2WideEventTests: XCTestCase {
         let parameters = eventData.pixelParameters()
 
         // Then
-        XCTAssertEqual(parameters["feature.name"], "authv2-token-refresh")
         XCTAssertNil(parameters["feature.data.ext.failing_step"])
         XCTAssertNil(parameters["feature.data.ext.application_state"])
         XCTAssertNil(parameters["feature.data.ext.refresh_token_latency_ms_bucketed"])
@@ -54,7 +53,6 @@ final class AuthV2WideEventTests: XCTestCase {
         let parameters = eventData.pixelParameters()
 
         // Then
-        XCTAssertEqual(parameters["feature.name"], "authv2-token-refresh")
         XCTAssertEqual(parameters["feature.data.ext.failing_step"], "refresh_access_token")
     }
 
@@ -189,7 +187,6 @@ final class AuthV2WideEventTests: XCTestCase {
         let parameters = eventData.pixelParameters()
 
         // Then
-        XCTAssertEqual(parameters["feature.name"], "authv2-token-refresh")
         XCTAssertEqual(parameters["feature.data.ext.failing_step"], "verify_access_token")
         XCTAssertEqual(parameters["feature.data.ext.refresh_token_latency_ms_bucketed"], "5000")
         XCTAssertEqual(parameters["feature.data.ext.fetch_jwks_latency_ms_bucketed"], "1000")

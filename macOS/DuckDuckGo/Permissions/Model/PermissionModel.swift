@@ -36,6 +36,9 @@ final class PermissionModel {
     /// Set to true when permissions are changed in the Permission Center and a reload is needed
     @PublishedAfter private(set) var permissionsNeedReload = false
 
+    /// Fires when permission blocked due to system being disabled - view layer shows info popover
+    let permissionBlockedBySystem = PassthroughSubject<(domain: String, permissionType: PermissionType), Never>()
+
     private(set) var authorizationQueries = [PermissionAuthorizationQuery]() {
         didSet {
             authorizationQuery = authorizationQueries.last
@@ -477,9 +480,17 @@ final class PermissionModel {
                       self.featureFlagger.isFeatureOn(.newPermissionView) else { return false }
                 return self.permissionManager.permission(forDomain: domain, permissionType: permission) == .allow
             }()
-            self.queryAuthorization(for: permissions, domain: domain, url: url,
-                                    isSystemPermissionDisabled: isSystemDisabled,
-                                    decisionHandler: wrappedDecisionHandler)
+
+            if isSystemDisabled {
+                // Deny - system permission is disabled, can't deliver anyway
+                wrappedDecisionHandler(false)
+                // Fire event for view layer to show informational popover
+                permissionBlockedBySystem.send((domain: domain, permissionType: permissions.first!))
+            } else {
+                self.queryAuthorization(for: permissions, domain: domain, url: url,
+                                        isSystemPermissionDisabled: false,
+                                        decisionHandler: wrappedDecisionHandler)
+            }
         case .some(true):
             wrappedDecisionHandler(true)
         case .some(false):

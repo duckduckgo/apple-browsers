@@ -1,0 +1,84 @@
+{
+    "m_mac_crash": {
+        "description": "Fired when a crash is detected in the main app bundle",
+        "owners": ["ayoy", "mallexxx", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "failedToReadCrashVersion",
+                "description": "Set to true when the crash version could not be read from the crash report",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_mac_crash_dbp": {
+        "description": "Fired when a crash is detected in the DBP background agent",
+        "owners": ["ayoy", "mallexxx", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "failedToReadCrashVersion",
+                "description": "Set to true when the crash version could not be read from the crash report",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_mac_crash_vpnagent": {
+        "description": "Fired when a crash is detected in the VPN agent",
+        "owners": ["ayoy", "mallexxx", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "failedToReadCrashVersion",
+                "description": "Set to true when the crash version could not be read from the crash report",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_mac_crash_vpnextension": {
+        "description": "Fired when a crash is detected in the VPN extension",
+        "owners": ["ayoy", "mallexxx", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "failedToReadCrashVersion",
+                "description": "Set to true when the crash version could not be read from the crash report",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_mac_crash_unknown": {
+        "description": "Fired when a crash is detected but the source bundle could not be identified",
+        "owners": ["ayoy", "mallexxx", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "failedToReadCrashVersion",
+                "description": "Set to true when the crash version could not be read from the crash report",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_mac_crashreporting_failed_to_read_crash_contents": {
+        "description": "Fired when the crash reporter fails to read the contents of a crash report",
+        "owners": ["ayoy", "mallexxx", "samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

@@ -16,21 +16,22 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
+import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
-import BrowserServicesKit
-import History
-import PixelKit
-import PrivacyConfig
-import VPN
-import Subscription
-import os.log
-import Freemium
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
-import SwiftUI
 import DesignResourcesKitIcons
+import Freemium
+import History
+import os.log
+import PixelKit
+import PrivacyConfig
+import Subscription
+import SwiftUI
+import VPN
 
 protocol OptionsButtonMenuDelegate: AnyObject {
 
@@ -78,7 +79,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let internalUserDecider: InternalUserDecider
     @MainActor
     private lazy var sharingMenu: NSMenu = SharingMenu(title: UserText.shareMenuItem, location: .moreOptionsMenu, delegate: self)
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let freemiumDBPFeature: FreemiumDBPFeature
     private let freemiumDBPPresenter: FreemiumDBPPresenter
@@ -120,7 +121,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
          sharingMenu: NSMenu? = nil,
          internalUserDecider: InternalUserDecider,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
@@ -479,30 +480,29 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return
         }
 
-        #if SPARKLE
-        guard let updateController = updateController as? SparkleUpdateController else { return }
-
         // Log edge cases where menu item appears but doesn't function
         // To be removed in a future version
-        if !update.isInstalled, updateController.updateProgress.isDone {
-            updateController.log()
+        if let sparkleUpdateController = updateController as? any SparkleUpdateController,
+           !update.isInstalled, updateController.updateProgress.isDone {
+            sparkleUpdateController.log()
         }
-        #endif
 
-        guard updateController.hasPendingUpdate else {
+        guard updateController.hasPendingUpdate && updateController.mustShowUpdateIndicators else {
             return
         }
 
+        let isMenuItemCreatedFromUpdateController = featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) || featureFlagger.isFeatureOn(.updatesSimplifiedFlow)
+
         let menuItem: NSMenuItem = {
-            #if SPARKLE
-            if featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) {
-                return SparkleUpdateMenuItemFactory.menuItem(for: updateController)
+            if let sparkleUpdateController = updateController as? any SparkleUpdateController {
+                if isMenuItemCreatedFromUpdateController {
+                    return SparkleUpdateMenuItemFactory.menuItem(for: sparkleUpdateController)
+                } else {
+                    return SparkleUpdateMenuItemFactory.menuItem(for: update)
+                }
             } else {
-                return SparkleUpdateMenuItemFactory.menuItem(for: update)
+                return AppStoreUpdateMenuItemFactory.menuItem(for: update)
             }
-            #else
-            return AppStoreUpdateMenuItemFactory.menuItem(for: update)
-            #endif
         }()
 
         updateMenuItem = menuItem
@@ -753,7 +753,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         guard let updateController = Application.appDelegate.updateController else { return }
 
-        if updateController.hasPendingUpdate && updateController.needsNotificationDot {
+        if updateController.clearsNotificationDotOnMenuOpen,
+           updateController.hasPendingUpdate,
+           updateController.needsNotificationDot {
             updateController.needsNotificationDot = false
         }
 
@@ -1238,7 +1240,7 @@ final class HelpSubMenu: NSMenu {
 final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
     var subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    var subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    var subscriptionManager: any SubscriptionManager
 
     var networkProtectionItem: NSMenuItem!
     var dataBrokerProtectionItem: NSMenuItem!
@@ -1251,7 +1253,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
     init(targeting target: AnyObject,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding,
          featureFlagger: FeatureFlagger,
          onComplete: @escaping () -> Void = {}) {
@@ -1345,27 +1347,17 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     private func refreshAvailabilityBasedOnEntitlements() {
         guard subscriptionManager.isUserAuthenticated else { return }
 
-        @Sendable func hasEntitlement(for productName: Entitlement.ProductName) async -> Bool {
-            // Note by Diego: this is bad as it will default to `false` on transient errors
-            (try? await subscriptionManager.isFeatureEnabled(productName)) ?? false
-        }
-
         Task.detached(priority: .background) { [weak self] in
             guard let self else { return }
 
-            let isNetworkProtectionItemEnabled = await hasEntitlement(for: .networkProtection)
-            let isDataBrokerProtectionItemEnabled = await hasEntitlement(for: .dataBrokerProtection)
-            let isPaidAIChatItemEnabled = await hasEntitlement(for: .paidAIChat)
-
-            let hasIdentityTheftRestoration = await hasEntitlement(for: .identityTheftRestoration)
-            let hasIdentityTheftRestorationGlobal = await hasEntitlement(for: .identityTheftRestorationGlobal)
-            let isIdentityTheftRestorationItemEnabled = hasIdentityTheftRestoration || hasIdentityTheftRestorationGlobal
+            let status = await subscriptionManager.getAllEntitlementStatus()
+            let isIdentityTheftRestorationItemEnabled = status.identityTheftRestoration || status.identityTheftRestorationGlobal
 
             Task { @MainActor in
-                self.networkProtectionItem.isEnabled = isNetworkProtectionItemEnabled
-                self.dataBrokerProtectionItem.isEnabled = isDataBrokerProtectionItemEnabled
+                self.networkProtectionItem.isEnabled = status.networkProtection
+                self.dataBrokerProtectionItem.isEnabled = status.dataBrokerProtection
                 self.identityTheftRestorationItem.isEnabled = isIdentityTheftRestorationItemEnabled
-                self.paidAIChatItem.isEnabled = isPaidAIChatItemEnabled
+                self.paidAIChatItem.isEnabled = status.paidAIChat
             }
         }
     }

@@ -219,6 +219,15 @@ struct PermissionAuthorizationSwiftUIView: View {
         case denied
         /// Permission was already denied/restricted/disabled before showing the UI
         case alreadyDenied
+
+        /// Whether the system permission request has completed with a result.
+        /// Mirrors Apple's `UNAuthorizationStatus.notDetermined` terminology.
+        var isDetermined: Bool {
+            switch self {
+            case .authorized, .denied, .alreadyDenied: return true
+            case .initial, .waiting: return false
+            }
+        }
     }
 
     @State private var systemPermissionState: SystemPermissionState = .initial
@@ -383,7 +392,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     @ViewBuilder
     private var stepOneView: some View {
         HStack(spacing: 12) {
-            stepIndicator(step: 1, isActive: systemPermissionState != .authorized, isCompleted: systemPermissionState == .authorized)
+            stepIndicator(step: 1, isActive: !systemPermissionState.isDetermined, isCompleted: systemPermissionState == .authorized)
 
             switch systemPermissionState {
             case .initial:
@@ -439,36 +448,35 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     @ViewBuilder
     private var stepTwoView: some View {
-        let isEnabled = systemPermissionState == .authorized
+        let isAllowButtonEnabled = systemPermissionState == .authorized
 
         HStack(spacing: 12) {
-            stepIndicator(step: 2, isActive: isEnabled)
+            stepIndicator(step: 2, isActive: true)
 
             HStack(spacing: 8) {
                 Button(action: onDeny) {
                     Text(UserText.permissionPopupDenyButton)
                         .font(.system(size: 13))
-                        .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
-                        .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
+                        .background(Color(designSystemColor: .controlsFillPrimary))
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .disabled(!isEnabled)
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.denyButton")
 
                 Button(action: onAllow) {
                     Text(UserText.permissionPopupAllowButton)
                         .font(.system(size: 13))
-                        .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
+                        .foregroundColor(isAllowButtonEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
-                        .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
+                        .background(isAllowButtonEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .disabled(!isEnabled)
+                .disabled(!isAllowButtonEnabled)
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.allowButton")
             }
         }

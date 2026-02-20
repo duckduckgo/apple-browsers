@@ -37,6 +37,9 @@
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Vytvorí sa tak šifrovaná záloha tvojich záložiek a údajov automatického dopĺňania na zabezpečenom serveri DuckDuckGo, ktorú môžeš synchronizovať s ostatnými zariadeniami.";
 
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Týmto sa na zabezpečenom serveri DuckDuckGo vytvorí šifrovaná záloha tvojich uložených záložiek, hesiel, kreditných kariet a četov Duck.ai, ktorú je možné synchronizovať s tvojimi ostatnými zariadeniami.";
+
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Šifrovací kľúč je uložený iba vo vašom zariadení - DuckDuckGo k nemu nemá prístup.";
 
@@ -141,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Tvoje záložky a údaje automatického vypĺňania sa pripravujú na synchronizáciu. Malo by to trvať len chvíľu.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Tvoje záložky, heslá a čety Duck.ai sa pripravujú na synchronizáciu. Malo by to trvať len chvíľu.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Pripája sa...";
@@ -289,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Bezpečne synchronizujte záložky a heslá medzi svojimi zariadeniami.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Bezpečne synchronizuj záložky, údaje automatického dopĺňania a čety Duck.ai medzi tvojimi zariadeniami.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Začať synchronizáciu";
 
@@ -303,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Vypnúť synchronizáciu a zálohovanie...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Záložky, údaje automatického dopĺňania a čety Duck.ai sú momentálne synchronizované na všetkých tvojich zariadeniach.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Synchronizácia je povolená";

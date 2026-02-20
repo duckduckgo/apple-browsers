@@ -24,14 +24,14 @@ import SubscriptionTestingUtilities
 
 final class WinBackOfferVisibilityManagerTests: XCTestCase {
 
-    var mockSubscriptionManager: SubscriptionManagerMockV2!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var mockStore: MockWinbackOfferStore!
     var mockFeatureFlagProvider: MockWinBackOfferFeatureFlagProvider!
     var manager: WinBackOfferVisibilityManager!
 
     override func setUp() {
         super.setUp()
-        mockSubscriptionManager = SubscriptionManagerMockV2()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockStore = MockWinbackOfferStore()
         mockFeatureFlagProvider = MockWinBackOfferFeatureFlagProvider()
         manager = WinBackOfferVisibilityManager(
@@ -65,7 +65,7 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
         mockStore.churnDate = Date().addingTimeInterval(-4 * .day)
-        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.appleSubscription
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
 
         manager = WinBackOfferVisibilityManager(
             subscriptionManager: mockSubscriptionManager,
@@ -440,7 +440,8 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
             status: status,
             activeOffers: [],
             tier: nil,
-            availableChanges: nil
+            availableChanges: nil,
+            pendingPlans: nil
         )
     }
 }

@@ -65,33 +65,37 @@ public struct RemoteMessageModel: Equatable, Codable {
         case .small(let titleText, let descriptionText):
             self.content = .small(titleText: translation.titleText ?? titleText,
                                   descriptionText: translation.descriptionText ?? descriptionText)
-        case .medium(let titleText, let descriptionText, let placeholder):
+        case .medium(let titleText, let descriptionText, let placeholder, let imageUrl):
             self.content = .medium(titleText: translation.titleText ?? titleText,
                                    descriptionText: translation.descriptionText ?? descriptionText,
-                                   placeholder: placeholder)
-        case .bigSingleAction(let titleText, let descriptionText, let placeholder, let primaryActionText, let primaryAction):
+                                   placeholder: placeholder,
+                                   imageUrl: imageUrl)
+        case .bigSingleAction(let titleText, let descriptionText, let placeholder, let imageUrl, let primaryActionText, let primaryAction):
             self.content = .bigSingleAction(titleText: translation.titleText ?? titleText,
                                             descriptionText: translation.descriptionText ?? descriptionText,
                                             placeholder: placeholder,
+                                            imageUrl: imageUrl,
                                             primaryActionText: translation.primaryActionText ?? primaryActionText,
                                             primaryAction: primaryAction)
-        case .bigTwoAction(let titleText, let descriptionText, let placeholder, let primaryActionText, let primaryAction,
+        case .bigTwoAction(let titleText, let descriptionText, let placeholder, let imageUrl, let primaryActionText, let primaryAction,
                            let secondaryActionText, let secondaryAction):
             self.content = .bigTwoAction(titleText: translation.titleText ?? titleText,
                                          descriptionText: translation.descriptionText ?? descriptionText,
                                          placeholder: placeholder,
+                                         imageUrl: imageUrl,
                                          primaryActionText: translation.primaryActionText ?? primaryActionText,
                                          primaryAction: primaryAction,
                                          secondaryActionText: translation.secondaryActionText ?? secondaryActionText,
                                          secondaryAction: secondaryAction)
-        case .promoSingleAction(let titleText, let descriptionText, let placeholder, let actionText, let action):
+        case .promoSingleAction(let titleText, let descriptionText, let placeholder, let imageUrl, let actionText, let action):
             self.content = .promoSingleAction(titleText: translation.titleText ?? titleText,
                                             descriptionText: translation.descriptionText ?? descriptionText,
                                             placeholder: placeholder,
+                                              imageUrl: imageUrl,
                                             actionText: translation.primaryActionText ?? actionText,
                                             action: action)
 
-        case .cardsList(let titleText, let placeholder, let items, let primaryActionText, let primaryAction):
+        case .cardsList(let titleText, let placeholder, let imageUrl, let items, let primaryActionText, let primaryAction):
 
             let translatedItems: [RemoteMessageModelType.ListItem] = items.map { item in
                 guard let translatedItem = translation.listItems?[item.id] else {
@@ -133,6 +137,7 @@ public struct RemoteMessageModel: Equatable, Codable {
             self.content = .cardsList(
                 titleText: translation.titleText ?? titleText,
                 placeholder: placeholder,
+                imageUrl: imageUrl,
                 items: translatedItems,
                 primaryActionText: translation.primaryActionText ?? primaryActionText,
                 primaryAction: primaryAction
@@ -161,16 +166,36 @@ public struct RemoteMessageSurfaceType: OptionSet, Codable, Hashable, Equatable 
 }
 
 public enum RemoteMessageModelType: Codable, Equatable {
-    case small(titleText: String, descriptionText: String)
-    case medium(titleText: String, descriptionText: String, placeholder: RemotePlaceholder)
-    case bigSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+    case small(titleText: String,
+               descriptionText: String)
+    case medium(titleText: String,
+                descriptionText: String,
+                placeholder: RemotePlaceholder,
+                imageUrl: URL?)
+    case bigSingleAction(titleText: String,
+                         descriptionText: String,
+                         placeholder: RemotePlaceholder, imageUrl: URL?,
                          primaryActionText: String, primaryAction: RemoteAction)
-    case bigTwoAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
-                      primaryActionText: String, primaryAction: RemoteAction, secondaryActionText: String,
+    case bigTwoAction(titleText: String,
+                      descriptionText: String,
+                      placeholder: RemotePlaceholder,
+                      imageUrl: URL?,
+                      primaryActionText: String,
+                      primaryAction: RemoteAction,
+                      secondaryActionText: String,
                       secondaryAction: RemoteAction)
-    case promoSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
-                           actionText: String, action: RemoteAction)
-    case cardsList(titleText: String, placeholder: RemotePlaceholder?, items: [ListItem], primaryActionText: String, primaryAction: RemoteAction)
+    case promoSingleAction(titleText: String,
+                           descriptionText: String,
+                           placeholder: RemotePlaceholder,
+                           imageUrl: URL?,
+                           actionText: String,
+                           action: RemoteAction)
+    case cardsList(titleText: String,
+                   placeholder: RemotePlaceholder?,
+                   imageUrl: URL?,
+                   items: [ListItem],
+                   primaryActionText: String,
+                   primaryAction: RemoteAction)
 }
 
 extension RemoteMessageModelType {
@@ -179,8 +204,22 @@ extension RemoteMessageModelType {
         switch self {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
             return nil
-        case let .cardsList(_, _, items, _, _):
+        case let .cardsList(_, _, _, items, _, _):
             return items
+        }
+    }
+
+    /// Returns the remote image URL if present for this message type.
+    public var imageUrl: URL? {
+        switch self {
+        case .small:
+            return nil
+        case .medium(_, _, _, let imageUrl),
+             .bigSingleAction(_, _, _, let imageUrl, _, _),
+             .bigTwoAction(_, _, _, let imageUrl, _, _, _, _),
+             .promoSingleAction(_, _, _, let imageUrl, _, _),
+             .cardsList(_, _, let imageUrl, _, _, _):
+            return imageUrl
         }
     }
 }
@@ -247,6 +286,7 @@ public enum NavigationTarget: String, Codable, Equatable {
     case sync
     case importPasswords = "import.passwords"
     case appearance
+    case personalInformationRemoval = "pir.main"
 }
 
 public enum RemoteAction: Codable, Equatable {
@@ -268,6 +308,7 @@ public enum RemotePlaceholder: String, Codable, CaseIterable {
     case appUpdate = "RemoteMessageAppUpdate"
     case macComputer = "RemoteMessageMacComputer"
     case newForMacAndWindows = "RemoteMessageNewForMacAndWindows"
+    case macAndWindows = "RemoteMessageForMacAndWindows"
     case privacyShield = "RemoteMessagePrivacyShield"
     case aiChat = "RemoteDuckAi"
     case visualDesignUpdate = "RemoteVisualDesignUpdate"

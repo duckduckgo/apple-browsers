@@ -17,6 +17,8 @@
 //
 
 import AIChat
+import AppUpdaterShared
+import AttributedMetric
 import AutoconsentStats
 import Bookmarks
 import BrokenSitePrompt
@@ -55,8 +57,8 @@ import UserNotifications
 import Utilities
 import VPN
 import VPNAppState
+import WebExtensions
 import WebKit
-import AttributedMetric
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -97,6 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
+    let pinningManager = LocalPinningManager()
     let tabDragAndDropManager: TabDragAndDropManager
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
@@ -111,10 +114,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
+    private var passwordsStatusBarMenu: PasswordsStatusBarMenu?
+    private var passwordsMenuBarCancellable: AnyCancellable?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
-    private(set) var syncAIChatsCleaner: SyncAIChatsCleaning?
+    private(set) var syncErrorHandler = SyncErrorHandler()
+    private(set) var aiChatSyncCleaner: AIChatSyncCleaning?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
     private var screenLockedCancellable: AnyCancellable?
@@ -196,7 +202,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
         subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
         protectionsReportModel: newTabPageProtectionsReportModel,
-        homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
+        homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
+        nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
+        subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
+        duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
+        syncService: syncService,
+        pinningManager: pinningManager
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -229,17 +240,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
-        subscriptionManager: subscriptionAuthV1toV2Bridge,
+        subscriptionManager: subscriptionManager,
         featureFlagger: featureFlagger,
         vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
     )
     let themeManager: ThemeManager
 
-    let displaysTabsProgressIndicator: Bool
-
     let wideEvent: WideEventManaging
-    var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
-    let subscriptionManagerV2: (any SubscriptionManagerV2)?
+    let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    let subscriptionManager: any SubscriptionManager
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
@@ -260,7 +269,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     public let vpnSettings = VPNSettings(defaults: .netP)
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
-        featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge),
+        featureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
         featureFlagOverridesPublisher: featureFlagOverridesPublishingHandler.flagDidChangePublisher,
         loginItemsManager: LoginItemsManager(),
         defaults: .netP)
@@ -272,9 +281,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = {
         return VPNUpsellVisibilityManager(
-            isFirstLaunch: false,
             isNewUser: AppDelegate.isNewUser,
-            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            subscriptionManager: subscriptionManager,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
             persistor: vpnUpsellUserDefaultsPersistor,
@@ -290,7 +298,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Note: Using UserDefaultsWrapper as legacy store here because the pre-existed code used it.
     lazy var homePageSetUpDependencies: HomePageSetUpDependencies = {
-        return HomePageSetUpDependencies(subscriptionManager: subscriptionAuthV1toV2Bridge,
+        return HomePageSetUpDependencies(subscriptionManager: subscriptionManager,
                                          keyValueStore: keyValueStore,
                                          legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
     }()
@@ -298,7 +306,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - DBP
 
     private lazy var dataBrokerProtectionSubscriptionEventHandler: DataBrokerProtectionSubscriptionEventHandler = {
-        let authManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionAuthV1toV2Bridge)
+        let authManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
         return DataBrokerProtectionSubscriptionEventHandler(featureDisabler: DataBrokerProtectionFeatureDisabler(),
                                                             authenticationManager: authManager,
                                                             pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
@@ -310,13 +318,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if DEBUG || REVIEW
         let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueStore)
         let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
-        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionManager,
                                                                       winbackOfferStore: winbackOfferStore,
                                                                       winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
                                                                       dateProvider: dateProvider,
                                                                       timeBeforeOfferAvailability: .seconds(5))
 #else
-        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionManager,
                                                                       winbackOfferStore: winbackOfferStore,
                                                                       winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider)
 #endif
@@ -333,7 +341,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var winBackOfferPromptPresenter: WinBackOfferPromptPresenting = {
         return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager,
-                                          subscriptionManager: subscriptionAuthV1toV2Bridge)
+                                          subscriptionManager: subscriptionManager)
     }()
 
     lazy var winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator = {
@@ -348,15 +356,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return WideEventService(
             wideEvent: wideEvent,
             featureFlagger: featureFlagger,
-            subscriptionBridge: subscriptionAuthV1toV2Bridge
+            subscriptionManager: subscriptionManager
         )
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    private var webExtensionFeatureFlagHandler: AnyObject?
 
     private var didFinishLaunching = false
 
-    var updateController: UpdateController!
+    var updateController: UpdateController?
 #if SPARKLE
     var dockCustomization: DockCustomization?
 #endif
@@ -376,6 +385,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     let memoryUsageMonitor: MemoryUsageMonitor
+    /// Optional `var` because its `syncServiceProvider` closure captures `self`,
+    /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
+    var memoryPressureReporter: MemoryPressureReporter?
+    let memoryUsageThresholdReporter: MemoryUsageThresholdReporter
+    /// Optional `var` because its `syncServiceProvider` closure captures `self`,
+    /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
+    var memoryUsageIntervalReporter: MemoryUsageIntervalReporter?
+
+    /// The date this app instance was launched, used for computing uptime in memory pixels.
+    private let appLaunchDate = Date()
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
@@ -417,7 +436,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
-        wideEvent = WideEvent()
 
         if AppVersion.runType.requiresEnvironment {
             let commonDatabase = Database()
@@ -528,7 +546,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
-        displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
+        wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
+        freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
+            wideEvent: wideEvent,
+            pixelHandler: FreeTrialPixelHandler(),
+            isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
+        )
+        freeTrialConversionService.startObservingSubscriptionChanges()
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
@@ -543,7 +567,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyConfigurationManager,
             pixelFiring: PixelKit.shared,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: aiChatMenuConfiguration
         )
 
 #if DEBUG
@@ -588,18 +613,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-        let subscriptionEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
 
         // Configuring V2 for migration
-        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: .mainApp)
+        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared)
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
-        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager, userDefaults: .subs) { accessType, error in
+        let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager, userDefaults: .subs) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                                  accessError: error,
-                                                                                 source: KeychainErrorSource.shared,
+                                                                                 source: KeychainErrorSource.browser,
                                                                                  authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
@@ -616,7 +641,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                             refreshEventMapping: authRefreshWideEventMapper)
         Logger.general.log("Configuring Subscription")
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
-        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
@@ -647,49 +672,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let isInternalUserEnabled = { featureFlagger.internalUserDecider.isInternalUser }
-        let subscriptionManager: DefaultSubscriptionManagerV2
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: pixelHandler)
+        let defaultSubscriptionManager: DefaultSubscriptionManager
         if #available(macOS 12.0, *) {
-            subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                                                                                   subscriptionFeatureFlagger: subscriptionFeatureFlagger),
-                                                               oAuthClient: authClient,
-                                                               userDefaults: subscriptionUserDefaults,
-                                                               subscriptionEndpointService: subscriptionEndpointService,
-                                                               subscriptionEnvironment: subscriptionEnvironment,
-                                                               pixelHandler: pixelHandler,
-                                                               isInternalUserEnabled: isInternalUserEnabled)
+            defaultSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                                                                                      subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                                                                                      pendingTransactionHandler: pendingTransactionHandler),
+                                                                    oAuthClient: authClient,
+                                                                    userDefaults: subscriptionUserDefaults,
+                                                                    subscriptionEndpointService: subscriptionEndpointService,
+                                                                    subscriptionEnvironment: subscriptionEnvironment,
+                                                                    pixelHandler: pixelHandler,
+                                                                    isInternalUserEnabled: isInternalUserEnabled)
         } else {
-            subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
-                                                               userDefaults: subscriptionUserDefaults,
-                                                               subscriptionEndpointService: subscriptionEndpointService,
-                                                               subscriptionEnvironment: subscriptionEnvironment,
-                                                               pixelHandler: pixelHandler,
-                                                               isInternalUserEnabled: isInternalUserEnabled)
+            defaultSubscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
+                                                                    userDefaults: subscriptionUserDefaults,
+                                                                    subscriptionEndpointService: subscriptionEndpointService,
+                                                                    subscriptionEnvironment: subscriptionEnvironment,
+                                                                    pixelHandler: pixelHandler,
+                                                                    isInternalUserEnabled: isInternalUserEnabled)
         }
 
         // Expired refresh token recovery
         if #available(iOS 15.0, macOS 12.0, *) {
-            let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: subscriptionManager.storePurchaseManager())
-            subscriptionManager.tokenRecoveryHandler = {
-                try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
+            let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
+                                                         storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
+                                                         pendingTransactionHandler: pendingTransactionHandler)
+            defaultSubscriptionManager.tokenRecoveryHandler = {
+                try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
             }
         }
 
-        subscriptionManagerV2 = subscriptionManager
-        subscriptionAuthV1toV2Bridge = subscriptionManager
+        subscriptionManager = defaultSubscriptionManager
 
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinedTabsManager: pinnedTabsManager)
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinnedTabsManager: pinnedTabsManager)
 
         let windowControllersManager = WindowControllersManager(
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
                 privacyConfigurationManager: privacyConfigurationManager,
-                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
+                purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform,
                 featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
             ),
             internalUserDecider: internalUserDecider,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            pinningManager: pinningManager
         )
-        tabsPreferences = TabsPreferences(persistor: TabsPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        tabsPreferences = TabsPreferences(
+            persistor: TabsPreferencesUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
+            windowControllersManager: windowControllersManager
+        )
         windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
 
@@ -708,7 +741,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
             tabShower: windowControllersManager,
-            subscriptionManager: subscriptionAuthV1toV2Bridge
+            subscriptionManager: subscriptionManager
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
@@ -747,8 +780,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(
+            pinningManager: pinningManager,
             persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
-            windowControllersManager: windowControllersManager,
             appearancePreferences: appearancePreferences
         )
         defaultBrowserPreferences = DefaultBrowserPreferences()
@@ -756,7 +789,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aboutPreferences = AboutPreferences(
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            keyValueStore: UserDefaults.standard
         )
         accessibilityPreferences = AccessibilityPreferences()
         duckPlayer = DuckPlayer(
@@ -775,7 +809,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
                                           pixelFiring: PixelKit.shared,
-                                          syncAIChatsCleaner: { Application.appDelegate.syncAIChatsCleaner })
+                                          aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner })
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
@@ -795,12 +829,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 duckPlayer: duckPlayer,
                 windowControllersManager: windowControllersManager,
                 bookmarkManager: bookmarkManager,
+                pinningManager: pinningManager,
                 historyCoordinator: historyCoordinator,
                 fireproofDomains: fireproofDomains,
                 fireCoordinator: fireCoordinator,
                 tld: tld,
                 autoconsentManagement: autoconsentManagement,
-                contentScopePreferences: contentScopePreferences
+                contentScopePreferences: contentScopePreferences,
+                syncErrorHandler: syncErrorHandler
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -824,12 +860,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             duckPlayer: duckPlayer,
             windowControllersManager: windowControllersManager,
             bookmarkManager: bookmarkManager,
+            pinningManager: pinningManager,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,
             tld: tld,
             autoconsentManagement: autoconsentManagement,
-            contentScopePreferences: contentScopePreferences
+            contentScopePreferences: contentScopePreferences,
+            syncErrorHandler: syncErrorHandler
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,
@@ -875,16 +913,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     privacyConfigurationManager: privacyConfigurationManager
                 ),
                 remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
-                subscriptionManager: subscriptionAuthV1toV2Bridge,
+                subscriptionManager: subscriptionManager,
                 featureFlagger: self.featureFlagger,
                 configurationURLProvider: configurationURLProvider,
                 themeManager: themeManager,
                 dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager }
             )
+            let subscriptionManagerForPIR = subscriptionManager
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
             }, navigateToFeedbackHandler: {
                 windowControllersManager.showFeedbackModal(preselectedFormOption: .feedback(feedbackCategory: .other))
+            }, navigateToPIRHandler: {
+                let hasEntitlement = (try? await subscriptionManagerForPIR.isFeatureEnabled(.dataBrokerProtection)) ?? false
+                await MainActor.run {
+                    if hasEntitlement {
+                        windowControllersManager.showTab(with: .dataBrokerProtection)
+                    } else {
+                        let url = subscriptionManagerForPIR.url(for: .purchase)
+                        windowControllersManager.showTab(with: .subscription(url))
+                    }
+                }
             })
         } else {
             // As long as remoteMessagingClient is private to App Delegate and activeRemoteMessageModel
@@ -895,16 +944,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 remoteMessagingStore: nil,
                 remoteMessagingAvailabilityProvider: nil,
                 openURLHandler: { _ in },
-                navigateToFeedbackHandler: { }
+                navigateToFeedbackHandler: { },
+                navigateToPIRHandler: { }
             )
         }
 
         // Update VPN environment and match the Subscription environment
-        vpnSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
+        vpnSettings.alignTo(subscriptionEnvironment: subscriptionManager.currentEnvironment)
 
         // Update DBP environment and match the Subscription environment
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-        dbpSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
+        dbpSettings.alignTo(subscriptionEnvironment: subscriptionManager.currentEnvironment)
 
         // Also update the stored run type so the login item knows if tests are running
         dbpSettings.updateStoredRunType()
@@ -913,7 +963,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
 
         freemiumDBPFeature = DefaultFreemiumDBPFeature(privacyConfigurationManager: privacyConfigurationManager,
-                                                       subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                                       subscriptionManager: subscriptionManager,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                                                   freemiumDBPFeature: freemiumDBPFeature,
@@ -998,7 +1048,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .appConfiguration,
                                                                       errorHandler: errorHandler)
         let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
-        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionAuthV1toV2Bridge)
+        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionManager)
         let defaultBrowserProvider = SystemDefaultBrowserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
                                                                dataStoring: attributedMetricDataStorage,
@@ -1009,9 +1059,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 
-        memoryUsageMonitor = MemoryUsageMonitor(logger: .memory)
+        memoryUsageMonitor = MemoryUsageMonitor(internalUserDecider: internalUserDecider, logger: .memory)
+        memoryUsageThresholdReporter = MemoryUsageThresholdReporter(
+            memoryUsageMonitor: memoryUsageMonitor,
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            logger: .memory
+        )
 
         super.init()
+
+        memoryPressureReporter = MemoryPressureReporter(
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            memoryUsageMonitor: memoryUsageMonitor,
+            windowContext: WindowContext(
+                standardTabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                pinnedTabs: windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                windows: windowControllersManager.mainWindowControllers.count
+            ),
+            isSyncEnabled: { [weak self] in
+                guard let syncService = self?.syncService else { return nil }
+
+                return syncService.authState == .active
+            },
+            launchDate: appLaunchDate,
+            logger: .memory
+        )
+
+        memoryUsageIntervalReporter = MemoryUsageIntervalReporter(
+            memoryUsageMonitor: memoryUsageMonitor,
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            windowContext: WindowContext(
+                standardTabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                pinnedTabs: windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count },
+                windows: windowControllersManager.mainWindowControllers.count
+            ),
+            isSyncEnabled: { [weak self] in
+                guard let syncService = self?.syncService else { return nil }
+
+                return syncService.authState == .active
+            },
+            launchDate: appLaunchDate,
+            logger: .memory
+        )
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
     }
@@ -1038,32 +1130,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                              keyValueStore: keyValueStore,
                                                              sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                                                              pixelFiring: PixelKit.shared)
-#if APPSTORE
-        if AppVersion.runType != .uiTests {
-            updateController = AppStoreUpdateController()
-        }
-#elseif SPARKLE
-        if AppVersion.runType != .uiTests {
-            let updateController = SparkleUpdateController(
-                internalUserDecider: internalUserDecider
-            )
-            self.updateController = updateController
-            stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
-        }
-#endif
+
+        initializeUpdateController()
 
         appIconChanger = AppIconChanger(internalUserDecider: internalUserDecider, appearancePreferences: appearancePreferences)
 
-        // Configure Event handlers
-        let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
-        let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
+        if AppVersion.runType.requiresEnvironment {
+            // Configure Event handlers
+            let vpnUninstaller = VPNUninstaller(pinningManager: pinningManager, ipcClient: vpnXPCClient)
+            let featureGatekeeper = DefaultVPNFeatureGatekeeper(vpnUninstaller: vpnUninstaller, subscriptionManager: subscriptionManager)
+            let tunnelController = NetworkProtectionIPCTunnelController(featureGatekeeper: featureGatekeeper, ipcClient: vpnXPCClient)
 
-        vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionAuthV1toV2Bridge,
-                                                                   tunnelController: tunnelController,
-                                                                   vpnUninstaller: vpnUninstaller)
+            vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionManager,
+                                                                       tunnelController: tunnelController,
+                                                                       vpnUninstaller: vpnUninstaller)
 
-        // Freemium DBP
-        freemiumDBPFeature.subscribeToDependencyUpdates()
+            // Freemium DBP
+            freemiumDBPFeature.subscribeToDependencyUpdates()
+        }
 
         // ignore popovers shown from a view not in view hierarchy
         // https://app.asana.com/0/1201037661562251/1206407295280737/f
@@ -1081,7 +1165,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Task {
-            await subscriptionManagerV2?.loadInitialData()
+            await subscriptionManager.loadInitialData()
 
             vpnAppEventsHandler.applicationDidFinishLaunching()
         }
@@ -1108,7 +1192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupWebExtensions()
 
-        vpnUpsellVisibilityManager.setup(isFirstLaunch: isFirstLaunch)
+        vpnUpsellVisibilityManager.setup(isFirstLaunch: isFirstLaunch, isOnboardingFinished: OnboardingActionsManager.isOnboardingFinished)
 
         AtbAndVariantCleanup.cleanup()
         DefaultVariantManager().assignVariantIfNeeded { _ in
@@ -1130,7 +1214,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
-
         BWManager.shared.initCommunication()
 
         if case .normal = AppVersion.runType,
@@ -1149,7 +1232,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         applyPreferredTheme()
 
 #if APPSTORE
-        crashCollection.startAttachingCrashLogMessages { [weak self] pixelParameters, payloads, completion in
+        let sortKeys = !featureFlagger.isFeatureOn(.crashCollectionDisableKeysSorting)
+        let isCallStackLimitingEnabled = featureFlagger.isFeatureOn(.crashCollectionLimitCallStackTreeDepth)
+        let callStackDepthLimit: Int? = isCallStackLimitingEnabled ? 250 : nil
+
+        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: callStackDepthLimit, sortKeys: sortKeys) { [weak self] pixelParameters, payloads, completion in
 
             pixelParameters.forEach { parameters in
                 var params = parameters
@@ -1200,7 +1287,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            subscriptionManager: subscriptionManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
 
@@ -1209,6 +1296,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         TipKitAppEventHandler(featureFlagger: featureFlagger).appDidFinishLaunching()
 
         setUpAutofillPixelReporter()
+        setUpPasswordsMenuBarVisibility()
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
@@ -1270,7 +1358,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            subscriptionManager: subscriptionManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager
         )
 
@@ -1319,7 +1407,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireThemeDailyPixel() {
-        guard featureFlagger.isFeatureOn(.themes) else { return }
         PixelKit.fire(ThemePixels.themeNameDaily(themeName: themeManager.theme.name), frequency: .daily)
     }
 
@@ -1330,79 +1417,177 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SyncDiagnosisHelper(syncService: syncService).diagnoseAccountStatus()
     }
 
+    @MainActor
+    private func initializeUpdateController() {
+        guard AppVersion.runType != .uiTests else { return }
+
+        let buildType = StandardApplicationBuildType()
+        let notificationPresenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
+
+        if buildType.isAppStoreBuild {
+            guard let appStoreFactory = UpdateControllerFactory.self as? any AppStoreUpdateControllerFactory.Type else {
+                assertionFailure("Failed to instantiate app store update controller")
+                return
+            }
+
+            self.updateController = appStoreFactory.instantiate(
+                internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger,
+                pixelFiring: PixelKit.shared,
+                notificationPresenter: notificationPresenter,
+                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
+            )
+        } else {
+            assert(buildType.isSparkleBuild)
+
+            guard let sparkleFactory = UpdateControllerFactory.self as? any SparkleUpdateControllerFactory.Type else {
+                assertionFailure("Failed to instantiate sparkle update controller")
+                return
+            }
+
+            let allowCustomUpdateFeed = buildType.isDebugBuild || buildType.isReviewBuild
+            let sparkleUpdateController = sparkleFactory.instantiate(
+                internalUserDecider: internalUserDecider,
+                featureFlagger: featureFlagger,
+                pixelFiring: PixelKit.shared,
+                notificationPresenter: notificationPresenter,
+                keyValueStore: UserDefaults.standard,
+                allowCustomUpdateFeed: allowCustomUpdateFeed,
+                wideEvent: wideEvent,
+                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished },
+                openUpdatesPage: { [windowControllersManager] in
+                    windowControllersManager.showTab(with: .releaseNotes)
+                }
+            )
+            stateRestorationManager.subscribeToAutomaticAppRelaunching(using: sparkleUpdateController.willRelaunchAppPublisher)
+            self.updateController = sparkleUpdateController
+        }
+    }
+
+    private var terminationHandler: TerminationDeciderHandler?
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard featureFlagger.isFeatureOn(.terminationDeciderSequence) else {
             return applicationShouldTerminateFallback()
         }
 
-        // Show quit survey for first-time quitters (new users within 14 days)
-        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let quitSurveyDecider = QuitSurveyAppTerminationDecider(
-            featureFlagger: featureFlagger,
-            dataClearingPreferences: dataClearingPreferences,
-            downloadManager: downloadManager,
-            installDate: AppDelegate.firstLaunchDate,
-            persistor: persistor,
-            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
-            showQuitSurvey: { [weak self] in
-                guard let self else { return }
-                let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor)
-                await presenter.showSurvey()
-            }
-        )
-
-        if let surveyTask = quitSurveyDecider.presentQuitSurveyIfNeeded() {
-            Task { @MainActor in
-                await surveyTask.value
-                NSApp.reply(toApplicationShouldTerminate: true)
-            }
+        // Already running — the in-flight handler will reply() when done
+        if terminationHandler != nil {
             return .terminateLater
         }
 
-        let downloadsDecider = ActiveDownloadsAppTerminationDecider(
-            downloadManager: downloadManager,
-            downloadListCoordinator: downloadListCoordinator
-        )
-        if let downloadsTask = downloadsDecider.handleTermination() {
-            Task {
-                let shouldContinueTermination = await downloadsTask.value
-                guard shouldContinueTermination else {
-                    NSApp.reply(toApplicationShouldTerminate: false)
-                    return
-                }
-                let reply = continueTerminationAfterAsyncDeciders()
-                switch reply {
-                case .terminateCancel:
-                    NSApp.reply(toApplicationShouldTerminate: false)
-                case .terminateNow:
-                    NSApp.reply(toApplicationShouldTerminate: true)
-                case .terminateLater:
-                    break // autoClearHandler.onAutoClearCompleted will call `NSApp.reply(toApplicationShouldTerminate: true)`
-                @unknown default:
-                    NSApp.reply(toApplicationShouldTerminate: true)
-                }
+        let handler = TerminationDeciderHandler(
+            deciders: createTerminationDeciders(),
+            replyToApplicationShouldTerminate: { [weak self] shouldTerminate in
+                self?.terminationHandler = nil
+                NSApp.reply(toApplicationShouldTerminate: shouldTerminate)
             }
-            return .terminateLater
-        }
+        )
+        terminationHandler = handler
+        let reply = handler.executeTerminationDeciders()
 
-        return continueTerminationAfterAsyncDeciders()
+        if reply == .terminateCancel {
+            // Synchronous cancellation — discard handler
+            terminationHandler = nil
+        }
+        return reply
     }
 
     @MainActor
-    private func continueTerminationAfterAsyncDeciders() -> NSApplication.TerminateReply {
-        // Cancel any active update tracking flow
-        updateController?.handleAppTermination()
+    private func createTerminationDeciders() -> [ApplicationTerminationDecider] {
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
 
-        stateRestorationManager?.applicationWillTerminate()
+        let deciders: [ApplicationTerminationDecider?] = [
+            // 1. Quit survey (for new users within first 3 days)
+            QuitSurveyAppTerminationDecider(
+                featureFlagger: featureFlagger,
+                dataClearingPreferences: dataClearingPreferences,
+                downloadManager: downloadManager,
+                installDate: AppDelegate.firstLaunchDate,
+                persistor: persistor,
+                reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
+                showQuitSurvey: { [weak self] in
+                    guard let self else { return }
+                    let presenter = QuitSurveyPresenter(windowControllersManager: self.windowControllersManager, persistor: persistor)
+                    await presenter.showSurvey()
+                }
+            ),
 
-        // Handling of "Burn on quit"
-        if let terminationReply = autoClearHandler.handleAppTermination() {
-            return terminationReply
-        }
+            // 2. Active downloads check
+            ActiveDownloadsAppTerminationDecider(
+                downloadManager: downloadManager,
+                downloadListCoordinator: downloadListCoordinator
+            ),
 
-        tearDownPrivacyStats()
+            // 3. Warn before quit confirmation
+            makeWarnBeforeQuitDecider(),
 
-        return .terminateNow
+            // 4. Update controller cleanup
+            .perform { [updateController] in
+                updateController?.handleAppTermination()
+            },
+
+            // 5. State restoration
+            .perform { [stateRestorationManager] in
+                stateRestorationManager?.applicationWillTerminate()
+            },
+
+            // 6. Auto-clear (burn on quit)
+            autoClearHandler,
+
+            // 7. Privacy stats cleanup
+            .terminationDecider { [privacyStats] _ in
+                .async(Task {
+                    await privacyStats.handleAppTermination()
+                    return .next
+                })
+            },
+
+            // 8. Close windows before quitting while waiting for ⌘Q release
+            .perform {
+                NSApp.visibleWindows.forEach { $0.close() }
+            }
+        ]
+
+        return deciders.compactMap { $0 }
+    }
+
+    @MainActor
+    private func makeWarnBeforeQuitDecider() -> ApplicationTerminationDecider? {
+        // Don't show "warn before quit" if autoclear warning will be shown
+        let willShowAutoClearWarning = dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isWarnBeforeClearingEnabled
+
+        // Don't show if no window is open
+        let hasWindow = windowControllersManager.lastKeyMainWindowController?.window != nil
+
+        guard featureFlagger.isFeatureOn(.warnBeforeQuit),
+              !willShowAutoClearWarning,
+              hasWindow,
+              let currentEvent = NSApp.currentEvent else { return nil }
+
+        guard let manager = WarnBeforeQuitManager(
+            currentEvent: currentEvent,
+            action: .quit,
+            isWarningEnabled: { [tabsPreferences] in
+                tabsPreferences.warnBeforeQuitting
+            },
+            isPhysicalKeyPress: WarnBeforeQuitManager.makePhysicalKeyPressCheck(for: currentEvent)
+        ) else { return nil }
+
+        let presenter = WarnBeforeQuitOverlayPresenter(
+            startupPreferences: startupPreferences,
+            onDontAskAgain: { [tabsPreferences] in
+                PixelKit.fire(GeneralPixel.warnBeforeQuitDontShowAgain, frequency: .standard)
+                tabsPreferences.warnBeforeQuitting = false
+            },
+            onHoverChange: { [weak manager] isHovering in
+                manager?.setMouseHovering(isHovering)
+            }
+        )
+
+        // Subscribe to state stream (the Task keeps presenter alive)
+        presenter.subscribe(to: manager.stateStream)
+        return manager
     }
 
     // Original Termination Handler (Fallback - To be removed)
@@ -1451,7 +1636,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateRestorationManager?.applicationWillTerminate()
 
         // Handling of "Burn on quit"
-        if let terminationReply = autoClearHandler.handleAppTermination() {
+        if let terminationReply = autoClearHandler.handleAppTerminationFallback() {
             return terminationReply
         }
 
@@ -1493,8 +1678,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupWebExtensions() {
         if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManager()
+            let webExtensionManager = WebExtensionManagerFactory.makeManager(
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+                autoconsentPreferences: cookiePopupProtectionPreferences
+            )
             self.webExtensionManager = webExtensionManager
+
+            let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+                .flagDidChangePublisher
+                .filter { $0.0 == .webExtensions }
+                .map { $0.1 }
+                .eraseToAnyPublisher()
+
+            webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+                webExtensionManager: webExtensionManager,
+                featureFlagPublisher: publisher) { [weak self] in
+                    self?.webExtensionManager = nil
+                }
 
             Task {
                 await webExtensionManager.loadInstalledExtensions()
@@ -1507,11 +1707,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - PixelKit
 
     static func configurePixelKit() {
-#if DEBUG || REVIEW
-            Self.setUpPixelKit(dryRun: true)
-#else
-            Self.setUpPixelKit(dryRun: false)
-#endif
+        Self.setUpPixelKit(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild))
     }
 
     private static func setUpPixelKit(dryRun: Bool) {
@@ -1562,7 +1758,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         let environment = defaultEnvironment
 #endif
-        let syncErrorHandler = SyncErrorHandler()
         let syncDataProviders = SyncDataProvidersSource(
             bookmarksDatabase: bookmarkDatabase.db,
             bookmarkManager: bookmarkManager,
@@ -1576,10 +1771,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             environment: environment
         )
-        let syncAIChatsCleaner = SyncAIChatsCleaner(sync: syncService,
-                                                    keyValueStore: keyValueStore,
-                                                    featureFlagger: featureFlagger)
-        syncService.setCustomOperations([AIChatDeleteOperation(cleaner: syncAIChatsCleaner)])
+        let aiChatSyncCleaner = AIChatSyncCleaner(
+            sync: syncService,
+            keyValueStore: keyValueStore,
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger),
+            httpRequestErrorHandler: syncErrorHandler.handleAiChatsError
+        )
+        syncService.setCustomOperations([AIChatDeleteOperation(cleaner: aiChatSyncCleaner)])
 
         syncService.initializeIfNeeded()
         syncDataProviders.setUpDatabaseCleaners(syncService: syncService)
@@ -1593,7 +1791,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         self.syncDataProviders = syncDataProviders
         self.syncService = syncService
-        self.syncAIChatsCleaner = syncAIChatsCleaner
+        self.aiChatSyncCleaner = aiChatSyncCleaner
 
         isSyncInProgressCancellable = syncService.isSyncInProgressPublisher
             .filter { $0 }
@@ -1691,14 +1889,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func subscribeToUpdateControllerChanges() {
-#if SPARKLE
-        guard AppVersion.runType != .uiTests else { return }
+        guard AppVersion.runType != .uiTests,
+              let sparkleUpdateController = updateController as? any SparkleUpdateController else { return }
 
-        updateProgressCancellable = updateController.updateProgressPublisher
-            .sink { [weak self] progress in
-                (self?.updateController as? SparkleUpdateController)?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+        updateProgressCancellable = sparkleUpdateController.updateProgressPublisher
+            .sink { [weak sparkleUpdateController] progress in
+                sparkleUpdateController?.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
-#endif
     }
 
     private func emailDidSignInNotification(_ notification: Notification) {
@@ -1731,13 +1928,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager,
-                                                syncAIChatsCleaner: syncAIChatsCleaner)
+                                                aiChatSyncCleaner: aiChatSyncCleaner)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()
-            autoClearHandler.onAutoClearCompleted = {
-                NSApplication.shared.reply(toApplicationShouldTerminate: true)
-            }
         }
     }
 
@@ -1773,6 +1967,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                    queue: nil) { [weak self] _ in
             self?.autofillPixelReporter?.updateAutofillEnabledStatus(AutofillPreferences().askToSaveUsernamesAndPasswords)
         }
+    }
+
+    @MainActor
+    private func setUpPasswordsMenuBarVisibility() {
+        guard featureFlagger.isFeatureOn(.autofillPasswordsStatusBar) else {
+            passwordsStatusBarMenu?.hide()
+            passwordsStatusBarMenu = nil
+            passwordsMenuBarCancellable = nil
+            return
+        }
+
+        let preferences = AutofillPreferences()
+        if passwordsStatusBarMenu == nil {
+            passwordsStatusBarMenu = PasswordsStatusBarMenu(preferences: preferences, pinningManager: pinningManager)
+        }
+
+        if preferences.showInMenuBar {
+            passwordsStatusBarMenu?.show()
+        } else {
+            passwordsStatusBarMenu?.hide()
+        }
+
+        passwordsMenuBarCancellable = NotificationCenter.default.publisher(for: .autofillShowInMenuBarDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    let showInMenuBar = AutofillPreferences().showInMenuBar
+                    if showInMenuBar {
+                        self?.passwordsStatusBarMenu?.show()
+                    } else {
+                        self?.passwordsStatusBarMenu?.hide()
+                    }
+                }
+            }
     }
 }
 
@@ -1835,7 +2063,12 @@ extension AppDelegate: UserScriptDependenciesProviding {
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
             subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
             protectionsReportModel: newTabPageProtectionsReportModel,
-            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
+            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor,
+            nextStepsCardsPersistor: homePageSetUpDependencies.nextStepsCardsPersistor,
+            subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
+            duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
+            syncService: syncService,
+            pinningManager: pinningManager
         )
     }
 }

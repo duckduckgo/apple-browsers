@@ -17,516 +17,256 @@
 //
 
 import Cocoa
-import Combine
 import Common
-import History
-import os.log
-import PixelKit
 import DesignResourcesKitIcons
-import BrowserServicesKit
-import PrivacyConfig
 
-protocol FirePopoverViewControllerDelegate: AnyObject {
-
-    func firePopoverViewControllerDidClear(_ firePopoverViewController: FirePopoverViewController)
-    func firePopoverViewControllerDidCancel(_ firePopoverViewController: FirePopoverViewController)
-
+/// A text field that doesn't intercept mouse events, allowing clicks to pass through to views underneath
+private final class ClickThroughTextField: NSTextField {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil
+    }
 }
 
-final class FirePopoverViewController: NSViewController {
+protocol FirePopoverViewControllerDelegate: AnyObject {
+    func firePopoverViewControllerDidClear(_ firePopoverViewController: FirePopoverViewController)
+    func firePopoverViewControllerDidCancel(_ firePopoverViewController: FirePopoverViewController)
+}
 
-    struct Constants {
-        static let maximumContentHeight: CGFloat = 42 + 230 + 32
-        static let minimumContentHeight: CGFloat = 42
-        static let headerHeight: CGFloat = 28
-        static let footerHeight: CGFloat = 8
-    }
+/// Simplified Fire popover used ONLY for burner windows (Fire windows).
+/// Regular windows use the SwiftUI FireDialogView instead.
+final class FirePopoverViewController: NSViewController {
 
     weak var delegate: FirePopoverViewControllerDelegate?
 
     private let fireViewModel: FireViewModel
-    private var firePopoverViewModel: FireDialogViewModel
-    private let historyCoordinating: HistoryCoordinating
+    private weak var tabCollectionViewModel: TabCollectionViewModel?
     private let themeManager: ThemeManaging
 
-    @IBOutlet weak var backgroundView: ColorView!
-    @IBOutlet weak var mainButtonsBackgroundView: ColorView!
+#if DEBUG
+    // Preview action handlers (optional, for testing/previewing without side effects)
+    var onOpenNewBurnerWindow: (() -> Void)?
+    var onCloseBurnerWindow: (() -> Void)?
+#endif
 
-    @IBOutlet weak var closeTabsLabel: NSTextField!
-    @IBOutlet weak var openFireWindowsTitleLabel: NSTextField!
-    @IBOutlet weak var fireWindowDescriptionLabel: NSTextField!
-    @IBOutlet weak var headerWrapperView: NSView!
-    @IBOutlet weak var mainButtonsToBurnerWindowContraint: NSLayoutConstraint!
-    @IBOutlet weak var infoLabel: NSTextField!
-    @IBOutlet weak var optionsButton: NSPopUpButton!
-    @IBOutlet weak var optionsButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var openDetailsButton: NSButton!
-    @IBOutlet weak var openDetailsButtonImageView: NSImageView!
-    @IBOutlet weak var closeDetailsButton: NSButton!
-    @IBOutlet weak var detailsWrapperView: NSView!
-    @IBOutlet weak var contentHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var detailsWrapperViewHeightContraint: NSLayoutConstraint!
-    @IBOutlet weak var openWrapperView: NSView!
-    @IBOutlet weak var closeWrapperView: NSView!
-    @IBOutlet weak var collectionView: NSCollectionView!
-    @IBOutlet weak var collectionViewBottomConstraint: NSLayoutConstraint!
-    @IBOutlet weak var warningWrapperView: NSView!
-    @IBOutlet weak var warningButton: NSButton!
-    @IBOutlet weak var clearButton: NSButton!
-    @IBOutlet weak var cancelButton: NSButton!
-    @IBOutlet weak var closeBurnerWindowButton: NSButton!
-    @IBOutlet weak var burnerWindowButton: NSImageView!
-    @IBOutlet weak var fireGraphic: NSImageView!
+    private lazy var backgroundView: ColorView = {
+        let view = ColorView(frame: .zero, backgroundColor: NSColor(designSystemColor: .surfacePrimary))
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
 
-    private var viewModelCancellable: AnyCancellable?
-    private var selectedCancellable: AnyCancellable?
+    private lazy var openBurnerWindowButton: MouseOverButton = {
+        let button = MouseOverButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isBordered = false
+        button.setButtonType(.momentaryPushIn)
+        button.title = ""
+        button.mouseOverColor = themeManager.theme.colorsProvider.buttonMouseOverColor
+        button.mouseDownColor = themeManager.theme.colorsProvider.buttonMouseDownColor
+        button.cornerRadius = 4
+        button.target = self
+        button.action = #selector(openNewBurnerWindowAction)
+        return button
+    }()
+
+    private lazy var burnerIconView: NSImageView = {
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = DesignSystemImages.Glyphs.Size16.fireWindow
+        imageView.contentTintColor = NSColor.labelColor
+        return imageView
+    }()
+
+    private lazy var titleLabel: NSTextField = {
+        let label = ClickThroughTextField(labelWithString: UserText.fireDialogFireWindowTitle)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: NSFont.systemFontSize)
+        label.textColor = .labelColor
+        label.alignment = .left
+        label.lineBreakMode = .byTruncatingTail
+        label.isEditable = false
+        label.isSelectable = false
+        label.isBordered = false
+        label.drawsBackground = false
+        return label
+    }()
+
+    private lazy var descriptionLabel: NSTextField = {
+        let label = ClickThroughTextField(labelWithString: UserText.fireDialogFireWindowDescription)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        label.textColor = .secondaryLabelColor
+        label.alignment = .left
+        label.lineBreakMode = .byWordWrapping
+        label.isEditable = false
+        label.isSelectable = false
+        label.isBordered = false
+        label.drawsBackground = false
+        return label
+    }()
+
+    private lazy var separatorBox: NSBox = {
+        let box = NSBox()
+        box.translatesAutoresizingMaskIntoConstraints = false
+        box.boxType = .separator
+        return box
+    }()
+
+    private lazy var closeBurnerWindowButton: NSButton = {
+        let button = NSButton(title: "", target: self, action: #selector(closeBurnerWindowButtonAction))
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.bezelStyle = .rounded
+        button.controlSize = .large
+        button.setButtonType(.momentaryPushIn)
+
+        button.attributedTitle = NSAttributedString(
+            string: UserText.fireDialogBurnWindowButton,
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 13),
+                .foregroundColor: themeManager.theme.palette.destructiveTextPrimary
+            ]
+        )
+
+        return button
+    }()
+
+    init(fireViewModel: FireViewModel,
+         tabCollectionViewModel: TabCollectionViewModel,
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
+        self.fireViewModel = fireViewModel
+        self.tabCollectionViewModel = tabCollectionViewModel
+        self.themeManager = themeManager
+
+        super.init(nibName: nil, bundle: nil)
+    }
 
     required init?(coder: NSCoder) {
         fatalError("FirePopoverViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder,
-          fireViewModel: FireViewModel,
-          tabCollectionViewModel: TabCollectionViewModel,
-          historyCoordinating: HistoryCoordinating = NSApp.delegateTyped.historyCoordinator,
-          aiChatHistoryCleaner: AIChatHistoryCleaning = AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
-                                                                             aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
-                                                                             featureDiscovery: DefaultFeatureDiscovery(),
-                                                                             privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager),
-          dataClearingPreferences: DataClearingPreferences = NSApp.delegateTyped.dataClearingPreferences,
-          fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
-          faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager,
-          tld: TLD = NSApp.delegateTyped.tld,
-          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
-        self.fireViewModel = fireViewModel
-        self.historyCoordinating = historyCoordinating
-        self.themeManager = themeManager
-        // Clear chat history if the option is available and Duck.ai auto-clear is enabled
-        let includeChatHistory = aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption && dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isAutoClearAIChatHistoryEnabled
-        self.firePopoverViewModel = FireDialogViewModel(fireViewModel: fireViewModel,
-                                                        tabCollectionViewModel: tabCollectionViewModel,
-                                                        historyCoordinating: historyCoordinating,
-                                                        aiChatHistoryCleaner: aiChatHistoryCleaner,
-                                                        fireproofDomains: fireproofDomains,
-                                                        faviconManagement: faviconManagement,
-                                                        clearingOption: .allData,
-                                                        includeTabsAndWindows: true,
-                                                        includeHistory: true,
-                                                        includeCookiesAndSiteData: true,
-                                                        includeChatHistory: includeChatHistory,
-                                                        tld: tld)
-
-        super.init(coder: coder)
+    override func loadView() {
+        view = NSView(frame: NSRect(x: 0, y: 0, width: 344, height: 144))
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let nib = NSNib(nibNamed: "FirePopoverCollectionViewItem", bundle: nil)
-        collectionView.register(nib, forItemWithIdentifier: FirePopoverCollectionViewItem.identifier)
-        collectionView.delegate = self
-        collectionView.dataSource = self
+        setupUI()
+    }
 
-        refreshBackgroundColor()
-        updateBurnerButtonAppearance()
+    private func setupUI() {
+        view.addSubview(backgroundView)
+        view.addSubview(burnerIconView)
+        view.addSubview(titleLabel)
+        view.addSubview(openBurnerWindowButton)
+        view.addSubview(descriptionLabel)
+        view.addSubview(separatorBox)
+        view.addSubview(closeBurnerWindowButton)
 
-        if firePopoverViewModel.tabCollectionViewModel?.isBurner ?? false {
-            adjustViewForBurnerWindow()
+        NSLayoutConstraint.activate([
+            // Background fills the view
+            backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            // Mouse over button (behind everything in top section)
+            openBurnerWindowButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
+            openBurnerWindowButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            openBurnerWindowButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            openBurnerWindowButton.heightAnchor.constraint(equalToConstant: 60),
+
+            // Burner icon
+            burnerIconView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            burnerIconView.topAnchor.constraint(equalTo: view.topAnchor, constant: 26),
+            burnerIconView.widthAnchor.constraint(equalToConstant: 32),
+            burnerIconView.heightAnchor.constraint(equalToConstant: 32),
+
+            // Title label
+            titleLabel.leadingAnchor.constraint(equalTo: burnerIconView.trailingAnchor, constant: 6),
+            titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 25),
+
+            // Description label
+            descriptionLabel.leadingAnchor.constraint(equalTo: burnerIconView.trailingAnchor, constant: 6),
+            descriptionLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            descriptionLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
+
+            // Separator
+            separatorBox.topAnchor.constraint(equalTo: openBurnerWindowButton.bottomAnchor, constant: 6),
+            separatorBox.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            separatorBox.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            separatorBox.heightAnchor.constraint(equalToConstant: 5),
+
+            // Close button
+            closeBurnerWindowButton.topAnchor.constraint(equalTo: separatorBox.bottomAnchor, constant: 13),
+            closeBurnerWindowButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            closeBurnerWindowButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            closeBurnerWindowButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
+            closeBurnerWindowButton.heightAnchor.constraint(equalToConstant: 28)
+        ])
+    }
+
+    @objc func openNewBurnerWindowAction(_ sender: Any) {
+#if DEBUG
+        if let handler = onOpenNewBurnerWindow {
+            handler()
             return
         }
-
-        setUpStrings()
-        updateClearButtonAppearance()
-        setupOptionsButton()
-        setupOpenCloseDetailsButton()
-        updateWarningWrapperView()
-
-        subscribeToViewModel()
-        subscribeToSelected()
-
-        let iconsProvider = themeManager.theme.iconsProvider
-        fireGraphic.image = iconsProvider.fireInfoGraphic
+#endif
+        self.dismiss()
+        Application.appDelegate.newBurnerWindow(self)
     }
 
-    override func viewDidLayout() {
-        super.viewDidLayout()
-        if burnerWindowButton.wantsLayer {
-            addCircularBackground(to: burnerWindowButton)
-        }
-    }
-
-    private func refreshBackgroundColor() {
-        backgroundView.backgroundColor = NSColor(designSystemColor: .surfacePrimary)
-        mainButtonsBackgroundView.backgroundColor = NSColor(designSystemColor: .surfacePrimary)
-    }
-
-    private func updateBurnerButtonAppearance() {
-        self.burnerWindowButton.image = DesignSystemImages.Glyphs.Size16.fireWindow
-
-        self.burnerWindowButton.wantsLayer = true
-        addCircularBackground(to: self.burnerWindowButton)
-    }
-
-    private func addCircularBackground(to imageView: NSImageView) {
-        let layerName = "circularBackground"
-        imageView.layer?.sublayers?.removeAll { $0.name == layerName }
-        let backgroundLayer = CALayer()
-        backgroundLayer.name = layerName
-        backgroundLayer.backgroundColor = NSColor(designSystemColor: .buttonsWhite).withAlphaComponent(0.05).cgColor
-        backgroundLayer.frame = imageView.bounds
-        let radius = min(imageView.bounds.width, imageView.bounds.height) / 2
-        backgroundLayer.cornerRadius = radius
-        imageView.layer?.insertSublayer(backgroundLayer, at: 0)
-    }
-
-    private func setUpStrings() {
-        openFireWindowsTitleLabel.stringValue = UserText.fireDialogFireWindowTitle
-        fireWindowDescriptionLabel.stringValue = UserText.fireDialogFireWindowDescription
-        closeBurnerWindowButton.title = UserText.fireDialogBurnWindowButton
-        clearButton.title = UserText.clear
-        cancelButton.title = UserText.cancel
-        updateCloseTabsLabel()
-    }
-
-    private func updateCloseTabsLabel() {
-        closeTabsLabel.stringValue = UserText.fireDialogCloseTabs(includeChats: firePopoverViewModel.includeChatHistory)
-    }
-
-    @IBAction func optionsButtonAction(_ sender: NSPopUpButton) {
-        guard let tag = sender.selectedItem?.tag, let clearingOption = FireDialogViewModel.ClearingOption(rawValue: tag) else {
-            assertionFailure("Clearing option for not found for the selected menu item")
+    @objc func closeBurnerWindowButtonAction(_ sender: Any) {
+#if DEBUG
+        if let handler = onCloseBurnerWindow {
+            handler()
             return
         }
-        firePopoverViewModel.clearingOption = clearingOption
-        updateWarningWrapperView()
-        updateCloseTabsLabel()
-    }
-
-    @IBAction func openNewBurnerWindowAction(_ sender: Any) {
-        NSApp.delegateTyped.newBurnerWindow(self)
-        delegate?.firePopoverViewControllerDidCancel(self)
-    }
-
-    @IBAction func openDetailsButtonAction(_ sender: Any) {
-        // Fire pixel when fire popover details are viewed
-        PixelKit.fire(GeneralPixel.fireButtonDetailsViewed, frequency: .dailyAndCount)
-
-        toggleDetails()
-    }
-
-    @IBAction func closeDetailsButtonAction(_ sender: Any) {
-        toggleDetails()
-    }
-
-    @IBAction func closeBurnerWindowButtonAction(_ sender: Any) {
+#endif
         let windowControllersManager = Application.appDelegate.windowControllersManager
-        guard let tabCollectionViewModel = firePopoverViewModel.tabCollectionViewModel,
+        guard let tabCollectionViewModel = tabCollectionViewModel,
               let windowController = windowControllersManager.windowController(for: tabCollectionViewModel) else {
             assertionFailure("No TabCollectionViewModel or MainWindowController")
             return
         }
         windowController.window?.close()
     }
-
-    private func adjustViewForBurnerWindow() {
-        updateCloseBurnerWindowButtonAppearance()
-        clearButton.isHidden = true
-        cancelButton.isHidden = true
-        closeBurnerWindowButton.isHidden = false
-
-        contentHeightConstraint.isActive = false
-        headerWrapperView.isHidden = true
-        openWrapperView.isHidden = true
-        detailsWrapperView.isHidden = true
-        warningWrapperView.isHidden = true
-        mainButtonsToBurnerWindowContraint.priority = .required
-    }
-
-    private func updateInfoLabel() {
-        guard !firePopoverViewModel.selectable.isEmpty else {
-            infoLabel.stringValue = ""
-            return
-        }
-
-        guard !firePopoverViewModel.selected.isEmpty else {
-            infoLabel.stringValue = UserText.selectSiteToClear
-            return
-        }
-
-        let sites = firePopoverViewModel.selected.count
-        switch firePopoverViewModel.clearingOption {
-        case .allData:
-            let tabs = Application.appDelegate.windowControllersManager.allTabViewModels.count
-            infoLabel.stringValue = UserText.activeTabsInfo(tabs: tabs, sites: sites, includeChats: firePopoverViewModel.includeChatHistory)
-        case .currentWindow:
-            let tabs = firePopoverViewModel.tabCollectionViewModel?.tabs.count ?? 0
-            infoLabel.stringValue = UserText.activeTabsInfo(tabs: tabs, sites: sites, includeChats: firePopoverViewModel.includeChatHistory)
-        case .currentTab:
-            infoLabel.stringValue = UserText.oneTabInfo(sites: sites)
-        }
-    }
-
-    private func updateClearButtonAppearance() {
-        setRedTintColor(button: clearButton)
-    }
-
-    private func updateCloseBurnerWindowButtonAppearance() {
-        setRedTintColor(button: closeBurnerWindowButton)
-    }
-
-    private func setRedTintColor(button: NSButton) {
-        let attrTitle = NSMutableAttributedString(string: button.title)
-        let range = NSRange(location: 0, length: button.title.count)
-
-        attrTitle.addAttributes([
-            .foregroundColor: NSColor.redButtonTint,
-            .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)],
-            range: range)
-
-        button.attributedTitle = attrTitle
-    }
-
-    private func setupOpenCloseDetailsButton() {
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.firstLineHeadIndent = 15
-        let title = NSMutableAttributedString(string: UserText.fireDialogDetails)
-        title.addAttributes([.paragraphStyle: paragraphStyle], range: NSRange(location: 0, length: title.length))
-
-        openDetailsButton.attributedTitle = title
-        openDetailsButton.alignment = .left
-        closeDetailsButton.attributedTitle = title
-        closeDetailsButton.alignment = .left
-    }
-
-    private func updateWarningWrapperView() {
-        warningWrapperView.isHidden = detailsWrapperView.isHidden
-
-        if !warningWrapperView.isHidden {
-            let title: String
-            switch firePopoverViewModel.clearingOption {
-            case .currentTab:
-                if firePopoverViewModel.tabCollectionViewModel?.selectedTab?.isPinned ?? false {
-                    title = UserText.fireDialogPinnedTabWillReload
-                } else {
-                    title = UserText.fireDialogTabWillClose
-                }
-            case .currentWindow:
-                title = UserText.fireDialogWindowWillClose
-            case .allData:
-                title = UserText.fireDialogAllWindowsWillClose
-            }
-
-            warningButton.title = "   \(title)"
-        }
-
-        collectionViewBottomConstraint.constant = warningWrapperView.isHidden ? 0 : 32
-    }
-
-    @IBAction func clearButtonAction(_ sender: Any) {
-        delegate?.firePopoverViewControllerDidClear(self)
-        let result = FireDialogResult(
-            clearingOption: firePopoverViewModel.clearingOption,
-            includeHistory: firePopoverViewModel.includeHistory,
-            includeTabsAndWindows: firePopoverViewModel.includeTabsAndWindows,
-            includeCookiesAndSiteData: firePopoverViewModel.includeCookiesAndSiteData,
-            includeChatHistory: firePopoverViewModel.includeChatHistory,
-            selectedCookieDomains: firePopoverViewModel.selectedCookieDomainsForScope,
-            selectedVisits: nil,
-            isToday: false
-        )
-        Task {
-            let isAllHistorySelected = result.selectedCookieDomains == nil || result.selectedCookieDomains?.count == firePopoverViewModel.selectable.count
-            await Application.appDelegate.fireCoordinator.handleDialogResult(result,
-                                                                             tabCollectionViewModel: firePopoverViewModel.tabCollectionViewModel,
-                                                                             isAllHistorySelected: isAllHistorySelected)
-            Application.appDelegate.onboardingContextualDialogsManager.fireButtonUsed()
-        }
-    }
-
-    @IBAction func cancelButtonAction(_ sender: Any) {
-        delegate?.firePopoverViewControllerDidCancel(self)
-    }
-
-    private func subscribeToViewModel() {
-        viewModelCancellable = Publishers.Zip(
-            firePopoverViewModel.$fireproofed,
-            firePopoverViewModel.$selectable
-        ).receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.collectionView.reloadData()
-                if self.firePopoverViewModel.selectable.isEmpty && !self.detailsWrapperView.isHidden {
-                    self.toggleDetails()
-                }
-                self.updateInfoLabel()
-                self.adjustContentHeight()
-            }
-    }
-
-    private func subscribeToSelected() {
-        selectedCancellable = firePopoverViewModel.$selected
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] selected in
-                guard let self = self else { return }
-                let selectionIndexPaths = Set(selected.map { IndexPath(item: $0, section: self.firePopoverViewModel.selectableSectionIndex) })
-                self.collectionView.selectionIndexPaths = selectionIndexPaths
-                self.updateInfoLabel()
-            }
-    }
-
-    private func toggleDetails() {
-        let showDetails = detailsWrapperView.isHidden
-        openWrapperView.isHidden = showDetails
-        detailsWrapperView.isHidden = !showDetails
-
-        updateWarningWrapperView()
-        adjustContentHeight()
-    }
-
-    private func adjustContentHeight() {
-        NSAnimationContext.runAnimationGroup { [self, contentHeight = contentHeight()] context in
-            context.duration = 1/3
-            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            self.contentHeightConstraint.animator().constant = contentHeight
-            if contentHeight != Constants.minimumContentHeight {
-                self.detailsWrapperViewHeightContraint.animator().constant = contentHeight
-            }
-        }
-    }
-
-    private func contentHeight() -> CGFloat {
-        if detailsWrapperView.isHidden {
-            return Constants.minimumContentHeight
-        } else {
-            if let contentHeight = collectionView.collectionViewLayout?.collectionViewContentSize.height {
-                let warningWrapperViewHeight = warningWrapperView.isHidden ? 0 : warningWrapperView.frame.height
-                let height = contentHeight + closeWrapperView.frame.height + warningWrapperViewHeight
-                return min(Constants.maximumContentHeight, height)
-            } else {
-                return Constants.maximumContentHeight
-            }
-        }
-    }
-
-    private func setupOptionsButton() {
-        guard let menu = optionsButton.menu, let font = optionsButton.font else {
-            Logger.fire.error("FirePopoverViewController: Menu and/or font not present for optionsMenu")
-            return
-        }
-        menu.removeAllItems()
-
-        let constraintSize = NSSize(width: .max, height: 0)
-        let attributes = [NSAttributedString.Key.font: font]
-        var maxWidth: CGFloat = 0
-
-        FireDialogViewModel.ClearingOption.allCases.forEach { option in
-            if option == .allData {
-                menu.addItem(.separator())
-            }
-
-            let item = NSMenuItem(title: option.string)
-            item.tag = option.rawValue
-            menu.addItem(item)
-
-            let width = (option.string as NSString)
-                .boundingRect(with: constraintSize, options: .usesDeviceMetrics, attributes: attributes, context: nil)
-                .width
-            maxWidth = max(maxWidth, width)
-        }
-
-        optionsButtonWidthConstraint.constant = maxWidth + 32
-        optionsButton.selectItem(at: optionsButton.numberOfItems - 1)
-    }
 }
 
-extension FirePopoverViewController: NSCollectionViewDataSource {
+// MARK: - #Preview
+#if DEBUG
+import SwiftUI
+import os.log
 
-    func numberOfSections(in collectionView: NSCollectionView) -> Int {
-        return 2
+@available(macOS 14.0, *)
+#Preview(traits: .fixedLayout(width: 344, height: 144)) {
+    let logger = Logger(subsystem: "Preview", category: "FirePopoverViewController")
+
+    // Mock dependencies
+    let fireViewModel = FireViewModel(
+        tld: TLD(),
+        visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider
+    )
+
+    let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
+    let themeManager = NSApp.delegateTyped.themeManager
+
+    let controller = FirePopoverViewController(
+        fireViewModel: fireViewModel,
+        tabCollectionViewModel: tabCollectionViewModel,
+        themeManager: themeManager
+    )
+
+    // Pass action handlers that log instead of performing actual burns
+    controller.onOpenNewBurnerWindow = {
+        print("🔥 Preview: Would open new burner window")
     }
 
-    func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
-        return section == firePopoverViewModel.selectableSectionIndex ? firePopoverViewModel.selectable.count: firePopoverViewModel.fireproofed.count
+    controller.onCloseBurnerWindow = {
+        print("🔥 Preview: Would close burner window (burn)")
     }
 
-    func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
-        let item = collectionView.makeItem(withIdentifier: FirePopoverCollectionViewItem.identifier, for: indexPath)
-        guard let firePopoverItem = item as? FirePopoverCollectionViewItem else { return item }
-
-        firePopoverItem.delegate = self
-        let isSelectableSection = indexPath.section == firePopoverViewModel.selectableSectionIndex
-        let sectionList = isSelectableSection ? firePopoverViewModel.selectable: firePopoverViewModel.fireproofed
-        let listItem = sectionList[indexPath.item]
-        firePopoverItem.setItem(listItem, isFireproofed: indexPath.section == firePopoverViewModel.fireproofedSectionIndex)
-        return firePopoverItem
-    }
-
-    func collectionView(_ collectionView: NSCollectionView,
-                        viewForSupplementaryElementOfKind kind: NSCollectionView.SupplementaryElementKind,
-                        at indexPath: IndexPath) -> NSView {
-        // swiftlint:disable force_cast
-        let view = collectionView.makeSupplementaryView(ofKind: NSCollectionView.elementKindSectionHeader,
-                                                        withIdentifier: FirePopoverCollectionViewHeader.identifier,
-                                                        for: indexPath) as! FirePopoverCollectionViewHeader
-        // swiftlint:enable force_cast
-
-        if indexPath.section == firePopoverViewModel.selectableSectionIndex {
-            view.title.stringValue = UserText.fireDialogClearSites
-        } else {
-            view.title.stringValue = UserText.fireDialogFireproofSites
-        }
-
-        return view
-    }
-
+    return controller._preview_hidingWindowControlsOnAppear()
 }
-
-extension FirePopoverViewController: NSCollectionViewDelegate {
-
-}
-
-extension FirePopoverViewController: NSCollectionViewDelegateFlowLayout {
-
-    func collectionView(_ collectionView: NSCollectionView,
-                        layout collectionViewLayout: NSCollectionViewLayout,
-                        referenceSizeForHeaderInSection section: Int) -> NSSize {
-        let count: Int
-        switch section {
-        case firePopoverViewModel.selectableSectionIndex: count = firePopoverViewModel.selectable.count
-        case firePopoverViewModel.fireproofedSectionIndex: count = firePopoverViewModel.fireproofed.count
-        default: count = 0
-        }
-        return NSSize(width: collectionView.bounds.width, height: count == 0 ? 0 : Constants.headerHeight)
-    }
-
-    func collectionView(_ collectionView: NSCollectionView,
-                        layout collectionViewLayout: NSCollectionViewLayout,
-                        referenceSizeForFooterInSection section: Int) -> NSSize {
-        let count: Int
-        switch section {
-        case firePopoverViewModel.selectableSectionIndex: count = firePopoverViewModel.selectable.count
-        case firePopoverViewModel.fireproofedSectionIndex: count = firePopoverViewModel.fireproofed.count
-        default: count = 0
-        }
-        return NSSize(width: collectionView.bounds.width, height: count == 0 ? 0 : Constants.footerHeight)
-    }
-
-}
-
-extension FirePopoverViewController: FirePopoverCollectionViewItemDelegate {
-
-    func firePopoverCollectionViewItemDidToggle(_ firePopoverCollectionViewItem: FirePopoverCollectionViewItem) {
-        guard let indexPath = collectionView.indexPath(for: firePopoverCollectionViewItem) else {
-            assertionFailure("No index path for the \(firePopoverCollectionViewItem)")
-            return
-        }
-
-        if firePopoverCollectionViewItem.isSelected {
-            firePopoverViewModel.deselect(index: indexPath.item)
-        } else {
-            firePopoverViewModel.select(index: indexPath.item)
-        }
-    }
-
-}
+#endif

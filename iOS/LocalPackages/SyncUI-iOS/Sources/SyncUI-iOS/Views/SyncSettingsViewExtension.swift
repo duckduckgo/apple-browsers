@@ -39,6 +39,7 @@ extension SyncSettingsView {
 
     @ViewBuilder
     func syncWithAnotherDeviceView() -> some View {
+        let syncWithAnotherDeviceMessage = model.isAIChatSyncEnabled ? UserText.syncWithAnotherDeviceMessageUpdated : UserText.syncWithAnotherDeviceMessage
         Section {
             HStack {
                 Spacer()
@@ -46,7 +47,7 @@ extension SyncSettingsView {
                     Image("Sync-Pair-96")
                     Text(UserText.syncWithAnotherDeviceTitle)
                         .daxTitle3()
-                    Text(UserText.syncWithAnotherDeviceMessage)
+                    Text(syncWithAnotherDeviceMessage)
                         .daxBodyRegular()
                         .multilineTextAlignment(.center)
                         .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -222,6 +223,10 @@ extension SyncSettingsView {
                     .frame(width: 8)
                     .padding(.bottom, 1)
                 devEnvironmentIndicator()
+            }
+        } footer: {
+            if model.isAIChatSyncEnabled {
+                Text(UserText.turnSyncOffSectionFooter)
             }
         }
     }

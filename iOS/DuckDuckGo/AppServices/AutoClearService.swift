@@ -18,7 +18,7 @@
 //
 
 import UIKit
-import Persistence
+import AIChat
 
 protocol AutoClearServiceProtocol {
 
@@ -32,8 +32,8 @@ final class AutoClearService: AutoClearServiceProtocol {
 
     private let autoClear: AutoClearing
     private let overlayWindowManager: OverlayWindowManaging
+    private let aiChatSyncCleaner: AIChatSyncCleaning
     private let application: UIApplication
-    private let keyValueStore: ThrowingKeyValueStoring
 
     private(set) var autoClearTask: Task<Void, Never>?
 
@@ -43,12 +43,12 @@ final class AutoClearService: AutoClearServiceProtocol {
 
     init(autoClear: AutoClearing,
          overlayWindowManager: OverlayWindowManaging,
-         keyValueStore: ThrowingKeyValueStoring,
+         aiChatSyncCleaner: AIChatSyncCleaning,
          application: UIApplication = UIApplication.shared) {
         self.autoClear = autoClear
         self.overlayWindowManager = overlayWindowManager
+        self.aiChatSyncCleaner = aiChatSyncCleaner
         self.application = application
-        self.keyValueStore = keyValueStore
 
         autoClearTask = Task {
             await autoClear.clearDataIfEnabled(launching: true, applicationState: .init(with: application.applicationState))
@@ -70,12 +70,14 @@ final class AutoClearService: AutoClearServiceProtocol {
     // MARK: - Suspend
 
     func suspend() {
+        let now = Date()
         if autoClear.isClearingEnabled {
             overlayWindowManager.displayBlankSnapshotWindow(for: .autoClearing)
-            try? keyValueStore.set(Date().timeIntervalSince1970,
-                                   forKey: SyncAIChatsCleaner.Keys.autoClearBackgroundTimestamp)
+            Task { [aiChatSyncCleaner] in
+                await aiChatSyncCleaner.recordAutoClearBackgroundTimestamp(date: now)
+            }
         }
-        autoClear.startClearingTimer(Date().timeIntervalSince1970)
+        autoClear.startClearingTimer(now.timeIntervalSince1970)
     }
 
     // MARK: -

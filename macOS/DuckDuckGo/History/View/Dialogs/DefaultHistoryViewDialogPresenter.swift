@@ -62,25 +62,7 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
 
     @MainActor
     func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?, fromMainMenu: Bool) async -> HistoryViewDeleteDialogModel.Response {
-        if featureFlagger.isFeatureOn(.fireDialog) {
-            return await presentFireDialog(for: query, visits: visits, in: window, fromMainMenu: fromMainMenu)
-        }
-
-        return await withCheckedContinuation { continuation in
-            let parentWindow = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
-            let model = HistoryViewDeleteDialogModel(entriesCount: visits.count, mode: query.deleteMode)
-            let dialog = HistoryViewDeleteDialog(model: model)
-            dialog.show(in: parentWindow) {
-                switch model.response {
-                case .burn(includeChats: let burnChats) where burnChats,
-                    .delete(includeChats: let burnChats) where burnChats:
-                    PixelKit.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
-                default:
-                    break
-                }
-                continuation.resume(returning: model.response ?? .noAction)
-            }
-        }
+        return await presentFireDialog(for: query, visits: visits, in: window, fromMainMenu: fromMainMenu)
     }
 
     @MainActor
@@ -92,9 +74,9 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
         case .burn(options: .some(let options)) where !options.includeHistory:
             return .noAction // don‘t delete history records from History View, burning is done by FireCoordinator
         case .burn(options: .some(let options)) where options.includeCookiesAndSiteData:
-            return .burn(includeChats: options.includeChatHistory)
+            return .burn
         case .burn(let options):
-            return .delete(includeChats: options?.includeChatHistory ?? false)
+            return .delete
         }
     }
 

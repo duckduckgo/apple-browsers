@@ -19,6 +19,8 @@
 import XCTest
 import Combine
 import AIChat
+import FeatureFlags
+import PrivacyConfig
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -27,17 +29,23 @@ final class AIChatOmnibarControllerTests: XCTestCase {
     private var controller: AIChatOmnibarController!
     private var mockDelegate: MockAIChatOmnibarControllerDelegate!
     private var mockTabOpener: MockAIChatTabOpener!
+    private var featureFlagger: MockFeatureFlagger!
+    private var searchPreferencesPersistor: AIChatMockSearchPreferencesPersistor!
     private var tabCollectionViewModel: TabCollectionViewModel!
 
     override func setUp() {
         super.setUp()
         mockDelegate = MockAIChatOmnibarControllerDelegate()
         mockTabOpener = MockAIChatTabOpener()
+        featureFlagger = MockFeatureFlagger()
+        searchPreferencesPersistor = AIChatMockSearchPreferencesPersistor()
         tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
 
         controller = AIChatOmnibarController(
             aiChatTabOpener: mockTabOpener,
-            tabCollectionViewModel: tabCollectionViewModel
+            tabCollectionViewModel: tabCollectionViewModel,
+            featureFlagger: featureFlagger,
+            searchPreferencesPersistor: searchPreferencesPersistor
         )
         controller.delegate = mockDelegate
     }
@@ -46,6 +54,8 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         controller = nil
         mockDelegate = nil
         mockTabOpener = nil
+        featureFlagger = nil
+        searchPreferencesPersistor = nil
         tabCollectionViewModel = nil
         super.tearDown()
     }
@@ -213,6 +223,44 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertEqual(sharedTextState?.text, "shared text")
         XCTAssertEqual(sharedTextState?.hasUserInteractedWithText, true)
     }
+
+    // MARK: - Suggestions Feature Tests
+
+    func testWhenFeatureFlagAndAutocompleteBothEnabled_ThenSuggestionsEnabled() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
+        searchPreferencesPersistor.showAutocompleteSuggestions = true
+
+        // Then
+        XCTAssertTrue(controller.isSuggestionsEnabled)
+    }
+
+    func testWhenFeatureFlagDisabled_ThenSuggestionsDisabled() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = false
+        searchPreferencesPersistor.showAutocompleteSuggestions = true
+
+        // Then
+        XCTAssertFalse(controller.isSuggestionsEnabled)
+    }
+
+    func testWhenAutocompleteDisabled_ThenSuggestionsDisabled() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = true
+        searchPreferencesPersistor.showAutocompleteSuggestions = false
+
+        // Then
+        XCTAssertFalse(controller.isSuggestionsEnabled)
+    }
+
+    func testWhenBothFeatureFlagAndAutocompleteDisabled_ThenSuggestionsDisabled() {
+        // Given
+        featureFlagger.featuresStub[FeatureFlag.aiChatSuggestions.rawValue] = false
+        searchPreferencesPersistor.showAutocompleteSuggestions = false
+
+        // Then
+        XCTAssertFalse(controller.isSuggestionsEnabled)
+    }
 }
 
 // MARK: - Mock Delegate
@@ -221,6 +269,8 @@ private class MockAIChatOmnibarControllerDelegate: AIChatOmnibarControllerDelega
     var didSubmitCalled = false
     var didRequestNavigationToURLCalled = false
     var lastNavigationURL: URL?
+    var didSelectSuggestionCalled = false
+    var lastSelectedSuggestion: AIChatSuggestion?
 
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
         didSubmitCalled = true
@@ -230,4 +280,15 @@ private class MockAIChatOmnibarControllerDelegate: AIChatOmnibarControllerDelega
         didRequestNavigationToURLCalled = true
         lastNavigationURL = url
     }
+
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion) {
+        didSelectSuggestionCalled = true
+        lastSelectedSuggestion = suggestion
+    }
+}
+
+// MARK: - Mock Search Preferences Persistor
+
+private class AIChatMockSearchPreferencesPersistor: SearchPreferencesPersistor {
+    var showAutocompleteSuggestions: Bool = true
 }

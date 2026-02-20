@@ -80,7 +80,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         }
     }
 
-    private let subscriptionManager: SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: SubscriptionManager
     private let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
     private let featureFlagger: FeatureFlagger
@@ -93,7 +93,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
              openWinBackOfferLandingPage
     }
 
-    public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
+    public init(subscriptionManager: SubscriptionManager,
                 featureFlagger: FeatureFlagger,
                 winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
                 userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,
@@ -141,7 +141,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     var isPaidAIChatEnabled: Bool {
-        featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManagerV2
+        featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManager
     }
 
     /// Updates the user's eligibility for a free trial based on subscription manager checks.
@@ -155,19 +155,6 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     private func currentStorefrontRegion() -> SubscriptionRegion {
-        var region: SubscriptionRegion?
-
-        switch currentPurchasePlatform {
-        case .appStore:
-            if #available(macOS 12.0, *) {
-                if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2 {
-                    region = subscriptionManagerV2.storePurchaseManager().currentStorefrontRegion
-                }
-            }
-        case .stripe:
-            region = .usa
-        }
-
-        return region ?? .usa
+        return subscriptionManager.currentStorefrontRegion
     }
 }

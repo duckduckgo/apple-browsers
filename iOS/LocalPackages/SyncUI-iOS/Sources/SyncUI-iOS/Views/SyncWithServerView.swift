@@ -32,6 +32,7 @@ public struct SyncWithServerView: View {
     }
 
     public var body: some View {
+        let connectWithServerDescriptionPart1 = model.isAIChatSyncEnabled ? UserText.connectWithServerSheetDescriptionPart1Updated : UserText.connectWithServerSheetDescriptionPart1
         UnderflowContainer {
             VStack(spacing: 0) {
                 HStack {
@@ -50,7 +51,7 @@ public struct SyncWithServerView: View {
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 24)
                 VStack(spacing: 16) {
-                    Text(UserText.connectWithServerSheetDescriptionPart1)
+                    Text(connectWithServerDescriptionPart1)
                         .multilineTextAlignment(.center)
 
                     Text(UserText.connectWithServerSheetDescriptionPart2)

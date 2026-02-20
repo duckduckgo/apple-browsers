@@ -25,40 +25,40 @@ import Subscription
 final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
 
     var subscriptionManager: DataBrokerProtectionSubscriptionManager!
-    var mockSubscriptionBridge: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var mockRunTypeProvider: MockAppRunTypeProvider!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        mockSubscriptionBridge = SubscriptionAuthV1toV2BridgeMock()
-        mockSubscriptionBridge.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
         mockRunTypeProvider = MockAppRunTypeProvider()
         subscriptionManager = DataBrokerProtectionSubscriptionManager(
-            subscriptionManager: mockSubscriptionBridge,
+            subscriptionManager: mockSubscriptionManager,
             runTypeProvider: mockRunTypeProvider
         )
     }
 
     override func tearDownWithError() throws {
         subscriptionManager = nil
-        mockSubscriptionBridge = nil
+        mockSubscriptionManager = nil
         mockRunTypeProvider = nil
         try super.tearDownWithError()
     }
 
     func testWhenSubscriptionBridgeReturnsTrue_isUserEligibleForFreeTrial_ReturnsTrue() {
-        mockSubscriptionBridge.isEligibleForFreeTrialResult = true
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
         XCTAssertTrue(subscriptionManager.isUserEligibleForFreeTrial())
     }
 
     func testWhenSubscriptionBridgeReturnsFalse_isUserEligibleForFreeTrial_ReturnsFalse() {
-        mockSubscriptionBridge.isEligibleForFreeTrialResult = false
+        mockSubscriptionManager.isEligibleForFreeTrialResult = false
         XCTAssertFalse(subscriptionManager.isUserEligibleForFreeTrial())
     }
 
     func testWhenSubscriptionPlatformIsStripe_isUserEligibleForFreeTrial_ReturnsTrue() {
-        mockSubscriptionBridge.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
-        mockSubscriptionBridge.isEligibleForFreeTrialResult = true
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
         XCTAssertTrue(subscriptionManager.isUserEligibleForFreeTrial())
     }
 }

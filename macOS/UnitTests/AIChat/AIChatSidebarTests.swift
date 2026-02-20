@@ -130,4 +130,45 @@ final class AIChatSidebarTests: XCTestCase {
         XCTAssertFalse(sidebar.isPresented)
         XCTAssertNotNil(sidebar.hiddenAt)
     }
+
+    // MARK: - Session Expiry Tests
+
+    func testIsSessionExpired_withNilHiddenAt_returnsFalse() {
+        // Given - sidebar starts with nil hiddenAt
+        XCTAssertNil(sidebar.hiddenAt)
+
+        // When & Then
+        XCTAssertFalse(sidebar.isSessionExpired)
+    }
+
+    func testIsSessionExpired_withRecentHiddenAt_returnsFalse() {
+        // Given - sidebar hidden 30 minutes ago (within default 60 minute timeout)
+        let recentDate = Date().addingTimeInterval(-1800) // 30 minutes ago
+        sidebar.updateHiddenAt(recentDate)
+
+        // When & Then
+        XCTAssertFalse(sidebar.isSessionExpired)
+    }
+
+    func testIsSessionExpired_withOldHiddenAt_returnsTrue() {
+        // Given - sidebar hidden 70 minutes ago (exceeds default 60 minute timeout)
+        let oldDate = Date().addingTimeInterval(-4200) // 70 minutes ago
+        sidebar.updateHiddenAt(oldDate)
+
+        // When & Then
+        XCTAssertTrue(sidebar.isSessionExpired)
+    }
+
+    func testIsSessionExpired_afterSetRevealed_returnsFalse() {
+        // Given - sidebar was hidden long ago
+        let oldDate = Date().addingTimeInterval(-4200) // 70 minutes ago
+        sidebar.updateHiddenAt(oldDate)
+        XCTAssertTrue(sidebar.isSessionExpired)
+
+        // When - sidebar is revealed
+        sidebar.setRevealed()
+
+        // Then - session is no longer expired (hiddenAt is cleared)
+        XCTAssertFalse(sidebar.isSessionExpired)
+    }
 }

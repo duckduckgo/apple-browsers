@@ -89,6 +89,12 @@
             "value" : "Cerca privatamente per impostazione predefinita"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "検索時にデフォルトでプライバシーを保護"
+          }
+        },
         "lt" : {
           "stringUnit" : {
             "state" : "translated",
@@ -249,6 +255,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Blocca i popup dei cookie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookieポップアップをブロックする"
           }
         },
         "lt" : {
@@ -413,6 +425,12 @@
             "value" : "Blocca gli annunci mirati"
           }
         },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ターゲティング広告をブロック"
+          }
+        },
         "lt" : {
           "stringUnit" : {
             "state" : "translated",
@@ -491,10 +509,34 @@
       "comment" : "Message to highlight browser capability of watching YouTube videos without targeted ads",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Гледайте YouTube без насочени реклами"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Přehrávej YouTube bez cílených reklam"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afspil YouTube uden målrettede annoncer"
+          }
+        },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "YouTube ohne gezielte Werbung abspielen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αναπαράγετε στο YouTube χωρίς στοχευμένες διαφημίσεις"
           }
         },
         "en" : {
@@ -509,16 +551,64 @@
             "value" : "Reproduce YouTube sin anuncios segmentados"
           }
         },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esita YouTube’i ilma sihitud reklaamideta"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toista YouTubea ilman kohdennettuja mainoksia"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Profitez de YouTube sans publicités ciblées"
           }
         },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproduciraj YouTube bez ciljanih oglasa"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nézd a YouTube-ot célzott hirdetések nélkül"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guarda YouTube senza annunci mirati"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ターゲティング広告なしでYouTubeを再生"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Žiūrėkite „YouTube“ be tikslinių skelbimų"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skaties YouTube bez mērķētām reklāmām"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se YouTube uten målrettede annonser"
           }
         },
         "nl" : {
@@ -539,10 +629,40 @@
             "value" : "Vê YouTube sem anúncios segmentados"
           }
         },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redă YouTube fără reclame direcționate"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Позволяет смотреть YouTube без целевой рекламы"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleduj YouTube bez cielených reklám"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Predvajajte YouTube brez ciljanih oglasov"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titta på YouTube utan riktade annonser"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube videolarını hedeflenmiş reklamlar olmadan izleyin"
           }
         }
       }
@@ -633,6 +753,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cancella i dati di navigazione con un solo pulsante"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1クリックで閲覧データを削除"
           }
         },
         "lt" : {
@@ -795,6 +921,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Blocca i sistemi di tracciamento di terze parti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サードパーティトラッカーをブロック"
           }
         },
         "lt" : {

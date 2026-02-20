@@ -22,18 +22,30 @@ import Core
 import BrowserServicesKit
 import PrivacyDashboard
 
+enum TabClosingBehavior {
+    case createEmptyTabAtSamePosition
+    case createOrReuseEmptyTab
+    case onlyClose
+}
+
 protocol TabDelegate: AnyObject {
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
     func tabDidRequestNewTab(_ tab: TabViewController)
+    
+    func newTab(reuseExisting: Bool)
+
+    func tabDidRequestActivate(_ tab: TabViewController)
 
     func tab(_ tab: TabViewController,
              didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration,
              for navigationAction: WKNavigationAction,
              inheritingAttribution: AdClickAttributionLogic.State?) -> WKWebView?
 
-    func tabDidRequestClose(_ tab: TabViewController, shouldCreateEmptyTabAtSamePosition: Bool)
+    func tabDidRequestClose(_ tab: Tab,
+                            behavior: TabClosingBehavior,
+                            clearTabHistory: Bool)
 
     func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
@@ -128,12 +140,15 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestNavigationToDifferentSite(tab: TabViewController)
     
     var isAIChatEnabled: Bool { get }
+
+    var isEmailProtectionSignedIn: Bool { get }
+    func tabDidRequestNewPrivateEmailAddress(tab: TabViewController)
 }
 
 extension TabDelegate {
 
     func tabDidRequestClose(_ tab: TabViewController) {
-        tabDidRequestClose(tab, shouldCreateEmptyTabAtSamePosition: false)
+        tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
     }
     
 }

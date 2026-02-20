@@ -16,10 +16,14 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import Foundation
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ApplicationBuildTypeMock: ApplicationBuildType {
     var isSparkleBuild: Bool = false
     var isAppStoreBuild: Bool = false
+    var isDebugBuild: Bool = false
+    var isReviewBuild: Bool = false
 }

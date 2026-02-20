@@ -50,12 +50,14 @@ extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
         case .aiChatPageContext,
-                .duckAISearchParameter,
                 .aiChatKeepSession,
-                .aiChatDataClearing,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
-                .standaloneMigration:
+                .aiChatSuggestions,
+                .aiChatOmnibarTools,
+                .aiChatOmnibarOnboarding,
+                .standaloneMigration,
+                .aiChatSidebarResizable:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
@@ -68,7 +70,9 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .sync
         case .updatesWontAutomaticallyRestartApp,
                 .autoUpdateInDEBUG,
-                .appStoreUpdateFlow:
+                .autoUpdateInREVIEW,
+                .appStoreUpdateFlow,
+                .updatesSimplifiedFlow:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
@@ -81,7 +85,6 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .paidAIChat,
                 .supportsAlternateStripePaymentFlow,
                 .blackFridayCampaign,
-                .tierMessagingEnabled,
                 .allowProTierPurchase:
             return .subscription
         case .popupBlocking,

@@ -1,8 +1,29 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
+"-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
+
+/* No comment provided by engineer. */
+"-ff.<flagRawValue> true/false" = "-ff.<flagRawValue> true/false";
+
+/* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@ items" = "%@ items";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"%@s" = "%@s";
 
 /* No comment provided by engineer. */
 "Account" = "λογαριασμό";
@@ -1043,13 +1064,25 @@
 "close.all.tabs" = "Κλείσιμο όλων των καρτελών";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Ομάδα: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
+
+/* No comment provided by engineer. */
+"Config Rollout:" = "Config Rollout:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Διαμόρφωση";
 
 /* No comment provided by engineer. */
 "Confirm" = "Επιβεβαίωση";
+
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Προσθήκη με βάση το περιεχόμενο";
+
+/* No comment provided by engineer. */
+"Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Παράλειψη";
@@ -1170,6 +1203,12 @@
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "ΠΡΟΣΑΡΜΟΣΜΕΝΟ ΠΕΡΙΕΧΟΜΕΝΟ ΚΕΛΙΟΥ";
+
+/* No comment provided by engineer. */
+"Custom Duration" = "Custom Duration";
+
+/* No comment provided by engineer. */
+"Custom Session Timer Duration" = "Custom Session Timer Duration";
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Προσαρμοσμένη διεύθυνση URL: %@";
@@ -1408,8 +1447,29 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Η λειτουργία του Duck Player έχει επηρεαστεί από τις πρόσφατες αλλαγές στο YouTube. Προσπαθούμε να διορθώσουμε αυτά τα προβλήματα και εκτιμούμε την κατανόησή σας.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Επισύναψη περιεχομένου σελίδας";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Αποστέλλεται με το μήνυμά σας στο Duck.ai";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Το Duck.ai μπορεί τώρα να σας βοηθήσει να απαντάτε σε ερωτήσεις σχετικά με τη σελίδα που βλέπετε.\n\nΤο περιεχόμενο της σελίδας περιλαμβάνεται μόνο όταν το επισυνάπτετε. Μπορείτε να το αλλάξετε αυτό οποιαδήποτε στιγμή από τις Ρυθμίσεις.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Το κατάλαβα";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Ρωτήστε γι' αυτήν τη σελίδα";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Προβολή ρυθμίσεων";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Επισύναψη περιεχομένου σελίδας";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Συνοψίστε αυτήν τη σελίδα";
@@ -1670,7 +1730,10 @@
 "empty.search" = "Δεν βρέθηκαν αντιστοιχίες";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Εγγεγραμμένοι: %@";
+"Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1706,6 +1769,12 @@
 "error.unknown.try.again" = "Έχει προκύψει κάποιο άγνωστο σφάλμα";
 
 /* No comment provided by engineer. */
+"Experiment:" = "Experiment:";
+
+/* No comment provided by engineer. */
+"Experiment: %@" = "Experiment: %@";
+
+/* No comment provided by engineer. */
 "External ID: %@" = "Εξωτερικό αναγνωριστικό: %@";
 
 /* No comment provided by engineer. */
@@ -1730,7 +1799,7 @@
 "favorites.settings.mobile-only" = "Αγαπημένα μόνο για κινητά";
 
 /* No comment provided by engineer. */
-"Feature: %@" = "Λειτουργία: %@";
+"Feature Flag:" = "Feature Flag:";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Αποκλεισμός διαφημίσεων και αναδυόμενων παραθύρων";
@@ -2011,6 +2080,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.waterSwirl.name" = "Δίνη νερού";
 
+/* No comment provided by engineer. */
+"Flag: %@" = "Flag: %@";
+
 /* Description text above the Share Link button */
 "get.browser.on-your-desktop-go-to" = "Στον υπολογιστή σας, μεταβείτε στη διεύθυνση:";
 
@@ -2058,6 +2130,12 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Ρωτήστε ιδιωτικά";
+
+/* No comment provided by engineer. */
+"Install Extension" = "Εγκατάσταση επέκτασης";
+
+/* No comment provided by engineer. */
+"Installed Extensions (%@)" = "Εγκατεστημένες επεκτάσεις (%@)";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Πρέπει να ενεργοποιήσετε το VPN από την εφαρμογή DuckDuckGo.";
@@ -2179,6 +2257,15 @@
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "Εφαρμογή DuckDuckGo για Mac";
 
+/* No comment provided by engineer. */
+"Maestro Launch Arguments:" = "Maestro Launch Arguments:";
+
+/* No comment provided by engineer. */
+"Maestro: -experiment.uiTestExperiment control|treatment" = "Maestro: -experiment.uiTestExperiment control|treatment";
+
+/* No comment provided by engineer. */
+"Maestro: -ff.%@ true" = "Maestro: -ff.%@ true";
+
 /* Text explaining what happens when Malicious Site Protection is enabled */
 "malicious-site-protection-with-scam.settings.toggle.message" = "Να λαμβάνω προειδοποίηση για ιστότοπους που έχουν επισημανθεί για απάτες, ηλεκτρονικό ψάρεμα ή κακόβουλο λογισμικό";
 
@@ -2205,6 +2292,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Μηνύματα";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Κουμπί της γραμμής διευθύνσεων";
@@ -2492,6 +2582,12 @@
 "No existing subscription found" = "Δεν βρέθηκε υπάρχουσα συνδρομή";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
+"No extensions installed" = "Δεν έχουν εγκατασταθεί επεκτάσεις";
+
+/* No comment provided by engineer. */
 "No Logs" = "Δεν υπάρχουν αρχεία καταγραφής";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2598,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Δεν υπάρχουν διαθέσιμες συνδρομές";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "Εντάξει";
@@ -2873,6 +2972,9 @@
 "prompt.custom.url.scheme.title" = "Άνοιγμα σε άλλη εφαρμογή;";
 
 /* No comment provided by engineer. */
+"REBRANDED" = "ΕΓΙΝΕ ΑΝΑΝΕΩΣΗ ΕΤΑΙΡΙΚΗΣ ΤΑΥΤΟΤΗΤΑΣ";
+
+/* No comment provided by engineer. */
 "Recent Processing Logs" = "Πρόσφατα αρχεία καταγραφής επεξεργασίας";
 
 /* No comment provided by engineer. */
@@ -2888,7 +2990,46 @@
 "Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
+"Reset to Default" = "Reset to Default";
+
+/* No comment provided by engineer. */
 "Results" = "Αποτελέσματα";
+
+/* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
+"Save" = "Save";
+
+/* No comment provided by engineer. */
+"Scanning..." = "Σάρωση...";
+
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Διαγραφή καρτελών και δεδομένων ιστότοπου;";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Διαγραφή καρτελών, δεδομένων ιστότοπου και συνομιλιών;";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Διαγραφή όλων";
+
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Διαγραφή αυτής της συνομιλίας";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "Η επιλογή «Διαγραφή όλων» δεν θα διαγράψει το ιστορικό συνομιλιών σας στο Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Διαγραφή αυτής της καρτέλας";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Αυτό θα ακυρώσει λήψεις που βρίσκονται σε εξέλιξη.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Οι νέες καρτέλες που δημιουργήσατε μπορούν επίσης να διαγραφούν μεμονωμένα.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Η διαγραφή δεδομένων ιστότοπου μπορεί να σας αποσυνδέσει από τους λογαριασμούς.";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Αναζήτηση ή εισαγωγή διεύθυνσης";
@@ -2956,6 +3097,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Εμφάνιση πλήρους διεύθυνσης ιστότοπου";
 
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Εμφάνιση στη Γραμμή διευθύνσεων";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Αναζήτηση και Duck.ai";
 
@@ -2980,11 +3124,14 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Ρυθμίσεις αναζήτησης Assist";
 
-/* Settings screen cell subtitle for enabling automatic page context */
+/* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Αυτόματη αποστολή περιεχομένου σελίδας στο Duck.ai";
 
-/* Settings screen cell title for enabling automatic page context */
+/* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Αυτόματη αποστολή περιεχομένου";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Προτάσεις συνομιλίας";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Απόκρυψη εικόνων που δημιουργήθηκαν με τεχνητή νοημοσύνη";
@@ -3024,6 +3171,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Διαγραφή";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Εκκαθάριση καρτελών και δεδομένων";
 
@@ -3036,17 +3184,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Καρτέλες";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Έξοδος εφαρμογής, ανενεργή για 15 λεπτά";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Έξοδος εφαρμογής, ανενεργή για 1 ώρα";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Έξοδος εφαρμογής, ανενεργή για 30 λεπτά";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Έξοδος εφαρμογής, ανενεργή για 5 λεπτά";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Έξοδος εφαρμογής, ανενεργή για 15 λεπτά";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Έξοδος εφαρμογής, ανενεργή για 30 λεπτά";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Μόνο έξοδος εφαρμογής";
@@ -3059,6 +3207,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Τα δεδομένα θα διαγραφούν κατά την επανεκκίνηση της εφαρμογής.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Προτάσεις αναζήτησης";
 
@@ -3071,14 +3220,24 @@
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Προβολή προτάσεων αναζήτησης καθώς πληκτρολογείτε, συμπεριλαμβανομένων των σελιδοδεικτών σας. Όλες οι αναζητήσεις είναι ιδιωτικές.";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Εμφάνιση προτάσεων από το ιστορικό σας, τους σελιδοδείκτες σας και (προαιρετικά) το ιστορικό συνομιλιών του Duck.ai καθώς πληκτρολογείτε στη γραμμή αναζήτησης. Όλες οι αναζητήσεις είναι ιδιωτικές.";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Κλείδωμα εφαρμογής";
 
 /* Section footer Autolock description */
 "settings.autolock.description" = "Εάν έχει ενεργοποιηθεί το Touch ID, το Face ID ή ο κωδικός πρόσβασης συστήματος, θα σας ζητηθεί να ξεκλειδώσετε την εφαρμογή κατά το άνοιγμά της.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Διαγραφή";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Αυτόματη εκκαθάριση δεδομένων";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Αυτόματη διαγραφή δεδομένων";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Σχόλια για το πρόγραμμα περιήγησης";
 
@@ -3090,6 +3249,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Εκκαθάριση δεδομένων περιήγησης";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Αυτόματη απαλοιφή δεδομένων";
 
@@ -3105,6 +3265,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Διαχείριση αναδυόμενων παραθύρων cookies";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Διαγραφή καρτελών και δεδομένων";
+
 /* Settings title for the customize section */
 "settings.customize" = "Προσαρμογή";
 
@@ -3119,8 +3282,15 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Η διαγραφή των δεδομένων σας μπορεί να βοηθήσει στην προστασία του απορρήτου σας στο διαδίκτυο. Χρησιμοποιήστε το Fire Button για να διαγράψετε τα δεδομένα μη αυτόματα ή για να ρυθμίσετε την αυτόματη εκκαθάριση.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Προεπιλεγμένο πρόγραμμα περιήγησης";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Διαγραφή συνομιλιών Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Διαγραφή καρτελών και δεδομένων";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Απενεργοποίηση αυτόματης συμπλήρωσης Email Protection";
@@ -3166,6 +3336,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Ασφαλείς ιστότοποι";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Γενικά";
 
@@ -3183,9 +3354,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Νέο";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Προεπισκόπηση";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Πληκτρολόγιο";
@@ -3328,6 +3496,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Εμφάνιση στη Διαχείριση καρτελών";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Καρτέλες";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Προεπιλεγμένο ζουμ κειμένου";
 
@@ -3336,6 +3510,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Ρυθμίσεις";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Κίνηση αποκλεισμένων εφαρμογών παρακολούθησης";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Βοηθά στον αποκλεισμό των εφαρμογών παρακολούθησης τρίτων που προσπαθούν να συγκαλυφθούν μέσα σε έναν ιστότοπο χρησιμοποιώντας DNS.";
@@ -3461,16 +3638,19 @@
 "siteFeedback.urlPlaceholder" = "Ποιος ιστότοπος είναι κατεστραμμένος;";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Κατάσταση";
+
+/* No comment provided by engineer. */
+"Status:" = "Status:";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Κατάσταση: Καταστάθηκε μη έγκυρο";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Δευτερεύουσα λειτουργία: % @";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Προσθήκη σε συσκευή";
@@ -3519,6 +3699,12 @@
 
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Η συνδρομή σας έχει αφαιρεθεί από αυτήν τη συσκευή.";
+
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Ακύρωση υποβάθμισης";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Το πρόγραμμά σας θα υποβαθμιστεί σε %1$@ στις %2$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Ενημέρωση προγράμματος ή ακύρωση";
@@ -3577,6 +3763,9 @@
 /* Help and support Section header */
 "subscription.help" = "Βοήθεια και υποστήριξη";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Διαχείριση πληρωμής ή ακύρωση";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Διαχείριση προγράμματος";
 
@@ -3610,17 +3799,20 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Προγράμματα συνδρομής";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Ολοκλήρωση αλλαγής σχεδίου...";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Ολοκλήρωση της αγοράς...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Αλλαγή σχεδίου σε εξέλιξη...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Αγορά σε εξέλιξη...";
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Επαναφορά συνδρομής...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Το Privacy Pro ονομάζεται πλέον απλά Συνδρομή DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Αφαίρεση από αυτήν τη συσκευή";
@@ -3679,6 +3871,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Η ετήσια συνδρομή σας λήγει %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Το πρόγραμμά σας θα υποβαθμιστεί σε %1$@ Μηνιαία στις %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Το πρόγραμμά σας θα υποβαθμιστεί σε %1$@ στις %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Το πρόγραμμά σας θα υποβαθμιστεί σε %1$@ Ετήσια στις %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Η μηνιαία συνδρομή σας ανανεώνεται %@.";
 
@@ -3699,6 +3900,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Η δωρεάν δοκιμή είναι ενεργή";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Αναβάθμιση σε %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Ξεκλείδωσε μια πιο έξυπνη και πιο ισχυρή τεχνητή νοημοσύνη";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Αναβάθμιση";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Δείτε όλα τα προγράμματα";
@@ -3726,6 +3936,12 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Ρύθμιση συγχρονισμού";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας των πιστωτικών καρτών σας";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας των δεδομένων σας";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Όχι, ευχαριστώ";
@@ -3817,6 +4033,30 @@
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Προσθήκη σελιδοδείκτη σε όλες τις καρτέλες";
 
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Απόκρυψη";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Μπορείτε να ενεργοποιήσετε ξανά αυτήν την επιλογή στις Ρυθμίσεις > Εμφάνιση.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Απόκρυψη πλήθους εφαρμογών παρακολούθησης;";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Επιλογές πλήθους εφαρμογών παρακολούθησης";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Πατήστε δύο φορές για να δείτε τις επιλογές απόκρυψης αυτού του banner";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Διατήρηση";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "in last 7 days";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Αυξήστε ή μειώστε το μέγεθος του κειμένου σε όλους τους ιστότοπους.";
 
@@ -3855,6 +4095,9 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Η Προστασία προσωπικών δεδομένων ενεργοποιήθηκε για το %@";
+
+/* No comment provided by engineer. */
+"Total stored: %@" = "Total stored: %@";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
@@ -4098,6 +4341,9 @@
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Έχετε προσκληθεί!";
+
+/* No comment provided by engineer. */
+"Web Extensions not available" = "Οι επεκτάσεις ιστού δεν είναι διαθέσιμες";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Το Αγαπημένο αφαιρέθηκε";

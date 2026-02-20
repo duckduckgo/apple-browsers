@@ -45,16 +45,26 @@ class MockTextZoomCoordinator: TextZoomCoordinating {
     func showTextZoomEditor(inController controller: UIViewController, forWebView webView: WKWebView) {
     }
     
-    func makeBrowsingMenuEntry(forLink: Link, inController controller: UIViewController, forWebView webView: WKWebView, useSmallIcon: Bool) -> BrowsingMenuEntry? {
+    func makeBrowsingMenuEntry(forLink: Link, inController controller: UIViewController, forWebView webView: WKWebView, useSmallIcon: Bool, percentageInDetail: Bool) -> BrowsingMenuEntry? {
         return nil
     }
 
     private(set) var resetTextZoomLevelsCallCount = 0
-    private(set) var resetTextZoomLevelsExcludingDomains: [String]?
+    private(set) var resetTextZoomLevelsExcludingDomainsArg: [String]?
     
     func resetTextZoomLevels(excludingDomains: [String]) {
         resetTextZoomLevelsCallCount += 1
-        resetTextZoomLevelsExcludingDomains = excludingDomains
+        resetTextZoomLevelsExcludingDomainsArg = excludingDomains
+    }
+
+    private(set) var resetTextZoomLevelsForVisitedDomainsCallCount = 0
+    private(set) var resetTextZoomLevelsForVisitedDomains: [String]?
+    private(set) var resetTextZoomLevelsForVisitedExcludingDomains: [String]?
+
+    func resetTextZoomLevels(forVisitedDomains domains: [String], excludingDomains: [String]) {
+        resetTextZoomLevelsForVisitedDomainsCallCount += 1
+        resetTextZoomLevelsForVisitedDomains = domains
+        resetTextZoomLevelsForVisitedExcludingDomains = excludingDomains
     }
 
 }

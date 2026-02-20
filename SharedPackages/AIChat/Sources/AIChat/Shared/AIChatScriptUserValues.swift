@@ -161,6 +161,7 @@ public struct AIChatNativeConfigValues: Codable {
 public struct AIChatNativePrompt: Codable, Equatable {
     public let platform: String
     public let tool: Tool?
+    public let pageContext: AIChatPageContextData?
 
     public enum Tool: Equatable {
         case query(Query)
@@ -225,11 +226,13 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case query
         case summary
         case translation
+        case pageContext
     }
 
-    public init(platform: String, tool: Tool?) {
+    public init(platform: String, tool: Tool?, pageContext: AIChatPageContextData? = nil) {
         self.platform = platform
         self.tool = tool
+        self.pageContext = pageContext
     }
 
     public init(from decoder: Decoder) throws {
@@ -252,6 +255,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
         default:
             tool = nil
         }
+
+        pageContext = try container.decodeIfPresent(AIChatPageContextData.self, forKey: .pageContext)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -272,10 +277,12 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case .none:
             try container.encodeNil(forKey: .tool)
         }
+
+        try container.encodeIfPresent(pageContext, forKey: .pageContext)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit)))
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, pageContext: AIChatPageContextData? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit)), pageContext: pageContext)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

@@ -54,15 +54,7 @@ final class BrokenSiteReportingTests: XCTestCase {
         }
     }
 
-    override func setUp() {
-        super.setUp()
-
-        Pixel.isDryRun = false
-    }
-
     override func tearDown() {
-        Pixel.isDryRun = true
-
         HTTPStubs.removeAllStubs()
         super.tearDown()
     }

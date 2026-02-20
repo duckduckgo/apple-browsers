@@ -24,6 +24,10 @@ final class MockNewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersi
     private var timesShownStorage: [NewTabPageDataModel.CardID: Int] = [:]
     private var timesDismissedStorage: [NewTabPageDataModel.CardID: Int] = [:]
 
+    var orderedCardIDs: [NewTabPageDataModel.CardID]?
+    var firstCardLevel: NewTabPageDataModel.CardLevel = .level1
+    var isFirstSession: Bool = true
+
     func timesShown(for card: NewTabPageDataModel.CardID) -> Int {
         timesShownStorage[card] ?? 0
     }
@@ -53,5 +57,8 @@ final class MockNewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersi
     func clear() {
         timesShownStorage.removeAll()
         timesDismissedStorage.removeAll()
+        orderedCardIDs = nil
+        firstCardLevel = .level1
+        isFirstSession = true
     }
 }

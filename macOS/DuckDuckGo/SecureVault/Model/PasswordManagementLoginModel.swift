@@ -174,8 +174,8 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
         }
     }
 
-    func save() {
-        guard var credentials = credentials else { return }
+    func save() -> Bool {
+        guard var credentials = credentials else { return false }
         credentials.account.title = title
         credentials.account.username = username
         credentials.account.domain = urlMatcher.normalizeUrlForWeb(domain)
@@ -183,6 +183,7 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
         credentials.password = password.data(using: .utf8)! // let it crash?
         hasValidPrivateEmail = emailManager.isPrivateEmail(email: username)
         onSaveRequested(credentials)
+        return true
     }
 
     func requestDelete() {

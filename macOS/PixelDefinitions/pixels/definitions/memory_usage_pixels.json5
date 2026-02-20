@@ -1,0 +1,53 @@
+// Memory usage threshold pixels
+// Fired daily when memory usage enters specific buckets
+{
+    "m_mac_memory_usage_less_512": {
+        "description": "Fired daily when browser memory usage is less than 512MB",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_memory_usage_512_1023": {
+        "description": "Fired daily when browser memory usage is between 512MB and 1023MB",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_memory_usage_1024_2047": {
+        "description": "Fired daily when browser memory usage is between 1GB and 2047MB",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_memory_usage_2048_4095": {
+        "description": "Fired daily when browser memory usage is between 2GB and 4095MB",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_memory_usage_4096_8191": {
+        "description": "Fired daily when browser memory usage is between 4GB and 8191MB",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_memory_usage_8192_16383": {
+        "description": "Fired daily when browser memory usage is between 8GB and 16383MB",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_memory_usage_16384_more": {
+        "description": "Fired daily when browser memory usage is 16GB or more",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

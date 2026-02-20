@@ -1,8 +1,29 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
+"-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
+
+/* No comment provided by engineer. */
+"-ff.<flagRawValue> true/false" = "-ff.<flagRawValue> true/false";
+
+/* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@ items" = "%@ items";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"%@s" = "%@s";
 
 /* No comment provided by engineer. */
 "Account" = "account";
@@ -1043,13 +1064,25 @@
 "close.all.tabs" = "Zatvoriť všetky karty";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohorta: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
+
+/* No comment provided by engineer. */
+"Config Rollout:" = "Config Rollout:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfigurácia";
 
 /* No comment provided by engineer. */
 "Confirm" = "Potvrdiť";
+
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Kontextové uvádzanie";
+
+/* No comment provided by engineer. */
+"Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Preskočiť";
@@ -1170,6 +1203,12 @@
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "VLASTNÝ OBSAH BUNKY";
+
+/* No comment provided by engineer. */
+"Custom Duration" = "Custom Duration";
+
+/* No comment provided by engineer. */
+"Custom Session Timer Duration" = "Custom Session Timer Duration";
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Vlastná URL adresa: %@";
@@ -1408,8 +1447,29 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Funkčnosť prehrávača Duck Player bola ovplyvnená nedávnymi zmenami v službe YouTube. Na odstránení týchto problémov pracujeme. Ďakujeme za pochopenie.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Pripoj obsah stránky";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Odoslané s tvojou správou na Duck.ai";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai ti teraz môže pomôcť odpovedať na otázky týkajúce sa stránky, ktorú si prezeráš.\n\nObsah stránky sa zahrnie iba vtedy, keď ju priložíš. Môžeš to kedykoľvek zmeniť v Nastaveniach.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Rozumiem";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Opýtaj sa na túto stránku";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Zobraziť nastavenia";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcie DuckDuckGo AI sú súkromné a voliteľné. Tvoje údaje sa nepoužívajú na trénovanie AI.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Pripoj obsah stránky";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Zhrň túto stránku";
@@ -1670,7 +1730,10 @@
 "empty.search" = "Nenašli sa žiadne zhody";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Zaregistrovaných: %@";
+"Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1706,6 +1769,12 @@
 "error.unknown.try.again" = "Vyskytla sa neznáma chyba.";
 
 /* No comment provided by engineer. */
+"Experiment:" = "Experiment:";
+
+/* No comment provided by engineer. */
+"Experiment: %@" = "Experiment: %@";
+
+/* No comment provided by engineer. */
 "External ID: %@" = "Externé ID: %@";
 
 /* No comment provided by engineer. */
@@ -1730,7 +1799,7 @@
 "favorites.settings.mobile-only" = "Iba obľúbené mobilné položky";
 
 /* No comment provided by engineer. */
-"Feature: %@" = "Funkcia: %@";
+"Feature Flag:" = "Feature Flag:";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokovanie reklám a automaticky otváraných okien";
@@ -2011,6 +2080,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.waterSwirl.name" = "Vodný vír";
 
+/* No comment provided by engineer. */
+"Flag: %@" = "Flag: %@";
+
 /* Description text above the Share Link button */
 "get.browser.on-your-desktop-go-to" = "V počítači prejdite na:";
 
@@ -2058,6 +2130,12 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Spýtaj sa súkromne";
+
+/* No comment provided by engineer. */
+"Install Extension" = "Nainštaluj rozšírenie";
+
+/* No comment provided by engineer. */
+"Installed Extensions (%@)" = "Nainštalované rozšírenia (%@)";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Musíš povoliť VPN z aplikácie DuckDuckGo.";
@@ -2179,6 +2257,15 @@
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "Aplikácia DuckDuckGo pre Mac";
 
+/* No comment provided by engineer. */
+"Maestro Launch Arguments:" = "Maestro Launch Arguments:";
+
+/* No comment provided by engineer. */
+"Maestro: -experiment.uiTestExperiment control|treatment" = "Maestro: -experiment.uiTestExperiment control|treatment";
+
+/* No comment provided by engineer. */
+"Maestro: -ff.%@ true" = "Maestro: -ff.%@ true";
+
 /* Text explaining what happens when Malicious Site Protection is enabled */
 "malicious-site-protection-with-scam.settings.toggle.message" = "Upozorni ma na stránkach označených ako podvod, phishing alebo malvér";
 
@@ -2205,6 +2292,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Správy";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Tlačidlo riadku adresy";
@@ -2492,6 +2582,12 @@
 "No existing subscription found" = "Nebolo nájdené žiadne existujúce predplatné";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
+"No extensions installed" = "Žiadne nainštalované rozšírenia";
+
+/* No comment provided by engineer. */
 "No Logs" = "Žiadne záznamy";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2598,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Žiadne predplatné nie je k dispozícii";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2873,6 +2972,9 @@
 "prompt.custom.url.scheme.title" = "Otvoriť v inej aplikácii?";
 
 /* No comment provided by engineer. */
+"REBRANDED" = "REBRANDED";
+
+/* No comment provided by engineer. */
 "Recent Processing Logs" = "Nedávne záznamy o spracovaní";
 
 /* No comment provided by engineer. */
@@ -2888,7 +2990,46 @@
 "Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
+"Reset to Default" = "Reset to Default";
+
+/* No comment provided by engineer. */
 "Results" = "Výsledky";
+
+/* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
+"Save" = "Save";
+
+/* No comment provided by engineer. */
+"Scanning..." = "Skenovanie...";
+
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Odstrániť karty a údaje stránok?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Odstrániť karty, údaje stránok a chaty?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Odstrániť všetko";
+
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Zmazať tento čet";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "Možnosť „Odstrániť všetko“ neodstráni tvoju históriu četu na Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Vymazať túto záložku";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Tým sa zrušia prebiehajúce sťahovania.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Nové karty, ktoré si vytvoril/-a, sa dajú odstrániť aj jednotlivo.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Odstránením údajov z webových stránok sa môžeš odhlásiť z účtov.";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Vyhľadajte alebo zadajte adresu";
@@ -2956,6 +3097,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Zobraziť úplnú adresu lokality";
 
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "Zobraziť v adresnom riadku";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Vyhľadávanie & Duck.ai";
 
@@ -2980,11 +3124,14 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavenia Assist vyhľadávania";
 
-/* Settings screen cell subtitle for enabling automatic page context */
-"settings.aifeatures.automatic.context.subtitle" = "Automaticky odoslať kontext stránky do Duck.ai";
+/* Settings screen cell subtitle for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.subtitle" = "Automaticky odoslať obsah stránky do Duck.ai";
 
-/* Settings screen cell title for enabling automatic page context */
-"settings.aifeatures.automatic.context.title" = "Automatické odosielanie kontextu";
+/* Settings screen cell title for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.title" = "Automaticky odoslať obsah";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Návrhy četu";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skryť obrázky generované umelou inteligenciou";
@@ -3024,6 +3171,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Vymazať";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Vymazať karty a údaje";
 
@@ -3036,17 +3184,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Karty";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "Ukončiť 15 minút neaktívnu aplikáciu";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "Aplikácia bola zatvorená po 1 hodine neaktívnosti";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "Ukončiť 30 minút neaktívnu aplikáciu";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "Ukončiť 5 minút neaktívnu aplikáciu";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Ukončiť 15 minút neaktívnu aplikáciu";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Ukončiť 30 minút neaktívnu aplikáciu";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Iba ukončiť aplikáciu";
@@ -3059,6 +3207,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Údaje sa vymažú po reštartovaní aplikácie.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Návrhy na vyhľadávanie";
 
@@ -3071,14 +3220,24 @@
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Zobrazenie návrhov vyhľadávania pri písaní vrátane záložiek. Všetky vyhľadávania sú súkromné.";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Pri písaní do vyhľadávacieho panela zobrazuj návrhy z histórie, záložiek a (voliteľne) z histórie chatu Duck.ai. Všetky vyhľadávania sú súkromné.";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Zámok aplikácie";
 
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ak je povolená funkcia Touch ID, Face ID alebo systémový prístupový kód, pri otvorení aplikácie sa zobrazí výzva na odomknutie.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Vymazať";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatické vymazávanie údajov";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Automatické odstránenie údajov";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Spätná väzba prehliadača";
 
@@ -3090,6 +3249,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Vymaž údaje o prehliadaní";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automaticky vymazať údaje";
 
@@ -3105,6 +3265,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Správa kontextových okien súborov cookie";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Vymazať karty a údaje";
+
 /* Settings title for the customize section */
 "settings.customize" = "Prispôsobiť";
 
@@ -3119,8 +3282,15 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Odstránenie údajov môže pomôcť chrániť tvoje súkromie online. Pomocou tlačidla Fire Button môžeš údaje vymazať manuálne alebo nastaviť automatické vymazanie.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Predvolený prehliadač";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Odstrániť chaty Duck.ai";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Odstrániť karty a údaje";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Zakázať automatické vyplňovanie ochrany e-mailov";
@@ -3166,6 +3336,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Stránky s ochranou Fireproof";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Všeobecné";
 
@@ -3183,9 +3354,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nové";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Ukážka";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnica";
@@ -3328,6 +3496,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synchronizácia a zálohovanie";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Zobraziť v Správcovi kariet";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Karty";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Predvolené zväčšenie textu";
 
@@ -3336,6 +3510,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Nastavenia";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animácia blokovania sledovačov";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Pomáha blokovať sledovacie programy tretích strán, ktoré sa snažia zamaskovať v rámci webovej lokality pomocou DNS.";
@@ -3461,16 +3638,19 @@
 "siteFeedback.urlPlaceholder" = "Ktorá webová stránka je nefunkčná?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Stav";
+
+/* No comment provided by engineer. */
+"Status:" = "Status:";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Stav: zneplatnené";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený názov hostiteľa: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Podfunkcia: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pridať do zariadenia";
@@ -3519,6 +3699,12 @@
 
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Tvoje predplatné bolo z tohto zariadenia odstránené.";
+
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Zrušiť zníženie";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Tvoj program sa prepne na %1$@ dňa %2$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Aktualizovať plán alebo zrušiť";
@@ -3577,6 +3763,9 @@
 /* Help and support Section header */
 "subscription.help" = "Pomoc a podpora";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Spravovať platbu alebo zrušiť";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Spravovať plán";
 
@@ -3610,17 +3799,20 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Plány predplatného";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Dokončuje sa zmena plánu...";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Dokončujem nákup...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Prebieha zmena plánu...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Prebieha nákup...";
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnovuje sa predplatné...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro sa teraz nazýva predplatné DuckDuckGo.";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odstrániť z tohto zariadenia";
@@ -3679,6 +3871,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Tvoje ročné predplatné vyprší dňa %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Tvoj mesačný program sa zníži na %1$@ dňa %2$@.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Tvoj program sa prepne na %1$@ dňa %2$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Tvoj program sa zníži na %1$@ ročný dňa %2$@.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Tvoje mesačné predplatné sa obnoví %@.";
 
@@ -3699,6 +3900,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Bezplatná skúšobná verzia je aktívna";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Zvýšiť na %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Odomkni inteligentnejšiu a výkonnejšiu umelú inteligenciu";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Aktualizovať";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Zobraziť všetky plány";
@@ -3726,6 +3936,12 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Nastavenie synchronizácie";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synchronizuj a zálohuj svoje kreditné karty";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synchronizuj a zálohuj svoje dáta";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nie, ďakujem";
@@ -3817,6 +4033,30 @@
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Uložiť všetky karty medzi záložky";
 
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Skryť";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Túto funkciu môžeš znova zapnúť v časti Nastavenia > Vzhľad.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Skryť počet sledovaných položiek?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Možnosti počtu sledovačov";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Dvojitým klepnutím zobrazíš možnosti skrytia tohto bannera";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Ponechať";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "in last 7 days";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Zväčšite alebo zmenšite veľkosť textu na všetkých stránkach.";
 
@@ -3855,6 +4095,9 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Ochrana súkromia na doméne %@ bola zapnutá";
+
+/* No comment provided by engineer. */
+"Total stored: %@" = "Total stored: %@";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
@@ -4098,6 +4341,9 @@
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Ste pozvaný/-á!";
+
+/* No comment provided by engineer. */
+"Web Extensions not available" = "Webové rozšírenia nie sú k dispozícii";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Obľúbená položka bola odstránená";

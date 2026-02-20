@@ -1,8 +1,29 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
+"-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
+
+/* No comment provided by engineer. */
+"-ff.<flagRawValue> true/false" = "-ff.<flagRawValue> true/false";
+
+/* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@ items" = "%@ items";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"%@s" = "%@s";
 
 /* No comment provided by engineer. */
 "Account" = "account";
@@ -1043,13 +1064,25 @@
 "close.all.tabs" = "Alle tabbladen sluiten";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Cohort: %@";
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
+
+/* No comment provided by engineer. */
+"Config Rollout:" = "Config Rollout:";
 
 /* No comment provided by engineer. */
 "Configuration" = "Configuratie";
 
 /* No comment provided by engineer. */
 "Confirm" = "Bevestigen";
+
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "Contextuele onboarding";
+
+/* No comment provided by engineer. */
+"Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Overslaan";
@@ -1170,6 +1203,12 @@
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "Aangepaste celinhoud";
+
+/* No comment provided by engineer. */
+"Custom Duration" = "Custom Duration";
+
+/* No comment provided by engineer. */
+"Custom Session Timer Duration" = "Custom Session Timer Duration";
 
 /* No comment provided by engineer. */
 "Custom URL: %@" = "Aangepaste URL: %@";
@@ -1408,8 +1447,29 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Recente wijzigingen in YouTube hebben invloed op de functionaliteit van Duck Player. We werken aan een oplossing voor deze problemen. Bedankt voor je begrip.";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "Pagina-inhoud bijvoegen";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Wordt samen met je bericht naar Duck.ai gestuurd";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.ai kan nu helpen bij het beantwoorden van vragen over de pagina die je bekijkt.\n\nDe inhoud van de pagina is alleen inbegrepen als je deze bijvoegt. Je kunt dit op elk moment wijzigen in Instellingen.";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "Ik snap het";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "Stel een vraag over deze pagina";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "Instellingen bekijken";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI-functies zijn privé en optioneel. Je gegevens worden niet gebruikt om AI te trainen.";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Pagina-inhoud bijvoegen";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Deze pagina samenvatten";
@@ -1670,7 +1730,10 @@
 "empty.search" = "Geen overeenkomsten gevonden";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Ingeschreven: %@";
+"Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
@@ -1706,6 +1769,12 @@
 "error.unknown.try.again" = "Er is een onbekende fout opgetreden";
 
 /* No comment provided by engineer. */
+"Experiment:" = "Experiment:";
+
+/* No comment provided by engineer. */
+"Experiment: %@" = "Experiment: %@";
+
+/* No comment provided by engineer. */
 "External ID: %@" = "Externe ID: %@";
 
 /* No comment provided by engineer. */
@@ -1730,7 +1799,7 @@
 "favorites.settings.mobile-only" = "Alleen mobiele favorieten";
 
 /* No comment provided by engineer. */
-"Feature: %@" = "Functie: %@";
+"Feature Flag:" = "Feature Flag:";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Advertentie- en pop-upblokkering";
@@ -2011,6 +2080,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.waterSwirl.name" = "Draaikolk";
 
+/* No comment provided by engineer. */
+"Flag: %@" = "Flag: %@";
+
 /* Description text above the Share Link button */
 "get.browser.on-your-desktop-go-to" = "Ga op je computer naar:";
 
@@ -2058,6 +2130,12 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "Vraag privé";
+
+/* No comment provided by engineer. */
+"Install Extension" = "Extensie installeren";
+
+/* No comment provided by engineer. */
+"Installed Extensions (%@)" = "Geïnstalleerde extensies (%@)";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Je moet de VPN inschakelen vanuit de DuckDuckGo-app.";
@@ -2179,6 +2257,15 @@
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "DuckDuckGo-app voor Mac";
 
+/* No comment provided by engineer. */
+"Maestro Launch Arguments:" = "Maestro Launch Arguments:";
+
+/* No comment provided by engineer. */
+"Maestro: -experiment.uiTestExperiment control|treatment" = "Maestro: -experiment.uiTestExperiment control|treatment";
+
+/* No comment provided by engineer. */
+"Maestro: -ff.%@ true" = "Maestro: -ff.%@ true";
+
 /* Text explaining what happens when Malicious Site Protection is enabled */
 "malicious-site-protection-with-scam.settings.toggle.message" = "Waarschuw me op websites die zijn aangeduid als oplichting, phishing of malware";
 
@@ -2205,6 +2292,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "Berichten";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "Knop Adresbalk";
@@ -2492,6 +2582,12 @@
 "No existing subscription found" = "Geen bestaand abonnement gevonden";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
+"No extensions installed" = "Geen extensies geïnstalleerd";
+
+/* No comment provided by engineer. */
 "No Logs" = "Geen logboeken";
 
 /* No comment provided by engineer. */
@@ -2502,6 +2598,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "Geen abonnementen beschikbaar";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2873,6 +2972,9 @@
 "prompt.custom.url.scheme.title" = "Openen in een andere app?";
 
 /* No comment provided by engineer. */
+"REBRANDED" = "REBRANDED";
+
+/* No comment provided by engineer. */
 "Recent Processing Logs" = "Recente verwerkingslogboeken";
 
 /* No comment provided by engineer. */
@@ -2888,7 +2990,46 @@
 "Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
+"Reset to Default" = "Reset to Default";
+
+/* No comment provided by engineer. */
 "Results" = "Resultaten";
+
+/* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
+"Save" = "Save";
+
+/* No comment provided by engineer. */
+"Scanning..." = "Scannen...";
+
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "Tabbladen en sitegegevens verwijderen?";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "Tabbladen, sitegegevens en chats verwijderen?";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "Alles verwijderen";
+
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Deze chat verwijderen";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "Als je 'Alles verwijderen' kiest, wordt je Duck.ai-chatgeschiedenis niet verwijderd.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Dit tabblad verwijderen";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "Hiermee worden lopende downloads geannuleerd.";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "Nieuwe tabbladen die je hebt aangemaakt kunnen ook afzonderlijk worden verwijderd.";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "Als je sitegegevens verwijdert, kun je uitloggen bij je accounts.";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Zoek of voer een adres in";
@@ -2956,6 +3097,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Volledig siteadres weergeven";
 
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "In adresbalk weergeven";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Zoeken en Duck.ai";
 
@@ -2980,11 +3124,14 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Instellingen voor zoek Assist";
 
-/* Settings screen cell subtitle for enabling automatic page context */
-"settings.aifeatures.automatic.context.subtitle" = "Paginacontext automatisch naar Duck.ai verzenden";
+/* Settings screen cell subtitle for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.subtitle" = "Pagina-inhoud automatisch naar Duck.ai verzenden";
 
-/* Settings screen cell title for enabling automatic page context */
-"settings.aifeatures.automatic.context.title" = "Context automatisch verzenden";
+/* Settings screen cell title for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.title" = "Inhoud automatisch verzenden";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Chatsuggesties";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Verberg AI-gegenereerde afbeeldingen.";
@@ -3024,6 +3171,7 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Wissen";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Tabbladen en gegevens wissen";
 
@@ -3036,17 +3184,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Tabbladen";
 
-/* Timing option to clear data on app exit or after 15 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.15min" = "App afsluiten, 15 minuten inactief";
-
 /* Timing option to clear data on app exit or after 1 hour of inactivity */
 "settings.autoclear.timing.app.exit.inactive.1hour" = "App afsluiten, 1 uur inactief";
 
-/* Timing option to clear data on app exit or after 30 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.30min" = "App afsluiten, 30 minuten inactief";
-
 /* Timing option to clear data on app exit or after 5 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.5min" = "App afsluiten, 5 minuten inactief";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "App afsluiten, 15 minuten inactief";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "App afsluiten, 30 minuten inactief";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Alleen app afsluiten";
@@ -3059,6 +3207,7 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "De gegevens worden verwijderd wanneer de app opnieuw wordt gestart.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Zoeksuggesties";
 
@@ -3071,14 +3220,24 @@
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Toon suggesties voor zoekopdrachten terwijl je typt, inclusief je bladwijzers. Alle zoekopdrachten zijn privé.";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Toon suggesties uit je geschiedenis, bladwijzers en (optioneel) de chatgeschiedenis van Duck.ai terwijl je typt in de zoekbalk. Alle zoekopdrachten zijn privé.";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "App-vergrendeling";
 
 /* Section footer Autolock description */
 "settings.autolock.description" = "Als Touch ID, Face ID of een systeemwachtwoord is ingeschakeld, word je gevraagd om de app te ontgrendelen als je deze opent.";
 
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "Verwijderen";
+
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatische gegevensverwijdering";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "Gegevens automatisch verwijderen";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browserfeedback";
 
@@ -3090,6 +3249,7 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Browsegegevens verwijderen";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Gegevens automatisch wissen";
 
@@ -3105,6 +3265,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Cookiepop-ups beheren";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "Tabbladen en gegevens verwijderen";
+
 /* Settings title for the customize section */
 "settings.customize" = "Aanpassen";
 
@@ -3119,8 +3282,15 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Het verwijderen van je gegevens kan helpen om je privacy online te beschermen. Gebruik de Fire Button om gegevens handmatig te verwijderen of stel in dat gegevens automatisch worden verwijderd.";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standaardbrowser";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Duck.ai-chats verwijderen";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "Tabbladen en gegevens verwijderen";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Automatisch invullen van Email Protection uitschakelen";
@@ -3166,6 +3336,7 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Brandveilige websites";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Algemeen";
 
@@ -3183,9 +3354,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nieuw";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Voorvertoning";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Toetsenbord";
@@ -3328,6 +3496,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Synchronisatie en back-up";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "Weergeven in Tabbladbeheer";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "Tabbladen";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "Standaard tekstgrootte";
 
@@ -3336,6 +3510,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "Instellingen";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "Animatie voor geblokkeerde trackers";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "Helpt bij het blokkeren van trackers van derden die zich proberen te vermommen binnen een website met behulp van DNS.";
@@ -3461,16 +3638,19 @@
 "siteFeedback.urlPlaceholder" = "Welke website is defect?";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "Status";
+
+/* No comment provided by engineer. */
+"Status:" = "Status:";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Status: ongeldig verklaard";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Opgeslagen hostnaam: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Subfeature: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Toevoegen aan apparaat";
@@ -3519,6 +3699,12 @@
 
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Je abonnement is van dit apparaat verwijderd.";
+
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Downgrade annuleren";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Je abonnement wordt op %2$@ gedowngraded naar %1$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Plan bijwerken of annuleren";
@@ -3577,6 +3763,9 @@
 /* Help and support Section header */
 "subscription.help" = "Hulp en ondersteuning";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "Betaling beheren of annuleren";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "Abonnement beheren";
 
@@ -3610,17 +3799,20 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Abonnementsformules";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "De abonnementswijziging wordt afgerond …";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Je aankoop wordt afgerond ...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Abonnementswijziging in uitvoering …";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Je aankoop wordt gedaan ...";
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Je abonnement wordt hersteld ...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro heet nu gewoon het DuckDuckGo-abonnement";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Verwijderen van dit apparaat";
@@ -3679,6 +3871,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "Je jaarabonnement verloopt op %@.";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "Je abonnement wordt op %2$@ gedowngraded naar %1$@ per maand.";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "Je abonnement wordt op %2$@ gedowngraded naar %1$@.";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "Je abonnement wordt op %2$@ gedowngraded naar %1$@ per jaar.";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Je maandabonnement wordt verlengd op %@.";
 
@@ -3699,6 +3900,15 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Gratis proefversie actief";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "Upgraden naar %@";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "Ontgrendel slimmere, krachtigere AI";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "Upgrade";
 
 /* View All Plans button to see available subscription tiers */
 "subscription.view.all.plans" = "Bekijk alle abonnementen";
@@ -3726,6 +3936,12 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Synchronisatie instellen";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "Synchroniseer en back-up je creditcards";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "Synchroniseer en back-up je gegevens";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "Nee, bedankt";
@@ -3817,6 +4033,30 @@
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Alle tabbladen toevoegen als bladwijzer?";
 
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "Verbergen";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "Je kunt dit weer inschakelen in Instellingen > Weergave.";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "Trackertelling verbergen?";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "Opties voor trackers";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "Dubbel tikken om opties weer te geven voor het verbergen van deze banner";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "Bewaren";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "in last 7 days";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Vergroot of verklein de tekstgrootte op alle sites.";
 
@@ -3855,6 +4095,9 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Privacybescherming ingeschakeld voor %@";
+
+/* No comment provided by engineer. */
+"Total stored: %@" = "Total stored: %@";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
@@ -4098,6 +4341,9 @@
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Je bent uitgenodigd!";
+
+/* No comment provided by engineer. */
+"Web Extensions not available" = "Webextensies niet beschikbaar";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Favoriet verwijderd";

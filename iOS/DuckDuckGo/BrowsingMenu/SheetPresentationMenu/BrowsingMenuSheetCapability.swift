@@ -23,16 +23,24 @@ import Persistence
 import PrivacyConfig
 
 protocol BrowsingMenuSheetCapable {
-    var isAvailable: Bool { get }
     var isEnabled: Bool { get }
+    var isSettingsOptionVisible: Bool { get }
+    var isWebsiteHeaderEnabled: Bool { get }
+    var mergeActionsAndBookmarks: Bool { get }
 
     func setEnabled(_ enabled: Bool)
 }
 
 enum BrowsingMenuSheetCapability {
-    static func create(using featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) -> BrowsingMenuSheetCapable {
+    static func create(
+        using featureFlagger: FeatureFlagger,
+        keyValueStore: ThrowingKeyValueStoring,
+    ) -> BrowsingMenuSheetCapable {
         if #available(iOS 17, *) {
-            return BrowsingMenuSheetDefaultCapability(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
+            return BrowsingMenuSheetDefaultCapability(
+                featureFlagger: featureFlagger,
+                keyValueStore: keyValueStore
+            )
         } else {
             return BrowsingMenuSheetUnavailableCapability()
         }
@@ -40,15 +48,16 @@ enum BrowsingMenuSheetCapability {
 }
 
 struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
-    let isAvailable: Bool = false
     let isEnabled: Bool = false
+    let isSettingsOptionVisible: Bool = false
+    let isWebsiteHeaderEnabled: Bool = false
+    let mergeActionsAndBookmarks: Bool = false
 
     func setEnabled(_ enabled: Bool) {
         // no-op
     }
 }
 
-@available(iOS 17.0, *)
 struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
     let featureFlagger: FeatureFlagger
     private let keyValueStore: ThrowingKeyValueStoring
@@ -58,20 +67,40 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
         self.keyValueStore = keyValueStore
     }
 
-    var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
+    var isEnabled: Bool {
+        if isEnabledByDefault {
+            if featureFlagger.internalUserDecider.isInternalUser {
+                return storedEnabledValue ?? true
+            }
+            return true
+        }
+        return storedEnabledValue ?? false
     }
 
-    var isEnabled: Bool {
-        get {
-            guard isAvailable else { return false }
+    var isSettingsOptionVisible: Bool {
+        isEnabledByDefault && featureFlagger.internalUserDecider.isInternalUser
+    }
 
-            return (try? keyValueStore.object(forKey: StorageKey.experimentalBrowsingMenuEnabled) as? Bool) ?? false
-        }
+    var isWebsiteHeaderEnabled: Bool {
+        isEnabledByDefault
+    }
+
+    var mergeActionsAndBookmarks: Bool {
+        isEnabledByDefault
     }
 
     func setEnabled(_ enabled: Bool) {
         try? keyValueStore.set(enabled, forKey: StorageKey.experimentalBrowsingMenuEnabled)
+    }
+
+    // MARK: - Private
+
+    private var isEnabledByDefault: Bool {
+        featureFlagger.isFeatureOn(.browsingMenuSheetEnabledByDefault)
+    }
+
+    private var storedEnabledValue: Bool? {
+        try? keyValueStore.object(forKey: StorageKey.experimentalBrowsingMenuEnabled) as? Bool
     }
 
     private struct StorageKey {

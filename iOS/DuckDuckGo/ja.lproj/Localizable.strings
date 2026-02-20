@@ -1,8 +1,29 @@
 /* No comment provided by engineer. */
+"-config.rollout.<parent>.<subfeature> true/false" = "-config.rollout.<parent>.<subfeature> true/false";
+
+/* No comment provided by engineer. */
+"-experiment.<flagRawValue> <cohortId>" = "-experiment.<flagRawValue> <cohortId>";
+
+/* No comment provided by engineer. */
+"-ff.<flagRawValue> true/false" = "-ff.<flagRawValue> true/false";
+
+/* No comment provided by engineer. */
+"(%@)" = "(%@)";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"%@ items" = "%@ items";
+
+/* No comment provided by engineer. */
+"%@%%" = "%@%%";
+
+/* No comment provided by engineer. */
+"%@s" = "%@s";
 
 /* No comment provided by engineer. */
 "Account" = "アカウント";
@@ -1043,10 +1064,25 @@
 "close.all.tabs" = "すべてのタブを閉じる";
 
 /* No comment provided by engineer. */
+"Cohort:" = "Cohort:";
+
+/* No comment provided by engineer. */
+"Cohorts:" = "Cohorts:";
+
+/* No comment provided by engineer. */
+"Config Rollout:" = "Config Rollout:";
+
+/* No comment provided by engineer. */
 "Configuration" = "構成";
 
 /* No comment provided by engineer. */
 "Confirm" = "確認";
+
+/* No comment provided by engineer. */
+"Contextual Onboarding" = "コンテキストに基づくオンボーディング";
+
+/* No comment provided by engineer. */
+"Contextual Session Timer" = "Contextual Session Timer";
 
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "スキップ";
@@ -1169,6 +1205,12 @@
 "CUSTOM CELL CONTENT" = "カスタムセルコンテンツ";
 
 /* No comment provided by engineer. */
+"Custom Duration" = "Custom Duration";
+
+/* No comment provided by engineer. */
+"Custom Session Timer Duration" = "Custom Session Timer Duration";
+
+/* No comment provided by engineer. */
 "Custom URL: %@" = "カスタムURL：%@";
 
 /* Button label to select zip or html file for importing */
@@ -1288,6 +1330,18 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "昨日";
 
+/* Title shown when user taps on an easter egg logo in full screen view */
+"dax.easter.egg.found.title" = "隠れているロゴを見つけました！";
+
+/* Toast message shown when the user saves a custom logo */
+"dax.easter.egg.logo.saved" = "ロゴが保存されました";
+
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "検索ロゴをリセット";
+
+/* Button to switch to the displayed easter egg logo */
+"dax.easter.egg.switch.to.this.logo" = "このロゴに切り替える";
+
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "注意：%1$@が%2$@でのアクティビティを見るのを止めることはできません。\n\nしかし、このブラウザでブラウジングすれば、他の多くのサイトでトラッカーをブロックすることで、%1$@がお客様について全体的に知っていることを減らせます。";
 
@@ -1393,8 +1447,32 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Playerの機能は、YouTubeの最近の変更の影響を受けています。これらの問題の解決に取り組んでいますので、ご理解のほどよろしくお願い申し上げます。";
 
+/* Menu option to attach current page content to Duck.ai chat */
+"duckai.attach.page.content" = "ページの内容を添付";
+
+/* Info text shown below the context chip explaining that content will be sent with the message */
+"duckai.context.chip.info" = "Duck.aiに送信するメッセージと一緒に送信されます";
+
+/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
+"duckai.contextual.onboarding.body" = "Duck.aiは、現在表示しているページに関する質問に回答できるようになりました。\n\nページの内容は、添付した場合にのみ含まれます。この設定は、「設定」でいつでも変更できます。";
+
+/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.gotIt" = "了解";
+
+/* Title for the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.title" = "このページについて質問する";
+
+/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
+"duckai.contextual.onboarding.viewSettings" = "設定を表示";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGoのAI機能はプライベートでオプションです。データはAIのトレーニングに使用されません。";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "ページの内容を添付";
+
+/* Title for the summarize quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.summarize" = "このページを要約";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "DuckDuckGoの検索結果にDuck.aiのボタンとリンクを表示する";
@@ -1652,6 +1730,12 @@
 "empty.search" = "一致するものが見つかりませんでした";
 
 /* No comment provided by engineer. */
+"Enrolled" = "Enrolled";
+
+/* No comment provided by engineer. */
+"Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "エントリーピル";
 
 /* Button title to Sign In */
@@ -1685,6 +1769,12 @@
 "error.unknown.try.again" = "不明なエラーが発生しました";
 
 /* No comment provided by engineer. */
+"Experiment:" = "Experiment:";
+
+/* No comment provided by engineer. */
+"Experiment: %@" = "Experiment: %@";
+
+/* No comment provided by engineer. */
 "External ID: %@" = "外部ID：%@";
 
 /* No comment provided by engineer. */
@@ -1707,6 +1797,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "モバイルのお気に入りのみ";
+
+/* No comment provided by engineer. */
+"Feature Flag:" = "Feature Flag:";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "広告とポップアップのブロック";
@@ -1921,6 +2014,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "カテゴリーを選択";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Unable to access Plus or Pro tier features";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "お客様の匿名のフィードバックは私たちにとって重要です。";
 
@@ -1984,6 +2080,9 @@
 /* No comment provided by engineer. */
 "fireButtonAnimation.waterSwirl.name" = "ワールプール";
 
+/* No comment provided by engineer. */
+"Flag: %@" = "Flag: %@";
+
 /* Description text above the Share Link button */
 "get.browser.on-your-desktop-go-to" = "コンピューターで次の場所に移動：";
 
@@ -2031,6 +2130,12 @@
 
 /* Placeholder text for the duck.ai input field */
 "input.field.placeholder.duckai" = "非公開で質問";
+
+/* No comment provided by engineer. */
+"Install Extension" = "拡張機能をインストール";
+
+/* No comment provided by engineer. */
+"Installed Extensions (%@)" = "インストール済み拡張機能（%@）";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "DuckDuckGoアプリからVPNを有効にする必要があります。";
@@ -2152,6 +2257,15 @@
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "DuckDuckGo Macアプリ";
 
+/* No comment provided by engineer. */
+"Maestro Launch Arguments:" = "Maestro Launch Arguments:";
+
+/* No comment provided by engineer. */
+"Maestro: -experiment.uiTestExperiment control|treatment" = "Maestro: -experiment.uiTestExperiment control|treatment";
+
+/* No comment provided by engineer. */
+"Maestro: -ff.%@ true" = "Maestro: -ff.%@ true";
+
 /* Text explaining what happens when Malicious Site Protection is enabled */
 "malicious-site-protection-with-scam.settings.toggle.message" = "詐欺、フィッシング、またはマルウェアのフラグが立てられたサイトで警告";
 
@@ -2178,6 +2292,9 @@
 
 /* No comment provided by engineer. */
 "Messages" = "メッセージ";
+
+/* No comment provided by engineer. */
+"Min Version:" = "Min Version:";
 
 /* The name of the Address Bar button when referenced in settings. */
 "mobile.customization.addressbar.button" = "アドレスバーのボタン";
@@ -2465,6 +2582,12 @@
 "No existing subscription found" = "既存のサブスクリプションが見つかりません";
 
 /* No comment provided by engineer. */
+"No experiments defined in contentScopeExperiments" = "No experiments defined in contentScopeExperiments";
+
+/* No comment provided by engineer. */
+"No extensions installed" = "拡張機能はインストールされていません";
+
+/* No comment provided by engineer. */
 "No Logs" = "ログなし";
 
 /* No comment provided by engineer. */
@@ -2475,6 +2598,9 @@
 
 /* No comment provided by engineer. */
 "No subscriptions available" = "利用可能なサブスクリプションはありません";
+
+/* No comment provided by engineer. */
+"Not Enrolled" = "Not Enrolled";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2846,6 +2972,9 @@
 "prompt.custom.url.scheme.title" = "別のアプリで開きますか？";
 
 /* No comment provided by engineer. */
+"REBRANDED" = "ブランド刷新";
+
+/* No comment provided by engineer. */
 "Recent Processing Logs" = "最近の処理ログ";
 
 /* No comment provided by engineer. */
@@ -2861,7 +2990,46 @@
 "Reset Priming Modal State" = "プライミングモーダル状態をリセット";
 
 /* No comment provided by engineer. */
+"Reset to Default" = "Reset to Default";
+
+/* No comment provided by engineer. */
 "Results" = "検索結果";
+
+/* No comment provided by engineer. */
+"Rollout:" = "Rollout:";
+
+/* No comment provided by engineer. */
+"Save" = "Save";
+
+/* No comment provided by engineer. */
+"Scanning..." = "スキャン中...";
+
+/* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
+"scoped.fire.confirmation.alert.title" = "タブとサイトデータを削除しますか？";
+
+/* Title for scoped fire confirmation dialog when AI chat clearing is enabled */
+"scoped.fire.confirmation.alert.title.with.aichat" = "タブ、サイトデータ、チャットを削除しますか？";
+
+/* Button to delete all tabs and data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.all.button" = "すべて削除";
+
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "このチャットを削除";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "「すべて削除」はDuck.aiのチャット履歴を削除しません。";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "このタブを削除";
+
+/* Warning message that deleting will cancel any active downloads */
+"scoped.fire.confirmation.downloads.warning" = "これにより、進行中のダウンロードがキャンセルされます。";
+
+/* Informational message explaining that new tabs can also be deleted individually */
+"scoped.fire.confirmation.new.tabs.info" = "新しく作成したタブは個別に削除することもできます。";
+
+/* Warning message explaining that deleting site data may sign users out of accounts */
+"scoped.fire.confirmation.sign.out.warning" = "サイトデータを削除すると、アカウントからサインアウトされる場合があります。";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "検索またはアドレスを入力";
@@ -2929,6 +3097,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "完全なサイトアドレスを表示";
 
+/* Settings screen cell title for toggling tracker blocking animation in address bar */
+"settings.address.trackers.animation" = "アドレスバーに表示";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "検索とDuck.ai";
 
@@ -2953,11 +3124,14 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist設定";
 
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "ブラウザのタブとして新しいDuck.aiチャットを表示する";
+/* Settings screen cell subtitle for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.subtitle" = "ページのコンテンツをDuck.aiに自動送信";
 
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Duck.aiタブズモード";
+/* Settings screen cell title for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.title" = "コンテンツを自動的に送信";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "チャットの提案";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI生成画像を非表示にする";
@@ -2983,8 +3157,56 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "無効にすると、リンクが他のインストール済みアプリで自動的に開かれなくなります。";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "すべてのサイトデータ（訪問済みサイトを含む）を削除します。アカウントからサインアウトされる場合があります。";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookieとサイトデータ";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "ピン留めされたチャットを含むすべてのチャットを削除します";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.aiチャット";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "クリア";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "タブとデータをクリア";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "タブ、データ、Duck.aiチャットを消去する";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "開いているすべてのタブを閉じます";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "タブ";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "アプリ終了、1時間非アクティブ";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "アプリ終了、5分間非アクティブ";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "アプリ終了、15分間非アクティブ";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "アプリ終了、30分間非アクティブ";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "アプリ終了のみ";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "アプリの終了は、アプリをスワイプして閉じることと定義されます。非アクティブとは、アプリがバックグラウンドにある状態のことです。";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "希望するタイミング";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "アプリを再起動するとデータが削除されます。";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "検索候補";
@@ -2998,11 +3220,23 @@
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "入力に応じて検索候補を表示し、ブックマークも含めます。すべての検索は非公開です。";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "検索バーに入力する際に、履歴、ブックマーク、（オプションで）Duck.aiのチャット履歴からの提案が表示されます。すべての検索は非公開です。";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "アプリケーションロック";
 
 /* Section footer Autolock description */
 "settings.autolock.description" = "Touch ID、Face ID、またはシステムパスコードが有効になっている場合、アプリを開く際にロック解除を求められます。";
+
+/* Section title in automatic data clearing settings */
+"settings.automatic.data.clearing.delete.section.title" = "削除";
+
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "自動データ消去";
+
+/* Settings screen cell text for automatic data deletion option */
+"settings.automatically.delete.data" = "データを自動的に削除";
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "ブラウザのフィードバック";
@@ -3012,6 +3246,9 @@
 
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Duck.aiチャットを消去する";
+
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "閲覧データを消去";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "データを自動的にクリア";
@@ -3028,6 +3265,9 @@
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Cookieポップアップを管理";
 
+/* Label for customizable toolbar button that deletes tabs and data */
+"settings.customizable.button.delete.tabs.and.data" = "タブとデータを削除";
+
 /* Settings title for the customize section */
 "settings.customize" = "カスタマイズ";
 
@@ -3040,8 +3280,17 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "データクリアリング";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "データを削除することで、オンラインでのプライバシー保護に役立ちます。Fire Buttonでデータを手動削除、または自動削除を設定します。";
+
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "デフォルトのブラウザ";
+
+/* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
+"settings.delete.duckai.chats" = "Duck.aiのチャットを削除";
+
+/* Settings screen cell text for option to delete tabs and data */
+"settings.delete.tabs.and.data" = "タブとデータを削除";
 
 /* Label of a button disabling email protection */
 "settings.disable.email.protection.autofill" = "Email Protectionの自動入力を無効にする";
@@ -3085,6 +3334,9 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Fireproofサイト";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproof化されたサイト";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "一般";
 
@@ -3102,9 +3354,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "新規";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "プレビュー";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "キーボード";
@@ -3247,6 +3496,12 @@
 /* Settings screen cell text for sync and backup */
 "settings.sync" = "Sync & Backup";
 
+/* Settings screen cell title for toggling tracker blocking animation in tabs manager */
+"settings.tab.switcher.show.tracker.count" = "タブマネージャーに表示";
+
+/* Settings screen section title for tab-related appearance options */
+"settings.tabs" = "タブ";
+
 /* Settings screen cell text for text size */
 "settings.text.size" = "デフォルトのテキストズーム";
 
@@ -3255,6 +3510,9 @@
 
 /* Title for the Settings View */
 "settings.title" = "設定";
+
+/* Settings screen section title for tracker blocking animation options */
+"settings.tracker.blocking.animation.section" = "トラッカーのブロックアニメーション";
 
 /* Description for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.description" = "DNSを使用してウェブサイト内で偽装を試みるサードパーティのトラッカーをブロックするのに役立ちます。";
@@ -3340,6 +3598,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGoブラウザは追跡防止機能を提供し、常に有効です。[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "新着情報";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "直近1分間のログを表示し、リフレッシュ後の問題を即座に診断するために役立ちます。";
 
@@ -3377,7 +3638,13 @@
 "siteFeedback.urlPlaceholder" = "問題のあるウェブサイトはどれですか？";
 
 /* No comment provided by engineer. */
+"State:" = "State:";
+
+/* No comment provided by engineer. */
 "Status" = "状態";
+
+/* No comment provided by engineer. */
+"Status:" = "Status:";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "ステータス：無効化されました";
@@ -3432,6 +3699,12 @@
 
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "このデバイスからサブスクリプションが削除されました。";
+
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "ダウングレードをキャンセル";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "プランは%2$@に%1$@にダウングレードされます。";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "プランを更新するかキャンセル";
@@ -3490,6 +3763,9 @@
 /* Help and support Section header */
 "subscription.help" = "ヘルプとサポート";
 
+/* Manage Payment or cancel action title */
+"subscription.manage.payment" = "支払いを管理またはキャンセル";
+
 /* Manage Plan header */
 "subscription.manage.plan" = "プランを管理する";
 
@@ -3520,17 +3796,23 @@
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "サブスクリプションプラン";
+
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "プラン変更を完了しています…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "購入を完了しています...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "プランを変更しています…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "購入が進行中です...";
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "サブスクリプションを復元しています...";
-
-/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Proは「DuckDuckGoサブスクリプション」に名称変更されました";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "このデバイスから削除";
@@ -3589,6 +3871,15 @@
 /* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
 "subscription.subscription.expiring.yearly.caption" = "年間サブスクリプションの有効期限は%@です。";
 
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Monthly on (date).' */
+"subscription.subscription.pending.downgrade.monthly.caption" = "プランは%2$@に毎月%1$@にダウングレードされます。";
+
+/* Pending downgrade info for unknown billing period. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.subscription.pending.downgrade.unknown.caption" = "プランは%2$@に%1$@にダウングレードされます。";
+
+/* Pending downgrade info for yearly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus Yearly on (date).' */
+"subscription.subscription.pending.downgrade.yearly.caption" = "プランは%2$@に%1$@（年額）にダウングレードされます。";
+
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "月間サブスクリプションは%@に更新されます。";
 
@@ -3609,6 +3900,18 @@
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "無料トライアルが有効です";
+
+/* Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro') */
+"subscription.upgrade.button" = "%@にアップグレード";
+
+/* Caption text in the upgrade section promoting AI features */
+"subscription.upgrade.section.caption" = "よりスマートで、より強力なAIを利用可能に";
+
+/* Header for the upgrade section in subscription settings */
+"subscription.upgrade.section.title" = "アップグレード";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "全プランを表示";
 
 /* No comment provided by engineer. */
 "SwiftUI Alert" = "SwiftUIアラート";
@@ -3633,6 +3936,12 @@
 
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "同期を設定";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.credit-cards.title" = "クレジットカードを同期・バックアップ";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.data.import.title" = "データを同期・バックアップ";
 
 /* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
 "sync.promo.dismiss.action" = "いいえ、結構です";
@@ -3724,6 +4033,30 @@
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "すべてのタブをブックマーク";
 
+/* Action button to hide tracker count banner */
+"tab.switcher.tracker.count.hide.action" = "隠す";
+
+/* Alert message explaining how to re-enable tracker count */
+"tab.switcher.tracker.count.hide.message" = "設定 > 外観でこれを再度オンにできます。";
+
+/* Alert title asking user to hide the tracker count banner */
+"tab.switcher.tracker.count.hide.title" = "トラッカーの数を非表示にしますか？";
+
+/* Accessibility label for tracker count info button */
+"tab.switcher.tracker.count.info.a11y" = "トラッカー数のオプション";
+
+/* Accessibility hint for tracker count info button */
+"tab.switcher.tracker.count.info.hint.a11y" = "ダブルタップしてこのバナーを非表示にするオプションを表示";
+
+/* Action button to keep showing tracker count banner */
+"tab.switcher.tracker.count.keep.action" = "保持";
+
+/* Subtitle for tracker count banner indicating time window */
+"tab.switcher.tracker.count.subtitle" = "in last 7 days";
+
+/* Do not translate - stringsdict entry */
+"tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";
+
 /* Description text for the text size adjustment setting */
 "textSize.description" = "すべてのサイトでテキストサイズを増減します。";
 
@@ -3762,6 +4095,9 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "%@のプライバシー保護が有効になっています";
+
+/* No comment provided by engineer. */
+"Total stored: %@" = "Total stored: %@";
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
@@ -4005,6 +4341,9 @@
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "ご招待します！";
+
+/* No comment provided by engineer. */
+"Web Extensions not available" = "ウェブ拡張機能は利用できません";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "お気に入りが削除されました";

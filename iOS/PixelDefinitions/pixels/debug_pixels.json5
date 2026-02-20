@@ -1,9 +1,0 @@
-{
-    "m_debug_tabswitcher_didchange_invalidstate": {
-        "description": "Fires when the tabswitcher was unable to update the state of a tab that had been updated elsewhere.  Expecting minimumal numbers of these pixels - ideally zero.",
-        "owners": ["brindy"],
-        "triggers": ["other"],
-        "suffixes": [["platform", "form_factor"]],
-        "parameters": ["appVersion"]
-    }
-}

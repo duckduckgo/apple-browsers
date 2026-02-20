@@ -26,6 +26,7 @@ import History
 import BrowserServicesKit
 import PrivacyConfig
 import UIComponents
+import RemoteMessaging
 import AIChat
 
 class SuggestionTrayViewController: UIViewController {
@@ -105,10 +106,12 @@ class SuggestionTrayViewController: UIViewController {
         let favoritesModel: FavoritesListInteracting
         let homePageMessagesConfiguration: HomePageMessagesConfiguration
         let subscriptionDataReporting: SubscriptionDataReporting?
-        let newTabDialogFactory: NewTabDaxDialogFactory
+        let newTabDialogFactory: NewTabDaxDialogsProvider
         let newTabDaxDialogManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
         let faviconLoader: FavoritesFaviconLoading
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
+        let remoteMessagingImageLoader: RemoteMessagingImageLoading
+        let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
         let appSettings: AppSettings
         let internalUserCommands: URLBasedDebugCommands
     }
@@ -287,6 +290,8 @@ class SuggestionTrayViewController: UIViewController {
             daxDialogsManager: dependencies.newTabDaxDialogManager,
             faviconLoader: dependencies.faviconLoader,
             remoteMessagingActionHandler: dependencies.remoteMessagingActionHandler,
+            remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
+            remoteMessagingPixelReporter: dependencies.remoteMessagingPixelReporter,
             appSettings: dependencies.appSettings,
             internalUserCommands: dependencies.internalUserCommands
         )

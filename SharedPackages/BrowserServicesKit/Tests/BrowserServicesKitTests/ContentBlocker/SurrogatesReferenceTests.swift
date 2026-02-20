@@ -166,15 +166,23 @@ final class SurrogatesReferenceTests: XCTestCase {
             self.userScriptDelegateMock.reset()
 
             self.webView?.evaluateJavaScript(expectExpression, completionHandler: { result, err in
-                XCTAssertNil(err)
-
-                if let result = result as? Bool {
-                    XCTAssertTrue(result, "Expression \(expectExpression) should return true")
+                if let err = err {
+                    XCTFail("JavaScript evaluation failed for expression '\(expectExpression)': \(err)")
                     onTestExecuted.fulfill()
+                    return
+                }
 
-                    DispatchQueue.main.async {
-                        self.runTestForRedirect(onTestExecuted: onTestExecuted)
-                    }
+                guard let boolResult = result as? Bool else {
+                    XCTFail("Expected Bool result for expression '\(expectExpression)', got: \(String(describing: result)) (type: \(type(of: result)))")
+                    onTestExecuted.fulfill()
+                    return
+                }
+
+                XCTAssertTrue(boolResult, "Expression \(expectExpression) should return true")
+                onTestExecuted.fulfill()
+
+                DispatchQueue.main.async {
+                    self.runTestForRedirect(onTestExecuted: onTestExecuted)
                 }
             })
         }

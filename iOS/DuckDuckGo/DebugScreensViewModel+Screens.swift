@@ -25,6 +25,7 @@ import BareBonesBrowserKit
 import Core
 import DataBrokerProtection_iOS
 import AIChat
+import WebExtensions
 
 extension DebugScreensViewModel {
 
@@ -80,6 +81,9 @@ extension DebugScreensViewModel {
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
             }),
+            .view(title: "UI Test Overrides", { _ in
+                UITestOverridesDebugView()
+            }),
             .view(title: "ContentScope Experiments", { _ in
                 ContentScopeExperimentsDebugView()
             }),
@@ -89,11 +93,14 @@ extension DebugScreensViewModel {
             .view(title: "DuckPlayer", { _ in
                 DuckPlayerDebugSettingsView()
             }),
+            .view(title: "Idle Return NTP", { _ in
+                IdleReturnNTPDebugView()
+            }),
             .view(title: "WebView State Restoration", { _ in
                 WebViewStateRestorationDebugView()
             }),
-            .view(title: "History", { _ in
-                HistoryDebugRootView()
+            .view(title: "History", { d in
+                HistoryDebugRootView(tabManager: d.tabManager)
             }),
             .view(title: "Bookmarks", { _ in
                 BookmarksDebugRootView()
@@ -178,6 +185,7 @@ extension DebugScreensViewModel {
                                                             runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
                 }
             }) : nil,
+            webExtensionsDebugScreen,
             .controller(title: "File Size Inspector", { _ in
                 return self.debugStoryboard.instantiateViewController(identifier: "FileSizeDebug") { coder in
                     FileSizeDebugViewController(coder: coder)
@@ -222,10 +230,26 @@ extension DebugScreensViewModel {
                     }
                 }
 
+                let isOnboardingRebranding = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.onboardingRebranding)
+                let defaultFlow: OnboardingDebugFlow = isOnboardingRebranding ? .rebranding : .legacy
+
                 weak var capturedController: OnboardingDebugViewController?
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView {
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(initialFlow: defaultFlow) { flow in
                     guard let capturedController else { return }
-                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter(), systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager, daxDialogsManager: d.daxDialogManager)
+
+                    let controller: Onboarding = if flow.isRebranding {
+                        OnboardingIntroViewController.rebranded(
+                            onboardingPixelReporter: OnboardingPixelReporter(),
+                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                            daxDialogsManager: d.daxDialogManager
+                        )
+                    } else {
+                        OnboardingIntroViewController.legacy(
+                            onboardingPixelReporter: OnboardingPixelReporter(),
+                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                            daxDialogsManager: d.daxDialogManager
+                        )
+                    }
                     controller.delegate = capturedController
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)
@@ -266,6 +290,21 @@ extension DebugScreensViewModel {
         )
 
         store.lastPresentationTimestamp = nil
+    }
+
+    private var webExtensionsDebugScreen: DebugScreen? {
+        guard #available(iOS 18.4, *),
+              AppDependencyProvider.shared.featureFlagger.isFeatureOn(.webExtensions) else {
+            return nil
+        }
+
+        return .view(title: "Web Extensions") { d in
+            if let manager = d.webExtensionManager {
+                WebExtensionsDebugView(webExtensionManager: manager)
+            } else {
+                Text("Web Extensions not available")
+            }
+        }
     }
 
 }

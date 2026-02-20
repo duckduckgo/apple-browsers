@@ -26,7 +26,8 @@ extension WKNavigationAction: WebViewNavigationAction {
     /// https://github.com/WebKit/WebKit/blob/c39358705b79ccf2da3b76a8be6334e7e3dfcfa6/Source/WebKit/UIProcess/WebPageProxy.cpp#L5708
     public var safeSourceFrame: WKFrameInfo? {
         _=WKNavigationAction.addSafetyCheckForSafeSourceFrameUsageOnce
-        return self.perform(#selector(getter: sourceFrame))?.takeUnretainedValue() as? WKFrameInfo
+        guard self.perform(#selector(getter: sourceFrame)) != nil else { return nil }
+        return sourceFrame
     }
 
     /// Make an empty URLRequest if `WKNavigationAction.request` returns nil

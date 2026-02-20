@@ -50,10 +50,6 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
     private lazy var cachedBookmarks: CachedBookmarks = {
         CachedBookmarks(bookmarksDatabase)
     }()
-    
-    var historyCoordinator: HistoryCoordinating {
-        historyManager.historyCoordinator
-    }
 
     var platform: Platform {
         .mobile
@@ -69,7 +65,7 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
 
     @MainActor
     func history(for suggestionLoading: Suggestions.SuggestionLoading) -> [HistorySuggestion] {
-        return historyCoordinator.history ?? []
+        return historyManager.history ?? []
     }
 
     func bookmarks(for suggestionLoading: Suggestions.SuggestionLoading) -> [Suggestions.Bookmark] {
@@ -81,10 +77,7 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
     }
 
     func openTabs(for suggestionLoading: any SuggestionLoading) -> [BrowserTab] {
-        if featureFlagger.isFeatureOn(.autocompleteTabs) {
-            return candidateOpenTabs
-        }
-        return []
+        return candidateOpenTabs
     }
 
     func suggestionLoading(_ suggestionLoading: Suggestions.SuggestionLoading, suggestionDataFromUrl url: URL, withParameters parameters: [String: String], completion: @escaping (Data?, Error?) -> Void) {

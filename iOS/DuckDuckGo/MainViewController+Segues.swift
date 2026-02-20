@@ -53,10 +53,19 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller = OnboardingIntroViewController(
-            onboardingPixelReporter: contextualOnboardingPixelReporter,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-            daxDialogsManager: daxDialogsManager)
+        let controller: Onboarding = if featureFlagger.isFeatureOn(.onboardingRebranding) {
+            OnboardingIntroViewController.rebranded(
+                onboardingPixelReporter: contextualOnboardingPixelReporter,
+                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                daxDialogsManager: daxDialogsManager
+            )
+        } else {
+            OnboardingIntroViewController.legacy(
+                onboardingPixelReporter: contextualOnboardingPixelReporter,
+                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                daxDialogsManager: daxDialogsManager
+            )
+        }
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)
@@ -189,9 +198,30 @@ extension MainViewController {
         present(controller, animated: true)
     }
 
-    func segueToTabSwitcher() {
+    func segueToTabSwitcher() async {
         Logger.lifecycle.debug(#function)
+
+        // Guard against concurrent presentations
+        guard tabSwitcherController == nil else {
+            Logger.lifecycle.debug("Tab switcher presentation already in progress or active")
+            return
+        }
+
         hideAllHighlightsIfNeeded()
+
+        // Calculate the initial tracker count state before creating the view controller
+        // to ensure correct header sizing during the transition
+        let initialTrackerCountState = await TabSwitcherTrackerCountViewModel.calculateInitialState(
+            featureFlagger: featureFlagger,
+            settings: DefaultTabSwitcherSettings(),
+            privacyStats: privacyStats
+        )
+
+        // Check again after async work in case another presentation started
+        guard tabSwitcherController == nil else {
+            Logger.lifecycle.debug("Tab switcher presentation already in progress")
+            return
+        }
 
         let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
         guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
@@ -202,10 +232,13 @@ extension MainViewController {
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
                                       appSettings: self.appSettings,
+                                      privacyStats: self.privacyStats,
                                       productSurfaceTelemetry: self.productSurfaceTelemetry,
                                       historyManager: self.historyManager,
                                       fireproofing: self.fireproofing,
-                                      keyValueStore: self.keyValueStore)
+                                      keyValueStore: self.keyValueStore,
+                                      daxDialogsManager: self.daxDialogsManager,
+                                      initialTrackerCountState: initialTrackerCountState)
         }) else {
             assertionFailure()
             return
@@ -257,6 +290,26 @@ extension MainViewController {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .dbp)
         }, deepLinkTarget: .dbp)
+    }
+
+    func segueToPIRWithSubscriptionCheck() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+
+        Task { @MainActor in
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+            let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
+
+            if hasEntitlement {
+                launchSettings(completion: {
+                    $0.triggerDeepLinkNavigation(to: .dbp)
+                }, deepLinkTarget: .dbp)
+            } else {
+                launchSettings(completion: {
+                    $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
+                }, deepLinkTarget: .subscriptionFlow())
+            }
+        }
     }
 
     func segueToDebugSettings() {
@@ -355,7 +408,8 @@ extension MainViewController {
                                                             dbpIOSPublicInterface: dbpIOSPublicInterface,
                                                             subscriptionDataReporter: subscriptionDataReporter,
                                                             remoteMessagingDebugHandler: remoteMessagingDebugHandler,
-                                                            productSurfaceTelemetry: productSurfaceTelemetry)
+                                                            productSurfaceTelemetry: productSurfaceTelemetry,
+                                                            webExtensionManager: webExtensionManager)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
@@ -366,11 +420,12 @@ extension MainViewController {
             remoteMessageActionHandler: remoteMessagingActionHandler,
             isIPad: UIDevice.current.userInterfaceIdiom == .pad,
             pixelReporter: nil,
-            userScriptsDependencies: userScriptsDependencies)
+            userScriptsDependencies: userScriptsDependencies,
+            imageLoader: remoteMessagingImageLoader,
+            featureFlagger: featureFlagger)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
-                                                  subscriptionManagerV2: AppDependencyProvider.shared.subscriptionManagerV2,
-                                                  subscriptionAuthV1toV2Bridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                   subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                   voiceSearchHelper: voiceSearchHelper,
                                                   deepLink: deepLinkTarget,
@@ -391,7 +446,10 @@ extension MainViewController {
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
-                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore),
+                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(
+                                                      using: featureFlagger,
+                                                      keyValueStore: keyValueStore
+                                                  ),
                                                   whatsNewCoordinator: whatsNewCoordinator)
 
         settingsViewModel.autoClearActionDelegate = self
@@ -411,6 +469,7 @@ extension MainViewController {
 
                 // We are still presenting legacy views, so use a Navcontroller
                 let navController = SettingsUINavigationController(rootViewController: settingsController)
+                navController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
                 settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
 
                 // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
@@ -449,7 +508,8 @@ extension MainViewController {
             debuggingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
             subscriptionDataReporter: self.subscriptionDataReporter,
-            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler))
+            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
+            webExtensionManager: self.webExtensionManager))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

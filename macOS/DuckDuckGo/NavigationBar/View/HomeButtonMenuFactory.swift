@@ -21,39 +21,39 @@ import Foundation
 
 struct HomeButtonMenuFactory {
 
-    static func replace(_ menuItem: NSMenuItem, prefs: AppearancePreferences) -> NSMenuItem? {
+    static func replace(_ menuItem: NSMenuItem, prefs: AppearancePreferences, pinningManager: PinningManager) -> NSMenuItem? {
         guard let menu = menuItem.menu else { return nil }
         let index = menu.index(of: menuItem)
         guard index >= 0 else { return nil }
 
-        let item = makeMenuItem(prefs: prefs)
+        let item = makeMenuItem(prefs: prefs, pinningManager: pinningManager)
         menu.replaceItem(at: index, with: item)
         return item
     }
 
-    static func addToMenu(_ menu: NSMenu, prefs: AppearancePreferences) {
-        menu.addItem(makeMenuItem(prefs: prefs))
+    static func addToMenu(_ menu: NSMenu, prefs: AppearancePreferences, pinningManager: PinningManager) {
+        menu.addItem(makeMenuItem(prefs: prefs, pinningManager: pinningManager))
     }
 
-    private static func makeMenuItem(prefs: AppearancePreferences) -> NSMenuItem {
+    private static func makeMenuItem(prefs: AppearancePreferences, pinningManager: PinningManager) -> NSMenuItem {
         let item = NSMenuItem(title: UserText.mainMenuHomeButton)
 
-        let isButtonVisible = LocalPinningManager.shared.isPinned(.homeButton)
+        let isButtonVisible = pinningManager.isPinned(.homeButton)
         let buttonPosition = prefs.homeButtonPosition
 
         let hiddenItem: NSMenuItem = BlockMenuItem(title: UserText.mainMenuHomeButtonMode(for: .hidden), isChecked: !isButtonVisible, block: {
             prefs.homeButtonPosition = .hidden
-            LocalPinningManager.shared.unpin(.homeButton)
+            pinningManager.unpin(.homeButton)
         })
         let leftItem: NSMenuItem = BlockMenuItem(title: UserText.mainMenuHomeButtonMode(for: .left), isChecked: isButtonVisible && buttonPosition == .left, block: {
             prefs.homeButtonPosition = .left
-            LocalPinningManager.shared.unpin(.homeButton)
-            LocalPinningManager.shared.pin(.homeButton)
+            pinningManager.unpin(.homeButton)
+            pinningManager.pin(.homeButton)
         })
         let rightItem: NSMenuItem = BlockMenuItem(title: UserText.mainMenuHomeButtonMode(for: .right), isChecked: isButtonVisible && buttonPosition == .right, block: {
             prefs.homeButtonPosition = .right
-            LocalPinningManager.shared.unpin(.homeButton)
-            LocalPinningManager.shared.pin(.homeButton)
+            pinningManager.unpin(.homeButton)
+            pinningManager.pin(.homeButton)
         })
 
         item.submenu = NSMenu(items: [hiddenItem, leftItem, rightItem])

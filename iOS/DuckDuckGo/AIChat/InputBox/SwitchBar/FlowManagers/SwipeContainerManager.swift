@@ -37,6 +37,14 @@ final class SwipeContainerManager: NSObject {
         }
     }
 
+    var chatPageContainer: UIView {
+        if switchBarHandler.isUsingFadeOutAnimation {
+            return fadeOutContainerViewController.chatPageContainer
+        } else {
+            return swipeContainerViewController.chatPageContainer
+        }
+    }
+
     private lazy var swipeContainerViewController = SwipeContainerViewController(switchBarHandler: switchBarHandler)
     private lazy var fadeOutContainerViewController = FadeOutContainerViewController(switchBarHandler: switchBarHandler, featureFlagger: featureFlagger)
 
@@ -65,6 +73,13 @@ final class SwipeContainerManager: NSObject {
     
     // MARK: - Public Methods
 
+
+    /// Installs the chat history manager in the chat page container
+    /// - Parameter manager: The AIChatHistoryManager to install
+    @MainActor
+    func installChatHistory(using manager: AIChatHistoryManager) {
+        manager.installInContainerView(chatPageContainer, parentViewController: containerViewController)
+    }
 
     /// Installs the swipe container in the provided parent view
     func installInViewController(_ parentController: UIViewController, asSubviewOf view: UIView, barView: UIView, isTopBarPosition: Bool) {

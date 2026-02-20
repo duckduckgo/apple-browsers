@@ -125,6 +125,49 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
 
     func testThatInitialSetupReturnsConfiguration() async throws {
         sectionsAvailabilityProvider.isOmnibarAvailable = true
+        sectionsAvailabilityProvider.isNextStepsListWidgetAvailable = true
+
+        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
+        XCTAssertEqual(configuration.widgets, [
+            .init(id: .rmf),
+            .init(id: .freemiumPIRBanner),
+            .init(id: .subscriptionWinBackBanner),
+            .init(id: .omnibar),
+            .init(id: .nextStepsList),
+            .init(id: .favorites),
+            .init(id: .protections)
+        ])
+        XCTAssertEqual(configuration.widgetConfigs, [
+            .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
+            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible),
+            .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible)
+        ])
+        XCTAssertEqual(configuration.platform, .init(name: "macos"))
+    }
+
+    func testWhenOmnibarNotAvailable_ThenInitialSetupReturnsConfigurationWithoutOmnibar() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = false
+        sectionsAvailabilityProvider.isNextStepsListWidgetAvailable = true
+
+        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
+        XCTAssertEqual(configuration.widgets, [
+            .init(id: .rmf),
+            .init(id: .freemiumPIRBanner),
+            .init(id: .subscriptionWinBackBanner),
+            .init(id: .nextStepsList),
+            .init(id: .favorites),
+            .init(id: .protections),
+        ])
+        XCTAssertEqual(configuration.widgetConfigs, [
+            .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
+            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible),
+        ])
+        XCTAssertEqual(configuration.platform, .init(name: "macos"))
+    }
+
+    func testWhenNextStepsListWidgetNotAvailable_ThenInitialSetupReturnsConfigurationWithNextStepsWidget() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = true
+        sectionsAvailabilityProvider.isNextStepsListWidgetAvailable = false
 
         let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
         XCTAssertEqual(configuration.widgets, [
@@ -140,25 +183,6 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
             .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible),
             .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible)
-        ])
-        XCTAssertEqual(configuration.platform, .init(name: "macos"))
-    }
-
-    func testWhenOmnibarNotAvailable_ThenInitialSetupReturnsConfigurationWithoutOmnibar() async throws {
-        sectionsAvailabilityProvider.isOmnibarAvailable = false
-
-        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
-        XCTAssertEqual(configuration.widgets, [
-            .init(id: .rmf),
-            .init(id: .freemiumPIRBanner),
-            .init(id: .subscriptionWinBackBanner),
-            .init(id: .nextSteps),
-            .init(id: .favorites),
-            .init(id: .protections),
-        ])
-        XCTAssertEqual(configuration.widgetConfigs, [
-            .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
-            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible),
         ])
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
     }

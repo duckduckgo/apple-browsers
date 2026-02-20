@@ -190,6 +190,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var isAccountCreationAvailable: Bool = true
     @Published var isAccountRecoveryAvailable: Bool = true
     @Published var isAppVersionNotSupported: Bool = true
+    @Published var isAIChatSyncEnabled: Bool = false
 
     private let syncPausedStateManager: any SyncPausedStateManaging
     let syncSettingsHandler: SyncSettingsViewHandling
@@ -209,6 +210,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private let syncIdentitiesAdapter: SyncIdentitiesAdapter?
     private let appearancePreferences: AppearancePreferences
     private var cancellables = Set<AnyCancellable>()
+    private let featureFlagger: FeatureFlagger
 
     private let diagnosisHelper: SyncDiagnosisHelper
 
@@ -232,6 +234,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.appearancePreferences = appearancePreferences
         self.syncFeatureFlags = syncService.featureFlags
         self.syncPausedStateManager = syncPausedStateManager
+        self.featureFlagger = featureFlagger
 
         self.isFaviconsFetchingEnabled = syncBookmarksAdapter.isFaviconsFetchingEnabled
         self.isUnifiedFavoritesEnabled = appearancePreferences.favoritesDisplayMode.isDisplayUnified
@@ -283,6 +286,15 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .assign(to: \.syncFeatureFlags, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
+        featureFlagger.updatesPublisher
+            .prepend(())
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.isAIChatSyncEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
+            }
             .store(in: &cancellables)
 
         syncService.isSyncInProgressPublisher

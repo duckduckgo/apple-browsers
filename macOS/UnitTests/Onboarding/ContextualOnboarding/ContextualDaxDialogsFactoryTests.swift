@@ -39,7 +39,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         reporter = CapturingOnboardingPixelReporter()
         windowControllersManager = WindowControllersManagerMock()
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab, .fireDialog]
+        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
         fireCoordinator = FireCoordinator(tld: TLD(),
                                           featureFlagger: featureFlagger,
                                           historyCoordinating: HistoryCoordinatingMock(),
@@ -263,7 +263,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
 
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
-            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
             aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator
         )

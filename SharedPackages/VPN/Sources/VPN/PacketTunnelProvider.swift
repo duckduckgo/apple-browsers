@@ -191,16 +191,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - WireGuard
 
     private let wireGuardAdapterEventHandler: WireGuardAdapterEventHandling
-
-    private lazy var adapter: WireGuardAdapter = {
-        WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface, eventHandler: self.wireGuardAdapterEventHandler) { logLevel, message in
-            if logLevel == .error {
-                Logger.networkProtectionWireGuard.error("🔴 Received error from adapter: \(message, privacy: .public)")
-            } else {
-                Logger.networkProtectionWireGuard.log("Received message from adapter: \(message, privacy: .public)")
-            }
-        }
-    }()
+    private var adapter: WireGuardAdapterProtocol!
 
     // MARK: - Timers Support
 
@@ -259,14 +250,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - Server Selection
 
-    private lazy var serverSelectionResolver: VPNServerSelectionResolving = {
-        let locationRepository = NetworkProtectionLocationListCompositeRepository(
-            environment: settings.selectedEnvironment,
-            tokenHandler: tokenHandlerProvider,
-            errorEvents: debugEvents
-        )
-        return VPNServerSelectionResolver(locationListRepository: locationRepository, vpnSettings: settings)
-    }()
+    private let serverSelectionResolver: VPNServerSelectionResolving
 
     @MainActor
     private var lastSelectedServer: NetworkProtectionServer? {
@@ -348,21 +332,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private var isConnectionTesterEnabled: Bool = true
 
     @MainActor
-    private lazy var keyExpirationTester: KeyExpirationTester = {
-        KeyExpirationTester(keyStore: keyStore, settings: settings) { @MainActor [weak self] in
-            guard let self else { return false }
+    private var keyExpirationTester: KeyExpirationTesting!
 
-            // This provides a more frequent active user pixel check
-            providerEvents.fire(.userBecameActive)
-
-            await updateBandwidthAnalyzer()
-            return await bandwidthAnalyzer.isConnectionIdle()
-        } rekey: { @MainActor [weak self] in
-            try await self?.rekey()
-        }
-    }()
-
-    private lazy var tunnelFailureMonitor = NetworkProtectionTunnelFailureMonitor(handshakeReporter: adapter)
+    private var tunnelFailureMonitor: TunnelFailureMonitoring!
 
     public let latencyMonitor: LatencyMonitoring
     public let entitlementMonitor: EntitlementMonitoring
@@ -412,13 +384,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 providerEvents: EventMapping<Event>,
                 settings: VPNSettings,
                 defaults: UserDefaults,
-                wideEvent: WideEventManaging = WideEvent(),
+                wideEvent: WideEventManaging? = nil,
                 bandwidthAnalyzer: BandwidthAnalyzing? = nil,
                 latencyMonitor: LatencyMonitoring = NetworkProtectionLatencyMonitor(),
                 entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),
                 deviceManager: NetworkProtectionDeviceManagement? = nil,
                 serverStatusMonitor: ServerStatusMonitoring? = nil,
+                serverSelectionResolver: VPNServerSelectionResolving? = nil,
                 connectionTester: ConnectionTesting? = nil,
+                adapter: WireGuardAdapterProtocol? = nil,
+                keyExpirationTester: KeyExpirationTesting? = nil,
+                tunnelFailureMonitor: TunnelFailureMonitoring? = nil,
+                failureRecoveryHandler: FailureRecoveryHandling? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -434,11 +411,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.wireGuardInterface = wireGuardInterface
         self.settings = settings
         self.defaults = defaults
-        self.wideEvent = wideEvent
         self.bandwidthAnalyzer = bandwidthAnalyzer ?? NetworkProtectionConnectionBandwidthAnalyzer()
         self.latencyMonitor = latencyMonitor
         self.entitlementMonitor = entitlementMonitor
         self.entitlementCheck = entitlementCheck
+
+        self.wideEvent = wideEvent ?? WideEvent(featureFlagProvider: WideEventFeatureFlagProvider(settings: settings))
 
         let keyStore = keyStore ?? NetworkProtectionKeychainKeyStore(
             keychainType: keychainType,
@@ -458,6 +436,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             tokenHandler: tokenHandlerProvider
         )
 
+        self.serverSelectionResolver = serverSelectionResolver ?? {
+            let locationRepository = NetworkProtectionLocationListCompositeRepository(
+                environment: settings.selectedEnvironment,
+                tokenHandler: tokenHandlerProvider,
+                errorEvents: debugEvents
+            )
+            return VPNServerSelectionResolver(locationListRepository: locationRepository, vpnSettings: settings)
+        }()
+
         self.wireGuardAdapterEventHandler = WireGuardAdapterEventHandler(
             providerEvents: providerEvents,
             settings: settings,
@@ -467,6 +454,42 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.connectionTester = connectionTester ?? NetworkProtectionConnectionTester(timerQueue: timerQueue)
 
         super.init()
+
+        self.adapter = adapter ?? WireGuardAdapter(
+            with: self,
+            wireGuardInterface: wireGuardInterface,
+            eventHandler: wireGuardAdapterEventHandler
+        ) { logLevel, message in
+            if logLevel == .error {
+                Logger.networkProtectionWireGuard.error("🔴 Received error from adapter: \(message, privacy: .public)")
+            } else {
+                Logger.networkProtectionWireGuard.log("Received message from adapter: \(message, privacy: .public)")
+            }
+        }
+
+        self.keyExpirationTester = keyExpirationTester ?? KeyExpirationTester(
+            keyStore: keyStore,
+            settings: settings
+        ) { @MainActor [weak self] in
+            guard let self else { return false }
+            self.providerEvents.fire(.userBecameActive)
+            await self.updateBandwidthAnalyzer()
+            return await self.bandwidthAnalyzer.isConnectionIdle()
+        } rekey: { @MainActor [weak self] in
+            try await self?.rekey()
+        }
+
+        self.tunnelFailureMonitor = tunnelFailureMonitor ?? NetworkProtectionTunnelFailureMonitor(
+            handshakeReporter: self.adapter
+        )
+
+        self.failureRecoveryHandler = failureRecoveryHandler ?? FailureRecoveryHandler(
+            deviceManager: self.deviceManager,
+            reassertingControl: self,
+            eventHandler: { [weak self] step in
+                self?.providerEvents.fire(.failureRecoveryAttempt(step))
+            }
+        )
 
         self.connectionTester.resultHandler = { @MainActor [weak self] result in
             self?.handleConnectionTestResult(result)
@@ -517,6 +540,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     open func loadVendorOptions(from provider: NETunnelProviderProtocol?) throws {
+        // no-op, but can be overridden by subclasses
+    }
+
+    /// Called after the token check passes on iOS, indicating that protected data is available.
+    open func loadProtectedResources() async {
         // no-op, but can be overridden by subclasses
     }
 
@@ -672,6 +700,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             if (try? await tokenHandlerProvider.getToken()) == nil {
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: nil)
             }
+
+            // Load resources that require the device to be unlocked.
+            // At this point, the token check has passed, so protected data is available.
+            await loadProtectedResources()
 #endif
         } catch {
             if startupOptions.startupMethod == .automaticOnDemand {
@@ -1457,13 +1489,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
 
-    private lazy var failureRecoveryHandler: FailureRecoveryHandling = FailureRecoveryHandler(
-        deviceManager: deviceManager,
-        reassertingControl: self,
-        eventHandler: { [weak self] step in
-            self?.providerEvents.fire(.failureRecoveryAttempt(step))
-        }
-    )
+    private var failureRecoveryHandler: FailureRecoveryHandling!
 
     private func startServerFailureRecovery() {
         Task {
@@ -1842,6 +1868,17 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 let newError = NSError(domain: (error as NSError).domain, code: (error as NSError).code)
                 return [NSUnderlyingErrorKey: newError]
             }
+        }
+    }
+}
+
+private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    let settings: VPNSettings
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+            return settings.wideEventPostEndpointEnabled
         }
     }
 }

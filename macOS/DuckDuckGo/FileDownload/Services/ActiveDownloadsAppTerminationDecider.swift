@@ -18,35 +18,37 @@
 
 import AppKit
 import Combine
+import Common
+import Foundation
 
 /// Handles active downloads during app termination.
 /// Prompts user if there are active downloads and waits for their decision.
 @MainActor
-struct ActiveDownloadsAppTerminationDecider {
+struct ActiveDownloadsAppTerminationDecider: ApplicationTerminationDecider {
     let downloadManager: FileDownloadManagerProtocol
     let downloadListCoordinator: DownloadListCoordinator
 
-    /// Handles active downloads during termination.
-    /// - Returns: A task that completes with `true` to continue termination or `false` to cancel,
-    ///            or `nil` if there are no active downloads.
-    func handleTermination() -> Task<Bool, Never>? {
-        guard !downloadManager.downloads.isEmpty else { return nil }
+    func shouldTerminate(isAsync: Bool) -> TerminationQuery {
+        guard !downloadManager.downloads.isEmpty else {
+            return .sync(.next)
+        }
 
         // if there're downloads without location chosen yet (save dialog should display) - cancel them
         let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
         guard !activeDownloads.isEmpty else {
-            return Task {
-                // Cancel .initial state downloads
+            // Cancel .initial state downloads
+            return .async(Task { @MainActor in
                 await downloadManager.cancelAll()
                 await downloadListCoordinator.sync()
-
-                return true // Continue termination
-            }
+                return .next // Continue termination
+            })
         }
 
-        return Task { @MainActor in
+        // Show modal alert for active downloads
+        return .async(Task { @MainActor in
             let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
 
+            // Observe downloads finishing to auto-dismiss alert
             let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
                 // close alert and quit when all downloads finished
                 NSApp.stopModal(withCode: .OK)
@@ -56,14 +58,14 @@ struct ActiveDownloadsAppTerminationDecider {
             downloadsFinishedCancellable.cancel()
 
             if response == .cancel {
-                return false // Cancel termination
+                return .cancel
             }
 
             // User chose to quit - cancel all downloads and wait
             await downloadManager.cancelAll()
             await downloadListCoordinator.sync()
 
-            return true // Continue termination
-        }
+            return .next // Continue termination
+        })
     }
 }

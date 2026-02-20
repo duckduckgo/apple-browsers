@@ -50,8 +50,8 @@ struct SubscriptionSettingsHeaderView: View {
 
             switch state {
             case .subscribed, .trial:
-                HStack(spacing: 8) {
-                    HStack(spacing: 4) {
+                HStack(alignment: .lastTextBaseline, spacing: 6) {
+                    HStack(alignment: .center, spacing: 4) {
                         Circle()
                             .fill(Color(designSystemColor: .alertGreen))
                             .frame(width: 8, height: 8)
@@ -60,6 +60,9 @@ struct SubscriptionSettingsHeaderView: View {
                             .foregroundColor(Color(designSystemColor: .textSecondary))
                     }
                     if let variant = tierBadge {
+                        Rectangle()
+                            .fill(Color(designSystemColor: .lines))
+                            .frame(width: 1, height: 12)
                         TierBadgeView(variant: variant)
                     }
                 }

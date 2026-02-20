@@ -44,6 +44,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     let notificationCenter: NotificationCenter
     private var featureDiscoveryObserver: NSObjectProtocol?
     private let pixelKit: PixelKit?
+    private let dataClearingPixelsReporter: DataClearingPixelsReporter
     private var historyCleaner: HistoryCleaning
 
     @Published
@@ -69,6 +70,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         aiChatWasUsedBefore = featureDiscovery.wasUsedBefore(.aiChat)
 
         self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
+        self.dataClearingPixelsReporter = .init(pixelFiring: self.pixelKit)
         subscribeToChanges()
     }
 
@@ -81,7 +83,6 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
     @MainActor
     func cleanAIChatHistory() async {
-        guard featureFlagger.isFeatureOn(.aiChatDataClearing) else { return }
         let result = await historyCleaner.cleanAIChatHistory()
 
         switch result {
@@ -89,6 +90,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
             pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
+            dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnChatHistoryError(error))
             pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
 
             if let userScriptError = error as? UserScriptError {
@@ -107,9 +109,9 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         $aiChatWasUsedBefore.combineLatest(aiChatMenuConfiguration.valuesChangedPublisher.prepend(()))
             .map { [weak self] wasUsed, _ in
                 guard let self else { return false }
-                return wasUsed && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatDataClearing)
+                return wasUsed && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
             }
-            .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatDataClearing))
+            .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature)
             .removeDuplicates()
             .assign(to: &$shouldDisplayCleanAIChatHistoryOption)
     }

@@ -10,11 +10,13 @@ let package = Package(
         .library(name: "SwiftUIExtensions", targets: ["SwiftUIExtensions"]),
     ],
     dependencies: [
+        .package(path: "../Infrastructure/DesignResourcesKit")
     ],
     targets: [
         .target(
             name: "SwiftUIExtensions",
             dependencies: [
+                "DesignResourcesKit"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

@@ -44,6 +44,10 @@ enum AIChatOpenTrigger {
     /// Opens an AI chat using restoration data from a previous session.
     /// - Parameter data: The `AIChatRestorationData` used to restore a previous chat state.
     case restoration(AIChatRestorationData)
+
+    /// Opens an existing AI chat by its chat ID.
+    /// - Parameter chatId: The unique identifier of the chat to open.
+    case existingChat(chatId: String)
 }
 
 /// Protocol defining the interface for opening AI chat tabs.
@@ -107,6 +111,10 @@ struct AIChatTabOpener: AIChatTabOpening {
 
         case .restoration(let data):
             aiChatTabManaging.insertAIChatTab(with: aiChatRemoteSettings.aiChatURL, restorationData: data)
+
+        case .existingChat(let chatId):
+            let chatURL = buildChatURL(for: chatId)
+            aiChatTabManaging.openAIChat(chatURL, with: behavior, hasPrompt: false)
         }
     }
 
@@ -115,7 +123,7 @@ struct AIChatTabOpener: AIChatTabOpening {
         openAIChatTab(with: .newChat, behavior: linkOpenBehavior)
     }
 
-    // MARK: - Private Helper
+    // MARK: - Private Helpers
 
     @MainActor
     private func openAIChatTab(query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) {
@@ -123,6 +131,21 @@ struct AIChatTabOpener: AIChatTabOpening {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
         aiChatTabManaging.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
+    }
+
+    /// Builds a URL to open an existing chat by its ID.
+    /// - Parameter chatId: The unique identifier of the chat to open.
+    /// - Returns: A URL with the chatID query parameter.
+    private func buildChatURL(for chatId: String) -> URL {
+        guard var components = URLComponents(url: aiChatRemoteSettings.aiChatURL, resolvingAgainstBaseURL: false) else {
+            return aiChatRemoteSettings.aiChatURL
+        }
+
+        var queryItems = components.queryItems ?? []
+        queryItems.append(URLQueryItem(name: "chatID", value: chatId))
+        components.queryItems = queryItems
+
+        return components.url ?? aiChatRemoteSettings.aiChatURL
     }
 }
 

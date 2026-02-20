@@ -29,7 +29,7 @@ protocol TabSwitcherDelegate: AnyObject {
     
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL)
 
-    func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireOptions: FireOptions)
+    func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest)
     
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController)
 
@@ -41,4 +41,7 @@ protocol TabSwitcherDelegate: AnyObject {
     
     /// Called when the tab switcher requests to open a new tab in AI Chat mode
     func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController)
+
+    func tabSwitcherDidDismiss(tabSwitcher: TabSwitcherViewController)
+    
 }

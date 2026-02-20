@@ -21,7 +21,6 @@ import Subscription
 import BrowserServicesKit
 
 public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvailability {
-    public var isTierMessagingEnabled: Bool = false
     public var isProTierPurchaseEnabled: Bool = false
     public var isPaidAIChatEnabled: Bool = true
     public var isSubscriptionPurchaseAllowed: Bool

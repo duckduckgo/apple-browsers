@@ -27,6 +27,7 @@ public final class WideEventMock: WideEventManaging {
     public var completions: [(WideEventData, WideEventStatus)] = []
     public var discarded: [WideEventData] = []
 
+    public var onStart: ((WideEventData) -> Void)?
     public var onUpdate: ((WideEventData) -> Void)?
     public var onComplete: ((WideEventData, WideEventStatus) -> Void)?
 
@@ -34,6 +35,7 @@ public final class WideEventMock: WideEventManaging {
 
     public func startFlow<T: WideEventData>(_ data: T) {
         started.append(data)
+        onStart?(data)
     }
 
     public func updateFlow<T: WideEventData>(_ data: T) {

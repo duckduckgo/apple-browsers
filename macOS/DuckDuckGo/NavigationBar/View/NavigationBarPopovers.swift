@@ -64,7 +64,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private(set) var autofillPopoverPresenter: AutofillPopoverPresenter
     private(set) var downloadsPopover: DownloadsPopover?
     private(set) var autofillOnboardingPopover: AutofillToolbarOnboardingPopover?
-    private(set) var historyViewOnboardingPopover: HistoryViewOnboardingPopover?
 
     private var privacyDashboardPopover: PrivacyDashboardPopover?
     private var privacyInfoCancellable: AnyCancellable?
@@ -86,6 +85,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private let permissionManager: PermissionManagerProtocol
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
+    private let pinningManager: PinningManager
     private let isBurner: Bool
 
     private var popoverIsShownCancellables = Set<AnyCancellable>()
@@ -102,6 +102,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         networkProtectionPopoverManager: NetPPopoverManager,
         autofillPopoverPresenter: AutofillPopoverPresenter,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
+        pinningManager: PinningManager,
         isBurner: Bool
     ) {
         self.bookmarkManager = bookmarkManager
@@ -115,6 +116,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
+        self.pinningManager = pinningManager
         self.isBurner = isBurner
     }
 
@@ -126,7 +128,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         savePaymentMethodPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         downloadsPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         autofillOnboardingPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-        historyViewOnboardingPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         privacyDashboardPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         bookmarkPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         zoomPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
@@ -200,7 +201,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         } else if isSaveIdentityPopoverShown && button.window == saveIdentityPopover?.mainWindow {
             saveIdentityPopover?.viewController.onNotNowClicked(sender: button)
         } else if isSavePaymentMethodPopoverShown && button.window == savePaymentMethodPopover?.mainWindow {
-            savePaymentMethodPopover?.viewController.onNotNowClicked(sender: button)
+            savePaymentMethodPopover?.viewController.onDontSaveClicked(sender: button)
         } else {
             showPasswordManagementPopover(selectedCategory: nil, from: button, withDelegate: delegate, source: .shortcut)
         }
@@ -310,17 +311,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         return true
     }
 
-    func showHistoryViewOnboardingPopover(from button: MouseOverButton,
-                                          withDelegate delegate: NSPopoverDelegate,
-                                          ctaCallback: @escaping (Bool) -> Void) {
-        guard closeTransientPopovers() else { return }
-        let popover = historyViewOnboardingPopover ?? HistoryViewOnboardingPopover(ctaCallback: ctaCallback)
-
-        popover.delegate = delegate
-        historyViewOnboardingPopover = popover
-        show(popover, positionedBelow: button, simulatingMouseDown: false)
-    }
-
     func showAutofillOnboardingPopover(from button: MouseOverButton,
                                        withDelegate delegate: NSPopoverDelegate,
                                        ctaCallback: @escaping (Bool) -> Void) {
@@ -335,7 +325,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func showBookmarkListPopover(from button: MouseOverButton, withDelegate delegate: NSPopoverDelegate, forTab tab: Tab?) {
         guard closeTransientPopovers() else { return }
 
-        let popover = bookmarkListPopover ?? BookmarkListPopover(bookmarkManager: bookmarkManager, dragDropManager: bookmarkDragDropManager)
+        let popover = bookmarkListPopover ?? BookmarkListPopover(bookmarkManager: bookmarkManager, dragDropManager: bookmarkDragDropManager, pinningManager: pinningManager)
         bookmarkListPopover = popover
         popover.delegate = delegate
 
@@ -386,10 +376,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     func closeZoomPopover() {
         zoomPopover?.close()
-    }
-
-    func closeHistoryViewOnboardingViewPopover() {
-        historyViewOnboardingPopover?.close()
     }
 
     func closeAutofillOnboardingPopover() {
@@ -524,7 +510,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     }
 
     private func showSaveCredentialsPopover(usingView view: NSView, withDelegate delegate: NSPopoverDelegate) {
-        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains)
+        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains, pinningManager: pinningManager)
         popover.delegate = delegate
         saveCredentialsPopover = popover
         show(popover, positionedBelow: view)

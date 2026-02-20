@@ -109,21 +109,30 @@ final class AIChatContextualInputViewController: UIViewController {
         nativeInputViewController.isContextChipVisible
     }
 
-    var attachActions: [AIChatAttachAction] {
-        get { nativeInputViewController.attachActions }
-        set { nativeInputViewController.attachActions = newValue }
-    }
-
     func setText(_ text: String) {
         nativeInputViewController.setText(text)
     }
 
-    func showContextChip(_ chipView: UIView, animated: Bool = true) {
-        nativeInputViewController.showContextChip(chipView, animated: animated)
+    func appendText(_ text: String) {
+        nativeInputViewController.appendText(text)
     }
 
-    func hideContextChip(animated: Bool = true) {
-        nativeInputViewController.hideContextChip(animated: animated)
+    func showContextChip(_ chipView: UIView) {
+        nativeInputViewController.showContextChip(chipView)
+        updateQuickActions()
+    }
+
+    func hideContextChip() {
+        nativeInputViewController.hideContextChip()
+        updateQuickActions()
+    }
+
+    func updateContextChipState(_ state: AIChatContextChipView.State) {
+        nativeInputViewController.updateContextChipState(state)
+    }
+
+    func setChipTapCallback(_ callback: @escaping () -> Void) {
+        nativeInputViewController.setChipTapCallback(callback)
     }
 }
 
@@ -178,7 +187,12 @@ private extension AIChatContextualInputViewController {
             guard let self else { return }
             delegate?.contextualInputViewController(self, didSelectQuickAction: action)
         }
-        quickActionsView.configure(with: [.summarize])
+        updateQuickActions()
+    }
+
+    internal func updateQuickActions() {
+        let actions: [AIChatContextualQuickAction] = [.summarize]
+        quickActionsView.configure(with: actions)
     }
 
     func scrollQuickActionsToBottom() {

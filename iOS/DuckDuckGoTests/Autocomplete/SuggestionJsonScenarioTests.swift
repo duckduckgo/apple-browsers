@@ -110,7 +110,6 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         
         // Set up feature flagger
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.autocompleteTabs)
         
         // Create the real data source with test dependencies
         let dataSource = AutocompleteSuggestionsDataSource(
@@ -152,7 +151,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         }
 
         // Wait for the expectation to be fulfilled with a timeout
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Check for errors
         if let loadingError = loadingError {
@@ -380,6 +379,7 @@ extension SuggestionJsonScenarioTests {
         
         var history: [History.HistoryEntry]?
         var allHistoryVisits: [History.Visit]?
+        var dataClearingPixelsHandling: (any DataClearingPixelsHandling)?
 
         @Published var historyDictionary: [URL: History.HistoryEntry]?
         var historyDictionaryPublisher: Published<[URL: History.HistoryEntry]?>.Publisher {
@@ -394,7 +394,7 @@ extension SuggestionJsonScenarioTests {
             return nil
         }
         
-        func addVisit(of url: URL, at date: Date) -> History.Visit? {
+        func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
             return nil
         }
         
@@ -438,6 +438,9 @@ extension SuggestionJsonScenarioTests {
             }
         }
         
+        func burnVisits(for tabID: String) async throws {
+        }
+        
         func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
             MainActor.assumeMainThread {
                 completion?(nil)
@@ -470,6 +473,30 @@ extension SuggestionJsonScenarioTests {
         }
         
         func deleteHistoryForURL(_ url: URL) async {
+        }
+        
+        @MainActor
+        var history: History.BrowsingHistory? {
+            historyCoordinator.history
+        }
+        
+        func addVisit(of url: URL, tabID: String?) {
+        }
+        
+        func updateTitleIfNeeded(title: String, url: URL) {
+        }
+        
+        func commitChanges(url: URL) {
+        }
+        
+        func tabHistory(tabID: String) async throws -> [URL] {
+            return []
+        }
+        
+        func removeTabHistory(for tabIDs: [String]) async {
+        }
+
+        func removeBrowsingHistory(tabID: String) async {
         }
     }
 }

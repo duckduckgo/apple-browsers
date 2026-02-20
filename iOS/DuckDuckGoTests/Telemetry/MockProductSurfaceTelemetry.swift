@@ -23,6 +23,9 @@ import XCTest
 
 public final class MockProductSurfaceTelemetry: ProductSurfaceTelemetry {
     public init() {}
+
+    public var duckAIUsedCallCount = 0
+
     public func menuUsed() {}
     public func dailyActiveUser() {}
     public func iPadUsed(isPad: Bool) {}
@@ -30,7 +33,7 @@ public final class MockProductSurfaceTelemetry: ProductSurfaceTelemetry {
     public func keyboardActive() {}
     public func autocompleteUsed() {}
     public func navigationCompleted(url: URL?) {}
-    public func duckAIUsed() {}
+    public func duckAIUsed() { duckAIUsedCallCount += 1 }
     public func tabManagerUsed() {}
     public func dataClearingUsed() {}
     public func newTabPageUsed() {}

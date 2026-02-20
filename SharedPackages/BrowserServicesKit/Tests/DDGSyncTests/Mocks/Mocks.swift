@@ -366,10 +366,18 @@ final class MockTokenRescoping: TokenRescoping {
 final class MockAIChatsHandling: AIChatsHandling {
 
     private(set) var deleteCalls: [(until: Date, token: String)] = []
+    private(set) var deleteChatIdsCalls: [(chatIds: [String], token: String)] = []
     var deleteError: Error?
 
     func delete(until: Date, token: String) async throws {
         deleteCalls.append((until: until, token: token))
+        if let deleteError {
+            throw deleteError
+        }
+    }
+
+    func delete(chatIds: [String], token: String) async throws {
+        deleteChatIdsCalls.append((chatIds: chatIds, token: token))
         if let deleteError {
             throw deleteError
         }

@@ -53,5 +53,6 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case sendToSyncSettings
     case sendToSetupSync
     case setAIChatHistoryEnabled
+    case submitSyncStatusChanged
 }
 // swiftlint:enable inclusive_language

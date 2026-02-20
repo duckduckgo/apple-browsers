@@ -38,6 +38,7 @@ public protocol ScriptSourceProviding {
     var sessionKey: String { get }
     var messageSecret: String { get }
     var currentCohorts: [ContentScopeExperimentData] { get }
+    var syncErrorHandler: SyncErrorHandling { get }
 
 }
 
@@ -50,6 +51,8 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let contentBlockingManager: ContentBlockerRulesManagerProtocol
         let fireproofing: Fireproofing
         let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+        let internalUserDecider: InternalUserDecider
+        let syncErrorHandler: SyncErrorHandling
     }
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
@@ -69,6 +72,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let fireproofing: Fireproofing
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     var currentCohorts: [ContentScopeExperimentData] = []
+    let syncErrorHandler: SyncErrorHandling
 
     init(dependencies: Dependencies) {
 
@@ -87,10 +91,12 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         sessionKey = Self.generateSessionKey()
         messageSecret = Self.generateSessionKey()
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
+        syncErrorHandler = dependencies.syncErrorHandler
 
         contentScopeProperties = ContentScopeProperties(gpcEnabled: dependencies.appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
+                                                        isInternalUser: dependencies.internalUserDecider.isInternalUser,
                                                         debug: AppUserDefaults().contentScopeDebugStateEnabled,
                                                         featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS,
                                                         currentCohorts: currentCohorts)

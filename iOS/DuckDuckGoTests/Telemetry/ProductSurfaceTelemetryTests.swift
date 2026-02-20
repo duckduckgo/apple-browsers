@@ -59,9 +59,7 @@ final class ProductSurfaceTelemetryTests: XCTestCase {
         telemetry.bookmarksPageUsed()
         telemetry.passwordsPageUsed()
 
-        // Temporary for debug pixels
-        // XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.debugTelemetryDAUPreFF.name)
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
     }
 
     // MARK: - Individual events

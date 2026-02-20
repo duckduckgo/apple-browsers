@@ -28,10 +28,10 @@ enum WinBackOfferFactory {
                             featureFlagger: FeatureFlagger,
                             daxDialogs: DaxDialogs) -> WinBackOfferService {
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
-#if DEBUG || ALPHA
+#if DEBUG || ALPHA || EXPERIMENTAL
         let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueFilesStore)
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             winbackOfferStore: WinbackOfferStore(keyValueStore: keyValueFilesStore),
             winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
             dateProvider: { winBackOfferDebugStore.simulatedTodayDate },
@@ -39,7 +39,7 @@ enum WinBackOfferFactory {
         )
 #else
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             winbackOfferStore: WinbackOfferStore(keyValueStore: keyValueFilesStore),
             winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
         )

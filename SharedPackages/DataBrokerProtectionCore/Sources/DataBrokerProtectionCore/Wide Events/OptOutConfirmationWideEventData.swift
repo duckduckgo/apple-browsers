@@ -20,8 +20,13 @@ import Foundation
 import PixelKit
 
 public final class OptOutConfirmationWideEventData: WideEventData {
-    public static let pixelName = "pir_opt_out_confirmation"
-    private static let featureName = "pir-opt-out-confirmation"
+    public static let metadata = WideEventMetadata(
+        pixelName: "pir_opt_out_confirmation",
+        featureName: "pir-opt-out-confirmation",
+        mobileMetaType: "ios-pir-opt-out-confirmation",
+        desktopMetaType: "macos-pir-opt-out-confirmation",
+        version: "1.0.0"
+    )
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
@@ -56,20 +61,11 @@ extension OptOutConfirmationWideEventData {
     }
 
     public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        parameters[WideEventParameter.Feature.name] = Self.featureName
-        parameters[DBPWideEventParameter.OptOutConfirmationFeature.dataBrokerURL] = dataBrokerURL
-
-        if let dataBrokerVersion {
-            parameters[DBPWideEventParameter.OptOutConfirmationFeature.dataBrokerVersion] = dataBrokerVersion
-        }
-
-        if let duration = confirmationInterval?.durationMilliseconds {
-            parameters[DBPWideEventParameter.OptOutConfirmationFeature.confirmationLatency] = String(duration)
-        }
-
-        return parameters
+        Dictionary(compacting: [
+            (DBPWideEventParameter.OptOutConfirmationFeature.dataBrokerURL, dataBrokerURL),
+            (DBPWideEventParameter.OptOutConfirmationFeature.dataBrokerVersion, dataBrokerVersion),
+            (DBPWideEventParameter.OptOutConfirmationFeature.confirmationLatency, confirmationInterval?.stringValue(.noBucketing)),
+        ])
     }
 }
 

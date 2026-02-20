@@ -40,7 +40,7 @@ public class DataBrokerProtectionAgentManagerProvider {
 
     public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                     configurationManager: DefaultConfigurationManager,
-                                    privacyConfigurationManager: DBPPrivacyConfigurationManager,
+                                    privacyConfigurationManager: PrivacyConfigurationManaging,
                                     featureFlagger: DBPFeatureFlagging,
                                     wideEvent: WideEventManaging,
                                     vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
@@ -130,7 +130,8 @@ public class DataBrokerProtectionAgentManagerProvider {
         let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
                                             settings: dbpSettings,
                                             servicePixel: backendServicePixels)
-        let emailConfirmationDataService = EmailConfirmationDataService(database: dataManager.database,
+        let emailConfirmationDataService = EmailConfirmationDataService(emailConfirmationStore: dataManager.database,
+                                                                        database: dataManager.database,
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
                                                                         featureFlagger: featureFlagger,
@@ -157,7 +158,8 @@ public class DataBrokerProtectionAgentManagerProvider {
             captchaService: captchaService,
             featureFlagger: featureFlagger,
             vpnBypassService: vpnBypassService,
-            wideEvent: wideEvent)
+            wideEvent: wideEvent,
+            isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated })
 
         return DataBrokerProtectionAgentManager(
             eventsHandler: eventsHandler,
@@ -207,7 +209,7 @@ public final class DataBrokerProtectionAgentManager {
     private let agentStopper: DataBrokerProtectionAgentStopper
     private let configurationManger: DefaultConfigurationManager
     private let brokerUpdater: BrokerJSONServiceProvider
-    private let privacyConfigurationManager: DBPPrivacyConfigurationManager
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let wideEventSweeper: DBPWideEventSweeper?
@@ -232,7 +234,7 @@ public final class DataBrokerProtectionAgentManager {
          agentStopper: DataBrokerProtectionAgentStopper,
          configurationManager: DefaultConfigurationManager,
          brokerUpdater: BrokerJSONServiceProvider,
-         privacyConfigurationManager: DBPPrivacyConfigurationManager,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          wideEvent: WideEventManaging? = nil

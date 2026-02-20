@@ -59,4 +59,8 @@ final class VPNUIActionHandler: VPNUIActionHandling {
     public func willStopVPN() async -> Bool {
         true
     }
+
+    public func didStartVPN() {
+        // No-op: Free trial conversion tracking is handled by the browser app
+    }
 }

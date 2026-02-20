@@ -18,6 +18,16 @@ concurrency:
 
 jobs:
 
+  upload_current_metadata:
+    name: Upload Current iOS App Version Metadata
+    uses: ./.github/workflows/ios_upload_version_metadata.yml
+    secrets:
+      AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+      AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+
   create_release_branch:
 
     name: Create Release Branch

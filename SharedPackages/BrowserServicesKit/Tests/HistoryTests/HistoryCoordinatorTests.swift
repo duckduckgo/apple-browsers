@@ -298,18 +298,22 @@ class HistoryCoordinatorTests: XCTestCase {
         let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL(string: "https://duckduckgo.com")!
+        let firstSaveExpectation = expectation(description: "Visit added")
+        historyStoringMock.saveCompletion = {
+            firstSaveExpectation.fulfill()
+        }
         historyCoordinator.addVisit(of: url)
+        await fulfillment(of: [firstSaveExpectation], timeout: 1.0)
 
         historyCoordinator.markFailedToLoadUrl(url)
 
-        let expectation = expectation(description: "Changes committed")
-        expectation.expectedFulfillmentCount = 2
+        let secondSaveExpectation = expectation(description: "Changes committed")
         historyStoringMock.saveCompletion = {
-            expectation.fulfill()
+            secondSaveExpectation.fulfill()
         }
         historyCoordinator.commitChanges(url: url)
 
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [secondSaveExpectation], timeout: 1.0)
 
         XCTAssertEqual(historyStoringMock.savedHistoryEntries.last?.url, url)
         XCTAssertEqual(historyStoringMock.savedHistoryEntries.last?.failedToLoad, true)
@@ -638,6 +642,125 @@ class HistoryCoordinatorTests: XCTestCase {
         XCTAssertFalse(results[4], "test.org should be reset")
     }
 
+    // MARK: - Tab ID Tests
+
+    @MainActor
+    func testWhenAddVisitIsCalledWithTabID_ThenTabIDIsStoredInVisit() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        let url = URL(string: "https://duckduckgo.com")!
+        let tabID = "test-tab-789"
+
+        historyCoordinator.addVisit(of: url, tabID: tabID)
+
+        let expectation = expectation(description: "Changes committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        let savedTabID = historyStoringMock.savedVisitsWithTabIDs.last?.tabID
+        XCTAssertEqual(savedTabID, tabID)
+    }
+
+    @MainActor
+    func testWhenAddVisitIsCalledWithNilTabID_ThenVisitHasNoTabID() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        let url = URL(string: "https://duckduckgo.com")!
+
+        historyCoordinator.addVisit(of: url, tabID: nil)
+
+        let expectation = expectation(description: "Changes committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        let savedTabID = historyStoringMock.savedVisitsWithTabIDs.last?.tabID
+        XCTAssertNil(savedTabID)
+    }
+
+    // MARK: - Burn Visits For Tab ID Tests
+
+    @MainActor
+    func testWhenBurnVisitsForTabID_ThenOnlyThatTabsVisitsAreRemoved() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+        historyStoringMock.removeEntriesResult = .success(())
+        historyStoringMock.removeVisitsResult = .success(())
+
+        let url1 = URL(string: "https://site1.com")!
+        let url2 = URL(string: "https://site2.com")!
+
+        let saveExpectation = expectation(description: "Saves completed")
+        saveExpectation.expectedFulfillmentCount = 2
+        historyStoringMock.saveCompletion = {
+            saveExpectation.fulfill()
+        }
+
+        let visit1 = historyCoordinator.addVisit(of: url1, tabID: "tab-1")
+        _ = historyCoordinator.addVisit(of: url2, tabID: "tab-2")
+
+        await fulfillment(of: [saveExpectation], timeout: 1.0)
+
+        // Wait for identifier to be set on the original visit (happens asynchronously after save returns)
+        guard let visit1 else {
+            XCTFail("visit1 should not be nil")
+            return
+        }
+
+        let identifierPredicate = NSPredicate { _, _ in visit1.identifier != nil }
+        let identifierExpectation = XCTNSPredicateExpectation(predicate: identifierPredicate, object: nil)
+
+        await fulfillment(of: [identifierExpectation], timeout: 10.0)
+
+        guard let visit1ID = visit1.identifier else {
+            XCTFail("visit1 identifier should not be nil after save")
+            return
+        }
+
+        historyStoringMock.pageVisitIDsResult = [visit1ID]
+
+        // When
+        let burnExpectation = expectation(description: "Burn completed")
+        do {
+            try await historyCoordinator.burnVisits(for: "tab-1")
+            burnExpectation.fulfill()
+        } catch {
+            XCTFail("burnVisits should not throw: \(error)")
+        }
+        await fulfillment(of: [burnExpectation], timeout: 1.0)
+
+        // Then - Only tab-1's visit should be removed
+        XCTAssertEqual(historyStoringMock.removeVisitsArray.count, 1)
+        XCTAssertEqual(historyStoringMock.removeVisitsArray.first?.identifier, visit1.identifier)
+        XCTAssertTrue(historyCoordinator.history!.contains { $0.url == url2 })
+    }
+
+    @MainActor
+    func testWhenBurnVisitsForTabIDWithNoHistory_ThenNoVisitsAreBurned() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+        historyStoringMock.removeVisitsResult = .success(())
+
+        // Configure mock to return empty visit IDs (no history for this tab)
+        historyStoringMock.pageVisitIDsResult = []
+
+        // When
+        let burnExpectation = expectation(description: "Burn completed")
+        do {
+            try await historyCoordinator.burnVisits(for: "non-existent-tab")
+            burnExpectation.fulfill()
+        } catch {
+            XCTFail("burnVisits should not throw: \(error)")
+        }
+        await fulfillment(of: [burnExpectation], timeout: 1.0)
+
+        // Then - No visits should be removed
+        XCTAssertTrue(historyStoringMock.removeVisitsArray.isEmpty)
+    }
+
 }
 
 fileprivate extension HistoryCoordinator {
@@ -728,6 +851,7 @@ actor HistoryStoringMock: HistoryStoring {
 
     @MainActor var saveCalled = false
     @MainActor var savedHistoryEntries = [HistoryEntry]()
+    @MainActor var savedVisitsWithTabIDs: [(visit: Visit, tabID: String?)] = []
     @MainActor var saveCompletion: (() -> Void)?
 
     func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
@@ -739,22 +863,35 @@ actor HistoryStoringMock: HistoryStoring {
         await MainActor.run {
             saveCalled = true
             savedHistoryEntries.append(entry)
+            for visit in entry.visits {
+                savedVisitsWithTabIDs.append((visit, visit.tabID))
+            }
             saveCompletion?()
         }
 
         return entry.visits.map { ($0.identifier!, $0.date) }
     }
 
+    @MainActor var pageVisitIDsCalled = false
+    @MainActor var pageVisitIDsResult: [Visit.ID] = []
+
+    func pageVisitIDs(in tabID: String) async throws -> [History.Visit.ID] {
+        await MainActor.run {
+            pageVisitIDsCalled = true
+            return pageVisitIDsResult
+        }
+    }
+
 }
 
-class MockHistoryStoreEventMapper: EventMapping<HistoryStore.HistoryStoreEvents> {
+class MockHistoryStoreEventMapper: EventMapping<HistoryDatabaseError> {
     public init() {
         super.init { _, _, _, _ in
             // no-op
         }
     }
 
-    override init(mapping: @escaping EventMapping<HistoryStore.HistoryStoreEvents>.Mapping) {
+    override init(mapping: @escaping EventMapping<HistoryDatabaseError>.Mapping) {
         fatalError("Use init()")
     }
 }

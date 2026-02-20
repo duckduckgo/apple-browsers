@@ -25,6 +25,7 @@ import NewTabPage
 import PrivacyConfig
 import UserScript
 import Configuration
+import DDGSync
 
 extension ContentBlockerRulesIdentifier.Difference {
     static let notification = ContentBlockerRulesIdentifier.Difference(rawValue: 1 << 8)
@@ -33,6 +34,8 @@ extension ContentBlockerRulesIdentifier.Difference {
 protocol UserScriptDependenciesProviding: AnyObject {
     @MainActor
     func makeNewTabPageActionsManager() -> NewTabPageActionsManager?
+
+    var syncService: DDGSyncing? { get }
 }
 
 final class UserContentUpdating {
@@ -77,6 +80,11 @@ final class UserContentUpdating {
     private lazy var newTabPageActionsManager: NewTabPageActionsManager? = userScriptDependenciesProvider?.makeNewTabPageActionsManager()
 
     @MainActor
+    private lazy var syncServiceProvider: () -> DDGSyncing? = { [weak userScriptDependenciesProvider] in
+        return userScriptDependenciesProvider?.syncService
+    }
+
+    @MainActor
     init(contentBlockerRulesManager: ContentBlockerRulesManagerProtocol,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          trackerDataManager: TrackerDataManager,
@@ -93,11 +101,13 @@ final class UserContentUpdating {
          startupPreferences: StartupPreferences,
          windowControllersManager: WindowControllersManagerProtocol,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+         pinningManager: PinningManager,
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
          autoconsentManagement: AutoconsentManagement,
-         contentScopePreferences: ContentScopePreferences
+         contentScopePreferences: ContentScopePreferences,
+         syncErrorHandler: SyncErrorHandling
     ) {
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
             return NotificationCenter.default.publisher(for: name)
@@ -133,11 +143,14 @@ final class UserContentUpdating {
                                                       startupPreferences: startupPreferences,
                                                       windowControllersManager: windowControllersManager,
                                                       bookmarkManager: bookmarkManager,
+                                                      pinningManager: pinningManager,
                                                       historyCoordinator: historyCoordinator,
                                                       fireproofDomains: fireproofDomains,
                                                       fireCoordinator: fireCoordinator,
                                                       autoconsentManagement: autoconsentManagement,
-                                                      newTabPageActionsManager: self?.newTabPageActionsManager)
+                                                      newTabPageActionsManager: self?.newTabPageActionsManager,
+                                                      syncServiceProvider: self?.syncServiceProvider ?? { nil },
+                                                      syncErrorHandler: syncErrorHandler)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
         }
 

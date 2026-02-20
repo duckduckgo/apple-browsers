@@ -105,6 +105,13 @@ public struct DaxCaption: ViewModifier {
     }
 }
 
+public struct DaxCaption1: ViewModifier {
+    public func body(content: Content) -> some View {
+        content
+            .font(Font(UIFont.daxCaption1()))
+    }
+}
+
 public extension View {
     func daxTitle1() -> some View {
         modifier(DaxTitle1())
@@ -148,6 +155,10 @@ public extension View {
 
     func daxFootnoteSemibold() -> some View {
         modifier(DaxFootnoteSemibold())
+    }
+
+    func daxCaption1() -> some View {
+        modifier(DaxCaption1())
     }
 
     func daxCaption() -> some View {

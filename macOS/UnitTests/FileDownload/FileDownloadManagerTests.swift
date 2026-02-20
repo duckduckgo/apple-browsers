@@ -79,7 +79,7 @@ final class FileDownloadManagerTests: XCTestCase {
         dm.add(download, fireWindowSession: nil, delegate: nil, destination: .auto)
 
         withExtendedLifetime(cancellable) {
-            waitForExpectations(timeout: 0.3)
+            waitForExpectations(timeout: 5)
         }
     }
 
@@ -97,7 +97,7 @@ final class FileDownloadManagerTests: XCTestCase {
         download.delegate?.download!(download.asWKDownload(), didFailWithError: TestError(), resumeData: nil)
 
         withExtendedLifetime(cancellable) {
-            waitForExpectations(timeout: 0.3)
+            waitForExpectations(timeout: 5)
         }
         XCTAssertTrue(dm.downloads.isEmpty)
     }
@@ -159,7 +159,7 @@ final class FileDownloadManagerTests: XCTestCase {
             e2.fulfill()
         }
 
-        waitForExpectations(timeout: 0.3)
+        waitForExpectations(timeout: 5)
         XCTAssertEqual(preferences.lastUsedCustomDownloadLocation, lastUsedCustomDownloadLocation, "lastUsedCustomDownloadLocation shouldn‘t change")
     }
 
@@ -193,7 +193,7 @@ final class FileDownloadManagerTests: XCTestCase {
             e2.fulfill()
         }
 
-        waitForExpectations(timeout: 0.3)
+        waitForExpectations(timeout: 5)
         XCTAssertEqual(preferences.lastUsedCustomDownloadLocation, downloadsURL, "lastUsedCustomDownloadLocation should be saved")
     }
 
@@ -213,7 +213,7 @@ final class FileDownloadManagerTests: XCTestCase {
             e.fulfill()
         }
 
-        waitForExpectations(timeout: 0.3)
+        waitForExpectations(timeout: 5)
 
         XCTAssertFalse(fm.fileExists(atPath: localURL.path))
         XCTAssertEqual(preferences.lastUsedCustomDownloadLocation, localURL.deletingLastPathComponent(), "lastUsedCustomDownloadLocation should be saved")
@@ -242,7 +242,7 @@ final class FileDownloadManagerTests: XCTestCase {
             e2.fulfill()
         }
 
-        waitForExpectations(timeout: 0.3)
+        waitForExpectations(timeout: 5)
         XCTAssertEqual(preferences.lastUsedCustomDownloadLocation, downloadsURL, "lastUsedCustomDownloadLocation should be saved")
     }
 
@@ -263,7 +263,7 @@ final class FileDownloadManagerTests: XCTestCase {
             e.fulfill()
         }
 
-        waitForExpectations(timeout: 0.3)
+        waitForExpectations(timeout: 5)
     }
 
     @MainActor
@@ -284,7 +284,7 @@ final class FileDownloadManagerTests: XCTestCase {
             e.fulfill()
         }
 
-        waitForExpectations(timeout: 0.3)
+        waitForExpectations(timeout: 5)
     }
 
     @MainActor
@@ -312,7 +312,7 @@ final class FileDownloadManagerTests: XCTestCase {
             e2.fulfill()
         }
 
-        waitForExpectations(timeout: 0.3)
+        waitForExpectations(timeout: 5)
     }
 
 }

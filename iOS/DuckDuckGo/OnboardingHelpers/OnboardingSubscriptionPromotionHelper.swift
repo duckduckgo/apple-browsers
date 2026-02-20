@@ -65,7 +65,7 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     private let featureFlagger: FeatureFlagger
 
     /// The subscription manager used to check if the user can purchase a subscription.
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
 
     /// The pixel firing service used to track user interactions with the promotion.
     private let pixelFiring: PixelFiring.Type
@@ -76,7 +76,7 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     ///   - featureFlagger: The feature flagging service. Defaults to the shared instance.
     ///   - subscriptionManager: The subscription manager. Defaults to the shared instance.
     ///   - pixelFiring: The pixel firing service. Defaults to Pixel.self.
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger, subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge, pixelFiring: PixelFiring.Type = Pixel.self) {
+    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger, subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager, pixelFiring: PixelFiring.Type = Pixel.self) {
         self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager
         self.pixelFiring = pixelFiring

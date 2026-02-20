@@ -1,0 +1,244 @@
+// Temporary telemetry pixels for settings customization
+// These pixels fire daily to track user preferences without creating parameter combinations that can identify users
+{
+    "m_temporary-telemetry_settings_clear-data-animation_fireRising": {
+        "description": "Fires daily when user has Fire Rising selected as their clear data animation",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_clear-data-animation_waterSwirl": {
+        "description": "Fires daily when user has Water Swirl selected as their clear data animation",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_clear-data-animation_airstream": {
+        "description": "Fires daily when user has Airstream selected as their clear data animation",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_clear-data-animation_none": {
+        "description": "Fires daily when user has no animation selected as their clear data animation",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_share": {
+        "description": "Fires daily when user has Share customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_addEditBookmark": {
+        "description": "Fires daily when user has Bookmark customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_addEditFavorite": {
+        "description": "Fires daily when user has Favorite customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_voiceSearch": {
+        "description": "Fires daily when user has Voice Search customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_zoom": {
+        "description": "Fires daily when user has Zoom customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_none": {
+        "description": "Fires daily when user has no button customized for their address bar",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_home": {
+        "description": "Fires daily when user has Home customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_newTab": {
+        "description": "Fires daily when user has New Tab customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_bookmarks": {
+        "description": "Fires daily when user has Bookmarks customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_downloads": {
+        "description": "Fires daily when user has Downloads customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_fire": {
+        "description": "Fires daily when user has Fire customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_vpn": {
+        "description": "Fires daily when user has VPN customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-address-bar-button_passwords": {
+        "description": "Fires daily when user has Passwords customized as their address bar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_share": {
+        "description": "Fires daily when user has Share customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_addEditBookmark": {
+        "description": "Fires daily when user has Bookmark customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_addEditFavorite": {
+        "description": "Fires daily when user has Favorite customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_voiceSearch": {
+        "description": "Fires daily when user has Voice Search customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_zoom": {
+        "description": "Fires daily when user has Zoom customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_none": {
+        "description": "Fires daily when user has no button customized for their toolbar",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_home": {
+        "description": "Fires daily when user has Home customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_newTab": {
+        "description": "Fires daily when user has New Tab customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_bookmarks": {
+        "description": "Fires daily when user has Bookmarks customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_downloads": {
+        "description": "Fires daily when user has Downloads customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_fire": {
+        "description": "Fires daily when user has Fire customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_vpn": {
+        "description": "Fires daily when user has VPN customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    },
+    "m_temporary-telemetry_settings_customized-toolbar-button_passwords": {
+        "description": "Fires daily when user has Passwords customized as their toolbar button",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-07-31"
+    }
+}

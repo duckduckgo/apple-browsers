@@ -166,7 +166,10 @@ final class JSONCrashReport: CrashReport {
     }
 
     var appVersion: String? {
-        headerJSON?["app_version"] as? String
+        guard let version = headerJSON?["app_version"] as? String, !version.isEmpty else {
+            return nil
+        }
+        return version
     }
 }
 

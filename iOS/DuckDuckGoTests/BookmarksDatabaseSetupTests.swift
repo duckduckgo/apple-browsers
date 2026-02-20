@@ -95,8 +95,9 @@ class BookmarksStateValidationMock: BookmarksStateValidation {
     }
 
     var onValidateBookmarksStructure: () -> Void = { }
-    func validateBookmarksStructure(context: NSManagedObjectContext) {
+    func validateBookmarksStructure(context: NSManagedObjectContext) -> Bool {
         onValidateBookmarksStructure()
+        return true
     }
 }
 

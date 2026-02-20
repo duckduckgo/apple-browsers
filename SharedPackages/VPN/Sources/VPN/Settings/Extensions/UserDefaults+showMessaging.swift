@@ -65,7 +65,27 @@ extension UserDefaults {
         }
     }
 
+    private var suppressEntitlementMessagingKey: String {
+        "suppressEntitlementMessaging"
+    }
+
+    /// When true, `enableEntitlementMessaging()` will not enable the alert/notification.
+    /// This is used to prevent the "subscription expired" alert from appearing during
+    /// user-initiated sign-out, where the missing token should not be treated as expiration.
+    public var suppressEntitlementMessaging: Bool {
+        get {
+            value(forKey: suppressEntitlementMessagingKey) as? Bool ?? false
+        }
+        set {
+            set(newValue, forKey: suppressEntitlementMessagingKey)
+        }
+    }
+
     public func enableEntitlementMessaging() {
+        guard !suppressEntitlementMessaging else {
+            return
+        }
+
         showEntitlementAlert = true
         showEntitlementNotification = true
 
@@ -79,6 +99,7 @@ extension UserDefaults {
     public func resetEntitlementMessaging() {
         removeObject(forKey: showEntitlementAlertKey)
         removeObject(forKey: showEntitlementNotificationKey)
+        suppressEntitlementMessaging = false
     }
 }
 

@@ -110,7 +110,7 @@ struct SettingsAIFeaturesView: View {
 
             if !viewModel.openedFromSERPSettingsButton {
                 Section {
-                    NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
+                    NavigationLink(destination: SERPSettingsView(page: .searchAssist, featureFlagger: viewModel.featureFlagger)) {
                         SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
                                          subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
                                          image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
@@ -118,9 +118,7 @@ struct SettingsAIFeaturesView: View {
                     .listRowBackground(Color(designSystemColor: .surface))
 
                     if viewModel.shouldShowHideAIGeneratedImagesSection {
-                        NavigationLink(destination:
-                            SERPSettingsView(page: .hideAIGeneratedImages)
-                                .environmentObject(viewModel)
+                        NavigationLink(destination: SERPSettingsView(page: .hideAIGeneratedImages, featureFlagger: viewModel.featureFlagger)
                                 .onAppear {
                                     PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
                                 }

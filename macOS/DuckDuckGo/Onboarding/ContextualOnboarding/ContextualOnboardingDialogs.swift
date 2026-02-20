@@ -272,7 +272,7 @@ struct OnboardingPrimaryCTAButton: View {
                 .padding(.vertical, 5)
                 .padding(.horizontal, 24)
         }
-        .buttonStyle(DefaultActionButtonStyle(enabled: true))
+        .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         .shadow(radius: 1, x: -0.6, y: +0.6)
     }
 

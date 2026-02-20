@@ -32,6 +32,7 @@ import Common
 @testable import DuckDuckGo
 @testable import Core
 import PersistenceTestingUtils
+import PrivacyConfig
 
 // swiftlint:disable force_try
 
@@ -73,6 +74,8 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
         let tabsModel = TabsModel(desktop: true)
         onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = try TabsModelPersistence()
+        let featureFlagger = MockFeatureFlagger()
+        let aiChatSettings = MockAIChatSettingsProvider()
         mainVC = MainViewController(
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
@@ -92,7 +95,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             contextualOnboardingPixelReporter: onboardingPixelReporter,
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: MockFireproofing(),
             textZoomCoordinator: MockTextZoomCoordinator(),
@@ -100,7 +103,9 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-            aiChatSettings: MockAIChatSettingsProvider(),
+            aiChatSettings: aiChatSettings,
+            aiChatAddressBarExperience: AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                                   aiChatSettings: aiChatSettings),
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider()

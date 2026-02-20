@@ -1,7 +1,7 @@
 {
   "name": "Spokeo",
   "url": "spokeo.com",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "addedDatetime": 1692572400000,
   "optOutUrl": "https://spokeo.com/optout",
   "mirrorSites": [
@@ -60,7 +60,7 @@
             },
             "addressCityState": {
               "selector": ".//div[contains(text(), 'Reside')]",
-              "afterText": "Resides in"
+              "afterText": "RESIDED IN"
             },
             "addressCityStateList": {
               "selector": ".//div[span[text() = 'Lived In']]",

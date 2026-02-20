@@ -48,10 +48,11 @@ public enum ContentScopeScriptContext {
     case contentScope
     case contentScopeIsolated
     case aiChatDataClearing
+    case aiChatHistory
 
     public var isIsolated: Bool {
         switch self {
-        case .contentScope, .aiChatDataClearing:
+        case .contentScope, .aiChatDataClearing, .aiChatHistory:
             return false
         case .contentScopeIsolated:
             return true
@@ -66,6 +67,8 @@ public enum ContentScopeScriptContext {
             return "contentScopeIsolated"
         case .aiChatDataClearing:
             return "duckAiDataClearing"
+        case .aiChatHistory:
+            return "duckAiChatHistory"
         }
     }
 
@@ -75,6 +78,8 @@ public enum ContentScopeScriptContext {
             return "contentScopeScripts"
         case .aiChatDataClearing:
             return "duckAiDataClearing"
+        case .aiChatHistory:
+            return "duckAiChatHistory"
         case .contentScopeIsolated:
             return "contentScopeScriptsIsolated"
         }
@@ -91,6 +96,7 @@ public final class ContentScopeProperties: Encodable {
     public let features: [String: ContentScopeFeature]
     public var currentCohorts: [ContentScopeExperimentData]
     public var messagingContextName: String?
+    public let themeVariant: String?
 
     public init(gpcEnabled: Bool,
                 sessionKey: String,
@@ -99,7 +105,8 @@ public final class ContentScopeProperties: Encodable {
                 debug: Bool = false,
                 featureToggles: ContentScopeFeatureToggles,
                 messagingContextName: String? = nil,
-                currentCohorts: [ContentScopeExperimentData] = []) {
+                currentCohorts: [ContentScopeExperimentData] = [],
+                themeVariant: String? = nil) {
         self.globalPrivacyControlValue = gpcEnabled
         self.debug = debug
         self.sessionKey = sessionKey
@@ -111,6 +118,7 @@ public final class ContentScopeProperties: Encodable {
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
         ]
         self.currentCohorts = currentCohorts
+        self.themeVariant = themeVariant
     }
 
     enum CodingKeys: String, CodingKey {
@@ -125,7 +133,7 @@ public final class ContentScopeProperties: Encodable {
         case features
         case currentCohorts
         case messagingContextName
-
+        case themeVariant
     }
 
 }

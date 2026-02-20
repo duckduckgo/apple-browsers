@@ -19,12 +19,13 @@
 
 import Foundation
 import DDGSync
+import AIChat
 
 final class AIChatDeleteOperation: SyncCustomOperation {
 
-    private weak var cleaner: (any SyncAIChatsCleaning)?
+    private weak var cleaner: (any AIChatSyncCleaning)?
 
-    init(cleaner: any SyncAIChatsCleaning) {
+    init(cleaner: any AIChatSyncCleaning) {
         self.cleaner = cleaner
     }
 

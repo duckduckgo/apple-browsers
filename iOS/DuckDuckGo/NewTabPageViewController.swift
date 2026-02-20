@@ -22,6 +22,7 @@ import DDGSync
 import Bookmarks
 import BrowserServicesKit
 import Core
+import RemoteMessaging
 
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
@@ -31,7 +32,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private lazy var borderView = StyledTopBottomBorderView()
 
-    private let newTabDialogFactory: any NewTabDaxDialogProvider
+    private let newTabDialogFactory: any NewTabDaxDialogProviding
     private let daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
 
     private let newTabPageViewModel: NewTabPageViewModel
@@ -52,10 +53,12 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          subscriptionDataReporting: SubscriptionDataReporting? = nil,
-         newTabDialogFactory: any NewTabDaxDialogProvider,
+         newTabDialogFactory: any NewTabDaxDialogProviding,
          daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
+         remoteMessagingImageLoader: RemoteMessagingImageLoading,
+         remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          appSettings: AppSettings,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
@@ -74,7 +77,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             faviconLoader: faviconLoader)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
-                                                messageActionHandler: remoteMessagingActionHandler)
+                                                messageActionHandler: remoteMessagingActionHandler,
+                                                imageLoader: remoteMessagingImageLoader,
+                                                pixelReporter: remoteMessagingPixelReporter)
 
         super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
@@ -241,7 +246,7 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
 
 extension NewTabPageViewController {
 
-    func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProvider) {
+    func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {
         dismissHostingController(didFinishNTPOnboarding: false)
 
         guard let spec = dialogProvider.nextHomeScreenMessageNew() else { return }
@@ -266,6 +271,17 @@ extension NewTabPageViewController {
 
         let onManualDismiss: () -> Void = { [weak self] in
             self?.dismissHostingController(didFinishNTPOnboarding: true)
+
+            if spec == .final {
+                let nextSpec = dialogProvider.nextHomeScreenMessageNew()
+                if nextSpec == .subscriptionPromotion {
+                    self?.chromeDelegate?.omniBar.endEditing()
+                    self?.showNextDaxDialog()
+                    return
+                }
+                dialogProvider.dismiss()
+            }
+
             // Show keyboard when manually dismiss the Dax tips.
             self?.chromeDelegate?.omniBar.beginEditing(animated: true)
         }

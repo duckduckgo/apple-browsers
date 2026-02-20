@@ -55,17 +55,6 @@ final class ThemeManagerTests: XCTestCase {
 
         XCTAssertEqual(manager.theme.name, .default)
     }
-
-    func testDisablingThemesFlagSetsTheLegacyTheme() async {
-        let (manager, _, featureFlagger) = buildThemeManager(initialTheme: .green, initialAppearance: .light)
-
-        featureFlagger.featuresStub["themes"] = false
-        featureFlagger.triggerUpdate()
-
-        let updatedTheme = await manager.themePublisher.nextValue()
-        XCTAssertEqual(updatedTheme.name, .default)
-        XCTAssertEqual(manager.appearance, .light)
-    }
 }
 
 private extension ThemeManagerTests {
@@ -77,12 +66,12 @@ private extension ThemeManagerTests {
     func buildThemeManager(initialTheme: String, initialAppearance: String) -> (ThemeManaging, AppearancePreferences, MockFeatureFlagger) {
         let persistor = AppearancePreferencesPersistorMock(themeAppearance: initialAppearance, themeName: initialTheme)
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub["themes"] = true
 
         let preferences = AppearancePreferences(
             persistor: persistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         let manager = ThemeManager(appearancePreferences: preferences, featureFlagger: featureFlagger)

@@ -170,6 +170,7 @@ class MockFrameInfo: WKFrameInfo {
     private let _request: URLRequest?
 
     init(isMainFrame: Bool, request: URLRequest? = nil) {
+        WKFrameInfo.swizzleDealloc()
         self._isMainFrame = isMainFrame
         self._request = request
     }
@@ -188,6 +189,27 @@ class MockFrameInfo: WKFrameInfo {
     }
     // swiftlint:enable identifier_name
 
+}
+
+extension WKFrameInfo {
+    private static var isSwizzled = false
+    private static let originalDealloc = { class_getInstanceMethod(WKFrameInfo.self, NSSelectorFromString("dealloc"))! }()
+    private static let swizzledDealloc = { class_getInstanceMethod(WKFrameInfo.self, #selector(swizzled_dealloc))! }()
+
+    static func swizzleDealloc() {
+        guard !self.isSwizzled else { return }
+        self.isSwizzled = true
+        method_exchangeImplementations(originalDealloc, swizzledDealloc)
+    }
+
+    static func restoreDealloc() {
+        guard self.isSwizzled else { return }
+        self.isSwizzled = false
+        method_exchangeImplementations(originalDealloc, swizzledDealloc)
+    }
+
+    @objc
+    func swizzled_dealloc() { }
 }
 
 final class MockDuckPlayerSettings: DuckPlayerSettings {

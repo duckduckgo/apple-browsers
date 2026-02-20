@@ -44,7 +44,6 @@ final class ReportingService {
     private var cancellables = Set<AnyCancellable>()
     let adAttributionPixelReporter: AdAttributionPixelReporter
     let privacyConfigurationManager: PrivacyConfigurationManaging
-    let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     var syncService: SyncService? {
         didSet {
@@ -58,8 +57,7 @@ final class ReportingService {
          userDefaults: UserDefaults,
          pixelKit: PixelKit?,
          appDependencies: DependencyProvider,
-         privacyConfigurationManager: PrivacyConfigurationManaging,
-         productSurfaceTelemetry: ProductSurfaceTelemetry) {
+         privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagging = featureFlagging
         self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
@@ -69,7 +67,7 @@ final class ReportingService {
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
         let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler)
         let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
-        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge)
+        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionManager)
         let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
                                                                dataStoring: attributedMetricDataStorage,
@@ -78,7 +76,6 @@ final class ReportingService {
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                settingsProvider: settingsProvider)
-        self.productSurfaceTelemetry = productSurfaceTelemetry
         addNotificationsObserver()
     }
 
@@ -165,7 +162,6 @@ final class ReportingService {
         Pixel.fire(pixel: .appLaunch, includedParameters: [.appVersion, .atb])
         reportAdAttribution()
         reportWidgetUsage()
-        productSurfaceTelemetry.dailyActiveUser()
         onboardingPixelReporter.fireEnqueuedPixelsIfNeeded()
         reportUserNotificationAuthStatus()
     }
@@ -300,7 +296,7 @@ struct AttributedMetricDefaultBrowserProvider: AttributedMetricDefaultBrowserPro
 
 struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
 
-    let subscriptionManager: SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: SubscriptionManager
 
     func isFreeTrial() async -> Bool {
         (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).hasActiveTrialOffer) ?? false

@@ -21,31 +21,24 @@ import BrowserServicesKit
 
 extension EmailUrls {
 
-    private struct Url {
-        static let emailProtectionLink = "https://duckduckgo.com/email"
-        static let emailProtectionInContextSignupLink = "https://duckduckgo.com/email/start-incontext"
-        static let emailProtectionAccountLink = "https://duckduckgo.com/email/settings/account"
-        static let emailProtectionSupportLink = "https://duckduckgo.com/email/settings/support"
-    }
-
     var emailProtectionLink: URL {
-        return URL(string: Url.emailProtectionLink)!
+        return URL.emailProtectionLink
     }
 
     var emailProtectionInContextSignupLink: URL {
-        return URL(string: Url.emailProtectionInContextSignupLink)!
+        return URL.emailProtectionInContextSignup
     }
 
     var emailProtectionAccountLink: URL {
-        return URL(string: Url.emailProtectionAccountLink)!
+        return URL.emailProtectionAccount
     }
 
     var emailProtectionSupportLink: URL {
-        return URL(string: Url.emailProtectionSupportLink)!
+        return URL.emailProtectionSupport
     }
 
     func isDuckDuckGoEmailProtection(url: URL) -> Bool {
-        return url.absoluteString.starts(with: Url.emailProtectionLink)
+        return url.absoluteString.starts(with: URL.emailProtectionLink.absoluteString)
     }
 
 }

@@ -23,7 +23,7 @@ import Foundation
 /// This protocol defines the interface for managing a WireGuard tunnel adapter,
 /// including starting, stopping, updating configuration, and monitoring connection state.
 ///
-protocol WireGuardAdapterProtocol: AnyObject, HandshakeReporting {
+public protocol WireGuardAdapterProtocol: AnyObject, HandshakeReporting {
 
     /// The name of the tunnel interface, if available.
     var interfaceName: String? { get }

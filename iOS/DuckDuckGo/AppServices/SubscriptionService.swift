@@ -28,7 +28,7 @@ import WKAbstractions
 final class SubscriptionService {
 
     let subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability
-    private let subscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2
+    private let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
     private var cancellables: Set<AnyCancellable> = []
 
     init(application: UIApplication = UIApplication.shared,
@@ -40,7 +40,7 @@ final class SubscriptionService {
                     featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
                 )
         Task {
-            await subscriptionManagerV2?.loadInitialData()
+            await subscriptionManager.loadInitialData()
         }
     }
 

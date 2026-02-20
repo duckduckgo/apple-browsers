@@ -276,6 +276,22 @@ public struct DataBroker: Codable, Sendable {
     }
 }
 
+extension DataBroker {
+    public func with(id: Int64) -> DataBroker {
+        DataBroker(id: id,
+                   name: name,
+                   url: url,
+                   steps: steps,
+                   version: version,
+                   schedulingConfig: schedulingConfig,
+                   parent: parent,
+                   mirrorSites: mirrorSites,
+                   optOutUrl: optOutUrl,
+                   eTag: eTag,
+                   removedAt: removedAt)
+    }
+}
+
 extension DataBroker: Hashable {
 
     public func hash(into hasher: inout Hasher) {

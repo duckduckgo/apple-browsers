@@ -16,51 +16,69 @@
 //  limitations under the License.
 //
 
-import XCTest
+import Foundation
 import Persistence
+import Testing
 
-class KeyValueFileStoreTests: XCTestCase {
+final class KeyValueFileStoreTests {
 
-    static let tempDir: URL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    static let tempDir: URL = {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }()
 
-    override class func setUp() {
-        super.setUp()
-
-        do {
-            try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        } catch {
-            XCTFail("Could not prepare test DIR")
-        }
+    init() throws {
+        // Ensure temp directory exists
+        try FileManager.default.createDirectory(at: Self.tempDir, withIntermediateDirectories: true)
     }
 
-    override class func tearDown() {
-        super.setUp()
+    // MARK: - Protocol Conformance Tests
 
-        do {
-            try FileManager.default.removeItem(at: tempDir)
-        } catch {
-            XCTFail("Could not cleanup test DIR")
-        }
+    @Test("KeyValueFileStore conforms to ThrowingKeyValueStoring")
+    func storeConformsToThrowingKeyValueStoring() throws {
+        let name = UUID().uuidString
+        let store = try KeyValueFileStore(location: Self.tempDir, name: name)
+
+        let conformsToProtocol = store is ThrowingKeyValueStoring
+        #expect(conformsToProtocol)
     }
 
-    func testWhenFileIsMissingNoErrorIsThrown() throws {
+    @Test("KeyValueFileStore does not conform to ObservableThrowingKeyValueStoring")
+    func storeDoesNotConformToObservableThrowingKeyValueStoring() throws {
+        let name = UUID().uuidString
+        let store = try KeyValueFileStore(location: Self.tempDir, name: name)
 
+        // KeyValueFileStore is file-based and does not support observation
+        let doesNotConformToObservableProtocol = !(store is ObservableThrowingKeyValueStoring)
+        #expect(doesNotConformToObservableProtocol)
+    }
+
+    // MARK: - Basic Functionality Tests
+
+    @Test("File missing throws no error")
+    func fileMissingNoErrorIsThrown() throws {
         let name = UUID().uuidString
         let s = try KeyValueFileStore(location: Self.tempDir, name: name)
 
-        XCTAssertNil(try s.object(forKey: "a"))
+        #expect(try s.object(forKey: "a") == nil)
     }
 
-    func testWhenFileIsReusedErrorIsThrown() throws {
-
+    @Test("File reuse throws error")
+    func fileReusedErrorIsThrown() throws {
         let name = UUID().uuidString
-        let s = try KeyValueFileStore(location: Self.tempDir, name: name)
+        let firstStore = try KeyValueFileStore(location: Self.tempDir, name: name)
 
-        XCTAssertThrowsError(try KeyValueFileStore(location: Self.tempDir, name: name))
+        #expect(throws: (any Error).self) {
+            try KeyValueFileStore(location: Self.tempDir, name: name)
+        }
+
+        // Keep firstStore alive until after the test
+        _ = firstStore
     }
 
-    func testPersistingSimpleObjects() throws {
-
+    @Test("Persisting simple objects")
+    func persistingSimpleObjects() throws {
         let name = UUID().uuidString
         var s = try KeyValueFileStore(location: Self.tempDir, name: name)
 
@@ -79,21 +97,21 @@ class KeyValueFileStoreTests: XCTestCase {
         // Reload from file
         KeyValueFileStore.relinquish(fileURL: s.fileURL)
         s = try KeyValueFileStore(location: Self.tempDir, name: name)
-        XCTAssertEqual(try s.object(forKey: "tbool") as? Bool, true)
-        XCTAssertEqual(try s.object(forKey: "fbool") as? Bool, false)
+        #expect(try s.object(forKey: "tbool") as? Bool == true)
+        #expect(try s.object(forKey: "fbool") as? Bool == false)
 
-        XCTAssertEqual(try s.object(forKey: "int0") as? Int, 0)
-        XCTAssertEqual(try s.object(forKey: "int1") as? Int, 1)
+        #expect(try s.object(forKey: "int0") as? Int == 0)
+        #expect(try s.object(forKey: "int1") as? Int == 1)
 
-        XCTAssertEqual(try s.object(forKey: "double1") as? Double, 5.5)
+        #expect(try s.object(forKey: "double1") as? Double == 5.5)
 
-        XCTAssertEqual(try s.object(forKey: "string") as? String, "string")
+        #expect(try s.object(forKey: "string") as? String == "string")
 
-        XCTAssertEqual(try s.object(forKey: "data") as? Data, "data".data(using: .utf8))
+        #expect(try s.object(forKey: "data") as? Data == "data".data(using: .utf8))
     }
 
-    func testPersistingCollections() throws {
-
+    @Test("Persisting collections")
+    func persistingCollections() throws {
         let name = UUID().uuidString
         var s = try KeyValueFileStore(location: Self.tempDir, name: name)
 
@@ -106,26 +124,25 @@ class KeyValueFileStoreTests: XCTestCase {
         // Reload from file
         KeyValueFileStore.relinquish(fileURL: s.fileURL)
         s = try KeyValueFileStore(location: Self.tempDir, name: name)
-        XCTAssertEqual(try s.object(forKey: "arrayI") as? [Int], [1, 2])
-        XCTAssertEqual(try s.object(forKey: "arrayS") as? [String], ["a", "b"])
+        #expect(try s.object(forKey: "arrayI") as? [Int] == [1, 2])
+        #expect(try s.object(forKey: "arrayS") as? [String] == ["a", "b"])
 
         let a = try s.object(forKey: "arrayM") as? [Any]
-        XCTAssertEqual(a?[0] as? Int, 1)
-        XCTAssertEqual(a?[1] as? String, "a")
+        #expect(a?[0] as? Int == 1)
+        #expect(a?[1] as? String == "a")
 
-        XCTAssertEqual(try s.object(forKey: "dict") as? [String: Int], ["a": 1, "b": 2])
+        #expect(try s.object(forKey: "dict") as? [String: Int] == ["a": 1, "b": 2])
     }
 
-    func testPersistingUnsupportedObjects() throws {
-
+    @Test("Persisting unsupported objects")
+    func persistingUnsupportedObjects() throws {
         let name = UUID().uuidString
         var s = try KeyValueFileStore(location: Self.tempDir, name: name)
 
         let set: Set<String> = ["a"]
-        do {
+        #expect(throws: (any Error).self) {
             try s.set(set, forKey: "set")
-            XCTFail("Set should not be persisted")
-        } catch {}
+        }
 
         // This must succeed
         try s.set(["a": 1, "b": 2], forKey: "dict")
@@ -133,8 +150,7 @@ class KeyValueFileStoreTests: XCTestCase {
         // Reload from file
         KeyValueFileStore.relinquish(fileURL: s.fileURL)
         s = try KeyValueFileStore(location: Self.tempDir, name: name)
-        XCTAssertNil(try s.object(forKey: "set"))
-        XCTAssertEqual(try s.object(forKey: "dict") as? [String: Int], ["a": 1, "b": 2])
+        #expect(try s.object(forKey: "set") == nil)
+        #expect(try s.object(forKey: "dict") as? [String: Int] == ["a": 1, "b": 2])
     }
-
 }

@@ -66,10 +66,12 @@ final class MockNotificationIconFetcher: NotificationIconFetching {
 
     private(set) var fetchIconCalled = false
     private(set) var fetchedURL: URL?
+    private(set) var fetchedOriginURL: URL?
 
-    func fetchIcon(from url: URL) async -> UNNotificationAttachment? {
+    func fetchIcon(from url: URL, originURL: URL) async -> UNNotificationAttachment? {
         fetchIconCalled = true
         fetchedURL = url
+        fetchedOriginURL = originURL
         return attachmentToReturn
     }
 }
@@ -141,11 +143,11 @@ private class WebNotificationMockScriptMessage: WKScriptMessage {
         self.mockedName = name
         self.mockedBody = body
         self.mockedWebView = effectiveWebView
-        self.mockedFrameInfo = frameInfo ?? WKFrameInfoMock(
-            webView: effectiveWebView,
+        self.mockedFrameInfo = frameInfo ?? WKFrameInfo.mock(
+            for: effectiveWebView,
+            isMain: isMainFrame,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
-            request: URLRequest(url: URL(string: "https://example.com")!),
-            isMainFrame: isMainFrame
+            request: URLRequest(url: URL(string: "https://example.com")!)
         )
         super.init()
     }

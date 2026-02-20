@@ -99,10 +99,14 @@ protocol OmniBarDelegate: AnyObject {
 
     func onDaxLogoTapped(logoURL: URL?, image: UIImage?, sourceFrame: CGRect)
 
-    // MARK: - Experimental Address Bar (pixels only)
+    /// Called when user selects a chat from the AI Chat history list
+    func onChatHistorySelected(url: URL)
+
+    // MARK: - Experimental Address Bar
     func onExperimentalAddressBarTapped()
     func onExperimentalAddressBarClearPressed()
     func onExperimentalAddressBarCancelPressed()
+    func dismissContextualSheetIfNeeded(completion: @escaping () -> Void)
 }
 
 extension OmniBarDelegate {
@@ -165,8 +169,15 @@ extension OmniBarDelegate {
     func onDaxLogoTapped(logoURL: URL?, image: UIImage?, sourceFrame: CGRect) {
     }
 
+    func onChatHistorySelected(url: URL) {
+    }
+
     // Default no-op implementations for experimental address bar pixel hooks
     func onExperimentalAddressBarTapped() {}
     func onExperimentalAddressBarClearPressed() {}
     func onExperimentalAddressBarCancelPressed() {}
+
+    func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
+        completion()
+    }
 }

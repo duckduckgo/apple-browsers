@@ -26,16 +26,16 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
 
     private var sut: OnboardingSubscriptionPromotionHelping!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mockSubscriptionAuthV1toV2Bridge: SubscriptionAuthV1toV2BridgeMock!
+    private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockPixelFiring: PixelFiringMock!
 
     override func setUpWithError() throws {
         mockFeatureFlagger = MockFeatureFlagger()
-        mockSubscriptionAuthV1toV2Bridge = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         
         sut = OnboardingSubscriptionPromotionHelper(
             featureFlagger: mockFeatureFlagger,
-            subscriptionManager: mockSubscriptionAuthV1toV2Bridge,
+            subscriptionManager: mockSubscriptionManager,
             pixelFiring: PixelFiringMock.self
         )
     }
@@ -43,7 +43,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
     override func tearDownWithError() throws {
         sut = nil
         mockFeatureFlagger = nil
-        mockSubscriptionAuthV1toV2Bridge = nil
+        mockSubscriptionManager = nil
         PixelFiringMock.tearDown()
     }
     
@@ -52,7 +52,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
     func testReturnsFreeTrialTextWhenUserIsEligibleForFreeTrial() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [FeatureFlag.privacyProOnboardingPromotion]
-        mockSubscriptionAuthV1toV2Bridge.isEligibleForFreeTrialResult = true
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
 
         // When
         let result = sut.proceedButtonText
@@ -64,7 +64,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
     func testReturnsNonFreeTrialTextWhenUserIsNotEligibleForFreeTrial() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [FeatureFlag.privacyProOnboardingPromotion]
-        mockSubscriptionAuthV1toV2Bridge.isEligibleForFreeTrialResult = false
+        mockSubscriptionManager.isEligibleForFreeTrialResult = false
 
         // When
         let result = sut.proceedButtonText
@@ -78,7 +78,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
     func testShouldDisplayWhenFeatureFlagEnabledAndCanPurchase() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [FeatureFlag.privacyProOnboardingPromotion]
-        mockSubscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
 
         // When
         let result = sut.shouldDisplay
@@ -90,7 +90,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
     func testShouldNotDisplayWhenFeatureFlagDisabled() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
-        mockSubscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
 
         // When
         let result = sut.shouldDisplay
@@ -102,7 +102,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
     func testShouldNotDisplayWhenCannotPurchase() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [FeatureFlag.privacyProOnboardingPromotion]
-        mockSubscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable = false
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
 
         // When
         let result = sut.shouldDisplay

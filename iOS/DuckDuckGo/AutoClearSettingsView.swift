@@ -35,7 +35,7 @@ struct AutoClearSettingsView: View {
                 timingSection
             }
         }
-        .applySettingsListModifiers(title: UserText.settingsAutomaticDataClearing,
+        .applySettingsListModifiers(title: UserText.settingsAutomaticallyDeleteData,
                                     displayMode: .inline,
                                     viewModel: settingsViewModel)
         .modifier(ScrollBounceBehaviorModifier())
@@ -51,8 +51,9 @@ struct AutoClearSettingsView: View {
     
     private var autoClearToggleSection: some View {
         Section {
-            SettingsCellView(label: UserText.settingsClearData,
-                             accessory: .toggle(isOn: viewModel.autoClearEnabledBinding))
+            SettingsCellView(label: UserText.settingsAutomaticallyDeleteData,
+                             accessory: .toggle(isOn: viewModel.autoClearEnabledBinding),
+                             accessoryAccessibilityIdentifier: Constants.toggleAccessibilityIdentifier)
         } footer: {
             Text(UserText.settingsAutoClearToggleFooter)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -80,7 +81,7 @@ struct AutoClearSettingsView: View {
                                  accessory: .toggle(isOn: viewModel.clearDuckAIChatsBinding))
             }
         } header: {
-            Text(UserText.settingsAutoClearSectionHeader)
+            Text(UserText.settingsAutomaticDataClearingDeleteSectionTitle)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
         }
     }
@@ -138,5 +139,11 @@ private struct TimingOptionRow: View {
         .listRowBackground(Color(designSystemColor: .surface))
         .accessibilityLabel(label)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+private extension AutoClearSettingsView {
+    enum Constants {
+        static let toggleAccessibilityIdentifier = "AutoclearEnabledToggle"
     }
 }

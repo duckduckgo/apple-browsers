@@ -78,6 +78,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let sortBookmarksViewModel: SortBookmarksViewModel
+    private let pinningManager: PinningManager
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -127,9 +128,11 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
+         pinningManager: PinningManager,
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
+        self.pinningManager = pinningManager
         let metrics = BookmarksSearchAndSortMetrics()
         let navigationEngagementMetrics = BookmarksNavigationEngagementMetrics()
         let sortViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .manager)
@@ -418,7 +421,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     private func onImport() {
-        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
     }
 
     @objc func handleDoubleClick(_ sender: NSTableView) {
@@ -942,7 +945,7 @@ extension BookmarkManagementDetailViewController {
         return manager
     }()
 
-    return BookmarkManagementDetailViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
+    BookmarkManagementDetailViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman), pinningManager: Application.appDelegate.pinningManager)
 
 }
 #endif

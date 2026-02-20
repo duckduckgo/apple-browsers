@@ -112,8 +112,11 @@ final class PixelKitTests: XCTestCase {
         let appVersion = "1.0.5"
         let headers: [String: String] = [:]
 
-        let pixelKit = PixelKit(dryRun: true, appVersion: appVersion, defaultHeaders: headers, dailyPixelCalendar: nil, defaults: userDefaults()) { _, _, _, _, _, _ in
-
+        let pixelKit = PixelKit(dryRun: true,
+                                appVersion: appVersion,
+                                defaultHeaders: headers,
+                                dailyPixelCalendar: nil,
+                                defaults: userDefaults()) { _, _, _, _, _, _ in
             XCTFail("This callback should not be executed when doing a dry run")
         }
 
@@ -487,7 +490,8 @@ final class PixelKitTests: XCTestCase {
         let cohort = calendar.date(from: cohort)
         let timeMachine = TimeMachine(calendar: calendar, date: cohort)
 
-        PixelKit.setUp(appVersion: "test",
+        PixelKit.setUp(dryRun: true,
+                       appVersion: "test",
                        defaultHeaders: [:],
                        dailyPixelCalendar: calendar,
                        dateGenerator: timeMachine.now,

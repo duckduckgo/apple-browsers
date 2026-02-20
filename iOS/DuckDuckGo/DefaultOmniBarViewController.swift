@@ -31,7 +31,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     private lazy var omniBarView = DefaultOmniBarView.create()
-    private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
     private var cancellables = Set<AnyCancellable>()
     private let sessionStateMetrics = SessionStateMetrics(storage: UserDefaults.standard)
@@ -61,7 +60,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+        if dependencies.aiChatAddressBarExperience.shouldUseExperimentalEditingState {
             if textFieldTapped {
                 omniDelegate?.onExperimentalAddressBarTapped()
             }
@@ -187,6 +186,21 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
 
+        let capturedTextEntryMode = textEntryMode
+
+        if let omniDelegate {
+            omniDelegate.dismissContextualSheetIfNeeded { [weak self] in
+                guard let self else { return }
+                self.present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
+            }
+        } else {
+            present(for: textField, suggestionsDependencies: suggestionsDependencies, textEntryMode: capturedTextEntryMode, animated: animated)
+        }
+    }
+
+    private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
+        guard editingStateViewController == nil else { return }
+
         let switchBarHandler = createSwitchBarHandler(for: textField)
         switchBarHandler.setToggleState(textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
@@ -206,7 +220,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                 self?.omniDelegate?.onExperimentalAddressBarClearPressed()
             }
             .store(in: &cancellables)
-        
+
         self.editingStateViewController = editingStateViewController
 
         present(editingStateViewController, animated: animated)
@@ -214,7 +228,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
         let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
-                                                storage: UserDefaults.standard, aiChatSettings: aiChatSettings,
+                                                storage: UserDefaults.standard, aiChatSettings: dependencies.aiChatSettings,
                                                 sessionStateMetrics: sessionStateMetrics)
 
         guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty, omniBarView.isFullAIChatHidden else {
@@ -278,6 +292,13 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
 
             let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
             self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
+        }
+    }
+
+    func onChatHistorySelected(url: URL) {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+            self.omniDelegate?.onChatHistorySelected(url: url)
         }
     }
 

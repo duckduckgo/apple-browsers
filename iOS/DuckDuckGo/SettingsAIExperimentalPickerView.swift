@@ -21,22 +21,21 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
+import Core
 
 struct SettingsAIExperimentalPickerView: View {
     @Binding var isDuckAISelected: Bool
-    let showNewBadgeForDuckAI: Bool
 
-    init(isDuckAISelected: Binding<Bool>, showNewBadgeForDuckAI: Bool = true) {
+    init(isDuckAISelected: Binding<Bool>) {
         self._isDuckAISelected = isDuckAISelected
-        self.showNewBadgeForDuckAI = showNewBadgeForDuckAI
     }
 
     var body: some View {
         HStack(alignment: .top, spacing: SettingsAIExperimentalPickerViewLayout.optionsHorizontalSpacing) {
             PickerOptionView(
                 isSelected: !isDuckAISelected,
-                selectedImage: .searchExperimentalOn,
-                unselectedImage: .searchExperimentalOff,
+                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAIActive : .searchExperimentalOn,
+                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAI : .searchExperimentalOff,
                 title: UserText.settingsAIPickerSearchOnly,
                 showNewBadge: false
             ) {
@@ -45,16 +44,24 @@ struct SettingsAIExperimentalPickerView: View {
 
             PickerOptionView(
                 isSelected: isDuckAISelected,
-                selectedImage: .aiExperimentalOn,
-                unselectedImage: .aiExperimentalOff,
+                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAIActive : .aiExperimentalOn,
+                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAI : .aiExperimentalOff,
                 title: UserText.settingsAIPickerSearchAndDuckAI,
-                showNewBadge: showNewBadgeForDuckAI
+                showNewBadge: false
             ) {
                 isDuckAISelected = true
             }
         }
         .frame(height: SettingsAIExperimentalPickerViewLayout.viewHeight)
         .frame(maxWidth: SettingsAIExperimentalPickerViewLayout.maxViewWidth)
+    }
+
+    private var shouldUseIPadAssets: Bool {
+        isIPadAIToggleOn && UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    private var isIPadAIToggleOn: Bool {
+        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.iPadAIToggle)
     }
 }
 

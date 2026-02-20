@@ -25,7 +25,7 @@ import Persistence
 import Common
 
 public extension BoolFileMarker.Name {
-    static let hasSuccessfullySetupBookmarksDatabaseBefore = BoolFileMarker.Name(rawValue: "bookmarks-db-setup-successfully-2")
+    static let hasSuccessfullySetupBookmarksDatabaseBefore = BoolFileMarker.Name(rawValue: "bookmarks-db-setup-successfully-3")
 }
 
 struct BookmarksDatabaseSetup {
@@ -55,7 +55,7 @@ struct BookmarksDatabaseSetup {
                     enhancedParams["occurrence-count"] = String(newCount)
                 }
                 if let isBookmarksDBFilePresent {
-                    enhancedParams["is-bookmarks-db-file-present"] = String(isBookmarksDBFilePresent)
+                    enhancedParams["is-bookmarks-db-file-present-2"] = String(isBookmarksDBFilePresent)
                 }
 
                 DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLost,
@@ -123,12 +123,16 @@ struct BookmarksDatabaseSetup {
 
         // Perform post-setup validation
         let contextForValidation = bookmarksDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
+        var validationPassed = false
         contextForValidation.performAndWait {
-            validator.validateBookmarksStructure(context: contextForValidation)
+            validationPassed = validator.validateBookmarksStructure(context: contextForValidation)
             repairDeletedFlag(context: contextForValidation)
         }
 
-        BoolFileMarker(name: .hasSuccessfullySetupBookmarksDatabaseBefore)?.mark()
+        // Only mark as successfully setup if validation passed
+        if validationPassed {
+            BoolFileMarker(name: .hasSuccessfullySetupBookmarksDatabaseBefore)?.mark()
+        }
 
         if migrationHappened {
             do {

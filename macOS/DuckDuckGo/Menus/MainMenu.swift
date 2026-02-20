@@ -31,6 +31,7 @@ import PrivacyConfig
 import Subscription
 import SubscriptionUI
 import Utilities
+import PixelKit
 
 final class MainMenu: NSMenu {
 
@@ -132,6 +133,8 @@ final class MainMenu: NSMenu {
     private let configurationURLProvider: CustomConfigurationURLProviding
     private let contentScopePreferences: ContentScopePreferences
     private let quitSurveyPersistor: QuitSurveyPersistor
+    private let pinningManager: PinningManager
+    private let subscriptionManager: any SubscriptionManager
 
     private lazy var webExtensionsMenuItem: NSMenuItem? = {
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
@@ -158,7 +161,9 @@ final class MainMenu: NSMenu {
          isFireWindowDefault: Bool,
          configurationURLProvider: CustomConfigurationURLProviding,
          contentScopePreferences: ContentScopePreferences,
-         quitSurveyPersistor: QuitSurveyPersistor) {
+         quitSurveyPersistor: QuitSurveyPersistor,
+         pinningManager: PinningManager,
+         subscriptionManager: any SubscriptionManager) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -172,6 +177,8 @@ final class MainMenu: NSMenu {
         self.configurationURLProvider = configurationURLProvider
         self.contentScopePreferences = contentScopePreferences
         self.quitSurveyPersistor = quitSurveyPersistor
+        self.pinningManager = pinningManager
+        self.subscriptionManager = subscriptionManager
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -666,15 +673,15 @@ final class MainMenu: NSMenu {
             return
         }
         self.toggleBookmarksBarMenuItem = toggleBookmarksBarMenuItem
-        toggleBookmarksBarMenuItem.target = self
-        toggleBookmarksBarMenuItem.action = #selector(toggleBookmarksBarFromMenu(_:))
+        toggleBookmarksBarMenuItem.action = #selector(MainViewController.toggleBookmarksBarFromMenu)
         toggleBookmarksBarMenuItem.setAccessibilityIdentifier("MainMenu.toggleBookmarksBar")
 
         self.bookmarksMenuToggleBookmarksBarMenuItem = bookmarksMenuToggleBookmarksBarMenuItem
+        bookmarksMenuToggleBookmarksBarMenuItem.action = #selector(MainViewController.toggleBookmarksBarFromMenu)
     }
 
     private func updateHomeButtonMenuItem() {
-        guard let homeButtonMenuItem = HomeButtonMenuFactory.replace(homeButtonMenuItem, prefs: appearancePreferences) else {
+        guard let homeButtonMenuItem = HomeButtonMenuFactory.replace(homeButtonMenuItem, prefs: appearancePreferences, pinningManager: pinningManager) else {
             assertionFailure("Could not replace HomeButtonMenuItem")
             return
         }
@@ -689,23 +696,16 @@ final class MainMenu: NSMenu {
         self.showTabsAndBookmarksBarOnFullScreenMenuItem = showTabsAndBookmarksBarOnFullScreenMenuItem
     }
 
-    @MainActor
-    @objc
-    private func toggleBookmarksBarFromMenu(_ sender: Any) {
-        guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
-        mainVC.toggleBookmarksBarFromMenu(sender)
-    }
-
     private func updateShortcutMenuItems() {
         Task { @MainActor in
-            toggleAutofillShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .autofill)
-            toggleBookmarksShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .bookmarks)
-            toggleDownloadsShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .downloads)
-            toggleShareShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .share)
+            toggleAutofillShortcutMenuItem.title = pinningManager.shortcutTitle(for: .autofill)
+            toggleBookmarksShortcutMenuItem.title = pinningManager.shortcutTitle(for: .bookmarks)
+            toggleDownloadsShortcutMenuItem.title = pinningManager.shortcutTitle(for: .downloads)
+            toggleShareShortcutMenuItem.title = pinningManager.shortcutTitle(for: .share)
 
-            if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isVPNVisible() {
+            if DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager).isVPNVisible() {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = false
-                toggleNetworkProtectionShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .networkProtection)
+                toggleNetworkProtectionShortcutMenuItem.title = pinningManager.shortcutTitle(for: .networkProtection)
             } else {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = true
             }
@@ -730,11 +730,17 @@ final class MainMenu: NSMenu {
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
+            NSMenuItem(title: "Memory Debugging") {
+                NSMenuItem(title: "Export Allocation Stats", action: #selector(AppDelegate.exportMemoryAllocationStats), keyEquivalent: [.control, .command, .shift, .option, "m"])
+            }
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.resetNextStepsMenuItem)
+                NSMenuItem(title: "Shift top card by 10 impressions", action: #selector(MainViewController.debugShiftCardImpression))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
-            }
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
+            }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
                 NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
                 NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
@@ -781,7 +787,6 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
                 NSMenuItem(title: "Set Launch Date A Month In the Past", action: #selector(AppDelegate.setLaunchDayAMonthInThePast))
                 NSMenuItem(title: "Reset Quit Survey Was Shown", action: #selector(AppDelegate.resetQuitSurveyWasShown))
-                NSMenuItem(title: "Reset Themes Popover Was Shown", action: #selector(AppDelegate.resetThemesPopoverWasShown))
 
             }.withAccessibilityIdentifier("MainMenu.resetData")
             NSMenuItem(title: "UI Triggers") {
@@ -820,7 +825,7 @@ final class MainMenu: NSMenu {
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")
-                    .submenu(NetworkProtectionDebugMenu())
+                    .submenu(NetworkProtectionDebugMenu(pinningManager: pinningManager))
             }
 
             NSMenuItem(title: "Attributed Metrics")
@@ -847,6 +852,18 @@ final class MainMenu: NSMenu {
                 }
             }
 
+            NSMenuItem(title: "Simulate memory pressure event") {
+                NSMenuItem(title: "Critical", action: #selector(AppDelegate.simulateMemoryPressureCritical))
+            }
+
+            NSMenuItem(title: "Memory Usage Reporting") {
+                NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))
+                NSMenuItem(title: "Clear Simulated Memory", action: #selector(AppDelegate.clearSimulatedMemory))
+                NSMenuItem(title: "Start Reporter Immediately (Skip 5min Delay)", action: #selector(AppDelegate.startMemoryReporterImmediately))
+                NSMenuItem.separator()
+                NSMenuItem(title: "Fire Interval Pixel Now...", action: #selector(AppDelegate.fireIntervalPixelNow))
+            }
+
             NSMenuItem(title: "Hang Debugging") {
                 toggleWatchdogMenuItem
                 toggleWatchdogCrashMenuItem
@@ -863,20 +880,65 @@ final class MainMenu: NSMenu {
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
 
-            var currentEnvironment = DefaultSubscriptionManagerV2.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+            var currentEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
             let updateServiceEnvironment: (SubscriptionEnvironment.ServiceEnvironment) -> Void = { env in
                 currentEnvironment.serviceEnvironment = env
-                DefaultSubscriptionManagerV2.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
+                DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
             let updatePurchasingPlatform: (SubscriptionEnvironment.PurchasePlatform) -> Void = { platform in
                 currentEnvironment.purchasePlatform = platform
-                DefaultSubscriptionManagerV2.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
+                DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
 
             let updateCustomBaseSubscriptionURL: (URL?) -> Void = { url in
                 currentEnvironment.customBaseSubscriptionURL = url
-                DefaultSubscriptionManagerV2.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
+                DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
+
+            // Closure to handle subscription selection via the user script handler
+            let subscriptionSelectionHandler: SubscriptionSelectionHandler? = {
+                if #available(macOS 12.0, *) {
+                    return { @MainActor (productId: String, changeType: String?) async in
+                        let subscriptionManager = Application.appDelegate.subscriptionManager
+                        let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
+                        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+                        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+                        let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: nil)
+                        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults, pixelHandler: pixelHandler)
+
+                        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+                            subscriptionManager: subscriptionManager,
+                            uiHandler: Application.appDelegate.subscriptionUIHandler,
+                            wideEvent: Application.appDelegate.wideEvent,
+                            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+                            pendingTransactionHandler: pendingTransactionHandler
+                        )
+
+                        let feature = SubscriptionPagesUseSubscriptionFeature(
+                            subscriptionManager: subscriptionManager,
+                            stripePurchaseFlow: stripePurchaseFlow,
+                            uiHandler: Application.appDelegate.subscriptionUIHandler,
+                            aiChatURL: AIChatRemoteSettings().aiChatURL,
+                            wideEvent: Application.appDelegate.wideEvent,
+                            pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
+                        )
+
+                        // Create params matching what the web would send
+                        var params: [String: Any] = ["id": productId]
+                        if let changeType = changeType {
+                            params["change"] = changeType
+                        }
+
+                        // Call the appropriate handler based on whether it's a tier change or new purchase
+                        if changeType != nil {
+                            _ = try? await feature.subscriptionChangeSelected(params: params, original: WKScriptMessage())
+                        } else {
+                            _ = try? await feature.subscriptionSelected(params: params, original: WKScriptMessage())
+                        }
+                    }
+                }
+                return nil
+            }()
 
             SubscriptionDebugMenu(currentEnvironment: currentEnvironment,
                                   updateServiceEnvironment: updateServiceEnvironment,
@@ -884,10 +946,10 @@ final class MainMenu: NSMenu {
                                   updateCustomBaseSubscriptionURL: updateCustomBaseSubscriptionURL,
                                   currentViewController: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController },
                                   openSubscriptionTab: { Application.appDelegate.windowControllersManager.showTab(with: .subscription($0)) },
-                                  subscriptionAuthV1toV2Bridge: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                  subscriptionManagerV2: Application.appDelegate.subscriptionManagerV2,
+                                  subscriptionManager: Application.appDelegate.subscriptionManager,
                                   subscriptionUserDefaults: subscriptionUserDefaults,
-                                  wideEvent: Application.appDelegate.wideEvent)
+                                  wideEvent: Application.appDelegate.wideEvent,
+                                  subscriptionSelectionHandler: subscriptionSelectionHandler)
 
             NSMenuItem(title: "TipKit") {
                 NSMenuItem(title: "Reset", action: #selector(AppDelegate.resetTipKit))
@@ -896,8 +958,9 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
+            NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
 #if SPARKLE
-            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
+            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
 #endif
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)")
@@ -1031,7 +1094,7 @@ final class MainMenu: NSMenu {
     @MainActor
     private func updateWatchdogMenuItems() {
        Task {
-            let isRunning = NSApp.delegateTyped.watchdog.isRunning
+            let isRunning = await NSApp.delegateTyped.watchdog.isRunning
             let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
 
             toggleWatchdogMenuItem.state = isRunning ? .on : .off

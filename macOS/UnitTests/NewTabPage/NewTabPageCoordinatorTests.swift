@@ -76,14 +76,12 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var windowControllersManager: (WindowControllersManagerProtocol & AIChatTabManaging)!
     var tabsPreferences: TabsPreferences!
     var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
-    var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
 
     @MainActor
     override func setUp() async throws {
         try await super.setUp()
 
         subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
-        homePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting()
         notificationCenter = NotificationCenter()
         keyValueStore = try MockKeyValueFileStore()
         firePixelCalls.removeAll()
@@ -93,7 +91,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         customizationModel = NewTabPageCustomizationModel(
@@ -144,7 +143,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 remoteMessagingStore: MockRemoteMessagingStore(),
                 remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
                 openURLHandler: { _ in },
-                navigateToFeedbackHandler: { }
+                navigateToFeedbackHandler: { },
+                navigateToPIRHandler: { }
             ),
             historyCoordinator: HistoryCoordinatingMock(),
             contentBlocking: ContentBlockingMock(),
@@ -172,7 +172,12 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()),
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             protectionsReportModel: protectionsReportModel,
-            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersisting,
+            homePageContinueSetUpModelPersistor: MockHomePageContinueSetUpModelPersisting(),
+            nextStepsCardsPersistor: MockNewTabPageNextStepsCardsPersistor(),
+            subscriptionCardPersistor: MockHomePageSubscriptionCardPersisting(),
+            duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            pinningManager: MockPinningManager(),
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }
@@ -188,7 +193,6 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         tabsPreferences = nil
         windowControllersManager = nil
         subscriptionCardVisibilityManager = nil
-        homePageContinueSetUpModelPersisting = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {

@@ -39,7 +39,7 @@ final class DBPService: NSObject {
         }
 
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             runTypeProvider: appDependencies.dbpSettings)
         let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
         let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
@@ -62,6 +62,7 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                userNotificationService: notificationService,
                 pixelKit: pixelKit,
                 wideEvent: appDependencies.wideEvent,
                 subscriptionManager: dbpSubscriptionManager,
@@ -71,7 +72,7 @@ final class DBPService: NSObject {
                 },
                 feedbackViewCreator: {
                     let viewModel = UnifiedFeedbackFormViewModel(
-                        subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                        subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                         vpnMetadataCollector: DefaultVPNMetadataCollector(),
                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
                         isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
@@ -81,7 +82,8 @@ final class DBPService: NSObject {
                     return view
                 },
                 eventsHandler: eventsHandler,
-                isWebViewInspectable: isWebViewInspectable)
+                isWebViewInspectable: isWebViewInspectable,
+                freeTrialConversionService: appDependencies.freeTrialConversionService)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil

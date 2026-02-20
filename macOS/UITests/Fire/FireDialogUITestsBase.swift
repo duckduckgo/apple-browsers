@@ -34,9 +34,7 @@ extension FireDialogUITests {
 
     func setUpFireDialogUITests() {
         continueAfterFailure = false
-        // Enable feature flags for new Fire dialog, History view, and History view Sites section
-        // TO DO: Enable Sites Section when C-S-S implementation is merged in
-        app = XCUIApplication.setUp(featureFlags: ["fireDialog": true, /*"historyViewSitesSection": true*/])
+        app = XCUIApplication.setUp()
         app.enforceSingleWindow()
 
         // Reset fireproof sites

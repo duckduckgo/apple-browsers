@@ -227,7 +227,7 @@ final class NewTabPageNextStepsCardsClientTests: XCTestCase {
         model.isViewExpanded = false
         try await triggerInitialCardsEventAndResetMockState()
 
-        try await performAndWaitForWillDisplayCards(count: 0, timeout: 0.5) {
+        try await performAndWaitForWillDisplayCards(count: 0, timeout: 0.1) {
             model.isViewExpanded = true
         }
 
@@ -239,7 +239,7 @@ final class NewTabPageNextStepsCardsClientTests: XCTestCase {
         model.isViewExpanded = true
         try await triggerInitialCardsEventAndResetMockState()
 
-        try await performAndWaitForWillDisplayCards(count: 0, timeout: 0.5) {
+        try await performAndWaitForWillDisplayCards(count: 0, timeout: 0.1) {
             model.isViewExpanded = false
         }
 

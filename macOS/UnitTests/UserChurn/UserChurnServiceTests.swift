@@ -16,33 +16,19 @@
 //  limitations under the License.
 //
 
-import XCTest
-import PixelKit
 import PersistenceTestingUtils
+import PixelKit
+import PixelKitTestingUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
-
-final class MockPixelFiring: PixelFiring {
-    var firedPixels: [(event: PixelKitEvent, frequency: PixelKit.Frequency, additionalParameters: [String: String]?)] = []
-
-    func fire(_ event: PixelKitEvent) {
-        fire(event, frequency: .standard)
-    }
-
-    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
-        firedPixels.append((event: event, frequency: frequency, additionalParameters: nil))
-    }
-
-    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, withAdditionalParameters: [String: String]) {
-        firedPixels.append((event: event, frequency: frequency, additionalParameters: withAdditionalParameters))
-    }
-}
 
 final class UserChurnServiceTests: XCTestCase {
 
     private var sut: UserChurnService!
     private var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     private var mockKeyValueStore: MockThrowingKeyValueStore!
-    private var mockPixelFiring: MockPixelFiring!
+    private var mockPixelFiring: PixelKitMock!
     private var mockBundleIdentifiers: [URL: String]!
 
     override func setUp() {
@@ -50,7 +36,7 @@ final class UserChurnServiceTests: XCTestCase {
 
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockKeyValueStore = MockThrowingKeyValueStore()
-        mockPixelFiring = MockPixelFiring()
+        mockPixelFiring = PixelKitMock()
         mockBundleIdentifiers = [:]
 
         sut = UserChurnService(
@@ -98,7 +84,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when DuckDuckGo is still the default")
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should be fired when DuckDuckGo is still the default")
     }
 
     func testWhenDuckDuckGoIsDefaultAndWasDefault_ThenStoredStateNotUpdated() throws {
@@ -122,7 +108,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when DuckDuckGo becomes the default")
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should be fired when DuckDuckGo becomes the default")
     }
 
     func testWhenDuckDuckGoIsDefaultAndWasNotDefault_ThenStoredStateUpdatedToTrue() throws {
@@ -148,8 +134,8 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.count, 1, "Pixel should be fired when user changes default away from DuckDuckGo")
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.name, "m_mac_unset-as-default")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1, "Pixel should be fired when user changes default away from DuckDuckGo")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.name, "m_mac_unset-as-default")
     }
 
     func testWhenDuckDuckGoIsNotDefaultAndWasDefault_ThenPixelContainsCorrectNewDefault() throws {
@@ -161,7 +147,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.parameters?["newDefault"], "Safari")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["newDefault"], "Safari")
     }
 
     func testWhenDuckDuckGoIsNotDefaultAndWasDefault_ThenPixelContainsAtb() throws {
@@ -173,7 +159,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.parameters?["atb"], "v123-4")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["atb"], "v123-4")
     }
 
     func testWhenDuckDuckGoIsNotDefaultAndWasDefault_ThenStoredStateUpdatedToFalse() throws {
@@ -197,7 +183,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when DuckDuckGo was never the default")
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should be fired when DuckDuckGo was never the default")
     }
 
     func testWhenDuckDuckGoIsNotDefaultAndWasNotDefault_ThenStoredStateNotUpdated() throws {
@@ -223,7 +209,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.parameters?["newDefault"], "Chrome")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["newDefault"], "Chrome")
     }
 
     func testWhenNewDefaultIsFirefox_ThenPixelContainsFirefoxParameter() throws {
@@ -235,7 +221,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.parameters?["newDefault"], "Firefox")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["newDefault"], "Firefox")
     }
 
     func testWhenNewDefaultIsBrave_ThenPixelContainsBraveParameter() throws {
@@ -247,7 +233,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.parameters?["newDefault"], "Brave")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["newDefault"], "Brave")
     }
 
     func testWhenNewDefaultIsUnknown_ThenPixelContainsOtherParameter() throws {
@@ -259,7 +245,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.parameters?["newDefault"], "Other")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["newDefault"], "Other")
     }
 
     func testWhenNewDefaultURLIsNil_ThenPixelContainsOtherParameter() throws {
@@ -271,7 +257,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.parameters?["newDefault"], "Other")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["newDefault"], "Other")
     }
 
     // MARK: - Tests: checkForDefaultBrowserChange with no stored state
@@ -286,7 +272,7 @@ final class UserChurnServiceTests: XCTestCase {
 
         // Then
         XCTAssertEqual(try mockKeyValueStore.object(forKey: "user-churn.was-default-browser") as? Bool, true, "State should be initialized to true")
-        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty)
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
     }
 
     func testWhenNoStoredStateAndDuckDuckGoIsNotDefault_ThenStateInitializedToFalseAndNoPixelFired() throws {
@@ -299,7 +285,7 @@ final class UserChurnServiceTests: XCTestCase {
 
         // Then
         XCTAssertEqual(try mockKeyValueStore.object(forKey: "user-churn.was-default-browser") as? Bool, false, "State should be initialized to false")
-        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when state is being initialized")
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should be fired when state is being initialized")
     }
 
     // MARK: - Tests: Full churn detection flow
@@ -314,8 +300,8 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.count, 1, "Churn pixel should be fired")
-        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.name, "m_mac_unset-as-default")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1, "Churn pixel should be fired")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.name, "m_mac_unset-as-default")
     }
 
     // MARK: - Tests: Switching between DuckDuckGo builds
@@ -332,7 +318,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when switching between DuckDuckGo builds")
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should be fired when switching between DuckDuckGo builds")
         XCTAssertEqual(try mockKeyValueStore.object(forKey: "user-churn.was-default-browser") as? Bool, true, "State should remain true")
     }
 
@@ -348,7 +334,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when switching between DuckDuckGo builds")
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should be fired when switching between DuckDuckGo builds")
     }
 
     func testWhenUserSwitchesFromReleaseToAlpha_ThenNoPixelFired() throws {
@@ -363,7 +349,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when switching between DuckDuckGo builds")
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty, "No pixel should be fired when switching between DuckDuckGo builds")
     }
 
     func testWhenUserSwitchesFromAppStoreToSafari_ThenPixelFired() throws {
@@ -376,7 +362,7 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.count, 1, "Churn pixel should be fired when switching away from DuckDuckGo")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1, "Churn pixel should be fired when switching away from DuckDuckGo")
     }
 
     func testWhenDefaultBrowserURLHasNoBundleIdentifier_ThenTreatedAsNonDuckDuckGo() throws {
@@ -390,6 +376,6 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.firedPixels.count, 1, "Pixel should be fired when new default has no bundle ID")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1, "Pixel should be fired when new default has no bundle ID")
     }
 }

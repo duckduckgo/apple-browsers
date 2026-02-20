@@ -24,9 +24,14 @@ import DesignResourcesKit
 
 public struct PreparingToSyncView: View {
 
-    public init() {}
+    private let isAIChatSyncEnabled: Bool
+
+    public init(isAIChatSyncEnabled: Bool = false) {
+        self.isAIChatSyncEnabled = isAIChatSyncEnabled
+    }
 
     public var body: some View {
+        let preparingToSyncDescription = isAIChatSyncEnabled ? UserText.preparingToSyncSheetDescriptionUpdated : UserText.preparingToSyncSheetDescription
         UnderflowContainer {
             VStack(spacing: 0) {
                 Image("Sync-128")
@@ -38,7 +43,7 @@ public struct PreparingToSyncView: View {
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 24)
 
-                Text(UserText.preparingToSyncSheetDescription)
+                Text(preparingToSyncDescription)
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 20)

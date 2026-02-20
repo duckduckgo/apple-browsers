@@ -40,7 +40,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
         themeManager: ThemeManaging,
         dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
@@ -72,7 +72,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         statisticsStore: @escaping @autoclosure () -> StatisticsStore,
         featureDiscovery: @escaping @autoclosure () -> FeatureDiscovery,
         variantManager: @escaping @autoclosure () -> VariantManager,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
         themeManager: ThemeManaging,
         dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
@@ -101,7 +101,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let statisticsStore: () -> StatisticsStore
     let featureDiscovery: () -> FeatureDiscovery
     let variantManager: () -> VariantManager
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManager
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
     let dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)?

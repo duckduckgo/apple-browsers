@@ -22,6 +22,7 @@ import Navigation
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -151,7 +152,7 @@ final class TabTests: XCTestCase {
         tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         tab.url = .duckDuckGo
         let webViewMock = WebViewMock()
-        let frameInfo = WKFrameInfoMock(webView: webViewMock, securityOrigin: WKSecurityOriginMock.new(url: .duckDuckGo), request: URLRequest(url: .duckDuckGo), isMainFrame: true)
+        let frameInfo = WKFrameInfo.mock(for: webViewMock, isMain: true, securityOrigin: WKSecurityOriginMock.new(url: .duckDuckGo), request: URLRequest(url: .duckDuckGo))
         tab.webView(webViewMock, runJavaScriptAlertPanelWithMessage: "Alert", initiatedByFrame: frameInfo) { }
         XCTAssertNotNil(tab.userInteractionDialog)
         tab.url = .duckDuckGoMorePrivacyInfo

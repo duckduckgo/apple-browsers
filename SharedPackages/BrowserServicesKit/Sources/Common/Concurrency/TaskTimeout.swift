@@ -18,6 +18,16 @@
 
 import Foundation
 
+/// Wraps an async operation in a timeout.
+/// If the operation takes longer than the timeout, an error is thrown.
+/// If the operation is cancelled, the error is propagated.
+/// - Parameters:
+///   - timeout: The timeout duration.
+///   - error: The error to throw if the operation takes longer than the timeout.
+///   - operation: The async operation to wrap.
+/// - Returns: The result of the operation.
+/// ❗ Note: If used to wait for a task's value, it WILL NOT cancel the task!
+/// ❗ Use `task.value(cancellingTaskOnTimeout:)` to await the task's value with a timeout and automatic cancellation, or use `withTaskCancellationHandler` to cancel the task manually.
 public func withTimeout<T>(_ timeout: TimeInterval,
                            throwing error: @autoclosure @escaping () -> Error,
                            do operation: @escaping () async throws -> T) async throws -> T {
@@ -41,9 +51,59 @@ public func withTimeout<T>(_ timeout: TimeInterval,
     }
 }
 
+/// Wraps an async operation in a timeout.
+/// If the operation takes longer than the timeout, an error is thrown.
+/// If the operation is cancelled, the error is propagated.
+/// - Parameters:
+///   - timeout: The timeout duration.
+///   - file: The file name.
+///   - line: The line number.
+///   - operation: The async operation to wrap.
+/// - Returns: The result of the operation.
+/// ❗ Note: If used to wait for a task's value, it WILL NOT cancel the task!
+/// ❗ Use `task.value(cancellingTaskOnTimeout:)` to await the task's value with a timeout and automatic cancellation, or use `withTaskCancellationHandler` to cancel the task manually.
 public func withTimeout<T>(_ timeout: TimeInterval,
                            file: StaticString = #file,
                            line: UInt = #line,
                            do operation: @escaping () async throws -> T) async throws -> T {
     try await withTimeout(timeout, throwing: TimeoutError(interval: timeout, file: file, line: line), do: operation)
+}
+
+extension Task {
+    /// Awaits the task's value with a timeout, cancelling the task if the timeout is exceeded.
+    /// If the task takes longer than the timeout, an error is thrown and the task is cancelled.
+    /// If the task is cancelled, the error is propagated.
+    /// - Parameters:
+    ///   - timeout: The timeout duration after which the task will be cancelled.
+    ///   - file: The file name.
+    ///   - line: The line number.
+    /// - Returns: The result of the task.
+    public func value(cancellingTaskOnTimeout timeout: TimeInterval, file: StaticString = #file, line: UInt = #line) async throws -> Success {
+        try await withTimeout(timeout, throwing: TimeoutError(interval: timeout, file: file, line: line), do: {
+            try await withTaskCancellationHandler {
+                try await self.value
+            } onCancel: {
+                self.cancel()
+            }
+        })
+    }
+}
+extension Task where Failure == Never {
+    /// Awaits the task's value with a timeout, cancelling the task if the timeout is exceeded.
+    /// If the task takes longer than the timeout, an error is thrown and the task is cancelled.
+    /// If the task is cancelled, the error is propagated.
+    /// - Parameters:
+    ///   - timeout: The timeout duration after which the task will be cancelled.
+    ///   - file: The file name.
+    ///   - line: The line number.
+    /// - Returns: The result of the task.
+    public func value(cancellingTaskOnTimeout timeout: TimeInterval, file: StaticString = #file, line: UInt = #line) async throws -> Success {
+        try await withTimeout(timeout, throwing: TimeoutError(interval: timeout, file: file, line: line), do: {
+            await withTaskCancellationHandler {
+                await self.value
+            } onCancel: {
+                self.cancel()
+            }
+        })
+    }
 }

@@ -26,12 +26,20 @@ final class TitleDisplayPolicyTests: XCTestCase {
 
     // MARK: - Skipping Display Title
 
-    func testTitleIsSkippedWhenPreviousAndCurrentHostMatchAndLatestTitleIsPlaceholder() {
+    func testTitleIsSkippedWhenHostMatchesAndTitleIsPlaceholderWhileLoading() {
         let url = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://www.example.com/")
         let title = "example.com"
 
-        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL) == true)
+        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: true))
+    }
+
+    func testTitleIsNotSkippedWhenHostMatchesAndTitleIsPlaceholderAfterLoading() {
+        let url = URL(string: "https://www.example.com/page")
+        let previousURL = URL(string: "https://www.example.com/")
+        let title = "example.com"
+
+        XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: false))
     }
 
     func testTitleIsNotSkippedWhenHostDiffers() {
@@ -39,7 +47,9 @@ final class TitleDisplayPolicyTests: XCTestCase {
         let previousURL = URL(string: "https://different.com/")
         let title = "example.com"
 
-        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL) == false)
+        for isLoading in [true, false] {
+            XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: isLoading))
+        }
     }
 
     func testTitleIsNotSkippedWhenLatestTitleIsNotPlaceholder() {
@@ -47,7 +57,9 @@ final class TitleDisplayPolicyTests: XCTestCase {
         let previousURL = URL(string: "https://www.example.com/")
         let title = "Custom Page Title"
 
-        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL) == false)
+        for isLoading in [true, false] {
+            XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: isLoading))
+        }
     }
 
     // MARK: - Title Transitions

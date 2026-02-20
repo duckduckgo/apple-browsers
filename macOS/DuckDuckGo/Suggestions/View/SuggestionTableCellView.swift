@@ -38,7 +38,7 @@ final class SuggestionTableCellView: NSTableCellView {
         static let suffixColor: NSColor = NSColor(designSystemColor: .accentTextPrimary)
         static let burnerSuffixColor: NSColor = .burnerAccent
         static let iconColor: NSColor = .suggestionIcon
-        static let selectedTintColor: NSColor = .selectedSuggestionTint
+        static let selectedTintColor: NSColor = NSColor(designSystemColor: .accentContentPrimary)
 
         static let switchToTabExtraSpace: CGFloat = 12 + 6 + 9 + 12
         static let switchToTabSuffixPadding: CGFloat = 8

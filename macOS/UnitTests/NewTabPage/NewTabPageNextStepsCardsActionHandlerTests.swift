@@ -21,6 +21,7 @@ import BrowserServicesKit
 import PrivacyConfigTestsUtils
 import Subscription
 import XCTest
+import PrivacyConfig
 
 final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var actionHandler: NewTabPageNextStepsCardsActionHandler!
@@ -30,6 +31,9 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var privacyConfigManager: MockPrivacyConfigurationManager!
     private var dockCustomizer: DockCustomization!
     private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
+    private var navigator: MockNavigator!
+    private var syncLauncher: MockSyncLauncher!
+    private var featureFlagger: MockFeatureFlagger!
 
     @MainActor override func setUp() {
         capturingDefaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -40,6 +44,9 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         let config = MockPrivacyConfiguration()
         privacyConfigManager.privacyConfig = config
         pixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
+        navigator = MockNavigator()
+        syncLauncher = MockSyncLauncher()
+        featureFlagger = MockFeatureFlagger()
 
         actionHandler = NewTabPageNextStepsCardsActionHandler(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -47,7 +54,10 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: tabOpener,
             privacyConfigurationManager: privacyConfigManager,
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            newTabPageNavigator: navigator,
+            syncLauncher: syncLauncher,
+            featureFlagger: featureFlagger
         )
     }
 
@@ -59,6 +69,9 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         dockCustomizer = nil
         privacyConfigManager = nil
         pixelHandler = nil
+        navigator = nil
+        syncLauncher = nil
+        featureFlagger = nil
     }
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserCardThenItPresentsTheDefaultBrowserPrompt() {
@@ -76,10 +89,22 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertTrue(capturingDefaultBrowserProvider.openSystemPreferencesCalled)
     }
 
-    @MainActor func testWhenAskedToPerformActionForDockThenItAddsAppToDock() {
-        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
+    @MainActor func testWhenAskedToPerformActionForDockAndFeatureFlagEnabledThenItAddsAppToDockAndCallsRefreshCardsAction() {
+        var cardsRefreshed = false
+        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
+        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
 
         XCTAssertTrue(dockCustomizer.isAddedToDock)
+        XCTAssertTrue(cardsRefreshed)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForDockAndFeatureFlagDisabledThenItAddsAppToDockWithoutRefreshCardsAction() {
+        var cardsRefreshed = false
+        featureFlagger.enabledFeatureFlags = []
+        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
+
+        XCTAssertTrue(dockCustomizer.isAddedToDock)
+        XCTAssertFalse(cardsRefreshed)
     }
 
     @MainActor func testWhenAskedToPerformActionForImportPromptThenItOpensImportWindowAndCallsRefreshCardsAction() {
@@ -111,6 +136,20 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
 
         XCTAssertEqual(tabOpener.openedTabs.count, 1)
         XCTAssertEqual(tabOpener.openedTabs.first?.url, expectedURL)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForPersonalizeBrowserThenItOpensCustomization() {
+        actionHandler.performAction(for: .personalizeBrowser, refreshCardsAction: nil)
+
+        XCTAssertTrue(navigator.customizationSettingsOpened)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForSyncThenItStartsSyncFlow() {
+        actionHandler.performAction(for: .sync, refreshCardsAction: { })
+
+        XCTAssertTrue(syncLauncher.startDeviceSyncFlowCalled)
+        XCTAssertEqual(syncLauncher.syncSource, .nextStepsCard)
+        XCTAssertNotNil(syncLauncher.capturedCompletion)
     }
 
     // MARK: - Pixel Tests
@@ -154,6 +193,18 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .subscription)
     }
 
+    @MainActor func testWhenAskedToPerformActionForPersonalizeBrowserThenItFiresPixel() {
+        actionHandler.performAction(for: .personalizeBrowser, refreshCardsAction: nil)
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .personalizeBrowser)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForSyncThenItFiresPixel() {
+        actionHandler.performAction(for: .sync, refreshCardsAction: nil)
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .sync)
+    }
+
 }
 
 private final class MockTabOpener: NewTabPageNextStepsCardsTabOpening {
@@ -162,5 +213,25 @@ private final class MockTabOpener: NewTabPageNextStepsCardsTabOpening {
     @MainActor
     func openTab(_ tab: Tab) {
         openedTabs.append(tab)
+    }
+}
+
+private class MockNavigator: NewTabPageNavigator {
+    private(set) var customizationSettingsOpened = false
+
+    func openNewTabPageBackgroundCustomizationSettings() {
+        customizationSettingsOpened = true
+    }
+}
+
+private class MockSyncLauncher: SyncDeviceFlowLaunching {
+    private(set) var startDeviceSyncFlowCalled = false
+    private(set) var syncSource: SyncDeviceButtonTouchpoint?
+    private(set) var capturedCompletion: (() -> Void)?
+
+    func startDeviceSyncFlow(source: SyncDeviceButtonTouchpoint, completion: (() -> Void)?) {
+        startDeviceSyncFlowCalled = true
+        syncSource = source
+        capturedCompletion = completion
     }
 }

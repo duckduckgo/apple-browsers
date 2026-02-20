@@ -29,7 +29,7 @@ protocol FeedbackSenderImplementing {
 
 final class FeedbackSender: FeedbackSenderImplementing {
 
-    static let feedbackURL = URL(string: "https://duckduckgo.com/feedback.js")!
+    static let feedbackURL = URL.feedbackForm
 
     func sendFeedback(_ feedback: Feedback, completionHandler: (() -> Void)? = nil) {
 #if DEBUG || REVIEW

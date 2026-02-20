@@ -26,10 +26,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473245911
     case scamSiteProtection
 
-    /// Add experimental atb parameter to SERP queries for internal users to display Privacy Reminder
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472784764
-    case appendAtbToSerpQueries
-
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614987519
     case freemiumDBP
 
@@ -48,10 +44,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
-    /// Subfeature: display the Sites section inside History View
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866716610324
-    case historyViewSitesSection
-
     /// Enable WebKit page load timing performance reporting
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615625098
     case webKitPerformanceReporting
@@ -59,14 +51,18 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
+    /// Controls automatic update downloads in REVIEW builds (off by default)
+    case autoUpdateInREVIEW
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615802881
     case updatesWontAutomaticallyRestartApp
 
+    /// Simplified update flow without expiration logic
+    /// Requires: .updatesWontAutomaticallyRestartApp (via subfeature)
+    case updatesSimplifiedFlow
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714296474
-    case autocompleteTabs
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
@@ -113,6 +109,15 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212227266479719
     case aiChatOmnibarCluster
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
+    case aiChatSuggestions
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211654922002904
+    case aiChatOmnibarTools
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
+    case aiChatOmnibarOnboarding
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134
     case osSupportForceUnsupportedMessage
 
@@ -140,9 +145,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473926615
-    case duckAISearchParameter
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719485546
     case refactorOfSyncPreferences
 
@@ -151,9 +153,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720018164
     case syncFeatureLevel3
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
-    case themes
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619633097
     case appStoreUpdateFlow
@@ -167,21 +166,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211969496845106?focus=true
     case blackFridayCampaign
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477541910
-    case fireDialog
-
-    /// Toggle for showing the "Manage individual sites" link in Fire dialog
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715393773
-    case fireDialogIndividualSitesLink
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477844148
     case syncCreditCards
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620280912
     case syncIdentities
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866478543578
-    case aiChatDataClearing
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
@@ -198,9 +187,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721275379
     case scheduledDefaultBrowserAndDockPromptsInactiveUser
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
-    case tabProgressIndicator
-
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
 
@@ -212,9 +198,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212014826835069?focus=true
     case newTabPageAutoconsentStats
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998610726861?focus=true
-    case tierMessagingEnabled
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203544?focus=true
     case allowProTierPurchase
@@ -262,22 +245,60 @@ public enum FeatureFlag: String, CaseIterable {
     /// Prioritize results where the domain matches the search query when searching passwords & autofill
     case autofillPasswordSearchPrioritizeDomain
 
+    /// Controls visibility of the Passwords menu bar feature
+    case autofillPasswordsStatusBar
+
+    /// Warn before quit confirmation overlay
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
+    case warnBeforeQuit
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
     case dataImportWideEventMeasurement
 
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
 
-    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212783502979551?focus=true
+    case memoryPressureReporting
+
+    /// Memory Usage Reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
+    case memoryUsageReporting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case aiChatSync
 
     /// Autoconsent heuristic action experiment
     /// https://app.asana.com/1/137249556945/project/1201621853593513/task/1212068164128054?focus=true
     case heuristicAction
 
-    /// Next Steps cards iteration with single card displayed on New Tab page
+    /// Enables Next Steps List widget with a single card displayed at a time on New Tab page
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
-    case nextStepsSingleCardIteration
+    case nextStepsListWidget
+
+    /// Enables advanced card ordering for the Next Steps List widget
+    /// This flag is disabled by default to allow testing the new widget design with current ordering logic
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
+    case nextStepsListAdvancedCardOrdering
+
+    /// Whether the wide event POST endpoint is enabled
+    /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
+    case wideEventPostEndpoint
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
+    case crashCollectionLimitCallStackTreeDepth
+
+    /// Failsafe flag for whether the free trial conversion wide event is enabled
+    case freeTrialConversionWideEvent
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
+    case supportsSyncChatsDeletion
+
+    /// https://app.asana.com/1/137249556945/task/1213316822018797
+    case aiChatSidebarResizable
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -292,13 +313,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
-                .duckAISearchParameter,
                 .syncCreditCards,
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
-                .fireDialog,
-                .fireDialogIndividualSitesLink,
-                .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
                 .allowPopupsForCurrentPage,
                 .extendedUserInitiatedPopupTimeout,
@@ -306,11 +323,18 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .popupPermissionButtonPersistence,
                 .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
-                .tabProgressIndicator,
                 .firstTimeQuitSurvey,
+                .aiChatOmnibarOnboarding,
                 .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
-                .themes:
+                .warnBeforeQuit,
+                .wideEventPostEndpoint,
+                .memoryPressureReporting,
+                .crashCollectionDisableKeysSorting,
+                .crashCollectionLimitCallStackTreeDepth,
+                .memoryUsageReporting,
+                .aiChatSidebarResizable,
+                .nextStepsListWidget:
             true
         default:
             false
@@ -329,14 +353,14 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .autofillPartialFormSaves,
-                .autocompleteTabs,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
-                .historyViewSitesSection,
                 .webExtensions,
                 .autoUpdateInDEBUG,
+                .autoUpdateInREVIEW,
                 .updatesWontAutomaticallyRestartApp,
+                .updatesSimplifiedFlow,
                 .scamSiteProtection,
                 .tabCrashDebugging,
                 .maliciousSiteProtection,
@@ -353,37 +377,34 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
+                .aiChatSuggestions,
+                .aiChatOmnibarTools,
+                .aiChatOmnibarOnboarding,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
                 .newTabPageTabIDs,
                 .supportsAlternateStripePaymentFlow,
-                .duckAISearchParameter,
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
                 .dbpClickActionDelayReductionOptimization,
                 .syncFeatureLevel3,
-                .themes,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
                 .webKitPerformanceReporting,
-                .fireDialog,
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
-                .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
                 .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
-                .tabProgressIndicator,
                 .attributedMetrics,
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
                 .blackFridayCampaign,
                 .newTabPageAutoconsentStats,
-                .tierMessagingEnabled,
                 .allowProTierPurchase,
                 .popupBlocking,
                 .extendedUserInitiatedPopupTimeout,
@@ -394,29 +415,36 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newPermissionView,
                 .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain,
+                .autofillPasswordsStatusBar,
+                .warnBeforeQuit,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
+                .memoryPressureReporting,
+                .memoryUsageReporting,
                 .aiChatSync,
                 .heuristicAction,
-                .nextStepsSingleCardIteration:
+                .nextStepsListWidget,
+                .nextStepsListAdvancedCardOrdering,
+                .wideEventPostEndpoint,
+                .freeTrialConversionWideEvent,
+                .supportsSyncChatsDeletion,
+                .aiChatSidebarResizable:
             return true
-        case .appendAtbToSerpQueries,
-                .freemiumDBP,
+        case .freemiumDBP,
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .fireDialogIndividualSitesLink,
                 .scheduledDefaultBrowserAndDockPromptsInactiveUser,
                 .tabClosingEventRecreation,
-                .terminationDeciderSequence:
+                .terminationDeciderSequence,
+                .crashCollectionDisableKeysSorting,
+                .crashCollectionLimitCallStackTreeDepth:
             return false
         }
     }
 
     public var source: FeatureFlagSource {
         switch self {
-        case .appendAtbToSerpQueries:
-            return .internalOnly()
         case .unknownUsernameCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.unknownUsernameCategorization))
         case .freemiumDBP:
@@ -431,16 +459,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
-        case .historyViewSitesSection:
-            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
+            return .disabled
+        case .autoUpdateInREVIEW:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
             return .remoteReleasable(.feature(.updatesWontAutomaticallyRestartApp))
+        case .updatesSimplifiedFlow:
+            return .remoteReleasable(.subfeature(UpdatesSubfeature.simplifiedFlow))
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
-        case .autocompleteTabs:
-            return .remoteReleasable(.feature(.autocompleteTabs))
         case .webExtensions:
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
@@ -477,6 +505,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarToggle))
         case .aiChatOmnibarCluster:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
+        case .aiChatSuggestions:
+            return .remoteReleasable(.feature(.duckAiChatHistory))
+        case .aiChatOmnibarTools:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarTools))
+        case .aiChatOmnibarOnboarding:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarOnboarding))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:
@@ -493,20 +527,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPageTabIDs))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
-        case .duckAISearchParameter:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.duckAISearchParameter))
-        case .fireDialog:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
-        case .fireDialogIndividualSitesLink:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialogIndividualSitesLink))
         case .refactorOfSyncPreferences:
             return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         case .newSyncEntryPoints:
             return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
-        case .themes:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.themes))
         case .appStoreUpdateFlow:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
@@ -519,8 +545,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
-        case .aiChatDataClearing:
-            return .remoteReleasable(.feature(.duckAiDataClearing))
         case .storeSerpSettings:
             return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
@@ -529,8 +553,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience))
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
-        case .tabProgressIndicator:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabProgressIndicator))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .showHideAIGeneratedImagesSection:
@@ -539,8 +561,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         case .newTabPageAutoconsentStats:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.autoconsentStats))
-        case .tierMessagingEnabled:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.tierMessagingEnabled))
         case .allowProTierPurchase:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .popupBlocking:
@@ -565,16 +585,38 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.terminationDeciderSequence))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
+        case .autofillPasswordsStatusBar:
+            return .internalOnly()
+        case .warnBeforeQuit:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
             return .disabled
+        case .memoryPressureReporting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryPressureReporting))
+        case .memoryUsageReporting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryUsageReporting))
         case .aiChatSync:
             return .disabled
         case .heuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
-        case .nextStepsSingleCardIteration:
+        case .nextStepsListWidget:
+            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.nextStepsListWidget))
+        case .nextStepsListAdvancedCardOrdering:
             return .disabled
+        case .wideEventPostEndpoint:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
+        case .crashCollectionDisableKeysSorting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionDisableKeysSorting))
+        case .crashCollectionLimitCallStackTreeDepth:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
+        case .freeTrialConversionWideEvent:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
+        case .supportsSyncChatsDeletion:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
+        case .aiChatSidebarResizable:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         }
     }
 }

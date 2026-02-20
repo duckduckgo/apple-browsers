@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PixelKit
 import UserScript
 import WebKit
 
@@ -39,6 +40,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
         case setBookmarksBar
         case setSessionRestore
         case setShowHomeButton
+        case setDuckAiInAddressBar
         case requestAddToDock
         case requestImport
         case requestSetAsDefault
@@ -64,6 +66,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
             .setBookmarksBar: setBookmarksBar,
             .setSessionRestore: setSessionRestore,
             .setShowHomeButton: setShowHome,
+            .setDuckAiInAddressBar: setDuckAiInAddressBar,
             .stepCompleted: stepCompleted,
             .reportInitException: reportException,
             .reportPageException: reportException
@@ -134,6 +137,14 @@ extension OnboardingUserScript {
     private func setShowHome(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let params = params as? [String: Bool], let enabled = params["enabled"] else { return nil }
         onboardingActionsManager.setHomeButtonPosition(enabled: enabled)
+        return nil
+    }
+
+    private func setDuckAiInAddressBar(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let params = params as? [String: Bool], let enabled = params["enabled"] else { return nil }
+        onboardingActionsManager.setDuckAiInAddressBar(enabled: enabled)
+        let pixel: AIChatPixel = enabled ? .aiChatOnboardingTogglePreferenceOn : .aiChatOnboardingTogglePreferenceOff
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
         return nil
     }
 

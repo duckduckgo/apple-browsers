@@ -1,0 +1,59 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    "m_mac_memory_pressure_critical": {
+        "description": "Sent when the operating system reports critical level memory pressure, with context about browser state at the time of the event.",
+        "owners": ["ayoy", "jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "browser_memory_mb",
+                "type": "number",
+                "enum": [0, 512, 1024, 2048, 4096, 8192, 16384],
+                "description": "Browser memory usage (phys_footprint) in MB, bucketed"
+            },
+            {
+                "key": "windows",
+                "type": "string",
+                "enum": ["0", "1", "2", "4", "7", "11", "21", "unknown"],
+                "description": "Number of open browser windows, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "standard_tabs",
+                "type": "string",
+                "enum": ["0", "1", "2", "4", "7", "11", "21", "51", "unknown"],
+                "description": "Number of standard (unpinned) tabs across all windows, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "pinned_tabs",
+                "type": "string",
+                "enum": ["0", "1", "2", "4", "7", "11", "15", "unknown"],
+                "description": "Number of pinned tabs across all windows, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "architecture",
+                "type": "string",
+                "enum": ["ARM", "Intel"],
+                "description": "CPU architecture of the build"
+            },
+            {
+                "key": "sync_enabled",
+                "type": "string",
+                "enum": ["true", "false", "unknown"],
+                "description": "Whether Sync is currently enabled. 'unknown' if unavailable."
+            },
+            {
+                "key": "used_allocation",
+                "type": "string",
+                "enum": ["0", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "unknown"],
+                "description": "Total used allocation from malloc zones in MB, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "uptime",
+                "type": "integer",
+                "description": "Minutes elapsed since app launch (raw value, not bucketed)"
+            }
+        ]
+    }
+}

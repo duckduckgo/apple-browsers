@@ -83,25 +83,22 @@ extension HistoryViewDataProviding {
 
 final class HistoryViewDataProvider: HistoryViewDataProviding {
 
-    private let featureFlagger: FeatureFlagger
     private let tld: TLD
 
     init(
         historyDataSource: HistoryDataSource,
         historyBurner: HistoryBurning,
         dateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
-        featureFlagger: FeatureFlagger,
         pixelHandler: HistoryViewDataProviderPixelFiring = HistoryViewDataProviderPixelHandler(),
         tld: TLD
     ) {
         self.dateFormatter = dateFormatter
         self.historyDataSource = historyDataSource
         self.historyBurner = historyBurner
-        self.featureFlagger = featureFlagger
         self.pixelHandler = pixelHandler
         self.tld = tld
         historyGroupingProvider = { @MainActor in
-            HistoryGroupingProvider(dataSource: historyDataSource, featureFlagger: featureFlagger)
+            HistoryGroupingProvider(dataSource: historyDataSource)
         }
     }
 
@@ -119,10 +116,9 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         }.reduce(0, +)), at: 0)
 
         // Sites = unique domains count (items in synthetic 'sites' section)
-        if isSitesSectionEnabled {
-            let sitesCount = groupingsByRange[.allSites]?.items.count ?? historyDataSource.historyDictionary?.keys.convertedToETLDPlus1(tld: tld).count ?? 0
-            filteredRanges.append(.init(id: .allSites, count: sitesCount))
-        }
+        let sitesCount = groupingsByRange[.allSites]?.items.count ?? historyDataSource.historyDictionary?.keys.convertedToETLDPlus1(tld: tld).count ?? 0
+        filteredRanges.append(.init(id: .allSites, count: sitesCount))
+
         return filteredRanges
     }
 
@@ -285,12 +281,8 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         }
 
         // Populate synthetic 'sites' section with one item per unique eTLD+1 domain
-        if isSitesSectionEnabled {
-            let siteItems = sitesSectionItems()
-            groupingsByRange[.allSites] = .init(range: .allSites, visits: siteItems)
-        } else {
-            groupingsByRange[.allSites] = nil
-        }
+        let siteItems = sitesSectionItems()
+        groupingsByRange[.allSites] = .init(range: .allSites, visits: siteItems)
     }
 
     /// Returns a list of history items for the Sites section, one item per unique eTLD+1 domain.
@@ -449,8 +441,6 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         return items
     }
 
-    /// This is an async accessor in order to be able to feed it with `NSApp.delegateTyped.featureFlagger`
-    /// Could be refactored into a simple property once the feture flag is removed.
     private let historyGroupingProvider: () async -> HistoryGroupingProvider
     private let historyDataSource: HistoryDataSource
     private let dateFormatter: HistoryViewDateFormatting
@@ -460,10 +450,6 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
     private var historyItems: [DataModel.HistoryItem] = []
 
     private var visitsByRange: [DataModel.HistoryRange: [Visit]] = [:]
-
-    private var isSitesSectionEnabled: Bool {
-        featureFlagger.isFeatureOn(.historyViewSitesSection)
-    }
 
     private struct QueryInfo {
         /// When the query happened.

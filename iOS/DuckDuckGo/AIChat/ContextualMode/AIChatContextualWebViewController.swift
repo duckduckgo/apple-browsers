@@ -20,6 +20,9 @@
 import AIChat
 import BrowserServicesKit
 import Combine
+import Common
+import Core
+import os.log
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -30,6 +33,7 @@ import WebKit
 protocol AIChatContextualWebViewControllerDelegate: AnyObject {
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestToLoad url: URL)
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?)
+    func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestOpenDownloadWithFileName fileName: String)
 }
 
 final class AIChatContextualWebViewController: UIViewController {
@@ -42,6 +46,10 @@ final class AIChatContextualWebViewController: UIViewController {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
+    private let featureFlagger: FeatureFlagger
+    private var downloadHandler: DownloadHandling
+    private let pixelHandler: AIChatContextualModePixelFiring
+    private let debugSettings: AIChatDebugSettingsHandling
 
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -52,11 +60,19 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     private var pendingPrompt: String?
-    private var userContentController: UserContentController?
+    private var pendingPageContext: AIChatPageContextData?
     private var isPageReady = false
     private var isContentHandlerReady = false
     private var urlObservation: NSKeyValueObservation?
     private var lastContextualChatURL: URL?
+
+    /// Constraint for adjusting WebView bottom when keyboard appears
+    private var webViewBottomConstraint: NSLayoutConstraint?
+    private var isMediumDetent = true
+    private var lastKnownKeyboardFrame: CGRect?
+
+    /// URL to load on viewDidLoad instead of the default AI chat URL (for cold restore).
+    var initialURL: URL?
 
     // MARK: - UI Components
 
@@ -79,18 +95,43 @@ final class AIChatContextualWebViewController: UIViewController {
 
     // MARK: - Initialization
 
+    /// Initialize the web view controller.
+    /// - Parameters:
+    ///   - aiChatSettings: AI chat settings provider
+    ///   - privacyConfigurationManager: Privacy configuration manager
+    ///   - contentBlockingAssetsPublisher: Content blocking assets publisher
+    ///   - featureDiscovery: Feature discovery
+    ///   - featureFlagger: Feature flagger
+    ///   - downloadHandler: Download handler for managing file downloads
+    ///   - getPageContext: Closure to get page context (used by ContentHandler for JS getAIChatPageContext requests)
+    ///   - pixelHandler: Pixel handler for contextual mode analytics
     init(aiChatSettings: AIChatSettingsProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
-         featureDiscovery: FeatureDiscovery) {
+         featureDiscovery: FeatureDiscovery,
+         featureFlagger: FeatureFlagger,
+         downloadHandler: DownloadHandling,
+         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
+         pixelHandler: AIChatContextualModePixelFiring,
+         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
+        self.featureFlagger = featureFlagger
+        self.downloadHandler = downloadHandler
+        self.pixelHandler = pixelHandler
+        self.debugSettings = debugSettings
+
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
-            featureDiscovery: featureDiscovery
+            featureDiscovery: featureDiscovery,
+            featureFlagger: featureFlagger,
+            productSurfaceTelemetry: productSurfaceTelemetry,
+            getPageContext: getPageContext
         )
+
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -102,23 +143,50 @@ final class AIChatContextualWebViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
+        aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
-        loadAIChat()
+        setupDownloadHandler()
+        if let url = initialURL {
+            Logger.aiChat.debug("[ContextualWebVC] Loading initialURL: \(url.absoluteString)")
+            loadChatURL(url)
+        } else {
+            Logger.aiChat.debug("[ContextualWebVC] No initialURL, loading default AI chat")
+            loadAIChat()
+        }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        setupKeyboardObservers()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        removeKeyboardObservers()
+        webViewBottomConstraint?.constant = 0
+        lastKnownKeyboardFrame = nil
     }
 
     deinit {
         urlObservation?.invalidate()
+        removeKeyboardObservers()
     }
 
     // MARK: - Public Methods
 
     /// Queues prompt if web view not ready yet; otherwise submits immediately.
-    func submitPrompt(_ prompt: String) {
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+        Logger.aiChat.debug("[ContextualWebVC] submitPrompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if isPageReady && isContentHandlerReady {
-            aiChatContentHandler.submitPrompt(prompt)
+            Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")
+            aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
         } else {
+            Logger.aiChat.debug("[ContextualWebVC] Queuing prompt as pending")
             pendingPrompt = prompt
+            pendingPageContext = pageContext
         }
     }
 
@@ -126,13 +194,45 @@ final class AIChatContextualWebViewController: UIViewController {
         aiChatContentHandler.submitStartChatAction()
     }
 
+    func pushPageContext(_ context: AIChatPageContextData?) {
+        aiChatContentHandler.submitPageContext(context)
+    }
+
     func reload() {
+        isPageReady = false
+        isContentHandlerReady = false
         webView.reload()
     }
 
-    /// Returns the current contextual chat URL if one exists, nil otherwise.
-    var currentContextualChatURL: URL? {
-        webView.url.flatMap { $0.duckAIChatID != nil ? $0 : nil }
+    func loadChatURL(_ url: URL) {
+        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(url.absoluteString)")
+        isPageReady = false
+        pendingPrompt = nil
+        pendingPageContext = nil
+        loadingView.startAnimating()
+        webView.load(URLRequest(url: url))
+    }
+
+    /// Updates the sheet detent. Keyboard fix only applies in medium detent.
+    func setMediumDetent(_ isMediumDetent: Bool) {
+        let wasInMediumDetent = self.isMediumDetent
+        self.isMediumDetent = isMediumDetent
+
+        if isMediumDetent && !wasInMediumDetent {
+            recalculateKeyboardOverlapIfNeeded()
+        } else if !isMediumDetent && webViewBottomConstraint?.constant != 0 {
+            UIView.animate(withDuration: 0.25) {
+                self.webViewBottomConstraint?.constant = 0
+                self.view.layoutIfNeeded()
+            }
+        }
+    }
+
+    private func recalculateKeyboardOverlapIfNeeded() {
+        guard let keyboardFrame = lastKnownKeyboardFrame else {
+            return
+        }
+        adjustForKeyboard(frame: keyboardFrame, duration: 0.25, options: .curveEaseInOut)
     }
 
     // MARK: - Private Methods
@@ -143,15 +243,103 @@ final class AIChatContextualWebViewController: UIViewController {
         view.addSubview(webView)
         view.addSubview(loadingView)
 
+        let bottomConstraint = webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        webViewBottomConstraint = bottomConstraint
+
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            bottomConstraint,
 
             loadingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
+    }
+
+    private func setupKeyboardObservers() {
+        removeKeyboardObservers()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillChangeFrame),
+            name: UIResponder.keyboardWillChangeFrameNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    private func removeKeyboardObservers() {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: UIResponder.keyboardWillChangeFrameNotification,
+            object: nil
+        )
+        NotificationCenter.default.removeObserver(
+            self,
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    @objc private func keyboardWillChangeFrame(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
+            return
+        }
+
+        lastKnownKeyboardFrame = keyboardFrame
+
+        guard isMediumDetent, view.window != nil else {
+            return
+        }
+
+        let duration = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
+        let animationCurveRaw = (userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber)?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
+        let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRaw)
+
+        adjustForKeyboard(frame: keyboardFrame, duration: duration, options: animationCurve)
+    }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        lastKnownKeyboardFrame = nil
+
+        guard view.window != nil else {
+            return
+        }
+
+        let userInfo = notification.userInfo
+        let duration = (userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
+        let animationCurveRaw = (userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber)?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
+        let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRaw)
+
+        webViewBottomConstraint?.constant = 0
+
+        UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
+            self.view.layoutIfNeeded()
+        }
+    }
+
+    private func adjustForKeyboard(frame keyboardFrame: CGRect, duration: TimeInterval, options: UIView.AnimationOptions) {
+        let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
+        let keyboardOverlap = max(0, view.bounds.height - keyboardFrameInView.origin.y)
+
+        // Guard against invalid keyboard positions during sheet animation transitions
+        // If keyboard is above the view (negative Y) or overlap exceeds view height, skip adjustment
+        if keyboardFrameInView.origin.y < 0 || keyboardOverlap > view.bounds.height {
+            return
+        }
+
+        webViewBottomConstraint?.constant = -keyboardOverlap
+
+        UIView.animate(withDuration: duration, delay: 0, options: options) {
+            self.view.layoutIfNeeded()
+        }
     }
 
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
@@ -162,24 +350,50 @@ final class AIChatContextualWebViewController: UIViewController {
         )
         userContentController.delegate = self
         configuration.userContentController = userContentController
-        self.userContentController = userContentController
         return configuration
     }
 
     private func loadAIChat() {
         loadingView.startAnimating()
-        let request = URLRequest(url: aiChatSettings.aiChatURL)
+        let contextualURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
+        Logger.aiChat.debug("[ContextualWebVC] loadAIChat - loading URL: \(contextualURL.absoluteString)")
+        let request = URLRequest(url: contextualURL)
         webView.load(request)
+    }
+
+    private func setupDownloadHandler() {
+        downloadHandler.onDownloadComplete = { [weak self] result in
+            guard let self = self else { return }
+
+            switch result {
+            case .success(let filename):
+                self.view.showDownloadCompletionToast(for: filename) { [weak self] in
+                    guard let self = self else { return }
+                    self.delegate?.contextualWebViewController(self, didRequestOpenDownloadWithFileName: filename)
+                }
+
+            case .failure:
+                self.view.showDownloadFailedToast()
+            }
+        }
     }
 
     /// Handles edge case where user submits before preloaded web view is fully ready.
     private func submitPendingPromptIfReady() {
+        Logger.aiChat.debug("[ContextualWebVC] submitPendingPromptIfReady - pendingPrompt: \(self.pendingPrompt != nil), isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         guard let prompt = pendingPrompt,
               isPageReady,
               isContentHandlerReady else { return }
 
+        let pageContext = pendingPageContext
         pendingPrompt = nil
-        aiChatContentHandler.submitPrompt(prompt)
+        pendingPageContext = nil
+        submitPromptNow(prompt, pageContext: pageContext)
+    }
+
+    private func submitPromptNow(_ prompt: String, pageContext: AIChatPageContextData?) {
+        Logger.aiChat.debug("[ContextualWebVC] Submitting pending prompt now")
+        aiChatContentHandler.submitPrompt(prompt, pageContext: pageContext)
     }
 
     // MARK: - URL Observation
@@ -197,7 +411,9 @@ final class AIChatContextualWebViewController: UIViewController {
         let contextualChatURL = url.flatMap { $0.duckAIChatID != nil ? $0 : nil }
 
         guard contextualChatURL != lastContextualChatURL else { return }
+
         lastContextualChatURL = contextualChatURL
+
         delegate?.contextualWebViewController(self, didUpdateContextualChatURL: contextualChatURL)
     }
 }
@@ -214,7 +430,9 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
             return
         }
 
-        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
+        userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
+
         isContentHandlerReady = true
         submitPendingPromptIfReady()
     }
@@ -227,7 +445,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let url = navigationAction.request.url else { return .allow }
 
-        if url.isDuckAIURL || navigationAction.targetFrame?.isMainFrame == false {
+        if url.scheme == "blob" || url.isDuckAIURL || debugSettings.matchesCustomURL(url) || navigationAction.targetFrame?.isMainFrame == false {
             return .allow
         }
 
@@ -235,11 +453,23 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         return .cancel
     }
 
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        guard let url = navigationResponse.response.url else {
+            return .allow
+        }
+        return url.scheme == "blob" ? .download : .allow
+    }
+
+    func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+        download.delegate = downloadHandler
+    }
+
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         loadingView.startAnimating()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        Logger.aiChat.debug("[ContextualWebVC] didFinish navigation - URL: \(String(describing: webView.url?.absoluteString))")
         loadingView.stopAnimating()
         isPageReady = true
         submitPendingPromptIfReady()

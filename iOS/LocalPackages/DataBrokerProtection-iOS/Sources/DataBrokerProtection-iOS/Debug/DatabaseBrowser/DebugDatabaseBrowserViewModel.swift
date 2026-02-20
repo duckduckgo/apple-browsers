@@ -83,6 +83,10 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
         }
  }
 
+    func refresh() {
+        updateTables()
+    }
+
     private func convertToGenericRowData<T>(_ item: T) -> DataBrokerDatabaseBrowserData.Row {
         let mirror = Mirror(reflecting: item)
         var data: [String: CustomStringConvertible] = [:]

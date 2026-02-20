@@ -27,6 +27,9 @@ class FireWindowByDefaultTests: UITestCase {
         app = XCUIApplication.setUp()
 
         app.enforceSingleWindow()
+
+        // Disable warn before quit to allow Cmd+Q to quit immediately in tests
+        app.disableWarnBeforeQuitting()
     }
 
     override func tearDownWithError() throws {

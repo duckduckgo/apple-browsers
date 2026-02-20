@@ -37,6 +37,9 @@
 /* Connect With Server Sheet - Description Part 1 */
 "connect.with.server.sheet.description.part1" = "Tämä luo salatun varmuuskopion kirjanmerkeistäsi ja automaattisen täytön tiedoistasi DuckDuckGon suojatulle palvelimelle. Voit synkronoida varmuuskopion muiden laitteittesi kanssa.";
 
+/* Connect With Server Sheet - Description Part 1 */
+"connect.with.server.sheet.description.part1-updated" = "Tämä luo salatun varmuuskopion tallentamistasi kirjanmerkeistä, salasanoista, luottokorteista ja Duck.ai-keskusteluista DuckDuckGon suojatulle palvelimelle, ja se voidaan synkronoida muiden laitteidesi kanssa.";
+
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Salausavain tallennetaan vain laitteellesi. DuckDuckGo ei pääse siihen käsiksi.";
 
@@ -141,6 +144,9 @@
 
 /* Preparing To Sync Sheet - Description */
 "preparing.to.sync.sheet.description" = "Kirjanmerkkejä ja automaattisen täytön tietoja valmistellaan synkronointiin. Tämän pitäisi kestää vain hetken.";
+
+/* Preparing To Sync Sheet - Description */
+"preparing.to.sync.sheet.description-updated" = "Kirjanmerkkejä, salasanoja ja Duck.ai-keskusteluja valmistellaan synkronointiin. Tämän pitäisi kestää vain hetken.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Yhdistetään…";
@@ -289,6 +295,9 @@
 /* Message for syncing with another device */
 "sync.with.another.device.message" = "Synkronoi kirjanmerkit ja salasanat turvallisesti laitteittesi välillä.";
 
+/* Message for syncing with another device */
+"sync.with.another.device.message-updated" = "Synkronoi kirjanmerkit, automaattisen täytön tiedot ja Duck.ai-keskustelut turvallisesti laitteidesi välillä.";
+
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Aloita synkronointi";
 
@@ -303,6 +312,9 @@
 
 /* Turn Sync Off - Button */
 "turn.sync.off" = "Poista synkronointi ja varmuuskopiointi käytöstä...";
+
+/* Sync enabled - footer description of data that is syncing */
+"turn.sync.off.section.footer" = "Kirjanmerkit, automaattisen täytön tiedot ja Duck.ai-keskustelut synkronoidaan tällä hetkellä laitteidesi välillä.";
 
 /* Turn Sync Off - Section Header */
 "turn.sync.off.section.header" = "Synkronointi käytössä";

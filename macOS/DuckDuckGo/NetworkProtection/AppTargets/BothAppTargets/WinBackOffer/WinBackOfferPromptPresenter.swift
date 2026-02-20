@@ -27,14 +27,14 @@ protocol WinBackOfferPromptPresenting {
 final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
     private let visibilityManager: WinBackOfferVisibilityManaging
     private let urlOpener: @MainActor (URL) -> Void
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let pixelHandler: (SubscriptionPixel) -> Void
 
     init(visibilityManager: WinBackOfferVisibilityManaging,
          urlOpener: @escaping @MainActor (URL) -> Void = { @MainActor url in
             Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
          },
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
         self.visibilityManager = visibilityManager
         self.urlOpener = urlOpener

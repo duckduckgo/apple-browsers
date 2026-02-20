@@ -26,6 +26,7 @@ public enum WideEventError: DDGError, LocalizedError {
     case invalidFlowState
     case storageError(Error)
     case invalidParameters(String)
+    case emptyPixelName
 
     public var description: String {
         switch self {
@@ -41,6 +42,8 @@ public enum WideEventError: DDGError, LocalizedError {
             return "Storage error: \(error.localizedDescription)"
         case .invalidParameters(let message):
             return "Invalid parameters: \(message)"
+        case .emptyPixelName:
+            return "Pixel name should not be empty"
         }
     }
 
@@ -64,12 +67,14 @@ public enum WideEventError: DDGError, LocalizedError {
             return 4
         case .invalidParameters:
             return 5
+        case .emptyPixelName:
+            return 6
         }
     }
 
     public var underlyingError: Error? {
         switch self {
-        case .flowNotFound, .typeMismatch, .invalidFlowState, .invalidParameters:
+        case .flowNotFound, .typeMismatch, .invalidFlowState, .invalidParameters, .emptyPixelName:
             return nil
         case .serializationFailed(let error), .storageError(let error):
             return error
@@ -90,6 +95,8 @@ public enum WideEventError: DDGError, LocalizedError {
             return (lhsError as NSError) == (rhsError as NSError)
         case (.invalidParameters(let lhsMessage), .invalidParameters(let rhsMessage)):
             return lhsMessage == rhsMessage
+        case (.emptyPixelName, .emptyPixelName):
+            return true
         default:
             return false
         }

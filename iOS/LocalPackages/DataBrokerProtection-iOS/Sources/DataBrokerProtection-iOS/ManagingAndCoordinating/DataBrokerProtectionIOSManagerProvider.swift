@@ -45,13 +45,15 @@ public class DataBrokerProtectionIOSManagerProvider {
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                   featureFlagger: DBPFeatureFlagging,
+                                  userNotificationService: DataBrokerProtectionUserNotificationService,
                                   pixelKit: PixelKit,
                                   wideEvent: WideEventManaging,
                                   subscriptionManager: DataBrokerProtectionSubscriptionManaging,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View),
                                   eventsHandler: EventMapping<JobEvent>,
-                                  isWebViewInspectable: Bool = false) -> DataBrokerProtectionIOSManager? {
+                                  isWebViewInspectable: Bool = false,
+                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -116,7 +118,8 @@ public class DataBrokerProtectionIOSManagerProvider {
         let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
                                             settings: dbpSettings,
                                             servicePixel: backendServicePixels)
-        let emailConfirmationDataService = EmailConfirmationDataService(database: database,
+        let emailConfirmationDataService = EmailConfirmationDataService(emailConfirmationStore: database,
+                                                                        database: database,
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
                                                                         featureFlagger: featureFlagger,
@@ -137,7 +140,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             featureFlagger: featureFlagger,
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
-            wideEvent: wideEvent
+            wideEvent: wideEvent,
+            isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated }
         )
 
         return DataBrokerProtectionIOSManager(
@@ -145,6 +149,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             jobDependencies: jobDependencies,
             emailConfirmationDataService: emailConfirmationDataService,
             authenticationManager: authenticationManager,
+            userNotificationService: userNotificationService,
             sharedPixelsHandler: sharedPixelsHandler,
             iOSPixelsHandler: iOSPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
@@ -156,7 +161,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             subscriptionManager: subscriptionManager,
             wideEvent: wideEvent,
             eventsHandler: eventsHandler,
-            isWebViewInspectable: isWebViewInspectable
+            isWebViewInspectable: isWebViewInspectable,
+            freeTrialConversionService: freeTrialConversionService
         )
     }
 }

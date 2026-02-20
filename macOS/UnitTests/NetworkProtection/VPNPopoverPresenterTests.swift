@@ -28,7 +28,7 @@ import Subscription
 final class VPNPopoverPresenterTests: XCTestCase {
 
     var sut: DefaultVPNUpsellPopoverPresenter!
-    var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var mockSubscriptionManager: SubscriptionManagerMock!
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
@@ -37,14 +37,13 @@ final class VPNPopoverPresenterTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockFeatureFlagger = MockFeatureFlagger()
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
         firedPixels = []
 
         vpnUpsellVisibilityManager = VPNUpsellVisibilityManager(
-            isFirstLaunch: false,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
@@ -54,7 +53,7 @@ final class VPNPopoverPresenterTests: XCTestCase {
             autoDismissDays: 7,
             pixelHandler: { _ in }
         )
-        vpnUpsellVisibilityManager.setup(isFirstLaunch: false)
+        vpnUpsellVisibilityManager.setup(isFirstLaunch: false, isOnboardingFinished: true)
 
         sut = DefaultVPNUpsellPopoverPresenter(
             subscriptionManager: mockSubscriptionManager,

@@ -37,7 +37,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let userDefaults: UserDefaults
     private let subscriptionAvailability: SubscriptionFeatureAvailability
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -45,7 +45,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler(),
          userDefaults: UserDefaults = .standard,
          subscriptionAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         subscriptionManager: any SubscriptionManager,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureDisabler = featureDisabler

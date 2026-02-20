@@ -45,12 +45,13 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: MockAIChatConfig()
         )
         let windowControllersManager = WindowControllersManagerMock()
         let startupPreferences = StartupPreferences(
+            pinningManager: MockPinningManager(),
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            windowControllersManager: windowControllersManager,
             appearancePreferences: appearancePreferences
         )
 
@@ -85,11 +86,13 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        startupPreferences: startupPreferences,
                                        windowControllersManager: windowControllersManager,
                                        bookmarkManager: MockBookmarkManager(),
+                                       pinningManager: MockPinningManager(),
                                        historyCoordinator: CapturingHistoryDataSource(),
                                        fireproofDomains: MockFireproofDomains(domains: []),
                                        fireCoordinator: fireCoordinator,
                                        autoconsentManagement: AutoconsentManagement(),
-                                       contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()))
+                                       contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
+                                       syncErrorHandler: SyncErrorHandler())
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil
     }

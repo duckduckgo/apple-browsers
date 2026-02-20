@@ -44,15 +44,21 @@ final class MockTabDelegate: TabDelegate {
     private(set) var tabDidRequestPrivacyDashboardButtonPulseCalled = false
     private(set) var privacyDashboardAnimated: Bool?
     var isAIChatEnabled = false
-
+    var isEmailProtectionSignedIn = false
 
     func tabWillRequestNewTab(_ tab: DuckDuckGo.TabViewController) -> UIKeyModifierFlags? { nil }
 
-    func tabDidRequestNewTab(_ tab: DuckDuckGo.TabViewController) {}
+    func tabDidRequestNewTab(_ tab: TabViewController) {}
+    
+    func newTab(reuseExisting: Bool) {}
+
+    func tabDidRequestActivate(_ tab: TabViewController) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) -> WKWebView? { nil }
 
-    func tabDidRequestClose(_ tab: DuckDuckGo.TabViewController, shouldCreateEmptyTabAtSamePosition: Bool) {}
+    func tabDidRequestClose(_ tab: DuckDuckGo.Tab,
+                            behavior: TabClosingBehavior,
+                            clearTabHistory: Bool) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
@@ -79,7 +85,9 @@ final class MockTabDelegate: TabDelegate {
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestDataImport source: DuckDuckGo.DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {}
 
     func tabDidRequestAIChat(tab: TabViewController) {}
-    
+
+    func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {}
+
     func tabDidRequestSettings(tab: DuckDuckGo.TabViewController) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestSettingsToLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount, source: DuckDuckGo.AutofillSettingsSource) {}
@@ -154,7 +162,7 @@ extension TabViewController {
             privacyConfigurationManager: PrivacyConfigurationManagerMock(),
             appSettings: AppSettingsMock(),
             bookmarksDatabase: CoreDataDatabase.bookmarksMock,
-            historyManager: MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true),
+            historyManager: MockHistoryManager(),
             syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
@@ -174,6 +182,7 @@ extension TabViewController {
             daxDialogsManager: DummyDaxDialogsManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+            privacyStats: MockPrivacyStats(),
             voiceSearchHelper: MockVoiceSearchHelper()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
@@ -219,6 +228,29 @@ class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     
     func advancedInfoPresented() {}
 
+}
+
+final class MockPrivacyStats: PrivacyStatsProviding {
+    var total: Int64 = 0
+    var recordCalls: [String] = []
+    var clearCallCount = 0
+    var handleAppTerminationCallCount = 0
+
+    func recordBlockedTracker(_ name: String) async {
+        recordCalls.append(name)
+    }
+
+    func fetchPrivacyStatsTotalCount() async -> Int64 {
+        return total
+    }
+
+    func clearPrivacyStats() async {
+        clearCallCount += 1
+    }
+
+    func handleAppTermination() async {
+        handleAppTerminationCallCount += 1
+    }
 }
 
 // swiftlint:enable force_try

@@ -1166,7 +1166,7 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             }
             viewModel.dismissSurvey(id: survey.id)
         case .syncPromo(let touchpoint):
-            segueToSync(source: "promotion_passwords")
+            segueToSync(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
             Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": touchpoint.rawValue])
         case .importPromo:
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)

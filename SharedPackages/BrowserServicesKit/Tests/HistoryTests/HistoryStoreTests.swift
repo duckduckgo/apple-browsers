@@ -297,6 +297,59 @@ final class HistoryStoreTests: XCTestCase {
         await fulfillment(of: [firstSavingExpectation, secondSavingExpectation], timeout: 2)
     }
 
+    // MARK: - Tab History Integration Tests
+
+    func testWhenVisitIsSavedWithTabID_ThenTabHistoryRecordIsCreated() async throws {
+        let tabID = "test-tab-for-visit"
+        let visitDate = Date()
+        let visit = Visit(date: visitDate, tabID: tabID)
+
+        let historyEntry = try await saveNewHistoryEntry(including: [visit], lastVisit: visitDate)
+
+        let tabHistoryRecords = fetchAllTabHistory()
+        XCTAssertEqual(tabHistoryRecords.count, 1)
+        XCTAssertEqual(tabHistoryRecords.first?.tabID, tabID)
+        XCTAssertEqual(tabHistoryRecords.first?.url, historyEntry.url)
+        XCTAssertNotNil(tabHistoryRecords.first?.visit, "Tab history should be linked to visit")
+    }
+
+    func testWhenVisitIsSavedWithoutTabID_ThenNoTabHistoryRecordIsCreated() async throws {
+        let visitDate = Date()
+        let visit = Visit(date: visitDate)
+
+        _ = try await saveNewHistoryEntry(including: [visit], lastVisit: visitDate)
+
+        let tabHistoryRecords = fetchAllTabHistory()
+        XCTAssertEqual(tabHistoryRecords.count, 0)
+    }
+
+    func testWhenHistoryEntryIsDeleted_ThenLinkedTabHistoryPersists() async throws {
+        let tabID = "persist-tab-123"
+        let visitDate = Date()
+        let visit = Visit(date: visitDate, tabID: tabID)
+
+        let historyEntry = try await saveNewHistoryEntry(including: [visit], lastVisit: visitDate)
+
+        XCTAssertEqual(fetchAllTabHistory().count, 1)
+
+        try await removeEntriesAndWait([historyEntry])
+
+        // TabHistory should persist due to Nullify delete rule (orphaned)
+        let tabHistoryRecords = fetchAllTabHistory()
+        XCTAssertEqual(tabHistoryRecords.count, 1)
+        XCTAssertEqual(tabHistoryRecords.first?.tabID, tabID)
+        XCTAssertNil(tabHistoryRecords.first?.visit, "Visit relationship should be nullified")
+    }
+
+    private func fetchAllTabHistory() -> [TabHistoryManagedObject] {
+        var results: [TabHistoryManagedObject] = []
+        context.performAndWait {
+            let request = TabHistoryManagedObject.fetchRequest()
+            results = (try? context.fetch(request)) ?? []
+        }
+        return results
+    }
+
     private func cleanOldAndWait(cleanUntil date: Date, assertion: @escaping (BrowsingHistory) -> Void, file: StaticString = #file, line: UInt = #line) async throws {
         do {
             let history = try await historyStore.cleanOld(until: date)

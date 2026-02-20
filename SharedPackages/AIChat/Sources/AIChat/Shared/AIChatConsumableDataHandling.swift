@@ -133,7 +133,7 @@ public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
     }
 }
 
-public struct AIChatPageContextData: Codable {
+public struct AIChatPageContextData: Codable, Equatable {
     public let title: String
     public let favicon: [PageContextFavicon]
     public let url: String
@@ -150,7 +150,7 @@ public struct AIChatPageContextData: Codable {
         self.fullContentLength = fullContentLength
     }
 
-    public struct PageContextFavicon: Codable {
+    public struct PageContextFavicon: Codable, Equatable {
         public let href: String
         public let rel: String
 
@@ -158,5 +158,14 @@ public struct AIChatPageContextData: Codable {
             self.href = href
             self.rel = rel
         }
+    }
+
+    /// Returns `true` if this page context contains no usable data for AI Chat.
+    ///
+    /// A page context is considered empty when it has no title, no favicon, no content,
+    /// and the full content length is zero. Note that `url` is intentionally excluded
+    /// from this check.
+    public func isEmpty() -> Bool {
+        return title.isEmpty && favicon.isEmpty && content.isEmpty && fullContentLength == 0
     }
 }

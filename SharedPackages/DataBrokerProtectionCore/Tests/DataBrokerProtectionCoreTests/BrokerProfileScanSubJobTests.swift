@@ -177,6 +177,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
                                                  isManual: false,
+                                                 isAuthenticated: false,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
@@ -193,6 +194,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
                                                  isManual: true,
+                                                 isAuthenticated: false,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
@@ -210,6 +212,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
                                                  isManual: false,
+                                                 isAuthenticated: false,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,

@@ -28,7 +28,7 @@ extension NetworkProtectionLocationListCompositeRepository {
     convenience init() {
         let settings = Application.appDelegate.vpnSettings
         // swiftlint:disable:next force_cast
-        var tokenHandler: any SubscriptionTokenHandling = Application.appDelegate.subscriptionManagerV2 as! DefaultSubscriptionManagerV2
+        var tokenHandler: any SubscriptionTokenHandling = Application.appDelegate.subscriptionManager as! DefaultSubscriptionManager
         self.init(
             environment: settings.selectedEnvironment,
             tokenHandler: tokenHandler,

@@ -101,7 +101,8 @@ final class TabViewModelTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(showFullURL: false),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
         let tabViewModel = TabViewModel(tab: tab, appearancePreferences: appearancePreferences)
 
@@ -125,7 +126,8 @@ final class TabViewModelTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(showFullURL: true),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
         let tabViewModel = TabViewModel(tab: tab, appearancePreferences: appearancePreferences)
 
@@ -450,13 +452,14 @@ final class TabViewModelTests: XCTestCase {
 
     @MainActor
     func testDisplayedFaviconForOnboardingWithActualFavicon() {
+        let expectedFavicon = NSImage.onboardingDax
         let actualFavicon = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)!
 
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.setContent(.onboarding)
         tabViewModel.tab.favicon = actualFavicon
 
-        XCTAssertImagesEqual(tabViewModel.favicon, actualFavicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, expectedFavicon)
     }
 
     @MainActor
@@ -492,7 +495,8 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
             ),
             accessibilityPreferences: AccessibilityPreferences()
         )
@@ -523,7 +527,8 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
             ),
             accessibilityPreferences: accessibilityPreferences
         )
@@ -590,7 +595,8 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
             ),
             accessibilityPreferences: accessibilityPreferences
         )
@@ -616,7 +622,8 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
             ),
             accessibilityPreferences: accessibilityPreferences
         )
@@ -811,7 +818,8 @@ extension TabViewModel {
             let appearancePreferences = AppearancePreferences(
                 keyValueStore: try! MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                aiChatMenuConfig: MockAIChatConfig()
             )
             return TabViewModel(
                 tab: tab,

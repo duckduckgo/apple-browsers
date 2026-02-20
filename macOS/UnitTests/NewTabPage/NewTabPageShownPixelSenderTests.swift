@@ -49,7 +49,8 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         visibleFeedProvider = MockNewTabPageProtectionsReportVisibleFeedProvider()

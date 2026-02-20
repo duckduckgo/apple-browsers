@@ -48,12 +48,13 @@ struct SettingsSubscriptionView: View {
     
     var subscriptionRestoreViewV2: some View {
         SubscriptionContainerViewFactory.makeRestoreFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                           subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                           subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                                                            userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                            wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                           dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
+                                                           dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
+                                                           featureFlagger: settingsViewModel.featureFlagger)
     }
 
     private var manageSubscriptionView: some View {
@@ -64,7 +65,7 @@ struct SettingsSubscriptionView: View {
     }
 
     var currentStorefrontRegion: SubscriptionRegion {
-        return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.currentStorefrontRegion ?? .usa
+        return AppDependencyProvider.shared.subscriptionManager.currentStorefrontRegion
     }
     
     private var winBackURLComponents: URLComponents? {
@@ -168,21 +169,25 @@ struct SettingsSubscriptionView: View {
         }
 
         if subscriptionFeatures.contains(.dataBrokerProtection) {
+            let shouldShowPIRNewBadge = settingsViewModel.shouldShowNewBadge(for: .personalInformationRemoval)
             SettingsCellView(
                 label: UserText.settingsPProDBPTitle,
-                image: Image(uiImage: DesignSystemImages.Color.Size24.databroker),
+                image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                 statusIndicator: StatusIndicatorView(status: .off),
-                isGreyedOut: true
+                isGreyedOut: true,
+                optionalBadgeText: shouldShowPIRNewBadge ? UserText.settingsItemNewBadge : nil
             )
+            .onAppear {
+                settingsViewModel.storeNewBadgeFirstImpressionDateIfNeeded(for: .personalInformationRemoval)
+            }
         }
 
         if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
             SettingsCellView(
                 label: UserText.settingsSubscriptionAiChatTitle,
-                image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
+                image: Image(uiImage: DesignSystemImages.Color.Size24.paidAiChat),
                 statusIndicator: StatusIndicatorView(status: .off),
-                isGreyedOut: true,
-                optionalBadgeText: UserText.settingsItemNewBadge
+                isGreyedOut: true
             )
         }
 
@@ -202,7 +207,7 @@ struct SettingsSubscriptionView: View {
 
         // Renew Subscription (Expired)
         let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
-                                                      viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                      viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                       settingsViewModel: settingsViewModel,
                                                       viewPlans: {
             subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
@@ -224,7 +229,7 @@ struct SettingsSubscriptionView: View {
         disabledFeaturesView
             // Subscribe with Win-back offer
             let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
-                                                          viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                          viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                           settingsViewModel: settingsViewModel,
                                                           takeWinBackOffer: {
                 Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
@@ -254,7 +259,7 @@ struct SettingsSubscriptionView: View {
 
         // Renew Subscription (Expired)
         let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.activating,
-                                                      viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                      viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                       settingsViewModel: settingsViewModel,
                                                       viewPlans: {
             subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
@@ -292,6 +297,7 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             let hasDBPEntitlement = userEntitlements.contains(.dataBrokerProtection)
             let hasValidStoredProfile = settingsViewModel.dbpMeetsProfileRunPrequisite
+            let shouldShowPIRNewBadge = settingsViewModel.shouldShowNewBadge(for: .personalInformationRemoval)
             var statusIndicator: StatusIndicator = hasDBPEntitlement && hasValidStoredProfile ? .on : .off
 
             let destination: LazyView<AnyView> = {
@@ -307,12 +313,16 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: destination, isActive: $isShowingDBP) {
                 SettingsCellView(
                     label: UserText.settingsPProDBPTitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
                     statusIndicator: StatusIndicatorView(status: statusIndicator),
-                    isGreyedOut: !hasDBPEntitlement
+                    isGreyedOut: !hasDBPEntitlement,
+                    optionalBadgeText: shouldShowPIRNewBadge ? UserText.settingsItemNewBadge : nil
                 )
             }
             .disabled(!hasDBPEntitlement)
+            .onAppear {
+                settingsViewModel.storeNewBadgeFirstImpressionDateIfNeeded(for: .personalInformationRemoval)
+            }
         }
 
         if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
@@ -321,10 +331,9 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: LazyView(SubscriptionAIChatView(viewModel: settingsViewModel)), isActive: $isShowingPaidAIChat) {
                 SettingsCellView(
                     label: UserText.settingsSubscriptionAiChatTitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.paidAiChat),
                     statusIndicator: StatusIndicatorView(status: (hasAIChatEntitlement && settingsViewModel.isAIChatEnabled) ? .on : .off),
-                    isGreyedOut: !hasAIChatEntitlement,
-                    optionalBadgeText: UserText.settingsItemNewBadge
+                    isGreyedOut: !hasAIChatEntitlement
                 )
             }
             .disabled(!hasAIChatEntitlement)
@@ -333,9 +342,10 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal) {
             let hasITREntitlement = userEntitlements.contains(.identityTheftRestoration) || userEntitlements.contains(.identityTheftRestorationGlobal)
 
-            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                  userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)
+                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
+                                                 featureFlagger: settingsViewModel.featureFlagger)
             NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: model)), isActive: $isShowingITP) {
                 SettingsCellView(
                     label: UserText.settingsPProITRTitle,
@@ -350,7 +360,7 @@ struct SettingsSubscriptionView: View {
         let isActiveTrialOffer = settingsViewModel.state.subscription.isActiveTrialOffer
         let configuration: SubscriptionSettingsViewConfiguration = isActiveTrialOffer ? .trial : .subscribed
         NavigationLink(destination: LazyView(SubscriptionSettingsViewV2(configuration: configuration,
-                                                                        viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                                        viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                                         settingsViewModel: settingsViewModel))
             .environmentObject(subscriptionNavigationCoordinator)
         ) {

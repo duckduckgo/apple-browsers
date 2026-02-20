@@ -55,7 +55,9 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     private var observation: NSKeyValueObservation?
 
     private var startZoomScale: CGFloat = 0
-    
+
+    private var scrollToTop = true
+
     func attach(to scrollView: UIScrollView) {
         detach()
         
@@ -130,15 +132,25 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
 
     func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        defer {
+            scrollToTop = true
+        }
+
         switch animator.barsState {
         case .hidden:
             animator.revealBars(animated: true)
             return false
+        case .transitioning:
+            return false
         default:
-            return true
+            return scrollToTop
         }
     }
-    
+
+    func preventNextScrollToTop() {
+        scrollToTop = false
+    }
+
     /// Bars should not be hidden in case ScrollView content is smaller than full (with bars hidden) viewport.
     private func canHideBars(for scrollView: UIScrollView) -> Bool {
         let heightAllowsHide = scrollView.bounds.height + (delegate?.barsMaxHeight ?? 0) < scrollView.contentSize.height

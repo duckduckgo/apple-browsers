@@ -25,28 +25,33 @@ import FeatureFlags
 import Networking
 import os.log
 
-extension DefaultSubscriptionManagerV2 {
+extension DefaultSubscriptionManager {
     // Init the SubscriptionManager using the standard dependencies and configuration, to be used only in the dependencies tree root
     public convenience init(keychainType: KeychainType,
                             environment: SubscriptionEnvironment,
                             featureFlagger: FeatureFlagger? = nil,
                             userDefaults: UserDefaults,
-                            pixelHandlingSource: SubscriptionPixelHandler.Source) {
+                            pixelHandlingSource: SubscriptionPixelHandler.Source,
+                            source: KeychainErrorSource) {
 
-        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource)
-        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource, pixelKit: PixelKit.shared)
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+        let tokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
                                                               userDefaults: userDefaults) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
-                                                                             source: KeychainErrorSource.shared,
+                                                                             source: source,
                                                                              authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
 
-        let wideEvent: WideEventManaging = WideEvent()
+        let featureFlagProvider: WideEventFeatureFlagProviding = featureFlagger.map {
+            WideEventFeatureFlagAdapter(featureFlagger: $0)
+        } ?? StaticWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
+
+        let wideEvent: WideEventManaging = WideEvent(featureFlagProvider: featureFlagProvider)
         let authRefreshEventMapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
 #if DEBUG
             return true // Allow the refresh event when using staging in debug mode, for easier testing
@@ -58,7 +63,7 @@ extension DefaultSubscriptionManagerV2 {
                                             authService: authService,
                                             refreshEventMapping: authRefreshEventMapping)
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
-        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
                                                                                baseURL: environment.serviceEnvironment.url)
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
@@ -94,8 +99,11 @@ extension DefaultSubscriptionManagerV2 {
         }
         let isInternalUserEnabled = { featureFlagger?.internalUserDecider.isInternalUser ?? false }
         if #available(macOS 12.0, *) {
-            self.init(storePurchaseManager: DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
-                                                                          subscriptionFeatureFlagger: subscriptionFeatureFlagger),
+            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: userDefaults,
+                                                                             pixelHandler: pixelHandler)
+            self.init(storePurchaseManager: DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                                        subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                                        pendingTransactionHandler: pendingTransactionHandler),
                       oAuthClient: authClient,
                       userDefaults: userDefaults,
                       subscriptionEndpointService: subscriptionEndpointService,
@@ -109,6 +117,21 @@ extension DefaultSubscriptionManagerV2 {
                       subscriptionEnvironment: environment,
                       pixelHandler: pixelHandler,
                       isInternalUserEnabled: isInternalUserEnabled)
+        }
+    }
+}
+
+private struct StaticWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
+    let isPostEndpointEnabled: Bool
+
+    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+        switch flag {
+        case .postEndpoint:
+#if DEBUG || REVIEW || ALPHA
+            return false
+#else
+            return isPostEndpointEnabled
+#endif
         }
     }
 }

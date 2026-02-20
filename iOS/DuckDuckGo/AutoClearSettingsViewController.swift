@@ -86,12 +86,12 @@ class AutoClearSettingsViewController: UITableViewController {
             appSettings.autoClearAction = settings.action
             appSettings.autoClearTiming = settings.timing
         } else {
-            appSettings.autoClearAction = FireOptions()
+            appSettings.autoClearAction = FireRequest.Options()
             appSettings.autoClearTiming = AutoClearSettingsModel.Timing.termination
         }
     }
     
-    private func indexPathOf(action: FireOptions) -> IndexPath {
+    private func indexPathOf(action: FireRequest.Options) -> IndexPath {
         if action.contains(.data) {
             return IndexPath(row: 0, section: Sections.action.rawValue)
         }

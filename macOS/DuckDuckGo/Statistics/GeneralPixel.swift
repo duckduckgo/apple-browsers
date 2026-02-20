@@ -17,11 +17,11 @@
 //
 
 import AppKit
-import PixelKit
 import BrowserServicesKit
+import Configuration
 import ContentBlocking
 import DDGSync
-import Configuration
+import PixelKit
 import Suggestions
 
 enum GeneralPixel: PixelKitEvent {
@@ -30,6 +30,7 @@ enum GeneralPixel: PixelKitEvent {
     case crashOnCrashHandlersSetUp
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
+    case crashReportingFailedToReadContents
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser
@@ -94,6 +95,21 @@ enum GeneralPixel: PixelKitEvent {
 
     case autofillLoginsSettingsEnabled
     case autofillLoginsSettingsDisabled
+
+    // Passwords Status Bar
+    // See macOS/PixelDefinitions/pixels/definitions/passwords_status_bar_pixels.json5
+    case autofillPasswordsStatusBarSettingEnabled
+    case autofillPasswordsStatusBarSettingDisabled
+    case autofillPasswordsStatusBarIconClicked
+
+    // Warn Before Quit
+    // See macOS/PixelDefinitions/pixels/warn_before_quit_pixels.json5
+    // Discussion: https://app.asana.com/0/137249556945/1212837417207452
+    case warnBeforeQuitShown
+    case warnBeforeQuitQuit
+    case warnBeforeQuitCancelled
+    case warnBeforeQuitDontShowAgain
+    case warnBeforeQuitSettingsDisabled
 
     case bitwardenPasswordAutofilled
     case bitwardenPasswordSaved
@@ -204,24 +220,29 @@ enum GeneralPixel: PixelKitEvent {
     case syncDuckAddressOverride
     case syncSuccessRateDaily
     case syncLocalTimestampResolutionTriggered(Feature)
+    case syncAiChatActiveDaily
     case syncBookmarksObjectLimitExceededDaily
     case syncCredentialsObjectLimitExceededDaily
     case syncCreditCardsObjectLimitExceededDaily
     case syncIdentitiesObjectLimitExceededDaily
+    case syncAiChatsObjectLimitExceededDaily
     case syncBookmarksRequestSizeLimitExceededDaily
     case syncCredentialsRequestSizeLimitExceededDaily
     case syncCreditCardsRequestSizeLimitExceededDaily
     case syncIdentitiesRequestSizeLimitExceededDaily
+    case syncAiChatsRequestSizeLimitExceededDaily
     case syncBookmarksTooManyRequestsDaily
     case syncCredentialsTooManyRequestsDaily
     case syncCreditCardsTooManyRequestsDaily
     case syncIdentitiesTooManyRequestsDaily
     case syncSettingsTooManyRequestsDaily
+    case syncAiChatsTooManyRequestsDaily
     case syncBookmarksValidationErrorDaily
     case syncCredentialsValidationErrorDaily
     case syncCreditCardsValidationErrorDaily
     case syncIdentitiesValidationErrorDaily
     case syncSettingsValidationErrorDaily
+    case syncAiChatsValidationErrorDaily
     case syncDebugWasDisabledUnexpectedly
 
     // Remote Messaging Framework
@@ -304,6 +325,13 @@ enum GeneralPixel: PixelKitEvent {
 
     // Onboarding
     case onboardingExceptionReported(message: String, id: String)
+    case onboardingStepCompleteWelcome
+    case onboardingStepCompleteGetStarted
+    case onboardingStepCompletePrivateByDefault
+    case onboardingStepCompleteCleanerBrowsing
+    case onboardingStepCompleteSystemSettings
+    case onboardingStepCompleteCustomize
+    case onboardingFinalStepComplete
 
     // MARK: - Advanced Usage
 
@@ -453,13 +481,6 @@ enum GeneralPixel: PixelKitEvent {
     case bitwardenSendingOfMessageFailed
     case bitwardenSharedKeyInjectionFailed
 
-    case updaterAborted(reason: String)
-    case updaterDidFindUpdate
-    case updaterDidDownloadUpdate
-    case updaterDidRunUpdate
-    case updaterAttemptToRestartWithoutResumeBlock
-    case releaseNotesEmpty
-
     case faviconDecryptionFailedUnique
     case downloadListItemDecryptionFailedUnique
     case historyEntryDecryptionFailedUnique
@@ -503,6 +524,8 @@ enum GeneralPixel: PixelKitEvent {
     case syncSettingsFailed
     case syncSettingsMetadataUpdateFailed
     case syncSettingsPatchCompressionFailed
+    case syncAiChatsFailed
+    case syncAiChatsPatchCompressionFailed
     case syncMigratedToFileStore
     case syncFailedToMigrateToFileStore
     case syncFailedToInitFileStore
@@ -569,10 +592,13 @@ enum GeneralPixel: PixelKitEvent {
     var name: String {
         switch self {
         case .crash(let appIdentifier):
-            if let appIdentifier {
-                return "m_mac_crash_\(appIdentifier.rawValue)"
-            } else {
+            switch appIdentifier {
+            case .app:
                 return "m_mac_crash"
+            case .some(let identifier):
+                return "m_mac_crash_\(identifier.rawValue)"
+            case .none:
+                return "m_mac_crash_unknown"
             }
 
         case .crashOnCrashHandlersSetUp:
@@ -580,6 +606,9 @@ enum GeneralPixel: PixelKitEvent {
 
         case .crashReportCRCIDMissing:
             return "m_mac_crashreporting_crcid-missing"
+
+        case .crashReportingFailedToReadContents:
+            return "m_mac_crashreporting_failed_to_read_crash_contents"
 
         case .crashReportingSubmissionFailed:
             return "m_mac_crashreporting_submission-failed"
@@ -712,6 +741,24 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_autofill_logins_settings_enabled"
         case .autofillLoginsSettingsDisabled:
             return "m_mac_autofill_logins_settings_disabled"
+
+        case .autofillPasswordsStatusBarSettingEnabled:
+            return "m_mac_autofill_passwords_status-bar_setting_enabled"
+        case .autofillPasswordsStatusBarSettingDisabled:
+            return "m_mac_autofill_passwords_status-bar_setting_disabled"
+        case .autofillPasswordsStatusBarIconClicked:
+            return "m_mac_autofill_passwords_status-bar_icon_clicked"
+
+        case .warnBeforeQuitShown:
+            return "m_mac_warn-before-quit_shown"
+        case .warnBeforeQuitQuit:
+            return "m_mac_warn-before-quit_quit"
+        case .warnBeforeQuitCancelled:
+            return "m_mac_warn-before-quit_cancelled"
+        case .warnBeforeQuitDontShowAgain:
+            return "m_mac_warn-before-quit_dont-show-again"
+        case .warnBeforeQuitSettingsDisabled:
+            return "m_mac_settings_warn-before-quit_disabled"
 
         case .bitwardenPasswordAutofilled:
             return "m_mac_bitwarden_autofill_password"
@@ -885,24 +932,29 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature):
             return "m_mac_sync_\(feature.name)_local_timestamp_resolution_triggered"
+        case .syncAiChatActiveDaily: return "m_mac_sync_ai_chat_active_daily"
         case .syncBookmarksObjectLimitExceededDaily: return "m_mac_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_mac_sync_credentials_object_limit_exceeded_daily"
         case .syncCreditCardsObjectLimitExceededDaily: return "m_mac_sync_credit_cards_object_limit_exceeded_daily"
         case .syncIdentitiesObjectLimitExceededDaily: return "m_mac_sync_identities_object_limit_exceeded_daily"
+        case .syncAiChatsObjectLimitExceededDaily: return "m_mac_sync_ai_chats_object_limit_exceeded_daily"
         case .syncBookmarksRequestSizeLimitExceededDaily: return "m_mac_sync_bookmarks_request_size_limit_exceeded_daily"
         case .syncCredentialsRequestSizeLimitExceededDaily: return "m_mac_sync_credentials_request_size_limit_exceeded_daily"
         case .syncCreditCardsRequestSizeLimitExceededDaily: return "m_mac_sync_credit_cards_request_size_limit_exceeded_daily"
         case .syncIdentitiesRequestSizeLimitExceededDaily: return "m_mac_sync_identities_request_size_limit_exceeded_daily"
+        case .syncAiChatsRequestSizeLimitExceededDaily: return "m_mac_sync_ai_chats_request_size_limit_exceeded_daily"
         case .syncBookmarksTooManyRequestsDaily: return "m_mac_sync_bookmarks_too_many_requests_daily"
         case .syncCredentialsTooManyRequestsDaily: return "m_mac_sync_credentials_too_many_requests_daily"
         case .syncCreditCardsTooManyRequestsDaily: return "m_mac_sync_credit_cards_too_many_requests_daily"
         case .syncIdentitiesTooManyRequestsDaily: return "m_mac_sync_identities_too_many_requests_daily"
         case .syncSettingsTooManyRequestsDaily: return "m_mac_sync_settings_too_many_requests_daily"
+        case .syncAiChatsTooManyRequestsDaily: return "m_mac_sync_ai_chats_too_many_requests_daily"
         case .syncBookmarksValidationErrorDaily: return "m_mac_sync_bookmarks_validation_error_daily"
         case .syncCredentialsValidationErrorDaily: return "m_mac_sync_credentials_validation_error_daily"
         case .syncCreditCardsValidationErrorDaily: return "m_mac_sync_credit_cards_validation_error_daily"
         case .syncIdentitiesValidationErrorDaily: return "m_mac_sync_identities_validation_error_daily"
         case .syncSettingsValidationErrorDaily: return "m_mac_sync_settings_validation_error_daily"
+        case .syncAiChatsValidationErrorDaily: return "m_mac_sync_ai_chats_validation_error_daily"
         case .syncDebugWasDisabledUnexpectedly: return "m_mac_sync_was_disabled_unexpectedly"
 
         case .remoteMessageShown: return "m_mac_remote_message_shown"
@@ -990,8 +1042,15 @@ enum GeneralPixel: PixelKitEvent {
 
             // Onboarding
         case .onboardingExceptionReported: return "m_mac_onboarding_exception-reported"
+        case .onboardingStepCompleteWelcome: return "m_mac_onboarding_step-complete-welcome"
+        case .onboardingStepCompleteGetStarted: return "m_mac_onboarding_step-complete-get-started"
+        case .onboardingStepCompletePrivateByDefault: return "m_mac_onboarding_step-complete-private-by-default"
+        case .onboardingStepCompleteCleanerBrowsing: return "m_mac_onboarding_step-complete-cleaner-browsing"
+        case .onboardingStepCompleteSystemSettings: return "m_mac_onboarding_step-complete-system-settings"
+        case .onboardingStepCompleteCustomize: return "m_mac_onboarding_step-complete-customize"
+        case .onboardingFinalStepComplete: return "m_mac_onboarding_final-step-complete"
 
-        // “Advanced” usage
+        // "Advanced" usage
         case .windowFullscreen: return "m_mac_window_fullscreen"
         case .windowSplitScreen: return "m_mac_window_split_screen"
 
@@ -1199,19 +1258,6 @@ enum GeneralPixel: PixelKitEvent {
         case .bitwardenSharedKeyInjectionFailed:
             return "bitwarden_shared_key_injection_failed"
 
-        case .updaterAborted:
-            return "updater_aborted"
-        case .updaterDidFindUpdate:
-            return "updater_did_find_update"
-        case .updaterDidDownloadUpdate:
-            return "updater_did_download_update"
-        case .updaterDidRunUpdate:
-            return "updater_did_run_update"
-        case .updaterAttemptToRestartWithoutResumeBlock:
-            return "updater_attempt_to_restart_without_resume_block"
-        case .releaseNotesEmpty:
-            return "m_mac_release_notes_empty"
-
         case .faviconDecryptionFailedUnique:
             return "favicon_decryption_failed_unique"
         case .downloadListItemDecryptionFailedUnique:
@@ -1252,6 +1298,8 @@ enum GeneralPixel: PixelKitEvent {
         case .syncSettingsFailed: return "sync_settings_failed"
         case .syncSettingsMetadataUpdateFailed: return "sync_settings_metadata_update_failed"
         case .syncSettingsPatchCompressionFailed: return "sync_settings_patch_compression_failed"
+        case .syncAiChatsFailed: return "sync_ai_chats_failed"
+        case .syncAiChatsPatchCompressionFailed: return "sync_ai_chats_patch_compression_failed"
         case .syncMigratedToFileStore: return "sync_migrated_to_file_store"
         case .syncFailedToMigrateToFileStore: return "sync_failed_to_migrate_to_file_store"
         case .syncFailedToInitFileStore: return "sync_failed_to_init_file_store"
@@ -1473,9 +1521,6 @@ enum GeneralPixel: PixelKitEvent {
             }
             return nil
 
-        case .updaterAborted(let reason):
-            return ["reason": reason]
-
         case let .userScriptLoadJSFailed(jsFile, error):
             var params = error.pixelParameters
             params[PixelKit.Parameters.jsFile] = jsFile
@@ -1491,6 +1536,7 @@ enum GeneralPixel: PixelKitEvent {
                 .crashOnCrashHandlersSetUp,
                 .crashReportingSubmissionFailed,
                 .crashReportCRCIDMissing,
+                .crashReportingFailedToReadContents,
                 .compileRulesWait,
                 .launch,
                 .dailyActiveUser,
@@ -1543,6 +1589,14 @@ enum GeneralPixel: PixelKitEvent {
                 .autofillManagementUpdateLogin,
                 .autofillLoginsSettingsEnabled,
                 .autofillLoginsSettingsDisabled,
+                .autofillPasswordsStatusBarSettingEnabled,
+                .autofillPasswordsStatusBarSettingDisabled,
+                .autofillPasswordsStatusBarIconClicked,
+                .warnBeforeQuitShown,
+                .warnBeforeQuitQuit,
+                .warnBeforeQuitCancelled,
+                .warnBeforeQuitDontShowAgain,
+                .warnBeforeQuitSettingsDisabled,
                 .bitwardenPasswordAutofilled,
                 .bitwardenPasswordSaved,
                 .ampBlockingRulesCompilationFailed,
@@ -1619,24 +1673,29 @@ enum GeneralPixel: PixelKitEvent {
                 .syncDuckAddressOverride,
                 .syncSuccessRateDaily,
                 .syncLocalTimestampResolutionTriggered,
+                .syncAiChatActiveDaily,
                 .syncBookmarksObjectLimitExceededDaily,
                 .syncCredentialsObjectLimitExceededDaily,
                 .syncCreditCardsObjectLimitExceededDaily,
                 .syncIdentitiesObjectLimitExceededDaily,
+                .syncAiChatsObjectLimitExceededDaily,
                 .syncBookmarksRequestSizeLimitExceededDaily,
                 .syncCredentialsRequestSizeLimitExceededDaily,
                 .syncCreditCardsRequestSizeLimitExceededDaily,
                 .syncIdentitiesRequestSizeLimitExceededDaily,
+                .syncAiChatsRequestSizeLimitExceededDaily,
                 .syncBookmarksTooManyRequestsDaily,
                 .syncCredentialsTooManyRequestsDaily,
                 .syncCreditCardsTooManyRequestsDaily,
                 .syncIdentitiesTooManyRequestsDaily,
                 .syncSettingsTooManyRequestsDaily,
+                .syncAiChatsTooManyRequestsDaily,
                 .syncBookmarksValidationErrorDaily,
                 .syncCredentialsValidationErrorDaily,
                 .syncCreditCardsValidationErrorDaily,
                 .syncIdentitiesValidationErrorDaily,
                 .syncSettingsValidationErrorDaily,
+                .syncAiChatsValidationErrorDaily,
                 .syncDebugWasDisabledUnexpectedly,
                 .remoteMessageShown,
                 .remoteMessageShownUnique,
@@ -1694,6 +1753,13 @@ enum GeneralPixel: PixelKitEvent {
                 .suggestionSubmittedMouse,
                 .suggestionSubmittedKeyboard,
                 .onboardingExceptionReported,
+                .onboardingStepCompleteWelcome,
+                .onboardingStepCompleteGetStarted,
+                .onboardingStepCompletePrivateByDefault,
+                .onboardingStepCompleteCleanerBrowsing,
+                .onboardingStepCompleteSystemSettings,
+                .onboardingStepCompleteCustomize,
+                .onboardingFinalStepComplete,
                 .windowFullscreen,
                 .windowSplitScreen,
                 .pictureInPictureVideoPlayback,
@@ -1776,12 +1842,6 @@ enum GeneralPixel: PixelKitEvent {
                 .bitwardenDecryptionFailed,
                 .bitwardenSendingOfMessageFailed,
                 .bitwardenSharedKeyInjectionFailed,
-                .updaterAborted,
-                .updaterDidFindUpdate,
-                .updaterDidDownloadUpdate,
-                .updaterDidRunUpdate,
-                .updaterAttemptToRestartWithoutResumeBlock,
-                .releaseNotesEmpty,
                 .faviconDecryptionFailedUnique,
                 .downloadListItemDecryptionFailedUnique,
                 .historyEntryDecryptionFailedUnique,
@@ -1819,6 +1879,8 @@ enum GeneralPixel: PixelKitEvent {
                 .syncSettingsFailed,
                 .syncSettingsMetadataUpdateFailed,
                 .syncSettingsPatchCompressionFailed,
+                .syncAiChatsFailed,
+                .syncAiChatsPatchCompressionFailed,
                 .syncMigratedToFileStore,
                 .syncFailedToMigrateToFileStore,
                 .syncFailedToInitFileStore,

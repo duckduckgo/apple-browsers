@@ -25,18 +25,6 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-// Helper extension for creating test frames
-extension WKFrameInfo {
-    static func mock(url: URL) -> WKFrameInfo {
-        return WKFrameInfoMock(
-            webView: WKWebView(),
-            securityOrigin: WKSecurityOriginMock.new(url: url),
-            request: URLRequest(url: url),
-            isMainFrame: true
-        )
-    }
-}
-
 @MainActor
 final class DuckPlayerTabExtensionTests: XCTestCase {
 

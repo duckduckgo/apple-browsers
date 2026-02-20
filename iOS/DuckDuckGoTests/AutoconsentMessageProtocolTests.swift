@@ -164,6 +164,7 @@ class MockWKScriptMessage: WKScriptMessage {
     let mockedName: String
     let mockedBody: Any
     let mockedWebView: WKWebView?
+    let mockedFrameInfo: WKFrameInfo
 
     override var name: String {
         return mockedName
@@ -177,10 +178,15 @@ class MockWKScriptMessage: WKScriptMessage {
         return mockedWebView
     }
 
-    init(name: String, body: Any, webView: WKWebView? = nil) {
+    override var frameInfo: WKFrameInfo {
+        return mockedFrameInfo
+    }
+
+    init(name: String, body: Any, webView: WKWebView? = nil, frameInfo: WKFrameInfo = MockFrameInfo(isMainFrame: true)) {
         self.mockedName = name
         self.mockedBody = body
         self.mockedWebView = webView
+        self.mockedFrameInfo = frameInfo
         super.init()
     }
 }

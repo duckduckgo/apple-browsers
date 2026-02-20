@@ -34,6 +34,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     private var segueToFeedbackCallCount = 0
     private var segueToSyncSettingsCallCount = 0
     private var segueToSettingsAppearanceCallCount = 0
+    private var segueToPIRCallCount = 0
 
     override func setUpWithError() throws {
         messagesConfiguration = HomePageMessagesConfigurationMock(homeMessages: [])
@@ -291,11 +292,13 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         return NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
-                                messageActionHandler: remoteMessageActionHandler)
+                                messageActionHandler: remoteMessageActionHandler,
+                                imageLoader: MockRemoteMessagingImageLoader())
     }
 }
 
 extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
+
     func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, presentationStyle: PresentationContext.Style) {
         segueToAIChatSettingsCallCount += 1
     }
@@ -318,6 +321,10 @@ extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
 
     func segueToSettingsAppearance(presentationStyle: PresentationContext.Style) {
         segueToSettingsAppearanceCallCount += 1
+    }
+
+    func segueToPIR(presentationStyle: DuckDuckGo.PresentationContext.Style) {
+        segueToPIRCallCount += 1
     }
 
 }

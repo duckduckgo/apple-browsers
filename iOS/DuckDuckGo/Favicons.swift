@@ -146,6 +146,10 @@ public class Favicons {
     public func removeTabFavicon(forCacheKey key: String) {
        removeFavicon(forCacheKey: key, fromCache: .tabs)
     }
+    
+    public func removeTabFavicons(forDomains domains: [String]) {
+        domains.forEach { removeTabFavicon(forDomain: $0) }
+    }
 
     private func copyFavicon(forDomain domain: String, fromCache: FaviconsCacheType, toCache: FaviconsCacheType, completion: ((UIImage?) -> Void)? = nil) {
         guard let resource = defaultResource(forDomain: domain),

@@ -38,7 +38,7 @@ final class AutoClear: AutoClearing {
     private let worker: FireExecuting
     private var timestamp: TimeInterval?
     private let appSettings: AppSettings
-    private let featureFlagger: FeatureFlagger
+    private let dataClearingCapability: DataClearingCapable
 
     var isClearingEnabled: Bool {
         return AutoClearSettingsModel(settings: appSettings) != nil
@@ -46,10 +46,10 @@ final class AutoClear: AutoClearing {
 
     init(worker: FireExecuting,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         featureFlagger: FeatureFlagger) {
+         dataClearingCapability: DataClearingCapable) {
         self.worker = worker
         self.appSettings = appSettings
-        self.featureFlagger = featureFlagger
+        self.dataClearingCapability = dataClearingCapability
     }
 
     @MainActor
@@ -58,8 +58,9 @@ final class AutoClear: AutoClearing {
         if shouldInjectAIChatsFireOption(into: options) {
             options.insert(.aiChats)
         }
-        let fireContext: FireContext = launching ? .autoClearOnLaunch : .autoClearOnForeground
-        await worker.burn(options: options, applicationState: applicationState, fireContext: fireContext)
+        let trigger: FireRequest.Trigger = launching ? .autoClearOnLaunch : .autoClearOnForeground
+        let request = FireRequest(options: options, trigger: trigger, scope: .all, source: .autoClear)
+        await worker.burn(request: request, applicationState: applicationState)
     }
 
     /// Note: function is parametrised because of tests.
@@ -105,10 +106,10 @@ final class AutoClear: AutoClearing {
     // 2. FireOptions currently include `.data` but do NOT already include `.aiChats`.
     // 
     // This ensures .aiChats is only injected in the correct (legacy UI) scenarios.
-    private func shouldInjectAIChatsFireOption(into options: FireOptions) -> Bool {
+    private func shouldInjectAIChatsFireOption(into options: FireRequest.Options) -> Bool {
         options.contains(.data)
             && !options.contains(.aiChats)
-            && !featureFlagger.isFeatureOn(.enhancedDataClearingSettings)
+            && !dataClearingCapability.isEnhancedDataClearingEnabled
             && appSettings.autoClearAIChatHistory
     }
 

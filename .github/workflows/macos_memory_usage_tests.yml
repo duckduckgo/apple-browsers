@@ -1,0 +1,367 @@
+name: macOS - Memory Usage tests
+
+defaults:
+  run:
+    working-directory: macOS
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      branch:
+        description: "Branch name"
+        required: false
+        type: string
+  schedule:
+    - cron: '0 5 * * *' # run at 5 AM UTC
+  push:
+    branches: [ main, "release/macos/**", "hotfix/macos/**" ]
+    paths:
+      - 'SharedPackages/BrowserServicesKit/**'
+      - 'macOS/**'
+  pull_request:
+    # opened, synchronize, reopened are the default triggering events for a pull request
+    # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/**'
+      - '.xcode-version'
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  create-notarized-app:
+    name: Build Notarized Review app
+    uses: ./.github/workflows/macos_build_notarized.yml
+    with:
+      release-type: review
+      create-dmg: false
+      branch: ${{ inputs.branch || github.sha }}
+      skip-notify: true
+    secrets: inherit
+
+  memory-usage-tests:
+    name: Memory Usage Tests
+    needs: create-notarized-app
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15-xlarge]
+        include:
+          - xcode-version: 16.4
+            runner: macos-15-xlarge
+            os-version: 15
+
+    timeout-minutes: 60
+
+    steps:
+    - name: Register SSH key for certificates repository access
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        ref: ${{ inputs.branch || github.sha }}
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+
+    - name: Install screenresolution
+      if: matrix.os-version != '14'
+      run: brew install screenresolution
+
+    - name: Change screen resolution
+      if: matrix.os-version != '14'
+      run: screenresolution set 1920x1080x32@60
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
+
+    - name: Sync code signing assets
+      id: sync-signing-first-attempt
+      continue-on-error: true
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: |
+        bundle exec fastlane sync_signing_ci
+
+    - name: Retry sync code signing assets
+      if: steps.sync-signing-first-attempt.outcome == 'failure'
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: |
+        echo "First attempt to sync code signing assets failed. Retrying..."
+        bundle exec fastlane sync_signing_ci
+
+    - name: Download and unzip artifact
+      uses: actions/download-artifact@v4
+      with:
+        path: macOS
+
+    - name: Set cache key hash
+      run: |
+        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+        if [[ "$has_only_tags" == "true" ]]; then
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+        else
+          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+        fi
+
+    - name: Cache SPM
+      if: env.cache_key_hash
+      uses: actions/cache@v4
+      with:
+        path: macOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
+        restore-keys: |
+          ${{ runner.os }}-macos-
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: ${{ matrix.xcode-version }}
+
+    - name: Configure system logging
+      working-directory: SharedPackages/BrowserServicesKit
+      run: |
+        sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+        sudo killall logd || true
+
+    - name: Start log stream in background
+      working-directory: macOS
+      run: |
+        log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
+        echo $! > log_stream.pid
+
+    - name: Override XCTest Baseline HW Specs
+      working-directory: macOS
+      run: |
+        ./scripts/override-test-baseline-specs.sh
+
+    - name: Build Memory Usage Tests
+      working-directory: macOS
+      run: |
+        set -o pipefail && xcodebuild build-for-testing \
+          -scheme "macOS Memory Usage Tests CI" \
+          -derivedDataPath DerivedData \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
+        | tee xcodebuild.log \
+        | xcbeautify
+
+    - name: Extract and Copy app to /DerivedData
+      working-directory: macOS
+      run: |
+        cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
+
+        # Find the extracted app bundle and rename if needed
+        extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
+        if [[ -n "${extracted_app}" ]]; then
+          extracted_app_name=$(basename "${extracted_app}")
+          if [[ "${extracted_app_name}" != "DuckDuckGo Review.app" ]]; then
+            echo "Renaming extracted app from '${extracted_app_name}' to 'DuckDuckGo Review.app'"
+            mv "${extracted_app}" "DuckDuckGo Review.app"
+          fi
+        fi
+
+        mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
+
+    - name: Run Memory Usage Tests
+      id: run-ui-tests
+      working-directory: macOS
+      run: |
+        defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1
+        set -o pipefail && xcodebuild test-without-building \
+          -scheme "macOS Memory Usage Tests CI" \
+          -derivedDataPath DerivedData \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
+        | tee -a xcodebuild.log \
+        | tee ui-tests.log
+
+    - name: Build Memory Metrics Report
+      working-directory: macOS
+      run: |
+        XCRESULT_PATH=$(find DerivedData/Logs/Test -name "*.xcresult" | head -1)
+        if [[ -z "$XCRESULT_PATH" ]]; then
+          echo "No .xcresult bundle found"
+          exit 1
+        fi
+
+        START_TIME=$(date -u -r "${{ steps.start-duration.outputs.start-timestamp }}" '+%Y-%m-%d %H:%M:%S')
+
+        ./scripts/build-memory-metrics-sql.sh \
+          --runner "${{ matrix.runner }}" \
+          --xcresult-path "$XCRESULT_PATH" \
+          --run-id "${{ github.run_id }}" \
+          --branch "${{ github.ref_name }}" \
+          --commit-hash "${{ github.sha }}" \
+          --start-time "$START_TIME" \
+          > insert-statements.sql
+
+    - name: Debug Insert SQL
+      working-directory: macOS
+      run: |
+        echo "Generated insert-statements.sql:"
+        cat insert-statements.sql
+
+    - name: Upload memory metrics
+      uses: actions/upload-artifact@v4
+      with:
+        name: memory-metrics
+        path: macOS/insert-statements.sql
+        retention-days: 1
+
+    - name: Stop log stream
+      if: always()
+      working-directory: macOS
+      run: |
+        if [ -f log_stream.pid ]; then
+          kill $(cat log_stream.pid) || true
+        fi
+
+    - name: Check for test failures
+      id: check-failures
+      if: always()
+      working-directory: macOS
+      run: |
+        if grep -Eq 'XCTAssert.*failed|Test Case.*failed|Testing failed:' ui-tests.log; then
+          echo "had_failures=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Detected test failures in the log (may have passed on retry)"
+        else
+          echo "had_failures=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Report job duration
+      if: success() || (always() && steps.run-ui-tests.outcome == 'failure')
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_memory_usage_tests
+        pixel-params: |
+          runner: ${{ matrix.runner }}
+
+    - name: Prepare test report
+      if: always()
+      working-directory: macOS
+      run: |
+        xcbeautify --report junit --report-path . --junit-report-filename ui-tests.xml < ui-tests.log
+
+    - name: Publish tests report
+      uses: mikepenz/action-junit-report@v4
+      if: always() # always run even if the previous step fails
+      with:
+        check_name: "Test Report ${{ matrix.runner }}"
+        report_paths: macOS/ui-tests.xml
+        check_retries: true
+
+    - name: Upload xcresult files (passed on retry)
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      with:
+        name: "xcresult-${{ matrix.runner }}"
+        path: "macOS/DerivedData/Logs/Test/*.xcresult"
+        retention-days: 1
+
+    - name: Upload app console log (passed on retry)
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
+      with:
+        name: "app-console-${{ matrix.runner }}-macos${{ matrix.os-version }}"
+        path: "macOS/app-console.log"
+        if-no-files-found: warn
+        retention-days: 1
+
+    - name: Organize logs for upload
+      if: failure() || cancelled()
+      working-directory: macOS
+      run: |
+        echo "Current working directory: $(pwd)"
+
+        # Create staging directory with timestamp and OS version
+        timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+        archive_name="BuildLogs ${{ matrix.runner }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        echo "Creating archive directory: $archive_name"
+        mkdir -p "$archive_name"
+
+        # locate and copy all files, flattening the structure with verbose output
+        cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
+        cp "ui-tests.log" "$archive_name/" || echo "No ui-tests.log found"
+        cp "ui-tests.xml" "$archive_name/" || echo "No ui-tests.xml found"
+        cp "app-console.log" "$archive_name/" || echo "No app-console.log found"
+        find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
+        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/" || echo "No DiagnosticReports found"
+
+        # Store archive name for upload step
+        echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
+
+    - name: Upload logs when workflow failed
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: "${{ env.ARCHIVE_NAME }}"
+        path: "macOS/${{ env.ARCHIVE_NAME }}"
+        retention-days: 7
+
+  report-memory-metrics-to-clickhouse:
+    name: Report Memory Metrics to ClickHouse
+    needs: memory-usage-tests
+    runs-on: [ self-hosted, apple ]
+
+    steps:
+      - name: Download memory metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: memory-metrics
+
+      - name: Report Memory Metrics to ClickHouse
+        working-directory: .
+        run: |
+          echo "🏁🏁🏁 Reporting Memory Metrics 🏁"
+          cat insert-statements.sql
+
+          clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements.sql
+
+          echo "🏁🏁🏁 Report complete 🏁🏁🏁"
+
+  notify-failure:
+    name: Notify on failure
+    if: ${{ always() && github.event_name == 'schedule' && (needs.memory-usage-tests.result == 'failure' || needs.memory-usage-tests.result == 'cancelled') }}
+    needs: [memory-usage-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch || github.sha }}
+
+    - name: Create Asana task when workflow failed
+      uses: duckduckgo/native-github-asana-sync@v1.1
+      with:
+        action: create-asana-task
+        asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        asana-project: ${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
+        asana-task-name: GH Workflow Failure - Memory Usage Tests
+        asana-task-description: The Memory Usage Tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

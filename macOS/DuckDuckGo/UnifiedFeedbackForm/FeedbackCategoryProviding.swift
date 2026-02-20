@@ -93,9 +93,9 @@ enum SubscriptionFeedbackSubcategory: String, FeedbackCategoryProviding, Feedbac
     var url: URL? {
         switch self {
         case .selectSubcategory: return nil
-        case .otp: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/payments/")!
-        case .unableToAccessFeatures: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/activating/")!
-        case .somethingElse: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/payments/")!
+        case .otp: return URL.pproPaymentsHelp
+        case .unableToAccessFeatures: return URL.pproActivatingHelp
+        case .somethingElse: return URL.pproPaymentsHelp
         }
     }
 }
@@ -128,13 +128,13 @@ enum VPNFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProvi
     var url: URL? {
         switch self {
         case .selectSubcategory: return nil
-        case .unableToInstall: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/troubleshooting/")!
-        case .failsToConnect: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/troubleshooting/")!
-        case .tooSlow: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/troubleshooting/")!
-        case .issueWithAppOrWebsite: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/troubleshooting/")!
-        case .appCrashesOrFreezes: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/troubleshooting/")!
-        case .cantConnectToLocalDevice: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/troubleshooting/")!
-        case .somethingElse: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/")!
+        case .unableToInstall: return URL.vpnTroubleshootingHelp
+        case .failsToConnect: return URL.vpnTroubleshootingHelp
+        case .tooSlow: return URL.vpnTroubleshootingHelp
+        case .issueWithAppOrWebsite: return URL.vpnTroubleshootingHelp
+        case .appCrashesOrFreezes: return URL.vpnTroubleshootingHelp
+        case .cantConnectToLocalDevice: return URL.vpnTroubleshootingHelp
+        case .somethingElse: return URL.vpnHelp
         }
     }
 }
@@ -163,11 +163,11 @@ enum PIRFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProvi
     var url: URL? {
         switch self {
         case .selectSubcategory: return nil
-        case .nothingOnSpecificSite: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/personal-information-removal/removal-process/")!
-        case .notMe: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/personal-information-removal/removal-process/")!
-        case .scanStuck: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/personal-information-removal/removal-process/")!
-        case .removalStuck: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/personal-information-removal/removal-process/")!
-        case .somethingElse: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/personal-information-removal/")!
+        case .nothingOnSpecificSite: return URL.pirRemovalProcessHelp
+        case .notMe: return URL.pirRemovalProcessHelp
+        case .scanStuck: return URL.pirRemovalProcessHelp
+        case .removalStuck: return URL.pirRemovalProcessHelp
+        case .somethingElse: return URL.pirHelp
         }
     }
 }
@@ -194,10 +194,10 @@ enum ITRFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProvi
     var url: URL? {
         switch self {
         case .selectSubcategory: return nil
-        case .accessCode: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/")!
-        case .cantContactAdvisor: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/iris/")!
-        case .advisorUnhelpful: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/")!
-        case .somethingElse: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/")!
+        case .accessCode: return URL.itrHelp
+        case .cantContactAdvisor: return URL.itrIrisHelp
+        case .advisorUnhelpful: return URL.itrHelp
+        case .somethingElse: return URL.itrHelp
         }
     }
 }
@@ -228,11 +228,11 @@ enum PaidAIChatFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackF
         case .selectSubcategory:
             return nil
         case .accessSubscriptionModels:
-            return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/access-subscriber-AI-models")!
+            return URL.aiChatAccessSubscriberModels
         case .loginThirdPartyBrowser:
-            return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/activating")!
+            return URL.pproActivatingHelpNoSlash
         case .somethingElse:
-            return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai")!
+            return URL.aiChatHelpPages
         }
     }
 }

@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import Common
 import os.log
+import QuartzCore
 
 public typealias BrowsingHistory = [HistoryEntry]
 
@@ -30,9 +31,9 @@ public protocol HistoryCoordinatingDebuggingSupport {
     /**
      * Adds visit at an arbitrary time, rather than current timestamp.
      *
-     * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` should be used.
+     * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` or `addVisit(of: URL, tabID:)` should be used.
      */
-    @discardableResult @MainActor func addVisit(of url: URL, at date: Date) -> Visit?
+    @discardableResult @MainActor func addVisit(of url: URL, at date: Date, tabID: String?) -> Visit?
 }
 
 public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupport {
@@ -43,8 +44,8 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor var allHistoryVisits: [Visit]? { get }
     @MainActor var historyDictionary: [URL: HistoryEntry]? { get }
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { get }
+    var dataClearingPixelsHandling: DataClearingPixelsHandling? { get set }
 
-    @discardableResult @MainActor func addVisit(of url: URL) -> Visit?
     @MainActor func addBlockedTracker(entityName: String, on url: URL)
     @MainActor func trackerFound(on: URL)
     @MainActor func cookiePopupBlocked(on: URL)
@@ -57,6 +58,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor func burnAll(completion: @escaping @MainActor () -> Void)
     @MainActor func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Set<URL>) -> Void)
     @MainActor func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void)
+    @MainActor func burnVisits(for tabID: String) async throws
 
     @MainActor func resetCookiePopupBlocked(for domains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void)
 
@@ -64,15 +66,32 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
 }
 
 extension HistoryCoordinating {
+
+    /**
+     * Adds visit at an arbitrary time, rather than current timestamp.
+     *
+     * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` or `addVisit(of: URL, tabID:)` should be used.
+     */
+    @discardableResult
+    @MainActor public func addVisit(of url: URL, at date: Date) -> Visit? {
+        addVisit(of: url, at: date, tabID: nil)
+    }
+
     @discardableResult
     @MainActor public func addVisit(of url: URL) -> Visit? {
-        addVisit(of: url, at: Date())
+        addVisit(of: url, at: Date(), tabID: nil)
+    }
+
+    @discardableResult
+    @MainActor public func addVisit(of url: URL, tabID: String?) -> Visit? {
+        addVisit(of: url, at: Date(), tabID: tabID)
     }
 }
 
 /// Coordinates access to History. Uses its own queue with high qos for all operations.
 final public class HistoryCoordinator: HistoryCoordinating {
 
+    public lazy var dataClearingPixelsHandling: DataClearingPixelsHandling? = nil
     let historyStoringProvider: () -> HistoryStoring
 
     public init(historyStoring: @autoclosure @escaping () -> HistoryStoring) {
@@ -109,14 +128,14 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     @MainActor
-    @discardableResult public func addVisit(of url: URL, at date: Date) -> Visit? {
+    @discardableResult public func addVisit(of url: URL, at date: Date, tabID: String? = nil) -> Visit? {
         guard let historyDictionary else {
             Logger.history.debug("Visit of \(url.absoluteString) ignored")
             return nil
         }
 
         let entry = historyDictionary[url] ?? HistoryEntry(url: url)
-        let visit = entry.addVisit(at: date)
+        let visit = entry.addVisit(at: date, tabID: tabID)
         entry.failedToLoad = false
 
         self.historyDictionary?[url] = entry
@@ -232,6 +251,37 @@ final public class HistoryCoordinator: HistoryCoordinating {
         }
     }
 
+    /// Burns all history visits associated with a specific tab.
+    ///
+    /// This method retrieves visit IDs from the tab history store, maps them to in-memory `Visit` objects,
+    /// and removes them from history. Used when burning a single tab to clear its browsing history.
+    ///
+    /// - Parameter tabID: The unique identifier of the tab whose visits should be removed.
+    /// - Throws: `EntryRemovalError.notAvailable` if history has not yet been loaded.
+    @MainActor
+    public func burnVisits(for tabID: String) async throws {
+        guard let allVisits = allHistoryVisits else {
+            Logger.history.error("burnVisits(for:) called but history not yet loaded")
+            throw EntryRemovalError.notAvailable
+        }
+
+        let visitIDs = try await historyStoring.pageVisitIDs(in: tabID)
+        let visitsAndIDsArray = allVisits.map { ($0.identifier, $0) }
+        let visitByIDsDictionary = Dictionary(visitsAndIDsArray) { existing, _ in
+            existing // Keep the first instance found.
+        }
+        let visits = visitIDs.compactMap { visitByIDsDictionary[$0] }
+
+        assert(visits.count == visitIDs.count,
+               "burnVisits(for:) found \(visitIDs.count) visit IDs but matched only \(visits.count) in memory")
+
+        return await withCheckedContinuation { continuation in
+            burnVisits(visits) {
+                continuation.resume()
+            }
+        }
+    }
+
     public enum EntryRemovalError: Error {
         case notAvailable
     }
@@ -287,7 +337,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
                     onCleanFinished?()
                 }
             } catch {
-                // This should really be a pixel
+                dataClearingPixelsHandling?.fireErrorPixel(error)
                 Logger.history.error("Cleaning of history failed: \(error.localizedDescription)")
                 await MainActor.run {
                     onCleanFinished?()
@@ -313,6 +363,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 }
             } catch {
                 assertionFailure("Removal failed")
+                dataClearingPixelsHandling?.fireErrorPixel(error)
                 Logger.history.error("Removal failed: \(error.localizedDescription)")
                 await MainActor.run {
                     completionHandler?(error)
@@ -346,6 +397,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 assertionFailure("No history entry")
             }
         }
+
         entriesToSave.forEach { entry in
             save(entry: entry)
         }
@@ -357,14 +409,17 @@ final public class HistoryCoordinator: HistoryCoordinating {
         // Remove from the storage
         Task {
             do {
+                let startTime = CACurrentMediaTime()
                 try await historyStoring.removeVisits(visits)
                 Logger.history.debug("Visits removed successfully")
                 // Remove entries with no remaining visits
                 await MainActor.run {
                     self.removeEntries(entriesToRemove, completionHandler: completionHandler)
                 }
+                dataClearingPixelsHandling?.fireDurationPixel(startTime)
             } catch {
                 assertionFailure("Removal failed")
+                dataClearingPixelsHandling?.fireErrorPixel(error)
                 Logger.history.error("Removal failed: \(error.localizedDescription)")
                 await MainActor.run {
                     completionHandler?(error)

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       all_os_versions:
-        description: "Whether to test all OS versions or only the latest"
+        description: "Test all supported macOS versions (not just the latest)"
         type: boolean
         default: true
       single_test_class:
@@ -18,7 +18,7 @@ on:
   workflow_call:
     inputs:
       all_os_versions:
-        description: "Whether to test all OS versions or only the latest"
+        description: "Test all supported macOS versions (not just the latest)"
         type: boolean
         default: true
       branch:
@@ -34,7 +34,7 @@ on:
   push:
     branches: [ main, "release/macos/**", "hotfix/macos/**" ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/BrowserServicesKit/**'
       - 'macOS/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
@@ -43,6 +43,7 @@ on:
     paths:
       - '.github/**'
       - '.xcode-version'
+      - 'SharedPackages/BrowserServicesKit/Package.swift'
 
 concurrency:
   # When this workflow is called by another workflow (e.g. code freeze), `github.workflow` contains the name of the calling workflow,
@@ -104,15 +105,14 @@ jobs:
           all_os_versions="${{ inputs.all_os_versions || 'true' }}"
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
-            runner='["macos-26-xlarge"]'
-            include='[{"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.1"}]'
+            runner='["macos-15-xlarge"]'
+            include='[{"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.4"}]'
           else
             all_os_versions='true'
-            runner='["macos-14-xlarge", "macos-15-xlarge", "macos-26-xlarge"]'
+            runner='["macos-14-xlarge", "macos-15-xlarge"]'
             include=$(jq -c <<< '[
               {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "15.4"},
-              {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "26.1"},
-              {"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.1"}
+              {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.4"}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
@@ -189,11 +189,11 @@ jobs:
         ref: ${{ inputs.branch || github.sha }}
 
     - name: Install screenresolution
-      if: matrix.os-version != '14'
+      if: matrix.runner == 'macos-15-xlarge'
       run: brew install screenresolution
 
     - name: Change screen resolution
-      if: matrix.os-version != '14'
+      if: matrix.runner == 'macos-15-xlarge'
       run: screenresolution set 1920x1080x32@60
 
     - name: Setup Ruby and dependencies
@@ -230,9 +230,25 @@ jobs:
         bundle exec fastlane sync_signing_ci
 
     - name: Download and unzip artifact
-      uses: actions/download-artifact@v4
-      with:
-        path: macOS
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        max_attempts=5
+        retry_delay=10
+
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Attempt $attempt of $max_attempts"
+          if gh run download "${{ github.run_id }}" --dir .; then
+            echo "Download successful"
+            exit 0
+          fi
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Download failed, retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "All download attempts failed"
+        exit 1
 
     - name: Set cache key hash
       run: |
@@ -435,6 +451,7 @@ jobs:
         skip_annotations: true
 
     - name: Report workflow duration
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop

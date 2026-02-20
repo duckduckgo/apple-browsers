@@ -29,15 +29,32 @@ import os.log
 import AIChat
 import Combine
 import PrivacyConfig
+import WebExtensions
 
 protocol TabManaging {
     var count: Int { get }
     @MainActor func prepareAllTabsExceptCurrentForDataClearing()
     @MainActor func prepareCurrentTabForDataClearing()
     func removeAll()
+    @MainActor func viewModelForCurrentTab() -> TabViewModel?
+    @MainActor func prepareTab(_ tab: Tab)
+    @MainActor func isCurrentTab(_ tab: Tab) -> Bool
+    @MainActor func closeTab(_ tab: Tab,
+                             shouldCreateEmptyTabAtSamePosition: Bool,
+                             clearTabHistory: Bool)
+    func controller(for tab: Tab) -> TabViewController?
+    /// Closes the tab and navigates to homepage reusing an existing homepage or creating a new one
+    @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
 }
 
-class TabManager: TabManaging {
+protocol TrackerAnimationSuppressing {
+    @MainActor func markTabAsExternalLaunch(_ tab: Tab)
+    @MainActor func clearExternalLaunchFlags()
+    @MainActor func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool)
+    @MainActor func applyTrackerAnimationSuppressionBasedOnLaunchSource()
+}
+
+class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private(set) var model: TabsModel
     private(set) var persistence: TabsModelPersisting
@@ -70,7 +87,10 @@ class TabManager: TabManaging {
     private let aiChatSettings: AIChatSettingsProvider
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let sharedSecureVault: (any AutofillSecureVault)?
+    private let privacyStats: PrivacyStatsProviding
     private let voiceSearchHelper: VoiceSearchHelperProtocol
+    private var webExtensionManager: WebExtensionManaging?
+    private let launchSourceManager: LaunchSourceManaging
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -107,7 +127,9 @@ class TabManager: TabManaging {
          aiChatSettings: AIChatSettingsProvider,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
-         voiceSearchHelper: VoiceSearchHelperProtocol
+         privacyStats: PrivacyStatsProviding,
+         voiceSearchHelper: VoiceSearchHelperProtocol,
+         launchSourceManager: LaunchSourceManaging
     ) {
         self.model = model
         self.persistence = persistence
@@ -137,8 +159,14 @@ class TabManager: TabManaging {
         self.aiChatSettings = aiChatSettings
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.sharedSecureVault = sharedSecureVault
+        self.privacyStats = privacyStats
         self.voiceSearchHelper = voiceSearchHelper
+        self.launchSourceManager = launchSourceManager
         registerForNotifications()
+    }
+
+    func setWebExtensionManager(_ manager: WebExtensionManaging?) {
+        self.webExtensionManager = manager
     }
 
     @MainActor
@@ -152,7 +180,11 @@ class TabManager: TabManaging {
                                  url: URL?,
                                  inheritedAttribution: AdClickAttributionLogic.State?,
                                  interactionState: Data?) -> TabViewController {
-        let configuration =  WKWebViewConfiguration.persistent()
+        let configuration = WKWebViewConfiguration.persistent()
+
+        if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
+            configuration.webExtensionController = webExtensionManager.controller
+        }
 
         let specialErrorPageNavigationHandler = SpecialErrorPageNavigationHandler(
             maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
@@ -184,6 +216,7 @@ class TabManager: TabManaging {
                                                               aiChatSettings: aiChatSettings,
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
+                                                              privacyStats: privacyStats,
                                                               voiceSearchHelper: voiceSearchHelper)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
@@ -215,6 +248,21 @@ class TabManager: TabManaging {
     
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
+    }
+    
+    @MainActor
+    func viewModel(for tab: Tab) -> TabViewModel {
+        if let controller = controller(for: tab) {
+            return controller.viewModel
+        } else {
+            return TabViewModel(tab: tab, historyManager: historyManager)
+        }
+    }
+
+    @MainActor
+    func viewModelForCurrentTab() -> TabViewModel? {
+        guard let tab = model.currentTab else { return nil }
+        return viewModel(for: tab)
     }
 
     var isEmpty: Bool {
@@ -285,6 +333,7 @@ class TabManager: TabManaging {
                                                               aiChatSettings: aiChatSettings,
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
+                                                              privacyStats: privacyStats,
                                                               voiceSearchHelper: voiceSearchHelper)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
@@ -364,37 +413,29 @@ class TabManager: TabManaging {
     ///  Tab Switcher's UICollectionView 'delete items' function doesn't complain about mis-matching
     ///   number of items.
     func bulkRemoveTabs(_ indexPaths: [IndexPath]) {
-        indexPaths.forEach {
-            let tab = model.get(tabAt: $0.row)
-            previewsSource.removePreview(forTab: tab)
-            if let controller = controller(for: tab) {
-                removeFromCache(controller)
-            }
-            interactionStateSource?.removeStateForTab(tab)
-        }
+        let tabs = indexPaths.map { model.get(tabAt: $0.row) }
         model.remove(indexPaths)
+        clean(tabs: tabs, clearTabHistory: true)
         save()
     }
 
-    func remove(at index: Int) {
+    func remove(at index: Int, clearTabHistory: Bool = true) {
         let tab = model.get(tabAt: index)
-        previewsSource.removePreview(forTab: tab)
         model.remove(tab: tab)
-        if let controller = controller(for: tab) {
-            removeFromCache(controller)
-        }
-        interactionStateSource?.removeStateForTab(tab)
+        clean(tabs: [tab], clearTabHistory: clearTabHistory)
         save()
     }
 
-    func replaceTab(at index: Int, withNewTab newTab: Tab) {
+    func replaceTab(at index: Int, withNewTab newTab: Tab, clearTabHistory: Bool = true) {
         // Removing a Tab automatically inserts a new one if tabs are empty. Hence add a new one only if needed
         if model.tabs.count == 1 {
             // Since we're not re-inserting we should use the proper removal to ensure
             //  things are cleaned up properly.
-            remove(at: index)
+            remove(at: index, clearTabHistory: clearTabHistory)
         } else {
+            let oldTab = model.get(tabAt: index)
             model.remove(at: index)
+            clean(tabs: [oldTab], clearTabHistory: clearTabHistory)
             model.insert(tab: newTab, at: index)
         }
         save()
@@ -408,12 +449,14 @@ class TabManager: TabManaging {
     }
 
     func removeAll() {
+        let tabIDs = model.tabs.map { $0.uid }
         previewsSource.removeAllPreviews()
         model.clearAll()
         for controller in tabControllerCache {
             removeFromCache(controller)
         }
         interactionStateSource?.removeAll(excluding: [])
+        removeTabHistory(for: tabIDs)
         save()
     }
 
@@ -434,7 +477,7 @@ class TabManager: TabManaging {
     func save() {
         persistence.save(model: model)
     }
-    
+
     @MainActor
     func prepareAllTabsExceptCurrentForDataClearing() {
         tabControllerCache.filter { $0 !== current() }.forEach { $0.prepareForDataClearing() }
@@ -443,6 +486,32 @@ class TabManager: TabManaging {
     @MainActor
     func prepareCurrentTabForDataClearing() {
         current()?.prepareForDataClearing()
+    }
+    
+    @MainActor
+    func prepareTab(_ tab: Tab) {
+        controller(for: tab)?.prepareForDataClearing()
+    }
+    
+    @MainActor
+    func isCurrentTab(_ tab: Tab) -> Bool {
+        model.currentTab === tab
+    }
+    
+    @MainActor
+    func closeTab(_ tab: Tab, shouldCreateEmptyTabAtSamePosition: Bool, clearTabHistory: Bool) {
+        let behavior: TabClosingBehavior = shouldCreateEmptyTabAtSamePosition ? .createEmptyTabAtSamePosition : .onlyClose
+        delegate?.tabDidRequestClose(tab,
+                                     behavior: behavior,
+                                     clearTabHistory: clearTabHistory)
+    }
+
+    @MainActor
+    func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool) {
+        // Close the tab and create or reuse an empty tab
+        delegate?.tabDidRequestClose(tab,
+                                     behavior: .createOrReuseEmptyTab,
+                                     clearTabHistory: clearTabHistory)
     }
 
     func cleanupTabsFaviconCache() {
@@ -477,6 +546,29 @@ class TabManager: TabManaging {
             self.tabsCacheNeedsCleanup = false
         }
     }
+
+    // MARK: - Tab Cleanup
+    
+    private func clean(tabs: [Tab], clearTabHistory: Bool) {
+        let tabIDs = tabs.map { $0.uid }
+        tabs.forEach { tab in
+            previewsSource.removePreview(forTab: tab)
+            if let controller = controller(for: tab) {
+                removeFromCache(controller)
+            }
+            interactionStateSource?.removeStateForTab(tab)
+        }
+        if clearTabHistory {
+            removeTabHistory(for: tabIDs)
+        }
+    }
+
+    private func removeTabHistory(for tabIDs: [String]) {
+        guard !tabIDs.isEmpty else { return }
+        Task {
+            await historyManager.removeTabHistory(for: tabIDs)
+        }
+    }
 }
 
 
@@ -507,6 +599,83 @@ extension TabManager {
             Task(priority: .utility) {
                 await previewsSource.removePreviewsWithIdNotIn(Set(model.tabs.map { $0.uid }))
             }
+        }
+    }
+
+    // MARK: - External Launch Management
+
+    /// Clears all external launch flags. Should be called on app relaunch
+    /// to ensure existing tabs are not treated as external launches.
+    @MainActor
+    func clearExternalLaunchFlags() {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
+        Logger.general.debug("Clearing external launch flags for all tabs")
+        for tab in model.tabs {
+            tab.isExternalLaunch = false
+        }
+    }
+
+    @MainActor
+    func markTabAsExternalLaunch(_ tab: Tab) {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
+        guard !tab.isExternalLaunch else {
+            return
+        }
+        Logger.general.debug("Marking tab \(tab.uid) as external launch")
+        tab.isExternalLaunch = true
+    }
+
+    @MainActor
+    func setSuppressTrackerAnimationOnFirstLoad(for tab: Tab, shouldSuppress: Bool) {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
+        guard tab.shouldSuppressTrackerAnimationOnFirstLoad != shouldSuppress else {
+            return
+        }
+        Logger.general.debug("Setting suppressTrackerAnimation=\(shouldSuppress) for tab \(tab.uid)")
+        tab.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppress
+    }
+
+    /// Applies tracker animation suppression logic to all tabs based on current launch source.
+    /// - On cold start with standard launch: suppress tracker animations for all tabs
+    /// - On external launch: tracker animation suppression handled per-tab via markTabAsExternalLaunch
+    @MainActor
+    func applyTrackerAnimationSuppressionBasedOnLaunchSource() {
+        guard featureFlagger.isFeatureOn(.suppressTrackerAnimationOnColdStart) else {
+            return
+        }
+
+        let source = launchSourceManager.source
+        Logger.general.debug("Applying tracker animation suppression for launch source: \(source.rawValue)")
+
+        switch source {
+        case .standard:
+            // On cold start with standard launch, suppress tracker animations for existing tabs with content
+            for tab in model.tabs {
+                // Only suppress for tabs with non-DDG URLs (not NTP, not DDG search)
+                guard let url = tab.link?.url, !url.isDuckDuckGoSearch else {
+                    continue
+                }
+
+                tab.shouldSuppressTrackerAnimationOnFirstLoad = true
+
+                // Also set on TabViewController if it exists
+                if let controller = controller(for: tab) {
+                    controller.shouldSuppressTrackerAnimationOnFirstLoad = true
+                }
+            }
+        case .URL, .shortcut:
+            // For external launches, only the newly created tab (marked via markTabAsExternalLaunch)
+            // should have tracker animations, all other tabs must have animations suppressed (which is handled elsewhere)
+            break
         }
     }
 

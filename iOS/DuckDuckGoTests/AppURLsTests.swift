@@ -294,4 +294,56 @@ final class AppURLsTests: XCTestCase {
         XCTAssertEqual(URL.bloomFilterSpec.absoluteString, "https://staticcdn.duckduckgo.com/https/https-mobile-v2-bloom-spec.json")
         XCTAssertEqual(URL.bloomFilterExcludedDomains.absoluteString, "https://staticcdn.duckduckgo.com/https/https-mobile-v2-false-positives.json")
     }
+
+    // MARK: - Duck.ai ATB URL Tests
+
+    func testWhenAtbNotPersistedThenDuckAIAtbUrlIsNil() {
+        XCTAssertNil(StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore).makeDuckAIAtbURL())
+    }
+
+    func testWhenAtbPersistedWithoutDuckAIRetentionAtbThenDuckAIAtbUrlHasNoSetAtb() throws {
+        // Given
+        mockStatisticsStore.atb = "v516-3"
+        mockStatisticsStore.variant = "ru"
+
+        // When
+        // duckAIRetentionAtb is nil (first prompt scenario)
+        let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore).makeDuckAIAtbURL()
+
+        // Then
+        XCTAssertNotNil(url)
+        XCTAssertEqual(url!.getParameter(named: "atb"), "v516-3ru")
+        XCTAssertEqual(url!.getParameter(named: "at"), "duckai")
+        XCTAssertNil(url!.getParameter(named: "set_atb"))
+        XCTAssertNil(url!.getParameter(named: "email"))
+    }
+
+    func testWhenAtbAndDuckAIRetentionAtbPersistedThenDuckAIAtbUrlHasCorrectParams() throws {
+        // Given
+        mockStatisticsStore.atb = "v516-3"
+        mockStatisticsStore.variant = "ru"
+        mockStatisticsStore.duckAIRetentionAtb = "v516-2"
+
+        // When
+        let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore).makeDuckAIAtbURL()
+
+        // Then
+        XCTAssertNotNil(url)
+        XCTAssertEqual(url!.getParameter(named: "atb"), "v516-3ru")
+        XCTAssertEqual(url!.getParameter(named: "at"), "duckai")
+        XCTAssertEqual(url!.getParameter(named: "set_atb"), "v516-2")
+        XCTAssertNil(url!.getParameter(named: "email"))
+    }
+
+    func testWhenDuckAIAtbUrlCreatedThenActivityTypeIsDuckAI() throws {
+        // Given
+        mockStatisticsStore.atb = "v516-3"
+
+        // When
+        let url = StatisticsDependentURLFactory(statisticsStore: mockStatisticsStore).makeDuckAIAtbURL()
+
+        // Then
+        XCTAssertNotNil(url)
+        XCTAssertEqual(url!.getParameter(named: "at"), "duckai")
+    }
 }

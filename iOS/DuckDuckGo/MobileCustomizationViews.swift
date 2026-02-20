@@ -18,11 +18,16 @@
 //
 
 import SwiftUI
+import Core
 import DesignResourcesKitIcons
 
 protocol MobileCustomizationView { }
 
 extension MobileCustomizationView {
+
+    private var dataClearingCapability: DataClearingCapable {
+        DataClearingCapability.create(using: AppDependencyProvider.shared.featureFlagger)
+    }
 
     func buttonIconProvider(_ button: MobileCustomization.Button) -> Image? {
         if button == .none {
@@ -51,7 +56,11 @@ extension MobileCustomizationView {
         case .bookmarks:
             UserText.actionOpenBookmarks
         case .fire:
-            isAIChatEnabled ? UserText.settingsAutoClearTabsAndDataWithAIChat :  UserText.settingsAutoClearTabsAndData
+            if dataClearingCapability.isEnhancedDataClearingEnabled {
+                UserText.settingsDeleteTabsAndData
+            } else {
+                isAIChatEnabled ? UserText.settingsAutoClearTabsAndDataWithAIChat : UserText.settingsAutoClearTabsAndData
+            }
         case .vpn:
             UserText.actionVPN
         case .passwords:

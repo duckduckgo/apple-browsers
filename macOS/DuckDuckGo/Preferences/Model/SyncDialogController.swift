@@ -146,6 +146,15 @@ final class SyncDialogController {
             .receive(on: DispatchQueue.main)
             .assign(to: \.isScreenLocked, onWeaklyHeld: self)
             .store(in: &cancellables)
+
+        featureFlagger.updatesPublisher
+            .prepend(())
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.managementDialogModel.isAIChatSyncEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
+            }
+            .store(in: &cancellables)
     }
 
     @objc

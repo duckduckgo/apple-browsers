@@ -1,0 +1,10 @@
+# Configuration for actionlint (GitHub Actions workflow linter)
+# https://github.com/rhysd/actionlint
+#
+# This file defines custom self-hosted runner labels that actionlint
+# should recognize as valid. Without this configuration, actionlint
+# would report errors for workflows using custom runner labels.
+
+self-hosted-runner:
+  labels:
+    - apple

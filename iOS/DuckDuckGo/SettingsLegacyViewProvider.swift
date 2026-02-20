@@ -29,6 +29,7 @@ import Configuration
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import Subscription
+import WebExtensions
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -54,6 +55,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
     let subscriptionDataReporter: SubscriptionDataReporting
     let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
+    let webExtensionManager: WebExtensionManaging?
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -70,7 +72,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          subscriptionDataReporter: SubscriptionDataReporting,
          remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
-         productSurfaceTelemetry: ProductSurfaceTelemetry) {
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         webExtensionManager: WebExtensionManaging?) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -87,6 +90,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.subscriptionDataReporter = subscriptionDataReporter
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.webExtensionManager = webExtensionManager
     }
     
     enum LegacyView {
@@ -147,7 +151,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             debuggingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
             subscriptionDataReporter: self.subscriptionDataReporter,
-            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler))
+            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
+            webExtensionManager: self.webExtensionManager))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

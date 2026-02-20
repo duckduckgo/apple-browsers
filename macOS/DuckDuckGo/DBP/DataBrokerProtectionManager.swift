@@ -35,11 +35,12 @@ public final class DataBrokerProtectionManager {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let fakeBrokerFlag: DataBrokerDebugFlag = DataBrokerDebugFlagFakeBroker()
     private let vpnBypassService: VPNBypassFeatureProvider
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     private lazy var freemiumDBPFirstProfileSavedNotifier: FreemiumDBPFirstProfileSavedNotifier = {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let freemiumDBPFirstProfileSavedNotifier = FreemiumDBPFirstProfileSavedNotifier(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                                                                        authenticationStateProvider: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+                                                                                        authenticationStateProvider: Application.appDelegate.subscriptionManager)
         return freemiumDBPFirstProfileSavedNotifier
     }()
 
@@ -79,8 +80,13 @@ public final class DataBrokerProtectionManager {
                                                     pixelHandler: sharedPixelsHandler,
                                                     vault: vault,
                                                     localBrokerService: brokerUpdater)
-        let dataManager = DataBrokerProtectionDataManager(database: database,
-                                                          profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier)
+        let dataManager = DataBrokerProtectionDataManager(
+            database: database,
+            profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier,
+            onProfileSaved: { [weak self] in
+                self?.freeTrialConversionService.markPIRActivated()
+            }
+        )
 
         dataManager.delegate = self
         return dataManager
@@ -117,8 +123,9 @@ public final class DataBrokerProtectionManager {
 
     private init() {
         self.authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
-            subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+            subscriptionManager: Application.appDelegate.subscriptionManager)
         self.vpnBypassService = VPNBypassService()
+        self.freeTrialConversionService = Application.appDelegate.freeTrialConversionService
     }
 
     public func isUserAuthenticated() async -> Bool {

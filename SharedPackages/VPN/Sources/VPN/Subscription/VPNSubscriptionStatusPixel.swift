@@ -66,8 +66,8 @@ public enum VPNSubscriptionStatusPixel: PixelKitEvent, PixelKitEventWithCustomPr
             }()
 
             return [
-                "isSubscriptionActive": isSubscriptionActiveString,
-                "authVersion": "v2",
+                "vpnSubscriptionActive": isSubscriptionActiveString,
+                "vpnAuthVersion": "v2",
                 "notificationObjectClass": Self.sourceClass(from: sourceObject)
             ]
         }
@@ -91,7 +91,7 @@ public enum VPNSubscriptionStatusPixel: PixelKitEvent, PixelKitEventWithCustomPr
         // This is odd, but for `DefaultSubscriptionEndpointServiceV2` we can't get the class name
         // and it's not very clear why, so we're setting it manually.
         switch sourceObject {
-        case is DefaultSubscriptionEndpointServiceV2:
+        case is DefaultSubscriptionEndpointService:
             return "DefaultSubscriptionEndpointServiceV2"
         default:
             return String(describing: type(of: sourceObject))

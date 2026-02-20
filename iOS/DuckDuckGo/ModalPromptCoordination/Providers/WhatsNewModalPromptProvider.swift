@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import DesignResourcesKitIcons
 import RemoteMessaging
+import PrivacyConfig
 
 @MainActor
 final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
@@ -42,6 +43,7 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
     private weak var navigationController: UINavigationController?
 
     private var remoteMessage: RemoteMessageModel?
+    private let featureFlagger: FeatureFlagger
 
     init(
         displayContext: DisplayContext,
@@ -50,7 +52,9 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         isIPad: Bool,
         pixelReporter: RemoteMessagingPixelReporting?,
         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-        displayModelMapper: WhatsNewDisplayModelMapping = WhatsNewDisplayModelMapper()
+        imageLoader: RemoteMessagingImageLoading,
+        displayModelMapper: WhatsNewDisplayModelMapping? = nil,
+        featureFlagger: FeatureFlagger
     ) {
         self.displayContext = displayContext
         self.repository = repository
@@ -58,7 +62,8 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         self.isIPad = isIPad
         self.pixelReporter = pixelReporter
         self.userScriptsDependencies = userScriptsDependencies
-        self.displayModelMapper = displayModelMapper
+        self.displayModelMapper = displayModelMapper ?? WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
+        self.featureFlagger = featureFlagger
     }
 
     // MARK: - ModalPromptProvider
@@ -120,8 +125,10 @@ extension WhatsNewCoordinator: RemoteMessagingPresenter {
 
     @MainActor
     func presentEmbeddedWebView(url: URL) async {
-        let embeddedWebViewController = EmbeddedWebViewController(url: url,
-                                                                  userScriptsDependencies: userScriptsDependencies)
+        let embeddedWebViewController = EmbeddedWebViewController(
+            url: url,
+            userScriptsDependencies: userScriptsDependencies,
+            featureFlagger: featureFlagger)
         navigationController?.pushViewController(embeddedWebViewController, animated: true)
     }
 

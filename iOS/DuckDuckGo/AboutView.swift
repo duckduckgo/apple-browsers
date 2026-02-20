@@ -93,14 +93,24 @@ struct AboutViewVersion: View {
 
     var body: some View {
         Section(header: Text("DuckDuckGo for iOS"), footer: Text(UserText.settingsSendCrashReportsDescription)) {
-#if (ALPHA && !DEBUG)
+#if ((ALPHA || EXPERIMENTAL) && !DEBUG)
             // The commit SHA is only set for release alpha builds, so debug alpha builds won't show it
+
+            #if EXPERIMENTAL
+            let version = "\(viewModel.state.version) (Experimental)"
+            #elseif ALPHA
             let version = "\(viewModel.state.version) (Alpha)"
+            #endif
+
             let build = AppVersion.shared.commitSHAShort
-            let copyable = "\(version)-\(build)"
+            let commitSuffix = build.isEmpty ? "" : "-(\(build))"
+            let copyable = "\(version)\(commitSuffix)"
             Group {
                 SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
-                SettingsCellView(label: "Build", accessory: .rightDetail(build))
+
+                if !build.isEmpty {
+                    SettingsCellView(label: "Build", accessory: .rightDetail(build))
+                }
             }
             .onTapGesture {
                 copyVersion(copyable)

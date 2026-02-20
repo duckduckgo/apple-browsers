@@ -32,16 +32,17 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     private var customizationModel: NewTabPageCustomizationModel!
     private var provider: NewTabPageCustomizationProvider!
     private var featureFlagger: MockFeatureFlagger!
-    private var themePopoverDecider: MockThemePopoverDecider!
 
     @MainActor
     override func setUp() async throws {
         featureFlagger = MockFeatureFlagger()
-        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: featureFlagger)
+        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(),
+                                                      privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                      featureFlagger: featureFlagger,
+                                                      aiChatMenuConfig: MockAIChatConfig())
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
         openFilePanelCalls = 0
-        themePopoverDecider = MockThemePopoverDecider()
 
         customizationModel = NewTabPageCustomizationModel(
             appearancePreferences: appearancePreferences,
@@ -54,7 +55,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
             showAddImageFailedAlert: {}
         )
 
-        provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences, themePopoverDecider: themePopoverDecider)
+        provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
     }
 
     override func tearDown() async throws {
@@ -64,7 +65,6 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         provider = nil
         userBackgroundImagesManager = nil
         featureFlagger = nil
-        themePopoverDecider = nil
     }
 
     func testThatCustomizerOpenerReturnsSettingsModelCustomizerOpener() {
@@ -127,9 +127,8 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
             provider.customizerData,
             .init(
                 background: .solidColor("color05"),
-                showThemeVariantPopover: themePopoverDecider.shouldShowPopover,
                 theme: .light,
-                themeVariant: nil,
+                themeVariant: .default,
                 userColor: .init(hex: "#123abc"),
                 userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init)
             )
@@ -137,18 +136,10 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testThatCustomizerDataIncludesThemeVariantWhenThemesFeatureIsEnabled() async throws {
-        featureFlagger.enabledFeatureFlags = [.themes]
+    func testThatCustomizerDataIncludesThemeVariant() async throws {
         appearancePreferences.themeName = .violet
 
         XCTAssertEqual(provider.customizerData.themeVariant, .violet)
-    }
-
-    func testThatCustomizerDataExcludesThemeVariantWhenThemesFeatureIsDisabled() {
-        featureFlagger.enabledFeatureFlags = []
-        appearancePreferences.themeName = .violet
-
-        XCTAssertNil(provider.customizerData.themeVariant)
     }
 
     func testThatBackgroundPublisherPublishesEvents() throws {
@@ -190,8 +181,10 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     @MainActor
     func testThatThemeVariantGetterReturnsSelectedThemeNameDuringInitialization() {
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.themes]
-        let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: featureFlagger)
+        let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(),
+                                                          privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                          featureFlagger: featureFlagger,
+                                                          aiChatMenuConfig: MockAIChatConfig())
         appearancePreferences.themeName = .violet
 
         let customizationModel = NewTabPageCustomizationModel(
@@ -202,29 +195,13 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
             showAddImageFailedAlert: {}
         )
 
-        let provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences, themePopoverDecider: themePopoverDecider)
+        let provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
         XCTAssertEqual(provider.customizerData.themeVariant, .violet)
     }
 
     func testThatThemeVariantGetterReturnsSelectedThemeNameAfterInitialization() {
-        featureFlagger.enabledFeatureFlags = [.themes]
         appearancePreferences.themeName = .violet
         XCTAssertEqual(provider.customizerData.themeVariant, .violet)
-    }
-
-    // MARK: - showThemeVariantPopover Tests
-
-    @MainActor
-    func testThatShowThemeVariantPopoverReturnsDeciderValue() {
-        for shouldShowPopover in [true, false] {
-            let trueDecider = MockThemePopoverDecider(shouldShowPopover: shouldShowPopover)
-            let providerWithTrueDecider = NewTabPageCustomizationProvider(
-                customizationModel: customizationModel,
-                appearancePreferences: appearancePreferences,
-                themePopoverDecider: trueDecider
-            )
-            XCTAssertEqual(providerWithTrueDecider.customizerData.showThemeVariantPopover, shouldShowPopover)
-        }
     }
 
     func testThatThemeSetterSetsAppearancePreferencesTheme() {

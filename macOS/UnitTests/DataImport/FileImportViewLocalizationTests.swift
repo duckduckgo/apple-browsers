@@ -108,7 +108,7 @@ class FileImportViewLocalizationTests: XCTestCase {
 
     // Helper function to set the application's locale for testing
     private func setLocale(_ identifier: String) {
-        let bundlePath = Bundle.mainBundle.path(forResource: identifier, ofType: "lproj")!
+        let bundlePath = (Bundle.mainBundle ?? .main).path(forResource: identifier, ofType: "lproj")!
         let testBundle = Bundle(path: bundlePath)!
         Bundle.swizzleMainBundle(with: testBundle)
     }
@@ -153,7 +153,7 @@ private extension String {
 
 private extension Bundle {
 
-    static var mainBundle: Bundle = .main
+    static var mainBundle: Bundle?
     static var testBundle: Bundle?
 
     func availableLocalizations() -> [String] {
@@ -164,7 +164,7 @@ private extension Bundle {
     }
 
     static func swizzleMainBundle(with bundle: Bundle) {
-        if testBundle == nil {
+        if mainBundle == nil {
             mainBundle = Bundle.main
             swizzleMainBundle()
         }
@@ -173,8 +173,7 @@ private extension Bundle {
     }
 
     static func resetSwizzling() {
-        guard testBundle != nil else { return }
-        swizzleMainBundle()
+        testBundle = nil
     }
 
     private static func swizzleMainBundle() {
@@ -185,7 +184,7 @@ private extension Bundle {
     }
 
     @objc dynamic static var swizzledMain: Bundle {
-        testBundle!
+        testBundle ?? mainBundle!
     }
 
 }

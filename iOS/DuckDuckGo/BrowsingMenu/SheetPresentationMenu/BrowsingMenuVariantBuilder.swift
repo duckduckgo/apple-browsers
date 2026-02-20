@@ -86,8 +86,7 @@ extension BrowsingMenuVariantBuilder {
 
         return BrowsingMenuModel(
             headerItems: headerItems,
-            sections: sections,
-            footerItems: []
+            sections: sections
         )
     }
 }

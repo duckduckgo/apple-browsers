@@ -482,19 +482,6 @@
                         <subviews>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="ENV-0H-Fcc" userLabel="Inactive Background View with Progress" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                 <rect key="frame" x="2" y="2" width="651" height="28"/>
-                                <subviews>
-                                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="4x6-Xn-fNv" customClass="LoadingProgressView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="651" height="2"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="2" id="phH-XL-CIq"/>
-                                        </constraints>
-                                    </customView>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstItem="4x6-Xn-fNv" firstAttribute="leading" secondItem="ENV-0H-Fcc" secondAttribute="leading" id="991-AR-3Be"/>
-                                    <constraint firstAttribute="bottom" secondItem="4x6-Xn-fNv" secondAttribute="bottom" id="pcl-m3-yAC"/>
-                                    <constraint firstAttribute="trailing" secondItem="4x6-Xn-fNv" secondAttribute="trailing" id="y94-AB-Flr"/>
-                                </constraints>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
                                         <color key="value" name="InactiveSearchBarBackground"/>
@@ -724,7 +711,6 @@
                         <outlet property="passiveTextField" destination="le0-Hn-ZAC" id="npL-R1-gmH"/>
                         <outlet property="passiveTextFieldMinXConstraint" destination="eJI-rp-ptx" id="HNu-7v-JQy"/>
                         <outlet property="passiveTextFieldTrailingConstraint" destination="yYJ-7M-8iq" id="KeG-V4-gBQ"/>
-                        <outlet property="progressIndicator" destination="4x6-Xn-fNv" id="Ydu-ob-RJz"/>
                         <outlet property="shadowView" destination="ktI-g4-Uk6" id="v81-tf-DGJ"/>
                         <outlet property="switchToTabBox" destination="JKb-5c-xaF" id="mhx-BL-hG3"/>
                         <outlet property="switchToTabBoxMinXConstraint" destination="9CH-r6-Spp" id="snN-dF-gMm"/>
@@ -745,7 +731,7 @@
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="hdY-An-3W8">
-                                <rect key="frame" x="0.0" y="2" width="100" height="30"/>
+                                <rect key="frame" x="1" y="2" width="100" height="30"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="30" id="4cN-ij-M5x"/>
                                     <constraint firstAttribute="width" constant="100" id="CQO-D3-iVT"/>

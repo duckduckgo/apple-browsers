@@ -112,12 +112,13 @@ extension TabSwitcherViewController {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: sender,
-                onConfirm: { [weak self] fireOptions in
-                    self?.forgetAll(fireOptions)
+                tabViewModel: nil,
+                pixelSource: .tabSwitcher,
+                daxDialogsManager: daxDialogsManager,
+                onConfirm: { [weak self] fireRequest in
+                    self?.forgetAll(fireRequest)
                 },
-                onCancel: {
-                    // TODO: - Maybe add pixel
-                }
+                onCancel: { }
             )
         }
 
@@ -488,7 +489,7 @@ extension TabSwitcherViewController {
         barsHandler.duckChatButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.duckChatButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.aiChat, { [weak self] in
             guard let self else { return }
-            if self.aichatFullModeFeature.isAvailable {
+            if self.aichatFullModeFeature.isAvailable || self.aichatIPadTabFeature.isAvailable {
                 addNewAIChatTab()
             } else {
                 self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)

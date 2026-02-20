@@ -163,6 +163,9 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showSearchAndDuckAIToggleSubject.eraseToAnyPublisher()
     }
 
+    var userDidSeeToggleOnboarding: Bool = false
+    var lastUsedSidebarWidth: Double?
+
     func reset() {
         isAIFeaturesEnabled = false
         showShortcutOnNewTabPage = false
@@ -172,6 +175,8 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         openAIChatInSidebar = false
         shouldAutomaticallySendPageContext = false
         showSearchAndDuckAIToggle = true
+        userDidSeeToggleOnboarding = false
+        lastUsedSidebarWidth = nil
     }
 }
 #endif

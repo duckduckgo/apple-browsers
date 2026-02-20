@@ -39,6 +39,8 @@ public protocol BrokerProfileJobDependencyProviding {
     var featureFlagger: DBPFeatureFlagging { get }
     var wideEvent: WideEventManaging? { get }
 
+    func isAuthenticatedUser() async -> Bool
+
     func createScanRunner(profileQuery: BrokerProfileQueryData,
                           stageDurationCalculator: StageDurationCalculator,
                           shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileScanSubJobWebRunning
@@ -63,6 +65,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let jobSortPredicate: BrokerJobDataComparators.Predicate
     public let featureFlagger: DBPFeatureFlagging
     public let wideEvent: WideEventManaging?
+    public let isAuthenticatedUserProvider: () async -> Bool
 
     public init(database: any DataBrokerProtectionRepository,
                 contentScopeProperties: ContentScopeProperties,
@@ -77,7 +80,8 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 featureFlagger: DBPFeatureFlagging,
                 vpnBypassService: VPNBypassFeatureProvider? = nil,
                 jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
-                wideEvent: WideEventManaging? = nil
+                wideEvent: WideEventManaging? = nil,
+                isAuthenticatedUserProvider: @escaping () async -> Bool = { true }
     ) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
@@ -93,6 +97,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.jobSortPredicate = jobSortPredicate
         self.featureFlagger = featureFlagger
         self.wideEvent = wideEvent
+        self.isAuthenticatedUserProvider = isAuthenticatedUserProvider
     }
 
     public func createScanRunner(profileQuery: BrokerProfileQueryData,
@@ -128,5 +133,9 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             actionsHandlerMode: .optOut,
             shouldRunNextStep: shouldRunNextStep
         )
+    }
+
+    public func isAuthenticatedUser() async -> Bool {
+        await isAuthenticatedUserProvider()
     }
 }

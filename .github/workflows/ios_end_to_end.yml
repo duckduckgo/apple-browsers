@@ -59,7 +59,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.1"
+        preferred-versions: "18.6,18.2"
 
     - name: Build for tests
       run: |
@@ -76,6 +76,7 @@ jobs:
         | tee xcodebuild.log
 
     - name: Report job duration
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
@@ -180,6 +181,7 @@ jobs:
         device-name: ${{ matrix.device-name }}
 
     - name: Report job duration
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop

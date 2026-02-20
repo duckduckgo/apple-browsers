@@ -33,18 +33,15 @@ final class CapturingHistoryGroupingDataSource: HistoryGroupingDataSource, Histo
 
 final class HistoryGroupingProviderTests: XCTestCase {
     private var dataSource: CapturingHistoryGroupingDataSource!
-    private var featureFlagger: MockFeatureFlagger!
     private var provider: HistoryGroupingProvider!
 
     override func setUp() async throws {
         dataSource = CapturingHistoryGroupingDataSource()
-        featureFlagger = MockFeatureFlagger()
-        provider = await HistoryGroupingProvider(dataSource: dataSource, featureFlagger: featureFlagger)
+        provider = await HistoryGroupingProvider(dataSource: dataSource)
     }
 
     override func tearDown() async throws {
         dataSource = nil
-        featureFlagger = nil
         provider = nil
         try await super.tearDown()
     }

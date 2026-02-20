@@ -148,7 +148,7 @@ extension TabContent {
                 return .aiChat(url)
             }
 
-            let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
+            let subscriptionManager = Application.appDelegate.subscriptionManager
             let environment = subscriptionManager.currentEnvironment.serviceEnvironment
             let subscriptionBaseURL = subscriptionManager.url(for: .baseURL)
             let identityTheftRestorationURL = subscriptionManager.url(for: .identityTheftRestoration)
@@ -339,7 +339,7 @@ extension TabContent {
 
     var canBeDuplicated: Bool {
         switch self {
-        case .settings, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes:
+        case .settings, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .onboarding:
             return false
         default:
             return true

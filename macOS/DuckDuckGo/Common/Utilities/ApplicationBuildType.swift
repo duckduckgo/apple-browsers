@@ -19,6 +19,8 @@
 protocol ApplicationBuildType {
     var isSparkleBuild: Bool { get }
     var isAppStoreBuild: Bool { get }
+    var isDebugBuild: Bool { get }
+    var isReviewBuild: Bool { get }
 }
 
 final class StandardApplicationBuildType: ApplicationBuildType {
@@ -32,6 +34,22 @@ final class StandardApplicationBuildType: ApplicationBuildType {
 
     var isAppStoreBuild: Bool {
         #if APPSTORE
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    var isDebugBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    var isReviewBuild: Bool {
+        #if REVIEW
         return true
         #else
         return false

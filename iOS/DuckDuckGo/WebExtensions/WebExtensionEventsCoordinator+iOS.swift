@@ -59,6 +59,14 @@ final class WebExtensionEventsCoordinator {
         webExtensionManager?.eventsListener.didCloseTab(tabViewController, windowIsClosing: windowIsClosing)
     }
 
+    /// Call this when all extensions are unloaded (e.g. before clearing browser data).
+    /// Clears the reported-tab tracking so that registerExistingTabsAndWindow() can
+    /// re-register all tabs correctly after extensions are reloaded.
+    @available(iOS 18.4, *)
+    func extensionsWillUnload() {
+        reportedTabUIDs.removeAll()
+    }
+
     @available(iOS 18.4, *)
     func didActivateTab(_ tabViewController: TabViewController, previousActiveTab: TabViewController?) {
         webExtensionManager?.eventsListener.didActivateTab(tabViewController, previousActiveTab: previousActiveTab)

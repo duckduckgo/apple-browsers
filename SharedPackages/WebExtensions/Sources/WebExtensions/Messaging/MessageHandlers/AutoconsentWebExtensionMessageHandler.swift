@@ -94,7 +94,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return .failure(WebExtensionMessageHandlerError.missingParameter("pixelName or type"))
         }
 
-        let pixelParams = params?["params"] as? [String: String] ?? [:]
+        let pixelParams = params?["params"] as? [String: Any] ?? [:]
         let pixelInfo = PixelInfo(name: pixelName, type: type, params: pixelParams)
 
         Logger.webExtensions.debug("📊 Send Pixel - name: \(pixelName), type: \(type), params: \(pixelParams)")
@@ -106,7 +106,9 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
 
     private func handleRefreshCpmDashboardState(_ params: [String: Any]?) -> WebExtensionMessageResult {
         guard
-            let domain = params?["domain"] as? String,
+            let urlString = params?["url"] as? String,
+            let url = URL(string: urlString),
+            let domain = url.host,
             let consentStatusDict = params?["consentStatus"] as? [String: Any],
             let consentStatus = ConsentStatusInfo(from: consentStatusDict)
         else {

@@ -404,7 +404,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let tab = Tab(link: link)
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
-        onTabControllerCreated?(controller)
 
         let index = model.currentIndex
         model.insert(tab: tab, at: index + 1)
@@ -412,6 +411,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if !inBackground {
             model.select(tabAt: index + 1)
         }
+
+        onTabControllerCreated?(controller)
 
         save()
         return controller

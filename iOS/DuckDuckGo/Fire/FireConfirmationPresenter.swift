@@ -212,7 +212,9 @@ struct FireConfirmationPresenter {
             sheet.detents = [.large()]
         }
         sheet.prefersGrabberVisible = false
-        sheet.preferredCornerRadius = Constants.sheetCornerRadius
+        if #unavailable(iOS 26) {
+            sheet.preferredCornerRadius = Constants.sheetCornerRadius
+        }
     }
     
     private func calculateSheetHeight<Content: View>(for hostingController: UIHostingController<Content>,

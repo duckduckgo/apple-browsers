@@ -2990,7 +2990,9 @@ extension MainViewController: OmniBarDelegate {
             }
             sheet.prefersGrabberVisible = true
             sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
-            sheet.preferredCornerRadius = 24
+            if #unavailable(iOS 26) {
+                sheet.preferredCornerRadius = 24
+            }
         }
 
         let isiPad = UIDevice.current.userInterfaceIdiom == .pad

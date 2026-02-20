@@ -25,9 +25,17 @@ private let idKey = "id"
 
 /// Extension types identified via manifest `browser_specific_settings.duckduckgo.id`.
 @available(macOS 15.4, iOS 18.4, *)
-public enum DuckDuckGoWebExtensionType: String {
+public enum DuckDuckGoWebExtensionType: String, Codable {
     /// Embedded web extension (e.g. autoconsent/CPM).
     case embedded = "com.duckduckgo.web-extension.embedded"
+}
+
+/// Metadata extracted from a web extension without loading it into a controller.
+@available(macOS 15.4, iOS 18.4, *)
+public struct WebExtensionMetadata {
+    public let type: DuckDuckGoWebExtensionType?
+    public let version: String?
+    public let displayName: String?
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -43,5 +51,24 @@ public extension WKWebExtensionContext {
             return nil
         }
         return DuckDuckGoWebExtensionType(rawValue: idString)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension WKWebExtension {
+
+    /// Reads metadata from a web extension at the given URL without loading it into a controller.
+    /// This can be used to inspect version and type before deciding whether to install/upgrade.
+    /// - Parameter url: URL to the extension (folder or zip file)
+    /// - Returns: Metadata containing type, version, and display name
+    @MainActor
+    static func metadata(from url: URL) async throws -> WebExtensionMetadata {
+        let webExtension = try await WKWebExtension(resourceBaseURL: url)
+        let context = WKWebExtensionContext(for: webExtension)
+        return WebExtensionMetadata(
+            type: context.duckDuckGoWebExtensionType,
+            version: webExtension.version,
+            displayName: webExtension.displayName
+        )
     }
 }

@@ -111,6 +111,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         controller.extensionContexts
     }
 
+    /// Whether the embedded autoconsent web extension is loaded and active.
+    public var isAutoconsentExtensionLoaded: Bool {
+        contexts.contains { $0.duckDuckGoWebExtensionType == .embedded }
+    }
+
     // MARK: - Install/Uninstall
 
     public func installExtension(from sourceURL: URL) async throws {

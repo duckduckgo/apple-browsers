@@ -105,7 +105,6 @@ final class WebExtensionEventsCoordinator {
     func registerExistingTabsAndWindow() {
         guard let mainViewController else { return }
 
-        // Tell the extension about the single iOS window.
         didOpenWindow()
 
         // Register all tabs that are already open at extension load time.
@@ -118,7 +117,6 @@ final class WebExtensionEventsCoordinator {
             if let tabController = tabManager.controller(for: tab) {
                 didOpenTab(tabController)
             }
-            // No else needed: unreported tabs will be caught by onTabControllerCreated.
         }
 
         // Report the current selection state so the extension has an accurate picture

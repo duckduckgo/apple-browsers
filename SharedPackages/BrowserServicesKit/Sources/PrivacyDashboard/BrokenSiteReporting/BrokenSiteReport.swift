@@ -111,6 +111,7 @@ public struct BrokenSiteReport {
     let atb: String
     let model: String
     let variant: String
+    let isForceDarkModeEnabled: Bool?
 #endif
 
 #if os(macOS)
@@ -210,6 +211,7 @@ public struct BrokenSiteReport {
         debugFlags: String,
         privacyExperiments: String,
         isPirEnabled: Bool?,
+        isForceDarkModeEnabled: Bool?,
         pageLoadTiming: WKPageLoadTiming? = nil,
         detectorMetrics: [String: String]? = nil
     ) {
@@ -246,6 +248,7 @@ public struct BrokenSiteReport {
         self.isPirEnabled = isPirEnabled
         self.pageLoadTiming = pageLoadTiming
         self.detectorMetrics = detectorMetrics
+        self.isForceDarkModeEnabled = isForceDarkModeEnabled
     }
 #endif
 
@@ -314,6 +317,10 @@ public struct BrokenSiteReport {
 
         if isPirEnabled == true {
             result["isPirEnabled"] = "true"
+        }
+
+        if let isForceDarkModeEnabled {
+            result["isForceDarkModeEnabled"] = isForceDarkModeEnabled.description
         }
 
         if let pageLoadTiming = pageLoadTiming {

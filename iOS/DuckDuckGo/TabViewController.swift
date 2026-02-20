@@ -1446,7 +1446,8 @@ class TabViewController: UIViewController {
                                                                      openerContext: inferredOpenerContext,
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
-                                                                     breakageReportingSubfeature: breakageReportingSubfeature)
+                                                                     breakageReportingSubfeature: breakageReportingSubfeature,
+                                                                     isForceDarkModeEnabled: nil)
     }
 
     public func print() {

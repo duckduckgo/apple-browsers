@@ -171,7 +171,7 @@ class TabManager: TabManaging {
                                  url: URL?,
                                  inheritedAttribution: AdClickAttributionLogic.State?,
                                  interactionState: Data?) -> TabViewController {
-        let configuration = WKWebViewConfiguration.persistent()
+        let configuration = WKWebViewConfiguration.persistent(fireMode: tab.fireTab)
 
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
             configuration.webExtensionController = webExtensionManager.controller

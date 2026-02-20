@@ -21,35 +21,39 @@ import UserScript
 
 protocol PageObserverUserScriptDelegate: AnyObject {
 
+    @MainActor
     func pageDOMLoaded()
 
 }
 
-final class PageObserverUserScript: NSObject, StaticUserScript {
+/// Receives the `domLoaded` notification from the C-S-S `pageObserver` feature
+/// running in the isolated content world, keeping the WebKit message handler
+/// out of the page's JavaScript context.
+final class PageObserverUserScript: NSObject, Subfeature {
 
+    let messageOriginPolicy: MessageOriginPolicy = .all
+    let featureName: String = "pageObserver"
+
+    weak var broker: UserScriptMessageBroker?
     weak var delegate: PageObserverUserScriptDelegate?
 
-    static var injectionTime: WKUserScriptInjectionTime { .atDocumentEnd }
-
-    static var forMainFrameOnly: Bool { false }
-
-    static let source = """
-
-        // assuming we're inserted at document end, we can message up to the native layer immediately
-        webkit.messageHandlers.pageDOMLoaded.postMessage({});
-
-    """
-
-    static var script: WKUserScript = PageObserverUserScript.makeWKUserScript()
-
-    var messageNames: [String] {
-        ["pageDOMLoaded"]
+    enum MessageNames: String, CaseIterable {
+        case domLoaded
     }
 
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        if message.frameInfo.isMainFrame {
-            delegate?.pageDOMLoaded()
+    func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        switch MessageNames(rawValue: methodName) {
+        case .domLoaded:
+            return { [weak self] in try await self?.domLoaded(params: $0, original: $1) }
+        default:
+            return nil
         }
     }
 
+    @MainActor
+    private func domLoaded(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard original.frameInfo.isMainFrame else { return nil }
+        delegate?.pageDOMLoaded()
+        return nil
+    }
 }

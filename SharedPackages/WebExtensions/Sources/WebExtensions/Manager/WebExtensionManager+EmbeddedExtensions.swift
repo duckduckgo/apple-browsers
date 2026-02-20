@@ -25,18 +25,37 @@ import WebKit
 @available(macOS 15.4, iOS 18.4, *)
 extension WebExtensionManager {
 
-    /// Syncs all embedded extensions from the registry.
-    /// Installs new embedded extensions and upgrades outdated ones.
+    /// Syncs embedded extensions from the registry based on the enabled types.
+    /// Installs/upgrades enabled extensions and uninstalls disabled ones.
     /// Call this after `loadInstalledExtensions()`.
+    /// - Parameter enabledTypes: The set of extension types that should be installed.
+    ///   Extensions not in this set will be uninstalled if previously installed.
     @MainActor
-    public func syncEmbeddedExtensions() async {
+    public func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {
         Logger.webExtensions.debug("🔄 Syncing embedded extensions...")
 
         for descriptor in EmbeddedWebExtensionRegistry.all {
-            await syncEmbeddedExtension(descriptor)
+            if enabledTypes.contains(descriptor.type) {
+                await syncEmbeddedExtension(descriptor)
+            } else {
+                uninstallEmbeddedExtensionIfNeeded(type: descriptor.type)
+            }
         }
 
         Logger.webExtensions.debug("✅ Embedded extensions sync completed")
+    }
+
+    private func uninstallEmbeddedExtensionIfNeeded(type: DuckDuckGoWebExtensionType) {
+        guard let installed = installedEmbeddedExtension(for: type) else {
+            return
+        }
+
+        Logger.webExtensions.info("🗑️ Uninstalling disabled embedded extension: \(type.rawValue)")
+        do {
+            try uninstallExtension(identifier: installed.uniqueIdentifier)
+        } catch {
+            Logger.webExtensions.error("❌ Failed to uninstall embedded extension \(type.rawValue): \(error.localizedDescription)")
+        }
     }
 
     @MainActor

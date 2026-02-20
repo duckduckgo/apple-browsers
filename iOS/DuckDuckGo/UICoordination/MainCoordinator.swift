@@ -254,7 +254,13 @@ final class MainCoordinator {
 
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
-                await webExtensionManager.syncEmbeddedExtensions()
+
+                var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
+                if self.featureFlagger.isFeatureOn(.embeddedExtension) {
+                    enabledTypes.insert(.embedded)
+                }
+                await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+
                 self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
         } else {

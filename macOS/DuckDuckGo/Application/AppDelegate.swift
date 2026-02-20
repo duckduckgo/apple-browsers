@@ -1727,7 +1727,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             Task {
                 await webExtensionManager.loadInstalledExtensions()
-                await webExtensionManager.syncEmbeddedExtensions()
+
+                var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
+                if self.featureFlagger.isFeatureOn(.embeddedExtension) {
+                    enabledTypes.insert(.embedded)
+                }
+                await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
             }
         } else {
             self.webExtensionManager = nil

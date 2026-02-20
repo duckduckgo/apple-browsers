@@ -114,6 +114,68 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         XCTAssertEqual(callbackCount, 2)
     }
 
+    // MARK: - Feature Flag Enabled Tests
+
+    func testWhenFeatureFlagEnabledThenOnFeatureFlagEnabledCallbackIsCalled() async throws {
+        let expectation = expectation(description: "onFeatureFlagEnabled called")
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManager: mockWebExtensionManager,
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagEnabled: {
+                expectation.fulfill()
+            },
+            onFeatureFlagDisabled: {}
+        )
+
+        featureFlagSubject.send(true)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+
+    func testWhenFeatureFlagDisabledThenOnFeatureFlagEnabledCallbackIsNotCalled() async throws {
+        var enabledCallbackCalled = false
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManager: mockWebExtensionManager,
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagEnabled: {
+                enabledCallbackCalled = true
+            },
+            onFeatureFlagDisabled: {}
+        )
+
+        featureFlagSubject.send(false)
+
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertFalse(enabledCallbackCalled)
+    }
+
+    func testWhenFeatureFlagToggledMultipleTimesThenBothCallbacksAreCalled() async throws {
+        var enabledCount = 0
+        var disabledCount = 0
+
+        let enabledExpectation = expectation(description: "onFeatureFlagEnabled called twice")
+        enabledExpectation.expectedFulfillmentCount = 2
+
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManager: mockWebExtensionManager,
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagEnabled: {
+                enabledCount += 1
+                enabledExpectation.fulfill()
+            },
+            onFeatureFlagDisabled: { disabledCount += 1 }
+        )
+
+        featureFlagSubject.send(true)
+        featureFlagSubject.send(false)
+        featureFlagSubject.send(true)
+        featureFlagSubject.send(false)
+
+        await fulfillment(of: [enabledExpectation], timeout: 1.0)
+        XCTAssertEqual(enabledCount, 2)
+        XCTAssertEqual(disabledCount, 2)
+    }
+
     // MARK: - Embedded Extension Flag Tests
 
     func testWhenEmbeddedFlagDisabledThenUninstallEmbeddedExtensionIsCalled() {
@@ -158,6 +220,75 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         XCTAssertFalse(mockWebExtensionManager.uninstallAllExtensionsCalled)
         XCTAssertFalse(callbackCalled)
     }
+
+    // MARK: - Embedded Extension Flag Enabled Tests
+
+    func testWhenEmbeddedFlagEnabledThenOnEmbeddedExtensionFlagEnabledCallbackIsCalled() async throws {
+        let expectation = expectation(description: "onEmbeddedExtensionFlagEnabled called")
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManager: mockWebExtensionManager,
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onEmbeddedExtensionFlagEnabled: {
+                expectation.fulfill()
+            }
+        )
+
+        embeddedFlagSubject.send(true)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+
+    func testWhenEmbeddedFlagDisabledThenOnEmbeddedExtensionFlagEnabledCallbackIsNotCalled() async throws {
+        var enabledCallbackCalled = false
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManager: mockWebExtensionManager,
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onEmbeddedExtensionFlagEnabled: {
+                enabledCallbackCalled = true
+            }
+        )
+
+        embeddedFlagSubject.send(false)
+
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertFalse(enabledCallbackCalled)
+    }
+
+    func testWhenEmbeddedFlagToggledMultipleTimesThenBothCallbacksAreCalled() async throws {
+        var enabledCount = 0
+        var disabledCount = 0
+
+        let enabledExpectation = expectation(description: "onEmbeddedExtensionFlagEnabled called twice")
+        enabledExpectation.expectedFulfillmentCount = 2
+
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManager: mockWebExtensionManager,
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onEmbeddedExtensionFlagEnabled: {
+                enabledCount += 1
+                enabledExpectation.fulfill()
+            }
+        )
+
+        mockWebExtensionManager.uninstallEmbeddedExtensionHandler = {
+            disabledCount += 1
+        }
+
+        embeddedFlagSubject.send(true)
+        embeddedFlagSubject.send(false)
+        embeddedFlagSubject.send(true)
+        embeddedFlagSubject.send(false)
+
+        await fulfillment(of: [enabledExpectation], timeout: 1.0)
+        XCTAssertEqual(enabledCount, 2)
+        XCTAssertEqual(disabledCount, 2)
+    }
 }
 
 // MARK: - Mock
@@ -168,6 +299,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     var uninstallAllExtensionsCalled = false
     var uninstallEmbeddedExtensionCalled = false
     var uninstalledEmbeddedType: DuckDuckGoWebExtensionType?
+    var uninstallEmbeddedExtensionHandler: (() -> Void)?
 
     var loadedExtensions: Set<WKWebExtensionContext> { [] }
     var webExtensionIdentifiers: [String] { [] }
@@ -188,6 +320,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {
         uninstallEmbeddedExtensionCalled = true
         uninstalledEmbeddedType = type
+        uninstallEmbeddedExtensionHandler?()
     }
 
     func unloadAllExtensions() {}

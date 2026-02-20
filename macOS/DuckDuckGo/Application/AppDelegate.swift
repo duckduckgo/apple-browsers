@@ -1706,45 +1706,68 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setupWebExtensions() {
-        if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManagerFactory.makeManager(
-                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-                autoconsentPreferences: cookiePopupProtectionPreferences
-            )
-            self.webExtensionManager = webExtensionManager
+        guard #available(macOS 15.4, *) else { return }
 
-            let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
-                .flagDidChangePublisher
+        let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+            .flagDidChangePublisher
 
-            let webExtensionsPublisher = flagPublisher?
-                .filter { $0.0 == .webExtensions }
-                .map { $0.1 }
-                .eraseToAnyPublisher()
+        let webExtensionsPublisher = flagPublisher?
+            .filter { $0.0 == .webExtensions }
+            .map { $0.1 }
+            .eraseToAnyPublisher()
 
-            let embeddedExtensionPublisher = flagPublisher?
-                .filter { $0.0 == .embeddedExtension }
-                .map { $0.1 }
-                .eraseToAnyPublisher()
+        let embeddedExtensionPublisher = flagPublisher?
+            .filter { $0.0 == .embeddedExtension }
+            .map { $0.1 }
+            .eraseToAnyPublisher()
 
-            webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
-                webExtensionManager: webExtensionManager,
-                featureFlagPublisher: webExtensionsPublisher,
-                embeddedExtensionFlagPublisher: embeddedExtensionPublisher) { [weak self] in
-                    self?.webExtensionManager = nil
-                }
+        webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+            webExtensionManager: nil,
+            featureFlagPublisher: webExtensionsPublisher,
+            embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
+            onFeatureFlagEnabled: { [weak self] in
+                await self?.initializeWebExtensions()
+            },
+            onFeatureFlagDisabled: { [weak self] in
+                self?.webExtensionManager = nil
+            },
+            onEmbeddedExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            }
+        )
 
+        if featureFlagger.isFeatureOn(.webExtensions) {
             Task {
-                await webExtensionManager.loadInstalledExtensions()
-
-                var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
-                if self.featureFlagger.isFeatureOn(.embeddedExtension) {
-                    enabledTypes.insert(.embedded)
-                }
-                await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+                await initializeWebExtensions()
             }
         } else {
-            self.webExtensionManager = nil
+            webExtensionManager = nil
         }
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func initializeWebExtensions() async {
+        let webExtensionManager = WebExtensionManagerFactory.makeManager(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            autoconsentPreferences: cookiePopupProtectionPreferences
+        )
+        self.webExtensionManager = webExtensionManager
+
+        await webExtensionManager.loadInstalledExtensions()
+        await syncEmbeddedExtensions()
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func syncEmbeddedExtensions() async {
+        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+
+        var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
+        if featureFlagger.isFeatureOn(.embeddedExtension) {
+            enabledTypes.insert(.embedded)
+        }
+        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
 
     // MARK: - PixelKit

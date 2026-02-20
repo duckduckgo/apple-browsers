@@ -38,19 +38,21 @@ extension WebExtensionManager {
             if enabledTypes.contains(descriptor.type) {
                 await syncEmbeddedExtension(descriptor)
             } else {
-                uninstallEmbeddedExtensionIfNeeded(type: descriptor.type)
+                uninstallEmbeddedExtension(type: descriptor.type)
             }
         }
 
         Logger.webExtensions.debug("✅ Embedded extensions sync completed")
     }
 
-    private func uninstallEmbeddedExtensionIfNeeded(type: DuckDuckGoWebExtensionType) {
+    /// Uninstalls an embedded extension of the given type if it's currently installed.
+    /// - Parameter type: The type of embedded extension to uninstall.
+    public func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {
         guard let installed = installedEmbeddedExtension(for: type) else {
             return
         }
 
-        Logger.webExtensions.info("🗑️ Uninstalling disabled embedded extension: \(type.rawValue)")
+        Logger.webExtensions.info("🗑️ Uninstalling embedded extension: \(type.rawValue)")
         do {
             try uninstallExtension(identifier: installed.uniqueIdentifier)
         } catch {

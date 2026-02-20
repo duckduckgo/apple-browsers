@@ -26,17 +26,20 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
 
     private var mockWebExtensionManager: MockWebExtensionManaging!
     private var featureFlagSubject: PassthroughSubject<Bool, Never>!
+    private var embeddedFlagSubject: PassthroughSubject<Bool, Never>!
     private var sut: WebExtensionFeatureFlagHandler!
 
     override func setUp() {
         super.setUp()
         mockWebExtensionManager = MockWebExtensionManaging()
         featureFlagSubject = PassthroughSubject<Bool, Never>()
+        embeddedFlagSubject = PassthroughSubject<Bool, Never>()
     }
 
     override func tearDown() {
         sut = nil
         featureFlagSubject = nil
+        embeddedFlagSubject = nil
         mockWebExtensionManager = nil
         super.tearDown()
     }
@@ -110,6 +113,51 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
 
         XCTAssertEqual(callbackCount, 2)
     }
+
+    // MARK: - Embedded Extension Flag Tests
+
+    func testWhenEmbeddedFlagDisabledThenUninstallEmbeddedExtensionIsCalled() {
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManager: mockWebExtensionManager,
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {}
+        )
+
+        embeddedFlagSubject.send(false)
+
+        XCTAssertTrue(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
+        XCTAssertEqual(mockWebExtensionManager.uninstalledEmbeddedType, .embedded)
+    }
+
+    func testWhenEmbeddedFlagEnabledThenUninstallEmbeddedExtensionIsNotCalled() {
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManager: mockWebExtensionManager,
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {}
+        )
+
+        embeddedFlagSubject.send(true)
+
+        XCTAssertFalse(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
+    }
+
+    func testWhenEmbeddedFlagDisabledThenOnlyEmbeddedExtensionIsUninstalled() {
+        var callbackCalled = false
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManager: mockWebExtensionManager,
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: { callbackCalled = true }
+        )
+
+        embeddedFlagSubject.send(false)
+
+        XCTAssertTrue(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
+        XCTAssertFalse(mockWebExtensionManager.uninstallAllExtensionsCalled)
+        XCTAssertFalse(callbackCalled)
+    }
 }
 
 // MARK: - Mock
@@ -118,6 +166,8 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
 private final class MockWebExtensionManaging: WebExtensionManaging {
 
     var uninstallAllExtensionsCalled = false
+    var uninstallEmbeddedExtensionCalled = false
+    var uninstalledEmbeddedType: DuckDuckGoWebExtensionType?
 
     var loadedExtensions: Set<WKWebExtensionContext> { [] }
     var webExtensionIdentifiers: [String] { [] }
@@ -133,6 +183,11 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     func uninstallAllExtensions() -> [Result<Void, Error>] {
         uninstallAllExtensionsCalled = true
         return []
+    }
+
+    func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {
+        uninstallEmbeddedExtensionCalled = true
+        uninstalledEmbeddedType = type
     }
 
     func unloadAllExtensions() {}

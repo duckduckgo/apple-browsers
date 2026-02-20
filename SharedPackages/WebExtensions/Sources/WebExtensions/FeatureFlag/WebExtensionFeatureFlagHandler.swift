@@ -21,19 +21,27 @@ import Foundation
 
 /// Handles feature flag changes for web extensions.
 ///
-/// When the feature flag is disabled, this handler automatically uninstalls all extensions
-/// and calls the provided callback for additional cleanup.
+/// When the main web extensions feature flag is disabled, this handler automatically
+/// uninstalls all extensions and calls the provided callback for cleanup.
+///
+/// When the embedded extension feature flag is disabled, only embedded extensions are uninstalled.
 ///
 /// Usage:
 /// ```swift
-/// let publisher = featureFlagPublisher
+/// let webExtensionsPublisher = featureFlagPublisher
 ///     .filter { $0.0 == .webExtensions }
+///     .map { $0.1 }
+///     .eraseToAnyPublisher()
+///
+/// let embeddedPublisher = featureFlagPublisher
+///     .filter { $0.0 == .embeddedExtension }
 ///     .map { $0.1 }
 ///     .eraseToAnyPublisher()
 ///
 /// handler = WebExtensionFeatureFlagHandler(
 ///     webExtensionManager: manager,
-///     featureFlagPublisher: publisher,
+///     featureFlagPublisher: webExtensionsPublisher,
+///     embeddedExtensionFlagPublisher: embeddedPublisher,
 ///     onFeatureFlagDisabled: { [weak self] in
 ///         self?.cleanupReferences()
 ///     }
@@ -42,38 +50,57 @@ import Foundation
 @available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionFeatureFlagHandler {
 
-    private var cancellable: AnyCancellable?
+    private var webExtensionsCancellable: AnyCancellable?
+    private var embeddedExtensionCancellable: AnyCancellable?
     private weak var webExtensionManager: WebExtensionManaging?
     private let onFeatureFlagDisabled: () -> Void
 
     /// Creates a feature flag handler.
     /// - Parameters:
-    ///   - webExtensionManager: The web extension manager to call uninstallAllExtensions on.
-    ///   - featureFlagPublisher: A publisher that emits `true` when the feature is enabled and `false` when disabled.
-    ///                          This should be pre-filtered for the webExtensions flag.
-    ///   - onFeatureFlagDisabled: Callback invoked when the feature flag is disabled, after uninstalling extensions.
+    ///   - webExtensionManager: The web extension manager to manage extensions.
+    ///   - featureFlagPublisher: A publisher that emits `true` when the main webExtensions feature is enabled.
+    ///   - embeddedExtensionFlagPublisher: A publisher that emits `true` when the embedded extension feature is enabled.
+    ///   - onFeatureFlagDisabled: Callback invoked when the main feature flag is disabled, after uninstalling extensions.
     public init(webExtensionManager: WebExtensionManaging?,
                 featureFlagPublisher: AnyPublisher<Bool, Never>?,
+                embeddedExtensionFlagPublisher: AnyPublisher<Bool, Never>? = nil,
                 onFeatureFlagDisabled: @escaping () -> Void) {
         self.webExtensionManager = webExtensionManager
         self.onFeatureFlagDisabled = onFeatureFlagDisabled
-        subscribeToFeatureFlagChanges(featureFlagPublisher)
+        subscribeToWebExtensionsFlagChanges(featureFlagPublisher)
+        subscribeToEmbeddedExtensionFlagChanges(embeddedExtensionFlagPublisher)
     }
 
-    private func subscribeToFeatureFlagChanges(_ publisher: AnyPublisher<Bool, Never>?) {
+    private func subscribeToWebExtensionsFlagChanges(_ publisher: AnyPublisher<Bool, Never>?) {
         guard let publisher else { return }
 
-        cancellable = publisher
+        webExtensionsCancellable = publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] enabled in
                 if !enabled {
-                    self?.handleFeatureFlagDisabled()
+                    self?.handleWebExtensionsFlagDisabled()
                 }
             }
     }
 
-    private func handleFeatureFlagDisabled() {
+    private func subscribeToEmbeddedExtensionFlagChanges(_ publisher: AnyPublisher<Bool, Never>?) {
+        guard let publisher else { return }
+
+        embeddedExtensionCancellable = publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] enabled in
+                if !enabled {
+                    self?.handleEmbeddedExtensionFlagDisabled()
+                }
+            }
+    }
+
+    private func handleWebExtensionsFlagDisabled() {
         webExtensionManager?.uninstallAllExtensions()
         onFeatureFlagDisabled()
+    }
+
+    private func handleEmbeddedExtensionFlagDisabled() {
+        webExtensionManager?.uninstallEmbeddedExtension(type: .embedded)
     }
 }

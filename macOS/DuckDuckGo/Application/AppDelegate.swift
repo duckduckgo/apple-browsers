@@ -1713,15 +1713,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
             self.webExtensionManager = webExtensionManager
 
-            let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+            let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
                 .flagDidChangePublisher
+
+            let webExtensionsPublisher = flagPublisher?
                 .filter { $0.0 == .webExtensions }
+                .map { $0.1 }
+                .eraseToAnyPublisher()
+
+            let embeddedExtensionPublisher = flagPublisher?
+                .filter { $0.0 == .embeddedExtension }
                 .map { $0.1 }
                 .eraseToAnyPublisher()
 
             webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
                 webExtensionManager: webExtensionManager,
-                featureFlagPublisher: publisher) { [weak self] in
+                featureFlagPublisher: webExtensionsPublisher,
+                embeddedExtensionFlagPublisher: embeddedExtensionPublisher) { [weak self] in
                     self?.webExtensionManager = nil
                 }
 

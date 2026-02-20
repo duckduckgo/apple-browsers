@@ -254,6 +254,7 @@ final class MainCoordinator {
 
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
+                self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
         } else {
             clearWebExtensionReferences()
@@ -346,6 +347,10 @@ final class MainCoordinator {
 
         controller.showBars()
         controller.onForeground()
+
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didFocusWindow()
+        }
     }
 
     func onBackground() {

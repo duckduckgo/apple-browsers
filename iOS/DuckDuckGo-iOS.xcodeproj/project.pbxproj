@@ -48,6 +48,7 @@
 		1E162605296840D80004127F /* Triangle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E162604296840D80004127F /* Triangle.swift */; };
 		1E1626072968413B0004127F /* ViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1626062968413B0004127F /* ViewExtension.swift */; };
 		1E162615296D910F0004127F /* cookie-icon-animated-40-dark.json in Resources */ = {isa = PBXBuildFile; fileRef = 1E162614296D910F0004127F /* cookie-icon-animated-40-dark.json */; };
+		1E1B24B12F4729DE00D239CE /* WebExtensionAvailability+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1B24B02F4729DE00D239CE /* WebExtensionAvailability+iOS.swift */; };
 		1E1D8B5D2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1D8B5C2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift */; };
 		1E1D8B6129950FD200C96994 /* AutoconsentBackgroundTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1D8B6029950FD200C96994 /* AutoconsentBackgroundTests.swift */; };
 		1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B622995143200C96994 /* OHHTTPStubs */; };
@@ -90,6 +91,7 @@
 		1E908BF229827C480008C8F3 /* autoconsent-bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 1E908BEF29827C480008C8F3 /* autoconsent-bundle.js */; };
 		1E908BF329827C480008C8F3 /* AutoconsentManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E908BF029827C480008C8F3 /* AutoconsentManagement.swift */; };
 		1E9529A12C4E748B006E80D4 /* UINavigationControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9529A02C4E748B006E80D4 /* UINavigationControllerExtension.swift */; };
+		1EA1DA252F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA1DA242F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift */; };
 		1EA51376286596A000493C6A /* PrivacyIconLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EA51375286596A000493C6A /* PrivacyIconLogic.swift */; };
 		1EC458462948932500CB2B13 /* UIHostingControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC458452948932500CB2B13 /* UIHostingControllerExtension.swift */; };
 		1EC8B1832F29139400F18679 /* WebExtensionManager+iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC8B17E2F29139400F18679 /* WebExtensionManager+iOS.swift */; };
@@ -2405,6 +2407,7 @@
 		1E162604296840D80004127F /* Triangle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Triangle.swift; sourceTree = "<group>"; };
 		1E1626062968413B0004127F /* ViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtension.swift; sourceTree = "<group>"; };
 		1E162614296D910F0004127F /* cookie-icon-animated-40-dark.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "cookie-icon-animated-40-dark.json"; sourceTree = "<group>"; };
+		1E1B24B02F4729DE00D239CE /* WebExtensionAvailability+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WebExtensionAvailability+iOS.swift"; sourceTree = "<group>"; };
 		1E1D8B5C2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentMessageProtocolTests.swift; sourceTree = "<group>"; };
 		1E1D8B6029950FD200C96994 /* AutoconsentBackgroundTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentBackgroundTests.swift; sourceTree = "<group>"; };
 		1E1D8B6729953CE200C96994 /* autoconsent-test.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "autoconsent-test.js"; sourceTree = "<group>"; };
@@ -2443,6 +2446,7 @@
 		1E908BEF29827C480008C8F3 /* autoconsent-bundle.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "autoconsent-bundle.js"; sourceTree = "<group>"; };
 		1E908BF029827C480008C8F3 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 		1E9529A02C4E748B006E80D4 /* UINavigationControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UINavigationControllerExtension.swift; sourceTree = "<group>"; };
+		1EA1DA242F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AutoconsentMessageHandlerDelegate+iOS.swift"; sourceTree = "<group>"; };
 		1EA51375286596A000493C6A /* PrivacyIconLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyIconLogic.swift; sourceTree = "<group>"; };
 		1EC458452948932500CB2B13 /* UIHostingControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIHostingControllerExtension.swift; sourceTree = "<group>"; };
 		1EC51CD828D8C0DF00E9D05A /* UIImageExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIImageExtension.swift; sourceTree = "<group>"; };
@@ -5250,10 +5254,12 @@
 				1EC8B17D2F29139400F18679 /* WebExtensionEventsCoordinator+iOS.swift */,
 				1EC8B17E2F29139400F18679 /* WebExtensionManager+iOS.swift */,
 				1EEBF9112F3E16F500DF90F3 /* WebExtensionHandlerProvider+iOS.swift */,
+				1EA1DA242F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift */,
 				1EC8B17F2F29139400F18679 /* WebExtensionWindowTabProvider+iOS.swift */,
 				1EC8B1802F29139400F18679 /* TabViewController+WKWebExtensionTab.swift */,
 				1EC8B1812F29139400F18679 /* MainViewController+WKWebExtensionWindow.swift */,
 				1D94E7A22F33B433008315A2 /* WebExtensionPixelFiring+iOS.swift */,
+				1E1B24B02F4729DE00D239CE /* WebExtensionAvailability+iOS.swift */,
 			);
 			path = WebExtensions;
 			sourceTree = "<group>";
@@ -11498,6 +11504,7 @@
 				6FAA75CA2F27B2D500789A7D /* BrowsingMenuCloseButtonStyle.swift in Sources */,
 				9F31833B2F3183230078DA7F /* RebrandedContextualOnboardingDialogs+TrySearch.swift in Sources */,
 				3161D13227AC161B00285CF6 /* DownloadMetadata.swift in Sources */,
+				1EA1DA252F460653005387D0 /* AutoconsentMessageHandlerDelegate+iOS.swift in Sources */,
 				D664C7C72B289AA200CBFA76 /* PurchaseInProgressView.swift in Sources */,
 				9F465E1E2D3F5C2E00490109 /* Logger+MaliciousSiteProtection.swift in Sources */,
 				7BFD5FD72C9DB9D7000FF959 /* VPNGeoswitchingTip.swift in Sources */,
@@ -11970,6 +11977,7 @@
 				850365F323DE087800D0F787 /* UIImageViewExtension.swift in Sources */,
 				9F0369F42F23099800A00DCA /* RebrandedContextualDaxDialogFactory.swift in Sources */,
 				65A6848B2D6F904A0029FE9E /* DuckPlayerContainer.swift in Sources */,
+				1E1B24B12F4729DE00D239CE /* WebExtensionAvailability+iOS.swift in Sources */,
 				56D060262C359D2E003BAEB5 /* ContextualOnboardingDialogs.swift in Sources */,
 				9F8E0F382CCFAA8A001EA7C5 /* AddToDockPromoView.swift in Sources */,
 				9F0369EE2F2307AE00A00DCA /* RebrandedNewTabDaxDialogFactory.swift in Sources */,

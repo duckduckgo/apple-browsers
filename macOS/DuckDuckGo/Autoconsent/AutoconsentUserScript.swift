@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Combine
 import Common
 import os.log
 import PixelKit
@@ -25,6 +24,7 @@ import PrivacyDashboard
 import UserScript
 import WebKit
 import FeatureFlags
+import WebExtensions
 
 protocol AutoconsentUserScriptDelegate: AnyObject {
     func autoconsentUserScript(consentStatus: CookieConsentInfo)
@@ -52,17 +52,12 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private let preferences: CookiePopupProtectionPreferences
     private let management: AutoconsentManagement
     private let featureFlagger: FeatureFlagger
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding?
 
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
     private let config: PrivacyConfiguration
     weak var delegate: AutoconsentUserScriptDelegate?
-
-    // Publisher for cookie popup managed events
-    private let popupManagedSubject = PassthroughSubject<AutoconsentDoneMessage, Never>()
-    public var popupManagedPublisher: AnyPublisher<AutoconsentDoneMessage, Never> {
-        popupManagedSubject.eraseToAnyPublisher()
-    }
 
     // Reload loop detection state (per-tab)
     private var lastHandledCMPName: String?
@@ -72,7 +67,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     init(config: PrivacyConfiguration,
          management: AutoconsentManagement,
          preferences: CookiePopupProtectionPreferences,
-         featureFlagger: FeatureFlagger
+         featureFlagger: FeatureFlagger,
+         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil
     ) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
@@ -87,6 +83,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.management = management
         self.preferences = preferences
         self.featureFlagger = featureFlagger
+        self.webExtensionAvailability = webExtensionAvailability
     }
 
     func userContentController(_ userContentController: WKUserContentController,
@@ -302,6 +299,12 @@ extension AutoconsentUserScript {
             // ignore special schemes
             Logger.autoconsent.debug("Ignoring special URL scheme: \(messageData.url)")
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
+            return
+        }
+
+        if webExtensionAvailability?.isAutoconsentExtensionAvailable == true {
+            Logger.autoconsent.debug("Web extension active, deferring autoconsent to extension")
+            replyHandler([ "type": "ok" ], nil)
             return
         }
 
@@ -542,7 +545,17 @@ extension AutoconsentUserScript {
             firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
         }
 
-        popupManagedSubject.send(messageData)
+        NotificationCenter.default.post(
+            name: AutoconsentPopupManagedEvent.userScriptPopupManagedNotification,
+            object: self,
+            userInfo: AutoconsentPopupManagedEvent.makeNotificationUserInfo(
+                url: url,
+                cmpName: messageData.cmp,
+                isCosmetic: messageData.isCosmetic,
+                totalClicks: messageData.totalClicks,
+                duration: messageData.duration
+            )
+        )
 
         // Show animation and remember that we did it for this site
         management.sitesNotifiedCache.insert(host)

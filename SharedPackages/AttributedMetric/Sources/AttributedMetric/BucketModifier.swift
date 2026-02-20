@@ -26,9 +26,11 @@ struct Bucket {
 
 protocol BucketModifier {
 
-    /// Convert a Int value in it's bucketed int version based on the bucket configuration received from the privacy configuration.
+    /// Convert a Int value in its bucketed int version based on the bucket configuration received from the privacy configuration.
     /// Returns a Bucket containing both the bucketed value and the configuration version.
     func bucket(value: Int, pixelName: AttributedMetricPixelName) throws -> Bucket
+
+    func bucket(value: Float, pixelName: AttributedMetricPixelName) throws -> Bucket
 
     func parseConfigurations(from settings: [String: Any]) throws
 }
@@ -64,6 +66,10 @@ final class DefaultBucketModifier: BucketModifier {
     }
 
     func bucket(value: Int, pixelName: AttributedMetricPixelName) throws -> Bucket {
+        return try bucket(value: Float(value), pixelName: pixelName)
+    }
+
+    func bucket(value: Float, pixelName: AttributedMetricPixelName) throws -> Bucket {
         guard let configuration = configurations[pixelName.rawValue] else {
             Logger.attributedMetric.error("The pixel bucket configuration is missing: \(pixelName.rawValue, privacy: .public)")
             throw BucketModifierError.missingConfiguration
@@ -73,7 +79,7 @@ final class DefaultBucketModifier: BucketModifier {
         let bucketedValue: Int
 
         // Find the index of the first bucket threshold that the value is less than or equal to
-        if let matchIndex = buckets.firstIndex(where: { value <= $0 }) {
+        if let matchIndex = buckets.firstIndex(where: { value <= Float($0) }) {
             bucketedValue = matchIndex
         } else {
             // If no match is found (value exceeds all thresholds), return the last bucket index

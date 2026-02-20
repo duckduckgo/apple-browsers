@@ -50,7 +50,7 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     }
 
     var isAutoconsentExtensionAvailable: Bool {
-        guard isAvailable else { return false }
+        guard isAvailable, featureFlagger.isFeatureOn(.embeddedExtension) else { return false }
 
         if #available(iOS 18.4, *) {
             guard let manager = webExtensionManagerProvider() else { return false }

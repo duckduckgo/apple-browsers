@@ -41,7 +41,7 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     }
 
     var isAutoconsentExtensionAvailable: Bool {
-        guard isAvailable else { return false }
+        guard isAvailable, featureFlagger.isFeatureOn(.embeddedExtension) else { return false }
 
         if #available(macOS 15.4, *) {
             guard let manager = webExtensionManagerProvider() else { return false }

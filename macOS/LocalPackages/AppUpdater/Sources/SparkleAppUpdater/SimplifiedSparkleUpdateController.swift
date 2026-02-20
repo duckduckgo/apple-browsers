@@ -256,14 +256,6 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
         return isUnsignedAutoUpdateEnabled && userPreference
     }
 
-    public static func isDebug() -> Bool {
-#if DEBUG
-        return true
-#else // REVIEW
-        return false
-#endif
-    }
-
     /// Instance wrapper for the static method - convenience for non-static contexts.
     private func resolveAutoDownloadEnabled(userPreference: Bool) -> Bool {
         Self.resolveAutoDownloadEnabled(

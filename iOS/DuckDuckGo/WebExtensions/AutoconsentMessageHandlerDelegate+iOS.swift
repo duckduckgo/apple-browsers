@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import PixelKit
 import WebExtensions
 import os.log
 
@@ -52,6 +53,48 @@ final class IOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDeleg
     }
 
     func sendPixel(_ pixelInfo: PixelInfo) {
-        Logger.webExtensions.debug("iOS: Firing pixel \(pixelInfo.name) of type \(pixelInfo.type)")
+        guard let pixel = mapPixelNameToAutoconsentPixel(pixelInfo.name) else {
+            Logger.webExtensions.error("iOS: Unknown autoconsent pixel name: \(pixelInfo.name)")
+            return
+        }
+
+        let frequency: PixelKit.Frequency = pixelInfo.type == "daily" ? .daily : .standard
+        Logger.webExtensions.debug("iOS: Firing pixel \(pixelInfo.name) with frequency \(pixelInfo.type)")
+        PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: pixelInfo.params, includeAppVersionParameter: true)
+    }
+
+    private func mapPixelNameToAutoconsentPixel(_ name: String) -> AutoconsentPixel? {
+        switch name {
+        case "autoconsent_init":
+            return .acInit
+        case "error_multiple-popups":
+            return .errorMultiplePopups
+        case "error_optout":
+            return .errorOptoutFailed
+        case "error_reload-loop":
+            return .errorReloadLoop
+        case "popup-found":
+            return .popupFound
+        case "done":
+            return .done
+        case "done_cosmetic":
+            return .doneCosmetic
+        case "done_heuristic":
+            return .doneHeuristic
+        case "animation-shown":
+            return .animationShown
+        case "animation-shown_cosmetic":
+            return .animationShownCosmetic
+        case "disabled-for-site":
+            return .disabledForSite
+        case "detected-by-patterns":
+            return .detectedByPatterns
+        case "detected-by-both":
+            return .detectedByBoth
+        case "detected-only-rules":
+            return .detectedOnlyRules
+        default:
+            return nil
+        }
     }
 }

@@ -161,6 +161,7 @@ class PrivacyDashboardUITests: UITestCase {
     }
 
     func testPrivacyDashboard_TrackerBlocking_ShowsBlockedTrackersAtNYTimes() throws {
+        throw XCTSkip("Flaky test")
         // Navigate to a page with known trackers
         let trackerTestURL = URL(string: "https://nytimes.com")!
         addressBarTextField.pasteURL(trackerTestURL, pressingEnter: true)

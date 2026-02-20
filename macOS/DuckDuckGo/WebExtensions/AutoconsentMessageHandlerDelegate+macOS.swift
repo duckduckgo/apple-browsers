@@ -50,8 +50,6 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
             duration: message["duration"] as? TimeInterval ?? 0
         )
 
-        print("--- handleCookiePopup")
-
         NotificationCenter.default.post(
             name: AutoconsentPopupManagedEvent.webExtensionPopupManagedNotification,
             object: self,

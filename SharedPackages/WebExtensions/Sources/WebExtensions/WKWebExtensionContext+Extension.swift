@@ -39,23 +39,19 @@ public struct WebExtensionMetadata {
 }
 
 @available(macOS 15.4, iOS 18.4, *)
-public extension WKWebExtensionContext {
+public extension WKWebExtension {
 
     /// Returns the extension type from manifest `browser_specific_settings.duckduckgo.id`, if present and recognized.
     /// Example manifest entry:
     /// `"browser_specific_settings": { "duckduckgo": { "id": "com.duckduckgo.web-extension.embedded" } }`
     var duckDuckGoWebExtensionType: DuckDuckGoWebExtensionType? {
-        guard let browserSpecific = webExtension.manifest[browserSpecificSettingsKey] as? [String: Any],
+        guard let browserSpecific = manifest[browserSpecificSettingsKey] as? [String: Any],
               let duckduckgo = browserSpecific[duckduckgoKey] as? [String: Any],
               let idString = duckduckgo[idKey] as? String else {
             return nil
         }
         return DuckDuckGoWebExtensionType(rawValue: idString)
     }
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-public extension WKWebExtension {
 
     /// Reads metadata from a web extension at the given URL without loading it into a controller.
     /// This can be used to inspect version and type before deciding whether to install/upgrade.
@@ -64,11 +60,19 @@ public extension WKWebExtension {
     @MainActor
     static func metadata(from url: URL) async throws -> WebExtensionMetadata {
         let webExtension = try await WKWebExtension(resourceBaseURL: url)
-        let context = WKWebExtensionContext(for: webExtension)
         return WebExtensionMetadata(
-            type: context.duckDuckGoWebExtensionType,
+            type: webExtension.duckDuckGoWebExtensionType,
             version: webExtension.version,
             displayName: webExtension.displayName
         )
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension WKWebExtensionContext {
+
+    /// Convenience proxy to the underlying web extension's type.
+    var duckDuckGoWebExtensionType: DuckDuckGoWebExtensionType? {
+        webExtension.duckDuckGoWebExtensionType
     }
 }

@@ -1,0 +1,71 @@
+# ai-chat-iphone-ipad-flag.yaml
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+# Set up - force iPad-only feature flag ON and verify it does not affect iPhone behavior
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.iPadAIToggle: "true"
+
+# iPhone address bar should still show Duck.ai button and never show iPad mode toggle controls
+- assertVisible:
+    id: "searchEntry"
+- assertVisible:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertNotVisible:
+    id: "Browser.OmniBar.Button.ModeToggle.Search"
+- assertNotVisible:
+    id: "Browser.OmniBar.Button.ModeToggle.AIChat"
+
+# Open AI Features and verify iPad-only flag does not hide iPhone settings
+- tapOn: "Browsing Menu"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "AI Features"
+    direction: DOWN
+- tapOn: "AI Features"
+- assertVisible: "Duck.ai"
+- assertVisible: "Search Only"
+- assertVisible: "Search & Duck.ai"
+- tapOn: "Manage Duck.ai Shortcuts"
+- assertVisible: "Address Bar"
+- tapOn: "AI Features"
+
+# Select Search & Duck.ai and verify iPhone still does not show iPad mode toggle controls
+- tapOn: "Search & Duck.ai"
+- tapOn: "Settings"
+- tapOn: "Done"
+- assertVisible:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertNotVisible:
+    id: "Browser.OmniBar.Button.ModeToggle.Search"
+- assertNotVisible:
+    id: "Browser.OmniBar.Button.ModeToggle.AIChat"
+
+# Select Search Only and verify iPhone remains unaffected by iPad-only feature behavior
+- tapOn: "Browsing Menu"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "AI Features"
+    direction: DOWN
+- tapOn: "AI Features"
+- tapOn: "Search Only"
+- tapOn: "Settings"
+- tapOn: "Done"
+- assertVisible:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertNotVisible:
+    id: "Browser.OmniBar.Button.ModeToggle.Search"
+- assertNotVisible:
+    id: "Browser.OmniBar.Button.ModeToggle.AIChat"

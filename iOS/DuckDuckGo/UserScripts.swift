@@ -21,14 +21,14 @@ import AIChat
 import BrowserServicesKit
 import Core
 import Foundation
+import Persistence
+import PrivacyConfig
+import SERPSettings
 import SpecialErrorPages
 import Subscription
 import TrackerRadarKit
 import UserScript
 import WebKit
-import SERPSettings
-import Persistence
-import PrivacyConfig
 
 final class UserScripts: UserScriptsProvider {
 

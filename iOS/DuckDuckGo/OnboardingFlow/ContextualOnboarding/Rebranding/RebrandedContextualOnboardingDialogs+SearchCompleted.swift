@@ -58,7 +58,7 @@ extension OnboardingRebranding {
             OnboardingRebranding.ContextualDaxDialogContent(
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
                 title: title,
-                message: message.attributed
+                message: message
             ) {
                 Button {
                     gotItAction()
@@ -70,6 +70,7 @@ extension OnboardingRebranding {
                 } label: {
                     Text(cta)
                 }
+                .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
                 .buttonStyle(theme.primaryButtonStyle.style)
             }
         }
@@ -79,4 +80,13 @@ extension OnboardingRebranding {
         }
 
     }
+
+}
+
+private extension OnboardingRebranding.OnboardingSearchDoneDialog {
+
+    enum Metrics {
+        static let buttonMaxWidth = MetricBuilder<CGFloat?>(default: nil).iPhone(landscape: 174.0).iPad(174.0)
+    }
+
 }

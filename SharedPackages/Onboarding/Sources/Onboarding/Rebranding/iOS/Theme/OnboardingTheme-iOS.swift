@@ -53,7 +53,7 @@ public extension OnboardingTheme {
             optionsListTextColor: Color(singleUseColor: .rebranding(.textLink)),
             primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
             primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText)),
-            secondaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsSecondaryDefault)),
+            secondaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.controlsFillPrimary)),
             secondaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsSecondaryText))
         )
         let bubbleMetrics = BubbleMetrics(
@@ -107,7 +107,8 @@ public extension OnboardingTheme {
             contextualOnboardingMetrics: ContextualOnboardingMetrics(
                 containerPadding: containerPadding,
                 contentSpacing: 20,
-                titleBodyVerticalSpacing: 10,
+                titleBodyVerticalSpacingVerticalLayout: 28,
+                titleBodyVerticalSpacingHorizontalLayout: 10,
                 titleBodyInset: contextualTitleBodyContentInsets,
                 contextualTitleTextAlignment: .leading,
                 contextualBodyTextAlignment: .leading,
@@ -169,7 +170,7 @@ public extension OnboardingTheme {
 
     /// Insets for the contextual title/body copy block, per device class.
     private static let contextualTitleBodyContentInsets: EdgeInsets = MetricBuilder<EdgeInsets>(
-        iPhone: EdgeInsets(top: 0, leading: 8, bottom: 12, trailing: 0),
+        iPhone: EdgeInsets(top: 0, leading: 8, bottom: 12, trailing: 8),
         iPad: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
     ).build()
 

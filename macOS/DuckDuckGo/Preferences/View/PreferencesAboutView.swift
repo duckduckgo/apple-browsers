@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions

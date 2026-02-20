@@ -58,6 +58,13 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
         mockPendingTransactionHandler = MockPendingTransactionHandler()
         mockRequestValidator = ScriptRequestValidatorMock()
 
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: mockAppStorePurchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+
         sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
@@ -67,6 +74,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent,
             pendingTransactionHandler: mockPendingTransactionHandler,
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
             requestValidator: mockRequestValidator)
     }
 

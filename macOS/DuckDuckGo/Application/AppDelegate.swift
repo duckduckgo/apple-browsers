@@ -17,6 +17,8 @@
 //
 
 import AIChat
+import AppUpdaterShared
+import AttributedMetric
 import AutoconsentStats
 import Bookmarks
 import BrokenSitePrompt
@@ -57,7 +59,6 @@ import VPN
 import VPNAppState
 import WebExtensions
 import WebKit
-import AttributedMetric
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -1463,13 +1464,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private var terminationHandler: TerminationDeciderHandler?
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard featureFlagger.isFeatureOn(.terminationDeciderSequence) else {
             return applicationShouldTerminateFallback()
         }
 
-        let handler = TerminationDeciderHandler(deciders: createTerminationDeciders())
-        return handler.executeTerminationDeciders()
+        // Already running — the in-flight handler will reply() when done
+        if terminationHandler != nil {
+            return .terminateLater
+        }
+
+        let handler = TerminationDeciderHandler(
+            deciders: createTerminationDeciders(),
+            replyToApplicationShouldTerminate: { [weak self] shouldTerminate in
+                self?.terminationHandler = nil
+                NSApp.reply(toApplicationShouldTerminate: shouldTerminate)
+            }
+        )
+        terminationHandler = handler
+        let reply = handler.executeTerminationDeciders()
+
+        if reply == .terminateCancel {
+            // Synchronous cancellation — discard handler
+            terminationHandler = nil
+        }
+        return reply
     }
 
     @MainActor

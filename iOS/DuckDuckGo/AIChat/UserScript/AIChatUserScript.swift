@@ -264,6 +264,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     /// Pushes sync status change to the web content when sync state changes (login/logout, availability).
     func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
+        // Push only to websites matching origin policy
+        guard let host = webView?.url?.host,
+              messageOriginPolicy.isAllowed(host) else { return }
+
         push(.syncStatusChanged(status))
     }
 

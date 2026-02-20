@@ -97,9 +97,13 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     private func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
-        guard let webView else {
+        // Push only to websites matching origin policy
+        guard let webView,
+              let host = webView.url?.host,
+              messageOriginPolicy.isAllowed(host) else {
             return
         }
+
         broker?.push(method: AIChatUserScriptMessages.submitSyncStatusChanged.rawValue, params: status, for: self, into: webView)
     }
 

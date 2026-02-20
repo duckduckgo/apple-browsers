@@ -56,7 +56,7 @@ public final class WebExtensionMessageRouter: WebExtensionMessageRouting {
         let handler: WebExtensionMessageHandler?
 
         lock.lock()
-        let extensionIdentifier = message.context
+        let extensionIdentifier = message.extensionIdentifier
         handler = handlers[extensionIdentifier]?[message.featureName]
         lock.unlock()
 

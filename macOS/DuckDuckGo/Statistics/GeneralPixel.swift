@@ -17,11 +17,11 @@
 //
 
 import AppKit
-import PixelKit
 import BrowserServicesKit
+import Configuration
 import ContentBlocking
 import DDGSync
-import Configuration
+import PixelKit
 import Suggestions
 
 enum GeneralPixel: PixelKitEvent {
@@ -95,6 +95,12 @@ enum GeneralPixel: PixelKitEvent {
 
     case autofillLoginsSettingsEnabled
     case autofillLoginsSettingsDisabled
+
+    // Passwords Status Bar
+    // See macOS/PixelDefinitions/pixels/definitions/passwords_status_bar_pixels.json5
+    case autofillPasswordsStatusBarSettingEnabled
+    case autofillPasswordsStatusBarSettingDisabled
+    case autofillPasswordsStatusBarIconClicked
 
     // Warn Before Quit
     // See macOS/PixelDefinitions/pixels/warn_before_quit_pixels.json5
@@ -214,6 +220,7 @@ enum GeneralPixel: PixelKitEvent {
     case syncDuckAddressOverride
     case syncSuccessRateDaily
     case syncLocalTimestampResolutionTriggered(Feature)
+    case syncAiChatActiveDaily
     case syncBookmarksObjectLimitExceededDaily
     case syncCredentialsObjectLimitExceededDaily
     case syncCreditCardsObjectLimitExceededDaily
@@ -473,13 +480,6 @@ enum GeneralPixel: PixelKitEvent {
     case bitwardenDecryptionFailed
     case bitwardenSendingOfMessageFailed
     case bitwardenSharedKeyInjectionFailed
-
-    case updaterAborted(reason: String)
-    case updaterDidFindUpdate
-    case updaterDidDownloadUpdate
-    case updaterDidRunUpdate
-    case updaterAttemptToRestartWithoutResumeBlock
-    case releaseNotesEmpty
 
     case faviconDecryptionFailedUnique
     case downloadListItemDecryptionFailedUnique
@@ -742,6 +742,13 @@ enum GeneralPixel: PixelKitEvent {
         case .autofillLoginsSettingsDisabled:
             return "m_mac_autofill_logins_settings_disabled"
 
+        case .autofillPasswordsStatusBarSettingEnabled:
+            return "m_mac_autofill_passwords_status-bar_setting_enabled"
+        case .autofillPasswordsStatusBarSettingDisabled:
+            return "m_mac_autofill_passwords_status-bar_setting_disabled"
+        case .autofillPasswordsStatusBarIconClicked:
+            return "m_mac_autofill_passwords_status-bar_icon_clicked"
+
         case .warnBeforeQuitShown:
             return "m_mac_warn-before-quit_shown"
         case .warnBeforeQuitQuit:
@@ -925,6 +932,7 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature):
             return "m_mac_sync_\(feature.name)_local_timestamp_resolution_triggered"
+        case .syncAiChatActiveDaily: return "m_mac_sync_ai_chat_active_daily"
         case .syncBookmarksObjectLimitExceededDaily: return "m_mac_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_mac_sync_credentials_object_limit_exceeded_daily"
         case .syncCreditCardsObjectLimitExceededDaily: return "m_mac_sync_credit_cards_object_limit_exceeded_daily"
@@ -1250,19 +1258,6 @@ enum GeneralPixel: PixelKitEvent {
         case .bitwardenSharedKeyInjectionFailed:
             return "bitwarden_shared_key_injection_failed"
 
-        case .updaterAborted:
-            return "updater_aborted"
-        case .updaterDidFindUpdate:
-            return "updater_did_find_update"
-        case .updaterDidDownloadUpdate:
-            return "updater_did_download_update"
-        case .updaterDidRunUpdate:
-            return "updater_did_run_update"
-        case .updaterAttemptToRestartWithoutResumeBlock:
-            return "updater_attempt_to_restart_without_resume_block"
-        case .releaseNotesEmpty:
-            return "m_mac_release_notes_empty"
-
         case .faviconDecryptionFailedUnique:
             return "favicon_decryption_failed_unique"
         case .downloadListItemDecryptionFailedUnique:
@@ -1526,9 +1521,6 @@ enum GeneralPixel: PixelKitEvent {
             }
             return nil
 
-        case .updaterAborted(let reason):
-            return ["reason": reason]
-
         case let .userScriptLoadJSFailed(jsFile, error):
             var params = error.pixelParameters
             params[PixelKit.Parameters.jsFile] = jsFile
@@ -1597,6 +1589,9 @@ enum GeneralPixel: PixelKitEvent {
                 .autofillManagementUpdateLogin,
                 .autofillLoginsSettingsEnabled,
                 .autofillLoginsSettingsDisabled,
+                .autofillPasswordsStatusBarSettingEnabled,
+                .autofillPasswordsStatusBarSettingDisabled,
+                .autofillPasswordsStatusBarIconClicked,
                 .warnBeforeQuitShown,
                 .warnBeforeQuitQuit,
                 .warnBeforeQuitCancelled,
@@ -1678,6 +1673,7 @@ enum GeneralPixel: PixelKitEvent {
                 .syncDuckAddressOverride,
                 .syncSuccessRateDaily,
                 .syncLocalTimestampResolutionTriggered,
+                .syncAiChatActiveDaily,
                 .syncBookmarksObjectLimitExceededDaily,
                 .syncCredentialsObjectLimitExceededDaily,
                 .syncCreditCardsObjectLimitExceededDaily,
@@ -1846,12 +1842,6 @@ enum GeneralPixel: PixelKitEvent {
                 .bitwardenDecryptionFailed,
                 .bitwardenSendingOfMessageFailed,
                 .bitwardenSharedKeyInjectionFailed,
-                .updaterAborted,
-                .updaterDidFindUpdate,
-                .updaterDidDownloadUpdate,
-                .updaterDidRunUpdate,
-                .updaterAttemptToRestartWithoutResumeBlock,
-                .releaseNotesEmpty,
                 .faviconDecryptionFailedUnique,
                 .downloadListItemDecryptionFailedUnique,
                 .historyEntryDecryptionFailedUnique,

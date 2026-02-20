@@ -343,6 +343,10 @@ func AIChatMockDebugSettings() -> any KeyedStoring<AIChatDebugURLSettings> {
 }
 
 private final class MockAIChatMessageHandling: AIChatMessageHandling {
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues {
+        .defaultValues
+    }
+
     func getDataForMessageType(_ type: DuckDuckGo_Privacy_Browser.AIChatMessageType) -> (any Encodable)? {
         nil
     }

@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Smazat vše";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Smazat tento chat";
-"scoped.fire.confirmation.delete.this.chat.description" = "Příkaz „Smazat vše“ nesmaže tvoji historii chatu na Duck.ai.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Vymazat tuto kartu";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "Příkaz „Smazat vše“ nesmaže tvoji historii chatu na Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Vymazat tuto kartu";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Tím se zruší probíhající stahování.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Automaticky odesílat obsah";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Návrhy chatu";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skrýt obrázky vygenerované umělou inteligencí";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Nech si při psaní zobrazovat návrhy vyhledávání včetně záložek. Všechna vyhledávání jsou soukromá.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Při psaní do vyhledávacího pole si nech zobrazovat návrhy z historie, záložek a volitelně i historie chatu Duck.ai. Všechna vyhledávání jsou soukromá.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Zámek aplikace";
@@ -3691,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Tvoje předplatné bylo z tohohle zařízení odstraněno.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Zrušit snížení tarifu";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Tvůj tarif se %2$@ změní na %1$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Aktualizace nebo zrušení tarifu";
 
@@ -3784,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Plány předplatného";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Změna tarifu se dokončuje…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Dokončuji nákup...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Probíhá změna tarifu...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Probíhá nákup...";

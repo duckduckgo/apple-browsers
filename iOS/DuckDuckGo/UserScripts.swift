@@ -21,14 +21,14 @@ import AIChat
 import BrowserServicesKit
 import Core
 import Foundation
+import Persistence
+import PrivacyConfig
+import SERPSettings
 import SpecialErrorPages
 import Subscription
 import TrackerRadarKit
 import UserScript
 import WebKit
-import SERPSettings
-import Persistence
-import PrivacyConfig
 
 final class UserScripts: UserScriptsProvider {
 
@@ -110,6 +110,7 @@ final class UserScripts: UserScriptsProvider {
             featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: subscriptionNavigationHandler,
             debugHost: aiChatDebugSettings.messagePolicyHostname)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
@@ -132,7 +133,6 @@ final class UserScripts: UserScriptsProvider {
         findInPageScript,
         surrogatesScript,
         contentBlockerUserScript,
-        faviconScript,
         fullScreenVideoScript,
         autofillUserScript,
         loginFormDetectionScript,

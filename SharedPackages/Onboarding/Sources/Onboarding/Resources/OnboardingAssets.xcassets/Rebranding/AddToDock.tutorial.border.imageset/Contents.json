@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "AddToDock.tutorial.bazel.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

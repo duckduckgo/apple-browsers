@@ -142,7 +142,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
-        messageHandling.getDataForMessageType(.nativeConfigValues)
+        let isFireWindow = await isFireWindowMessage(message)
+        return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -365,7 +366,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             guard let syncHandler = makeSyncHandler() else {
                 return makeErrorResponse("internal error")
             }
-            return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
+            let payload = try await syncHandler.getScopedToken()
+            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -401,7 +404,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.encrypt(data))
+            let payload = try syncHandler.encrypt(data)
+            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -430,7 +435,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.decrypt(data))
+            let payload = try syncHandler.decrypt(data)
+            pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason = error.localizedDescription
             pixelFiring?.fire(AIChatPixel.aiChatSyncDecryptionError(reason: reason), frequency: .dailyAndStandard)
@@ -480,6 +487,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
         return AIChatSyncHandler(sync: sync, httpRequestErrorHandler: syncErrorHandler.handleAiChatsError)
+    }
+
+    @MainActor
+    private func isFireWindowMessage(_ message: UserScriptMessage) -> Bool {
+        guard let windowController = message.messageWebView?.window?.windowController as? MainWindowController else {
+            return false
+        }
+
+        return windowController.mainViewController.isBurner
     }
 }
 // swiftlint:enable inclusive_language

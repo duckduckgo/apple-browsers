@@ -17,32 +17,30 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import Lottie
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockPromoView: View {
-        private static let appIconFillKeyPath = "**.Backdrop.Fill 1.Color"
-
-        private var model = AddToDockPromoViewModel()
-
         @State private var isAnimating = false
 
         var body: some View {
-            LottieView(
-                lottieFile: "add-to-dock-promo",
-                isAnimating: $isAnimating,
-                animationImageProvider: model,
-                valueProvider: .init(
-                    provider: ColorValueProvider(model.color),
-                    keypath: AnimationKeypath(keypath: Self.appIconFillKeyPath)
+            ZStack(alignment: .center) {
+                OnboardingRebrandingImages.AddToDock.promoBorder
+                    .resizable()
+                    .scaledToFit()
+                    .padding(.horizontal, -11)
+                LottieView(
+                    lottieFile: "add-to-dock-promo",
+                    isAnimating: $isAnimating
                 )
-            )
-            .onFirstAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    isAnimating = true
+                .tempPlaceholder()
+                .onFirstAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        isAnimating = true
+                    }
                 }
             }
         }

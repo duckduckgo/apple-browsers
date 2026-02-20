@@ -209,6 +209,17 @@ enum UserText {
         return String(format: localized, tierName, formattedDate)
     }
 
+    static func cancelPendingDowngradeBannerInfo(tierName: String, effectiveDate: String) -> String {
+        let localized = NSLocalizedString("subscription.cancel.pending.downgrade.banner.caption",
+                                         bundle: Bundle.module,
+                                         value: "Your plan will downgrade to %@ on %@.",
+                                         comment: "Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).'")
+        let nonBreakingDate = effectiveDate.replacingOccurrences(of: " ", with: "\u{00A0}")
+        return String(format: localized, tierName, nonBreakingDate)
+    }
+
+    static let cancelDowngradeButton = NSLocalizedString("subscription.preferences.cancel.downgrade.button", bundle: Bundle.module, value: "Cancel Downgrade", comment: "Button to cancel a pending downgrade of the subscription")
+
     static let manageSubscriptionButton = NSLocalizedString("subscription.preferences.manage.subscription.button", bundle: Bundle.module, value: "Manage Subscription", comment: "Button to manage subscription")
     static let updatePlanOrCancelButton = NSLocalizedString("subscription.preferences.update.plan.or.cancel.button", bundle: Bundle.module, value: "Update Plan or Cancel", comment: "Button to update subscription plan or cancel")
     static let managePaymentOrCancelButton = NSLocalizedString("subscription.preferences.manage.payment.or.cancel.button", bundle: Bundle.module, value: "Manage Payment or Cancel", comment: "Button to manage payment or cancel subscription")
@@ -249,7 +260,7 @@ enum UserText {
     static let viewPlansExpiredButtonTitle = NSLocalizedString("subscription.preferences.button.view.plans", bundle: Bundle.module, value: "View Plans", comment: "Button for viewing subscription plans on expired subscription")
 
     // MARK: - Upgrade section
-    static let upgradeSectionCaption = NSLocalizedString("subscription.upgrade.section.caption", bundle: Bundle.module, value: "Unlock smarter more powerful AI", comment: "Caption text in the upgrade section promoting AI features")
+    static let upgradeSectionCaption = NSLocalizedString("subscription.upgrade.section.caption", bundle: Bundle.module, value: "Unlock smarter, more powerful AI", comment: "Caption text in the upgrade section promoting AI features")
     static func upgradeButton(tierName: String) -> String {
         let format = NSLocalizedString("subscription.upgrade.button", bundle: Bundle.module, value: "Upgrade to %@", comment: "Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro')")
         return String(format: format, tierName.capitalized)

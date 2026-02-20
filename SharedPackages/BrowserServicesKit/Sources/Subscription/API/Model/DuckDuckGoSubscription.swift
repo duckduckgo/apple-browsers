@@ -39,20 +39,31 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     public struct AvailableChanges: Codable, Equatable {
         public let upgrade: [TierChange]
         public let downgrade: [TierChange]
+        /// Current product ID from the backend; use for cancel-downgrade instead of subscription.productId when present.
+        public let currentProductId: String?
 
-        public init(upgrade: [TierChange] = [], downgrade: [TierChange] = []) {
+        public init(upgrade: [TierChange] = [], downgrade: [TierChange] = [], currentProductId: String? = nil) {
             self.upgrade = upgrade
             self.downgrade = downgrade
+            self.currentProductId = currentProductId
         }
 
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             self.upgrade = (try? container.decode([TierChange].self, forKey: .upgrade)) ?? []
             self.downgrade = (try? container.decode([TierChange].self, forKey: .downgrade)) ?? []
+            self.currentProductId = try? container.decode(String.self, forKey: .currentProductId)
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(upgrade, forKey: .upgrade)
+            try container.encode(downgrade, forKey: .downgrade)
+            try container.encodeIfPresent(currentProductId, forKey: .currentProductId)
         }
 
         private enum CodingKeys: String, CodingKey {
-            case upgrade, downgrade
+            case upgrade, downgrade, currentProductId
         }
     }
 

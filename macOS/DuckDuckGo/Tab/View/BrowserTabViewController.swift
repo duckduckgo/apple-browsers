@@ -125,6 +125,24 @@ final class BrowserTabViewController: NSViewController {
     private(set) var transientTabContentViewController: NSViewController?
 
     public weak var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate?
+    weak var aiChatSidebarResizeDelegate: AIChatSidebarResizeDelegate?
+
+    /// Resize handle placed on the leading edge of the sidebar container.
+    private(set) lazy var sidebarResizeHandle: AIChatSidebarResizeHandleView = {
+        let handle = AIChatSidebarResizeHandleView()
+        handle.translatesAutoresizingMaskIntoConstraints = false
+        handle.isHidden = true
+        handle.currentWidthProvider = { [weak self] in
+            self?.sidebarContainerWidthConstraint?.constant ?? 0
+        }
+        handle.onResize = { [weak self] proposedWidth in
+            self?.aiChatSidebarResizeDelegate?.sidebarHostDidResize(to: proposedWidth) ?? proposedWidth
+        }
+        handle.onResizeEnd = { [weak self] finalWidth in
+            self?.aiChatSidebarResizeDelegate?.sidebarHostDidFinishResize(to: finalWidth)
+        }
+        return handle
+    }()
 
     var isInPopUpWindow: Bool {
         tabCollectionViewModel.isPopup
@@ -234,6 +252,14 @@ final class BrowserTabViewController: NSViewController {
             sidebarContainerLeadingConstraint!,
             sidebarContainerWidthConstraint!
         ])
+
+        view.addSubview(sidebarResizeHandle)
+        NSLayoutConstraint.activate([
+            sidebarResizeHandle.leadingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor),
+            sidebarResizeHandle.topAnchor.constraint(equalTo: sidebarContainer.topAnchor),
+            sidebarResizeHandle.bottomAnchor.constraint(equalTo: sidebarContainer.bottomAnchor),
+            sidebarResizeHandle.widthAnchor.constraint(equalToConstant: 6)
+        ])
     }
 
     override func viewDidLoad() {
@@ -246,6 +272,15 @@ final class BrowserTabViewController: NSViewController {
         }
 
         view.registerForDraggedTypes([.URL, .fileURL])
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+
+        // Only adjust sidebar width when it is visually on-screen (leading < 0 means pulled into view)
+        if let leading = sidebarContainerLeadingConstraint?.constant, leading < 0 {
+            aiChatSidebarResizeDelegate?.sidebarHostDidChangeAvailableWidth(view.bounds.width)
+        }
     }
 
     override func viewWillAppear() {

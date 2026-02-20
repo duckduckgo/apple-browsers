@@ -95546,6 +95546,66 @@
         }
       }
     },
+    "subscription.progress.view.completing.plan.change" : {
+      "comment" : "Progress view title when completing a plan change with the backend",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planänderung wird abgeschlossen …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Completing plan change…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completando cambio de plan…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finalisation de la modification du forfait…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completamento della modifica del piano…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De planwijziging wordt afgerond …\n"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kończenie zmiany planu…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A concluir a mudança de plano..."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершается смена тарифа..."
+          }
+        }
+      }
+    },
     "subscription.progress.view.completing.purchase" : {
       "comment" : "Progress view title when completing the purchase",
       "extractionState" : "extracted_with_value",
@@ -95602,6 +95662,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Завершение покупки..."
+          }
+        }
+      }
+    },
+    "subscription.progress.view.plan.change.in.progress" : {
+      "comment" : "Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planänderung in Bearbeitung•…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Plan change in progress…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambio de plan en curso…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changement de plan en cours…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifica del piano in corso…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het plan wordt gewijzigd ..."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmiana planu w toku…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mudança de plano em progresso..."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выполняется смена тарифа..."
           }
         }
       }

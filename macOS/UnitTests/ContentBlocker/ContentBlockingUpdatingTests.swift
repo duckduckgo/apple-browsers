@@ -92,7 +92,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        fireCoordinator: fireCoordinator,
                                        autoconsentManagement: AutoconsentManagement(),
                                        contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
-                                       syncErrorHandler: SyncErrorHandler())
+                                       syncErrorHandler: SyncErrorHandler(),
+                                       webExtensionAvailability: nil)
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil
     }

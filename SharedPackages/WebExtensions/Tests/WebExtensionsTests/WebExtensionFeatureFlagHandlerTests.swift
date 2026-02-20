@@ -136,6 +136,8 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
         return []
     }
 
+    func unloadAllExtensions() {}
+
     func extensionName(for identifier: String) -> String? { nil }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
@@ -144,5 +146,16 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
 @available(macOS 15.4, iOS 18.4, *)
 private final class MockEventsListener: WebExtensionEventsListening {
     var controller: WKWebExtensionController?
-    func navigatedToURL(_ url: URL, for identifier: String) {}
+
+    func didOpenWindow(_ window: WKWebExtensionWindow) {}
+    func didCloseWindow(_ window: WKWebExtensionWindow) {}
+    func didFocusWindow(_ window: WKWebExtensionWindow) {}
+    func didOpenTab(_ tab: WKWebExtensionTab) {}
+    func didCloseTab(_ tab: WKWebExtensionTab, windowIsClosing: Bool) {}
+    func didActivateTab(_ tab: WKWebExtensionTab, previousActiveTab: WKWebExtensionTab?) {}
+    func didSelectTabs(_ tabs: [WKWebExtensionTab]) {}
+    func didDeselectTabs(_ tabs: [WKWebExtensionTab]) {}
+    func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow) {}
+    func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {}
+    func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {}
 }

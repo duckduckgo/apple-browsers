@@ -123,7 +123,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             management: sourceProvider.autoconsentManagement,
             preferences: sourceProvider.cookiePopupProtectionPreferences,
-            featureFlagger: sourceProvider.featureFlagger
+            featureFlagger: sourceProvider.featureFlagger,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
@@ -178,7 +179,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             releaseNotesUserScript = nil
         }
 
-        userScripts.append(autoconsentUserScript)
+        if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
+            userScripts.append(autoconsentUserScript)
+        }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)

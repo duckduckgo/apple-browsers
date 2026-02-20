@@ -1543,6 +1543,11 @@ class MainViewController: UIViewController {
         }
 
         if #available(iOS 18.4, *) {
+            if let previousTab {
+                webExtensionEventsCoordinator?.didDeselectTabs([previousTab])
+            }
+            webExtensionEventsCoordinator?.didOpenTab(tab)
+            webExtensionEventsCoordinator?.didSelectTabs([tab])
             webExtensionEventsCoordinator?.didActivateTab(tab, previousActiveTab: previousTab)
         }
     }
@@ -2029,6 +2034,9 @@ class MainViewController: UIViewController {
             tabManager.selectTab(existing)
         } else {
             tabManager.addHomeTab()
+            if #available(iOS 18.4, *), let newTab = tabManager.current() {
+                webExtensionEventsCoordinator?.didOpenTab(newTab)
+            }
         }
         attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
@@ -3463,8 +3471,12 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
-        _ = tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
+        let newTab = tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
         animateBackgroundTab()
+
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didOpenTab(newTab)
+        }
     }
 
     func tab(_ tab: TabViewController,
@@ -3752,6 +3764,16 @@ extension MainViewController: TabSwitcherDelegate {
         updateCurrentTab()
     }
 
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
+        if #available(iOS 18.4, *) {
+            for tab in tabs {
+                if let tabController = tabManager.controller(for: tab) {
+                    webExtensionEventsCoordinator?.didCloseTab(tabController)
+                }
+            }
+        }
+    }
+
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {
         if tabManager.count == 1 {
             // Make sure UI updates finish before dimissing the view.
@@ -3797,6 +3819,9 @@ extension MainViewController: TabSwitcherDelegate {
                 tabManager.selectTab(existing)
             } else {
                 tabManager.addHomeTab()
+                if #available(iOS 18.4, *), let newTab = tabManager.current() {
+                    webExtensionEventsCoordinator?.didOpenTab(newTab)
+                }
             }
             showBars() // In case the browser chrome bars are hidden when calling this method
         case .onlyClose:
@@ -4043,6 +4068,19 @@ extension MainViewController: FireExecutorDelegate {
     func willStartBurningTabs(fireRequest: FireRequest) {
         omniBar.endEditing()
         findInPageView?.done()
+
+        if #available(iOS 18.4, *) {
+            switch fireRequest.scope {
+            case .all:
+                for tab in tabManager.model.tabs {
+                    if let tabController = tabManager.controller(for: tab) {
+                        webExtensionEventsCoordinator?.didCloseTab(tabController)
+                    }
+                }
+            case .tab:
+                break
+            }
+        }
     }
     
     func didFinishBurningTabs(fireRequest: FireRequest) {

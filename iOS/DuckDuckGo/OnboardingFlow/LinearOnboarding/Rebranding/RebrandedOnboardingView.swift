@@ -40,6 +40,26 @@ private enum BubbleBackedDialogMetrics {
     static let appIconPickerAdditionalTopMargin: CGFloat = 0
 }
 
+/// Animation timing constants for the rebranded onboarding bubble dialogs.
+///
+/// The onboarding flow uses a two-level animation approach to create polished transitions:
+///
+/// 1. **Parent-level animations** (this view): Handles step-to-step transitions where the
+///    bubble resizes and content changes (e.g., intro → browsers comparison).
+///    - Bubble resizes with explicit duration
+///    - Content hides, waits for resize, then fades in
+///
+/// 2. **Child-level animations** (individual content views): Some views have internal state
+///    transitions that don't change `state.type` (e.g., showing skip dialog, tutorial overlay).
+///    - Child views use `.onboardingViewVisibleAfterDelay()` modifier
+///    - Delay matches parent's bubble animation duration for consistency
+enum OnboardingBubbleAnimationMetrics {
+    /// How long the bubble takes to resize between steps
+    static let bubbleResizeAnimationDuration = 0.25
+    /// How long to wait before fading in new content (should match bubble resize duration to ensure content appears after resize completes)
+    static let contentFadeInDelay = 0.3
+}
+
 extension OnboardingRebranding.OnboardingView {
 
     /// A theme-driven layout container for rebranded onboarding dialog steps.
@@ -143,6 +163,7 @@ extension OnboardingRebranding {
         @Namespace var animationNamespace
         @ObservedObject private var model: OnboardingIntroViewModel
         @State private var dialogContentHeight: CGFloat = 0
+        @State private var showBubbleContent: Bool = false
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
@@ -212,11 +233,11 @@ extension OnboardingRebranding {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .center) {
                         bubbleBackedDialogView(state: state, configuration: configuration)
-                        .animation(.default, value: state.type)
-                        .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth, alignment: .center)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .frame(width: geometry.size.width, alignment: .center)
-                        .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin)
+                            .animation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration), value: state.type)
+                            .frame(maxWidth: onboardingTheme.linearOnboardingMetrics.bubbleMaxWidth, alignment: .center)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .frame(width: geometry.size.width, alignment: .center)
+                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin)
                     }
                     .frame(minHeight: geometry.size.height, alignment: .top)
                     .background {
@@ -265,7 +286,6 @@ extension OnboardingRebranding {
                 title: OnboardingViewCopy.introTitle,
                 message: OnboardingViewCopy.introMessage,
                 skipOnboardingView: skipOnboardingView,
-                showCTA: $model.introState.showIntroButton,
                 continueAction: {
                     animateBrowserComparisonViewState(isResumingOnboarding: false)
                 },
@@ -293,7 +313,15 @@ extension OnboardingRebranding {
             return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
                 VStack {
                     bubbleBackedDialogContent(for: state.type)
+                        .visibility(showBubbleContent ? .visible : .invisible)
                 }
+            }
+            .onAppear {
+                // Show content after initial bubble animation on first appearance
+                animateBubbleContentTransition()
+            }
+            .onChange(of: state.type) { _ in
+                animateBubbleContentTransition()
             }
         }
 
@@ -403,7 +431,6 @@ extension OnboardingRebranding {
 
         private var addToDockPromoView: some View {
             AddToDockPromoContent(
-                isAnimating: $model.addToDockState.isAnimating,
                 showTutorialAction: {
                     model.addToDockShowTutorialAction()
                 },
@@ -433,15 +460,29 @@ extension OnboardingRebranding {
             )
         }
 
+        /// Animates bubble content visibility with a hide → delay → show sequence.
+        /// Use this for content changes that don't trigger `.onChange(of: state.type)`.
+        private func animateBubbleContentTransition() {
+            // Hide content
+            showBubbleContent = false
+
+            // Show content after delay (matching bubble animation duration)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                withAnimation {
+                    showBubbleContent = true
+                }
+            }
+        }
+
         private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
             // Hide content of Intro dialog before animating
             model.introState.showIntroViewContent = false
 
             // Animation with small delay for a better effect when intro content disappear
-            let animationDuration = 0.25
+            let animationDuration = OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration
             let animation = Animation
                 .linear(duration: animationDuration)
-                .delay(0.2)
+                .delay(OnboardingBubbleAnimationMetrics.contentFadeInDelay)
 
             if #available(iOS 17, *) {
                 withAnimation(animation) {

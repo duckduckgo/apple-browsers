@@ -171,6 +171,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     /// Controls whether the AI Chat mode UI is hidden (false = AI Chat mode, true = regular mode)
     var isFullAIChatHidden: Bool = true {
         didSet {
+            guard oldValue != isFullAIChatHidden else { return }
             if isFullAIChatHidden {
                 hideAIChatOmnibar()
             } else {
@@ -828,13 +829,14 @@ extension DefaultOmniBarView {
     /// Restores the omnibar UI to regular browse mode. Hides AI Chat buttons, shows search elements.
     private func hideAIChatOmnibar() {
         aiChatBrandingView?.isHidden = true
-        searchAreaView.textField.isHidden = false
         aiChatLeftButton.isHidden = true
         aiChatLeftButton.alpha = 0.0
         NSLayoutConstraint.deactivate(aiChatModeConstraints)
 
-        searchAreaView.textField.alpha = 1.0
-        searchAreaView.revealButtons()
+        if !isSearchAreaExpanded {
+            searchAreaView.textField.alpha = 1.0
+            searchAreaView.revealButtons()
+        }
 
         setNeedsLayout()
     }
@@ -952,16 +954,28 @@ extension DefaultOmniBarView {
 
     private func applyTextViewVisibility() {
         if isSearchAreaExpanded {
-            duckAITextView.text = textField.text
-            duckAITextView.isHidden = false
+            let currentText = textField.text ?? ""
             textField.text = ""
-            textField.alpha = 0
+            textField.alpha = currentText.isEmpty ? 1 : 0
+
+            duckAITextView.text = currentText
+            duckAITextView.isHidden = false
             searchAreaContainerView.bringSubviewToFront(duckAITextView)
         } else {
-            textField.text = duckAITextView.text
-            textField.alpha = 1
+            let currentText = duckAITextView.text ?? ""
             duckAITextView.isHidden = true
+            duckAITextView.text = ""
+
+            textField.text = currentText
+            textField.alpha = 1
         }
+    }
+
+    /// Toggles the textField's visibility so its placeholder shows through
+    /// the transparent duckAITextView when empty, and hides when there's text.
+    func updateTextFieldPlaceholderVisibility(hasText: Bool) {
+        guard isSearchAreaExpanded else { return }
+        textField.alpha = hasText ? 0 : 1
     }
 
     private func applyExpansionConstraints() {

@@ -37,6 +37,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private var animateNextEditingTransition = true
 
+    /// Guards the iPad duck.ai ↔ search first-responder transfer.
+    /// While true, `textViewDidEndEditing` side effects are suppressed
+    /// and `textFieldDidBeginEditing` skips text selection.
+    private var isTransferringFirstResponder = false
+
     override func loadView() {
         view = omniBarView
     }
@@ -63,7 +68,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         updateShadowAppearanceByApplyingLayerMask()
     }
 
-    
+    // MARK: - Text Field Delegate Overrides
+
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if omniBarView.isSearchAreaExpanded {
             return false
@@ -80,6 +86,61 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         return super.textFieldShouldBeginEditing(textField)
     }
+
+    override func textFieldDidBeginEditing(_ textField: UITextField) {
+        if isTransferringFirstResponder {
+            handleIPadTextFieldDidBeginEditingDuringTransfer()
+        } else {
+            super.textFieldDidBeginEditing(textField)
+        }
+
+        omniBarView.layoutIfNeeded()
+        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
+            self.omniBarView.isActiveState = true
+            self.omniBarView.layoutIfNeeded()
+        }
+    }
+
+    override func textFieldDidEndEditing(_ textField: UITextField) {
+        guard !omniBarView.isSearchAreaExpanded else { return }
+
+        super.textFieldDidEndEditing(textField)
+
+        omniBarView.layoutIfNeeded()
+        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
+            self.omniBarView.isActiveState = false
+            self.omniBarView.layoutIfNeeded()
+        }
+    }
+
+    // MARK: - Editing Lifecycle Overrides
+
+    override func setSelectedTextEntryMode(_ mode: TextEntryMode) {
+        guard dependencies.aiChatAddressBarExperience.shouldShowModeToggle else {
+            super.setSelectedTextEntryMode(mode)
+            return
+        }
+
+        handleIPadModeToggleTransition(to: mode)
+    }
+
+    override func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
+        animateNextEditingTransition = animated
+
+        super.beginEditing(animated: animated, forTextEntryMode: textEntryMode)
+        
+        animateNextEditingTransition = true
+    }
+
+    override func endEditing() {
+        if omniBarView.isSearchAreaExpanded {
+            omniBarView.duckAITextView.resignFirstResponder()
+        }
+        super.endEditing()
+        editingStateViewController?.dismissAnimated()
+    }
+
+    // MARK: - Layout
 
     override func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {
         dismissButtonAnimator?.stopAnimation(true)
@@ -132,50 +193,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         updateShadowAppearanceByApplyingLayerMask()
     }
 
-    override func textFieldDidBeginEditing(_ textField: UITextField) {
-        super.textFieldDidBeginEditing(textField)
-
-        omniBarView.layoutIfNeeded()
-        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
-            self.omniBarView.isActiveState = true
-            self.omniBarView.layoutIfNeeded()
-        }
-    }
-
-    override func textFieldDidEndEditing(_ textField: UITextField) {
-        guard !omniBarView.isSearchAreaExpanded else { return }
-
-        super.textFieldDidEndEditing(textField)
-
-        omniBarView.layoutIfNeeded()
-        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
-            self.omniBarView.isActiveState = false
-            self.omniBarView.layoutIfNeeded()
-        }
-    }
-
     override func useSmallTopSpacing() {
         omniBarView.isUsingSmallTopSpacing = true
     }
 
     override func useRegularTopSpacing() {
         omniBarView.isUsingSmallTopSpacing = false
-    }
-
-    override func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
-        animateNextEditingTransition = animated
-
-        super.beginEditing(animated: animated, forTextEntryMode: textEntryMode)
-        
-        animateNextEditingTransition = true
-    }
-
-    override func endEditing() {
-        if omniBarView.isSearchAreaExpanded {
-            omniBarView.duckAITextView.resignFirstResponder()
-        }
-        super.endEditing()
-        editingStateViewController?.dismissAnimated()
     }
 
     var shouldClipShadows: Bool {
@@ -269,6 +292,49 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 }
 
+// MARK: - iPad Duck.ai Mode Toggle
+//
+// On iPad, the address bar has a search/duck.ai toggle (gated by the iPadAIToggle feature flag).
+// When the user switches between modes, the text must transfer seamlessly between the UITextField
+// (search mode) and the UITextView (duck.ai expanded mode) while keeping the keyboard visible.
+
+extension DefaultOmniBarViewController {
+
+    /// Handles the duck.ai ↔ search mode transition on iPad, preserving text and keyboard state.
+    fileprivate func handleIPadModeToggleTransition(to mode: TextEntryMode) {
+        let wasInAIChat = selectedTextEntryMode == .aiChat
+        let switchingToSearch = wasInAIChat && mode == .search
+
+        var preservedText: String?
+        if switchingToSearch, omniBarView.isSearchAreaExpanded {
+            preservedText = omniBarView.duckAITextView.text
+        }
+
+        isTransferringFirstResponder = switchingToSearch
+        super.setSelectedTextEntryMode(mode)
+
+        if let text = preservedText {
+            omniBarView.textField.text = text
+            beginEditing(animated: false, forTextEntryMode: .search)
+            omniBarView.textField.text = text
+        }
+
+        isTransferringFirstResponder = false
+    }
+
+    /// Replicates the super's textFieldDidBeginEditing logic but deliberately skips
+    /// `selectAll` so text isn't highlighted when transferring from duck.ai mode.
+    fileprivate func handleIPadTextFieldDidBeginEditingDuringTransfer() {
+        DispatchQueue.main.async {
+            _ = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView)
+            self.refreshState(self.state.onEditingStartedState)
+            self.omniDelegate?.onDidBeginEditing()
+        }
+    }
+}
+
+// MARK: - OmniBarEditingStateViewControllerDelegate
+
 extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
     func onQueryUpdated(_ query: String) {
     }
@@ -322,7 +388,11 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 }
 
-// MARK: - UITextViewDelegate (iPad AI Chat Expanded Text View)
+// MARK: - UITextViewDelegate (iPad Duck.ai Expanded Text View)
+//
+// Handles text input in the expanded duckAITextView when the iPad duck.ai mode toggle is active.
+// The textField's placeholder is used as a shared placeholder — its alpha is toggled based on
+// whether the duckAITextView has content, so the placeholder shows through when empty.
 
 extension DefaultOmniBarViewController: UITextViewDelegate {
 
@@ -343,6 +413,13 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
     func textViewDidChange(_ textView: UITextView) {
         let newQuery = textView.text ?? ""
+
+        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !newQuery.isEmpty)
+
+        if isTransferringFirstResponder, !omniBarView.isSearchAreaExpanded {
+            omniBarView.textField.text = newQuery
+        }
+
         if selectedTextEntryMode != .aiChat {
             omniDelegate?.onOmniQueryUpdated(newQuery)
         }
@@ -354,6 +431,8 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
+        guard !isTransferringFirstResponder else { return }
+
         omniBarView.setSearchAreaExpanded(false, animated: true)
 
         switch omniDelegate?.onEditingEnd() {
@@ -385,6 +464,8 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         }
     }
 }
+
+// MARK: - UIViewControllerTransitioningDelegate
 
 extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
 

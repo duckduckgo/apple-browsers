@@ -94,7 +94,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return .failure(WebExtensionMessageHandlerError.missingParameter("pixelName or type"))
         }
 
-        let pixelParams = params?["params"] as? [String: String] ?? [:]
+        let pixelParams = params?["params"] as? [String: Any] ?? [:]
         let pixelInfo = PixelInfo(name: pixelName, type: type, params: pixelParams)
 
         Logger.webExtensions.debug("📊 Send Pixel - name: \(pixelName), type: \(type), params: \(pixelParams)")

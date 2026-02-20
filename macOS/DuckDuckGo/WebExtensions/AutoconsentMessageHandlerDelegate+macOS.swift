@@ -67,46 +67,72 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
     }
 
     func sendPixel(_ pixelInfo: PixelInfo) {
-        guard let pixel = mapPixelNameToAutoconsentPixel(pixelInfo.name) else {
+        guard let pixel = mapPixelNameToAutoconsentPixel(pixelInfo.name, params: pixelInfo.params) else {
             Logger.webExtensions.error("macOS: Unknown autoconsent pixel name: \(pixelInfo.name)")
             return
         }
 
         let frequency: PixelKit.Frequency = pixelInfo.type == "daily" ? .daily : .standard
+        let additionalParams = processAdditionalParams(pixelInfo.params, isSummary: pixelInfo.name == "autoconsent_summary")
+
         Logger.webExtensions.debug("macOS: Firing pixel \(pixelInfo.name) with frequency \(pixelInfo.type)")
-        PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: pixelInfo.params)
+
+        PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: additionalParams)
     }
 
-    private func mapPixelNameToAutoconsentPixel(_ name: String) -> AutoconsentPixel? {
+    private func processAdditionalParams(_ params: [String: Any], isSummary: Bool) -> [String: String] {
+        let stringParams = params.compactMapValues { value -> String? in
+            if let stringValue = value as? String { return stringValue }
+            if let intValue = value as? Int { return String(intValue) }
+            return nil
+        }
+
+        if isSummary {
+            // Filter out params that are already packed as part of the summary pixel
+            let summaryKeys = Set(AutoconsentPixel.summaryPixels.map { $0.key })
+            return stringParams.filter { !summaryKeys.contains($0.key) }
+        }
+
+        return stringParams
+    }
+
+    private func mapPixelNameToAutoconsentPixel(_ name: String, params: [String: Any]) -> AutoconsentPixel? {
         switch name {
         case "autoconsent_init":
             return .acInit
-        case "error_multiple-popups":
+        case "autoconsent_error_multiple-popups":
             return .errorMultiplePopups
-        case "error_optout":
+        case "autoconsent_error_optout":
             return .errorOptoutFailed
-        case "error_reload-loop":
+        case "autoconsent_error_reload-loop":
             return .errorReloadLoop
-        case "popup-found":
+        case "autoconsent_popup-found":
             return .popupFound
-        case "done":
+        case "autoconsent_done":
             return .done
-        case "done_cosmetic":
+        case "autoconsent_done_cosmetic":
             return .doneCosmetic
-        case "done_heuristic":
+        case "autoconsent_done_heuristic":
             return .doneHeuristic
-        case "animation-shown":
+        case "autoconsent_animation-shown":
             return .animationShown
-        case "animation-shown_cosmetic":
+        case "autoconsent_animation-shown_cosmetic":
             return .animationShownCosmetic
-        case "disabled-for-site":
+        case "autoconsent_disabled-for-site":
             return .disabledForSite
-        case "detected-by-patterns":
+        case "autoconsent_detected-by-patterns":
             return .detectedByPatterns
-        case "detected-by-both":
+        case "autoconsent_detected-by-both":
             return .detectedByBoth
-        case "detected-only-rules":
+        case "autoconsent_detected-only-rules":
             return .detectedOnlyRules
+        case "autoconsent_summary":
+            let intParams = params.compactMapValues { value -> Int? in
+                if let intValue = value as? Int { return intValue }
+                if let stringValue = value as? String { return Int(stringValue) }
+                return nil
+            }
+            return .summary(events: intParams)
         default:
             return nil
         }

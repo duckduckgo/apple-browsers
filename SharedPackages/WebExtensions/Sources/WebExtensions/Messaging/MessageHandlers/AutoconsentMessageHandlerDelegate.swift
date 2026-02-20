@@ -68,9 +68,9 @@ public struct ConsentStatusInfo {
 public struct PixelInfo {
     public let name: String
     public let type: String
-    public let params: [String: String]
+    public let params: [String: Any]
 
-    public init(name: String, type: String, params: [String: String] = [:]) {
+    public init(name: String, type: String, params: [String: Any] = [:]) {
         self.name = name
         self.type = type
         self.params = params

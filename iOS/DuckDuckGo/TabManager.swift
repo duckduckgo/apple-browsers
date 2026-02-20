@@ -47,6 +47,16 @@ protocol TabManaging {
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
 }
 
+/// Receives lifecycle events for TabViewController instances managed by TabManager.
+@MainActor
+protocol TabControllerCacheDelegate: AnyObject {
+    /// Called when a new TabViewController has been created and added to the cache for the first time.
+    func tabManager(_ tabManager: TabManager, didCreateController controller: TabViewController)
+    /// Called when a background tab's WebKit process terminated and its controller was evicted
+    /// from the cache. The tab still exists in the model; a replacement will be created on next activation.
+    func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController)
+}
+
 protocol TrackerAnimationSuppressing {
     @MainActor func markTabAsExternalLaunch(_ tab: Tab)
     @MainActor func clearExternalLaunchFlags()
@@ -61,9 +71,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private var tabControllerCache = [TabViewController]()
 
-    /// Called whenever a TabViewController is first created for a tab.
-    /// The receiver decides whether this warrants a didOpenTab notification.
-    var onTabControllerCreated: ((TabViewController) -> Void)?
+    weak var cacheDelegate: (any TabControllerCacheDelegate)?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let bookmarksDatabase: CoreDataDatabase
@@ -244,7 +252,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
             let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
             tabControllerCache.append(controller)
-            onTabControllerCreated?(controller)
+            cacheDelegate?.tabManager(self, didCreateController: controller)
             return controller
         } else {
             return nil
@@ -348,7 +356,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.loadViewIfNeeded()
         controller.applyInheritedAttribution(inheritedAttribution)
         tabControllerCache.append(controller)
-        onTabControllerCreated?(controller)
+        cacheDelegate?.tabManager(self, didCreateController: controller)
 
         save()
         return controller
@@ -412,7 +420,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             model.select(tabAt: index + 1)
         }
 
-        onTabControllerCreated?(controller)
+        cacheDelegate?.tabManager(self, didCreateController: controller)
 
         save()
         return controller
@@ -480,6 +488,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             current()?.reload()
         } else {
             removeFromCache(controller)
+            cacheDelegate?.tabManager(self, didInvalidateController: controller)
         }
     }
 

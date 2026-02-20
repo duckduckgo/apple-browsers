@@ -35,14 +35,7 @@ final class WebExtensionEventsCoordinator {
     init(webExtensionManager: WebExtensionManaging, mainViewController: MainViewController) {
         self.webExtensionManager = webExtensionManager
         self.mainViewController = mainViewController
-
-        // Observe TabManager so that any time a TabViewController is first created —
-        // whether eagerly (new tab) or lazily (existing tab activated for the first time) —
-        // we fire didOpenTab if this tab hasn't been reported yet.
-        mainViewController.tabManager.onTabControllerCreated = { [weak self] controller in
-            guard let self, !self.reportedTabUIDs.contains(controller.tabModel.uid) else { return }
-            self.didOpenTab(controller)
-        }
+        mainViewController.tabManager.cacheDelegate = self
     }
 
     // MARK: - Tab Events
@@ -118,8 +111,8 @@ final class WebExtensionEventsCoordinator {
         // Register all tabs that are already open at extension load time.
         // On iOS, TabViewControllers are created lazily — only the active tab is guaranteed
         // to have a controller in memory. For tabs that already have a controller, we notify
-        // immediately. For tabs whose controller hasn't been created yet, the onTabControllerCreated
-        // callback wired in init will fire didOpenTab the first time the user activates them.
+        // immediately. For tabs whose controller hasn't been created yet, the cacheDelegate
+        // will fire didOpenTab via didCreateController the first time the user activates them.
         let tabManager = mainViewController.tabManager
         for tab in tabManager.model.tabs {
             if let tabController = tabManager.controller(for: tab) {
@@ -133,5 +126,25 @@ final class WebExtensionEventsCoordinator {
             didActivateTab(currentTab, previousActiveTab: nil)
             didSelectTabs([currentTab])
         }
+    }
+}
+
+// MARK: - TabControllerCacheDelegate
+
+extension WebExtensionEventsCoordinator: TabControllerCacheDelegate {
+
+    func tabManager(_ tabManager: TabManager, didCreateController controller: TabViewController) {
+        guard #available(iOS 18.4, *) else { return }
+        guard !reportedTabUIDs.contains(controller.tabModel.uid) else { return }
+        didOpenTab(controller)
+    }
+
+    // When a background tab's WebKit process terminates, its controller is evicted from
+    // the cache and a replacement will be created on next activation. Treat the eviction
+    // as a close so the extension drops the dead controller and its UID is cleared from
+    // reportedTabUIDs, allowing didOpenTab to fire correctly for the replacement.
+    func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController) {
+        guard #available(iOS 18.4, *) else { return }
+        didCloseTab(controller)
     }
 }

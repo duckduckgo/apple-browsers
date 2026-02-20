@@ -44,7 +44,6 @@ protocol TabSwitcherBarsStateHandling {
     var doneButton: UIBarButtonItem { get }
     var closeTabsButton: UIBarButtonItem { get }
     var menuButton: UIBarButtonItem { get }
-    var addAllBookmarksButton: UIBarButtonItem { get }
     var tabSwitcherStyleButton: UIBarButtonItem { get }
     var editButton: UIBarButtonItem { get }
     var selectAllButton: UIBarButtonItem { get }
@@ -78,17 +77,44 @@ protocol TabSwitcherBarsStateHandling {
 /// This is what we hope will be the new version long term.
 class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
-    lazy var plusButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandNewTab, image: DesignSystemImages.Glyphs.Size24.add)
-    lazy var fireButton = BrowserChromeButton.createToolbarButtonItem(title: "Close all tabs and clear data", image: DesignSystemImages.Glyphs.Size24.fireSolid)
-    lazy var doneButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil)
-    lazy var closeTabsButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: DesignSystemImages.Glyphs.Size24.trash)
+    lazy var plusButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandNewTab, image: DesignSystemImages.Glyphs.Size24.add) { [weak self] in
+        self?.onPlusButtonTapped?()
+    }
+
+    lazy var fireButton = BrowserChromeButton.createToolbarButtonItem(title: "Close all tabs and clear data", image: DesignSystemImages.Glyphs.Size24.fireSolid) { [weak self] in
+        self?.onFireButtonTapped?()
+    }
+
+    lazy var doneButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil) { [weak self] in
+        self?.onDoneButtonTapped?()
+    }
+
+    lazy var closeTabsButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: DesignSystemImages.Glyphs.Size24.trash) { [weak self] in
+        self?.onCloseTabsTapped?()
+    }
+
+    // No action as this is a menu
     lazy var menuButton = BrowserChromeButton.createToolbarButtonItem(title: "More Menu", image: DesignSystemImages.Glyphs.Size24.moreApple)
-    lazy var addAllBookmarksButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.bookmarkAllTabs, image: DesignSystemImages.Glyphs.Size24.bookmarkNew)
-    lazy var tabSwitcherStyleButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil)
+
+    lazy var tabSwitcherStyleButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil) {
+        [weak self] in
+        self?.onTabStyleButtonTapped?()
+    }
+
+    // No action as shows a menu instead
     lazy var editButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.actionGenericEdit, image: DesignSystemImages.Glyphs.Size24.menuDotsVertical)
-    lazy var selectAllButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.selectAllTabs, image: nil)
-    lazy var deselectAllButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.deselectAllTabs, image: nil)
-    lazy var duckChatButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.duckAiFeatureName, image: DesignSystemImages.Glyphs.Size24.aiChat)
+
+    lazy var selectAllButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.selectAllTabs, image: nil) { [weak self] in
+        self?.onSelectAllTapped?()
+    }
+
+    lazy var deselectAllButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.deselectAllTabs, image: nil) { [weak self] in
+        self?.onDeselectAllTapped?()
+    }
+
+    lazy var duckChatButton = BrowserChromeButton.createToolbarButtonItem(title: UserText.duckAiFeatureName, image: DesignSystemImages.Glyphs.Size24.aiChat) { [weak self] in
+        self?.onDuckChatTapped?()
+    }
 
     private(set) var bottomBarItems = [UIBarButtonItem]()
     private(set) var isBottomBarHidden = false
@@ -155,83 +181,21 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         // Configure tab style button with dynamic image
         if let button = tabSwitcherStyleButton.customView as? BrowserChromeButton {
             button.setImage(tabsStyle.image)
-            button.removeTarget(nil, action: nil, for: .allEvents)
-            if let action = onTabStyleButtonTapped {
-                button.addAction(UIAction { _ in action() }, for: .touchUpInside)
-            }
-        }
-
-        // Configure plus button
-        if let button = plusButton.customView as? BrowserChromeButton {
-            button.removeTarget(nil, action: nil, for: .allEvents)
-            if let action = onPlusButtonTapped {
-                button.addAction(UIAction { _ in action() }, for: .touchUpInside)
-            }
-        }
-
-        // Configure fire button
-        if let button = fireButton.customView as? BrowserChromeButton {
-            button.removeTarget(nil, action: nil, for: .allEvents)
-            if let action = onFireButtonTapped {
-                button.addAction(UIAction { _ in action() }, for: .touchUpInside)
-            }
-        }
-
-        // Configure done button
-        if let button = doneButton.customView as? BrowserChromeButton {
-            button.removeTarget(nil, action: nil, for: .allEvents)
-            if let action = onDoneButtonTapped {
-                button.addAction(UIAction { _ in action() }, for: .touchUpInside)
-            }
         }
 
         // Configure edit button with menu
         if let button = editButton.customView as? BrowserChromeButton {
-            button.setImage(DesignSystemImages.Glyphs.Size24.menuDotsVertical)
             button.menu = onEditButtonTapped?()
             button.showsMenuAsPrimaryAction = true
         }
 
-        // Configure select all button
-        if let button = selectAllButton.customView as? BrowserChromeButton {
-            button.removeTarget(nil, action: nil, for: .allEvents)
-            button.setTitle(UserText.selectAllTabs, for: .normal)
-            if let action = onSelectAllTapped {
-                button.addAction(UIAction(title: UserText.selectAllTabs) { _ in action() }, for: .touchUpInside)
-            }
-        }
-
-        // Configure deselect all button
-        if let button = deselectAllButton.customView as? BrowserChromeButton {
-            button.removeTarget(nil, action: nil, for: .allEvents)
-            if let action = onDeselectAllTapped {
-                button.addAction(UIAction { _ in action() }, for: .touchUpInside)
-            }
-        }
-
         // Configure menu button with menu
         if let button = menuButton.customView as? BrowserChromeButton {
-            button.setImage(DesignSystemImages.Glyphs.Size24.moreApple)
             button.menu = onMenuButtonTapped?()
             button.showsMenuAsPrimaryAction = true
             button.isEnabled = canShowSelectionMenu
         }
 
-        // Configure close tabs button
-        if let button = closeTabsButton.customView as? BrowserChromeButton {
-            button.removeTarget(nil, action: nil, for: .allEvents)
-            if let action = onCloseTabsTapped {
-                button.addAction(UIAction { _ in action() }, for: .touchUpInside)
-            }
-        }
-
-        // Configure duck chat button
-        if let button = duckChatButton.customView as? BrowserChromeButton {
-            button.removeTarget(nil, action: nil, for: .allEvents)
-            if let action = onDuckChatTapped {
-                button.addAction(UIAction { _ in action() }, for: .touchUpInside)
-            }
-        }
     }
 
     private func configureButtons(for state: TabSwitcherToolbarState) {

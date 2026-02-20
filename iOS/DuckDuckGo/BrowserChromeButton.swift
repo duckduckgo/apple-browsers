@@ -229,11 +229,18 @@ private extension UIButton.Configuration {
 
 extension BrowserChromeButton {
 
-    static func createToolbarButtonItem(title: String, image: UIImage?) -> UIBarButtonItem {
+    static func createToolbarButtonItem(title: String, image: UIImage?, action: (() -> Void)? = nil) -> UIBarButtonItem {
         let button = BrowserChromeButton(.toolbar)
         if let image = image {
             button.setImage(image)
         }
+
+        if let action = action {
+            button.addAction(UIAction{ _ in
+                action()
+            }, for: .touchUpInside)
+        }
+
         button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
         let barItem = UIBarButtonItem(customView: button)

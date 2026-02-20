@@ -21,11 +21,6 @@ import SwiftUI
 import DuckUI
 import Onboarding
 
-private enum IntroDialogContentCopy {
-    static let continueCTA = "Let's do it!"
-    static let skipCTA = "I've been here before"
-}
-
 extension OnboardingRebranding.OnboardingView {
 
     struct IntroDialogContent: View {
@@ -93,7 +88,7 @@ extension OnboardingRebranding.OnboardingView {
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: continueAction) {
-                            Text(IntroDialogContentCopy.continueCTA)
+                            Text(UserText.Onboarding.Intro.continueCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
@@ -102,7 +97,7 @@ extension OnboardingRebranding.OnboardingView {
                                 showSkipOnboarding = true
                                 skipAction()
                             }) {
-                                Text(IntroDialogContentCopy.skipCTA)
+                                Text(UserText.Onboarding.Intro.skipCTA)
                             }
                             .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                         }

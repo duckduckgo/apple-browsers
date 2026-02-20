@@ -25,11 +25,11 @@ private enum OnboardingViewMetrics {
     static let landingScreenDuration = 2.0
 }
 
-private enum OnboardingViewCopy {
-    static let introTitle = "Hi There!"
-    static let introMessage = "Ready for a faster browser that keeps you protected?"
-    static let browsersComparisonTitle = "Protections activated!"
-}
+//private enum OnboardingViewCopy {
+//    static let introTitle = "Hi There!"
+//    static let introMessage = "Ready for a faster browser that keeps you protected?"
+//    static let browsersComparisonTitle = "Protections activated!"
+//}
 
 private enum BubbleBackedDialogMetrics {
     static let introAdditionalTopMargin: CGFloat = 40
@@ -260,8 +260,8 @@ extension OnboardingRebranding {
             }
 
             return IntroDialogContent(
-                title: OnboardingViewCopy.introTitle,
-                message: OnboardingViewCopy.introMessage,
+                title: UserText.Onboarding.Intro.title,
+                message: "",
                 skipOnboardingView: skipOnboardingView,
                 showCTA: $model.introState.showIntroButton,
                 continueAction: {
@@ -273,7 +273,7 @@ extension OnboardingRebranding {
 
         private var browsersComparisonView: some View {
             BrowsersComparisonContent(
-                title: OnboardingViewCopy.browsersComparisonTitle,
+                title: "",//OnboardingViewCopy.browsersComparisonTitle,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
                 cancelAction: model.cancelSetDefaultBrowserAction
             )

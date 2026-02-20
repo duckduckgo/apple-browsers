@@ -87,5 +87,20 @@
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_sidebar_resized": {
+        "description": "Fired when user finishes dragging the sidebar resize grip (after 500 ms debounce)",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "width",
+                "description": "The final sidebar width in points",
+                "type": "integer"
+            }
+        ]
     }
 }

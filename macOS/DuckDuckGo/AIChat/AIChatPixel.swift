@@ -97,6 +97,9 @@ enum AIChatPixel: PixelKitEvent {
     /// This is a unique pixel (sent once per app installation)
     case aiChatSidebarSettingChanged
 
+    /// Event Trigger: User finishes dragging the sidebar resize grip (after 500 ms debounce)
+    case aiChatSidebarResized(width: Int)
+
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
@@ -249,6 +252,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_sidebar_expanded"
         case .aiChatSidebarSettingChanged:
             return "aichat_sidebar_setting_changed_u"
+        case .aiChatSidebarResized:
+            return "aichat_sidebar_resized"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -389,6 +394,8 @@ enum AIChatPixel: PixelKitEvent {
             return params
         case .aiChatSidebarClosed(let source):
             return ["source": source.rawValue]
+        case .aiChatSidebarResized(let width):
+            return ["width": String(width)]
         case .aiChatSummarizeText(let source):
             return ["source": source.rawValue]
         case .aiChatPageContextAdded(let automaticEnabled), .aiChatPageContextRemoved(let automaticEnabled):
@@ -423,6 +430,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSidebarClosed,
                 .aiChatSidebarExpanded,
                 .aiChatSidebarSettingChanged,
+                .aiChatSidebarResized,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,

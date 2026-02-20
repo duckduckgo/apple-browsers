@@ -3700,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Tavo prenumerata buvo pašalinta iš šio įrenginio.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Atšaukti plano keitimą į žemesnio lygio";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Jūsų planas bus sumažintas iki %1$@ nuo %2$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Atnaujinkite planą arba atšaukite";
 
@@ -3793,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Prenumeratos planai";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Planas baigiamas keisti…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Užbaigiama pirkimą...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Planas keičiamas…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Pirkimas vyksta...";

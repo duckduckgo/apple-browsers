@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
+import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common
@@ -27,7 +29,6 @@ import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
 import WebKit
-import AutoconsentStats
 
 /**
  Tab Extensions should conform to TabExtension protocol
@@ -89,7 +90,6 @@ protocol TabExtensionDependencies {
     var tabCrashAggregator: TabCrashAggregator { get }
     var tabsPreferences: TabsPreferences { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
-    var autoconsentStats: AutoconsentStatsCollecting { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -106,6 +106,7 @@ typealias TabExtensionsBuilderArguments = (
     titlePublisher: AnyPublisher<String?, Never>,
     errorPublisher: AnyPublisher<WKError?, Never>,
     userScriptsPublisher: AnyPublisher<UserScripts?, Never>,
+    updateController: (any UpdateController)?,
     inheritedAttribution: AdClickAttributionLogic.State?,
     userContentControllerFuture: Future<UserContentController, Never>,
     permissionModel: PermissionModel,
@@ -259,10 +260,8 @@ extension TabExtensionsBuilder {
                                    pixelSender: dependencies.newTabPageShownPixelSender)
         }
 
-        let autoconsentTabExtension = add {
-            AutoconsentTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
-                                    autoconsentStats: dependencies.autoconsentStats,
-                                    featureFlagger: dependencies.featureFlagger)
+        add {
+            AutoconsentTabExtension(scriptsPublisher: userScripts.compactMap { $0 })
         }
 
         let isCapturingHistory = !args.isTabBurner && !args.isTabLoadedInSidebar
@@ -272,7 +271,6 @@ extension TabExtensionsBuilder {
                                 trackersPublisher: contentBlocking.trackersPublisher,
                                 urlPublisher: args.contentPublisher.map { content in content.displaysContentInWebView ? content.urlForWebView : nil },
                                 titlePublisher: args.titlePublisher,
-                                popupManagedPublisher: autoconsentTabExtension.popupManagedPublisher,
                                 scriptsPublisher: userScripts.compactMap { $0 },
                                 webViewPublisher: args.webViewFuture)
         }
@@ -333,16 +331,6 @@ extension TabExtensionsBuilder {
         add {
             SubscriptionTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
         }
-
-#if SPARKLE
-        add {
-            ReleaseNotesTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
-        }
-#else
-        add {
-            ReleaseNotesTabExtension()
-        }
-#endif
 
         if let tunnelController = dependencies.tunnelController {
             add {

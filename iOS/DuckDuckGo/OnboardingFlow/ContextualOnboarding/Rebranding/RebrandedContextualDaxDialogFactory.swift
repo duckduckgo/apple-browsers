@@ -187,7 +187,7 @@ private extension RebrandedContextualDaxDialogFactory {
         delegate: ContextualOnboardingDelegate,
         onSizeUpdate: @escaping () -> Void
     ) -> some View {
-        let attributedMessage = spec.message.attributedStringFromMarkdown(color: ThemeManager.shared.currentTheme.daxDialogTextColor)
+        let attributedMessage = attributedStringFromLegacyMarkdown(spec.message)
 
         let onManualDismiss: (_ isShowingFireDialog: Bool) -> Void = { [weak delegate, weak self] isShowingFireDialog in
             // Hide Pulsing animation for Privacy Shield or Fire Dialog
@@ -203,21 +203,24 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        return OnboardingTrackersDoneDialog(
-            shouldFollowUp: shouldFollowUpToFireDialog,
-            message: attributedMessage,
-            blockedTrackersCTAAction: { [weak self, weak delegate] in
-                // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
-                if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
-                    delegate?.didTapDismissContextualOnboardingAction()
-                } else {
-                    onSizeUpdate()
-                    delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
-                    self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
-                }
-            },
-            onManualDismiss: onManualDismiss
-        )
+        return OnboardingConditionalCenteredScrollableContainerView {
+            OnboardingRebranding.OnboardingTrackersBlockedDialog(
+                shouldFollowUp: shouldFollowUpToFireDialog,
+                message: attributedMessage,
+                blockedTrackersCTAAction: { [weak self, weak delegate] in
+                    // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
+                    if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
+                        delegate?.didTapDismissContextualOnboardingAction()
+                    } else {
+                        onSizeUpdate()
+                        delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
+                        self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
+                    }
+                },
+                onManualDismiss: onManualDismiss
+            )
+        }
+        .applyContextualOnboardingBackground(backgroundType: .trackers, animationContext: .default)
         .onAppear { [weak delegate] in
             delegate?.didShowContextualOnboardingTrackersDialog()
         }
@@ -241,10 +244,13 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        return OnboardingFireDialog(onManualDismiss: onManualDismiss)
-            .onFirstAppear { [weak self] in
-                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
-            }
+        return OnboardingConditionalCenteredScrollableContainerView {
+            OnboardingRebranding.OnboardingFireDialog(onManualDismiss: onManualDismiss)
+        }
+        .applyContextualOnboardingBackground(backgroundType: .fireDialog, animationContext: .default)
+        .onFirstAppear { [weak self] in
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
+        }
     }
 
 }
@@ -267,17 +273,53 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        return OnboardingFinalDialog(
-            logoPosition: .left,
-            message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-            cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-            dismissAction: dismissAction,
-            onManualDismiss: onManualDismiss
-        )
+        return OnboardingConditionalCenteredScrollableContainerView {
+            OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+                cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                dismissAction: dismissAction,
+                onManualDismiss: onManualDismiss
+            )
+        }
+        .applyContextualOnboardingBackground(backgroundType: .endOfJourney, animationContext: .default)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
         }
     }
 
+}
+
+// MARK: - Helpers
+
+private extension RebrandedContextualDaxDialogFactory {
+
+    // Converts a string with single asterisks for bold (*text*) to an AttributedString using native markdown parsing.
+    // Native markdown requires double asterisks for bold (**text**), so this helper converts the format.
+    func attributedStringFromLegacyMarkdown(_ string: String) -> AttributedString {
+        // Convert *text* to **text** for native markdown parsing using regex
+        // Matches *text* but not escaped \* or already doubled **
+        // - (?<!\*) - Negative lookbehind: ensure no * before
+        // - \* - Match a single *
+        // - (?!\*) - Negative lookahead: ensure no * after
+        // - ([^\*]+) - Capture group: one or more non-asterisk characters
+        // - \*(?!\*) - Match closing single * (not followed by another *)
+        let markdown = string.replacingOccurrences(
+            of: #"(?<!\*)\*(?!\*)([^\*]+)\*(?!\*)"#,
+            with: "**$1**",
+            options: .regularExpression
+        )
+
+        // Parse with native AttributedString markdown support
+        do {
+            return try AttributedString(
+                markdown: markdown,
+                options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+            )
+        } catch {
+            // Fallback to plain text if parsing fails
+            return AttributedString(string)
+        }
+    }
+    
 }

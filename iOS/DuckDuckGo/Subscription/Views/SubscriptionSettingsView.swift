@@ -59,6 +59,8 @@ struct SubscriptionSettingsViewV2: View {
     @State var isShowingSupportView = false
     @State var isShowingPlansView = false
     @State var isShowingUpgradeView = false
+    @State var isShowingCancelDowngradeError = false
+    @State private var cancelDowngradeErrorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
 
     var body: some View {
         optionsView
@@ -70,6 +72,18 @@ struct SubscriptionSettingsViewV2: View {
                 if value {
                     isShowingSubscriptionError = true
                 }
+            }
+            .onChange(of: viewModel.cancelDowngradeError) { value in
+                if let messageType = SubscriptionTransactionErrorAlert.displayContent(for: value) {
+                    cancelDowngradeErrorMessageType = messageType
+                    isShowingCancelDowngradeError = true
+                }
+            }
+            .alert(isPresented: $isShowingCancelDowngradeError) {
+                SubscriptionTransactionErrorAlert.alert(
+                    for: cancelDowngradeErrorMessageType,
+                    onDismiss: { viewModel.clearCancelDowngradeError() }
+                )
             }
     }
 
@@ -435,6 +449,10 @@ struct SubscriptionSettingsViewV2: View {
             headerSection
                 .padding(.horizontal, -20)
                 .padding(.vertical, -10)
+            if viewModel.state.cancelPendingDowngradeDetails != nil {
+                downgradeBanner
+                    .listRowBackground(Color(designSystemColor: .surface))
+            }
             if viewModel.shouldShowUpgrade {
                 upgradeSection
             }
@@ -526,6 +544,14 @@ struct SubscriptionSettingsViewV2: View {
             viewModel.showConnectionError(value)
         }
 
+        // Cancel downgrade in progress overlay
+        .overlay {
+            if let status = viewModel.state.cancelDowngradeTransactionStatus {
+                let message = cancelDowngradeOverlayMessage(for: status)
+                PurchaseInProgressView(status: message)
+            }
+        }
+
         .onChange(of: isShowingManageEmailView) { value in
             if value {
                 if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
@@ -569,6 +595,43 @@ struct SubscriptionSettingsViewV2: View {
     private var stripeView: some View {
         if let stripeViewModel = viewModel.state.stripeViewModel {
             SubscriptionExternalLinkView(viewModel: stripeViewModel)
+        }
+    }
+
+    @ViewBuilder
+    private var downgradeBanner: some View {
+        if let details = viewModel.state.cancelPendingDowngradeDetails {
+            Section {
+                // Row 1: Icon + Description
+                HStack(alignment: .top, spacing: 12) {
+                    Image(uiImage: DesignSystemImages.Color.Size24.info)
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                    Text(details)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                }
+                .listRowBackground(Color(designSystemColor: .surface))
+
+                // Row 2: Cancel downgrade button
+                SettingsCustomCell(content: {
+                    Text(UserText.cancelDowngradeButton)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .accent))
+                        .padding(.leading, 36) // 24 (icon) + 12 (spacing) to align with text
+                },
+                                   action: { viewModel.cancelPendingDowngrade() },
+                                   isButton: true)
+            }
+        }
+    }
+
+    private func cancelDowngradeOverlayMessage(for status: CancelDowngradeOverlayStatus) -> String {
+        switch status {
+        case .planChangeInProgress:
+            return UserText.subscriptionPlanChangeInProgressTitle
+        case .completingPlanChange:
+            return UserText.subscriptionCompletePlanChangeTitle
         }
     }
 }

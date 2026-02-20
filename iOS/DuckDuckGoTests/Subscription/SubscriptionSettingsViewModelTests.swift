@@ -38,6 +38,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         super.setUp()
         mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.resultURL = URL(string: "https://example.com")!
+        mockSubscriptionManager.resultStorePurchaseManager = StorePurchaseManagerMock()
         mockFeatureFlagger = MockFeatureFlagger()
         cancellables = Set<AnyCancellable>()
     }
@@ -212,8 +213,8 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(sut.state.isShowingGoogleView)
     }
 
-    func testViewAllPlans_WhenStripePlatform_SetsIsShowingStripeViewTrue() async {
-        // Given - Stripe platform subscription
+    func testViewAllPlans_WhenStripePlatform_SetsIsShowingPlansViewTrue() async {
+        // Given - Stripe platform subscription (same as Apple: navigateToPlans sets isShowingPlansView)
         mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe, tier: .plus))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
@@ -222,19 +223,10 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         await waitForSubscriptionUpdate()
 
         // When
-        let stripeViewExpectation = expectation(description: "Stripe view shown")
-        sut.$state
-            .map { $0.isShowingStripeView }
-            .filter { $0 == true }
-            .first()
-            .sink { _ in stripeViewExpectation.fulfill() }
-            .store(in: &cancellables)
-
         sut.navigateToPlans()
 
-        // Then - Wait for isShowingStripeView to become true
-        await fulfillment(of: [stripeViewExpectation], timeout: 2.0)
-        XCTAssertTrue(sut.state.isShowingStripeView)
+        // Then
+        XCTAssertTrue(sut.state.isShowingPlansView)
     }
 
     func testViewAllPlans_WhenUnknownPlatform_SetsIsShowingInternalSubscriptionNoticeTrue() async {
@@ -623,14 +615,122 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowUpgrade)
     }
 
+    // MARK: - Cancel Pending Downgrade
+
+    func testCancelPendingDowngrade_WhenAppleSubscriptionNoCurrentProductId_DoesNotInvokePerformer() async {
+        let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus)
+        mockSubscriptionManager.resultSubscription = .success(subscription)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        let mockPerformer = MockSubscriptionFlowsExecuter()
+        sut = makeSUT(subscriptionFlowsExecuter: mockPerformer)
+        await waitForSubscriptionUpdate()
+
+        sut.cancelPendingDowngrade()
+
+        try? await Task.sleep(nanoseconds: 100_000_000) // Allow runCancelHandler task to complete
+        XCTAssertNil(mockPerformer.capturedProductId)
+    }
+
+    func testCancelPendingDowngrade_WhenAppleSubscriptionWithAvailableChangesCurrentProductId_InvokesPerformerWithCurrentProductId() async {
+        let availableChanges = DuckDuckGoSubscription.AvailableChanges(upgrade: [], downgrade: [], currentProductId: "be-current-product-id")
+        let subscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            platform: .apple,
+            tier: .plus,
+            availableChanges: availableChanges
+        )
+        mockSubscriptionManager.resultSubscription = .success(subscription)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        let mockPerformer = MockSubscriptionFlowsExecuter()
+        let performerCalled = expectation(description: "Tier change performer called")
+        mockPerformer.onPerformTierChange = { performerCalled.fulfill() }
+
+        sut = makeSUT(subscriptionFlowsExecuter: mockPerformer)
+        await waitForSubscriptionUpdate()
+
+        sut.cancelPendingDowngrade()
+
+        await fulfillment(of: [performerCalled], timeout: 5.0)
+        XCTAssertEqual(mockPerformer.capturedProductId, "be-current-product-id")
+    }
+
+    func testCancelPendingDowngrade_WhenGoogleSubscription_ShowsGoogleView() async {
+        mockSubscriptionManager.resultSubscription = .success(
+            SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .google, tier: .plus))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+        await waitForSubscriptionUpdate()
+
+        sut.cancelPendingDowngrade()
+
+        await Task.yield()
+        XCTAssertTrue(sut.state.isShowingGoogleView)
+    }
+
+    func testCancelPendingDowngrade_WhenNoSubscriptionInfo_ShowsInternalNotice() {
+        mockSubscriptionManager.resultSubscription = nil
+        mockSubscriptionManager.resultTokenContainer = nil
+        sut = makeSUT()
+
+        sut.cancelPendingDowngrade()
+
+        XCTAssertTrue(sut.state.isShowingInternalSubscriptionNotice)
+    }
+
+    func testSetCancelDowngradeStatus_WhenIdle_SetsCancelDowngradeTransactionStatusToNil() async {
+        let subscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            platform: .apple,
+            tier: .plus,
+            availableChanges: DuckDuckGoSubscription.AvailableChanges(upgrade: [], downgrade: [], currentProductId: "test-product-id"))
+        mockSubscriptionManager.resultSubscription = .success(subscription)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        let mockPerformer = MockSubscriptionFlowsExecuter()
+        let performerCalled = expectation(description: "Performer called")
+        mockPerformer.onPerformTierChange = { [weak mockPerformer] in
+            mockPerformer?.setTransactionStatus?(.idle)
+            performerCalled.fulfill()
+        }
+        sut = makeSUT(subscriptionFlowsExecuter: mockPerformer)
+        await waitForSubscriptionUpdate()
+
+        sut.cancelPendingDowngrade()
+        await fulfillment(of: [performerCalled], timeout: 5.0)
+
+        XCTAssertNil(sut.state.cancelDowngradeTransactionStatus)
+    }
+
+    @MainActor
+    func testSetCancelDowngradeError_SetsCancelDowngradeErrorInState() async  {
+        sut = makeSUT()
+        let error = AppStorePurchaseFlowError.purchaseFailed(NSError(domain: "Test", code: -1))
+
+        sut.setCancelDowngradeError(error)
+
+        XCTAssertEqual(sut.state.cancelDowngradeError, .purchaseFailed)
+    }
+
+    @MainActor
+    func testClearCancelDowngradeError_ClearsErrorInState() {
+        sut = makeSUT()
+        sut.setCancelDowngradeError(AppStorePurchaseFlowError.purchaseFailed(NSError(domain: "Test", code: -1)))
+
+        sut.clearCancelDowngradeError()
+
+        XCTAssertNil(sut.state.cancelDowngradeError)
+    }
+
     // MARK: - Helpers
 
-    private func makeSUT() -> SubscriptionSettingsViewModel {
+    private func makeSUT(subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil) -> SubscriptionSettingsViewModel {
         SubscriptionSettingsViewModel(
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             keyValueStorage: MockKeyValueStorage(),
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter
         )
     }
 
@@ -649,6 +749,28 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         sut.onFirstAppear()
 
         await fulfillment(of: [expectation], timeout: 15.0)
+    }
+}
+
+// MARK: - Mock Tier Change Performer
+
+private final class MockSubscriptionFlowsExecuter: SubscriptionFlowsExecuting {
+    var capturedProductId: String?
+    var setTransactionStatus: ((SubscriptionTransactionStatus) -> Void)?
+    var setTransactionError: ((AppStorePurchaseFlowError?) -> Void)?
+    var onPerformTierChange: (() async -> Void)?
+
+    @MainActor
+    func performTierChange(to productId: String,
+                           changeType: String?,
+                           contextName: String?,
+                           setTransactionStatus: ((SubscriptionTransactionStatus) -> Void)?,
+                           setTransactionError: ((AppStorePurchaseFlowError?) -> Void)?,
+                           pushPurchaseUpdate: ((PurchaseUpdate) async -> Void)?) async {
+        capturedProductId = productId
+        self.setTransactionStatus = setTransactionStatus
+        self.setTransactionError = setTransactionError
+        await onPerformTierChange?()
     }
 }
 

@@ -96,8 +96,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     // No action as this is a menu
     lazy var menuButton = BrowserChromeButton.createToolbarButtonItem(title: "More Menu", image: DesignSystemImages.Glyphs.Size24.moreApple)
 
-    lazy var tabSwitcherStyleButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil) {
-        [weak self] in
+    lazy var tabSwitcherStyleButton = BrowserChromeButton.createToolbarButtonItem(title: "", image: nil) { [weak self] in
         self?.onTabStyleButtonTapped?()
     }
 
@@ -238,7 +237,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         }
     }
 
-    func updateBottomBar() {    
+    func updateBottomBar() {
         var newItems: [UIBarButtonItem]
 
         switch interfaceMode {

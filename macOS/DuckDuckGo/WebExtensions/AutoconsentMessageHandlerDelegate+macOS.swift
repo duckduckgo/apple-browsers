@@ -126,6 +126,10 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
             return .detectedByBoth
         case "autoconsent_detected-only-rules":
             return .detectedOnlyRules
+        case "autoconsent_self-test-ok":
+            return .selfTestOk
+        case "autoconsent_self-test-fail":
+            return .selfTestFail
         case "autoconsent_summary":
             let intParams = params.compactMapValues { value -> Int? in
                 if let intValue = value as? Int { return intValue }

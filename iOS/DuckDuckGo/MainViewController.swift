@@ -912,11 +912,12 @@ class MainViewController: UIViewController {
     private func registerForWebExtensionNotifications() {
         if #available(iOS 18.4, *) {
             NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(handleWebExtensionDashboardStateRefresh(_:)),
-                name: .webExtensionAutoconsentDashboardStateRefresh,
-                object: nil
-            )
+                forName: .webExtensionAutoconsentDashboardStateRefresh,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleWebExtensionDashboardStateRefresh(notification)
+            }
         }
     }
 

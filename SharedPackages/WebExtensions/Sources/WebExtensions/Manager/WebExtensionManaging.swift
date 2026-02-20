@@ -22,10 +22,6 @@ import WebKit
 /// Protocol defining the interface for managing web extensions.
 public protocol WebExtensionManaging: AnyObject {
 
-    /// Whether there are any installed extensions.
-    @available(macOS 15.4, iOS 18.4, *)
-    var hasInstalledExtensions: Bool { get }
-
     /// The set of currently loaded extension contexts.
     @available(macOS 15.4, iOS 18.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }

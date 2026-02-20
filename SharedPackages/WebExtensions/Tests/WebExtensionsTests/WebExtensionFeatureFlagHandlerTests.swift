@@ -119,7 +119,6 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
 
     var uninstallAllExtensionsCalled = false
 
-    var hasInstalledExtensions: Bool { false }
     var loadedExtensions: Set<WKWebExtensionContext> { [] }
     var webExtensionIdentifiers: [String] { [] }
     var controller: WKWebExtensionController { WKWebExtensionController() }

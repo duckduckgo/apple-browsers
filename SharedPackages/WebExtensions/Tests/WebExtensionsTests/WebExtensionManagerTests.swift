@@ -300,22 +300,6 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(resultIdentifiers, ["extension1.zip", "extension2.zip"])
     }
 
-    @MainActor
-    func testThatHasInstalledExtensions_ReturnsTrueWhenExtensionsExist() {
-        let manager = makeManager()
-        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: "extension.zip")]
-
-        XCTAssertTrue(manager.hasInstalledExtensions)
-    }
-
-    @MainActor
-    func testThatHasInstalledExtensions_ReturnsFalseWhenNoExtensionsExist() {
-        let manager = makeManager()
-        installedExtensionStoringMock.installedExtensions = []
-
-        XCTAssertFalse(manager.hasInstalledExtensions)
-    }
-
     // MARK: - Extension Version Lookup Tests
 
     @MainActor

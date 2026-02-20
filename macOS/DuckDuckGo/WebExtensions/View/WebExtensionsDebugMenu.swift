@@ -35,7 +35,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         installExtensionMenuItem.submenu = makeInstallSubmenu()
         installExtensionMenuItem.isEnabled = true
         uninstallAllExtensionsMenuItem.target = self
-        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.hasInstalledExtensions
+        uninstallAllExtensionsMenuItem.isEnabled = true
 
         addItems()
     }
@@ -79,7 +79,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItems()
 
         installExtensionMenuItem.isEnabled = true
-        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.hasInstalledExtensions
+        uninstallAllExtensionsMenuItem.isEnabled = true
     }
 
     @objc func selectAndLoadWebExtension() {

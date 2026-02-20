@@ -103,10 +103,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         installationStore.installedExtensions.map(\.uniqueIdentifier)
     }
 
-    public var hasInstalledExtensions: Bool {
-        !installationStore.installedExtensions.isEmpty
-    }
-
     public var loadedExtensions: Set<WKWebExtensionContext> {
         controller.extensionContexts
     }

@@ -149,32 +149,32 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         notifyUpdate()
     }
 
-    /// Installs a bundled extension, copying it to platform storage if not already installed.
-    /// - Parameter bundledExtension: The bundled extension to install.
-    public func installBundledExtension(_ bundledExtension: BundledWebExtension) async throws {
-        guard !installationStore.installedExtensions.contains(where: { $0.filename == bundledExtension.url.lastPathComponent }) else {
-            Logger.webExtensions.debug("⚠️ Bundled extension '\(bundledExtension.url.lastPathComponent)' is already installed")
-            return
-        }
-
-        try await installExtension(from: bundledExtension.url)
-    }
-
-    /// Uninstalls a previously installed bundled extension.
-    /// - Parameter bundledExtension: The bundled extension to uninstall.
-    public func uninstallBundledExtension(_ bundledExtension: BundledWebExtension) async throws {
-        let filename = bundledExtension.url.lastPathComponent
-        let matchingExtensions = installationStore.installedExtensions.filter { $0.filename == filename }
-
-        guard !matchingExtensions.isEmpty else {
-            Logger.webExtensions.debug("⚠️ Bundled extension '\(filename)' is not installed")
-            return
-        }
-
-        for installed in matchingExtensions {
-            try uninstallExtension(identifier: installed.uniqueIdentifier)
-        }
-    }
+//    /// Installs a bundled extension, copying it to platform storage if not already installed.
+//    /// - Parameter bundledExtension: The bundled extension to install.
+//    public func installBundledExtension(_ bundledExtension: BundledWebExtension) async throws {
+//        guard !installationStore.installedExtensions.contains(where: { $0.filename == bundledExtension.url.lastPathComponent }) else {
+//            Logger.webExtensions.debug("⚠️ Bundled extension '\(bundledExtension.url.lastPathComponent)' is already installed")
+//            return
+//        }
+//
+//        try await installExtension(from: bundledExtension.url)
+//    }
+//
+//    /// Uninstalls a previously installed bundled extension.
+//    /// - Parameter bundledExtension: The bundled extension to uninstall.
+//    public func uninstallBundledExtension(_ bundledExtension: BundledWebExtension) async throws {
+//        let filename = bundledExtension.url.lastPathComponent
+//        let matchingExtensions = installationStore.installedExtensions.filter { $0.filename == filename }
+//
+//        guard !matchingExtensions.isEmpty else {
+//            Logger.webExtensions.debug("⚠️ Bundled extension '\(filename)' is not installed")
+//            return
+//        }
+//
+//        for installed in matchingExtensions {
+//            try uninstallExtension(identifier: installed.uniqueIdentifier)
+//        }
+//    }
 
     public func uninstallExtension(identifier: String) throws {
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")

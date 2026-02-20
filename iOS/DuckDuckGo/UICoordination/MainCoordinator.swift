@@ -32,6 +32,7 @@ import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import PrivacyStats
 import WebExtensions
+import DarkReaderExtension
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -247,21 +248,10 @@ final class MainCoordinator {
 
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
-                if darkReaderSettings.isFeatureEnabled {
-                    await self.updateDarkReader(manager: webExtensionManager)
-                }
+                await self.updateDarkReader(manager: webExtensionManager)
                 self.registerExistingTabsWithExtensionController()
             }
 
-//            adaptiveDarkModeObserver = NotificationCenter.default.addObserver(
-//                forName: AppUserDefaults.Notifications.adaptiveDarkModeChanged,
-//                object: nil,
-//                queue: .main) { [weak self] _ in
-//                    guard let self, let manager = self.webExtensionManager else { return }
-//                    Task { @MainActor in
-//                        await self.updateDarkReader(manager: manager)
-//                    }
-//                }
         } else {
             clearWebExtensionReferences()
         }
@@ -271,9 +261,9 @@ final class MainCoordinator {
         guard #available(iOS 18.4, *) else { return }
 
         if darkReaderFeatureSettings?.isDarkModeEnabled == true {
-            try? await manager.installBundledExtension(.darkReader)
+            try? await manager.installExtension(from: DarkReaderExtenion.url)
         } else {
-            manager.uninstallAllExtensions()
+//            manager.uninstallExtension(identifier: <#T##String#>)
         }
     }
 

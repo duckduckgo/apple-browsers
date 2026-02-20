@@ -56,15 +56,15 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     func installExtension(from sourceURL: URL) async throws
 
-    /// Installs a bundled extension, copying it to platform storage if not already installed.
-    /// - Parameter extension: The bundled extension to install.
-    @available(macOS 15.4, iOS 18.4, *)
-    func installBundledExtension(_ extension: BundledWebExtension) async throws
-
-    /// Uninstalls a previously installed bundled extension.
-    /// - Parameter extension: The bundled extension to uninstall.
-    @available(macOS 15.4, iOS 18.4, *)
-    func uninstallBundledExtension(_ extension: BundledWebExtension) async throws
+//    /// Installs a bundled extension, copying it to platform storage if not already installed.
+//    /// - Parameter extension: The bundled extension to install.
+//    @available(macOS 15.4, iOS 18.4, *)
+//    func installBundledExtension(_ extension: BundledWebExtension) async throws
+//
+//    /// Uninstalls a previously installed bundled extension.
+//    /// - Parameter extension: The bundled extension to uninstall.
+//    @available(macOS 15.4, iOS 18.4, *)
+//    func uninstallBundledExtension(_ extension: BundledWebExtension) async throws
 
     /// Uninstalls an extension with the given identifier.
     @available(macOS 15.4, iOS 18.4, *)

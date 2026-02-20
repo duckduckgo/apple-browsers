@@ -55,6 +55,7 @@ final class WebExtensionEventsCoordinator {
 
     @available(iOS 18.4, *)
     func didCloseTab(_ tabViewController: TabViewController, windowIsClosing: Bool = false) {
+        reportedTabUIDs.remove(tabViewController.tabModel.uid)
         webExtensionManager?.eventsListener.didCloseTab(tabViewController, windowIsClosing: windowIsClosing)
     }
 

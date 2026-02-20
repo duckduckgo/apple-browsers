@@ -70,9 +70,13 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     func unloadAllExtensions()
 
-    /// Returns the extension name from the given path.
+    /// Returns the extension name for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
     func extensionName(for identifier: String) -> String?
+
+    /// Returns the extension version for the given identifier.
+    @available(macOS 15.4, iOS 18.4, *)
+    func extensionVersion(for identifier: String) -> String?
 
     /// Returns the extension context for the given URL.
     @available(macOS 15.4, iOS 18.4, *)

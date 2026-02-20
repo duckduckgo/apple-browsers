@@ -50,7 +50,8 @@ final class WebExtensionsDebugMenu: NSMenu {
             addItem(.separator())
             for identifier in webExtensionManager.webExtensionIdentifiers {
                 let name = webExtensionManager.extensionName(for: identifier)
-                let menuItem = WebExtensionMenuItem(identifier: identifier, webExtensionName: name)
+                let version = webExtensionManager.extensionVersion(for: identifier)
+                let menuItem = WebExtensionMenuItem(identifier: identifier, webExtensionName: name, version: version)
                 self.addItem(menuItem)
             }
         }
@@ -105,8 +106,10 @@ final class WebExtensionMenuItem: NSMenuItem {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(identifier: String, webExtensionName: String?) {
-        super.init(title: webExtensionName ?? identifier,
+    init(identifier: String, webExtensionName: String?, version: String?) {
+        let displayName = webExtensionName ?? identifier
+        let title = version.map { "\(displayName) v\($0)" } ?? displayName
+        super.init(title: title,
                    action: nil,
                    keyEquivalent: "")
         submenu = WebExtensionSubMenu(extensionIdentifier: identifier)

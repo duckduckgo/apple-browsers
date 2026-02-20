@@ -316,4 +316,42 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertFalse(manager.hasInstalledExtensions)
     }
 
+    // MARK: - Extension Version Lookup Tests
+
+    @MainActor
+    func testWhenExtensionVersionRequested_ThenReturnsVersionFromStore() {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "ext-1", version: "1.2.3")
+        ]
+
+        let version = manager.extensionVersion(for: "ext-1")
+
+        XCTAssertEqual(version, "1.2.3")
+    }
+
+    @MainActor
+    func testWhenExtensionVersionRequestedForUnknownIdentifier_ThenReturnsNil() {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "ext-1", version: "1.0.0")
+        ]
+
+        let version = manager.extensionVersion(for: "unknown-ext")
+
+        XCTAssertNil(version)
+    }
+
+    @MainActor
+    func testWhenExtensionHasNoVersion_ThenReturnsNil() {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "ext-1", version: nil)
+        ]
+
+        let version = manager.extensionVersion(for: "ext-1")
+
+        XCTAssertNil(version)
+    }
+
 }

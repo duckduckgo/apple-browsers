@@ -4,6 +4,9 @@
    <Group
       location = "group:SharedPackages"
       name = "SharedPackages">
+      <FileRef
+         location = "group:DarkReaderExtension">
+      </FileRef>
       <FileSystemSynchronizedGroup
          location = "group:Infrastructure"
          name = "Infrastructure">

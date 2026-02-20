@@ -698,7 +698,7 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
         updateWideEvent.didCompleteDownload()
         pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidDownloadUpdate))
 
-        userDriver.updateLastUpdateDownloadedDate()
+
     }
 
     public func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {

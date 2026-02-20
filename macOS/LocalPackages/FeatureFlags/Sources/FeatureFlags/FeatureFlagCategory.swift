@@ -68,11 +68,9 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .canScanUrlBasedSyncSetupBarcodes,
                 .exchangeKeysToSyncWithAnotherDevice:
             return .sync
-        case .updatesWontAutomaticallyRestartApp,
-                .autoUpdateInDEBUG,
+        case .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
-                .appStoreUpdateFlow,
-                .updatesSimplifiedFlow:
+                .appStoreUpdateFlow:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,

@@ -222,21 +222,6 @@ public protocol SparkleUpdateController: UpdateController, SparkleUpdateControll
     /// **Usage**: Drives UI state to show "Restart to Update" button in Settings.
     var isAtRestartCheckpoint: Bool { get }
 
-    /// Forces an update check to bypass rollout percentage restrictions.
-    ///
-    /// **Sparkle Behavior**: Returns `true` when internal user debug settings force update checks.
-    ///
-    /// **Usage**: Internal testing to verify update flow without waiting for rollout.
-    var shouldForceUpdateCheck: Bool { get }
-
-    /// Indicates whether to use legacy automatic restart logic.
-    ///
-    /// **Sparkle Behavior**: Returns `false` when feature flag `.updatesWontAutomaticallyRestartApp` is enabled (new flow),
-    ///                       returns `true` when feature flag is disabled (legacy flow).
-    ///
-    /// **Usage**: Determines whether to use the new manual restart flow or legacy automatic restart flow.
-    var useLegacyAutoRestartLogic: Bool { get }
-
     /// Publisher that emits when the app is about to relaunch for an update.
     ///
     /// **Sparkle Behavior**: Emits just before Sparkle performs automatic relaunch.

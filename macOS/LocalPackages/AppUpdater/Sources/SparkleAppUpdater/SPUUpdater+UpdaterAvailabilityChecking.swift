@@ -19,5 +19,4 @@
 import AppUpdaterShared
 import Sparkle
 
-extension SPUUpdater: UpdaterAvailabilityChecking {
-}
+extension SPUUpdater: UpdaterAvailabilityChecking {}

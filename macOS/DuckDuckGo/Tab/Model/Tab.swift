@@ -657,9 +657,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             self.content = .none
         }
 
-        // Note:
-        //  We're no longer updating the `title` property here, as we may be end up rendering the `window.title` for the (previous) document.
-        //  Such update will take place whenever the `webView.title` property is updated.
+        // We're no longer updating the `title` property here, as we may be end up rendering the `window.title` of the (previous) document.
+        // Such update will take place whenever the `webView.title` property is updated.
     }
 
     var lastSelectedAt: Date?

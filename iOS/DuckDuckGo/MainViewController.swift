@@ -1546,6 +1546,7 @@ class MainViewController: UIViewController {
             if let previousTab {
                 webExtensionEventsCoordinator?.didDeselectTabs([previousTab])
             }
+            webExtensionEventsCoordinator?.didOpenTab(tab)
             webExtensionEventsCoordinator?.didSelectTabs([tab])
             webExtensionEventsCoordinator?.didActivateTab(tab, previousActiveTab: previousTab)
         }

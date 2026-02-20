@@ -312,6 +312,18 @@ enum Preferences {
         }
 
         private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModel {
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+            let flowPerformer = DefaultSubscriptionFlowsExecuter(
+                subscriptionManager: subscriptionManager,
+                uiHandler: subscriptionUIHandler,
+                wideEvent: wideEvent,
+                subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+                pendingTransactionHandler: pendingTransactionHandler
+            )
+
             let userEventHandler: (PreferencesSubscriptionSettingsModel.UserEvent) -> Void = { event in
                 DispatchQueue.main.async {
                     switch event {
@@ -341,17 +353,22 @@ enum Preferences {
                         pixelHandler(.subscriptionViewAllPlansClick, .standard)
                     case .didClickUpgradeToPro:
                         pixelHandler(.subscriptionUpgradeClick, .standard)
+                    case .didClickCancelPendingDowngrade:
+                        pixelHandler(.subscriptionCancelPendingDowngradeClick, .standard)
                     }
                 }
             }
 
             return PreferencesSubscriptionSettingsModel(userEventHandler: userEventHandler,
-                                                          subscriptionManager: subscriptionManager,
-                                                          subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
-                                                          keyValueStore: NSApp.delegateTyped.keyValueStore,
-                                                          winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                                                          blackFridayCampaignProvider: blackFridayCampaignProvider,
-                                                          isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) })
+                                                        subscriptionManager: subscriptionManager,
+                                                        subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
+                                                        keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                                                        blackFridayCampaignProvider: blackFridayCampaignProvider,
+                                                        isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) },
+                                                        cancelPendingDowngradeHandler: { [flowPerformer] productId in
+                _ = await flowPerformer.performTierChange(to: productId, changeType: nil, contextName: "CancelDowngradeButton")
+            })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

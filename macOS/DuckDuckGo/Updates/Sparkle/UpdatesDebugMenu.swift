@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import AppKit
 import AIChat
+import AppKit
+import AppUpdaterShared
 import Common
 import CryptoKit
 import os.log

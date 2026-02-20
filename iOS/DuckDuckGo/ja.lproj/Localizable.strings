@@ -3700,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "このデバイスからサブスクリプションが削除されました。";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "ダウングレードをキャンセル";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "プランは%2$@に%1$@にダウングレードされます。";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "プランを更新するかキャンセル";
 
@@ -3793,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "サブスクリプションプラン";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "プラン変更を完了しています…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "購入を完了しています...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "プランを変更しています…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "購入が進行中です...";

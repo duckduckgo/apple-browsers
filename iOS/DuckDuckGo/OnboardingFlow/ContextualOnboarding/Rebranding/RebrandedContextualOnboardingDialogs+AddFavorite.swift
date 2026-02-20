@@ -30,9 +30,7 @@ extension OnboardingRebranding {
         var body: some View {
             ScrollView(.vertical) {
                 DaxDialogView(logoPosition: .top) {
-                    OnboardingRebranding.ContextualDaxDialogContent(message: message.attributed) {
-                        EmptyView()
-                    }
+                    OnboardingRebranding.ContextualDaxDialogContent<EmptyView>(message: message)
                 }
                 .padding(theme.contextualOnboardingMetrics.containerPadding)
             }

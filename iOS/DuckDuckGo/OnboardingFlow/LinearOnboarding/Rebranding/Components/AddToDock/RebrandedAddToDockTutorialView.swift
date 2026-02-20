@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import Onboarding
 import DuckUI
+import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 

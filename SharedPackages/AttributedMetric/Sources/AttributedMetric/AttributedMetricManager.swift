@@ -99,6 +99,7 @@ public final class AttributedMetricManager {
         updateBucketSettings()
 
         if dataStorage.installDate == nil {
+            Logger.attributedMetric.debug("First install, storing Install Date")
             dataStorage.installDate = self.dateProvider.now()
         }
 
@@ -113,6 +114,27 @@ public final class AttributedMetricManager {
         featureFlagger.isFeatureOn(for: AttributedMetricFeatureFlag.attributedMetrics)
     }
 
+    /// The number of whole days elapsed since the app was first installed.
+    ///
+    /// Uses the stored `installDate` and the current date from `dateProvider`,
+    /// converting the `TimeInterval` between them into full days (truncated, not rounded).
+    /// Returns `0` if the install date has not been recorded yet, or if the current
+    /// date is still within the first calendar day of installation.
+    ///
+    /// ## Examples
+    /// ```
+    /// // Install date: Jan 10, 12:00 — Current date: Jan 10, 23:59
+    /// daysSinceInstalled // → 0 (same day, less than 24 h)
+    ///
+    /// // Install date: Jan 10, 12:00 — Current date: Jan 11, 11:59
+    /// daysSinceInstalled // → 0 (less than 24 h elapsed)
+    ///
+    /// // Install date: Jan 10, 12:00 — Current date: Jan 11, 12:00
+    /// daysSinceInstalled // → 1 (exactly 24 h)
+    ///
+    /// // Install date: Jan 10, 12:00 — Current date: Jan 17, 15:30
+    /// daysSinceInstalled // → 7
+    /// ```
     var daysSinceInstalled: Int {
         guard let installDate = dataStorage.installDate else {
             return 0
@@ -120,6 +142,31 @@ public final class AttributedMetricManager {
         return Int(dateProvider.now().timeIntervalSince(installDate) / .day)
     }
 
+    /// The quantised time period elapsed since the app was installed.
+    ///
+    /// Delegates to ``QuantisedTimePast/timePastFrom(date:andInstallationDate:)`` which
+    /// buckets the elapsed time into weeks (1–4) then 28-day months (2+), providing
+    /// a privacy-preserving approximation used by retention and average-usage pixels.
+    ///
+    /// Returns `nil` when the install date has not been recorded yet.
+    ///
+    /// ## Examples
+    /// ```
+    /// // Install date: Jan 1 — Current date: Jan 1 (same day)
+    /// timePastFromInstall // → .none
+    ///
+    /// // Install date: Jan 1 — Current date: Jan 5 (4 days later)
+    /// timePastFromInstall // → .weeks(1)
+    ///
+    /// // Install date: Jan 1 — Current date: Jan 10 (9 days later)
+    /// timePastFromInstall // → .weeks(2)
+    ///
+    /// // Install date: Jan 1 — Current date: Feb 5 (35 days later)
+    /// timePastFromInstall // → .months(2)  (month 1 is skipped)
+    ///
+    /// // Install date not set
+    /// timePastFromInstall // → nil
+    /// ```
     var timePastFromInstall: QuantisedTimePast? {
         guard let installDate = dataStorage.installDate else {
             Logger.attributedMetric.error("Install date missing")
@@ -203,7 +250,7 @@ public final class AttributedMetricManager {
         }
 
         guard isLessThanSixMonths else {
-            dataStorage.removeAll()
+            dataStorage.removeAllExceptInstallDate()
             return
         }
 
@@ -230,17 +277,13 @@ public final class AttributedMetricManager {
 
     // MARK: - Retention
     // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929607?focus=true
-    ///
     /// Example retention pixels from install day through month 7:
     /// - Day 0: no pixel
     /// - Days 1-7: attributed_metric_retention_week (week 1)
-    /// - Days 8-14: attributed_metric_retention_week (week 2)
-    /// - Days 15-21: attributed_metric_retention_week (week 3)
+    /// ...
     /// - Days 22-28: attributed_metric_retention_week (week 4)
     /// - Days 29-56: attributed_metric_retention_month (month 2)
-    /// - Days 57-84: attributed_metric_retention_month (month 3)
-    /// - Days 85-112: attributed_metric_retention_month (month 4)
-    /// - Days 113-140: attributed_metric_retention_month (month 5)
+    /// ...
     /// - Days 141-168: attributed_metric_retention_month (month 6)
     /// - Days 169-196: not sent (data cleared at 6 months)
     func processRetention() {
@@ -302,6 +345,11 @@ public final class AttributedMetricManager {
     func processActiveSearchDays() {
         Logger.attributedMetric.log("Processing active search days")
         let daysSinceInstalled = daysSinceInstalled
+
+        // Check if is not the same day, this limits to 1 pixel per day
+        // Note: We previously relied on PixelKit `.legacyDailyNoSuffix` frequency check, but AttributedMetric works on 24h windows and PixelKit works calculating calendar days, this approach difference can cause to fire 2 pixels in a single 24h winndow
+        guard dataStorage.activeSearchDaysLastThreshold != daysSinceInstalled else { return }
+
         var addDaysSinceInstalled: Bool = false
         switch daysSinceInstalled {
         case 0:
@@ -320,6 +368,7 @@ public final class AttributedMetricManager {
             Logger.attributedMetric.error("Failed to bucket search count value")
             return
         }
+        dataStorage.activeSearchDaysLastThreshold = daysSinceInstalled
         pixelKit?.fire(AttributedMetricPixel.userActivePastWeek(origin: originOrInstall.origin,
                                                                 installDate: originOrInstall.installDate,
                                                                 days: bucket.value,
@@ -336,6 +385,10 @@ public final class AttributedMetricManager {
     func processAverageSearchCount() {
         Logger.attributedMetric.log("Calculating average search count")
         guard let timePastFromInstall = timePastFromInstall else { return }
+
+        let daysSinceInstalled = daysSinceInstalled
+        guard dataStorage.searchLastThreshold != daysSinceInstalled else { return }
+
         let search8Days = dataStorage.search8Days
         let result = search8Days.past7DaysAverage
 
@@ -350,6 +403,7 @@ public final class AttributedMetricManager {
                 return
             }
             Logger.attributedMetric.debug("Average last week (first month) search count: \(result.average, privacy: .public), bucket: \(bucket.value, privacy: .public)")
+            dataStorage.searchLastThreshold = daysSinceInstalled
             pixelKit?.fire(AttributedMetricPixel.userAverageSearchesPastWeekFirstMonth(origin: originOrInstall.origin,
                                                                                        installDate: originOrInstall.installDate,
                                                                                        count: bucket.value,
@@ -364,6 +418,7 @@ public final class AttributedMetricManager {
                 return
             }
             Logger.attributedMetric.debug("Average last week search count: \(result.average, privacy: .public), bucket: \(bucket.value, privacy: .public)")
+            dataStorage.searchLastThreshold = daysSinceInstalled
             pixelKit?.fire(AttributedMetricPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin,
                                                                              installDate: originOrInstall.installDate,
                                                                              count: bucket.value,
@@ -389,6 +444,9 @@ public final class AttributedMetricManager {
         Logger.attributedMetric.log("Process average AD click")
         guard !isSameDayOfInstallDate else { return }
 
+        let daysSinceInstalled = daysSinceInstalled
+        guard dataStorage.adClickLastThreshold != daysSinceInstalled else { return }
+
         let adClick8Days = dataStorage.adClick8Days
         guard adClick8Days.countPast7Days > 0 else { return }
         let result = adClick8Days.past7DaysAverage
@@ -397,6 +455,7 @@ public final class AttributedMetricManager {
             return
         }
         Logger.attributedMetric.log("Average AD click count in the last week: \(bucket.value, privacy: .public)")
+        dataStorage.adClickLastThreshold = daysSinceInstalled
         pixelKit?.fire(AttributedMetricPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin,
                                                                          installDate: originOrInstall.installDate,
                                                                          count: bucket.value,
@@ -420,6 +479,9 @@ public final class AttributedMetricManager {
         Logger.attributedMetric.log("Process average DuckAI chat")
         guard !isSameDayOfInstallDate else { return }
 
+        let daysSinceInstalled = daysSinceInstalled
+        guard dataStorage.duckAILastThreshold != daysSinceInstalled else { return }
+
         let duckAIChat8Days = dataStorage.duckAIChat8Days
         guard duckAIChat8Days.countPast7Days > 0 else { return }
         let result = duckAIChat8Days.past7DaysAverage
@@ -428,6 +490,7 @@ public final class AttributedMetricManager {
             return
         }
         Logger.attributedMetric.log("Average Duck.AI chats count in the last week: \(bucket.value, privacy: .public)")
+        dataStorage.duckAILastThreshold = daysSinceInstalled
         pixelKit?.fire(AttributedMetricPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin,
                                                                             installDate: originOrInstall.installDate,
                                                                             count: bucket.value,

@@ -3700,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Il tuo abbonamento è stato rimosso da questo dispositivo.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Annulla il downgrade";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Il tuo piano sarà declassato a %1$@ il giorno %2$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Aggiorna o annulla il piano";
 
@@ -3793,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Piani di abbonamento";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Completamento della modifica del piano…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Stiamo completando l'acquisto...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Modifica del piano in corso…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Acquisto in corso...";

@@ -42,10 +42,17 @@ final class MockAIChatMessageHandler: AIChatMessageHandling {
         }
     }
     var getDataForMessageTypeCalls: [AIChatMessageType] = []
+    var getNativeConfigValuesCalls: [Bool] = []
     var setDataCalls: [SetData] = []
 
     var getDataForMessageTypeImpl: (AIChatMessageType) -> Encodable? = { _ in nil }
+    var getNativeConfigValuesImpl: (Bool) -> AIChatNativeConfigValues = { _ in .defaultValues }
     var setData: (Any?, AIChatMessageType) -> Void = { _, _ in }
+
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues {
+        getNativeConfigValuesCalls.append(isFireWindow)
+        return getNativeConfigValuesImpl(isFireWindow)
+    }
 
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable? {
         getDataForMessageTypeCalls.append(type)
@@ -98,7 +105,7 @@ struct AIChatUserScriptHandlerTests {
     @Test("getAIChatNativeConfigValues calls messageHandler")
     func testThatGetAIChatNativeConfigValuesCallsMessageHandler() async {
         _ = await handler.getAIChatNativeConfigValues(params: [], message: MockWKScriptMessage())
-        #expect(messageHandler.getDataForMessageTypeCalls == [.nativeConfigValues])
+        #expect(messageHandler.getNativeConfigValuesCalls == [false])
     }
 
     @Test("getAIChatNativePrompt calls messageHandler")
@@ -759,6 +766,40 @@ struct AIChatUserScriptHandlerTests {
         await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt"], message: MockWKScriptMessage())
 
         #expect(!mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    // MARK: - AIChatMessageHandler config values
+
+    @Test("When aiChatSync is enabled and not a fire window, supportsAIChatSync is true")
+    func testWhenAIChatSyncEnabledAndNotFireWindowThenSupportsAIChatSyncIsTrue() {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared)
+
+        let config = handler.getNativeConfigValues(isFireWindow: false)
+
+        #expect(config.supportsAIChatSync == true)
+    }
+
+    @Test("When aiChatSync is enabled and is a fire window, supportsAIChatSync is false")
+    func testWhenAIChatSyncEnabledAndFireWindowThenSupportsAIChatSyncIsFalse() {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared)
+
+        let config = handler.getNativeConfigValues(isFireWindow: true)
+
+        #expect(config.supportsAIChatSync == false)
+    }
+
+    @Test("When aiChatSync is disabled, supportsAIChatSync is false regardless of fire window")
+    func testWhenAIChatSyncDisabledThenSupportsAIChatSyncIsFalse() {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared)
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsAIChatSync == false)
+        #expect(handler.getNativeConfigValues(isFireWindow: true).supportsAIChatSync == false)
     }
 }
 // swiftlint:enable inclusive_language

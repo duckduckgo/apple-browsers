@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common
@@ -29,10 +30,10 @@ import os.log
 import PageRefreshMonitor
 import PixelKit
 import PrivacyConfig
+import SERPSettings
 import SpecialErrorPages
 import UserScript
 import WebKit
-import SERPSettings
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
     var isInPopUpWindow: Bool { get }

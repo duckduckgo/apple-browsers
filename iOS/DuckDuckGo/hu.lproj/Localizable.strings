@@ -3700,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Az előfizetésed el lett távolítva erről az eszközről.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Kisebb csomagra váltás visszavonása";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "A csomagod %2$@ dátummal %1$@ előfizetésre vált.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Csomag frissítése vagy lemondása";
 
@@ -3793,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Előfizetési csomagok";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Csomagváltás befejezése…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "A vásárlás befejezése…";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Csomagváltás folyamatban…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Vásárlás folyamatban…";

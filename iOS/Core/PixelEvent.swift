@@ -1295,6 +1295,7 @@ extension Pixel {
         // Plan Change
         case subscriptionViewAllPlansClick
         case subscriptionUpgradeClick
+        case subscriptionCancelPendingDowngradeClick
 
         // MARK: Apple Ad Attribution
         case appleAdAttribution
@@ -2775,6 +2776,7 @@ extension Pixel.Event {
         // Plan Change
         case .subscriptionViewAllPlansClick: return "m_subscription_settings_view-all-plans_click"
         case .subscriptionUpgradeClick: return "m_subscription_settings_upgrade_click"
+        case .subscriptionCancelPendingDowngradeClick: return "m_subscription_settings_cancel-pending-downgrade_click"
 
         case .networkProtectionFailureRecoveryStarted: return "m_netp_ev_failure_recovery_started"
         case .networkProtectionFailureRecoveryFailed: return "m_netp_ev_failure_recovery_failed"

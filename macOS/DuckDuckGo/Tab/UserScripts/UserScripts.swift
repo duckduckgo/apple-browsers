@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppUpdaterShared
 import BrowserServicesKit
 import Foundation
 import HistoryView
@@ -235,12 +236,20 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
                                                                          pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: subscriptionManager,
+            uiHandler: Application.appDelegate.subscriptionUIHandler,
+            wideEvent: Application.appDelegate.wideEvent,
+            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+            pendingTransactionHandler: pendingTransactionHandler
+        )
+
         delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                            stripePurchaseFlow: stripePurchaseFlow,
                                                            uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                            aiChatURL: AIChatRemoteSettings().aiChatURL,
                                                            wideEvent: Application.appDelegate.wideEvent,
-                                                           pendingTransactionHandler: pendingTransactionHandler, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
+                                                           pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)

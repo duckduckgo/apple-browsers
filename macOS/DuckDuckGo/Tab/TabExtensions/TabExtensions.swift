@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
+import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common

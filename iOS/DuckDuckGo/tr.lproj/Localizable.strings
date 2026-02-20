@@ -3700,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Aboneliğiniz bu cihazdan kaldırıldı.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Düşürmeyi İptal Et";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Planınız %2$@ tarihinde %1$@ planına düşürülecek.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Planı Güncelle veya İptal Et";
 
@@ -3793,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Abonelik Planları";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Plan değişikliği tamamlanıyor...";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Satın alma tamamlanıyor...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Plan değişikliği devam ediyor...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Satın alma devam ediyor...";

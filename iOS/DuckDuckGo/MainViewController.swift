@@ -211,6 +211,7 @@ class MainViewController: UIViewController {
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
     let aiChatSettings: AIChatSettingsProvider
+    let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     let privacyStats: PrivacyStatsProviding
 
     let customConfigurationURLProvider: CustomConfigurationURLProviding
@@ -304,6 +305,7 @@ class MainViewController: UIViewController {
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
         aiChatSettings: AIChatSettingsProvider,
+        aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
         themeManager: ThemeManaging,
@@ -344,6 +346,7 @@ class MainViewController: UIViewController {
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
+        self.aiChatAddressBarExperience = aiChatAddressBarExperience
         self.experimentalAIChatManager = experimentalAIChatManager
         self.previewsSource = previewsSource
         self.tabManager = tabManager
@@ -458,6 +461,7 @@ class MainViewController: UIViewController {
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
+                                                              aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
@@ -597,6 +601,7 @@ class MainViewController: UIViewController {
                                                       featureFlagger: featureFlagger,
                                                       aichatIPadTabFeature: aichatIPadTabFeature,
                                                       aiChatSettings: aiChatSettings,
+                                                      aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
                                                       mobileCustomization: mobileCustomization)
@@ -1377,14 +1382,14 @@ class MainViewController: UIViewController {
     /// - Parameters:
     ///   - query: The search query to be loaded.
     ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
-    func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none) {
+    func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none, fromExternalLink: Bool = false) {
         dismissOmniBar()
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled) else {
             Logger.lifecycle.error("Couldn't form URL for query: \(query, privacy: .public)")
             return
         }
 
-        loadUrlInNewTab(url, reuseExisting: reuseExisting, inheritedAttribution: nil)
+        loadUrlInNewTab(url, reuseExisting: reuseExisting, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
     }
 
     /// Load URL in a new tab, with option to reuse an existing tab.
@@ -1514,6 +1519,14 @@ class MainViewController: UIViewController {
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false) {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
+
+        // Mark tab as external launch if opened from external URL or shortcut
+        if fromExternalLink {
+            tabManager.markTabAsExternalLaunch(tab.tabModel)
+            // For external launches, only the new tab should suppress tracker animations
+            tabManager.setSuppressTrackerAnimationOnFirstLoad(for: tab.tabModel, shouldSuppress: true)
+        }
+
         dismissOmniBar()
         attachTab(tab: tab)
 
@@ -1554,6 +1567,7 @@ class MainViewController: UIViewController {
             if let previousTab {
                 webExtensionEventsCoordinator?.didDeselectTabs([previousTab])
             }
+            webExtensionEventsCoordinator?.didOpenTab(tab)
             webExtensionEventsCoordinator?.didSelectTabs([tab])
             webExtensionEventsCoordinator?.didActivateTab(tab, previousActiveTab: previousTab)
         }

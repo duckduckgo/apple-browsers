@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
-import UIKit
-import SwiftUI
 import DesignResourcesKit
+import SwiftUI
+import UIKit
 
 enum AppIcon: String, CaseIterable {
     case red = "AppIcon-red"

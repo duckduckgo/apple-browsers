@@ -17,9 +17,9 @@
 //
 
 import AppKit
+import PrivacyConfig
 import WebExtensions
 import WebKit
-import PrivacyConfig
 
 @available(macOS 15.4, *)
 final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {

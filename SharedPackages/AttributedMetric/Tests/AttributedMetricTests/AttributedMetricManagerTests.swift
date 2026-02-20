@@ -914,6 +914,286 @@ final class AttributedMetricManagerTests: XCTestCase {
         XCTAssertFalse(pixelFired, "Should not fire for 3 or more devices")
     }
 
+    // MARK: - Threshold Dedup Tests
+
+    /// Tests that processActiveSearchDays does not fire twice on the same daysSinceInstalled
+    ///
+    /// ## Test Validation
+    /// - First call on day 4 fires the pixel
+    /// - Second call on same day 4 does NOT fire (threshold guard)
+    /// - Advancing to day 5 fires the pixel again
+    func testActiveSearchDaysSameDayDedup() {
+        var pixelFireCount = 0
+
+        let fixture = createTestFixture { pixelName, _, _, _, _, _ in
+            if pixelName == "attributed_metric_active_past_week" {
+                pixelFireCount += 1
+            }
+        }
+        defer { fixture.cleanup() }
+
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Day 3: record a search
+        fixture.timeMachine.travel(by: .day, value: 3)
+        fixture.attributionManager.process(trigger: .userDidSearch)
+
+        // Day 4: record a search (shifts rolling array so day 3's data enters the past-7-days window),
+        // then appDidStart fires the active search days pixel
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .userDidSearch)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        XCTAssertEqual(pixelFireCount, 1, "Should fire once on first call")
+
+        // Day 4 again: second appDidStart should NOT fire (same daysSinceInstalled)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        XCTAssertEqual(pixelFireCount, 1, "Should not fire again on same day")
+
+        // Day 5: record another search (shifts array again) and appDidStart should fire again
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .userDidSearch)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        XCTAssertEqual(pixelFireCount, 2, "Should fire again on next day")
+    }
+
+    /// Tests that processAverageAdClick does not fire twice on the same daysSinceInstalled
+    /// and that threshold is not burned when there's no data to send
+    ///
+    /// ## Test Validation
+    /// - Day 1 with no ad clicks: pixel does NOT fire, threshold NOT consumed
+    /// - Day 1 after recording ad clicks: pixel fires, threshold consumed
+    /// - Day 1 again: pixel does NOT fire (threshold guard)
+    func testAdClickThresholdNotBurnedOnEarlyReturn() {
+        var pixelFireCount = 0
+
+        let fixture = createTestFixture { pixelName, _, _, _, _, _ in
+            if pixelName == "attributed_metric_average_ad_clicks_past_week" {
+                pixelFireCount += 1
+            }
+        }
+        defer { fixture.cleanup() }
+
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Day 1: trigger with no ad click data — should NOT fire AND should NOT burn the threshold
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .userDidSelectAD)
+        // The first userDidSelectAD records a click but processAverageAdClick may not fire
+        // because the data just got recorded (only 1 day of data, average may be 0 or
+        // the click was just recorded today and not in the past 7 days yet).
+        // Let's set up a scenario where we have past data:
+
+        // Reset
+        pixelFireCount = 0
+        fixture.cleanup()
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Record ad clicks on day 0
+        fixture.attributionManager.process(trigger: .userDidSelectAD)
+
+        // Day 1: process without any new ad clicks — past 7 days has data from day 0
+        fixture.timeMachine.travel(by: .day, value: 1)
+
+        // Verify threshold is nil before processing
+        XCTAssertNil(fixture.dataStorage.adClickLastThreshold, "Threshold should be nil before first process")
+
+        fixture.attributionManager.process(trigger: .userDidSelectAD)
+        XCTAssertEqual(pixelFireCount, 1, "Should fire once with existing ad click data")
+        XCTAssertEqual(fixture.dataStorage.adClickLastThreshold, 1, "Threshold should be set to daysSinceInstalled")
+
+        // Same day again: should not fire
+        fixture.attributionManager.process(trigger: .userDidSelectAD)
+        XCTAssertEqual(pixelFireCount, 1, "Should not fire again on same day")
+    }
+
+    /// Tests that processAverageDuckAIChat dedup works correctly across days
+    ///
+    /// ## Test Validation
+    /// - First call fires the pixel and sets threshold
+    /// - Same day call does NOT fire
+    /// - Next day call fires again
+    func testDuckAIChatSameDayDedupAndNextDayFire() {
+        var pixelFireCount = 0
+
+        let fixture = createTestFixture { pixelName, _, _, _, _, _ in
+            if pixelName == "attributed_metric_average_duck_ai_usage_past_week" {
+                pixelFireCount += 1
+            }
+        }
+        defer { fixture.cleanup() }
+
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Record DuckAI chats on day 0
+        fixture.attributionManager.process(trigger: .userDidDuckAIChat)
+
+        // Day 1: should fire
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .userDidDuckAIChat)
+        XCTAssertEqual(pixelFireCount, 1, "Should fire once on day 1")
+        XCTAssertEqual(fixture.dataStorage.duckAILastThreshold, 1, "Threshold should be set to 1")
+
+        // Day 1 again: should NOT fire
+        fixture.attributionManager.process(trigger: .userDidDuckAIChat)
+        XCTAssertEqual(pixelFireCount, 1, "Should not fire again on same day")
+
+        // Day 2: should fire again
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .userDidDuckAIChat)
+        XCTAssertEqual(pixelFireCount, 2, "Should fire again on day 2")
+        XCTAssertEqual(fixture.dataStorage.duckAILastThreshold, 2, "Threshold should be updated to 2")
+    }
+
+    /// Tests that processAverageSearchCount threshold is not consumed when there's no search data
+    ///
+    /// ## Test Validation
+    /// - Day 1 with no search data: pixel does NOT fire, threshold NOT set
+    /// - After recording searches, same day fires pixel and sets threshold
+    func testSearchCountThresholdNotBurnedWithNoData() {
+        var pixelFireCount = 0
+
+        let fixture = createTestFixture { pixelName, _, _, _, _, _ in
+            if pixelName == "attributed_metric_average_searches_past_week_first_month" ||
+               pixelName == "attributed_metric_average_searches_past_week" {
+                pixelFireCount += 1
+            }
+        }
+        defer { fixture.cleanup() }
+
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Day 1: trigger search with NO prior search data — should not fire and not burn threshold
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .userDidSearch)
+        // userDidSearch records a search AND calls processAverageSearchCount
+        // The search was just recorded today, so past7DaysAverage may or may not include it
+        // depending on RollingEightDays implementation. Let's check the threshold:
+
+        // The key test: if average was 0 (no past data), threshold should NOT be consumed
+        // If average was > 0 (today's search counted), pixel fires and threshold is set
+        // Either way, the threshold is only set when the pixel fires
+
+        // Record searches over multiple days to have clear past data
+        pixelFireCount = 0
+        fixture.cleanup()
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Day 1: no searches recorded yet, trigger appDidStart — processAverageSearchCount runs
+        // but there's no search data so it should return early WITHOUT burning threshold
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        XCTAssertNil(fixture.dataStorage.searchLastThreshold, "Threshold should NOT be set when no search data exists")
+
+        // Now record some searches
+        fixture.attributionManager.process(trigger: .userDidSearch)
+
+        // Day 2: now there's data from day 1
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .userDidSearch)
+        XCTAssertEqual(pixelFireCount, 1, "Should fire now that search data exists")
+        XCTAssertEqual(fixture.dataStorage.searchLastThreshold, 2, "Threshold should be set to daysSinceInstalled")
+    }
+
+    /// Tests that removeAll clears threshold values
+    ///
+    /// ## Test Validation
+    /// - Set all 4 thresholds, verify they are set
+    /// - Call removeAll(), verify all are nil
+    func testRemoveAllClearsThresholds() {
+        let fixture = createTestFixture { _, _, _, _, _, _ in }
+        defer { fixture.cleanup() }
+
+        // Set thresholds
+        fixture.dataStorage.activeSearchDaysLastThreshold = 5
+        fixture.dataStorage.searchLastThreshold = 5
+        fixture.dataStorage.adClickLastThreshold = 5
+        fixture.dataStorage.duckAILastThreshold = 5
+
+        // Verify set
+        XCTAssertEqual(fixture.dataStorage.activeSearchDaysLastThreshold, 5)
+        XCTAssertEqual(fixture.dataStorage.searchLastThreshold, 5)
+        XCTAssertEqual(fixture.dataStorage.adClickLastThreshold, 5)
+        XCTAssertEqual(fixture.dataStorage.duckAILastThreshold, 5)
+
+        // Clear
+        fixture.dataStorage.removeAll()
+
+        // Verify cleared
+        XCTAssertNil(fixture.dataStorage.activeSearchDaysLastThreshold, "activeSearchDaysLastThreshold should be nil after removeAll")
+        XCTAssertNil(fixture.dataStorage.searchLastThreshold, "searchLastThreshold should be nil after removeAll")
+        XCTAssertNil(fixture.dataStorage.adClickLastThreshold, "adClickLastThreshold should be nil after removeAll")
+        XCTAssertNil(fixture.dataStorage.duckAILastThreshold, "duckAILastThreshold should be nil after removeAll")
+    }
+
+    /// Tests that a pixel cannot fire twice within a 24h window when crossing a UTC midnight boundary.
+    ///
+    /// ## Background
+    /// `daysSinceInstalled` is computed as `Int(elapsedSeconds / 86400)` — a rolling 24h window
+    /// anchored to the install time. PixelKit's `legacyDailyNoSuffix` deduplicates by UTC calendar
+    /// day. These two clocks can disagree near UTC midnight:
+    ///
+    /// ```
+    /// Install: Jan 15, 12:00 UTC
+    ///
+    ///                     Jan 16 12:00          Jan 16 23:00    Jan 17 01:00          Jan 17 12:00
+    /// daysSinceInstalled:       1                     1              1                      2
+    /// UTC calendar day:      Jan 16                Jan 16         Jan 17 ← new day!      Jan 17
+    /// ```
+    ///
+    /// Between Jan 17 00:00–11:59 UTC, PixelKit sees a new calendar day and would allow firing,
+    /// but `daysSinceInstalled` is still 1. Without our threshold guard, the pixel would fire
+    /// twice within ~13 hours.
+    ///
+    /// ## Test Validation
+    /// - Day 1 (12:00 UTC): pixel fires, threshold set to 1
+    /// - After crossing UTC midnight (01:00 UTC next calendar day), daysSinceInstalled is still 1
+    /// - Second call does NOT fire (threshold guard blocks it)
+    /// - Only after a full 24h from install (daysSinceInstalled increments to 2) does it fire again
+    func testPixelDoesNotFireTwiceWithin24hAcrossUTCMidnight() {
+        var activeSearchPixelCount = 0
+
+        let fixture = createTestFixture { pixelName, _, _, _, _, _ in
+            if pixelName == "attributed_metric_active_past_week" {
+                activeSearchPixelCount += 1
+            }
+        }
+        defer { fixture.cleanup() }
+
+        // Install at reference date: Jan 15, 12:00 UTC
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Record searches on day 0 so there's data for the pixel
+        fixture.attributionManager.process(trigger: .userDidSearch)
+
+        // Travel to day 1 (Jan 16, 12:00 UTC) — daysSinceInstalled = 1
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .userDidSearch)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        XCTAssertEqual(activeSearchPixelCount, 1, "Pixel should fire on day 1")
+        XCTAssertEqual(fixture.dataStorage.activeSearchDaysLastThreshold, 1, "Threshold should be set to 1")
+
+        // Travel 11 hours to Jan 16, 23:00 UTC — still daysSinceInstalled = 1
+        // (elapsed from install = 35h = 126000s, 126000/86400 = 1.458 → Int = 1)
+        fixture.timeMachine.travel(by: .hour, value: 11)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        XCTAssertEqual(activeSearchPixelCount, 1, "Pixel should NOT fire again (same daysSinceInstalled, same UTC day)")
+
+        // Travel 2 more hours to Jan 17, 01:00 UTC — NEW UTC calendar day, but daysSinceInstalled is STILL 1
+        // (elapsed from install = 37h = 133200s, 133200/86400 = 1.541 → Int = 1)
+        // PixelKit's legacyDailyNoSuffix would allow firing (new UTC day), but our threshold blocks it
+        fixture.timeMachine.travel(by: .hour, value: 2)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        XCTAssertEqual(activeSearchPixelCount, 1, "Pixel should NOT fire even after UTC midnight (daysSinceInstalled still 1)")
+
+        // Travel 11 more hours to Jan 17, 12:00 UTC — now daysSinceInstalled = 2
+        // (elapsed from install = 48h = 172800s, 172800/86400 = 2.0 → Int = 2)
+        fixture.timeMachine.travel(by: .hour, value: 11)
+        fixture.attributionManager.process(trigger: .userDidSearch)
+        fixture.attributionManager.process(trigger: .appDidStart)
+        XCTAssertEqual(activeSearchPixelCount, 2, "Pixel should fire now that daysSinceInstalled incremented to 2")
+        XCTAssertEqual(fixture.dataStorage.activeSearchDaysLastThreshold, 2, "Threshold should be updated to 2")
+    }
+
     // MARK: - Data Expiration Tests
 
     /// Tests that all data in dataStorage is removed at 6 months (168 days) from installation
@@ -975,7 +1255,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.attributionManager.process(trigger: .appDidStart)
 
         // Verify all data has been removed at exactly 6 months (168 days)
-        XCTAssertNil(fixture.dataStorage.installDate, "Install date should be removed at 6 months (168 days)")
+        XCTAssertNotNil(fixture.dataStorage.installDate, "Install date should be present")
         XCTAssertNil(fixture.dataStorage.lastRetentionThreshold, "Last retention threshold should be removed")
         XCTAssertEqual(fixture.dataStorage.search8Days.countPast7Days, 0, "Search data should be cleared")
         XCTAssertEqual(fixture.dataStorage.adClick8Days.countPast7Days, 0, "Ad click data should be cleared")

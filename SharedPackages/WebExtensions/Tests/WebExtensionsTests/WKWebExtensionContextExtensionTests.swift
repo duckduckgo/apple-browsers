@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import XCTest
 import WebKit
+import XCTest
+
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)

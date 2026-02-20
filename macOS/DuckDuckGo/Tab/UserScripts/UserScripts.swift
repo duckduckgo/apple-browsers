@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppUpdaterShared
 import BrowserServicesKit
 import Foundation
 import HistoryView

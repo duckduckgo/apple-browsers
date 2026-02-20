@@ -42,7 +42,7 @@ let package = Package(
                 .product(name: "Persistence", package: "BrowserServicesKit")
             ],
             resources: [
-                .copy("Embedded/Resources")
+                .copy("BundledWebExtensions")
             ]
         ),
         .testTarget(

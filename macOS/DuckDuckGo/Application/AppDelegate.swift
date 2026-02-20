@@ -1727,6 +1727,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             Task {
                 await webExtensionManager.loadInstalledExtensions()
+                await webExtensionManager.syncEmbeddedExtensions()
             }
         } else {
             self.webExtensionManager = nil

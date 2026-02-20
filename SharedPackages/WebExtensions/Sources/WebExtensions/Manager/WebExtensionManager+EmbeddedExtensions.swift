@@ -42,7 +42,7 @@ extension WebExtensionManager {
     @MainActor
     private func syncEmbeddedExtension(_ descriptor: EmbeddedWebExtensionDescriptor) async {
         guard let bundledURL = descriptor.bundledURL else {
-            Logger.webExtensions.error("❌ Embedded extension not found in bundle: \(descriptor.resourceName).\(descriptor.resourceExtension)")
+            Logger.webExtensions.error("❌ Embedded extension not found in bundle: \(descriptor.resourceFilename)")
             return
         }
 
@@ -62,7 +62,7 @@ extension WebExtensionManager {
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type)
                     pixelFiring.fire(.embeddedUpgraded(fromVersion: oldVersion, toVersion: bundledMetadata.version))
                 } else {
-                    Logger.webExtensions.debug("✓ Embedded extension \(descriptor.type.rawValue) is up to date (v\(installed.version ?? "?"))")
+                    Logger.webExtensions.debug("👌 Embedded extension \(descriptor.type.rawValue) is up to date (v\(installed.version ?? "?"))")
                 }
             } else {
                 Logger.webExtensions.info("📦 Installing embedded extension \(descriptor.type.rawValue) v\(bundledMetadata.version ?? "?")")

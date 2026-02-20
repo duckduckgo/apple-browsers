@@ -69,6 +69,30 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                 error: error
             )
+        case .embeddedInstalled:
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionEmbeddedInstalled,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+            )
+        case .embeddedUpgraded(let fromVersion, let toVersion):
+            var params: [String: String] = [:]
+            if let fromVersion {
+                params["from_version"] = fromVersion
+            }
+            if let toVersion {
+                params["to_version"] = toVersion
+            }
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionEmbeddedUpgraded,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                withAdditionalParameters: params
+            )
+        case .embeddedInstallError(let error):
+            DailyPixel.fireDailyAndCount(
+                pixel: .webExtensionEmbeddedInstallError,
+                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+                error: error
+            )
         }
     }
 }

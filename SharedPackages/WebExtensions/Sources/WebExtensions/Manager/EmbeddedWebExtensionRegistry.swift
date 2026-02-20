@@ -25,21 +25,20 @@ public struct EmbeddedWebExtensionDescriptor {
     /// The type identifier for this embedded extension.
     public let type: DuckDuckGoWebExtensionType
 
-    /// Resource name (without extension) in the bundle.
-    public let resourceName: String
-
-    /// Resource file extension (e.g., "zip").
-    public let resourceExtension: String
+    /// Resource filename (e.g., "duckduckgo-embedded-web-extension.zip").
+    public let resourceFilename: String
 
     /// Returns the URL to the bundled extension, or nil if not found.
     public var bundledURL: URL? {
-        Bundle.module.url(forResource: resourceName, withExtension: resourceExtension, subdirectory: "Resources")
+        Bundle.module.load()
+        let name = (resourceFilename as NSString).deletingPathExtension
+        let ext = (resourceFilename as NSString).pathExtension
+        return Bundle.module.url(forResource: name, withExtension: ext, subdirectory: "BundledWebExtensions")
     }
 
-    public init(type: DuckDuckGoWebExtensionType, resourceName: String, resourceExtension: String) {
+    public init(type: DuckDuckGoWebExtensionType, resourceFilename: String) {
         self.type = type
-        self.resourceName = resourceName
-        self.resourceExtension = resourceExtension
+        self.resourceFilename = resourceFilename
     }
 }
 
@@ -50,11 +49,7 @@ public enum EmbeddedWebExtensionRegistry {
 
     /// All embedded extensions that should be installed/updated on app launch.
     public static let all: [EmbeddedWebExtensionDescriptor] = [
-        EmbeddedWebExtensionDescriptor(
-            type: .embedded,
-            resourceName: "autoconsent",
-            resourceExtension: "zip"
-        )
+        EmbeddedWebExtensionDescriptor(type: .embedded, resourceFilename: "duckduckgo-embedded-web-extension.zip")
     ]
 
     /// Find descriptor for a given extension type.

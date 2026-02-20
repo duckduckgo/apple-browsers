@@ -49,7 +49,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
     /// Pixel firing for analytics.
-    private let pixelFiring: WebExtensionPixelFiring
+    let pixelFiring: WebExtensionPixelFiring
 
     // MARK: - AsyncStream
 
@@ -309,7 +309,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         contexts.first { $0.uniqueIdentifier == identifier }
     }
 
-    private func notifyUpdate() {
+    func notifyUpdate() {
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
     }

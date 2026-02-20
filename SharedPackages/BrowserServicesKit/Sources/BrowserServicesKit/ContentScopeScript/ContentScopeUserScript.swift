@@ -95,7 +95,6 @@ public final class ContentScopeProperties: Encodable {
     public let platform: ContentScopePlatform
     public let features: [String: ContentScopeFeature]
     public var currentCohorts: [ContentScopeExperimentData]
-    public var messagingContextName: String?
     public let themeVariant: String?
 
     public init(gpcEnabled: Bool,
@@ -104,14 +103,12 @@ public final class ContentScopeProperties: Encodable {
                 isInternalUser: Bool = false,
                 debug: Bool = false,
                 featureToggles: ContentScopeFeatureToggles,
-                messagingContextName: String? = nil,
                 currentCohorts: [ContentScopeExperimentData] = [],
                 themeVariant: String? = nil) {
         self.globalPrivacyControlValue = gpcEnabled
         self.debug = debug
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
-        self.messagingContextName = messagingContextName
         self.platform = ContentScopePlatform(isInternal: isInternalUser, version: AppVersion.shared.versionNumber)
         languageCode = Locale.current.languageCode ?? "en"
         features = [
@@ -132,7 +129,6 @@ public final class ContentScopeProperties: Encodable {
         case platform
         case features
         case currentCohorts
-        case messagingContextName
         case themeVariant
     }
 

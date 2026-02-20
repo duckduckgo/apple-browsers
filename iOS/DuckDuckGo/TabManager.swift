@@ -299,6 +299,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return current(createIfNeeded: true)!
     }
 
+    @MainActor
     func addURLRequest(_ request: URLRequest?,
                        with configuration: WKWebViewConfiguration,
                        inheritedAttribution: AdClickAttributionLogic.State?) -> TabViewController {

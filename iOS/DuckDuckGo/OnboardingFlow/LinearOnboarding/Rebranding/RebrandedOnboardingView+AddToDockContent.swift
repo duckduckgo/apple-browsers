@@ -87,7 +87,9 @@ extension OnboardingRebranding.OnboardingView {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: {
                             showTutorialAction()
-                            showAddToDockTutorial = true
+                            withAnimation {
+                                showAddToDockTutorial = true
+                            }
                         }) { Text(UserText.AddToDockOnboarding.Buttons.tutorial) }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 

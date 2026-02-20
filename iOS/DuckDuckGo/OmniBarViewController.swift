@@ -702,10 +702,12 @@ class OmniBarViewController: UIViewController, OmniBar {
             defaultOmniBarView.setSearchAreaExpanded(shouldExpand, animated: false)
         }
 
-        applyCustomization()
+        if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled == false {
+            applyCustomization()
 
-        let shouldShowAIChat = state.showAIChatFullModeBranding
-        barView.isFullAIChatHidden = !shouldShowAIChat
+            let shouldShowAIChat = state.showAIChatFullModeBranding
+            barView.isFullAIChatHidden = !shouldShowAIChat
+        }
     }
 
     private func applyCustomization() {

@@ -60,7 +60,11 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
             userPreference: true
         )
 
+#if DEBUG
         XCTAssertTrue(result)
+#else
+        XCTAssertFalse(result)
+#endif
     }
 
     func testResolveAutoDownload_customFeedEnabled_debugFlagOn_preferenceOff_returnsFalse() {

@@ -17,6 +17,8 @@
 //
 
 import AIChat
+import AppUpdaterShared
+import AttributedMetric
 import AutoconsentStats
 import Bookmarks
 import BrokenSitePrompt
@@ -57,7 +59,6 @@ import VPN
 import VPNAppState
 import WebExtensions
 import WebKit
-import AttributedMetric
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 

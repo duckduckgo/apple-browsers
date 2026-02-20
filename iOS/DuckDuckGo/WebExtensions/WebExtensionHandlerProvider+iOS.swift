@@ -17,10 +17,10 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import UIKit
 import WebExtensions
 import WebKit
-import PrivacyConfig
 
 @available(iOS 18.4, *)
 final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {

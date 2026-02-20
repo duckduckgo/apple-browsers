@@ -30,7 +30,6 @@ public struct EmbeddedWebExtensionDescriptor {
 
     /// Returns the URL to the bundled extension, or nil if not found.
     public var bundledURL: URL? {
-        Bundle.module.load()
         let name = (resourceFilename as NSString).deletingPathExtension
         let ext = (resourceFilename as NSString).pathExtension
         return Bundle.module.url(forResource: name, withExtension: ext, subdirectory: "BundledWebExtensions")

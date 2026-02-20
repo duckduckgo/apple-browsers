@@ -63,9 +63,7 @@ class MainViewController: UIViewController {
         return isIPad ? [.left, .right] : []
     }
 
-    weak var findInPageView: FindInPageView!
-    weak var findInPageHeightLayoutConstraint: NSLayoutConstraint!
-    weak var findInPageBottomLayoutConstraint: NSLayoutConstraint!
+    weak var findInPageView: FindInPageView?
 
     weak var notificationView: UIView?
 
@@ -395,23 +393,27 @@ class MainViewController: UIViewController {
 
         let view = FindInPageView.loadFromXib()
         self.view.addSubview(view)
-        
+
+        let container = view.container!
+
         // Avoids coercion swiftlint warnings
         let superview = self.view!
-        
-        let height = view.constrainAttribute(.height, to: view.frame.height)
-        let bottom = superview.constrainView(view, by: .bottom, to: .bottom)
-        
+
         NSLayoutConstraint.activate([
-            bottom,
-            superview.constrainView(view, by: .width, to: .width),
-            height,
-            superview.constrainView(view, by: .centerX, to: .centerX)
+
+            container.bottomAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor),
+            view.bottomAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.bottomAnchor),
+            view.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
+            view.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
+            view.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+
         ])
-        
+
         findInPageView = view
-        findInPageBottomLayoutConstraint = bottom
-        findInPageHeightLayoutConstraint = height
+
+        findInPageView?.delegate = self
+
+        updateFindInPage()
     }
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
@@ -471,7 +473,6 @@ class MainViewController: UIViewController {
             
         loadSuggestionTray()
         loadTabsBarIfNeeded()
-        loadFindInPage()
         attachOmniBar()
 
         view.addInteraction(UIDropInteraction(delegate: self))
@@ -495,8 +496,6 @@ class MainViewController: UIViewController {
 
         checkSubscriptionEntitlements()
 
-        findInPageView.delegate = self
-        findInPageBottomLayoutConstraint.constant = 0
         registerForKeyboardNotifications()
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
@@ -523,6 +522,8 @@ class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
+        loadFindInPage()
 
         productSurfaceTelemetry.dailyActiveUser()
         productSurfaceTelemetry.iPadUsed(isPad: isPad)
@@ -996,16 +997,6 @@ class MainViewController: UIViewController {
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
         keyboardHeight = keyboardFrameInView.height
 
-        // On iPad the keyboard will change even if using the hardware keyboard and we don't want FIP to move in that case.
-        if intersection.height < 1.0 || intersection.height > (isPad ? 50 : 0) {
-            findInPageBottomLayoutConstraint.constant = intersection.height
-            let y = self.view.frame.height - intersection.height
-            let frame = self.findInPageView.frame
-            UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {
-                self.findInPageView.frame = CGRect(x: 0, y: y - frame.height, width: frame.width, height: frame.height)
-            }, completion: nil)
-        }
-
         if self.appSettings.currentAddressBarPosition.isBottom {
             let intersection = safeAreaFrame.intersection(keyboardFrameInView)
             let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + omniBarHeight : 0
@@ -1168,7 +1159,7 @@ class MainViewController: UIViewController {
         guard !autoClearInProgress else { return }
         
         viewCoordinator.logoContainer.isHidden = false
-        findInPageView.isHidden = true
+        findInPageView?.isHidden = true
         chromeManager.detach()
         
         currentTab?.dismiss()
@@ -2046,9 +2037,8 @@ class MainViewController: UIViewController {
     
     func updateFindInPage() {
         currentTab?.findInPage?.delegate = self
-        findInPageView.update(with: currentTab?.findInPage, updateTextField: true)
-        // hide toolbar on iPhone
-        viewCoordinator.toolbar.accessibilityElementsHidden = !AppWidthObserver.shared.isLargeWidth
+        findInPageView?.update(with: currentTab?.findInPage, updateTextField: true)
+        findInPageView?.updateConstraints()
     }
 
     private func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
@@ -2526,7 +2516,7 @@ class MainViewController: UIViewController {
 extension MainViewController: FindInPageDelegate {
     
     func updated(findInPage: FindInPage) {
-        findInPageView.update(with: findInPage, updateTextField: false)
+        findInPageView?.update(with: findInPage, updateTextField: false)
     }
 
 }
@@ -2557,7 +2547,7 @@ extension MainViewController: BrowserChromeDelegate {
 
     private func hideKeyboard() {
         dismissOmniBar()
-        _ = findInPageView.resignFirstResponder()
+        _ = findInPageView?.resignFirstResponder()
     }
 
     func setBarsHidden(_ hidden: Bool, animated: Bool, customAnimationDuration: CGFloat?) {
@@ -2657,7 +2647,9 @@ extension MainViewController: BrowserChromeDelegate {
             viewCoordinator.constraints.navigationBarContainerBottom.constant = navBarHeight * (1.0 - ratio)
         }
 
-        findInPageHeightLayoutConstraint.constant = findInPageView.container.frame.height + view.safeAreaInsets.bottom
+//        if let findInPageView, let findInPageHeightLayoutConstraint {
+//            findInPageHeightLayoutConstraint.constant = findInPageView.container.frame.height + view.safeAreaInsets.bottom
+//        }
     }
 
     // 1.0 - full size, 0.0 - hidden
@@ -3440,7 +3432,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewTab(_ tab: TabViewController) {
-        _ = findInPageView.resignFirstResponder()
+        _ = findInPageView?.resignFirstResponder()
         newTab()
     }
     
@@ -3463,7 +3455,7 @@ extension MainViewController: TabDelegate {
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
-        _ = findInPageView.resignFirstResponder()
+        _ = findInPageView?.resignFirstResponder()
         hideNotificationBarIfBrokenSitePromptShown()
         tab.aiChatContextualSheetCoordinator.dismissSheet()
         if openedByPage {
@@ -3584,7 +3576,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabContentProcessDidTerminate(tab: TabViewController) {
-        findInPageView.done()
+        findInPageView?.done()
         tabManager.invalidateCache(forController: tab)
     }
 
@@ -3601,7 +3593,7 @@ extension MainViewController: TabDelegate {
 
     func closeFindInPage(tab: TabViewController) {
         if tab === currentTab {
-            findInPageView.done()
+            findInPageView?.done()
         } else {
             tab.findInPage?.done()
             tab.findInPage = nil
@@ -4105,6 +4097,8 @@ extension MainViewController {
         if !themeColorManager.updateThemeColor() {
             updateStatusBarBackgroundColor()
         }
+
+        updateFindInPage()
     }
 
     private func updateStatusBarBackgroundColor() {

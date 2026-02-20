@@ -27,16 +27,29 @@ final class WebExtensionEventsCoordinator {
     private weak var webExtensionManager: WebExtensionManaging?
     private weak var mainViewController: MainViewController?
 
+    /// Tracks UIDs of tabs that have already been reported to the extension via didOpenTab,
+    /// preventing duplicate notifications when a controller is lazily recreated.
+    private var reportedTabUIDs = Set<String>()
+
     @available(iOS 18.4, *)
     init(webExtensionManager: WebExtensionManaging, mainViewController: MainViewController) {
         self.webExtensionManager = webExtensionManager
         self.mainViewController = mainViewController
+
+        // Observe TabManager so that any time a TabViewController is first created —
+        // whether eagerly (new tab) or lazily (existing tab activated for the first time) —
+        // we fire didOpenTab if this tab hasn't been reported yet.
+        mainViewController.tabManager.onTabControllerCreated = { [weak self] controller in
+            guard let self, !self.reportedTabUIDs.contains(controller.tabModel.uid) else { return }
+            self.didOpenTab(controller)
+        }
     }
 
     // MARK: - Tab Events
 
     @available(iOS 18.4, *)
     func didOpenTab(_ tabViewController: TabViewController) {
+        guard reportedTabUIDs.insert(tabViewController.tabModel.uid).inserted else { return }
         webExtensionManager?.eventsListener.didOpenTab(tabViewController)
     }
 
@@ -91,15 +104,24 @@ final class WebExtensionEventsCoordinator {
     func registerExistingTabsAndWindow() {
         guard let mainViewController else { return }
 
+        // Tell the extension about the single iOS window.
         didOpenWindow()
 
+        // Register all tabs that are already open at extension load time.
+        // On iOS, TabViewControllers are created lazily — only the active tab is guaranteed
+        // to have a controller in memory. For tabs that already have a controller, we notify
+        // immediately. For tabs whose controller hasn't been created yet, the onTabControllerCreated
+        // callback wired in init will fire didOpenTab the first time the user activates them.
         let tabManager = mainViewController.tabManager
         for tab in tabManager.model.tabs {
             if let tabController = tabManager.controller(for: tab) {
                 didOpenTab(tabController)
             }
+            // No else needed: unreported tabs will be caught by onTabControllerCreated.
         }
 
+        // Report the current selection state so the extension has an accurate picture
+        // of which tab is active right now.
         if let currentTab = tabManager.current() {
             didActivateTab(currentTab, previousActiveTab: nil)
             didSelectTabs([currentTab])

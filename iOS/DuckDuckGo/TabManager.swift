@@ -61,6 +61,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private var tabControllerCache = [TabViewController]()
 
+    /// Called whenever a TabViewController is first created for a tab.
+    /// The receiver decides whether this warrants a didOpenTab notification.
+    var onTabControllerCreated: ((TabViewController) -> Void)?
+
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let bookmarksDatabase: CoreDataDatabase
     private let historyManager: HistoryManaging
@@ -240,6 +244,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
             let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
             tabControllerCache.append(controller)
+            onTabControllerCreated?(controller)
             return controller
         } else {
             return nil
@@ -249,7 +254,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
     }
-    
+
     @MainActor
     func viewModel(for tab: Tab) -> TabViewModel {
         if let controller = controller(for: tab) {
@@ -343,13 +348,15 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.loadViewIfNeeded()
         controller.applyInheritedAttribution(inheritedAttribution)
         tabControllerCache.append(controller)
+        onTabControllerCreated?(controller)
 
         save()
         return controller
     }
 
     func addHomeTab() {
-        model.add(tab: Tab())
+        let tab = Tab()
+        model.add(tab: tab)
         model.select(tabAt: model.count - 1)
         save()
     }
@@ -397,6 +404,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let tab = Tab(link: link)
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
+        onTabControllerCreated?(controller)
 
         let index = model.currentIndex
         model.insert(tab: tab, at: index + 1)

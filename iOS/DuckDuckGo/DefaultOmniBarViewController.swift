@@ -82,6 +82,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return false
         }
 
+        if modeToggleTextModel.isTransitioning {
+            return true
+        }
+
         return super.textFieldShouldBeginEditing(textField)
     }
 
@@ -311,17 +315,21 @@ extension DefaultOmniBarViewController {
 
         if transition.needsKeyboardTransfer {
             modeToggleTextModel.beginTransition()
+
+            omniBarView.onCollapseAnimationCompleted = { [weak self] in
+                guard let self else { return }
+                self.omniBarView.textField.text = transition.text
+                self.beginEditing(animated: false, forTextEntryMode: .search)
+                self.omniBarView.textField.text = transition.text
+                self.modeToggleTextModel.endTransition()
+            }
         }
 
         super.setSelectedTextEntryMode(mode)
 
-        if transition.needsKeyboardTransfer {
-            omniBarView.textField.text = transition.text
-            beginEditing(animated: false, forTextEntryMode: .search)
-            omniBarView.textField.text = transition.text
+        if !transition.needsKeyboardTransfer {
+            modeToggleTextModel.endTransition()
         }
-
-        modeToggleTextModel.endTransition()
     }
 
     /// Replicates the super's textFieldDidBeginEditing logic but deliberately skips

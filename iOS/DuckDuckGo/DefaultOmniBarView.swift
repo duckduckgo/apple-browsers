@@ -279,6 +279,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         set { duckAITextView.delegate = newValue }
     }
     var onSearchAreaExpandedStateChanged: ((Bool) -> Void)?
+    var onCollapseAnimationCompleted: (() -> Void)?
     private(set) var isSearchAreaExpanded: Bool = false {
         didSet {
             guard oldValue != isSearchAreaExpanded, !suppressExpansionUpdate else { return }
@@ -945,6 +946,8 @@ extension DefaultOmniBarView {
         } completion: { _ in
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
+                self.onCollapseAnimationCompleted?()
+                self.onCollapseAnimationCompleted = nil
             }
             if self.isSearchAreaExpanded {
                 self.duckAITextView.becomeFirstResponder()

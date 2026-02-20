@@ -102,7 +102,7 @@ public protocol UpdateController: UpdateControllerObjC {
     ///
     /// **App Store vs Sparkle Behavior:**
     /// - **App Store**: Always `true` - clears dot on menu open
-    /// - **Sparkle**: Returns `true` for standard flow, `false` for simplified flow
+    /// - **Sparkle**: Always `false` - dot is only cleared by explicit user action
     ///
     /// **Usage**: Controls whether the notification dot is automatically cleared when user opens the menu.
     var clearsNotificationDotOnMenuOpen: Bool { get }

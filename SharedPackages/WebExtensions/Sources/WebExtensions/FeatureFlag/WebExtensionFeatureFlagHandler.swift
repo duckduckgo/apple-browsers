@@ -41,7 +41,7 @@ import Foundation
 ///     .eraseToAnyPublisher()
 ///
 /// handler = WebExtensionFeatureFlagHandler(
-///     webExtensionManager: manager,
+///     webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
 ///     featureFlagPublisher: webExtensionsPublisher,
 ///     embeddedExtensionFlagPublisher: embeddedPublisher,
 ///     onFeatureFlagEnabled: { [weak self] in
@@ -60,26 +60,26 @@ public final class WebExtensionFeatureFlagHandler {
 
     private var webExtensionsCancellable: AnyCancellable?
     private var embeddedExtensionCancellable: AnyCancellable?
-    private weak var webExtensionManager: WebExtensionManaging?
+    private let webExtensionManagerProvider: () -> WebExtensionManaging?
     private let onFeatureFlagEnabled: (() async -> Void)?
     private let onFeatureFlagDisabled: () -> Void
     private let onEmbeddedExtensionFlagEnabled: (() async -> Void)?
 
     /// Creates a feature flag handler.
     /// - Parameters:
-    ///   - webExtensionManager: The web extension manager to manage extensions.
+    ///   - webExtensionManagerProvider: A closure that returns the current web extension manager. Called when uninstalling extensions.
     ///   - featureFlagPublisher: A publisher that emits `true` when the main webExtensions feature is enabled.
     ///   - embeddedExtensionFlagPublisher: A publisher that emits `true` when the embedded extension feature is enabled.
     ///   - onFeatureFlagEnabled: Callback invoked when the main feature flag is enabled. Use this to load/initialize extensions.
     ///   - onFeatureFlagDisabled: Callback invoked when the main feature flag is disabled, after uninstalling extensions.
     ///   - onEmbeddedExtensionFlagEnabled: Callback invoked when the embedded extension feature flag is enabled. Use this to sync/install embedded extensions.
-    public init(webExtensionManager: WebExtensionManaging?,
+    public init(webExtensionManagerProvider: @escaping () -> WebExtensionManaging?,
                 featureFlagPublisher: AnyPublisher<Bool, Never>?,
                 embeddedExtensionFlagPublisher: AnyPublisher<Bool, Never>? = nil,
                 onFeatureFlagEnabled: (() async -> Void)? = nil,
                 onFeatureFlagDisabled: @escaping () -> Void,
                 onEmbeddedExtensionFlagEnabled: (() async -> Void)? = nil) {
-        self.webExtensionManager = webExtensionManager
+        self.webExtensionManagerProvider = webExtensionManagerProvider
         self.onFeatureFlagEnabled = onFeatureFlagEnabled
         self.onFeatureFlagDisabled = onFeatureFlagDisabled
         self.onEmbeddedExtensionFlagEnabled = onEmbeddedExtensionFlagEnabled
@@ -123,7 +123,7 @@ public final class WebExtensionFeatureFlagHandler {
     }
 
     private func handleWebExtensionsFlagDisabled() {
-        webExtensionManager?.uninstallAllExtensions()
+        webExtensionManagerProvider()?.uninstallAllExtensions()
         onFeatureFlagDisabled()
     }
 
@@ -135,6 +135,6 @@ public final class WebExtensionFeatureFlagHandler {
     }
 
     private func handleEmbeddedExtensionFlagDisabled() {
-        webExtensionManager?.uninstallEmbeddedExtension(type: .embedded)
+        webExtensionManagerProvider()?.uninstallEmbeddedExtension(type: .embedded)
     }
 }

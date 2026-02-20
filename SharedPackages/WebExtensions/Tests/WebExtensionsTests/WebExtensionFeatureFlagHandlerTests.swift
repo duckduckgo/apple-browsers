@@ -47,7 +47,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     func testWhenFeatureFlagDisabledThenUninstallAllExtensionsIsCalled() {
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagDisabled: { callbackCalled = true }
         )
@@ -61,7 +61,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     func testWhenFeatureFlagEnabledThenUninstallAllExtensionsIsNotCalled() {
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagDisabled: { callbackCalled = true }
         )
@@ -75,7 +75,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     func testWhenPublisherIsNilThenHandlerDoesNotCrash() {
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: nil,
             onFeatureFlagDisabled: { callbackCalled = true }
         )
@@ -84,10 +84,10 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         XCTAssertFalse(callbackCalled)
     }
 
-    func testWhenWebExtensionManagerIsNilThenCallbackIsStillCalled() {
+    func testWhenWebExtensionManagerProviderReturnsNilThenCallbackIsStillCalled() {
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: nil,
+            webExtensionManagerProvider: { nil },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagDisabled: { callbackCalled = true }
         )
@@ -100,7 +100,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     func testWhenFeatureFlagToggledMultipleTimesThenOnlyDisableTriggersUninstall() {
         var callbackCount = 0
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagDisabled: { callbackCount += 1 }
         )
@@ -119,7 +119,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     func testWhenFeatureFlagEnabledThenOnFeatureFlagEnabledCallbackIsCalled() async throws {
         let expectation = expectation(description: "onFeatureFlagEnabled called")
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagEnabled: {
                 expectation.fulfill()
@@ -135,7 +135,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     func testWhenFeatureFlagDisabledThenOnFeatureFlagEnabledCallbackIsNotCalled() async throws {
         var enabledCallbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagEnabled: {
                 enabledCallbackCalled = true
@@ -157,7 +157,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         enabledExpectation.expectedFulfillmentCount = 2
 
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagEnabled: {
                 enabledCount += 1
@@ -180,7 +180,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
 
     func testWhenEmbeddedFlagDisabledThenUninstallEmbeddedExtensionIsCalled() {
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagDisabled: {}
@@ -194,7 +194,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
 
     func testWhenEmbeddedFlagEnabledThenUninstallEmbeddedExtensionIsNotCalled() {
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagDisabled: {}
@@ -208,7 +208,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     func testWhenEmbeddedFlagDisabledThenOnlyEmbeddedExtensionIsUninstalled() {
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagDisabled: { callbackCalled = true }
@@ -226,7 +226,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     func testWhenEmbeddedFlagEnabledThenOnEmbeddedExtensionFlagEnabledCallbackIsCalled() async throws {
         let expectation = expectation(description: "onEmbeddedExtensionFlagEnabled called")
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagDisabled: {},
@@ -243,7 +243,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     func testWhenEmbeddedFlagDisabledThenOnEmbeddedExtensionFlagEnabledCallbackIsNotCalled() async throws {
         var enabledCallbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagDisabled: {},
@@ -266,7 +266,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         enabledExpectation.expectedFulfillmentCount = 2
 
         sut = WebExtensionFeatureFlagHandler(
-            webExtensionManager: mockWebExtensionManager,
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagDisabled: {},

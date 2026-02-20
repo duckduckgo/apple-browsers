@@ -1722,7 +1722,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .eraseToAnyPublisher()
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
-            webExtensionManager: nil,
+            webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             onFeatureFlagEnabled: { [weak self] in

@@ -37,10 +37,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private var animateNextEditingTransition = true
 
-    /// Guards the iPad duck.ai ↔ search first-responder transfer.
-    /// While true, `textViewDidEndEditing` side effects are suppressed
-    /// and `textFieldDidBeginEditing` skips text selection.
-    private var isTransferringFirstResponder = false
+    /// Manages shared text state for the iPad duck.ai ↔ search mode toggle.
+    private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
 
     override func loadView() {
         view = omniBarView
@@ -88,7 +86,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     override func textFieldDidBeginEditing(_ textField: UITextField) {
-        if isTransferringFirstResponder {
+        if modeToggleTextModel.isTransitioning {
             handleIPadTextFieldDidBeginEditingDuringTransfer()
         } else {
             super.textFieldDidBeginEditing(textField)
@@ -302,24 +300,28 @@ extension DefaultOmniBarViewController {
 
     /// Handles the duck.ai ↔ search mode transition on iPad, preserving text and keyboard state.
     fileprivate func handleIPadModeToggleTransition(to mode: TextEntryMode) {
-        let wasInAIChat = selectedTextEntryMode == .aiChat
-        let switchingToSearch = wasInAIChat && mode == .search
-
-        var preservedText: String?
-        if switchingToSearch, omniBarView.isSearchAreaExpanded {
-            preservedText = omniBarView.duckAITextView.text
+        if omniBarView.isSearchAreaExpanded {
+            modeToggleTextModel.updateText(omniBarView.duckAITextView.text ?? "")
         }
 
-        isTransferringFirstResponder = switchingToSearch
+        guard let transition = modeToggleTextModel.transition(to: mode) else {
+            super.setSelectedTextEntryMode(mode)
+            return
+        }
+
+        if transition.needsKeyboardTransfer {
+            modeToggleTextModel.beginTransition()
+        }
+
         super.setSelectedTextEntryMode(mode)
 
-        if let text = preservedText {
-            omniBarView.textField.text = text
+        if transition.needsKeyboardTransfer {
+            omniBarView.textField.text = transition.text
             beginEditing(animated: false, forTextEntryMode: .search)
-            omniBarView.textField.text = text
+            omniBarView.textField.text = transition.text
         }
 
-        isTransferringFirstResponder = false
+        modeToggleTextModel.endTransition()
     }
 
     /// Replicates the super's textFieldDidBeginEditing logic but deliberately skips
@@ -414,9 +416,10 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         let newQuery = textView.text ?? ""
 
-        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !newQuery.isEmpty)
+        modeToggleTextModel.updateText(newQuery)
+        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
 
-        if isTransferringFirstResponder, !omniBarView.isSearchAreaExpanded {
+        if modeToggleTextModel.isTransitioning, !omniBarView.isSearchAreaExpanded {
             omniBarView.textField.text = newQuery
         }
 
@@ -431,7 +434,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
-        guard !isTransferringFirstResponder else { return }
+        guard !modeToggleTextModel.isTransitioning else { return }
 
         omniBarView.setSearchAreaExpanded(false, animated: true)
 

@@ -36,6 +36,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let sessionStateMetrics = SessionStateMetrics(storage: UserDefaults.standard)
 
     private var animateNextEditingTransition = true
+    private var isSuppressingKeyboardTransfer = false
 
     /// Manages shared text state for the iPad duck.ai ↔ search mode toggle.
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
@@ -302,6 +303,15 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
 extension DefaultOmniBarViewController {
 
+    /// Dismisses the duck.ai mode without bringing the keyboard back.
+    /// Used after prompt submission where we want the bar fully unfocused.
+    fileprivate func dismissIPadDuckAIMode() {
+        isSuppressingKeyboardTransfer = true
+        setSelectedTextEntryMode(.search)
+        endEditing()
+        isSuppressingKeyboardTransfer = false
+    }
+
     /// Handles the duck.ai ↔ search mode transition on iPad, preserving text and keyboard state.
     fileprivate func handleIPadModeToggleTransition(to mode: TextEntryMode) {
         if omniBarView.isSearchAreaExpanded {
@@ -313,7 +323,9 @@ extension DefaultOmniBarViewController {
             return
         }
 
-        if transition.needsKeyboardTransfer {
+        let shouldTransferKeyboard = transition.needsKeyboardTransfer && !isSuppressingKeyboardTransfer
+
+        if shouldTransferKeyboard {
             modeToggleTextModel.beginTransition()
 
             omniBarView.onCollapseAnimationCompleted = { [weak self] in
@@ -327,7 +339,7 @@ extension DefaultOmniBarViewController {
 
         super.setSelectedTextEntryMode(mode)
 
-        if !transition.needsKeyboardTransfer {
+        if !shouldTransferKeyboard {
             modeToggleTextModel.endTransition()
         }
     }
@@ -412,6 +424,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
             guard !query.isEmpty else { return false }
 
             if selectedTextEntryMode == .aiChat {
+                dismissIPadDuckAIMode()
                 omniDelegate?.onPromptSubmitted(query, tools: nil)
             } else {
                 omniDelegate?.onOmniQuerySubmitted(query)

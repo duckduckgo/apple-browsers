@@ -55,11 +55,54 @@ final class WebExtensionEventsCoordinator {
         webExtensionManager?.eventsListener.didChangeTabProperties(properties, for: tabViewController)
     }
 
+    @available(iOS 18.4, *)
+    func didSelectTabs(_ tabViewControllers: [TabViewController]) {
+        webExtensionManager?.eventsListener.didSelectTabs(tabViewControllers)
+    }
+
+    @available(iOS 18.4, *)
+    func didDeselectTabs(_ tabViewControllers: [TabViewController]) {
+        webExtensionManager?.eventsListener.didDeselectTabs(tabViewControllers)
+    }
+
     // MARK: - Window Events
+
+    @available(iOS 18.4, *)
+    func didOpenWindow() {
+        guard let mainViewController else { return }
+        webExtensionManager?.eventsListener.didOpenWindow(mainViewController)
+    }
+
+    @available(iOS 18.4, *)
+    func didCloseWindow() {
+        guard let mainViewController else { return }
+        webExtensionManager?.eventsListener.didCloseWindow(mainViewController)
+    }
 
     @available(iOS 18.4, *)
     func didFocusWindow() {
         guard let mainViewController else { return }
         webExtensionManager?.eventsListener.didFocusWindow(mainViewController)
+    }
+
+    // MARK: - Initial Registration
+
+    @available(iOS 18.4, *)
+    func registerExistingTabsAndWindow() {
+        guard let mainViewController else { return }
+
+        didOpenWindow()
+
+        let tabManager = mainViewController.tabManager
+        for tab in tabManager.model.tabs {
+            if let tabController = tabManager.controller(for: tab) {
+                didOpenTab(tabController)
+            }
+        }
+
+        if let currentTab = tabManager.current() {
+            didActivateTab(currentTab, previousActiveTab: nil)
+            didSelectTabs([currentTab])
+        }
     }
 }

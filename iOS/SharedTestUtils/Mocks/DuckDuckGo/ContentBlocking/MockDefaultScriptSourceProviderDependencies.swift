@@ -31,7 +31,8 @@ extension DefaultScriptSourceProvider.Dependencies {
              fireproofing: MockFireproofing(),
              contentScopeExperimentsManager: MockContentScopeExperimentManager(),
              internalUserDecider: MockInternalUserDecider(),
-             syncErrorHandler: CapturingAdapterErrorHandler())
+             syncErrorHandler: CapturingAdapterErrorHandler(),
+             webExtensionAvailability: nil)
     }
 
     static func makeMock(privacyConfig: PrivacyConfigurationManaging) -> Self {
@@ -42,6 +43,7 @@ extension DefaultScriptSourceProvider.Dependencies {
              fireproofing: MockFireproofing(),
              contentScopeExperimentsManager: MockContentScopeExperimentManager(),
              internalUserDecider: MockInternalUserDecider(),
-             syncErrorHandler: CapturingAdapterErrorHandler())
+             syncErrorHandler: CapturingAdapterErrorHandler(),
+             webExtensionAvailability: nil)
     }
 }

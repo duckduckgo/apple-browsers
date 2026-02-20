@@ -133,8 +133,7 @@ private extension RebrandedNewTabDaxDialogFactory {
     
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         return FadeInView {
-            OnboardingFinalDialog(
-                logoPosition: .top,
+            OnboardingRebranding.OnboardingEndOfJourneyDialog(
                 message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                 cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                 dismissAction: { [weak self] in
@@ -146,9 +145,8 @@ private extension RebrandedNewTabDaxDialogFactory {
                     onManualDismiss()
                 }
             )
-            .onboardingDaxDialogStyle()
         }
-        .onboardingContextualBackgroundStyle(background: .illustratedGradient)
+        .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
@@ -162,13 +160,37 @@ private extension RebrandedNewTabDaxDialogFactory {
 private extension RebrandedNewTabDaxDialogFactory {
 
     func createSubscriptionPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+        func createSubscriptionPromoMessage() -> AttributedString {
+            let fullText = String(
+                format: UserText.SubscriptionPromotionOnboarding.Promo.messageFormat,
+                UserText.SubscriptionPromotionOnboarding.Promo.optionalSubscriptionBold,
+                UserText.SubscriptionPromotionOnboarding.Promo.vpnBold,
+                UserText.SubscriptionPromotionOnboarding.Promo.privateAIBold
+            )
+
+            return AttributedString(fullText)
+        }
+
+        func createSubscriptionPromoMessageDeprecated() -> AttributedString {
+            let fullText = String(
+                format: UserText.SubscriptionPromotionOnboarding.Promo.messageFormatDeprecated,
+                UserText.SubscriptionPromotionOnboarding.Promo.vpnAndTwoMoreBold,
+                UserText.SubscriptionPromotionOnboarding.Promo.optionalSubscriptionBoldDeprecated
+            )
+
+            return AttributedString(fullText)
+        }
+
+        let title = UserText.SubscriptionPromotionOnboarding.Promo.title
+        let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
+        let dismissText = "No Thanks"
+
         return FadeInView {
-            SubscriptionPromotionView(
-                title: UserText.SubscriptionPromotionOnboarding.Promo.title,
-                // This is temporary and will be removed after rebranding is launched
-                message: AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ?  UserText.SubscriptionPromotionOnboarding.Promo.message() : UserText.SubscriptionPromotionOnboarding.Promo.messageDeprecated(),
+            OnboardingRebranding.OnboardingSubscriptionPromoDialog(
+                title: title,
+                message: message,
                 proceedText: proceedButtonText,
-                dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.skip,
+                dismissText: dismissText,
                 proceedAction: { [weak self] in
                     self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
                     let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
@@ -179,15 +201,17 @@ private extension RebrandedNewTabDaxDialogFactory {
                     )
                     onDismiss(false)
                 },
+                dismissAction: {
+                    onDismiss(true)
+                },
                 onManualDismiss: { [weak self] in
                     self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
                     self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
                     onDismiss(true)
                 }
             )
-            .onboardingDaxDialogStyle()
         }
-        .onboardingContextualBackgroundStyle(background: .illustratedGradient)
+        .applyContextualOnboardingBackground(backgroundType: .privacyProTrial)
         .onFirstAppear { [weak self] in
             self?.onboardingSubscriptionPromotionHelper.fireImpressionPixel()
             self?.daxDialogsFlowCoordinator.subscriptionPromotionDialogSeen = true

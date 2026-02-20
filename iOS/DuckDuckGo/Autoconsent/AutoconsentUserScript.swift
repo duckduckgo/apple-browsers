@@ -26,6 +26,7 @@ import PrivacyDashboard
 import os.log
 import PixelKit
 import Combine
+import WebExtensions
 
 protocol AutoconsentPreferences {
     var autoconsentEnabled: Bool { get set }
@@ -63,6 +64,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     let source: String
     private let config: PrivacyConfiguration
     private let ignoreNonHTTPURLs: Bool
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding?
     weak var delegate: AutoconsentUserScriptDelegate?
 
     // Publisher for cookie popup managed events
@@ -71,7 +73,10 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         popupManagedSubject.eraseToAnyPublisher()
     }
 
-    init(config: PrivacyConfiguration, preferences: AutoconsentPreferences = AppUserDefaults(), ignoreNonHTTPURLs: Bool = true) {
+    init(config: PrivacyConfiguration,
+         preferences: AutoconsentPreferences = AppUserDefaults(),
+         ignoreNonHTTPURLs: Bool = true,
+         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
             source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
@@ -84,6 +89,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.config = config
         self.preferences = preferences
         self.ignoreNonHTTPURLs = ignoreNonHTTPURLs
+        self.webExtensionAvailability = webExtensionAvailability
         super.init()
     }
 
@@ -251,6 +257,12 @@ extension AutoconsentUserScript {
             // ignore special schemes
             Logger.autoconsent.debug("Ignoring special URL scheme: \(messageData.url)")
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
+            return
+        }
+
+        if webExtensionAvailability?.isAutoconsentExtensionAvailable == true {
+            Logger.autoconsent.debug("Web extension active, deferring autoconsent to extension")
+            replyHandler([ "type": "ok" ], nil)
             return
         }
 

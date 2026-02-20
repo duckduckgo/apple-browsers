@@ -190,7 +190,7 @@ final class VersionComparisonTests: XCTestCase {
     func testWhenEmbeddedExtensionInstalled_ThenReturnsIt() {
         let embeddedExt = InstalledWebExtension(
             uniqueIdentifier: "embedded-id",
-            filename: "autoconsent.zip",
+            filename: "duckduckgo-embedded-web-extension.zip",
             name: "Autoconsent",
             version: "1.0.0",
             embeddedType: .embedded
@@ -213,7 +213,7 @@ final class VersionComparisonTests: XCTestCase {
         )
         let embeddedExt = InstalledWebExtension(
             uniqueIdentifier: "embedded-id",
-            filename: "autoconsent.zip",
+            filename: "duckduckgo-embedded-web-extension.zip",
             name: "Autoconsent",
             version: "1.0.0",
             embeddedType: .embedded

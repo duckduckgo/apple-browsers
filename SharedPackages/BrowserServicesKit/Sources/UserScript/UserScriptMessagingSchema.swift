@@ -152,10 +152,10 @@ public struct SubscriptionEvent {
 
         return """
            (() => {
-              if (!('\(res.subscriptionName)' in (navigator?.duckduckgo ?? {}))) {
+              if (!('\(res.subscriptionName)' in (navigator?.duckduckgo?.messageHandlers ?? {}))) {
                  \(warnStatement)
               } else {
-                  navigator?.duckduckgo?.\(res.subscriptionName)?.(\(json));
+                  navigator?.duckduckgo?.messageHandlers?.\(res.subscriptionName)?.(\(json));
               }
            })();
            """

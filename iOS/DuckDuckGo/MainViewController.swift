@@ -3254,6 +3254,7 @@ extension MainViewController: OmniBarDelegate {
 
     func onOmniBarExpandedStateChanged(isExpanded: Bool) {
         if isExpanded {
+            hideSuggestionTray()
             guard expandedOmniBarDismissTapGesture == nil else { return }
             //TODO: Verify why isnt working
             let tap = UITapGestureRecognizer(target: self, action: #selector(dismissExpandedOmniBar))

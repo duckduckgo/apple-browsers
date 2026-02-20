@@ -1256,7 +1256,7 @@ class MainViewController: UIViewController {
                                                       fireproofing: fireproofing,
                                                       aiChatSettings: aiChatSettings,
                                                       keyValueFilesStore: keyValueStore)
-            let source: UIView = tabsBarController?.fireButton ?? viewCoordinator.toolbar
+            let source: UIView = findFireButton() ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: source,

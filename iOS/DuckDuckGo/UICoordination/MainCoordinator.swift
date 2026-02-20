@@ -254,6 +254,7 @@ final class MainCoordinator {
 
             Task { @MainActor in
                 await webExtensionManager.loadInstalledExtensions()
+                await webExtensionManager.syncEmbeddedExtensions()
                 self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
         } else {

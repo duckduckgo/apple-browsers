@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PixelKit
 import WebExtensions
 import os.log
 
@@ -36,6 +37,14 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
 
     func refreshDashboardState(domain: String, consentStatus: ConsentStatusInfo) {
         Logger.webExtensions.debug("macOS: Refreshing dashboard state for \(domain)")
+        NotificationCenter.default.post(
+            name: .webExtensionAutoconsentDashboardStateRefresh,
+            object: self,
+            userInfo: [
+                AutoconsentNotification.UserInfoKeys.domain: domain,
+                AutoconsentNotification.UserInfoKeys.consentStatus: consentStatus
+            ]
+        )
     }
 
     func handleCookiePopup(_ popupInfo: CookiePopupHandledInfo) {
@@ -58,6 +67,77 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
     }
 
     func sendPixel(_ pixelInfo: PixelInfo) {
-        Logger.webExtensions.debug("macOS: Firing pixel \(pixelInfo.name) of type \(pixelInfo.type)")
+        guard let pixel = mapPixelNameToAutoconsentPixel(pixelInfo.name, params: pixelInfo.params) else {
+            Logger.webExtensions.error("macOS: Unknown autoconsent pixel name: \(pixelInfo.name)")
+            return
+        }
+
+        let frequency: PixelKit.Frequency = pixelInfo.type == "daily" ? .daily : .standard
+        let additionalParams = processAdditionalParams(pixelInfo.params, isSummary: pixelInfo.name == "autoconsent_summary")
+
+        Logger.webExtensions.debug("macOS: Firing pixel \(pixelInfo.name) with frequency \(pixelInfo.type)")
+
+        PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: additionalParams)
+    }
+
+    private func processAdditionalParams(_ params: [String: Any], isSummary: Bool) -> [String: String] {
+        let stringParams = params.compactMapValues { value -> String? in
+            if let stringValue = value as? String { return stringValue }
+            if let intValue = value as? Int { return String(intValue) }
+            return nil
+        }
+
+        if isSummary {
+            let summaryKeys = Set(AutoconsentPixel.summaryPixels.map { $0.key })
+            return stringParams.filter { !summaryKeys.contains($0.key) }
+        }
+
+        return stringParams
+    }
+
+    private func mapPixelNameToAutoconsentPixel(_ name: String, params: [String: Any]) -> AutoconsentPixel? {
+        switch name {
+        case "autoconsent_init":
+            return .acInit
+        case "autoconsent_error_multiple-popups":
+            return .errorMultiplePopups
+        case "autoconsent_error_optout":
+            return .errorOptoutFailed
+        case "autoconsent_error_reload-loop":
+            return .errorReloadLoop
+        case "autoconsent_popup-found":
+            return .popupFound
+        case "autoconsent_done":
+            return .done
+        case "autoconsent_done_cosmetic":
+            return .doneCosmetic
+        case "autoconsent_done_heuristic":
+            return .doneHeuristic
+        case "autoconsent_animation-shown":
+            return .animationShown
+        case "autoconsent_animation-shown_cosmetic":
+            return .animationShownCosmetic
+        case "autoconsent_disabled-for-site":
+            return .disabledForSite
+        case "autoconsent_detected-by-patterns":
+            return .detectedByPatterns
+        case "autoconsent_detected-by-both":
+            return .detectedByBoth
+        case "autoconsent_detected-only-rules":
+            return .detectedOnlyRules
+        case "autoconsent_self-test-ok":
+            return .selfTestOk
+        case "autoconsent_self-test-fail":
+            return .selfTestFail
+        case "autoconsent_summary":
+            let intParams = params.compactMapValues { value -> Int? in
+                if let intValue = value as? Int { return intValue }
+                if let stringValue = value as? String { return Int(stringValue) }
+                return nil
+            }
+            return .summary(events: intParams)
+        default:
+            return nil
+        }
     }
 }

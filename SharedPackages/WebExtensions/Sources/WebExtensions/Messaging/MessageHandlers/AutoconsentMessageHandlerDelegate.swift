@@ -68,9 +68,9 @@ public struct ConsentStatusInfo {
 public struct PixelInfo {
     public let name: String
     public let type: String
-    public let params: [String: String]
+    public let params: [String: Any]
 
-    public init(name: String, type: String, params: [String: String] = [:]) {
+    public init(name: String, type: String, params: [String: Any] = [:]) {
         self.name = name
         self.type = type
         self.params = params
@@ -85,6 +85,23 @@ public struct CookiePopupHandledInfo {
     public init(url: URL, message: [String: Any]) {
         self.url = url
         self.message = message
+    }
+}
+
+// MARK: - Notification Constants
+
+public extension Notification.Name {
+    /// Posted when the web extension requests a dashboard state refresh for cookie consent status.
+    /// UserInfo contains `AutoconsentNotification.UserInfoKeys.domain` and `AutoconsentNotification.UserInfoKeys.consentStatus`.
+    static let webExtensionAutoconsentDashboardStateRefresh = Notification.Name("webExtensionAutoconsentDashboardStateRefresh")
+}
+
+/// Constants for autoconsent notifications from web extensions
+public enum AutoconsentNotification {
+    /// Keys for notification userInfo dictionary
+    public enum UserInfoKeys {
+        public static let domain = "domain"
+        public static let consentStatus = "consentStatus"
     }
 }
 

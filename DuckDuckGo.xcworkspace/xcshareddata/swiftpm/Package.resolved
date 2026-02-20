@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "pr-releases/jkt/change-apple-message-exposure",
-        "revision" : "899118d7934dec56e7830b1d09bdda36f24e177a"
+        "revision" : "0eb7860ee6252da0bdd526e8ca1d800c74e5d16b",
+        "version" : "13.12.0"
       }
     },
     {

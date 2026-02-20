@@ -88,7 +88,6 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
         }
 
         if isSummary {
-            // Filter out params that are already packed as part of the summary pixel
             let summaryKeys = Set(AutoconsentPixel.summaryPixels.map { $0.key })
             return stringParams.filter { !summaryKeys.contains($0.key) }
         }
@@ -126,6 +125,10 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
             return .detectedByBoth
         case "autoconsent_detected-only-rules":
             return .detectedOnlyRules
+        case "autoconsent_self-test-ok":
+            return .selfTestOk
+        case "autoconsent_self-test-fail":
+            return .selfTestFail
         case "autoconsent_summary":
             let intParams = params.compactMapValues { value -> Int? in
                 if let intValue = value as? Int { return intValue }

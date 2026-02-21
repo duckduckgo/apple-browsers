@@ -842,7 +842,7 @@ class TabViewController: UIViewController {
         updateContentInsetAdjustment()
 
         pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
-                                                            pullableView: webViewContainerView,
+                                                            pullableView: webViewContainer,
                                                             onRefresh: { [weak self] in
             self?.handlePullToRefresh()
         })

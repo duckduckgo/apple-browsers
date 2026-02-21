@@ -17,12 +17,12 @@
 //  limitations under the License.
 //
 
+import Bookmarks
 import BrowserServicesKit
 import Core
-import Persistence
-import Bookmarks
 import CoreData
 import os.log
+import Persistence
 import UserScript
 import WebKit
 

@@ -86,7 +86,6 @@ final class HistoryTabExtension: NSObject {
          trackersPublisher: some Publisher<DetectedTracker, Never>,
          urlPublisher: some Publisher<URL?, Never>,
          titlePublisher: some Publisher<String?, Never>,
-         popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never>,
          scriptsPublisher: some Publisher<some HistoryUserScriptProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>) {
 
@@ -123,13 +122,6 @@ final class HistoryTabExtension: NSObject {
                 }
             }
             .store(in: &cancellables)
-
-        popupManagedPublisher.sink { [weak self] event in
-            guard let self else { return }
-            MainActor.assumeMainThread {
-                self.handlePopupManaged(event)
-            }
-        }.store(in: &cancellables)
 
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
@@ -172,14 +164,6 @@ final class HistoryTabExtension: NSObject {
 
         guard let url else { return }
         historyCoordinating.updateTitleIfNeeded(title: title, url: url)
-    }
-
-    @MainActor
-    private func handlePopupManaged(_ message: AutoconsentUserScript.AutoconsentDoneMessage) {
-        guard isCapturingHistory else { return }
-
-        guard let url else { return }
-        historyCoordinating.cookiePopupBlocked(on: url)
     }
 
     private func commitBeforeClosing() {

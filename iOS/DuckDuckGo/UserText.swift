@@ -2228,31 +2228,56 @@ public struct UserText {
     public enum SubscriptionPromotionOnboarding {
         public enum Promo {
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")
+
+            // MARK: - Message Components
+
+            static let vpnBold = NSLocalizedString(
+                "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold",
+                value: "VPN",
+                comment: "Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
+            )
+
+            static let optionalSubscriptionBold = NSLocalizedString(
+                "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold",
+                value: "optional paid subscription",
+                comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
+            )
+
+            static let privateAIBold = NSLocalizedString(
+                "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold",
+                value: "advanced, private AI",
+                comment: "Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message."
+            )
+
+            static let vpnAndTwoMoreBold = NSLocalizedString(
+                "onboarding.subscription.promo.message.vpn-two-more-bold",
+                value: "VPN + 2 more premium protections",
+                comment: "Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
+            )
+
+            static let optionalSubscriptionBoldDeprecated = NSLocalizedString(
+                "onboarding.subscription.promo.message.optional-subscription-bold",
+                value: "optional paid subscription",
+                comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
+            )
+
+            static let messageFormat = NSLocalizedString(
+                "onboarding.duckduckgo.subscription.promo.message",
+                value: "DuckDuckGo also has an %1$@, available with a %2$@ and %3$@.",
+                comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold)."
+            )
+
+            static let messageFormatDeprecated = NSLocalizedString(
+                "onboarding.subscription.promo.message",
+                value: "DuckDuckGo also has a secure %1$@, available with an %2$@.",
+                comment: "Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold)."
+            )
+
+            // MARK: - Legacy Methods
+
             static func message() -> NSAttributedString {
-
-                let vpnBold = NSLocalizedString(
-                    "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold",
-                    value: "VPN",
-                    comment: "Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
-                )
-
-                let optionalSubscriptionBold = NSLocalizedString(
-                    "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold",
-                    value: "optional paid subscription",
-                    comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
-                )
-
-                let privateAIBold = NSLocalizedString(
-                    "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold",
-                    value: "advanced, private AI",
-                    comment: "Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message."
-                )
-
                 // Localized full message with numbered placeholders
-                let fullText = String(format: NSLocalizedString(
-                    "onboarding.duckduckgo.subscription.promo.message",
-                    value: "DuckDuckGo also has an %1$@, available with a %2$@ and %3$@.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold)."), optionalSubscriptionBold, vpnBold, privateAIBold)
+                let fullText = String(format: messageFormat, optionalSubscriptionBold, vpnBold, privateAIBold)
 
                 let attributedString = NSMutableAttributedString(string: fullText)
 
@@ -2278,23 +2303,8 @@ public struct UserText {
                 return attributedString
             }
             static func messageDeprecated() -> NSAttributedString {
-                let vpnAndTwoMoreBold = NSLocalizedString(
-                    "onboarding.subscription.promo.message.vpn-two-more-bold",
-                    value: "VPN + 2 more premium protections",
-                    comment: "Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
-                )
-
-                let optionalSubscriptionBold = NSLocalizedString(
-                    "onboarding.subscription.promo.message.optional-subscription-bold",
-                    value: "optional paid subscription",
-                    comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
-                )
-
                 // Localized full message with numbered placeholders
-                let fullText = String(format: NSLocalizedString(
-                    "onboarding.subscription.promo.message",
-                    value: "DuckDuckGo also has a secure %1$@, available with an %2$@.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold)."), vpnAndTwoMoreBold, optionalSubscriptionBold)
+                let fullText = String(format: messageFormatDeprecated, vpnAndTwoMoreBold, optionalSubscriptionBoldDeprecated)
 
                 let attributedString = NSMutableAttributedString(string: fullText)
 
@@ -2308,7 +2318,7 @@ public struct UserText {
                 }
 
                 // Apply bold formatting
-                if let optionalSubscriptionRange = fullText.range(of: optionalSubscriptionBold) {
+                if let optionalSubscriptionRange = fullText.range(of: optionalSubscriptionBoldDeprecated) {
                     attributedString.addAttributes(boldAttributes, range: NSRange(optionalSubscriptionRange, in: fullText))
                 }
 

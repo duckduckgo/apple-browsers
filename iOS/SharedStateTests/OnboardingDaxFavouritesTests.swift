@@ -90,7 +90,8 @@ import AIChatTestingUtilities
                                                                               fireproofing: fireproofing,
                                                                               contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                               internalUserDecider: MockInternalUserDecider(),
-                                                                              syncErrorHandler: CapturingAdapterErrorHandler())
+                                                                              syncErrorHandler: CapturingAdapterErrorHandler(),
+                                                                              webExtensionAvailability: nil)
 
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
@@ -120,7 +121,8 @@ import AIChatTestingUtilities
                                     aiChatSettings: aiChatSettings,
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     privacyStats: MockPrivacyStats(),
-                                    voiceSearchHelper: MockVoiceSearchHelper()
+                                    voiceSearchHelper: MockVoiceSearchHelper(),
+                                    launchSourceManager: MockLaunchSourceManager()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,

@@ -29,8 +29,10 @@ public extension OnboardingTheme {
         /// Spacing between the copy block and CTA content.
         public let contentSpacing: CGFloat
 
-        /// Vertical spacing between title and body text in the copy block.
-        public let titleBodyVerticalSpacing: CGFloat
+        /// Vertical spacing between title and body text in the copy block when content stacked vertically.
+        public let titleBodyVerticalSpacingVerticalLayout: CGFloat
+        /// Vertical spacing between title and body text in the copy block when content stacked horizontally.
+        public let titleBodyVerticalSpacingHorizontalLayout: CGFloat
         /// Insets applied to the title/body copy block.
         public let titleBodyInset: EdgeInsets
 
@@ -60,7 +62,8 @@ public extension OnboardingTheme {
         public init(
             containerPadding: EdgeInsets,
             contentSpacing: CGFloat,
-            titleBodyVerticalSpacing: CGFloat,
+            titleBodyVerticalSpacingVerticalLayout: CGFloat,
+            titleBodyVerticalSpacingHorizontalLayout: CGFloat,
             titleBodyInset: EdgeInsets,
             contextualTitleTextAlignment: TextAlignment,
             contextualBodyTextAlignment: TextAlignment,
@@ -72,7 +75,8 @@ public extension OnboardingTheme {
         ) {
             self.containerPadding = containerPadding
             self.contentSpacing = contentSpacing
-            self.titleBodyVerticalSpacing = titleBodyVerticalSpacing
+            self.titleBodyVerticalSpacingVerticalLayout = titleBodyVerticalSpacingVerticalLayout
+            self.titleBodyVerticalSpacingHorizontalLayout = titleBodyVerticalSpacingHorizontalLayout
             self.titleBodyInset = titleBodyInset
             self.contextualTitleTextAlignment = contextualTitleTextAlignment
             self.contextualBodyTextAlignment = contextualBodyTextAlignment

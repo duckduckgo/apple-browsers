@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import XCTest
-import WebKit
-import BrowserServicesKitTestsUtils
 import Persistence
 import PersistenceTestingUtils
+import BrowserServicesKitTestsUtils
 import UserScript
+import WebKit
+import XCTest
+
 @testable import SERPSettings
 
 @MainActor

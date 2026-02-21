@@ -25,17 +25,14 @@ import SwiftUI
 /// to fill the available height. On iPhone (compact horizontal size class), content is positioned at
 /// the top without centering.
 public struct OnboardingConditionalCenteredScrollableContainerView<Content: View>: View {
-    @State private var containerHeight: CGFloat = 0
     @Environment(\.horizontalSizeClass) private var hSizeClass
 
-    private let animationDuration: CGFloat
     private let content: Content
 
     /// Creates a conditional centered scrollable container.
     ///
     /// - Parameter content: A view builder that provides the content to be displayed within the container.
-    public init(animationDuration: CGFloat = 0.3, @ViewBuilder content: () -> Content) {
-        self.animationDuration = animationDuration
+    public init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
@@ -44,34 +41,23 @@ public struct OnboardingConditionalCenteredScrollableContainerView<Content: View
     }
 
     public var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack {
-                if shouldCenterContent {
-                    Spacer(minLength: 0)
-                }
+        // Keep content in the same structural position by using conditional spacers
+        // instead of conditional container structure
+        VStack(spacing: 0) {
+            if shouldCenterContent {
+                Spacer(minLength: 0)
+            }
 
+            ScrollView(.vertical, showsIndicators: false) {
                 content
+            }
+            // Only apply fixedSize when centering to make ScrollView size to content
+            .fixedSize(horizontal: false, vertical: shouldCenterContent)
 
-                if shouldCenterContent {
-                    Spacer(minLength: 0)
-                }
+            if shouldCenterContent {
+                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: shouldCenterContent ? containerHeight : nil)
-            .animation(.easeInOut(duration: animationDuration), value: containerHeight)
         }
-        .background(
-            GeometryReader { proxy in
-                Color.clear
-                    .onAppear {
-                        containerHeight = proxy.size.height
-                    }
-                    .onChange(of: proxy.size.height) { newHeight in
-                        containerHeight = newHeight
-                    }
-            }
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 #endif

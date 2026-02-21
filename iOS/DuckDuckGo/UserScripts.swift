@@ -61,10 +61,14 @@ final class UserScripts: UserScriptsProvider {
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var debugScript = DebugUserScript()
 
+    private let isAutoconsentExtensionAvailable: Bool
+
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+
+        isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
         contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
@@ -88,7 +92,10 @@ final class UserScripts: UserScriptsProvider {
             }
             fatalError("Failed to initialize ContentScopeUserScript: \(error)")
         }
-        autoconsentUserScript = AutoconsentUserScript(config: sourceProvider.privacyConfigurationManager.privacyConfig)
+        autoconsentUserScript = AutoconsentUserScript(
+            config: sourceProvider.privacyConfigurationManager.privacyConfig,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability
+        )
 
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
         let aiChatSettings = AIChatSettings()
@@ -127,18 +134,25 @@ final class UserScripts: UserScriptsProvider {
         specialErrorPageUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
     }
 
-    lazy var userScripts: [UserScript] = [
-        debugScript,
-        autoconsentUserScript,
-        findInPageScript,
-        surrogatesScript,
-        contentBlockerUserScript,
-        fullScreenVideoScript,
-        autofillUserScript,
-        loginFormDetectionScript,
-        contentScopeUserScript,
-        contentScopeUserScriptIsolated
-    ].compactMap({ $0 })
+    lazy var userScripts: [UserScript] = {
+        var scripts: [UserScript?] = [
+            debugScript,
+            findInPageScript,
+            surrogatesScript,
+            contentBlockerUserScript,
+            fullScreenVideoScript,
+            autofillUserScript,
+            loginFormDetectionScript,
+            contentScopeUserScript,
+            contentScopeUserScriptIsolated
+        ]
+
+        if !isAutoconsentExtensionAvailable {
+            scripts.insert(autoconsentUserScript, at: 1)
+        }
+
+        return scripts.compactMap { $0 }
+    }()
     
     // Initialize DuckPlayer scripts
     private func initializeDuckPlayer() {

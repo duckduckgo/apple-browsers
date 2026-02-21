@@ -220,6 +220,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let privacyStats: PrivacyStatsCollecting
     let autoconsentStats: AutoconsentStatsCollecting
+    private var autoconsentEventCoordinator: AutoconsentEventCoordinator?
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let newTabPageCustomizationModel: NewTabPageCustomizationModel
     private(set) lazy var newTabPageProtectionsReportModel: NewTabPageProtectionsReportModel = NewTabPageProtectionsReportModel(
@@ -361,7 +362,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
+    private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
+
+    /// Holder class that allows `WebExtensionAvailability` to be created before `super.init()`,
+    /// while still providing access to `webExtensionManager` which is set on `self` after `super.init()`.
+    private final class WebExtensionManagerHolder {
+        weak var appDelegate: AppDelegate?
+        var manager: WebExtensionManaging? {
+            appDelegate?.webExtensionManager
+        }
+    }
 
     private var didFinishLaunching = false
 
@@ -545,6 +557,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        webExtensionAvailability = WebExtensionAvailability(
+            featureFlagger: featureFlagger,
+            webExtensionManagerProvider: { [webExtensionManagerHolder] in
+                webExtensionManagerHolder.manager
+            }
+        )
 
         wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
@@ -836,7 +855,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 tld: tld,
                 autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences,
-                syncErrorHandler: syncErrorHandler
+                syncErrorHandler: syncErrorHandler,
+                webExtensionAvailability: webExtensionAvailability
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -867,7 +887,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             tld: tld,
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
-            syncErrorHandler: syncErrorHandler
+            syncErrorHandler: syncErrorHandler,
+            webExtensionAvailability: webExtensionAvailability
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,
@@ -980,6 +1001,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
         autoconsentStats = AutoconsentStats(keyValueStore: keyValueStore, isFeatureEnabled: { featureFlagger.isFeatureOn(.newTabPageAutoconsentStats) })
+        autoconsentEventCoordinator = Self.makeAutoconsentEventCoordinator(
+            autoconsentStats: autoconsentStats,
+            historyCoordinating: historyCoordinator,
+            featureFlagger: featureFlagger,
+            webExtensionAvailability: webExtensionAvailability
+        )
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
 #if !APPSTORE
@@ -1068,6 +1095,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         super.init()
+
+        webExtensionManagerHolder.appDelegate = self
 
         memoryPressureReporter = MemoryPressureReporter(
             featureFlagger: featureFlagger,
@@ -2069,6 +2098,20 @@ extension AppDelegate: UserScriptDependenciesProviding {
             duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
             syncService: syncService,
             pinningManager: pinningManager
+        )
+    }
+
+    private static func makeAutoconsentEventCoordinator(
+        autoconsentStats: AutoconsentStatsCollecting,
+        historyCoordinating: HistoryCoordinating,
+        featureFlagger: FeatureFlagger,
+        webExtensionAvailability: WebExtensionAvailabilityProviding
+    ) -> AutoconsentEventCoordinator {
+        return AutoconsentEventCoordinator(
+            autoconsentStats: autoconsentStats,
+            historyCoordinating: historyCoordinating,
+            featureFlagger: featureFlagger,
+            webExtensionAvailability: webExtensionAvailability
         )
     }
 }

@@ -1026,10 +1026,13 @@ class TabViewController: UIViewController {
             if webView.isLoading {
                 delegate?.showBars()
             }
+            if #available(iOS 18.4, *) {
+                notifyWebExtensionOfPropertyChange([.loading])
+            }
 
         case #keyPath(WKWebView.estimatedProgress):
             progressWorker.progressDidChange(webView.estimatedProgress)
-            
+
         case #keyPath(WKWebView.url):
             // A short delay is required here, because the URL takes some time
             // to propagate to the webView.url property accessor and might not
@@ -1038,6 +1041,9 @@ class TabViewController: UIViewController {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                 guard let self else { return }
                 self.webViewUrlHasChanged(previousURL: previousURL, newURL: self.webView.url)
+                if #available(iOS 18.4, *) {
+                    self.notifyWebExtensionOfPropertyChange([.URL])
+                }
             }
 
         case #keyPath(WKWebView.canGoBack):
@@ -1048,7 +1054,9 @@ class TabViewController: UIViewController {
 
         case #keyPath(WKWebView.title):
             title = webView.title
-
+            if #available(iOS 18.4, *) {
+                notifyWebExtensionOfPropertyChange([.title])
+            }
         default:
             Logger.general.debug("Unhandled keyPath \(keyPath)")
         }
@@ -1066,7 +1074,12 @@ class TabViewController: UIViewController {
             url = newURL
         }
     }
-    
+
+    @available(iOS 18.4, *)
+    private func notifyWebExtensionOfPropertyChange(_ properties: WKWebExtension.TabChangedProperties) {
+        (delegate as? MainViewController)?.webExtensionEventsCoordinator?.didChangeTabProperties(properties, for: self)
+    }
+
     func enableFireproofingForDomain(_ domain: String) {
         FireproofingAlert.showConfirmFireproofWebsite(usingController: self, forDomain: domain) { [weak self] in
             Pixel.fire(pixel: .browsingMenuFireproof)

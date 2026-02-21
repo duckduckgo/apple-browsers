@@ -90,7 +90,8 @@ import AIChatTestingUtilities
                                                                               fireproofing: fireproofing,
                                                                               contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                               internalUserDecider: MockInternalUserDecider(),
-                                                                              syncErrorHandler: CapturingAdapterErrorHandler())
+                                                                              syncErrorHandler: CapturingAdapterErrorHandler(),
+                                                                              webExtensionAvailability: nil)
 
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,

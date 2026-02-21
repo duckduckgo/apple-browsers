@@ -2689,10 +2689,6 @@ extension MainViewController: BrowserChromeDelegate {
             let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
             viewCoordinator.constraints.navigationBarContainerBottom.constant = navBarHeight * (1.0 - ratio)
         }
-
-//        if let findInPageView, let findInPageHeightLayoutConstraint {
-//            findInPageHeightLayoutConstraint.constant = findInPageView.container.frame.height + view.safeAreaInsets.bottom
-//        }
     }
 
     // 1.0 - full size, 0.0 - hidden

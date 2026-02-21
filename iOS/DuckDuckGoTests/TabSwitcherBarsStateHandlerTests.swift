@@ -41,11 +41,11 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
 
         // Check that the expected items are present in the correct order
         let items = stateHandler.bottomBarItems
-        XCTAssertTrue(items.count >= 10)
-        XCTAssertEqual(items[1], stateHandler.tabSwitcherStyleButton)
-        XCTAssertEqual(items[5], stateHandler.fireButton)
-        XCTAssertEqual(items[7], stateHandler.plusButton)
-        XCTAssertEqual(items[9], stateHandler.editButton)
+        XCTAssertEqual(items.count, 9)
+        XCTAssertEqual(items[0], stateHandler.tabSwitcherStyleButton)
+        XCTAssertEqual(items[4], stateHandler.fireButton)
+        XCTAssertEqual(items[6], stateHandler.plusButton)
+        XCTAssertEqual(items[8], stateHandler.editButton)
 
         XCTAssertFalse(stateHandler.isBottomBarHidden)
         XCTAssertFalse(stateHandler.editButton.isEnabled)
@@ -56,11 +56,11 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
 
         // Check that the expected items are present in the correct order
         let items = stateHandler.bottomBarItems
-        XCTAssertTrue(items.count >= 10)
-        XCTAssertEqual(items[1], stateHandler.tabSwitcherStyleButton)
-        XCTAssertEqual(items[5], stateHandler.fireButton)
-        XCTAssertEqual(items[7], stateHandler.plusButton)
-        XCTAssertEqual(items[9], stateHandler.editButton)
+        XCTAssertEqual(items.count, 9)
+        XCTAssertEqual(items[0], stateHandler.tabSwitcherStyleButton)
+        XCTAssertEqual(items[4], stateHandler.fireButton)
+        XCTAssertEqual(items[6], stateHandler.plusButton)
+        XCTAssertEqual(items[8], stateHandler.editButton)
 
         XCTAssertFalse(stateHandler.isBottomBarHidden)
         XCTAssertTrue(stateHandler.editButton.isEnabled)

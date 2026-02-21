@@ -27,6 +27,17 @@ struct TextZoomEditorView: View {
 
     @Environment(\.dismiss) var dismiss
 
+    private var closeButton: some View {
+        Button {
+            model.onDismiss()
+            dismiss()
+        } label: {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+        }
+        .buttonStyle(BrowsingMenuCloseButtonStyle())
+        .accessibilityLabel(UserText.keyCommandClose)
+    }
+
     @ViewBuilder
     func header() -> some View {
         ZStack(alignment: .center) {
@@ -34,18 +45,13 @@ struct TextZoomEditorView: View {
                 .font(Font(uiFont: .daxHeadline()))
                 .frame(alignment: .center)
                 .foregroundStyle(Color(designSystemColor: .textPrimary))
+                // centers properly but also padds the sides in case a translation makes this overlap the close button
+                .padding(.horizontal, BrowsingMenuCloseButtonStyle.Constant.padding + 24)
 
-            Button {
-                model.onDismiss()
-                dismiss()
-            } label: {
-                Text(UserText.navigationTitleDone)
-                    .font(Font(uiFont: .daxHeadline()))
+            HStack {
+                Spacer()
+                closeButton
             }
-            .buttonStyle(.plain)
-            .padding(0)
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .foregroundStyle(Color(designSystemColor: .textPrimary))
         }
         .padding(.horizontal, 16)
         .frame(height: 56)

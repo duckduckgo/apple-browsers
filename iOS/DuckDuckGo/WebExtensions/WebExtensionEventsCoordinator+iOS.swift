@@ -35,7 +35,6 @@ final class WebExtensionEventsCoordinator {
     init(webExtensionManager: WebExtensionManaging, mainViewController: MainViewController) {
         self.webExtensionManager = webExtensionManager
         self.mainViewController = mainViewController
-        mainViewController.tabManager.cacheDelegate = self
     }
 
     // MARK: - Tab Events
@@ -113,7 +112,12 @@ final class WebExtensionEventsCoordinator {
         // to have a controller in memory. For tabs that already have a controller, we notify
         // immediately. For tabs whose controller hasn't been created yet, the cacheDelegate
         // will fire didOpenTab via didCreateController the first time the user activates them.
+        //
+        // The cacheDelegate is set here — after loadInstalledExtensions() has run — so that
+        // controller creation events during app startup don't record UIDs into reportedTabUIDs
+        // before the extension is ready to receive them.
         let tabManager = mainViewController.tabManager
+        tabManager.cacheDelegate = self
         for tab in tabManager.model.tabs {
             if let tabController = tabManager.controller(for: tab) {
                 didOpenTab(tabController)

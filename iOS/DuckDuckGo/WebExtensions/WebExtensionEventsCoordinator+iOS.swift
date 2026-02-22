@@ -140,11 +140,12 @@ extension WebExtensionEventsCoordinator: TabControllerCacheDelegate {
     }
 
     // When a background tab's WebKit process terminates, its controller is evicted from
-    // the cache and a replacement will be created on next activation. Treat the eviction
-    // as a close so the extension drops the dead controller and its UID is cleared from
-    // reportedTabUIDs, allowing didOpenTab to fire correctly for the replacement.
+    // the cache. The tab still exists in the model, so we must not call didCloseTab —
+    // extensions would drop the tab from their state entirely. Instead, just remove the UID
+    // from reportedTabUIDs so that didOpenTab fires correctly for the replacement controller
+    // when the user next activates the tab.
     func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController) {
         guard #available(iOS 18.4, *) else { return }
-        didCloseTab(controller)
+        reportedTabUIDs.remove(controller.tabModel.uid)
     }
 }

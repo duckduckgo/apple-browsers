@@ -59,6 +59,34 @@ Dictionary files live at `{platform}/PixelDefinitions/pixels/` (e.g. `iOS/PixelD
 
 If a pixel is fired with a daily frequency — e.g. `DailyPixel.fire`, `DailyPixel.fireDailyAndCount`, or `PixelKit.fire(..., frequency: .daily)` / `.dailyAndCount` / `.dailyAndStandard` — the definition's `suffixes` array should include a daily-related suffix such as `"daily"`, `"daily_count"`, `"daily_standard"`, `"first_daily_count"`, or `"legacy_daily_count"`. If the pixel is fired with a daily frequency but the definition has no daily-related suffix, flag it.
 
+Suffixes should be defined as "enum" unless using a bounded type such as "boolean".  Unbounded numeric and string values should be defined as parameters.
+
+Unlike parameters, suffixes are order-sensitive and required.  Suffix enums must not contain empty values such as `null` or "".  These are sometimes mistakenly specified to indicate "optional" values, but that doesn't work.  Since all suffixes in a given set are required, if a pixel has optional suffixes, those should be specified as nested arrays in a pixel definition itself (it CANNOT be specified in the suffix dictionary) in the form.  Provide this example:`"suffixes": [[ "required", "optional" ], ["required"]]`
+
+Suffix definiton can contain an optional `"key"` property.  This indicates a suffix always occurs as a key value pair.   For example, a given pixel sent as "m_pixelName_suffixKey_value1" would match a pixel with name "m_pixelName" and the suffix definition below.
+```
+    "key": "suffixKey",
+    "type": "string",
+    "description": "This suffix always occurs in the form suffixKey_valueX",
+    "enum": [
+        "value1",
+        "value2",
+        ...
+    ]
+```
+
+However a `"key"` should NOT be specified when it doesn't actually occur in the full pixel name.  For example "m_pixelName_value1" would fail to match.
+
+### Type Validity
+
+Flag any parameters defined with `"type": "string"` that have an enum containing ONLY "true" and/or "false".  They should just be redefined as type "boolean" instead with no enum.
+
+### Flag duplication
+
+Pixels should not redefine existing params that are already defined in `params_dictionary.json5` or suffixes that are already defined in `suffixes_dictionary.json5`.  These should only be flagged if not just the type and enum are identical, but the description and name seem similar.  This is not a hard rule as it requires individual judgement, so frame this as a question to the developer rather than a requirement.
+
+Pixels should also not duplicate the same params or suffixes repeatedly... if that is happening, suggest (but do not require) the developer to add them to the corresponding param or suffix dictionary.
+
 ### Expiry Dates
 
 Only check expiry dates on definitions that are added or modified in the PR, not on all definitions in files touched by the PR.

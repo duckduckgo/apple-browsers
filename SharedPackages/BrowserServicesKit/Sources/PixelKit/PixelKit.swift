@@ -555,6 +555,9 @@ public final class PixelKit {
         _ callBackOnMainThread: Bool,
         _ frequency: Frequency,
         _ onComplete: @escaping CompletionBlock) {
+#if DEBUG
+            Self.writeValidationPixel(pixelName: pixelName, parameters: parameters)
+#endif
             printDebugInfo(pixelName: pixelName, frequency: frequency, parameters: parameters, skipped: false)
             guard !dryRun else {
                 // simulate server response time for Dry Run mode
@@ -767,6 +770,62 @@ internal extension Dictionary where Key == String, Value == String {
         return [:]
     }
 }
+
+// MARK: - Local Pixel Validation
+
+#if DEBUG
+extension PixelKit {
+
+    private static let validationLogQueue = DispatchQueue(label: "Debug Pixel Validation")
+    private static var validationLogCleared = false
+
+    private static var validationLogURL: URL {
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        return cacheDir.appendingPathComponent("pixelkit-validation-log.txt")
+    }
+
+    private static func pixelURI(name: String, parameters: [String: String]) -> String {
+        guard !parameters.isEmpty else {
+            return name
+        }
+
+        let sortedParams = parameters.sorted { $0.key < $1.key }
+        let queryString = sortedParams
+            .map { "\($0.key)=\($0.value)" }
+            .joined(separator: "&")
+        return "\(name)?\(queryString)"
+    }
+
+    private static func writeValidationPixel(pixelName: String, parameters: [String: String]) {
+        let pixelURI = pixelURI(name: pixelName, parameters: parameters)
+        writeToValidationLog("Pixel fired: \(pixelURI)")
+    }
+
+    private static func writeToValidationLog(_ message: String) {
+        validationLogQueue.async {
+            let fileURL = validationLogURL
+
+            if !validationLogCleared {
+                try? FileManager.default.removeItem(at: fileURL)
+                validationLogCleared = true
+            }
+
+            let entry = message + "\n"
+            if let data = entry.data(using: .utf8) {
+                if FileManager.default.fileExists(atPath: fileURL.path) {
+                    if let handle = try? FileHandle(forWritingTo: fileURL) {
+                        handle.seekToEndOfFile()
+                        handle.write(data)
+                        handle.closeFile()
+                    }
+                } else {
+                    try? data.write(to: fileURL)
+                }
+            }
+        }
+    }
+}
+#endif
 
 internal extension PixelKit {
 

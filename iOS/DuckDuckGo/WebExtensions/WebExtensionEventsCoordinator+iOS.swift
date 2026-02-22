@@ -27,6 +27,10 @@ final class WebExtensionEventsCoordinator {
     private weak var webExtensionManager: WebExtensionManaging?
     private weak var mainViewController: MainViewController?
 
+    /// Tracks UIDs of tabs that have already been reported to the extension via didOpenTab,
+    /// preventing duplicate notifications when a controller is lazily recreated.
+    private var reportedTabUIDs = Set<String>()
+
     @available(iOS 18.4, *)
     init(webExtensionManager: WebExtensionManaging, mainViewController: MainViewController) {
         self.webExtensionManager = webExtensionManager
@@ -37,12 +41,22 @@ final class WebExtensionEventsCoordinator {
 
     @available(iOS 18.4, *)
     func didOpenTab(_ tabViewController: TabViewController) {
+        guard reportedTabUIDs.insert(tabViewController.tabModel.uid).inserted else { return }
         webExtensionManager?.eventsListener.didOpenTab(tabViewController)
     }
 
     @available(iOS 18.4, *)
     func didCloseTab(_ tabViewController: TabViewController, windowIsClosing: Bool = false) {
+        reportedTabUIDs.remove(tabViewController.tabModel.uid)
         webExtensionManager?.eventsListener.didCloseTab(tabViewController, windowIsClosing: windowIsClosing)
+    }
+
+    /// Call this when all extensions are unloaded (e.g. before clearing browser data).
+    /// Clears the reported-tab tracking so that registerExistingTabsAndWindow() can
+    /// re-register all tabs correctly after extensions are reloaded.
+    @available(iOS 18.4, *)
+    func extensionsWillUnload() {
+        reportedTabUIDs.removeAll()
     }
 
     @available(iOS 18.4, *)
@@ -93,16 +107,49 @@ final class WebExtensionEventsCoordinator {
 
         didOpenWindow()
 
+        // Register all tabs that are already open at extension load time.
+        // On iOS, TabViewControllers are created lazily — only the active tab is guaranteed
+        // to have a controller in memory. For tabs that already have a controller, we notify
+        // immediately. For tabs whose controller hasn't been created yet, the cacheDelegate
+        // will fire didOpenTab via didCreateController the first time the user activates them.
+        //
+        // The cacheDelegate is set here — after loadInstalledExtensions() has run — so that
+        // controller creation events during app startup don't record UIDs into reportedTabUIDs
+        // before the extension is ready to receive them.
         let tabManager = mainViewController.tabManager
+        tabManager.cacheDelegate = self
         for tab in tabManager.model.tabs {
             if let tabController = tabManager.controller(for: tab) {
                 didOpenTab(tabController)
             }
         }
 
+        // Report the current selection state so the extension has an accurate picture
+        // of which tab is active right now.
         if let currentTab = tabManager.current() {
             didActivateTab(currentTab, previousActiveTab: nil)
             didSelectTabs([currentTab])
         }
+    }
+}
+
+// MARK: - TabControllerCacheDelegate
+
+extension WebExtensionEventsCoordinator: TabControllerCacheDelegate {
+
+    func tabManager(_ tabManager: TabManager, didCreateController controller: TabViewController) {
+        guard #available(iOS 18.4, *) else { return }
+        guard !reportedTabUIDs.contains(controller.tabModel.uid) else { return }
+        didOpenTab(controller)
+    }
+
+    // When a background tab's WebKit process terminates, its controller is evicted from
+    // the cache. The tab still exists in the model, so we must not call didCloseTab —
+    // extensions would drop the tab from their state entirely. Instead, just remove the UID
+    // from reportedTabUIDs so that didOpenTab fires correctly for the replacement controller
+    // when the user next activates the tab.
+    func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController) {
+        guard #available(iOS 18.4, *) else { return }
+        reportedTabUIDs.remove(controller.tabModel.uid)
     }
 }

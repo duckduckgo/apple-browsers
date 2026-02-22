@@ -63,9 +63,6 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             newTab = mainViewController.tabManager.current(createIfNeeded: true)
         }
 
-        if let newTab {
-            mainViewController.webExtensionEventsCoordinator?.didOpenTab(newTab)
-        }
         return newTab
     }
 

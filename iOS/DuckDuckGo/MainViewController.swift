@@ -1530,10 +1530,6 @@ class MainViewController: UIViewController {
 
         dismissOmniBar()
         attachTab(tab: tab)
-
-        if #available(iOS 18.4, *) {
-            webExtensionEventsCoordinator?.didOpenTab(tab)
-        }
     }
 
     func select(tabAt index: Int) {
@@ -1568,7 +1564,6 @@ class MainViewController: UIViewController {
             if let previousTab {
                 webExtensionEventsCoordinator?.didDeselectTabs([previousTab])
             }
-            webExtensionEventsCoordinator?.didOpenTab(tab)
             webExtensionEventsCoordinator?.didSelectTabs([tab])
             webExtensionEventsCoordinator?.didActivateTab(tab, previousActiveTab: previousTab)
         }
@@ -2056,9 +2051,6 @@ class MainViewController: UIViewController {
             tabManager.selectTab(existing)
         } else {
             tabManager.addHomeTab()
-            if #available(iOS 18.4, *), let newTab = tabManager.current() {
-                webExtensionEventsCoordinator?.didOpenTab(newTab)
-            }
         }
         attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
@@ -3493,12 +3485,8 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
-        let newTab = tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
+        tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
         animateBackgroundTab()
-
-        if #available(iOS 18.4, *) {
-            webExtensionEventsCoordinator?.didOpenTab(newTab)
-        }
     }
 
     func tab(_ tab: TabViewController,
@@ -3841,9 +3829,6 @@ extension MainViewController: TabSwitcherDelegate {
                 tabManager.selectTab(existing)
             } else {
                 tabManager.addHomeTab()
-                if #available(iOS 18.4, *), let newTab = tabManager.current() {
-                    webExtensionEventsCoordinator?.didOpenTab(newTab)
-                }
             }
             showBars() // In case the browser chrome bars are hidden when calling this method
         case .onlyClose:
@@ -4119,6 +4104,10 @@ extension MainViewController: FireExecutorDelegate {
     
     func willStartBurningData(fireRequest: FireRequest) {
         self.clearInProgress = true
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.extensionsWillUnload()
+            webExtensionManager?.unloadAllExtensions()
+        }
     }
     
     func didFinishBurningData(fireRequest: FireRequest) {
@@ -4148,6 +4137,12 @@ extension MainViewController: FireExecutorDelegate {
         // because data could potentially delete a contextual chat that needs syncing
         if syncService.authState != .inactive {
             syncService.scheduler.requestSyncImmediately()
+        }
+        if #available(iOS 18.4, *) {
+            Task { @MainActor [weak self] in
+                await self?.webExtensionManager?.loadInstalledExtensions()
+                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+            }
         }
         switch fireRequest.trigger {
         case .manualFire:

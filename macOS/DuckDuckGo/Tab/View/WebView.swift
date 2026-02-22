@@ -20,6 +20,7 @@ import Carbon.HIToolbox
 import Cocoa
 import Combine
 import CommonObjCExtensions
+import PrivacyConfig
 import WebKit
 
 @MainActor
@@ -50,6 +51,7 @@ final class WebView: WKWebView {
     weak var zoomLevelDelegate: WebViewZoomLevelDelegate?
 
     let interactionEventsPublisher = PassthroughSubject<WebViewInteractionEvent, Never>()
+    private let privacyConfig: PrivacyConfiguration
 
     private var isLoadingObserver: Any?
     /// used in tests
@@ -61,6 +63,18 @@ final class WebView: WKWebView {
         // When a new tab is open, we don't want the web inspector to be active on screen and gain focus.
         // When a new tab is open the other tab views are removed from the window, hence, we should not show the web inspector.
         isInspectorShown && window != nil
+    }
+
+    init(frame: CGRect = .zero,
+         configuration: WKWebViewConfiguration = .init(),
+         privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig) {
+        self.privacyConfig = privacyConfig
+        super.init(frame: frame, configuration: configuration)
+    }
+
+    required init?(coder: NSCoder) {
+        self.privacyConfig = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig
+        super.init(coder: coder)
     }
 
     override func addTrackingArea(_ trackingArea: NSTrackingArea) {
@@ -183,6 +197,27 @@ final class WebView: WKWebView {
     // MARK: - Events
 
     override func mouseDown(with event: NSEvent) {
+        if shouldApplyControlClickFix(for: event),
+            let modifierReleased  = NSEvent.keyEvent(with: .flagsChanged,
+                                                location: event.locationInWindow,
+                                                modifierFlags: event.modifierFlags.subtracting(.control),
+                                                timestamp: event.timestamp,
+                                                windowNumber: event.windowNumber,
+                                                context: nil,
+                                                characters: "",
+                                                charactersIgnoringModifiers: "",
+                                                isARepeat: false,
+                                                keyCode: UInt16(kVK_Control)) {
+            // Google Drive sometimes handles ctrl+click incorrectly: it extends selection instead of opening the context menu.
+            // Simulate Control key release first, then forward the original ctrl+click so the page treats it as a right click.
+            NSApp.sendEvent(modifierReleased)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                super.mouseDown(with: event)
+            }
+            return
+        }
+
         super.mouseDown(with: event)
         interactionEventsPublisher.send(.mouseDown(event))
     }
@@ -395,7 +430,7 @@ final class WebView: WKWebView {
     }
 
 }
-
+// MARK: - Find In Page
 extension WebView /* _WKFindDelegate */ {
 
     @objc(_webView:didFindMatches:forString:withMatchIndex:)
@@ -414,4 +449,51 @@ extension WebView /* _WKFindDelegate */ {
         }
     }
 
+}
+
+// MARK: - Control Click Fix
+private extension WebView {
+
+    struct ControlClickFixSettings: Decodable {
+        let domains: [String]
+    }
+
+    enum ControlClickFixCache {
+        static var domains: Set<String>?
+        static var configIdentifier: String?
+    }
+
+    func shouldApplyControlClickFix(for event: NSEvent) -> Bool {
+        guard case .left = event.button,
+              event.modifierFlags.contains(.control),
+              privacyConfig.isSubfeatureEnabled(MacOSBrowserConfigSubfeature.controlClickFix),
+              let host = url?.host?.lowercased() else {
+            return false
+        }
+
+        return configuredControlClickFixDomains.contains(host)
+    }
+
+    var configuredControlClickFixDomains: Set<String> {
+        let currentIdentifier = privacyConfig.identifier
+
+        if let cachedDomains = ControlClickFixCache.domains,
+           let cachedIdentifier = ControlClickFixCache.configIdentifier,
+           cachedIdentifier == currentIdentifier {
+            return cachedDomains
+        }
+
+        guard let settingsString = privacyConfig.settings(for: MacOSBrowserConfigSubfeature.controlClickFix),
+              let settingsData = settingsString.data(using: .utf8),
+              let settings = try? JSONDecoder().decode(ControlClickFixSettings.self, from: settingsData) else {
+            ControlClickFixCache.domains = []
+            ControlClickFixCache.configIdentifier = currentIdentifier
+            return []
+        }
+
+        let domains = Set(settings.domains.map { $0.lowercased() })
+        ControlClickFixCache.domains = domains
+        ControlClickFixCache.configIdentifier = currentIdentifier
+        return domains
+    }
 }

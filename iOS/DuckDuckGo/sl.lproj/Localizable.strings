@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Izbriši vse";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Izbriši ta klepet";
-"scoped.fire.confirmation.delete.this.chat.description" = "»Izbriši vse« ne bo izbrisalo vaše zgodovine klepetov na Duck.ai.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Izbriši ta zavihek";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "»Izbriši vse« ne bo izbrisalo vaše zgodovine klepetov na Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Izbriši ta zavihek";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "S tem boste preklicali prenose v teku.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Samodejno pošiljanje vsebine";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Predlogi za klepet";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skrij slike, ki jih ustvari umetna inteligenca";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Med vnašanjem si oglejte predloge iskanja, vključno z zaznamki. Vsa iskanja so zasebna.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Med vnašanjem v iskalno vrstico so prikazani predlogi iz vaše zgodovine, zaznamkov in (po želji) zgodovine klepetov Duck.ai. Vsa iskanja so zasebna.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Zaklepanje aplikacije";
@@ -3691,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Vaša naročnina je bila odstranjena iz te naprave.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Prekliči znižanje";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Vaša naročnina se bo znižala na %1$@ dne %2$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Posodobitev paketa ali preklic";
 
@@ -3784,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Naročniški paketi";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Dokončevanje spremembe naročnine …";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Dokončujem nakup ...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Poteka sprememba naročnine ...";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Nakup je v teku ...";

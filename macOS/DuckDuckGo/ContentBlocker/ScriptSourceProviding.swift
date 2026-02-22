@@ -29,6 +29,7 @@ import PixelKit
 import PrivacyConfig
 import enum UserScript.UserScriptError
 import DDGSync
+import WebExtensions
 
 protocol ScriptSourceProviding {
 
@@ -49,6 +50,8 @@ protocol ScriptSourceProviding {
     var cookiePopupProtectionPreferences: CookiePopupProtectionPreferences { get }
     var duckPlayer: DuckPlayer { get }
     var syncServiceProvider: () -> DDGSyncing? { get }
+    var syncErrorHandler: SyncErrorHandling { get }
+    var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -81,7 +84,9 @@ protocol ScriptSourceProviding {
         newTabPageActionsManager: nil,
         syncServiceProvider: { [weak appDelegate = Application.appDelegate] in
             return appDelegate?.syncService
-        }
+        },
+        syncErrorHandler: Application.appDelegate.syncErrorHandler,
+        webExtensionAvailability: Application.appDelegate.webExtensionAvailability
     )
 }
 
@@ -112,6 +117,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let windowControllersManager: WindowControllersManagerProtocol
     let autoconsentManagement: AutoconsentManagement
     let syncServiceProvider: () -> DDGSyncing?
+    let syncErrorHandler: SyncErrorHandling
+    let webExtensionAvailability: WebExtensionAvailabilityProviding?
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -136,7 +143,9 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          fireCoordinator: FireCoordinator,
          autoconsentManagement: AutoconsentManagement,
          newTabPageActionsManager: NewTabPageActionsManager?,
-         syncServiceProvider: @escaping () -> DDGSyncing?
+         syncServiceProvider: @escaping () -> DDGSyncing?,
+         syncErrorHandler: SyncErrorHandling,
+         webExtensionAvailability: WebExtensionAvailabilityProviding?
     ) {
 
         self.configStorage = configStorage
@@ -155,6 +164,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.windowControllersManager = windowControllersManager
         self.autoconsentManagement = autoconsentManagement
         self.syncServiceProvider = syncServiceProvider
+        self.syncErrorHandler = syncErrorHandler
+        self.webExtensionAvailability = webExtensionAvailability
 
         self.newTabPageActionsManager = newTabPageActionsManager
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()

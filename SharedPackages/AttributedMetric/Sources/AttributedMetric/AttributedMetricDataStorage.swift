@@ -27,13 +27,19 @@ public protocol AttributedMetricDataStoring {
     var installDate: Date? { get set }
     /// Last calculated retention threshold for privacy-preserving metrics.
     var lastRetentionThreshold: QuantisedTimePast? { get set }
+    var activeSearchDaysLastThreshold: Int? { get set }
 
     /// Rolling 8-day counter for search events.
     var search8Days: RollingEightDaysInt { get set }
+    var searchLastThreshold: Int? { get set }
+
     /// Rolling 8-day counter for ad click events.
     var adClick8Days: RollingEightDaysInt { get set }
+    var adClickLastThreshold: Int? { get set }
+
     /// Rolling 8-day counter for Duck AI chat events.
     var duckAIChat8Days: RollingEightDaysInt { get set }
+    var duckAILastThreshold: Int? { get set }
 
     /// Date when user purchased the Subscription
     var subscriptionDate: Date? { get set }
@@ -49,6 +55,7 @@ public protocol AttributedMetricDataStoring {
 
     /// Removes all stored metric data.
     func removeAll()
+    func removeAllExceptInstallDate()
 }
 
 public enum DataStorageError: DDGError {
@@ -113,9 +120,13 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
         // retention
         case lastRetentionThreshold
+        case activeSearchDaysThreshold
         case search8Days
+        case searchThreshold
         case adClick8Days
+        case adClickThreshold
         case duckAIChat8Days
+        case duckAIThreshold
         case subscriptionDate
         case subscriptionFreeTrial
         case subscriptionMonth1
@@ -130,6 +141,13 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
     public func removeAll() {
         Logger.attributedMetric.log("Removing all data")
         for key in StorageKey.allCases {
+            userDefaults.removeObject(forKey: key.rawValue)
+        }
+    }
+
+    public func removeAllExceptInstallDate() {
+        Logger.attributedMetric.log("Removing all data except Install Date")
+        for key in StorageKey.allCases where key != StorageKey.installDate {
             userDefaults.removeObject(forKey: key.rawValue)
         }
     }
@@ -159,7 +177,7 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
         }
     }
 
-    // MARK: - Retention
+    // MARK: -
 
     public var installDate: Date? {
         get { return decode(from: userDefaults, key: .installDate) }
@@ -171,19 +189,45 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
         set { encode(newValue, to: userDefaults, key: .lastRetentionThreshold) }
     }
 
+    public var activeSearchDaysLastThreshold: Int? {
+        get { return decode(from: userDefaults, key: .activeSearchDaysThreshold) }
+        set { encode(newValue, to: userDefaults, key: .activeSearchDaysThreshold) }
+    }
+
+    // Search
+
     public var search8Days: RollingEightDaysInt {
         get { return decode(from: userDefaults, key: .search8Days) ?? RollingEightDaysInt() }
         set { encode(newValue, to: userDefaults, key: .search8Days) }
     }
+
+    public var searchLastThreshold: Int? {
+        get { return decode(from: userDefaults, key: .searchThreshold) }
+        set { encode(newValue, to: userDefaults, key: .searchThreshold) }
+    }
+
+    // AdClick
 
     public var adClick8Days: RollingEightDaysInt {
         get { return decode(from: userDefaults, key: .adClick8Days) ?? RollingEightDaysInt() }
         set { encode(newValue, to: userDefaults, key: .adClick8Days) }
     }
 
+    public var adClickLastThreshold: Int? {
+        get { return decode(from: userDefaults, key: .adClickThreshold) }
+        set { encode(newValue, to: userDefaults, key: .adClickThreshold) }
+    }
+
+    // Duck AI
+
     public var duckAIChat8Days: RollingEightDaysInt {
         get { return decode(from: userDefaults, key: .duckAIChat8Days) ?? RollingEightDaysInt() }
         set { encode(newValue, to: userDefaults, key: .duckAIChat8Days) }
+    }
+
+    public var duckAILastThreshold: Int? {
+        get { return decode(from: userDefaults, key: .duckAIThreshold) }
+        set { encode(newValue, to: userDefaults, key: .duckAIThreshold) }
     }
 
     public var subscriptionDate: Date? {

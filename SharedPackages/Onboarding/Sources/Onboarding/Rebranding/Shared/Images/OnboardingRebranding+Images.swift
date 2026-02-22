@@ -22,6 +22,13 @@ public enum OnboardingRebrandingImages {
 
     public enum Contextual {
         public static let tryASearchBackground = Image("Rebranding/contextual-bg-try-search", bundle: .module)
+        public static let tryASiteBackground = Image("Rebranding/contextual-bg-try-site", bundle: .module)
+        public static let searchDoneBackground = Image("Rebranding/contextual-bg-search-done", bundle: .module)
+        public static let trackerBlockedBackground = Image("Rebranding/contextual-bg-trackers", bundle: .module)
+        public static let endOfJourneyBackground = Image("Rebranding/contextual-bg-end-of-journey", bundle: .module)
+        public static let subscriptionPromoBackground = Image("Rebranding/contextual-bg-subscription-promo", bundle: .module)
+
+        public static let promoShield = Image("Rebranding/shield", bundle: .module)
     }
 
     public enum Comparison {
@@ -37,24 +44,19 @@ public enum OnboardingRebrandingImages {
         public static let eraseDataIcon = Image("Rebranding/Comparison-EraseData", bundle: .module)
     }
 
+    public enum SearchExperience {
+        public static let searchOff = Image("Rebranding/OnboardingSearchOff", bundle: .module)
+        public static let searchOn = Image("Rebranding/OnboardingSearchOn", bundle: .module)
+        public static let searchAIOff = Image("Rebranding/OnboardingSearchAIOff", bundle: .module)
+        public static let searchAIOn = Image("Rebranding/OnboardingSearchAIOn", bundle: .module)
+    }
+
     public enum Branding {
         public static let duckDuckGoLogo = Image("Rebranding/DuckDuckGoLogo", bundle: .module)
     }
 
-}
-
-extension OnboardingRebranding {
-
-    enum OnboardingImages {
-
-        enum Contextual {
-            static let tryASearchBackground = OnboardingRebrandingImages.Contextual.tryASearchBackground
-        }
-
-        enum Branding {
-            static let duckDuckGoLogo = OnboardingRebrandingImages.Branding.duckDuckGoLogo
-        }
-
+    public enum AddToDock {
+        public static let promoBorder = Image("Rebranding/AddToDock.promo.border", bundle: .module)
+        public static let tutorialBorder = Image("Rebranding/AddToDock.tutorial.border", bundle: .module)
     }
-
 }

@@ -30,8 +30,10 @@ struct SettingsAIChatShortcutsView: View {
                 SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                  accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 
-                SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
-                                 accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+                if shouldShowAddressBarShortcut {
+                    SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+                }
 
                 if viewModel.state.voiceSearchEnabled {
                     SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
@@ -43,5 +45,9 @@ struct SettingsAIChatShortcutsView: View {
             }
         }
         .applySettingsListModifiers(title: UserText.settingsAiChatShortcuts, displayMode: .inline, viewModel: viewModel)
+    }
+
+    private var shouldShowAddressBarShortcut: Bool {
+        !(viewModel.featureFlagger.isFeatureOn(.iPadAIToggle) && UIDevice.current.userInterfaceIdiom == .pad)
     }
 }

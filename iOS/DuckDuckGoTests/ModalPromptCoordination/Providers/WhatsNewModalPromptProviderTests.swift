@@ -510,8 +510,11 @@ struct WhatsNewCoordinatorPixelTrackingTests {
 
         // WHEN
         await mockMapper.capturedOnItemAction?(testAction, "card-123")
+        await Task.yield()
 
         // THEN
+        #expect(mockHandler.didCallHandleAction)
+        #expect(mockHandler.capturedRemoteAction == testAction)
         #expect(mockPixelReporter.didCallMeasureRemoteMessageCardClicked)
         #expect(mockPixelReporter.capturedCardClickedMessage?.id == "test-message")
         #expect(mockPixelReporter.capturedCardClickedCardId == "card-123")

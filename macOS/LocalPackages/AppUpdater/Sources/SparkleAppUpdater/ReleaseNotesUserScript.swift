@@ -85,8 +85,8 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
     }
 
     public func onUpdate() {
-        guard AppVersion.runType != .uiTests else { return }
-        guard let webView, webView.url == releaseNotesURL else { return }
+        guard AppVersion.runType != .uiTests,
+              let webView, webView.url == releaseNotesURL else { return }
 
         let values = ReleaseNotesValues(from: updateController, pixelFiring: pixelFiring, keyValueStore: keyValueStore)
         broker?.push(method: "onUpdate", params: values, for: self, into: webView)

@@ -102,6 +102,9 @@ protocol OmniBarDelegate: AnyObject {
     /// Called when user selects a chat from the AI Chat history list
     func onChatHistorySelected(url: URL)
 
+    /// Returns whether search query text on a SERP should be auto-selected in the experimental address bar.
+    func shouldAutoSelectTextForSERPQuery() -> Bool
+
     // MARK: - Experimental Address Bar
     func onExperimentalAddressBarTapped()
     func onExperimentalAddressBarClearPressed()
@@ -171,6 +174,8 @@ extension OmniBarDelegate {
 
     func onChatHistorySelected(url: URL) {
     }
+
+    func shouldAutoSelectTextForSERPQuery() -> Bool { false }
 
     // Default no-op implementations for experimental address bar pixel hooks
     func onExperimentalAddressBarTapped() {}

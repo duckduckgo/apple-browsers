@@ -3199,6 +3199,12 @@ extension MainViewController: OmniBarDelegate {
         return selectQueryText
     }
 
+    func shouldAutoSelectTextForSERPQuery() -> Bool {
+        let shouldSelect = isSERPPresented && skipSERPFlow
+        skipSERPFlow = false
+        return shouldSelect
+    }
+
     func onRefreshPressed() {
         hideSuggestionTray()
         currentTab?.refresh()

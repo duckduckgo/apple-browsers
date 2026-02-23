@@ -65,6 +65,8 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var isSyncingEmbeddedExtensions = false
+    private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -225,40 +227,86 @@ final class MainCoordinator {
     }
 
     private func setupWebExtensions(privacyConfigurationManager: PrivacyConfigurationManaging) {
-        if #available(iOS 18.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManagerFactory.makeManager(
-                mainViewController: controller,
-                privacyConfigurationManager: privacyConfigurationManager,
-                autoconsentPreferences: AppUserDefaults()
-            )
-            self.webExtensionManager = webExtensionManager
+        self.privacyConfigurationManager = privacyConfigurationManager
 
-            self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(webExtensionManager: webExtensionManager,
-                                                                               mainViewController: controller)
+        guard #available(iOS 18.4, *) else { return }
 
-            tabManager.setWebExtensionManager(webExtensionManager)
-            controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
-            controller.setWebExtensionManager(webExtensionManager)
+        let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+            .flagDidChangePublisher
 
-            let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
-                .flagDidChangePublisher
-                .filter { $0.0 == .webExtensions }
-                .map { $0.1 }
-                .eraseToAnyPublisher()
+        let webExtensionsPublisher = flagPublisher?
+            .filter { $0.0 == .webExtensions }
+            .map { $0.1 }
+            .eraseToAnyPublisher()
 
-            webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
-                webExtensionManager: webExtensionManager,
-                featureFlagPublisher: publisher) { [weak self] in
-                    self?.clearWebExtensionReferences()
-                }
+        let embeddedExtensionPublisher = flagPublisher?
+            .filter { $0.0 == .embeddedExtension }
+            .map { $0.1 }
+            .eraseToAnyPublisher()
 
+        webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+            featureFlagPublisher: webExtensionsPublisher,
+            embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
+            onFeatureFlagEnabled: { [weak self] in
+                await self?.initializeWebExtensions()
+            },
+            onFeatureFlagDisabled: { [weak self] in
+                self?.clearWebExtensionReferences()
+            },
+            onEmbeddedExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            }
+        )
+
+        if featureFlagger.isFeatureOn(.webExtensions) {
             Task { @MainActor in
-                await webExtensionManager.loadInstalledExtensions()
-                self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+                await initializeWebExtensions()
             }
         } else {
             clearWebExtensionReferences()
         }
+    }
+
+    @available(iOS 18.4, *)
+    private func initializeWebExtensions() async {
+        guard let privacyConfigurationManager else { return }
+
+        let webExtensionManager = WebExtensionManagerFactory.makeManager(
+            mainViewController: controller,
+            privacyConfigurationManager: privacyConfigurationManager,
+            autoconsentPreferences: AppUserDefaults()
+        )
+        self.webExtensionManager = webExtensionManager
+
+        self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(
+            webExtensionManager: webExtensionManager,
+            mainViewController: controller
+        )
+
+        tabManager.setWebExtensionManager(webExtensionManager)
+        controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
+        controller.setWebExtensionManager(webExtensionManager)
+
+        await webExtensionManager.loadInstalledExtensions()
+        await syncEmbeddedExtensions()
+
+        webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+    }
+
+    @available(iOS 18.4, *)
+    private func syncEmbeddedExtensions() async {
+        guard !isSyncingEmbeddedExtensions else { return }
+        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+
+        isSyncingEmbeddedExtensions = true
+        defer { isSyncingEmbeddedExtensions = false }
+
+        var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
+        if featureFlagger.isFeatureOn(.embeddedExtension) {
+            enabledTypes.insert(.embedded)
+        }
+        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
 
     private func clearWebExtensionReferences() {

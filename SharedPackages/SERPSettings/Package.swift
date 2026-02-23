@@ -34,6 +34,7 @@ let package = Package(
             name: "SERPSettingsTests",
             dependencies: [
                 "SERPSettings",
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),

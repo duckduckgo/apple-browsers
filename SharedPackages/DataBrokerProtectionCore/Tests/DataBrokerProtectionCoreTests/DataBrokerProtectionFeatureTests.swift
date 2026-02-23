@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import DataBrokerProtectionCore
+import BrowserServicesKitTestsUtils
 import DataBrokerProtectionCoreTestsUtils
 import UserScript
 import WebKit
@@ -169,7 +170,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
 
         let completionParams = ["result": ["success": ["actionID": "expectation-1", "actionType": "expectation"] as [String: Any]]]
-        _ = try? await sut.onActionCompleted(params: completionParams, original: MockWKScriptMessage())
+        _ = try? await sut.onActionCompleted(params: completionParams, original: WKScriptMessage.mock())
 
         XCTAssertNil(mockCSSDelegate.lastError)
         XCTAssertEqual(mockCSSDelegate.successActionId, "expectation-1")
@@ -185,7 +186,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         sut.pushAction(method: CCFSubscribeActionName.onActionReceived, webView: mockWebView, params: params)
 
         let errorParams = ["error": "No action found."]
-        _ = try? await sut.onActionError(params: errorParams, original: MockWKScriptMessage())
+        _ = try? await sut.onActionError(params: errorParams, original: WKScriptMessage.mock())
 
         XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, .noActionFound)
     }
@@ -240,31 +241,5 @@ final class MockCSSCommunicationDelegate: CCFCommunicationDelegate {
         solveCaptchaResponse = nil
         onErrorCallback = nil
         conditionSuccessActions = nil
-    }
-}
-
-private class MockWKScriptMessage: WKScriptMessage {
-
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
-
-    override var name: String {
-        return mockedName
-    }
-
-    override var body: Any {
-        return mockedBody
-    }
-
-    override var webView: WKWebView? {
-        return mockedWebView
-    }
-
-    init(name: String = "", body: Any = "", webView: WKWebView? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        super.init()
     }
 }

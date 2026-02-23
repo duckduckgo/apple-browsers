@@ -26,7 +26,6 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     weak var delegate: WebExtensionLoadingDelegate?
 
     var loadWebExtensionCalled = false
-    var loadBundledWebExtensionCalled = false
     var loadWebExtensionsCalled = false
     var unloadExtensionCalled = false
     var loadedIdentifiers: [String] = []
@@ -71,25 +70,6 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
 
         return result
-    }
-
-    @discardableResult
-    func loadBundledWebExtension(from resourceURL: URL, identifier: String, blockedDomains: Set<String>, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
-        loadBundledWebExtensionCalled = true
-        loadedIdentifiers.append(identifier)
-
-        if let mockError = mockError {
-            throw mockError
-        }
-
-        guard let mockLoadResult = mockLoadResult else {
-            let testExtensionURL = try createTestWebExtension()
-            let mockExtension = try await WKWebExtension(resourceBaseURL: testExtensionURL)
-            let mockContext = await WKWebExtensionContext(for: mockExtension)
-            return WebExtensionLoadResult(context: mockContext, identifier: identifier)
-        }
-
-        return mockLoadResult
     }
 
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {

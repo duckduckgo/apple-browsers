@@ -453,10 +453,6 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     func extensionVersion(for identifier: String) -> String? { nil }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
-    func installBundledExtension(resourceURL: URL, blockedDomains: Set<String>) async throws {}
-    func uninstallBundledExtension(resourceURL: URL) throws {}
-    func isBundledExtension(_ context: WKWebExtensionContext) -> Bool { false }
-    func updatePermissions(_ permissions: [WebExtensionMatchPatternPermission], forBundledExtensionAt resourceURL: URL) async throws {}
 }
 
 @available(macOS 15.4, iOS 18.4, *)

@@ -1737,8 +1737,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         if featureFlagger.isFeatureOn(.webExtensions) {
+            // Create manager synchronously so it's available during state restoration.
+            // Tabs restored before the manager exists won't have webExtensionController attached.
+            let webExtensionManager = WebExtensionManagerFactory.makeManager(
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+                autoconsentPreferences: cookiePopupProtectionPreferences
+            )
+            self.webExtensionManager = webExtensionManager
+
+            // Load extensions asynchronously - the controller is already attached to tabs
             Task {
-                await initializeWebExtensions()
+                await webExtensionManager.loadInstalledExtensions()
+                await syncEmbeddedExtensions()
             }
         } else {
             webExtensionManager = nil
@@ -1748,6 +1758,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @available(macOS 15.4, *)
     @MainActor
     private func initializeWebExtensions() async {
+        guard webExtensionManager == nil else {
+            // Already initialized, just load extensions
+            await (webExtensionManager as? WebExtensionManager)?.loadInstalledExtensions()
+            await syncEmbeddedExtensions()
+            return
+        }
+
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences

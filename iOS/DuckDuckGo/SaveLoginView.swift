@@ -133,8 +133,8 @@ struct SaveLoginView: View {
                     .padding(.bottom, 4)
                 AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
                     .padding(.bottom, 4)
-                AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage, showIcon: false)
-                    .padding(.bottom, 32)
+                AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage)
+                Spacer(minLength: Const.Size.contentSpacing)
                 featuresView().padding([.bottom], Const.Size.featuresListPadding)
                 onboardingCtaView()
             }

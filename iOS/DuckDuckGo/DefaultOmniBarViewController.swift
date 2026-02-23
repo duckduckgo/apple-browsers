@@ -323,6 +323,12 @@ extension DefaultOmniBarViewController {
             return
         }
 
+        // When switching to duck.ai without prior address bar interaction, the text field
+        // may contain the current page URL. Clear it so the expanded view starts empty.
+        if mode == .aiChat && !omniBarView.textField.isEditing {
+            omniBarView.textField.text = ""
+        }
+
         let shouldTransferKeyboard = transition.needsKeyboardTransfer && !isSuppressingKeyboardTransfer
 
         if shouldTransferKeyboard {

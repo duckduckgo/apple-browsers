@@ -161,7 +161,6 @@ class PrivacyDashboardUITests: UITestCase {
     }
 
     func testPrivacyDashboard_TrackerBlocking_ShowsBlockedTrackersAtNYTimes() throws {
-        throw XCTSkip("Flaky test")
         // Navigate to a page with known trackers
         let trackerTestURL = URL(string: "https://nytimes.com")!
         addressBarTextField.pasteURL(trackerTestURL, pressingEnter: true)
@@ -184,16 +183,46 @@ class PrivacyDashboardUITests: UITestCase {
 
         viewTrackerCompaniesButton.click()
 
-        // Verify that Google Ads (Google) appears in the tracker companies list
-        let googleAdsTracker = privacyDashboard.staticTexts.containing(\.value, containing: "Google Ads").firstMatch
-        XCTAssertTrue(googleAdsTracker.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Google Ads (Google) should appear in tracker companies list")
+        let trackerNetworksGroup = privacyDashboard.groups["List of tracker networks"]
+        XCTAssertTrue(trackerNetworksGroup.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tracker companies list should be visible")
+
+        // Each company row should have a corresponding "Tracker domains for ..." detail group.
+        let trackerCompanyRows = try trackerNetworksGroup.snapshot().children
+        guard trackerCompanyRows.count > 2 else {
+            let descr = try privacyDashboard.snapshot().toDictionary()
+            XCTFail("Expected more than 2 tracker company rows (\(trackerCompanyRows.count) found in \(descr)")
+            return
+        }
+
+        // Identify the "Tracker domains for ..." groups without pinning to specific company names.
+        let trackerDomainsGroups = trackerCompanyRows
+            .flatMap(\.children)
+            .filter { $0.title.hasPrefix("Tracker domains for ") }
+        XCTAssertEqual(trackerDomainsGroups.count, trackerCompanyRows.count,
+                       "Expected tracker domains groups count to match tracker company rows count (rows: \(trackerCompanyRows.count), domains: \(trackerDomainsGroups.count))")
+
+        // Domain strings are nested inside the tracker domains group and its immediate children.
+        let domainCandidates = trackerDomainsGroups.flatMap { trackerDomainsGroup in
+            let domainNodes = trackerDomainsGroup.children + trackerDomainsGroup.children.flatMap(\.children)
+            XCTAssertFalse(domainNodes.isEmpty, "Expected tracker domains group to contain domain rows")
+            return domainNodes.flatMap { node in
+                [node.trimmedLabel, node.trimmedStringValue].filter { !$0.isEmpty }
+            }
+        }
+        let domainLikeCandidates = domainCandidates.filter {
+            $0.range(of: #"^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#, options: .regularExpression) != nil
+        }
+        // Validate domain names
+        XCTAssertTrue(!domainLikeCandidates.isEmpty, "Expected a domain-formatted label/value in tracker domains group. Candidates: \(domainCandidates)")
+        Logger.log(
+            "tracker evaluation: domainGroupTitles=\(trackerDomainsGroups.map(\.title)), domainCandidates=\(domainCandidates), domainLikeCandidates=\(domainLikeCandidates)"
+        )
 
         // Close dashboard
         app.typeKey(.escape, modifierFlags: [])
 
         XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
     }
-
     func testPrivacyDashboard_PhishingDetection_ShowsWarning() throws {
         // Navigate to the phishing test page (matches original integration test)
         let testURL = URL(string: "http://privacy-test-pages.site/security/badware/phishing.html")!

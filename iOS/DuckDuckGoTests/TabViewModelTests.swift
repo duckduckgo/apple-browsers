@@ -57,7 +57,7 @@ final class TabViewModelTests: XCTestCase {
         sut.captureWebviewDidCommit(testURL)
         
         XCTAssertEqual(mockHistoryManager.addVisitCalls.count, 1)
-        XCTAssertEqual(mockHistoryManager.addVisitCalls.first, testURL)
+        XCTAssertEqual(mockHistoryManager.addVisitCalls.first?.url, testURL)
     }
 
     func testWhenCaptureTitleDidChange_ThenDelegatesToHistoryManager() async throws {
@@ -234,9 +234,10 @@ final class TabViewModelTests: XCTestCase {
         // When
         fireTabViewModel.captureWebviewDidCommit(testURL)
         
-        // Then - Should call addVisit with fireTab: true
+        // Then - Should call addVisit with fireTab: true and matching URL
         XCTAssertEqual(mockHistoryManager.addVisitCalls.count, 1)
-        XCTAssertEqual(mockHistoryManager.addVisitCalls.first, testURL)
+        XCTAssertEqual(mockHistoryManager.addVisitCalls.first?.url, testURL)
+        XCTAssertEqual(mockHistoryManager.addVisitCalls.first?.fireTab, true)
     }
     
     func testWhenFireTab_ThenTitleChangesAreSkipped() {

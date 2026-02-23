@@ -34,7 +34,7 @@ import WebKit
 final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
-    let contextMenuScript = ContextMenuUserScript()
+    let contextMenuSubfeature = ContextMenuSubfeature()
     let hoverUserScript = HoverUserScript()
     let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
@@ -184,6 +184,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
@@ -263,7 +264,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     lazy var userScripts: [UserScript] = [
         debugScript,
-        contextMenuScript,
         surrogatesScript,
         contentBlockerRulesScript,
         contentScopeUserScript,

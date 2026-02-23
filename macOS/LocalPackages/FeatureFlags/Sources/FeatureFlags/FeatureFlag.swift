@@ -302,6 +302,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
+
+    /// Startup Metrics Feature Flag
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
+    case startupMetrics
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -432,7 +436,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .wideEventPostEndpoint,
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
-                .aiChatSidebarResizable:
+                .aiChatSidebarResizable,
+                .startupMetrics:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -623,6 +628,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
+        case .startupMetrics:
+            return .internalOnly()
         }
     }
 }

@@ -135,7 +135,8 @@ private enum Metrics {
             title: "Tokamak - Wikipedia",
             subtitle: "en.wikipedia.org/wiki/Tokamak",
             isAITab: false,
-            domain: "en.wikipedia.org"
+            domain: "en.wikipedia.org",
+            targetTabIndex: 0
         ),
         onTap: {}
     )
@@ -149,7 +150,8 @@ private enum Metrics {
             title: "Good Dog Name Ideas",
             subtitle: "Duck.ai",
             isAITab: true,
-            domain: nil
+            domain: nil,
+            targetTabIndex: 0
         ),
         onTap: {}
     )

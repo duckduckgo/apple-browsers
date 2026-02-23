@@ -25,4 +25,5 @@ struct EscapeHatchModel {
     let subtitle: String
     let isAITab: Bool
     let domain: String?
+    let targetTabIndex: Int
 }

@@ -107,6 +107,10 @@ protocol OmniBarDelegate: AnyObject {
     func onExperimentalAddressBarClearPressed()
     func onExperimentalAddressBarCancelPressed()
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void)
+
+    // MARK: - Escape Hatch
+    func escapeHatchForEditingState() -> EscapeHatchModel?
+    func onSwitchTabToIndex(_ index: Int)
 }
 
 extension OmniBarDelegate {
@@ -179,5 +183,9 @@ extension OmniBarDelegate {
 
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
         completion()
+    }
+
+    func escapeHatchForEditingState() -> EscapeHatchModel? {
+        nil
     }
 }

@@ -49,6 +49,7 @@ protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchTabToIndex index: Int)
 }
 
 /// Manages the suggestion tray functionality including favorites and autocomplete
@@ -99,9 +100,9 @@ final class SuggestionTrayManager: NSObject {
     }
     
     // MARK: - Public Methods
-    
+
     /// Installs the suggestion tray in the provided container view
-    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController) {
+    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatch: EscapeHatchModel? = nil) {
         guard suggestionTrayViewController == nil else { return }
         
         let storyboard = UIStoryboard(name: "SuggestionTray", bundle: nil)
@@ -147,6 +148,7 @@ final class SuggestionTrayManager: NSObject {
         controller.autocompleteDelegate = self
         controller.newTabPageControllerDelegate = self
         controller.didMove(toParent: parentViewController)
+        controller.setEscapeHatch(escapeHatch)
 
         showInitialSuggestions()
         containerView.layoutIfNeeded()
@@ -288,6 +290,6 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, index: Int) {
-        // no-op; escape hatch is only shown on the real NTP in MainViewController
+        delegate?.suggestionTrayManager(self, requestsSwitchTabToIndex: index)
     }
 }

@@ -205,7 +205,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         switchBarHandler.setToggleState(textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
-        let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
+        let escapeHatch = omniDelegate?.escapeHatchForEditingState()
+        let editingStateViewController = OmniBarEditingStateViewController(
+            switchBarHandler: switchBarHandler,
+            escapeHatch: escapeHatch
+        )
         editingStateViewController.delegate = self
 
         editingStateViewController.modalPresentationStyle = .custom
@@ -256,6 +260,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 }
 
 extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
+
     func onQueryUpdated(_ query: String) {
     }
 
@@ -305,6 +310,10 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     func onDismissRequested() {
         // Fire cancel pixel only (no other side effects) when experimental bar is dismissed via back button
         omniDelegate?.onExperimentalAddressBarCancelPressed()
+    }
+
+    func onSwitchTabToIndex(_ index: Int) {
+        omniDelegate?.onSwitchTabToIndex(index)
     }
 }
 

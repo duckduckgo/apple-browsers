@@ -23,7 +23,14 @@ import WebKit
 /// Uses unsafe pointer casting to create a mock object that can be used as WKScriptMessage.
 public class MockWKScriptMessageObject: NSObject {
 
-    @objc public weak var webView: WKWebView?
+    @objc private weak var _webView: WKWebView?
+    private let wasWebViewProvided: Bool
+
+    @objc public var webView: WKWebView? {
+        assert(_webView != nil || !wasWebViewProvided, "webView was provided but has been deallocated — ensure it is retained outside of MockWKScriptMessageObject")
+        return _webView
+    }
+
     @objc public var frameInfo: WKFrameInfo
     @objc public var name: String
     @objc public var body: Any
@@ -36,7 +43,8 @@ public class MockWKScriptMessageObject: NSObject {
     ///   - name: The name of the message (default: "")
     ///   - body: The body of the message (default: [:])
     public init(webView: WKWebView?, frameInfo: WKFrameInfo, name: String = "", body: Any = [:]) {
-        self.webView = webView
+        self._webView = webView
+        self.wasWebViewProvided = webView != nil
         self.frameInfo = frameInfo
         self.name = name
         self.body = body

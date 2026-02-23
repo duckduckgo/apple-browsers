@@ -127,7 +127,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     }
 
     private var isRunningAutomation: Bool {
-        ProcessInfo.isRunningAutomation
+        LaunchOptionsHandler().isAutomationSession
     }
 }
 
@@ -170,10 +170,5 @@ struct NewAddressBarPickerStore: NewAddressBarPickerStorage {
 extension ProcessInfo {
     static var isRunningUITests: Bool {
         Self.processInfo.arguments.contains("isRunningUITests")
-    }
-
-    static var isRunningAutomation: Bool {
-        let port = UserDefaults.app.integer(forKey: "automationPort")
-        return UInt16(exactly: port) != nil && port > 0
     }
 }

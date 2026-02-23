@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Eliminar todo";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Borrar este chat";
-"scoped.fire.confirmation.delete.this.chat.description" = "«Eliminar todo» no borrará tu historial de chat de Duck.ai.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Eliminar esta pestaña";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "«Eliminar todo» no borrará tu historial de chat de Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Eliminar esta pestaña";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Esta acción cancelará las descargas en curso.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Enviar contenido automáticamente";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Sugerencias de chat";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ocultar imágenes generadas por IA";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Muestra las sugerencias de búsqueda mientras escribes, incluidos tus marcadores. Todas las búsquedas son privadas.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Muestra sugerencias de tu historial, marcadores y (opcionalmente) el historial de chat de Duck.ai mientras escribes en la barra de búsqueda. Todas las búsquedas son privadas.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Bloqueo de aplicación";
@@ -3691,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Tu suscripción se ha eliminado de este dispositivo.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Cancelar degradación";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Tu plan se se revertirá a %1$@ el %2$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Actualizar el plan o cancelar";
 
@@ -3784,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Planes de suscripción";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Completando cambio de plan…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Completando compra...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Cambio de plan en curso…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Compra en curso...";

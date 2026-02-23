@@ -2890,6 +2890,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Automatically Send Content";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Chat Suggestions";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
 
@@ -2977,6 +2980,9 @@ Take back control of your personal information with the browser designed for dat
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Show search suggestions as you type, including your bookmarks. All searches are private.";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Show suggestions from your history, bookmarks, and (optionally) Duck.ai chat history as you type in the search bar. All searches are private.";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Application Lock";
 
@@ -2984,7 +2990,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.autolock.description" = "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.";
 
 /* Section title in automatic data clearing settings */
-"settings.automatic.data.clearing.delete.section.title" = "DELETE";
+"settings.automatic.data.clearing.delete.section.title" = "Delete";
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatic Data Clearing";
@@ -3433,8 +3439,14 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Subscription Plans";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Cancel Downgrade";
+
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Your subscription has been removed from this device.";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Your plan will downgrade to %1$@ on %2$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Update Plan or Cancel";
@@ -3529,8 +3541,14 @@ Take back control of your personal information with the browser designed for dat
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Subscription Plans";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Completing plan change…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Completing purchase...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Plan change in progress…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Purchase in progress...";

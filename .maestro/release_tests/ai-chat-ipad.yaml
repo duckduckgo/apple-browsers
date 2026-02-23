@@ -1,0 +1,57 @@
+# ai-chat-ipad.yaml
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - release
+
+---
+
+# Set up - custom setup so iPad AI toggle behavior is deterministic
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.iPadAIToggle: "true"
+
+# AI Features should not show the Address Bar shortcut on iPad when iPadAIToggle is enabled
+- tapOn:
+    id: "Browser.OmniBar.Button.BrowsingMenu"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "AI Features"
+    direction: DOWN
+- tapOn: "AI Features"
+- assertVisible: "Duck.ai"
+- assertNotVisible: "Address Bar"
+- assertVisible: "Search Only"
+- assertVisible: "Search & Duck.ai"
+
+# Set mode to "Search & Duck.ai" and verify mode toggle is visible in address bar
+- tapOn: "Search & Duck.ai"
+- tapOn: "Settings"
+- tapOn: "Done"
+- assertVisible:
+    id: "Browser.OmniBar.Button.ModeToggle.Search"
+- assertVisible:
+    id: "Browser.OmniBar.Button.ModeToggle.AIChat"
+
+# Set mode back to "Search Only" and verify mode toggle is hidden from address bar
+- tapOn:
+    id: "Browser.OmniBar.Button.BrowsingMenu"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "AI Features"
+    direction: DOWN
+- tapOn: "AI Features"
+- tapOn: "Search Only"
+- tapOn: "Settings"
+- tapOn: "Done"
+- assertNotVisible:
+    id: "Browser.OmniBar.Button.ModeToggle.Search"
+- assertNotVisible:
+    id: "Browser.OmniBar.Button.ModeToggle.AIChat"

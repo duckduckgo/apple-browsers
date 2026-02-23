@@ -19,15 +19,10 @@
 import Foundation
 import XCTest
 import WebKit
+import BrowserServicesKitTestsUtils
 @testable import UserScript
 
 class UserScriptMessagingTests: XCTestCase {
-
-    override class func setUp() {
-        super.setUp()
-        // Swizzle WKScriptMessage.dealloc to prevent crashes in test environments
-        WKScriptMessage.swizzleDealloc()
-    }
 
     /// When an 'id' field is present on an incoming message, it means
     /// that the client is expecting a response. This test ensures that
@@ -251,7 +246,7 @@ func setupWith(message: [String: Any]) -> (UserScriptMessageBroker, UserScriptMe
     testee.registerSubfeature(delegate: TestDelegate())
 
     // Mock the call from the webview.
-    let msg1 = MockMsg(name: testee.context, body: message)
+    let msg1 = WKScriptMessage.mock(name: testee.context, body: message)
 
     // get the handler action
     let action = testee.messageHandlerFor(msg1)
@@ -309,119 +304,4 @@ struct TestDelegate: Subfeature {
         let person = Person(name: "Kittie")
         return person
     }
-}
-
-class MockMsg: WKScriptMessage {
-
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
-    let mockedFrameInfo: WKFrameInfo
-
-    override var name: String {
-        return mockedName
-    }
-
-    override var body: Any {
-        return mockedBody
-    }
-
-    override var webView: WKWebView? {
-        return mockedWebView
-    }
-
-    override var frameInfo: WKFrameInfo {
-        return mockedFrameInfo
-    }
-
-    init(name: String, body: Any, webView: WKWebView? = nil, frameInfo: WKFrameInfo? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        self.mockedFrameInfo = frameInfo ?? WKFrameInfo.mock(url: URL(string: "https://example.com")!)
-        super.init()
-    }
-}
-
-// MARK: - WebKit Mocks
-
-/// Mock for WKFrameInfo which has no public initializers.
-/// Uses unsafe memory rebound technique to cast an NSObject with matching @objc properties.
-final class WKFrameInfoMock: NSObject {
-
-    @objc var isMainFrame: Bool
-    @objc var request: URLRequest!
-    @objc var securityOrigin: WKSecurityOrigin!
-    @objc weak var webView: WKWebView?
-
-    init(webView: WKWebView?, securityOrigin: WKSecurityOrigin, request: URLRequest, isMainFrame: Bool) {
-        self.webView = webView
-        self.securityOrigin = securityOrigin
-        self.request = request
-        self.isMainFrame = isMainFrame
-    }
-
-    fileprivate var frameInfo: WKFrameInfo {
-        withUnsafePointer(to: self) { $0.withMemoryRebound(to: WKFrameInfo.self, capacity: 1) { $0 } }.pointee
-    }
-}
-
-/// Mock for WKSecurityOrigin which has no public initializers.
-/// Uses Objective-C runtime allocation.
-@objc final class WKSecurityOriginMock: WKSecurityOrigin {
-
-    var _protocol: String!
-    override var `protocol`: String { _protocol }
-
-    var _host: String!
-    override var host: String { _host }
-
-    var _port: Int!
-    override var port: Int { _port }
-
-    func setURL(_ url: URL) {
-        self._protocol = url.scheme ?? ""
-        self._host = url.host ?? ""
-        self._port = url.port ?? 0
-    }
-
-    class func new(url: URL) -> WKSecurityOriginMock {
-        // swiftlint:disable:next force_cast
-        let mock = self.perform(NSSelectorFromString("alloc")).takeUnretainedValue() as! WKSecurityOriginMock
-        mock.setURL(url)
-        return mock
-    }
-}
-
-extension WKFrameInfo {
-
-    static func mock(url: URL, isMainFrame: Bool = true) -> WKFrameInfo {
-        WKFrameInfoMock(
-            webView: nil,
-            securityOrigin: WKSecurityOriginMock.new(url: url),
-            request: URLRequest(url: url),
-            isMainFrame: isMainFrame
-        ).frameInfo
-    }
-}
-
-// MARK: - WebKit Dealloc Swizzling
-
-/// Swizzles WKScriptMessage.dealloc to prevent crashes in test environments.
-/// WebKit tries to dispatch to the main run loop during dealloc, which can crash
-/// in headless test environments without a proper run loop.
-extension WKScriptMessage {
-
-    private static var isSwizzled = false
-    private static let originalDealloc = { class_getInstanceMethod(WKScriptMessage.self, NSSelectorFromString("dealloc"))! }()
-    private static let swizzledDealloc = { class_getInstanceMethod(WKScriptMessage.self, #selector(swizzled_dealloc))! }()
-
-    static func swizzleDealloc() {
-        guard !self.isSwizzled else { return }
-        self.isSwizzled = true
-        method_exchangeImplementations(originalDealloc, swizzledDealloc)
-    }
-
-    @objc
-    func swizzled_dealloc() { }
 }

@@ -49,7 +49,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
     /// Pixel firing for analytics.
-    private let pixelFiring: WebExtensionPixelFiring
+    let pixelFiring: WebExtensionPixelFiring
 
     // MARK: - AsyncStream
 
@@ -103,12 +103,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         installationStore.installedExtensions.map(\.uniqueIdentifier)
     }
 
-    public var hasInstalledExtensions: Bool {
-        !installationStore.installedExtensions.isEmpty
-    }
-
     public var loadedExtensions: Set<WKWebExtensionContext> {
         controller.extensionContexts
+    }
+
+    /// Whether the embedded autoconsent web extension is loaded and active.
+    public var isAutoconsentExtensionLoaded: Bool {
+        contexts.contains { $0.duckDuckGoWebExtensionType == .embedded }
     }
 
     // MARK: - Install/Uninstall
@@ -133,7 +134,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
             installationStore.add(installedExtension)
 
-            Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) (\(identifier))")
+            Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) v\(installedExtension.version ?? "unknown") (\(identifier))")
             pixelFiring.fire(.installed)
         } catch {
             Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
@@ -207,6 +208,33 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         return results
     }
 
+    @MainActor
+    public func unloadAllExtensions() {
+        let contexts = controller.extensionContexts
+        Logger.webExtensions.debug("🔄 Unloading all extensions from memory (count: \(contexts.count))")
+
+        var successCount = 0
+        var failureCount = 0
+
+        for context in contexts {
+            let identifier = context.uniqueIdentifier
+            do {
+                try controller.unload(context)
+                unregisterHandlers(for: identifier)
+                successCount += 1
+            } catch {
+                Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
+                failureCount += 1
+            }
+        }
+
+        if failureCount > 0 {
+            Logger.webExtensions.warning("⚠️ Unload all completed with \(failureCount) error(s): \(successCount) succeeded, \(failureCount) failed")
+        } else {
+            Logger.webExtensions.debug("✅ Successfully unloaded \(successCount) extension(s) from memory")
+        }
+    }
+
     // MARK: - Loading
 
     @MainActor
@@ -226,7 +254,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         for (installedExtension, result) in zip(extensions, results) {
             switch result {
             case .success:
-                Logger.webExtensions.debug("✅ Loaded extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier))")
+                Logger.webExtensions.debug("✅ Loaded extension `\(installedExtension.name ?? "")` v\(installedExtension.version ?? "unknown") | \(installedExtension.filename) | \(installedExtension.uniqueIdentifier)")
                 successCount += 1
             case .failure(let failure):
                 Logger.webExtensions.error("❌ Failed to load web extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier)): \(failure.localizedDescription)")
@@ -269,6 +297,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         contexts.first { $0.uniqueIdentifier == identifier }?.webExtension.displayName
     }
 
+    public func extensionVersion(for identifier: String) -> String? {
+        installationStore.installedExtension(withUniqueIdentifier: identifier)?.version
+    }
+
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
         contexts.first { url.absoluteString.hasPrefix($0.baseURL.absoluteString) }
     }
@@ -277,7 +309,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         contexts.first { $0.uniqueIdentifier == identifier }
     }
 
-    private func notifyUpdate() {
+    func notifyUpdate() {
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
     }

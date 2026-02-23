@@ -30,6 +30,11 @@ final class WebExtensionStorageProvidingMock: WebExtensionStorageProviding {
     var shouldReturnNilForResolve = false
     var mockResolveResult: URL?
     var mockResolveFilename = "extension.xpi"
+
+    var resolvedExtensionURL: URL? {
+        get { mockResolveResult }
+        set { mockResolveResult = newValue }
+    }
     func resolveInstalledExtension(identifier: String) -> URL? {
         resolveInstalledExtensionCalled = true
         resolveInstalledExtensionIdentifier = identifier

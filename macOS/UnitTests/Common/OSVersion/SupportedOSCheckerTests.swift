@@ -286,4 +286,58 @@ final class SupportedOSCheckerTests: XCTestCase {
         // Then
         XCTAssertEqual(checker.osUpgradeCapability, .unknown)
     }
+
+    // MARK: - Max Supported OS Version Pixel Value Tests
+
+    func testWhenModelInLookupTableThenMaxSupportedOSVersionPixelValueReturnsVersionString() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.venturaVersion,
+            hardwareModel: "iMac19,1",
+            maxSupportedVersionByModelOverride: ["iMac19,1": 15])
+
+        // Then
+        XCTAssertEqual(checker.maxSupportedOSVersion, "15")
+    }
+
+    func testWhenModelNotInLookupTableThenMaxSupportedOSVersionPixelValueReturnsLatest() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.venturaVersion,
+            hardwareModel: "UnknownModel",
+            maxSupportedVersionByModelOverride: [:])
+
+        // Then
+        XCTAssertEqual(checker.maxSupportedOSVersion, "latest")
+    }
+
+    func testWhenNoHardwareModelThenMaxSupportedOSVersionPixelValueReturnsLatest() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.venturaVersion,
+            hardwareModel: nil,
+            maxSupportedVersionByModelOverride: [:])
+
+        // Then
+        XCTAssertEqual(checker.maxSupportedOSVersion, "latest")
+    }
+
+    func testWhenModelMapsToOlderOSThenMaxSupportedOSVersionPixelValueReturnsCorrectValue() {
+        // Given
+        let mockFeatureFlagger = MockFeatureFlagger()
+        let checker = SupportedOSChecker(
+            featureFlagger: mockFeatureFlagger,
+            currentOSVersionOverride: Self.venturaVersion,
+            hardwareModel: "MacBookAir7,1",
+            maxSupportedVersionByModelOverride: ["MacBookAir7,1": 12])
+
+        // Then
+        XCTAssertEqual(checker.maxSupportedOSVersion, "12")
+    }
 }

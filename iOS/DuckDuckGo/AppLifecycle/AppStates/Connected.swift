@@ -55,6 +55,7 @@ struct Connected: ConnectedHandling {
                                                         voiceSearchHelper: appDependencies.voiceSearchHelper,
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
+                                                        aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
         let dataClearingCapability = DataClearingCapability.create(using: appDependencies.featureFlagger)
         let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, dataClearingCapability: dataClearingCapability)
@@ -89,6 +90,7 @@ struct Connected: ConnectedHandling {
                                                         voiceSearchHelper: appDependencies.voiceSearchHelper,
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
+                                                        aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
         let dataClearingCapability = DataClearingCapability.create(using: appDependencies.featureFlagger)
         let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, dataClearingCapability: dataClearingCapability)
@@ -117,6 +119,7 @@ struct Connected: ConnectedHandling {
                                                         voiceSearchHelper: appDependencies.voiceSearchHelper,
                                                         featureFlagger: appDependencies.featureFlagger,
                                                         aiChatSettings: appDependencies.aiChatSettings,
+                                                        aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
         let dataClearingCapability = DataClearingCapability.create(using: appDependencies.featureFlagger)
         let autoClear = AutoClear(worker: mainCoordinator.controller.fireExecutor, dataClearingCapability: dataClearingCapability)

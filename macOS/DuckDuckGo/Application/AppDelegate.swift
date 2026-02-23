@@ -256,9 +256,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(pixelFiring: PixelKit.shared)
 
+#if DEBUG || REVIEW
     // MARK: - Automation Server
     private var automationServer: AutomationServer?
     private let launchOptionsHandler = LaunchOptionsHandler()
+#endif
 
     // MARK: - Freemium DBP
     public let freemiumDBPFeature: FreemiumDBPFeature
@@ -1701,6 +1703,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Automation Server
 
     private func startAutomationServerIfNeeded() {
+#if DEBUG || REVIEW
         guard let port = launchOptionsHandler.automationPort else {
             return
         }
@@ -1711,6 +1714,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 port: port
             )
         }
+#endif
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

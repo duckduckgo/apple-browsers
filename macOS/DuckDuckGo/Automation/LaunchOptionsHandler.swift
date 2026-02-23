@@ -17,24 +17,20 @@
 //
 
 import Foundation
+import Common
 
 /// Handles launch options and user defaults for automation and testing scenarios
 public final class LaunchOptionsHandler {
 
-    // Used by debug controller
-    public static let isOnboardingCompleted = "isOnboardingCompleted"
+    /// Launch argument key used by UI tests to override onboarding completion state.
+    private static let onboardingOverrideCompletedKey = "isOnboardingCompleted"
 
     private static let automationPortKey = "automationPort"
-    private static let isUITestingKey = "isUITesting"
-
-    private let environment: [String: String]
     private let userDefaults: UserDefaults
 
     public init(
-        environment: [String: String] = ProcessInfo.processInfo.environment,
         userDefaults: UserDefaults = .standard
     ) {
-        self.environment = environment
         self.userDefaults = userDefaults
     }
 
@@ -49,7 +45,7 @@ public final class LaunchOptionsHandler {
 
     /// Returns true if the app is running in UI testing mode
     private var isUITesting: Bool {
-        environment["UITEST_MODE"] == "1" || userDefaults.bool(forKey: Self.isUITestingKey)
+        [.uiTests, .uiTestsOnboarding].contains(AppVersion.runType)
     }
 
     /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
@@ -60,28 +56,18 @@ public final class LaunchOptionsHandler {
     public var onboardingStatus: OnboardingStatus {
         // If we're running UI Tests override onboarding settings permanently to keep state consistency across app launches. Some test re-launch the app within the same tests.
         // Launch Arguments can be read via userDefaults for easy value access.
-        if let uiTestingOnboardingOverride = userDefaults.string(forKey: Self.isOnboardingCompleted) {
+        if isUITesting,
+           let uiTestingOnboardingOverride = userDefaults.string(forKey: Self.onboardingOverrideCompletedKey) {
             return .overridden(.uiTests(completed: uiTestingOnboardingOverride == "true"))
         }
 
         // If developer override via Scheme Environment variable temporarily it means we want to show the onboarding.
-        if let developerOnboardingOverride = environment["ONBOARDING"] {
+        if let developerOnboardingOverride = ProcessInfo.processInfo.environment["ONBOARDING"] {
             return .overridden(.developer(completed: developerOnboardingOverride == "false"))
         }
 
         return .notOverridden
     }
-
-    /// Returns true if onboarding should be skipped (deprecated, use onboardingStatus instead)
-    public var isOnboardingCompleted: Bool {
-        userDefaults.string(forKey: Self.isOnboardingCompleted) == "true"
-    }
-
-#if DEBUG || ALPHA
-    public func overrideOnboardingCompleted() {
-        userDefaults.set("true", forKey: Self.isOnboardingCompleted)
-    }
-#endif
 }
 
 // MARK: - LaunchOptionsHandler + Onboarding

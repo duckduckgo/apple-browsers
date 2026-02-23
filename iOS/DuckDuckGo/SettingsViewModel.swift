@@ -174,8 +174,7 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }
 
-    lazy var darkReaderFeatureSettings: DarkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
-                                                                                                appSettings: appSettings)
+    lazy var darkReaderFeatureSettings: DarkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger)
 
     var isForceWebsiteDarkModeEnabled: Bool {
         darkReaderFeatureSettings.isFeatureEnabled

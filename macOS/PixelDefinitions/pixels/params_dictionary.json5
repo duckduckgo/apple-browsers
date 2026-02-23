@@ -42,6 +42,11 @@
         "type": "number",
         "description": "NSError code"
     },
+    "fromExtension": {
+        "key": "fromExtension",
+        "description": "indicates whether the pixel was sent by the embedded extension",
+        "type": "boolean"
+    },
     "themeName": {
         "key": "themeName",
         "enum": ["default", "coolGray", "desert", "green", "orange", "rose", "slateBlue", "violet"],

@@ -33,6 +33,11 @@
         "description": "NSError code",
         "examples": [-1009, 42]
     },
+    "fromExtension": {
+        "key": "fromExtension",
+        "description": "indicates whether the pixel was sent by the embedded extension",
+        "type": "boolean"
+    },
     "isInternalUser": {
         "key": "is_internal_user",
         "description": "Whether the user is flagged as internal.  Should ONLY be sent with \"true\" value",

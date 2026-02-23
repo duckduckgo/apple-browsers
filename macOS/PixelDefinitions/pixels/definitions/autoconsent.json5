@@ -8,11 +8,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -28,11 +24,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -48,11 +40,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -68,11 +56,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -88,11 +72,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -108,11 +88,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -128,11 +104,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -148,11 +120,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -168,11 +136,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -188,11 +152,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -208,11 +168,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -228,11 +184,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -248,11 +200,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -268,11 +216,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -288,11 +232,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -308,11 +248,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
-                "type": "number"
-            },
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
@@ -328,6 +264,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "init",
                 "description": "Number of autoconsent init pixels fired.",
@@ -406,11 +343,6 @@
             {
                 "key": "error_reload-loop",
                 "description": "Number of autoconsent error-reload-loop pixels fired.",
-                "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "whether the pixel was sent by the embedded extension",
                 "type": "number"
             },
             {

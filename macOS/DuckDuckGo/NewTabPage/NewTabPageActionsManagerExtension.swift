@@ -233,6 +233,7 @@ extension NewTabPageActionsManager {
             NewTabPageRecentActivityClient(model: recentActivityModel),
             NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
+                                    aiChatsProvider: NewTabPageOmnibarAiChatsProvider(),
                                     actionHandler: omnibarActionHandler),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])

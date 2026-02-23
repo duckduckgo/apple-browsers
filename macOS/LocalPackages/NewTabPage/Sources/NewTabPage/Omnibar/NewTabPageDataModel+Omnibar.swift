@@ -190,4 +190,37 @@ public extension NewTabPageDataModel {
         let target: OpenTarget
     }
 
+    // MARK: - omnibar_openAiChat
+
+    struct OpenAiChatAction: Codable, Equatable {
+        let chatId: String
+        let target: OpenTarget
+    }
+
+    // MARK: - omnibar_getAiChats
+
+    struct AiChat: Codable, Equatable {
+        let chatId: String
+        let title: String
+        let pinned: Bool?
+        let lastEdit: String?
+
+        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil) {
+            self.chatId = chatId
+            self.title = title
+            self.pinned = pinned
+            self.lastEdit = lastEdit
+        }
+    }
+
+    struct AiChatsData: Codable, Equatable {
+        let chats: [AiChat]
+
+        public init(chats: [AiChat]) {
+            self.chats = chats
+        }
+
+        public static let empty = Self(chats: [])
+    }
+
 }

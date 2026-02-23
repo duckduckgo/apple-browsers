@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "alavrenchuk/ntp-show-recent-duckai-chats",
-        "revision" : "ff5a3c05f597e7b535773291b9671847a3f0dad3"
+        "branch" : "pr-releases/alavrenchuk/ntp-show-recent-duckai-chats",
+        "revision" : "78cb5340faa802d67c6189529530367a5b6b2718"
       }
     },
     {

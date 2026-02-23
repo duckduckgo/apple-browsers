@@ -47,7 +47,14 @@ extension MainViewController: WKWebExtensionWindow {
     }
 
     func setWindowState(_ state: WKWebExtension.WindowState, for context: WKWebExtensionContext) async throws {
-        throw WebExtensionWindowError.notSupported
+        switch state {
+        case .normal, .maximized, .fullscreen:
+            view.window?.makeKeyAndVisible()
+        case .minimized:
+            throw WebExtensionWindowError.notSupported
+        @unknown default:
+            throw WebExtensionWindowError.notSupported
+        }
     }
 
     func isPrivate(for context: WKWebExtensionContext) -> Bool {

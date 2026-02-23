@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 import UIKit
 
 private enum AddToDockContentMetrics {

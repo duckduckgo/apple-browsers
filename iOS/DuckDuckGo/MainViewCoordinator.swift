@@ -29,7 +29,7 @@ class MainViewCoordinator {
     var logoContainer: UIView!
     var topSlideContainer: UIView!
     var logoText: UIImageView!
-    var navigationBarContainer: UIView!
+    var navigationBarContainer: MainViewFactory.NavigationBarContainer!
     var navigationBarCollectionView: MainViewFactory.NavigationBarCollectionView!
     var notificationBarContainer: UIView!
     var omniBar: OmniBar!

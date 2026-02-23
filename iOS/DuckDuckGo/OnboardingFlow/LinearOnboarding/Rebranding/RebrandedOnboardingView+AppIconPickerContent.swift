@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
@@ -28,10 +28,6 @@ extension OnboardingRebranding.OnboardingView {
         
         private var showContent: Binding<Bool>
         private let action: () -> Void
-
-        struct UntranslatedText {
-            static var message = "Customize your app icon."
-        }
 
         init(showContent: Binding<Bool> = .constant(false),
              action: @escaping () -> Void) {
@@ -48,7 +44,7 @@ extension OnboardingRebranding.OnboardingView {
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
                 message: AnyView(
-                    Text(UntranslatedText.message) // UserText.Onboarding.AppIconSelection.Rebranding.message)
+                    Text(UserText.Onboarding.AppIconSelection.message)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.body)
                         .multilineTextAlignment(.center)

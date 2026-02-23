@@ -102,6 +102,9 @@ protocol OmniBarDelegate: AnyObject {
     /// Called when user selects a chat from the AI Chat history list
     func onChatHistorySelected(url: URL)
 
+    // MARK: - iPad Expanded Omnibar
+    func onOmniBarExpandedStateChanged(isExpanded: Bool)
+
     // MARK: - Experimental Address Bar
     func onExperimentalAddressBarTapped()
     func onExperimentalAddressBarClearPressed()
@@ -171,6 +174,8 @@ extension OmniBarDelegate {
 
     func onChatHistorySelected(url: URL) {
     }
+
+    func onOmniBarExpandedStateChanged(isExpanded: Bool) {}
 
     // Default no-op implementations for experimental address bar pixel hooks
     func onExperimentalAddressBarTapped() {}

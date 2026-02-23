@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppUpdaterShared
 import BrowserServicesKit
 import Foundation
 import HistoryView
@@ -33,7 +34,7 @@ import WebKit
 final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
-    let contextMenuScript = ContextMenuUserScript()
+    let contextMenuSubfeature = ContextMenuSubfeature()
     let hoverUserScript = HoverUserScript()
     let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
@@ -122,7 +123,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             management: sourceProvider.autoconsentManagement,
             preferences: sourceProvider.cookiePopupProtectionPreferences,
-            featureFlagger: sourceProvider.featureFlagger
+            featureFlagger: sourceProvider.featureFlagger,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
@@ -177,9 +179,14 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             releaseNotesUserScript = nil
         }
 
-        userScripts.append(autoconsentUserScript)
+        if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
+            userScripts.append(autoconsentUserScript)
+        }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
 
         if let aiChatUserScript {
@@ -257,11 +264,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     lazy var userScripts: [UserScript] = [
         debugScript,
-        contextMenuScript,
         surrogatesScript,
         contentBlockerRulesScript,
-        pageObserverScript,
-        hoverUserScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
         autofillScript

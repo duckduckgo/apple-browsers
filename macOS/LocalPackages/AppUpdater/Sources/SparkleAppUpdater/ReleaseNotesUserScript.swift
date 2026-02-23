@@ -53,6 +53,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         case reportInitException
         case browserRestart
         case retryUpdate
+        case retryFetchReleaseNotes
     }
 
     public init(updateController: any SparkleUpdateController,
@@ -76,6 +77,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         .reportInitException: reportInitException,
         .browserRestart: browserRestart,
         .retryUpdate: retryUpdate,
+        .retryFetchReleaseNotes: retryFetchReleaseNotes,
     ]
 
     @MainActor
@@ -114,6 +116,14 @@ extension ReleaseNotesUserScript {
 
     @MainActor
     private func retryUpdate(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        DispatchQueue.main.async { [weak self] in
+            self?.updateController.checkForUpdateSkippingRollout()
+        }
+        return nil
+    }
+
+    @MainActor
+    private func retryFetchReleaseNotes(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         DispatchQueue.main.async { [weak self] in
             self?.updateController.checkForUpdateSkippingRollout()
         }

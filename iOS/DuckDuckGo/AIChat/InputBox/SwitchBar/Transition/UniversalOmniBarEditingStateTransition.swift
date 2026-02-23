@@ -138,6 +138,9 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         let hideLogoForTransition = useNewTransitionBehaviour && toVC.isEscapeHatchCardVisible
 
         animator.addAnimations {
+            if !self.isTopBarPosition {
+                fromVC.logoView?.alpha = 0
+            }
             if !self.useNewTransitionBehaviour {
                 toVC.view.alpha = 1.0
             }

@@ -177,13 +177,7 @@ extension ReleaseNotesValues {
 
             pixelFiring?.fire(UpdateFlowPixels.releaseNotesEmpty, frequency: .dailyAndCount)
 
-            // At this point both `latestUpdate` and the cached release notes are unavailable,
-            // so the fields required to render the card (latestVersion, releaseTitle, releaseNotes,
-            // releaseNotesSubscription) are all nil. If `toStatus` maps to `.loaded` here, JS would
-            // render a blank card. Override to `.loadingError` so the UI shows an error with a
-            // retry button instead.
-            let status: Status = updateController.updateProgress.toStatus == .loaded ? .loadingError : updateController.updateProgress.toStatus
-            self.init(status: status,
+            self.init(status: .loadingError,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,
                       automaticUpdate: updateController.areAutomaticUpdatesEnabled)

@@ -65,6 +65,11 @@ public final class WebExtensionFeatureFlagHandler {
     private let onFeatureFlagDisabled: () -> Void
     private let onEmbeddedExtensionFlagEnabled: (() async -> Void)?
 
+    private var isWebExtensionsFlagEnabled = false
+    private var isEmbeddedExtensionFlagEnabled = false
+    private var webExtensionsEnableTask: Task<Void, Never>?
+    private var embeddedExtensionEnableTask: Task<Void, Never>?
+
     /// Creates a feature flag handler.
     /// - Parameters:
     ///   - webExtensionManagerProvider: A closure that returns the current web extension manager. Called when uninstalling extensions.
@@ -117,24 +122,36 @@ public final class WebExtensionFeatureFlagHandler {
 
     private func handleWebExtensionsFlagEnabled() {
         guard let onFeatureFlagEnabled else { return }
-        Task { @MainActor in
+        isWebExtensionsFlagEnabled = true
+        webExtensionsEnableTask?.cancel()
+        webExtensionsEnableTask = Task { @MainActor [weak self] in
+            guard self?.isWebExtensionsFlagEnabled == true else { return }
             await onFeatureFlagEnabled()
         }
     }
 
     private func handleWebExtensionsFlagDisabled() {
+        isWebExtensionsFlagEnabled = false
+        webExtensionsEnableTask?.cancel()
+        webExtensionsEnableTask = nil
         webExtensionManagerProvider()?.uninstallAllExtensions()
         onFeatureFlagDisabled()
     }
 
     private func handleEmbeddedExtensionFlagEnabled() {
         guard let onEmbeddedExtensionFlagEnabled else { return }
-        Task { @MainActor in
+        isEmbeddedExtensionFlagEnabled = true
+        embeddedExtensionEnableTask?.cancel()
+        embeddedExtensionEnableTask = Task { @MainActor [weak self] in
+            guard self?.isEmbeddedExtensionFlagEnabled == true else { return }
             await onEmbeddedExtensionFlagEnabled()
         }
     }
 
     private func handleEmbeddedExtensionFlagDisabled() {
+        isEmbeddedExtensionFlagEnabled = false
+        embeddedExtensionEnableTask?.cancel()
+        embeddedExtensionEnableTask = nil
         webExtensionManagerProvider()?.uninstallEmbeddedExtension(type: .embedded)
     }
 }

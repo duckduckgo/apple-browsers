@@ -289,6 +289,120 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         XCTAssertEqual(enabledCount, 2)
         XCTAssertEqual(disabledCount, 2)
     }
+
+    // MARK: - Race Condition Prevention Tests
+
+    func testWhenWebExtensionsFlagRapidlyToggledEnabledThenDisabledThenEnableCallbackDoesNotRunAfterDisable() async throws {
+        var enabledCallbackExecuted = false
+        var disabledCallbackExecuted = false
+        var enabledCallbackExecutedAfterDisabled = false
+
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagEnabled: {
+                try? await Task.sleep(for: .milliseconds(50))
+                enabledCallbackExecuted = true
+                if disabledCallbackExecuted {
+                    enabledCallbackExecutedAfterDisabled = true
+                }
+            },
+            onFeatureFlagDisabled: {
+                disabledCallbackExecuted = true
+            }
+        )
+
+        featureFlagSubject.send(true)
+        featureFlagSubject.send(false)
+
+        try await Task.sleep(for: .milliseconds(200))
+
+        XCTAssertTrue(disabledCallbackExecuted)
+        XCTAssertFalse(enabledCallbackExecutedAfterDisabled)
+    }
+
+    func testWhenEmbeddedFlagRapidlyToggledEnabledThenDisabledThenEnableCallbackDoesNotRunAfterDisable() async throws {
+        var enabledCallbackExecuted = false
+        var disabledCallbackExecuted = false
+        var enabledCallbackExecutedAfterDisabled = false
+
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onEmbeddedExtensionFlagEnabled: {
+                try? await Task.sleep(for: .milliseconds(50))
+                enabledCallbackExecuted = true
+                if disabledCallbackExecuted {
+                    enabledCallbackExecutedAfterDisabled = true
+                }
+            }
+        )
+
+        mockWebExtensionManager.uninstallEmbeddedExtensionHandler = {
+            disabledCallbackExecuted = true
+        }
+
+        embeddedFlagSubject.send(true)
+        embeddedFlagSubject.send(false)
+
+        try await Task.sleep(for: .milliseconds(200))
+
+        XCTAssertTrue(disabledCallbackExecuted)
+        XCTAssertFalse(enabledCallbackExecutedAfterDisabled)
+    }
+
+    func testWhenWebExtensionsFlagToggledEnabledDisabledEnabledThenOnlyLastEnableRuns() async throws {
+        var enabledCallCount = 0
+        let enabledExpectation = expectation(description: "onFeatureFlagEnabled called once")
+
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagEnabled: {
+                try? await Task.sleep(for: .milliseconds(50))
+                enabledCallCount += 1
+                enabledExpectation.fulfill()
+            },
+            onFeatureFlagDisabled: {}
+        )
+
+        featureFlagSubject.send(true)
+        featureFlagSubject.send(false)
+        featureFlagSubject.send(true)
+
+        await fulfillment(of: [enabledExpectation], timeout: 1.0)
+        try await Task.sleep(for: .milliseconds(100))
+
+        XCTAssertEqual(enabledCallCount, 1)
+    }
+
+    func testWhenEmbeddedFlagToggledEnabledDisabledEnabledThenOnlyLastEnableRuns() async throws {
+        var enabledCallCount = 0
+        let enabledExpectation = expectation(description: "onEmbeddedExtensionFlagEnabled called once")
+
+        sut = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
+            featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
+            embeddedExtensionFlagPublisher: embeddedFlagSubject.eraseToAnyPublisher(),
+            onFeatureFlagDisabled: {},
+            onEmbeddedExtensionFlagEnabled: {
+                try? await Task.sleep(for: .milliseconds(50))
+                enabledCallCount += 1
+                enabledExpectation.fulfill()
+            }
+        )
+
+        embeddedFlagSubject.send(true)
+        embeddedFlagSubject.send(false)
+        embeddedFlagSubject.send(true)
+
+        await fulfillment(of: [enabledExpectation], timeout: 1.0)
+        try await Task.sleep(for: .milliseconds(100))
+
+        XCTAssertEqual(enabledCallCount, 1)
+    }
 }
 
 // MARK: - Mock
@@ -300,6 +414,7 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     var uninstallEmbeddedExtensionCalled = false
     var uninstalledEmbeddedType: DuckDuckGoWebExtensionType?
     var uninstallEmbeddedExtensionHandler: (() -> Void)?
+    var syncEmbeddedExtensionsCalled = false
 
     var loadedExtensions: Set<WKWebExtensionContext> { [] }
     var webExtensionIdentifiers: [String] { [] }
@@ -317,10 +432,19 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
         return []
     }
 
+    @MainActor
+    func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {
+        syncEmbeddedExtensionsCalled = true
+    }
+
     func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {
         uninstallEmbeddedExtensionCalled = true
         uninstalledEmbeddedType = type
         uninstallEmbeddedExtensionHandler?()
+    }
+
+    func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension? {
+        nil
     }
 
     func unloadAllExtensions() {}

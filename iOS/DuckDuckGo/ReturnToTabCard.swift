@@ -121,7 +121,6 @@ private enum Metrics {
     static let shadowOffset2: CGFloat = 16
     static let cardPadding: CGFloat = 16
     static let labelToContentSpacing: CGFloat = 0
-    static let contentSpacing: CGFloat = 12
     static let titleToSubtitleSpacing: CGFloat = 2
     static let iconSize: CGFloat = 24
     static let iconCornerRadius: CGFloat = 4

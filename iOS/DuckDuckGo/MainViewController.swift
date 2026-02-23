@@ -3365,6 +3365,10 @@ extension MainViewController: OmniBarDelegate {
         return currentNTPEscapeHatch
     }
 
+    func useNewOmnibarTransitionBehaviour() -> Bool {
+        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+    }
+
     func onSwitchTabToIndex(_ index: Int) {
         guard tabManager.model.tabs.indices.contains(index), index != tabManager.model.currentIndex else {
             viewCoordinator.omniBar.endEditing()

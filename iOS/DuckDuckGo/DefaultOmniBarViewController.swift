@@ -217,6 +217,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
+        editingStateViewController.useNewTransitionBehaviour = omniDelegate?.useNewOmnibarTransitionBehaviour() ?? false
 
         switchBarHandler.clearButtonTappedPublisher
             .receive(on: DispatchQueue.main)
@@ -322,8 +323,10 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        UniversalOmniBarEditingStateTransition(isPresenting: true,
-                                               addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        let useNew = (presented as? OmniBarEditingStateViewController)?.useNewTransitionBehaviour ?? false
+        return UniversalOmniBarEditingStateTransition(isPresenting: true,
+                                                      addressBarPosition: dependencies.appSettings.currentAddressBarPosition,
+                                                      useNewTransitionBehaviour: useNew)
     }
 
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {

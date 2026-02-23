@@ -22,6 +22,7 @@ import UIKit
 final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitioning {
     private let isPresenting: Bool
     private let isTopBarPosition: Bool
+    private let useNewTransitionBehaviour: Bool
 
     private struct TransitionOffsets {
         let switcherYOffset: CGFloat
@@ -47,9 +48,10 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         )
     }
 
-    init(isPresenting: Bool, addressBarPosition: AddressBarPosition) {
+    init(isPresenting: Bool, addressBarPosition: AddressBarPosition, useNewTransitionBehaviour: Bool = false) {
         self.isPresenting = isPresenting
         self.isTopBarPosition = addressBarPosition == .top
+        self.useNewTransitionBehaviour = useNewTransitionBehaviour
         super.init()
     }
 
@@ -104,9 +106,20 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
             return
         }
 
+        // When NTP shows the escape hatch card, hide the editing-state Dax logo so only the NTP logo is visible (no double logo).
+        if useNewTransitionBehaviour {
+            toVC.view.backgroundColor = toVC.view.backgroundColor ?? UIColor.systemBackground
+            toVC.view.alpha = 1.0
+
+            let hideLogoForTransition = toVC.isEscapeHatchCardVisible
+            if hideLogoForTransition {
+                toVC.setLogoHidden(true)
+            }
+        } else {
+            toVC.view.alpha = 0
+        }
+
         toVC.view.layer.sublayerTransform = CATransform3DMakeTranslation(0, -offsets.switcherYOffset, 0)
-        toVC.view.alpha = 0
-        toVC.actionBarView?.alpha = 0
         toVC.switchBarVC.textEntryViewController.isExpandable = false
         toVC.setLogoYOffset(offsets.logoYOffset)
 
@@ -121,12 +134,12 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
             animator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut)
         }
 
-        animator.addAnimations {
-            if !self.isTopBarPosition {
-                fromVC.logoView?.alpha = 0
-            }
+        let hideLogoForTransition = useNewTransitionBehaviour && toVC.isEscapeHatchCardVisible
 
-            toVC.view.alpha = 1.0
+        animator.addAnimations {
+            if !self.useNewTransitionBehaviour {
+                toVC.view.alpha = 1.0
+            }
             toVC.view.layer.sublayerTransform = CATransform3DIdentity
             toVC.switchBarVC.textEntryViewController.isExpandable = true
             toVC.setLogoYOffset(0)
@@ -141,6 +154,9 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         }, delayFactor: 0.3)
 
         animator.addCompletion { position in
+            if hideLogoForTransition {
+                toVC.setLogoHidden(false)
+            }
             transitionContext.completeTransition(position == .end)
         }
 

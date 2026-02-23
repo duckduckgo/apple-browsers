@@ -54,6 +54,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
+    var useNewTransitionBehaviour = false
 
     // MARK: - Core Components
     private lazy var contentContainerView = UIView()
@@ -186,8 +187,16 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         }
     }
 
+    var isEscapeHatchCardVisible: Bool {
+        escapeHatchModel != nil
+    }
+
     func setLogoYOffset(_ offset: CGFloat) {
         daxLogoManager.containerYCenterConstraint?.constant = offset
+    }
+
+    func setLogoHidden(_ hidden: Bool) {
+        daxLogoManager.setForcedHidden(hidden)
     }
 
     override func viewWillLayoutSubviews() {

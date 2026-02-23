@@ -89,6 +89,7 @@ public enum PrivacyFeature: String {
     case combinedPermissionView
     case pageContext
     case webExtensions
+    case forceDarkModeOnWebsites
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

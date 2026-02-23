@@ -405,7 +405,7 @@ class MainViewController: UIViewController {
         NSLayoutConstraint.activate([
 
             container.bottomAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor),
-            view.bottomAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.bottomAnchor),
+            view.bottomAnchor.constraint(equalTo: superview.bottomAnchor),
             view.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
             view.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
             view.leadingAnchor.constraint(equalTo: superview.leadingAnchor),

@@ -165,8 +165,8 @@ class SuggestionTrayViewController: UIViewController {
         switch type {
         case .autocomplete(let query):
             canShow = canDisplayAutocompleteSuggestions(forQuery: query, animated: animated)
-        case.favorites:
-            canShow = canDisplayFavorites
+        case .favorites:
+            canShow = canDisplayFavorites || hasRemoteMessages || pendingEscapeHatchModel != nil
         }
         return canShow
     }

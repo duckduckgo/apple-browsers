@@ -108,10 +108,12 @@ let package = Package(
             name: "BrowserServicesKitTestsUtils",
             dependencies: [
                 "BrowserServicesKit",
+                "Navigation",
                 "WKAbstractions",
             ],
             swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
+                .define("DEBUG", .when(configuration: .debug)),
+                .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
             ]
         ),
         .target(
@@ -420,6 +422,7 @@ let package = Package(
         .target(
             name: "SubscriptionTestingUtilities",
             dependencies: [
+                "BrowserServicesKitTestsUtils",
                 "Subscription",
                 "Common",
                 "NetworkingTestingUtils",
@@ -683,6 +686,7 @@ let package = Package(
         .testTarget(
             name: "UserScriptTests",
             dependencies: [
+                "BrowserServicesKitTestsUtils",
                 "SharedObjCTestsUtils",
                 "UserScript",
             ],
@@ -830,6 +834,7 @@ let package = Package(
         .testTarget(
             name: "SpecialErrorPagesTests",
             dependencies: [
+                "BrowserServicesKitTestsUtils",
                 "SharedObjCTestsUtils",
                 "SpecialErrorPages"
             ]

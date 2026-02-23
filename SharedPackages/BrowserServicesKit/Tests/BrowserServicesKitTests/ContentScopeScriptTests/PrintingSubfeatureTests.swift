@@ -19,6 +19,7 @@
 #if os(macOS)
 import Navigation
 #endif
+import BrowserServicesKitTestsUtils
 import WebKit
 import XCTest
 @testable import BrowserServicesKit
@@ -127,7 +128,7 @@ final class PrintingSubfeatureTests: XCTestCase {
         let handler = printingSubfeature.handler(forMethodNamed: "print")
         XCTAssertNotNil(handler)
 
-        let mockMessage = MockWKScriptMessage(name: "print", body: [:])
+        let mockMessage = WKScriptMessage.mock(name: "print", body: [:])
 
         // WHEN
         _ = try await handler!([:], mockMessage)
@@ -141,7 +142,7 @@ final class PrintingSubfeatureTests: XCTestCase {
         // GIVEN
         let handler = printingSubfeature.handler(forMethodNamed: "print")
         let webView = WKWebView()
-        let mockMessage = MockWKScriptMessage(name: "print", body: [:], webView: webView)
+        let mockMessage = WKScriptMessage.mock(name: "print", body: [:], webView: webView)
 
         // WHEN
         _ = try await handler!([:], mockMessage)

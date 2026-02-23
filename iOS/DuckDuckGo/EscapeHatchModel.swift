@@ -1,8 +1,8 @@
 //
-//  NewTabPageControllerDelegate.swift
+//  EscapeHatchModel.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 //  limitations under the License.
 //
 
-import Bookmarks
 import Foundation
 
-protocol NewTabPageControllerDelegate: AnyObject {
-    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
-    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
-    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController)
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, index: Int)
+/// Model for the NTP "Return to..." escape hatch card that navigates to the most recently used tab.
+struct EscapeHatchModel {
+    let title: String
+    let subtitle: String
+    let isAITab: Bool
+    let domain: String?
 }

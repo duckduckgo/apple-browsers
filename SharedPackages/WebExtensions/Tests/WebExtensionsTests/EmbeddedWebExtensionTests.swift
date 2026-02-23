@@ -93,7 +93,7 @@ final class EmbeddedWebExtensionTests: XCTestCase {
 
         XCTAssertNotNil(descriptor)
         XCTAssertEqual(descriptor?.type, .embedded)
-        XCTAssertEqual(descriptor?.resourceFilename, "autoconsent.zip")
+        XCTAssertEqual(descriptor?.resourceFilename, "com.duckduckgo.web-extension.embedded.zip")
     }
 
     func testRegistryAllContainsExpectedExtensions() {

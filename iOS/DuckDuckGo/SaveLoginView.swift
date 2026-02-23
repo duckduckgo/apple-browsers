@@ -131,11 +131,11 @@ struct SaveLoginView: View {
                 Spacer(minLength: Const.Size.topPadding)
                 experimentHeaderView
                     .padding(.bottom, 4)
-                AutofillViews.SemiboldHeadline(title: UserText.autofillSaveLoginTitleNewUser)
+                AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
                     .padding(.bottom, 4)
-                AutofillViews.SecureDescriptionVariant(text: UserText.autofillSaveLoginSecurityMessage)
+                AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage, showIcon: false)
                     .padding(.bottom, 32)
-                featuresView(useCompactFont: true).padding([.bottom], Const.Size.featuresListPadding)
+                featuresView().padding([.bottom], Const.Size.featuresListPadding)
                 onboardingCtaView()
             }
 
@@ -147,7 +147,7 @@ struct SaveLoginView: View {
                     .padding(.bottom, 4)
                 AutofillViews.Headline(title: UserText.autofillSaveLoginTitleNewUser)
                 Spacer(minLength: Const.Size.headlineToContentSpacing)
-                AutofillViews.SecureDescriptionVariant(text: UserText.autofillSaveLoginSecurityMessage)
+                AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage, showIcon: false)
                 Spacer(minLength: Const.Size.contentSpacing)
                 onboardingCtaView()
             }
@@ -161,7 +161,7 @@ struct SaveLoginView: View {
                 variant3TitleView
                 onboardingCtaView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.shieldCheckSolid))
                 VStack(alignment: .center) {
-                    AutofillViews.SecureDescriptionVariant(text: UserText.autofillSaveLoginSecurityMessage)
+                    AutofillViews.SecureDescription(text: UserText.autofillSaveLoginSecurityMessage, showIcon: false)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -358,9 +358,7 @@ struct SaveLoginView: View {
 
     private var horizontalPadding: CGFloat {
         if AutofillViews.isIPhonePortrait(verticalSizeClass, horizontalSizeClass) {
-            if layoutType.isNewUserVariant, layoutType != .newUser {
-                return Const.Size.variantHorizontalPadding
-            } else if AutofillViews.isSmallFrame(frame) {
+            if AutofillViews.isSmallFrame(frame) {
                 return Const.Size.closeButtonOffsetPortraitSmallFrame
             } else {
                 return Const.Size.closeButtonOffsetPortrait
@@ -393,7 +391,6 @@ private enum Const {
         static let featuresListPadding: CGFloat = 16.0
         static let featuresListTopPadding: CGFloat = 12.0
         static let featuresListBorderCornerRadius: CGFloat = 8.0
-        static let variantHorizontalPadding: CGFloat = 24.0
         static let variant3TitleFontSize: CGFloat = 40.0
         static let variant3MaximumTextWidth: CGFloat = 338.0
         static let variant3TitleHorizontalPadding: CGFloat = 8.0

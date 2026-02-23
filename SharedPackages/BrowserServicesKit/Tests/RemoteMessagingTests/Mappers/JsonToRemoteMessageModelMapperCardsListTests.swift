@@ -277,6 +277,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     @Test("Placeholder Maps Correctly",
         arguments: [
             ("Announce", RemotePlaceholder.announce),
+            ("NewTabOptions", RemotePlaceholder.newTabOptions),
+            ("SplitBarMobile", RemotePlaceholder.splitBarMobile),
             // Maps to Default
             ("", RemotePlaceholder.announce),
             // Maps to Default
@@ -350,6 +352,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
             ("RadarCheckGreen", .radarCheckGreen),
             ("RadarCheckPurple", .radarCheckPurple),
             ("KeyImport", .keyImport),
+            ("NewTabOptions", .newTabOptions),
+            ("SplitBarMobile", .splitBarMobile),
             ("PIR", .pir),
             ("Subscription", .subscription),
             (nil, nil)

@@ -88,6 +88,7 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
         }
 
         if isSummary {
+            // Filter out params that are already packed as part of the summary pixel
             let summaryKeys = Set(AutoconsentPixel.summaryPixels.map { $0.key })
             return stringParams.filter { !summaryKeys.contains($0.key) }
         }

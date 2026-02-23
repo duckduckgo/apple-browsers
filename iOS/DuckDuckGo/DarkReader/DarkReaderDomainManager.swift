@@ -26,36 +26,31 @@ import WebKit
 /// Manages the set of domains where DarkReader (force dark mode) should be blocked,
 /// and translates domain changes into web extension permission updates.
 ///
-/// Merges two sources:
-/// 1. A hardcoded blocklist (e.g. `duckduckgo.com`)
-/// 2. Server-controlled exceptions from the `forceWebsiteDarkMode` privacy config feature
+/// Blocked domains are sourced from the `forceDarkModeOnWebsites` privacy configuration exceptions list.
 final class DarkReaderDomainManager {
-
-    private static let hardcodedBlockedDomains: Set<String> = ["duckduckgo.com"]
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
 
-    /// Tracks domains that have been applied as permissions to the extension context.
+    /// Domains that have been applied as permissions to the extension context.
     private var appliedBlockedDomains: Set<String> = []
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.privacyConfigurationManager = privacyConfigurationManager
     }
 
-    /// All domains where dark mode should be blocked (hardcoded + server exceptions).
+    /// All domains where dark mode should be blocked (from privacy configuration exceptions list).
     var blockedDomains: Set<String> {
-        let serverExceptions = Set(
+        Set(
             privacyConfigurationManager.privacyConfig
                 .exceptionsList(forFeature: .forceDarkModeOnWebsites)
         )
-        return Self.hardcodedBlockedDomains.union(serverExceptions)
     }
 
     /// Publisher that fires whenever the privacy config updates (and thus the blocked domains may have changed).
     var blockedDomainsPublisher: AnyPublisher<Set<String>, Never> {
         privacyConfigurationManager.updatesPublisher
             .map { [weak self] in
-                self?.blockedDomains ?? Self.hardcodedBlockedDomains
+                self?.blockedDomains ?? []
             }
             .eraseToAnyPublisher()
     }

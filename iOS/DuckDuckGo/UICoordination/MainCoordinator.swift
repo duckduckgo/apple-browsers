@@ -68,7 +68,7 @@ final class MainCoordinator {
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
     private var darkModeSettingObserver: AnyObject?
-    private var darkReaderFeatureSettings: DarkReaderFeatureSettings?
+    private var darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
@@ -120,6 +120,7 @@ final class MainCoordinator {
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinator = Self.makeTextZoomCoordinator()
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
+        darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
@@ -274,7 +275,7 @@ final class MainCoordinator {
                queue: .main) { [weak self, weak webExtensionManager] _ in
                    guard let self, let webExtensionManager else { return }
                    Task { @MainActor in
-                       await self.updateDarkReaderExtensionInstallation(manager: webExtensionManager)
+                       await self.syncEmbeddedExtensions()
                    }
                }
         } else {
@@ -282,28 +283,6 @@ final class MainCoordinator {
         }
     }
 
-    private func updateDarkReaderExtensionInstallation(manager: WebExtensionManaging) async {
-        guard #available(iOS 18.4, *) else { return }
-
-        let darkModeExtensionIdentifier: String? = {
-            for identifier in manager.webExtensionIdentifiers {
-                if manager.extensionName(for: identifier)?.contains("Dark") == true {
-                    return identifier
-                }
-            }
-            return nil
-        }()
-
-        if darkReaderFeatureSettings?.isDarkModeEnabled == true,
-           darkModeExtensionIdentifier == nil,
-           let darkReaderURL = DarkReader.url {
-            try? await manager.installExtension(from: darkReaderURL)
-        } else {
-            if let darkModeExtensionIdentifier {
-                try? manager.uninstallExtension(identifier: darkModeExtensionIdentifier)
-            }
-        }
-    }
 
     @available(iOS 18.4, *)
     private func initializeWebExtensions() async {
@@ -325,7 +304,6 @@ final class MainCoordinator {
         controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
         controller.setWebExtensionManager(webExtensionManager)
 
-        await updateDarkReaderExtensionInstallation(manager: webExtensionManager)
         await webExtensionManager.loadInstalledExtensions()
         await syncEmbeddedExtensions()
 
@@ -344,13 +322,15 @@ final class MainCoordinator {
         if featureFlagger.isFeatureOn(.embeddedExtension) {
             enabledTypes.insert(.embedded)
         }
+        if darkReaderFeatureSettings.isDarkModeEnabled == true {
+            enabledTypes.insert(.darkReader)
+        }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
 
     private func clearWebExtensionReferences() {
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
-        darkReaderFeatureSettings = nil
         darkModeSettingObserver = nil
         tabManager.setWebExtensionManager(nil)
         controller.setWebExtensionEventsCoordinator(nil)

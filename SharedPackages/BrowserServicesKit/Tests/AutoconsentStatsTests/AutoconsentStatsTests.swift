@@ -393,8 +393,7 @@ final class AutoconsentStatsTests: XCTestCase {
         mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            errorEvents: mockEventMapping,
-            isFeatureEnabled: { true }
+            errorEvents: mockEventMapping
         )
 
         // Set up store to throw error
@@ -418,8 +417,7 @@ final class AutoconsentStatsTests: XCTestCase {
         mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            errorEvents: mockEventMapping,
-            isFeatureEnabled: { true }
+            errorEvents: mockEventMapping
         )
 
         // Set up store to throw error
@@ -444,8 +442,7 @@ final class AutoconsentStatsTests: XCTestCase {
         mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            errorEvents: mockEventMapping,
-            isFeatureEnabled: { true }
+            errorEvents: mockEventMapping
         )
 
         // Set up store to throw error on read
@@ -486,8 +483,7 @@ final class AutoconsentStatsTests: XCTestCase {
         mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            errorEvents: mockEventMapping,
-            isFeatureEnabled: { true }
+            errorEvents: mockEventMapping
         )
 
         // Add some data first
@@ -513,8 +509,7 @@ final class AutoconsentStatsTests: XCTestCase {
         // Given - No event mapping (nil)
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            errorEvents: nil,
-            isFeatureEnabled: { true }
+            errorEvents: nil
         )
 
         // Set up store to throw error

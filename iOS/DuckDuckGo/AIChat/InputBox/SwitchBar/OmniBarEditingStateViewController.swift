@@ -346,6 +346,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             }
             .store(in: &cancellables)
         aiChatHistoryManager = manager
+
+        if let escapeHatchModel {
+            manager.setEscapeHatch(escapeHatchModel, onTapped: { [weak self] in
+                self?.delegate?.onSwitchTabToIndex(escapeHatchModel.targetTabIndex)
+            })
+        }
     }
 
     private func installDaxLogoView() {
@@ -550,6 +556,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+
+        // When the escape hatch card is visible in the chat history list, offset the logo down so it sits below the escape hatch card
+        if escapeHatchModel != nil, isAIDaxVisible {
+            setLogoYOffset(Constants.escapeHatchLogoZoneHeight)
+        } else {
+            setLogoYOffset(0)
+        }
     }
 }
 
@@ -693,5 +706,6 @@ private extension OmniBarEditingStateViewController {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .background)
         static let animationDuration: TimeInterval = 0.15
+        static let escapeHatchLogoZoneHeight: CGFloat = 70
     }
 }

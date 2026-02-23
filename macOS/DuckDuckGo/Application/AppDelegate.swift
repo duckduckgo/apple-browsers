@@ -365,6 +365,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var isSyncingEmbeddedExtensions = false
 
     /// Holder class that allows `WebExtensionAvailability` to be created before `super.init()`,
     /// while still providing access to `webExtensionManager` which is set on `self` after `super.init()`.
@@ -1778,7 +1779,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @available(macOS 15.4, *)
     @MainActor
     private func syncEmbeddedExtensions() async {
+        guard !isSyncingEmbeddedExtensions else { return }
         guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+
+        isSyncingEmbeddedExtensions = true
+        defer { isSyncingEmbeddedExtensions = false }
 
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
         if featureFlagger.isFeatureOn(.embeddedExtension) {

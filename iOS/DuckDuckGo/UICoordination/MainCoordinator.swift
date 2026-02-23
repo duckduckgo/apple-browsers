@@ -65,6 +65,7 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var isSyncingEmbeddedExtensions = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -295,7 +296,11 @@ final class MainCoordinator {
 
     @available(iOS 18.4, *)
     private func syncEmbeddedExtensions() async {
+        guard !isSyncingEmbeddedExtensions else { return }
         guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+
+        isSyncingEmbeddedExtensions = true
+        defer { isSyncingEmbeddedExtensions = false }
 
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
         if featureFlagger.isFeatureOn(.embeddedExtension) {

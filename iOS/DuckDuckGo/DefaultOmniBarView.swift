@@ -40,7 +40,7 @@ public enum OmniBarIcon {
     }
 }
 
-final class DefaultOmniBarView: UIView, OmniBarView {
+final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     var textField: TextFieldWithInsets! { searchAreaView.textField }
     var privacyInfoContainer: PrivacyInfoContainerView! { searchAreaView.privacyInfoContainer }
@@ -171,6 +171,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     /// Controls whether the AI Chat mode UI is hidden (false = AI Chat mode, true = regular mode)
     var isFullAIChatHidden: Bool = true {
         didSet {
+            guard oldValue != isFullAIChatHidden else { return }
             if isFullAIChatHidden {
                 hideAIChatOmnibar()
             } else {
@@ -262,6 +263,37 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     private var aiChatBrandingView: AIChatFullModeOmniBrandingView?
     private var aiChatModeConstraints: [NSLayoutConstraint] = []
 
+    // MARK: - iPad Duck.ai Expanded Search Area (stored properties)
+
+    let aiChatTextView: UITextView = {
+        let textView = UITextView()
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.isHidden = true
+        textView.backgroundColor = .clear
+        textView.textContainerInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
+        textView.textContainer.lineFragmentPadding = 0
+        return textView
+    }()
+
+    var duckAITextViewDelegate: UITextViewDelegate? {
+        get { aiChatTextView.delegate }
+        set { aiChatTextView.delegate = newValue }
+    }
+    var onSearchAreaExpandedStateChanged: ((Bool) -> Void)?
+    var onCollapseAnimationCompleted: (() -> Void)?
+    private(set) var isSearchAreaExpanded: Bool = false {
+        didSet {
+            guard oldValue != isSearchAreaExpanded, !suppressExpansionUpdate else { return }
+            updateSearchAreaExpansion(animated: false)
+        }
+    }
+    private var suppressExpansionUpdate = false
+    private var searchAreaCenterYConstraint: NSLayoutConstraint?
+    private var searchAreaTopPinConstraint: NSLayoutConstraint?
+    private var expandedHeightConstraint: NSLayoutConstraint?
+    private var searchStackBottomEqualConstraint: NSLayoutConstraint?
+    private var searchStackBottomGTEConstraint: NSLayoutConstraint?
+
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
     private var masksTop: Bool = true
@@ -329,6 +361,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
+        searchAreaContainerView.addSubview(aiChatTextView)
         searchAreaContainerView.addSubview(aiChatLeftButton)
 
         addSubview(activeOutlineView)
@@ -379,7 +412,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
             searchAreaView.bottomAnchor.constraint(lessThanOrEqualTo: searchAreaContainerView.bottomAnchor),
             searchAreaView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
             searchAreaView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-            searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
 
             searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor),
             readableSearchAreaWidth,
@@ -395,7 +427,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
             omniBarProgressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor),
 
             searchAreaStackView.topAnchor.constraint(equalTo: searchAreaAlignmentView.topAnchor),
-            searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor),
             searchAreaStackView.leadingAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.leadingAnchor),
             searchAreaStackView.trailingAnchor.constraint(lessThanOrEqualTo: searchAreaAlignmentView.trailingAnchor),
 
@@ -435,6 +466,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
                 searchAreaContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor)
             ]
         }
+
+        setUpExpandedSearchAreaConstraints()
     }
 
     private func setUpProperties() {
@@ -503,6 +536,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         DefaultOmniBarView.setUpCommonProperties(for: aiChatLeftButton)
 
         progressView?.hide()
+
+        setUpExpandedTextViewProperties()
 
         updateShadows()
     }
@@ -603,6 +638,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaView.dismissButtonView.accessibilityLabel = "Cancel"
         searchAreaView.dismissButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Dismiss"
         searchAreaView.dismissButtonView.accessibilityTraits = .button
+
+        aiChatTextView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).AIChatTextView"
+        aiChatTextView.accessibilityLabel = UserText.duckAiFeatureName
     }
 
     private func setUpInitialState() {
@@ -725,6 +763,10 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         static let textAreaVerticalPaddingRegularSpacing: CGFloat = 8
 
+        static let expandedSearchAreaHeight: CGFloat = 120.0
+        static let duckAITextViewBottomPadding: CGFloat = 8.0
+        static let expansionAnimationDuration: TimeInterval = 0.25
+
         static let expandedSizeSpacing: CGFloat = 24.0
         static let expandedSizeMargins = NSDirectionalEdgeInsets(
             top: 0,
@@ -792,13 +834,14 @@ extension DefaultOmniBarView {
     /// Restores the omnibar UI to regular browse mode. Hides AI Chat buttons, shows search elements.
     private func hideAIChatOmnibar() {
         aiChatBrandingView?.isHidden = true
-        searchAreaView.textField.isHidden = false
         aiChatLeftButton.isHidden = true
         aiChatLeftButton.alpha = 0.0
         NSLayoutConstraint.deactivate(aiChatModeConstraints)
 
-        searchAreaView.textField.alpha = 1.0
-        searchAreaView.revealButtons()
+        if !isSearchAreaExpanded {
+            searchAreaView.textField.alpha = 1.0
+            searchAreaView.revealButtons()
+        }
 
         setNeedsLayout()
     }
@@ -811,7 +854,7 @@ extension DefaultOmniBarView {
     }
 
     private func updateMaskLayer() {
-        guard clipsContent else {
+        guard clipsContent, !isSearchAreaExpanded else {
             layer.mask = nil
             return
         }
@@ -830,5 +873,144 @@ extension DefaultOmniBarView {
         maskLayer.backgroundColor = UIColor.black.cgColor
 
         layer.mask = maskLayer
+    }
+}
+
+// MARK: - iPad Duck.ai Expanded Search Area
+
+extension DefaultOmniBarView {
+
+    func setSearchAreaExpanded(_ expanded: Bool, animated: Bool) {
+        guard expanded != isSearchAreaExpanded else { return }
+        suppressExpansionUpdate = true
+        isSearchAreaExpanded = expanded
+        suppressExpansionUpdate = false
+        updateSearchAreaExpansion(animated: animated)
+    }
+
+    func setUpExpandedSearchAreaConstraints() {
+        NSLayoutConstraint.activate([
+            aiChatTextView.topAnchor.constraint(equalTo: searchAreaView.textField.topAnchor),
+            aiChatTextView.leadingAnchor.constraint(equalTo: searchAreaView.textField.leadingAnchor),
+            aiChatTextView.trailingAnchor.constraint(equalTo: searchAreaView.textField.trailingAnchor),
+            aiChatTextView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+        ])
+
+        let bottomEqual = searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
+        bottomEqual.isActive = true
+        searchStackBottomEqualConstraint = bottomEqual
+
+        let bottomGTE = searchAreaStackView.bottomAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.bottomAnchor)
+        bottomGTE.isActive = false
+        searchStackBottomGTEConstraint = bottomGTE
+
+        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor)
+        centerY.isActive = true
+        searchAreaCenterYConstraint = centerY
+
+        let topPin = searchAreaView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor)
+        topPin.isActive = false
+        searchAreaTopPinConstraint = topPin
+
+        let expandedHeight = searchAreaContainerView.heightAnchor.constraint(equalToConstant: Metrics.expandedSearchAreaHeight)
+        expandedHeight.isActive = false
+        expandedHeightConstraint = expandedHeight
+    }
+
+    func setUpExpandedTextViewProperties() {
+        aiChatTextView.font = UIFont.daxBodyRegular()
+        aiChatTextView.textColor = UIColor(designSystemColor: .textPrimary)
+        aiChatTextView.tintColor = UIColor(designSystemColor: .accent)
+        aiChatTextView.autocapitalizationType = .sentences
+        aiChatTextView.autocorrectionType = .default
+        aiChatTextView.isScrollEnabled = true
+    }
+
+    func updateSearchAreaExpansion(animated: Bool) {
+        applyTextViewVisibility()
+        onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
+
+        guard animated else {
+            applyExpansionConstraints()
+            applyExpansionClipping()
+            layoutIfNeeded()
+            return
+        }
+
+        layoutIfNeeded()
+
+        if isSearchAreaExpanded {
+            applyExpansionClipping()
+        }
+
+        applyExpansionConstraints()
+
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: .curveEaseInOut) {
+            self.layoutIfNeeded()
+        } completion: { _ in
+            if !self.isSearchAreaExpanded {
+                self.applyExpansionClipping()
+                self.onCollapseAnimationCompleted?()
+                self.onCollapseAnimationCompleted = nil
+            }
+            if self.isSearchAreaExpanded {
+                self.aiChatTextView.becomeFirstResponder()
+            }
+        }
+    }
+
+    private func applyTextViewVisibility() {
+        if isSearchAreaExpanded {
+            let currentText = textField.text ?? ""
+            textField.text = ""
+            textField.alpha = currentText.isEmpty ? 1 : 0
+
+            aiChatTextView.text = currentText
+            aiChatTextView.isHidden = false
+            searchAreaContainerView.bringSubviewToFront(aiChatTextView)
+        } else {
+            let currentText = aiChatTextView.text ?? ""
+            aiChatTextView.isHidden = true
+            aiChatTextView.text = ""
+
+            textField.text = currentText
+            textField.alpha = 1
+        }
+    }
+
+    /// Toggles the textField's visibility so its placeholder shows through
+    /// the transparent duckAITextView when empty, and hides when there's text.
+    func updateTextFieldPlaceholderVisibility(hasText: Bool) {
+        guard isSearchAreaExpanded else { return }
+        textField.alpha = hasText ? 0 : 1
+    }
+
+    private func applyExpansionConstraints() {
+        if isSearchAreaExpanded {
+            searchStackBottomEqualConstraint?.isActive = false
+            searchAreaCenterYConstraint?.isActive = false
+            searchStackBottomGTEConstraint?.isActive = true
+            expandedHeightConstraint?.isActive = true
+            searchAreaTopPinConstraint?.isActive = true
+        } else {
+            expandedHeightConstraint?.isActive = false
+            searchAreaTopPinConstraint?.isActive = false
+            searchStackBottomGTEConstraint?.isActive = false
+            searchStackBottomEqualConstraint?.isActive = true
+            searchAreaCenterYConstraint?.isActive = true
+        }
+    }
+
+    private func applyExpansionClipping() {
+        let allowOverflow = isSearchAreaExpanded
+
+        let clippingViews: [UIView] = [self, stackView, searchAreaAlignmentView, searchAreaStackView, searchAreaContainerView]
+        clippingViews.forEach { $0.clipsToBounds = !allowOverflow }
+
+        if allowOverflow {
+            layer.mask = nil
+        } else {
+            updateMaskLayer()
+        }
     }
 }

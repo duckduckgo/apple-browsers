@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-#if SPARKLE
-
-import XCTest
+import AppUpdaterShared
 import Cocoa
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
@@ -125,5 +125,3 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
         XCTAssertEqual(menuItem.image?.pngData(), NSImage.updateMenuItemIcon.pngData())
     }
 }
-
-#endif

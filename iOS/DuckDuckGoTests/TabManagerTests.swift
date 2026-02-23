@@ -132,7 +132,8 @@ final class TabManagerTests: XCTestCase {
 
     func makeManager(_ model: TabsModel,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
-                     historyManager: MockHistoryManager = MockHistoryManager()) throws -> TabManager {
+                     historyManager: MockHistoryManager = MockHistoryManager(),
+                     launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager()) throws -> TabManager {
         let tabsPersistence = TabsModelPersistence(store: MockKeyValueFileStore(),
                                                    legacyStore: MockKeyValueStore())
         return TabManager(model: model,
@@ -163,7 +164,8 @@ final class TabManagerTests: XCTestCase {
                           aiChatSettings: MockAIChatSettingsProvider(),
                           productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                           privacyStats: MockPrivacyStats(),
-                          voiceSearchHelper: MockVoiceSearchHelper())
+                          voiceSearchHelper: MockVoiceSearchHelper(),
+                          launchSourceManager: launchSourceManager)
     }
 
 }

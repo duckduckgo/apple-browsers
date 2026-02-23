@@ -81,8 +81,10 @@ final class PadOmnibarToggleView: UIView {
             widthAnchor.constraint(equalToConstant: Metrics.outerWidth),
             heightAnchor.constraint(equalToConstant: Metrics.outerHeight),
 
-            selectedBackgroundView.topAnchor.constraint(equalTo: topAnchor, constant: (Metrics.outerHeight - Metrics.innerHeight) / 2),
-            selectedBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -(Metrics.outerHeight - Metrics.innerHeight) / 2),
+            selectedBackgroundView.topAnchor.constraint(equalTo: topAnchor, constant: (Metrics.outerHeight - Metrics.innerHeight) / 2)
+                .withPriority(.required - 1),
+            selectedBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -(Metrics.outerHeight - Metrics.innerHeight) / 2)
+                .withPriority(.required - 1),
             selectedBackgroundView.widthAnchor.constraint(equalToConstant: Metrics.selectedWidth),
             selectedLeadingConstraint,
 

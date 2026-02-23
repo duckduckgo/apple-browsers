@@ -49,6 +49,8 @@ public class Tab: NSObject, NSCoding {
         static let type = "type"
         static let supportsTabHistory = "supportsTabHistory"
         static let fireTab = "fireTab"
+        static let isExternalLaunch = "isExternalLaunch"
+        static let shouldSuppressTrackerAnimationOnFirstLoad = "shouldSuppressTrackerAnimationOnFirstLoad"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
@@ -107,6 +109,14 @@ public class Tab: NSObject, NSCoding {
     /// Indicates whether this tab is a fire tab or not.
     let fireTab: Bool
 
+    /// Indicates whether this tab was created from an external launch (URL or shortcut).
+    /// Used to determine animation behavior for externally-launched tabs.
+    var isExternalLaunch: Bool = false
+
+    /// Indicates whether tracker animations should be suppressed on the first load of this tab.
+    /// Set based on launch source: suppressed for all tabs on cold start with standard launch.
+    var shouldSuppressTrackerAnimationOnFirstLoad: Bool = false
+
     /// Type of tab: web or AI Chat, derived from the current URL
     private var type: TabType {
         if let link, link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
@@ -126,6 +136,8 @@ public class Tab: NSObject, NSCoding {
                 contextualChatURL: String? = nil,
                 supportsTabHistory: Bool = true,
                 fireTab: Bool = false,
+                isExternalLaunch: Bool = false,
+                shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
@@ -136,6 +148,8 @@ public class Tab: NSObject, NSCoding {
         self.contextualChatURL = contextualChatURL
         self.supportsTabHistory = supportsTabHistory
         self.fireTab = fireTab
+        self.isExternalLaunch = isExternalLaunch
+        self.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppressTrackerAnimationOnFirstLoad
         self.aichatDebugSettings = aichatDebugSettings
     }
 
@@ -150,10 +164,13 @@ public class Tab: NSObject, NSCoding {
         // Legacy tabs created before tab history tracking will not have this key, so default to false
         let supportsTabHistory = decoder.containsValue(forKey: NSCodingKeys.supportsTabHistory) ? decoder.decodeBool(forKey: NSCodingKeys.supportsTabHistory) : false
         let fireTab = decoder.containsValue(forKey: NSCodingKeys.fireTab) ? decoder.decodeBool(forKey: NSCodingKeys.fireTab) : false
+        // External launch flags are transient and always reset to false on decode
+        let isExternalLaunch = false
+        let shouldSuppressTrackerAnimationOnFirstLoad = false
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab)
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad)
     }
 
     public func encode(with coder: NSCoder) {
@@ -168,6 +185,7 @@ public class Tab: NSObject, NSCoding {
         coder.encode(contextualChatURL, forKey: NSCodingKeys.contextualChatURL)
         coder.encode(supportsTabHistory, forKey: NSCodingKeys.supportsTabHistory)
         coder.encode(fireTab, forKey: NSCodingKeys.fireTab)
+        // Note: isExternalLaunch and shouldSuppressTrackerAnimationOnFirstLoad are not encoded as they are transient flags
         // Note: type is not encoded as it's now a computed property based on the link URL
     }
 

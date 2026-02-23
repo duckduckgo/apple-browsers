@@ -88,6 +88,8 @@ public enum PrivacyFeature: String {
     case popupBlocking
     case combinedPermissionView
     case pageContext
+    case webExtensions
+    case forceDarkModeOnWebsites
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -177,6 +179,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
     case crashCollectionLimitCallStackTreeDepth
+
+    /// Ctrl+click compatibility fix to preserve right click behavior
+    case controlClickFix
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -234,6 +239,12 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091
     case burnSingleTab
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
+    case showNTPAfterIdleReturn
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
+    case suppressTrackerAnimationOnColdStart
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -377,6 +388,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
+
+    case sidebarResizable
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -636,4 +649,10 @@ public enum UpdatesSubfeature: String, PrivacySubfeature {
 
     /// Simplified update flow without expiration logic
     case simplifiedFlow
+}
+
+public enum WebExtensionsSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .webExtensions }
+
+    case embeddedExtension
 }

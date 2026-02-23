@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
-import AppKit
 import AIChat
+import AppKit
+import AppUpdaterShared
 import Common
 import CryptoKit
 import os.log
 import Persistence
+import PixelKit
 
 final class UpdatesDebugMenu: NSMenu {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
@@ -96,12 +98,8 @@ final class UpdatesDebugMenu: NSMenu {
     }
 
     @objc func showBrowserUpdatedPopover() {
-        let presenter = UpdateNotificationPresenter()
-        presenter.showUpdateNotification(
-            icon: NSImage.successCheckmark,
-            text: UserText.browserUpdatedNotification,
-            buttonText: UserText.viewDetails
-        )
+        let presenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
+        presenter.showUpdateNotification(for: .updated)
     }
 
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES
@@ -112,8 +110,8 @@ final class UpdatesDebugMenu: NSMenu {
         set { try? settings.set(newValue, for: \.debugSparkleCustomFeedURL) }
     }
 
-    private var sparkleUpdateController: SparkleCustomFeedURLProviding? {
-        Application.appDelegate.updateController as? SparkleCustomFeedURLProviding
+    private var sparkleUpdateController: (any SparkleCustomFeedURLProviding)? {
+        Application.appDelegate.updateController as? any SparkleCustomFeedURLProviding
     }
 
     @objc func setCustomFeedURL() {

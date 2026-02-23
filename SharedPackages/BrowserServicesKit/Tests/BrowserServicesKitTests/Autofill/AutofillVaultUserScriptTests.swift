@@ -22,16 +22,12 @@ import XCTest
 import WebKit
 import UserScript
 import Common
+import BrowserServicesKitTestsUtils
 @testable import BrowserServicesKit
 
 class AutofillVaultUserScriptTests: XCTestCase {
 
     lazy var hostProvider: UserScriptHostProvider = SecurityOriginHostProvider()
-
-    override class func setUp() {
-        super.setUp()
-        WKFrameInfo.swizzleDealloc()
-    }
 
     lazy var userScript: AutofillUserScript = {
         let embeddedConfig =
@@ -87,7 +83,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         userScript.vaultDelegate = delegate
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "pmHandlerGetAccounts", body: encryptedMessagingParams, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "pmHandlerGetAccounts", body: encryptedMessagingParams, webView: mockWebView)
 
         let expect = expectation(description: #function)
         userScript.userContentController(userContentController, didReceive: message) {
@@ -134,7 +130,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         body["id"] = "\(randomAccountId)"
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "pmHandlerGetAutofillCredentials", body: body, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "pmHandlerGetAutofillCredentials", body: body, webView: mockWebView)
 
         let expect = expectation(description: #function)
         userScript.userContentController(userContentController, didReceive: message) {
@@ -183,7 +179,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         body["id"] = "\(randomAccountId)"
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "pmHandlerGetAutofillCredentials",
+        let message = WKScriptMessage.mock(name: "pmHandlerGetAutofillCredentials",
                                           body: body,
                                           webView: mockWebView)
 
@@ -229,7 +225,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         body["id"] = "\(randomAccountId)"
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "pmHandlerGetAutofillCredentials",
+        let message = WKScriptMessage.mock(name: "pmHandlerGetAutofillCredentials",
                                           body: body,
                                           webView: mockWebView)
 
@@ -273,7 +269,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         body["id"] = "\(randomAccountId)"
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "pmHandlerGetAutofillCredentials", body: body, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "pmHandlerGetAutofillCredentials", body: body, webView: mockWebView)
 
         let expect = expectation(description: #function)
         userScript.userContentController(userContentController, didReceive: message) {
@@ -336,7 +332,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         body["id"] = "\(randomCardId)"
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "pmHandlerGetCreditCard", body: body, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "pmHandlerGetCreditCard", body: body, webView: mockWebView)
 
         let expect = expectation(description: #function)
         userScript.userContentController(userContentController, didReceive: message) {
@@ -393,7 +389,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         body["id"] = "\(randomIdentityId)"
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "pmHandlerGetIdentity", body: body, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "pmHandlerGetIdentity", body: body, webView: mockWebView)
 
         let expect = expectation(description: #function)
         userScript.userContentController(userContentController, didReceive: message) {
@@ -602,7 +598,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         body["trigger"] = "userInitiated"
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "getAutofillData", body: body, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "getAutofillData", body: body, webView: mockWebView)
 
         userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
@@ -651,7 +647,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         body["mainType"] = "creditCards"
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "getAutofillDataFocus", body: body, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "getAutofillDataFocus", body: body, webView: mockWebView)
 
         userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
@@ -684,7 +680,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         body["mainType"] = "creditCards"
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "getAutofillDataFocus", body: body, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "getAutofillDataFocus", body: body, webView: mockWebView)
 
         let expect = expectation(description: #function)
 
@@ -739,7 +735,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
             body["mainType"] = mainType
 
             let mockWebView = MockWebView()
-            let message = MockWKScriptMessage(name: "getAutofillDataFocus", body: body, webView: mockWebView)
+            let message = WKScriptMessage.mock(name: "getAutofillDataFocus", body: body, webView: mockWebView)
             let currentExpectation = expectations[index]
 
             userScript.userContentController(userContentController, didReceive: message) { result, error in
@@ -813,7 +809,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         var secondReplyResult: String?
 
         // Send first request
-        let message1 = MockWKScriptMessage(name: "getAutofillDataFocus", body: body, webView: mockWebView)
+        let message1 = WKScriptMessage.mock(name: "getAutofillDataFocus", body: body, webView: mockWebView)
         userScript.userContentController(userContentController, didReceive: message1) { result, error in
             firstReplyReceived = true
             firstReplyResult = result as? String
@@ -824,7 +820,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         wait(for: [firstDelegateCallExpect], timeout: 1.0)
 
         // Send second request before first completes
-        let message2 = MockWKScriptMessage(name: "getAutofillDataFocus", body: body, webView: mockWebView)
+        let message2 = WKScriptMessage.mock(name: "getAutofillDataFocus", body: body, webView: mockWebView)
         userScript.userContentController(userContentController, didReceive: message2) { result, error in
             secondReplyReceived = true
             secondReplyResult = result as? String
@@ -922,7 +918,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         focusBody["mainType"] = "creditCards"
 
         userScript.userContentController(userContentController,
-                                         didReceive: MockWKScriptMessage(name: "getAutofillDataFocus",
+                                         didReceive: WKScriptMessage.mock(name: "getAutofillDataFocus",
                                                                          body: focusBody,
                                                                          webView: MockWebView())
         ) { result, error in
@@ -948,7 +944,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         getDataBody["trigger"] = "userInitiated"
 
         userScript.userContentController(userContentController,
-                                         didReceive: MockWKScriptMessage(name: "getAutofillData",
+                                         didReceive: WKScriptMessage.mock(name: "getAutofillData",
                                                                          body: getDataBody,
                                                                          webView: MockWebView())
         ) { result, error in
@@ -984,7 +980,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         body["invalidKey"] = "invalidValue" // Missing mainType
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "getAutofillDataFocus", body: body, webView: mockWebView)
+        let message = WKScriptMessage.mock(name: "getAutofillDataFocus", body: body, webView: mockWebView)
 
         let expect = expectation(description: #function)
         expect.isInverted = true // We expect no callback

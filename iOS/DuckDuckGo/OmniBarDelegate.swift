@@ -188,6 +188,8 @@ extension OmniBarDelegate {
         completion()
     }
 
+    func onSwitchTabToIndex(_ index: Int) {}
+
     func escapeHatchForEditingState() -> EscapeHatchModel? {
         nil
     }

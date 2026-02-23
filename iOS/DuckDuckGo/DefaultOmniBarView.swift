@@ -638,6 +638,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaView.dismissButtonView.accessibilityLabel = "Cancel"
         searchAreaView.dismissButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Dismiss"
         searchAreaView.dismissButtonView.accessibilityTraits = .button
+
+        aiChatTextView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).AIChatTextView"
+        aiChatTextView.accessibilityLabel = UserText.duckAiFeatureName
     }
 
     private func setUpInitialState() {

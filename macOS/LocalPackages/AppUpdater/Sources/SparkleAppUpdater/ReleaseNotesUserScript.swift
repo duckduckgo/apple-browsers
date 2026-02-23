@@ -45,7 +45,6 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         }
     }
     private var cancellables = Set<AnyCancellable>()
-    private var isInitialized = false
 
     // MARK: - MessageNames
     enum MessageNames: String, CaseIterable {
@@ -86,8 +85,8 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
     }
 
     public func onUpdate() {
-        guard AppVersion.runType != .uiTests, isInitialized,
-              let webView, webView.url == releaseNotesURL else { return }
+        guard AppVersion.runType != .uiTests else { return }
+        guard let webView, webView.url == releaseNotesURL else { return }
 
         let values = ReleaseNotesValues(from: updateController, pixelFiring: pixelFiring, keyValueStore: keyValueStore)
         broker?.push(method: "onUpdate", params: values, for: self, into: webView)
@@ -99,8 +98,6 @@ extension ReleaseNotesUserScript {
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        isInitialized = true
-
         // Initialize the page right after sending the initial setup result
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             self?.onUpdate()

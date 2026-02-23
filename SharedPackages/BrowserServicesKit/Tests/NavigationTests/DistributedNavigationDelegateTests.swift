@@ -1433,6 +1433,8 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
+            // delay the response to avoid flakiness when the response is received before WebView stops loading
+            Thread.sleep(forTimeInterval: 0.1)
             return .ok(.data(data.html))
         }]
         try server.start(8084)

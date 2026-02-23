@@ -35,9 +35,6 @@
       <FileRef
          location = "group:WebExtensions">
       </FileRef>
-      <FileRef
-         location = "group:DarkReader">
-      </FileRef>
    </Group>
    <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">

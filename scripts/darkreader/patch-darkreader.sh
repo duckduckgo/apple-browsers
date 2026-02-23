@@ -6,12 +6,10 @@
 # inside a WKWebExtension (DuckDuckGo iOS/macOS browser).
 #
 # Usage:
-#   1. Download / update the upstream darkreader-chrome-mv3 extension into
-#      the "darkreader-chrome-mv3 2" directory (unzipped).
-#   2. Run this script from the darkreader/ directory:
-#        ./patch-darkreader.sh
-#   3. The script patches background/index.js in place and repackages
-#      darkreader-chrome-mv3.zip.
+#   ./patch-darkreader.sh <path-to-extracted-extension>
+#
+# Typically called by update-darkreader.sh after building from source,
+# but can also be run standalone after manually extracting an extension.
 #
 # What it patches:
 #   - automation.enabled  → true  (follow system color scheme)
@@ -20,19 +18,33 @@
 #   - syncSettings        → false (no chrome.storage.sync round-trips)
 #   - Disables chrome.tabs.create on install (no help page popup)
 #   - Disables chrome.runtime.setUninstallURL (no uninstall redirect)
+#   - Adds browser_specific_settings for DuckDuckGo extension ID
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-EXT_DIR="$SCRIPT_DIR/darkreader-chrome-mv3"
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <path-to-extracted-extension>" >&2
+    exit 1
+fi
+
+EXT_DIR="$1"
 BG_JS="$EXT_DIR/background/index.js"
-ZIP_OUT="$SCRIPT_DIR/darkreader-chrome-mv3.zip"
+MANIFEST="$EXT_DIR/manifest.json"
+ZIP_OUT="$(dirname "$EXT_DIR")/darkreader-chrome-mv3.zip"
 
 if [ ! -f "$BG_JS" ]; then
     echo "Error: $BG_JS not found. Make sure the extension is extracted." >&2
     exit 1
 fi
 
+if [ ! -f "$MANIFEST" ]; then
+    echo "Error: $MANIFEST not found." >&2
+    exit 1
+fi
+
+# ===========================================================================
+# Patch background/index.js
+# ===========================================================================
 echo "Patching $BG_JS..."
 
 FAIL=0
@@ -107,7 +119,35 @@ if [ "$FAIL" -ne 0 ]; then
     exit 1
 fi
 
+# ===========================================================================
+# Patch manifest.json
+# ===========================================================================
+echo ""
+echo "Patching $MANIFEST..."
+
+python3 -c "
+import json, sys
+
+path = sys.argv[1]
+
+with open(path) as f:
+    manifest = json.load(f)
+
+manifest['browser_specific_settings'] = {
+    'duckduckgo': {
+        'id': 'org.duckduckgo.web-extension.darkreader'
+    }
+}
+print('  ✓ browser_specific_settings → duckduckgo')
+
+with open(path, 'w') as f:
+    json.dump(manifest, f, indent=4)
+    f.write('\n')
+" "$MANIFEST"
+
+# ===========================================================================
 # Repackage the zip
+# ===========================================================================
 echo ""
 echo "Repackaging $ZIP_OUT..."
 rm -f "$ZIP_OUT"

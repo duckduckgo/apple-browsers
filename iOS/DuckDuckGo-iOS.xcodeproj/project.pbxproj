@@ -539,7 +539,6 @@
 		6FD7D9962D9D30C500420D0C /* OmniBarProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD7D9952D9D30C500420D0C /* OmniBarProgressView.swift */; };
 		6FD8E5202C5BA23200345670 /* NewTabPageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD8E51F2C5BA23200345670 /* NewTabPageViewModel.swift */; };
 		6FDA1FB32B59584400AC962A /* AddressDisplayHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FDA1FB22B59584400AC962A /* AddressDisplayHelper.swift */; };
-		6FDAAFD32F48775F006AA6BD /* DarkReader in Frameworks */ = {isa = PBXBuildFile; productRef = 6FDAAFD22F48775F006AA6BD /* DarkReader */; };
 		6FE095D82BD90AFB00490FF8 /* UniversalOmniBarState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE095D72BD90AFB00490FF8 /* UniversalOmniBarState.swift */; };
 		6FE127382C20492500EB5724 /* NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE127372C20492500EB5724 /* NewTabPage.swift */; };
 		6FE1273D2C204C2500EB5724 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE1273C2C204C2500EB5724 /* FavoritesView.swift */; };
@@ -2840,7 +2839,6 @@
 		6FD7D9952D9D30C500420D0C /* OmniBarProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarProgressView.swift; sourceTree = "<group>"; };
 		6FD8E51F2C5BA23200345670 /* NewTabPageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageViewModel.swift; sourceTree = "<group>"; };
 		6FDA1FB22B59584400AC962A /* AddressDisplayHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressDisplayHelper.swift; sourceTree = "<group>"; };
-		6FDAAFD12F48772D006AA6BD /* DarkReader */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DarkReader; path = ../SharedPackages/DarkReader; sourceTree = SOURCE_ROOT; };
 		6FE095D72BD90AFB00490FF8 /* UniversalOmniBarState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniversalOmniBarState.swift; sourceTree = "<group>"; };
 		6FE127372C20492500EB5724 /* NewTabPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPage.swift; sourceTree = "<group>"; };
 		6FE1273C2C204C2500EB5724 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
@@ -4799,7 +4797,6 @@
 				9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */,
 				7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */,
 				316AC7872DC28DD1003D9770 /* UIComponents in Frameworks */,
-				6FDAAFD32F48775F006AA6BD /* DarkReader in Frameworks */,
 				4BC95E7D2D7416B2002FAB32 /* Onboarding in Frameworks */,
 				853273B624FFE0BB00E3C778 /* WidgetKit.framework in Frameworks */,
 				0238E44F29C0FAA100615E30 /* FindInPageIOSJSSupport in Frameworks */,
@@ -6696,7 +6693,6 @@
 				31E69A60280F4BAD00478327 /* LocalPackages */,
 				84E341931E2F7EFB00BDBA6F /* Products */,
 				85A313962028E78A00327D00 /* release_notes.txt */,
-				6FDAAFD12F48772D006AA6BD /* DarkReader */,
 			);
 			sourceTree = "<group>";
 		};
@@ -10596,7 +10592,6 @@
 				374E76072EF56C1F00F8AADE /* PrivacyConfig */,
 				1EC8B1892F29145C00F18679 /* WebExtensions */,
 				9FB71C972F342B4F000AD042 /* MetricBuilder */,
-				6FDAAFD22F48775F006AA6BD /* DarkReader */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -17108,10 +17103,6 @@
 		5654CF562E22A9820074E806 /* BrowserServicesKitTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = BrowserServicesKitTestsUtils;
-		};
-		6FDAAFD22F48775F006AA6BD /* DarkReader */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = DarkReader;
 		};
 		7B2CCBA22D11ABB100FE5852 /* VPNWidgetSupport */ = {
 			isa = XCSwiftPackageProductDependency;

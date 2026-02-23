@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Updates the bundled DarkReader API library to a specific version (or latest).
+# Updates the bundled DarkReader Chrome MV3 extension to a specific version
+# (or latest), builds it, and applies DuckDuckGo patches.
 #
 # Usage:
 #   ./update-darkreader.sh              # update to the latest release tag
@@ -9,8 +10,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DARKREADER_DIR="$SCRIPT_DIR/darkreader"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+BUNDLE_DIR="$REPO_ROOT/SharedPackages/WebExtensions/Sources/WebExtensions/BundledWebExtensions"
 WORK_DIR="$(mktemp -d)"
+EXT_DIR="$WORK_DIR/darkreader-chrome-mv3"
 
 cleanup() {
     rm -rf "$WORK_DIR"
@@ -33,57 +36,59 @@ else
     fi
 fi
 
-VERSION="${TAG#v}"   # strip leading 'v' → e.g. "4.9.121"
+VERSION="${TAG#v}"   # strip leading 'v' → e.g. "4.9.130"
 
 echo "==> Updating DarkReader to ${TAG} (version ${VERSION})"
 
 # ---------------------------------------------------------------------------
-# Clone & build
+# Clone & build Chrome MV3 extension
 # ---------------------------------------------------------------------------
 echo "==> Cloning darkreader@${TAG}..."
 git clone --depth 1 --branch "$TAG" https://github.com/darkreader/darkreader.git "$WORK_DIR/darkreader"
 
 echo "==> Installing dependencies..."
-(cd "$WORK_DIR/darkreader" && npm install --ignore-scripts)
+(cd "$WORK_DIR/darkreader" && npm install)
 
-echo "==> Building API library..."
-(cd "$WORK_DIR/darkreader" && npm run api)
+echo "==> Building Chrome MV3 extension..."
+(cd "$WORK_DIR/darkreader" && npm run build -- --chrome-mv3)
 
 # ---------------------------------------------------------------------------
-# Verify build output
+# Find and extract build output
 # ---------------------------------------------------------------------------
-API_JS="$WORK_DIR/darkreader/darkreader.js"
-if [[ ! -f "$API_JS" ]]; then
-    echo "Error: API build did not produce darkreader.js" >&2
+BUILD_ZIP="$WORK_DIR/darkreader/build/release/darkreader-chrome-mv3.zip"
+if [[ ! -f "$BUILD_ZIP" ]]; then
+    echo "Error: Chrome MV3 build did not produce expected zip." >&2
+    echo "Looking for build output..."
+    find "$WORK_DIR/darkreader/build" -name "*.zip" -o -name "*mv3*" 2>/dev/null || true
     exit 1
 fi
 
-echo "==> Built darkreader.js ($(wc -c < "$API_JS" | tr -d ' ') bytes)"
+echo "==> Built darkreader-chromium-mv3.zip ($(wc -c < "$BUILD_ZIP" | tr -d ' ') bytes)"
 
 # ---------------------------------------------------------------------------
-# Copy into the extension
+# Extract into extension directory
 # ---------------------------------------------------------------------------
-cp "$API_JS" "$DARKREADER_DIR/darkreader-api.js"
+rm -rf "$EXT_DIR"
+mkdir -p "$EXT_DIR"
+unzip -q "$BUILD_ZIP" -d "$EXT_DIR"
+
+echo "==> Extracted Chrome MV3 extension to $EXT_DIR"
 
 # ---------------------------------------------------------------------------
-# Update version in manifest.json
+# Apply DuckDuckGo patches (JS patches + manifest updates + repackage)
 # ---------------------------------------------------------------------------
-# Use a simple Python one-liner to update the version in the JSON reliably.
-python3 -c "
-import json, sys
-path = sys.argv[1]
-version = sys.argv[2]
-with open(path) as f:
-    manifest = json.load(f)
-manifest['version'] = version
-with open(path, 'w') as f:
-    json.dump(manifest, f, indent=4)
-    f.write('\n')
-" "$DARKREADER_DIR/manifest.json" "$VERSION"
+echo ""
+"$SCRIPT_DIR/patch-darkreader.sh" "$EXT_DIR"
 
-echo "==> Updated manifest.json version to ${VERSION}"
+# ---------------------------------------------------------------------------
+# Copy final zip to BundledWebExtensions
+# ---------------------------------------------------------------------------
+ZIP_OUT="$WORK_DIR/darkreader-chrome-mv3.zip"
+cp "$ZIP_OUT" "$BUNDLE_DIR/darkreader.zip"
+cp "$WORK_DIR/darkreader/LICENSE" "$BUNDLE_DIR/DarkReader-LICENSE.txt"
+echo ""
+echo "==> Copied to $BUNDLE_DIR/darkreader.zip"
+echo "==> Copied to $BUNDLE_DIR/DarkReader-LICENSE.txt"
+
 echo ""
 echo "Done! DarkReader updated to ${VERSION}."
-echo "Files changed:"
-echo "  $DARKREADER_DIR/darkreader-api.js"
-echo "  $DARKREADER_DIR/manifest.json"

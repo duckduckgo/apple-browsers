@@ -72,7 +72,7 @@ final class DarkReaderDomainManager {
 
         var permissions: [WebExtensionMatchPatternPermission] = []
         for domain in domainsToRemove {
-            permissions.append(contentsOf: Self.matchPatternPermissions(for: domain, status: .grantedExplicitly))
+            permissions.append(contentsOf: Self.matchPatternPermissions(for: domain, status: .unknown))
         }
         for domain in domainsToAdd {
             permissions.append(contentsOf: Self.matchPatternPermissions(for: domain, status: .deniedExplicitly))

@@ -23,25 +23,50 @@ import PixelKit
 
 struct StartupMetricsPixel: PixelKitEvent {
 
+    /// Whether the Mac is running on battery power at launch time.
     let isOnBattery: Bool
+
+    /// Architecture of the current build (`"ARM"` or `"Intel"`).
+    let architecture: String
+
+    /// Number of active logical processors at launch time, or `nil` if unavailable.
     let activeProcessorCount: Int?
+
+    /// Time spent in the app's `init` method (seconds), or `nil` if unavailable.
     let durationOfAppInit: TimeInterval?
+
+    /// Time spent in `applicationWillFinishLaunching(_:)` (seconds), or `nil` if unavailable.
     let durationOfAppWillFinishLaunching: TimeInterval?
+
+    /// Time spent in `applicationDidFinishLaunching(_:)` before state restoration begins (seconds), or `nil` if unavailable.
     let durationOfAppDidFinishLaunchingBeforeStateRestoration: TimeInterval?
+
+    /// Time spent in `applicationDidFinishLaunching(_:)` after state restoration completes (seconds), or `nil` if unavailable.
     let durationOfAppDidFinishLaunchingAfterStateRestoration: TimeInterval?
+
+    /// Time spent restoring window and tab state (seconds), or `nil` if unavailable. Only sent when greater than zero.
     let durationOfAppStateRestoration: TimeInterval?
+
+    /// Elapsed time between the end of `init` and the start of `applicationWillFinishLaunching(_:)` (seconds), or `nil` if unavailable.
     let deltaBetweenAppInitAndWillFinishLaunching: TimeInterval?
+
+    /// Elapsed time between `applicationWillFinishLaunching(_:)` and `applicationDidFinishLaunching(_:)` (seconds), or `nil` if unavailable.
     let deltaBetweenAppWillFinishAndDidFinishLaunching: TimeInterval?
+
+    /// Elapsed time from app launch to the first interface display (seconds), or `nil` if unavailable.
     let deltaBetweenLaunchAndDidDisplayInterface: TimeInterval?
 
+    /// Pixel Name
     var name: String {
         "m_mac_startup_performance_metrics"
     }
 
+    /// Returns context parameters as a dictionary suitable for pixel firing.
     var parameters: [String: String]? {
         var params = [String: String]()
 
-        params["is_on_battery"] = isOnBattery.description
+        params["battery_power"] = isOnBattery.description
+        params["architecture"] = architecture
 
         if let count = activeProcessorCount {
             params["active_processor_count"] = StartupMetricsBuckets.bucketProcessorCount(count)

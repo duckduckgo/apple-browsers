@@ -655,6 +655,12 @@ extension AutoconsentUserScript {
             additionalParams["consentHeuristicEnabled"] = enabled ? "1" : "0"
         }
 
+        // Add fromExtension=0 when web extensions are available but autoconsent extension is not
+        if webExtensionAvailability?.isAvailable == true &&
+           webExtensionAvailability?.isAutoconsentExtensionAvailable == false {
+            additionalParams["fromExtension"] = "0"
+        }
+
         if management.pixelCounter.isEmpty {
             // Fire a summary pixel, containing counters of all other pixels, 2 minutes after
             // the first event is received.

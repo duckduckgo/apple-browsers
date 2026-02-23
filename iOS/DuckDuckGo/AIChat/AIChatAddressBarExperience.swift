@@ -36,6 +36,7 @@ protocol AIChatAddressBarExperienceProviding {
     var shouldShowDuckAIAddressBarButton: Bool { get }
     var shouldShowModeToggle: Bool { get }
     var shouldUseExperimentalEditingState: Bool { get }
+    var isIPadAIToggleExperienceEnabled: Bool { get }
 }
 
 struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
@@ -52,7 +53,7 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
         self.userInterfaceIdiomProvider = userInterfaceIdiomProvider
     }
 
-    private var isIPadAIToggleExperienceEnabled: Bool {
+    var isIPadAIToggleExperienceEnabled: Bool {
         userInterfaceIdiomProvider.userInterfaceIdiom == .pad
             && featureFlagger.isFeatureOn(.iPadAIToggle)
     }

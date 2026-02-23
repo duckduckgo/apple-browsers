@@ -509,12 +509,6 @@ final class NavigationBarViewController: NSViewController {
         addDebugNotificationListeners()
 #endif
 
-        if #available(macOS 15.4, *), !burnerMode.isBurner, let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            Task { @MainActor [weak self] in
-                await WebExtensionNavigationBarUpdater(webExtensionManager: webExtensionManager, container: self?.menuButtons).runUpdateLoop()
-            }
-        }
-
         memoryUsageDisplayer.setUpMemoryMonitorView()
     }
 

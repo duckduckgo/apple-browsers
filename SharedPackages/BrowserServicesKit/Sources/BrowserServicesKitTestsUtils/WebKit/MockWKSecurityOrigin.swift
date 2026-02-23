@@ -22,13 +22,13 @@ import WebKit
 /// Mock implementation of WKSecurityOrigin for testing purposes.
 /// Allows setting custom security origin properties for testing security validations.
 @objc public class MockWKSecurityOrigin: WKSecurityOrigin {
-    var mockProtocol: String!
+    private var mockProtocol: String!
     public override var `protocol`: String { mockProtocol }
 
-    var mockHost: String!
+    private var mockHost: String!
     public override var host: String { mockHost }
 
-    var mockPort: Int!
+    private var mockPort: Int!
     public override var port: Int { mockPort }
 
     internal func setURL(_ url: URL) {

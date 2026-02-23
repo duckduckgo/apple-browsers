@@ -23,7 +23,14 @@ import WebKit
 /// Uses unsafe pointer casting to create a mock object that can be used as WKScriptMessage.
 public class MockWKScriptMessageObject: NSObject {
 
-    @objc public var webView: WKWebView?
+    @objc private weak var _webView: WKWebView?
+    private let wasWebViewProvided: Bool
+
+    @objc public var webView: WKWebView? {
+        assert(_webView != nil || !wasWebViewProvided, "webView was provided but has been deallocated — ensure it is retained outside of MockWKScriptMessageObject")
+        return _webView
+    }
+
     @objc public var frameInfo: WKFrameInfo
     @objc public var name: String
     @objc public var body: Any
@@ -36,13 +43,15 @@ public class MockWKScriptMessageObject: NSObject {
     ///   - name: The name of the message (default: "")
     ///   - body: The body of the message (default: [:])
     public init(webView: WKWebView?, frameInfo: WKFrameInfo, name: String = "", body: Any = [:]) {
-        self.webView = webView
+        self._webView = webView
+        self.wasWebViewProvided = webView != nil
         self.frameInfo = frameInfo
         self.name = name
         self.body = body
     }
 
-    /// Returns a WKScriptMessage instance that can be used in tests.
+    override public func value(forUndefinedKey key: String) -> Any? { nil }
+
     public var scriptMessage: WKScriptMessage {
         withUnsafePointer(to: self) { $0.withMemoryRebound(to: WKScriptMessage.self, capacity: 1) { $0 } }.pointee
     }
@@ -58,6 +67,11 @@ extension WKScriptMessage {
     ///   - body: Message body (default: [:])
     /// - Returns: A WKScriptMessage instance suitable for testing
     public static func mock(webView: WKWebView?, frameInfo: WKFrameInfo, name: String = "", body: Any = [:]) -> WKScriptMessage {
+        return MockWKScriptMessageObject(webView: webView, frameInfo: frameInfo, name: name, body: body).scriptMessage
+    }
+
+    public static func mock(name: String = "", body: Any = [:], webView: WKWebView? = nil) -> WKScriptMessage {
+        let frameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         return MockWKScriptMessageObject(webView: webView, frameInfo: frameInfo, name: name, body: body).scriptMessage
     }
 }

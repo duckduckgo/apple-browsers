@@ -418,6 +418,7 @@ class MainViewController: UIViewController {
     }
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
+    private var expandedOmniBarDismissTapGesture: UITapGestureRecognizer?
 
     lazy var newTabDaxDialogFactory: NewTabDaxDialogsProvider = {
         NewTabDaxDialogsProvider(
@@ -467,6 +468,10 @@ class MainViewController: UIViewController {
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization)
+
+        if featureFlagger.isFeatureOn(.iPadAIToggle) {
+            viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
+        }
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -1743,6 +1748,13 @@ class MainViewController: UIViewController {
     func dismissOmniBar() {
         hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
+
+        if aiChatAddressBarExperience.shouldShowModeToggle,
+           let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController,
+           omniBarVC.selectedTextEntryMode == .aiChat {
+            omniBarVC.setSelectedTextEntryMode(.search)
+        }
+
         refreshOmniBar()
     }
 
@@ -2186,7 +2198,11 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
                 if let redirectURLComponents = notification.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents {
-                    deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
+                    if redirectURLComponents.path == "/subscriptions/plans" {
+                        deepLinkTarget = .subscriptionPlanChangeFlow(redirectURLComponents: redirectURLComponents)
+                    } else {
+                        deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
+                    }
                 } else {
                     deepLinkTarget = .subscriptionFlow()
                 }
@@ -3316,6 +3332,28 @@ extension MainViewController: OmniBarDelegate {
 
     func onDidBeginEditing() { }
     func onDidEndEditing() { }
+
+    // MARK: - iPad Expanded Omnibar
+
+    func onOmniBarExpandedStateChanged(isExpanded: Bool) {
+        if isExpanded {
+            hideSuggestionTray()
+            guard expandedOmniBarDismissTapGesture == nil else { return }
+            let tap = UITapGestureRecognizer(target: self, action: #selector(dismissExpandedOmniBar))
+            tap.cancelsTouchesInView = false
+            viewCoordinator.contentContainer.addGestureRecognizer(tap)
+            expandedOmniBarDismissTapGesture = tap
+        } else {
+            if let tap = expandedOmniBarDismissTapGesture {
+                viewCoordinator.contentContainer.removeGestureRecognizer(tap)
+                expandedOmniBarDismissTapGesture = nil
+            }
+        }
+    }
+
+    @objc private func dismissExpandedOmniBar() {
+        performCancel()
+    }
 
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped() {

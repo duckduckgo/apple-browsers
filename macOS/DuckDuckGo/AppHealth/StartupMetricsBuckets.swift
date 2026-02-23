@@ -40,6 +40,52 @@ enum StartupMetricsBuckets {
         }
     }
 
+    /// Buckets a window count into predefined ranges.
+    /// - Returns: Lower bound of the matching range: `0`, `1`, `2`, `4`, `7`, `11`, or `21`.
+    ///
+    static func bucketWindowCount(_ count: Int) -> Int {
+        switch count {
+        case ..<1:
+            return 0
+        case 1:
+            return 1
+        case 2..<4:
+            return 2
+        case 4..<7:
+            return 4
+        case 7..<11:
+            return 7
+        case 11..<21:
+            return 11
+        default:
+            return 21
+        }
+    }
+
+    /// Buckets a tab count into predefined ranges.
+    /// - Returns: Lower bound of the matching range: `0`, `1`, `2`, `4`, `7`, `11`, `21`, or `51`.
+    ///
+    static func bucketTabCount(_ count: Int) -> Int {
+        switch count {
+        case ..<1:
+            return 0
+        case 1:
+            return 1
+        case 2..<4:
+            return 2
+        case 4..<7:
+            return 4
+        case 7..<11:
+            return 7
+        case 11..<21:
+            return 11
+        case 21..<51:
+            return 21
+        default:
+            return 51
+        }
+    }
+
     /// Buckets a `TimeInterval` (in seconds) into a millisecond range and returns the result as a `String`.
     ///
     static func bucketMilliseconds(_ seconds: TimeInterval) -> String {

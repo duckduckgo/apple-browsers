@@ -72,6 +72,18 @@
                 "type": "string",
                 "description": "Optional. Number of active logical processors at launch time, bucketed.",
                 "enum": ["1", "2", "4", "8", "12"]
+            },
+            {
+                "key": "number_of_windows_restored",
+                "type": "string",
+                "description": "Optional. Number of windows restored during state restoration, bucketed.",
+                "enum": ["0", "1", "2", "4", "7", "11", "21"]
+            },
+            {
+                "key": "number_of_tabs_restored",
+                "type": "string",
+                "description": "Optional. Number of tabs restored during state restoration, bucketed.",
+                "enum": ["0", "1", "2", "4", "7", "11", "21", "51"]
             }
         ]
     }

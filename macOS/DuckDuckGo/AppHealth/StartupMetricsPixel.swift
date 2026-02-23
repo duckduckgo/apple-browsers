@@ -56,6 +56,12 @@ struct StartupMetricsPixel: PixelKitEvent {
     /// Elapsed time from app launch to the first interface display (seconds), or `nil` if unavailable.
     let deltaBetweenLaunchAndDidDisplayInterface: TimeInterval?
 
+    /// Number of windows restored during state restoration, or `nil` if unavailable.
+    let numberOfWindowsRestored: Int?
+
+    /// Number of tabs restored during state restoration, or `nil` if unavailable.
+    let numberOfTabsRestored: Int?
+
     /// Pixel Name
     var name: String {
         "m_mac_startup_performance_metrics"
@@ -94,6 +100,12 @@ struct StartupMetricsPixel: PixelKitEvent {
         }
         if let delta = deltaBetweenLaunchAndDidDisplayInterface {
             params["delta_between_launch_and_did_display_interface"] = StartupMetricsBuckets.bucketMilliseconds(delta)
+        }
+        if let count = numberOfWindowsRestored {
+            params["number_of_windows_restored"] = String(StartupMetricsBuckets.bucketWindowCount(count))
+        }
+        if let count = numberOfTabsRestored {
+            params["number_of_tabs_restored"] = String(StartupMetricsBuckets.bucketTabCount(count))
         }
 
         return params

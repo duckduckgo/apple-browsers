@@ -1361,7 +1361,6 @@ enum GeneralPixel: PixelKitEvent {
 
             // UserScript
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
-
         }
     }
 

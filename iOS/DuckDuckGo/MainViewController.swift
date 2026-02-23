@@ -532,9 +532,6 @@ class MainViewController: UIViewController {
         productSurfaceTelemetry.dailyActiveUser()
         productSurfaceTelemetry.iPadUsed(isPad: isPad)
 
-        DailyPixel.fireDailyAndCount(pixel: .reviewTestPixel(source: .automatic),
-                                     withAdditionalParameters: ["source": "automatic"])
-
         defer {
             if let appDidFinishLaunchingStartTime {
                 let launchTime = CFAbsoluteTimeGetCurrent() - appDidFinishLaunchingStartTime

@@ -1634,9 +1634,6 @@ extension Pixel {
         case webExtensionUninstallAllError
         case webExtensionLoaded
         case webExtensionLoadError
-
-        // MARK: Review Test
-        case reviewTestPixel(source: ReviewTestSource)
     }
 
 }
@@ -3203,19 +3200,11 @@ extension Pixel.Event {
         case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
         case .webExtensionLoaded: return "m_web_extension_loaded"
         case .webExtensionLoadError: return "m_web_extension_load_error"
-
-        case .reviewTestPixel: return "m_review_test_pixel"
         }
     }
 }
 
 extension Pixel.Event {
-
-    public enum ReviewTestSource: String {
-        case menu
-        case shortcut
-        case automatic
-    }
 
     public enum BucketAggregation: String, CustomStringConvertible {
 

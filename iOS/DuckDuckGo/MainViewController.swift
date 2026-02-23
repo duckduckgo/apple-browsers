@@ -3366,8 +3366,16 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onSwitchTabToIndex(_ index: Int) {
+        guard tabManager.model.tabs.indices.contains(index), index != tabManager.model.currentIndex else {
+            viewCoordinator.omniBar.endEditing()
+            return
+        }
+        let tabToClose = tabManager.model.currentTab
         select(tabAt: index)
         viewCoordinator.omniBar.endEditing()
+        if let tabToClose {
+            closeTab(tabToClose)
+        }
     }
 }
 
@@ -3472,7 +3480,13 @@ extension MainViewController: NewTabPageControllerDelegate {
             currentNTPEscapeHatch = nil
             return
         }
+        guard index != tabManager.model.currentIndex else { return }
+        let tabToClose = tabManager.model.currentTab
         select(tabAt: index)
+        if let tabToClose {
+            closeTab(tabToClose)
+        }
+        currentNTPEscapeHatch = nil
     }
 }
 

@@ -405,7 +405,6 @@ extension TabViewController {
     }
     
     private func onNewFireTabAction() {
-        Pixel.fire(pixel: .browsingMenuNewTab)
         delegate?.tabDidRequestNewTab(self, fireTab: true)
     }
 

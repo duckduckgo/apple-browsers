@@ -2,11 +2,8 @@
     "epbf": {
         "description": "Broken site report submitted by user via Privacy Dashboard or app menu",
         "owners": ["dus7"],
-        "triggers": ["user_action"],
-        "suffixes": [
-            "platform",
-            "form_factor"
-        ],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -87,7 +84,14 @@
                 "key": "reportFlow",
                 "type": "string",
                 "description": "Source of the report",
-                "enum": ["menu", "dashboard", "on_protections_off_menu", "on_protections_off_dashboard_main", "reload-three-times-within-20-seconds", "after_toggle_prompt"]
+                "enum": [
+                    "menu",
+                    "dashboard",
+                    "on_protections_off_menu",
+                    "on_protections_off_dashboard_main",
+                    "reload-three-times-within-20-seconds",
+                    "after_toggle_prompt"
+                ]
             },
             {
                 "key": "openerContext",
@@ -335,11 +339,8 @@
     "m_protection-toggled-off-breakage-report": {
         "description": "Automatic breakage report sent when user toggles off protections for a site",
         "owners": ["dus7"],
-        "triggers": ["user_action"],
-        "suffixes": [
-            "platform",
-            "form_factor"
-        ],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
@@ -404,7 +405,14 @@
                 "key": "reportFlow",
                 "type": "string",
                 "description": "Source of the report",
-                "enum": ["menu", "dashboard", "on_protections_off_menu", "on_protections_off_dashboard_main", "reload-three-times-within-20-seconds", "after_toggle_prompt"]
+                "enum": [
+                    "menu",
+                    "dashboard",
+                    "on_protections_off_menu",
+                    "on_protections_off_dashboard_main",
+                    "reload-three-times-within-20-seconds",
+                    "after_toggle_prompt"
+                ]
             },
             {
                 "key": "openerContext",

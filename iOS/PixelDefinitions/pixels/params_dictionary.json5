@@ -35,7 +35,7 @@
     },
     "fromExtension": {
         "key": "fromExtension",
-        "description": "indicates whether the pixel was sent by the embedded extension",
+        "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
         "type": "boolean"
     },
     "isInternalUser": {

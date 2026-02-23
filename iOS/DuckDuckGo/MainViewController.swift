@@ -504,6 +504,7 @@ class MainViewController: UIViewController {
         registerForKeyboardNotifications()
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
+        registerForWebExtensionNotifications()
 
         decorate()
 
@@ -906,7 +907,28 @@ class MainViewController: UIViewController {
                                                selector: #selector(refreshViewsBasedOnDuckPlayerPresentation),
                                                name: DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated,
                                                object: nil)
-        
+    }
+
+    private func registerForWebExtensionNotifications() {
+        if #available(iOS 18.4, *) {
+            NotificationCenter.default.addObserver(
+                forName: .webExtensionAutoconsentDashboardStateRefresh,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleWebExtensionDashboardStateRefresh(notification)
+            }
+        }
+    }
+
+    @available(iOS 18.4, *)
+    @objc private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
+        guard let domain = notification.userInfo?[AutoconsentNotification.UserInfoKeys.domain] as? String,
+              let consentStatus = notification.userInfo?[AutoconsentNotification.UserInfoKeys.consentStatus] as? ConsentStatusInfo,
+              currentTab?.url?.host == domain else {
+            return
+        }
+        currentTab?.privacyInfo?.cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
     @objc func onAddressBarPositionChanged() {
@@ -1508,10 +1530,6 @@ class MainViewController: UIViewController {
 
         dismissOmniBar()
         attachTab(tab: tab)
-
-        if #available(iOS 18.4, *) {
-            webExtensionEventsCoordinator?.didOpenTab(tab)
-        }
     }
 
     func select(tabAt index: Int) {
@@ -1543,6 +1561,10 @@ class MainViewController: UIViewController {
         }
 
         if #available(iOS 18.4, *) {
+            if let previousTab {
+                webExtensionEventsCoordinator?.didDeselectTabs([previousTab])
+            }
+            webExtensionEventsCoordinator?.didSelectTabs([tab])
             webExtensionEventsCoordinator?.didActivateTab(tab, previousActiveTab: previousTab)
         }
     }
@@ -3463,7 +3485,7 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
-        _ = tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
+        tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
         animateBackgroundTab()
     }
 
@@ -3750,6 +3772,16 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController) {
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         updateCurrentTab()
+    }
+
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
+        if #available(iOS 18.4, *) {
+            for tab in tabs {
+                if let tabController = tabManager.controller(for: tab) {
+                    webExtensionEventsCoordinator?.didCloseTab(tabController)
+                }
+            }
+        }
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {
@@ -4043,6 +4075,19 @@ extension MainViewController: FireExecutorDelegate {
     func willStartBurningTabs(fireRequest: FireRequest) {
         omniBar.endEditing()
         findInPageView?.done()
+
+        if #available(iOS 18.4, *) {
+            switch fireRequest.scope {
+            case .all:
+                for tab in tabManager.model.tabs {
+                    if let tabController = tabManager.controller(for: tab) {
+                        webExtensionEventsCoordinator?.didCloseTab(tabController)
+                    }
+                }
+            case .tab:
+                break
+            }
+        }
     }
     
     func didFinishBurningTabs(fireRequest: FireRequest) {
@@ -4059,6 +4104,10 @@ extension MainViewController: FireExecutorDelegate {
     
     func willStartBurningData(fireRequest: FireRequest) {
         self.clearInProgress = true
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.extensionsWillUnload()
+            webExtensionManager?.unloadAllExtensions()
+        }
     }
     
     func didFinishBurningData(fireRequest: FireRequest) {
@@ -4088,6 +4137,12 @@ extension MainViewController: FireExecutorDelegate {
         // because data could potentially delete a contextual chat that needs syncing
         if syncService.authState != .inactive {
             syncService.scheduler.requestSyncImmediately()
+        }
+        if #available(iOS 18.4, *) {
+            Task { @MainActor [weak self] in
+                await self?.webExtensionManager?.loadInstalledExtensions()
+                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+            }
         }
         switch fireRequest.trigger {
         case .manualFire:
@@ -4668,4 +4723,21 @@ extension MainViewController {
         }
     }
 
+}
+
+// MARK: - ConsentStatusInfo to CookieConsentInfo Conversion
+
+@available(iOS 18.4, *)
+extension ConsentStatusInfo {
+    func toCookieConsentInfo() -> CookieConsentInfo {
+        CookieConsentInfo(
+            consentManaged: consentManaged,
+            cosmetic: cosmetic,
+            optoutFailed: optoutFailed,
+            selftestFailed: selftestFailed,
+            consentReloadLoop: consentReloadLoop,
+            consentRule: consentRule,
+            consentHeuristicEnabled: consentHeuristicEnabled
+        )
+    }
 }

@@ -88,6 +88,7 @@ public enum PrivacyFeature: String {
     case popupBlocking
     case combinedPermissionView
     case pageContext
+    case webExtensions
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -647,4 +648,10 @@ public enum UpdatesSubfeature: String, PrivacySubfeature {
 
     /// Simplified update flow without expiration logic
     case simplifiedFlow
+}
+
+public enum WebExtensionsSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .webExtensions }
+
+    case embeddedExtension
 }

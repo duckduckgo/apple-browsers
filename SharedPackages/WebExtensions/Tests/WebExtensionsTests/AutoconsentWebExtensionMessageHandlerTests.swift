@@ -130,19 +130,58 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         }
     }
 
-    // MARK: - cookiePopupHandled (Not Implemented)
+    // MARK: - cookiePopupHandled
 
-    func testWhenCookiePopupHandledThenReturnsNotImplementedError() async {
-        let message = createMessage(method: "cookiePopupHandled")
+    func testWhenCookiePopupHandledWithValidParamsThenReturnsSuccess() async {
+        let msg: [String: Any] = [
+            "url": "https://example.com/page",
+            "cmp": "test-cmp",
+            "result": true
+        ]
+        let message = createMessage(method: "cookiePopupHandled", params: ["msg": msg])
+
+        let result = await handler.handleMessage(message)
+
+        if case .success(let response) = result {
+            let dict = response as? [String: String]
+            XCTAssertEqual(dict?["response"], "ok")
+        } else {
+            XCTFail("Expected success result")
+        }
+    }
+
+    func testWhenCookiePopupHandledWithMissingMsgThenReturnsMissingParameterError() async {
+        let message = createMessage(method: "cookiePopupHandled", params: [:])
 
         let result = await handler.handleMessage(message)
 
         if case .failure(let error) = result {
             let handlerError = error as? WebExtensionMessageHandlerError
-            if case .unknownMethod(let method) = handlerError {
-                XCTAssertEqual(method, "cookiePopupHandled")
+            if case .missingParameter(let parameter) = handlerError {
+                XCTAssertTrue(parameter.contains("msg") || parameter.contains("url"))
             } else {
-                XCTFail("Expected unknownMethod error")
+                XCTFail("Expected missingParameter error")
+            }
+        } else {
+            XCTFail("Expected failure result")
+        }
+    }
+
+    func testWhenCookiePopupHandledWithMissingUrlInMsgThenReturnsMissingParameterError() async {
+        let msg: [String: Any] = [
+            "cmp": "test-cmp",
+            "result": true
+        ]
+        let message = createMessage(method: "cookiePopupHandled", params: ["msg": msg])
+
+        let result = await handler.handleMessage(message)
+
+        if case .failure(let error) = result {
+            let handlerError = error as? WebExtensionMessageHandlerError
+            if case .missingParameter(let parameter) = handlerError {
+                XCTAssertTrue(parameter.contains("url") || parameter.contains("msg"))
+            } else {
+                XCTFail("Expected missingParameter error")
             }
         } else {
             XCTFail("Expected failure result")

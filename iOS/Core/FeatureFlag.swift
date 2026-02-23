@@ -335,6 +335,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true
     case webExtensions
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275565?focus=true
+    case embeddedExtension
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208707884599795?focus=true
     case autofillOnboardingExperiment
 
@@ -476,6 +479,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .uiTestExperiment,
              .onboardingRebranding,
              .webExtensions,
+             .embeddedExtension,
              .autofillOnboardingExperiment,
              .supportsSyncChatsDeletion,
              .fireMode,
@@ -729,6 +733,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .webExtensions:
             return .internalOnly()
+        case .embeddedExtension:
+            return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .autofillOnboardingExperiment:
             return .remoteReleasable(.subfeature(AutofillSubfeature.onboardingExperiment))
         case .supportsSyncChatsDeletion:

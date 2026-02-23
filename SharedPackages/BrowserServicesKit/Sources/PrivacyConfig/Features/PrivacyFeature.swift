@@ -87,7 +87,6 @@ public enum PrivacyFeature: String {
     case serp
     case popupBlocking
     case combinedPermissionView
-    case forceDarkModeOnWebsites
     case pageContext
     case webExtensions
     case forceDarkModeOnWebsites
@@ -650,12 +649,6 @@ public enum UpdatesSubfeature: String, PrivacySubfeature {
 
     /// Simplified update flow without expiration logic
     case simplifiedFlow
-}
-
-public enum forceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .forceDarkModeOnWebsites }
-
-    case rollout
 }
 
 public enum WebExtensionsSubfeature: String, PrivacySubfeature {

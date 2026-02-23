@@ -232,7 +232,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
     private func configureDoneButtonAsBackArrow() {
         if let button = doneButton.customView as? BrowserChromeButton {
-            button.setTitle(nil, for: .normal)
+            button.setTitle("", for: .normal)
             button.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
         }
     }

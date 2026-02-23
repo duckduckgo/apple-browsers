@@ -271,8 +271,8 @@ final class MainCoordinator {
             darkModeSettingObserver = NotificationCenter.default.addObserver(
                forName: AppUserDefaults.Notifications.adaptiveDarkModeChanged,
                object: nil,
-               queue: .main) { [weak self, weak webExtensionManager] _ in
-                   guard let self, let webExtensionManager else { return }
+               queue: .main) { [weak self] _ in
+                   guard let self else { return }
                    Task { @MainActor in
                        await self.syncEmbeddedExtensions()
                    }

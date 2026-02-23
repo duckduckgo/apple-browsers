@@ -168,9 +168,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.refreshButton.isPointerInteractionEnabled = true
         barView.customizableButton.isPointerInteractionEnabled = true
         barView.clearButton.isPointerInteractionEnabled = true
-        if let defaultOmniBarView = barView as? DefaultOmniBarView {
-            defaultOmniBarView.externalRefreshButtonView.isPointerInteractionEnabled = true
-        }
+        barView.externalRefreshButtonView.isPointerInteractionEnabled = true
     }
 
     private func configureTextField() {
@@ -257,13 +255,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onAIChatBrandingPressed = { [weak self] in
             self?.onAIChatBrandingPressed()
         }
-        if let defaultOmniBarView = barView as? DefaultOmniBarView {
-            defaultOmniBarView.onSearchModePressed = { [weak self] in
-                self?.setSelectedTextEntryMode(.search)
-            }
-            defaultOmniBarView.onAIChatModePressed = { [weak self] in
-                self?.setSelectedTextEntryMode(.aiChat)
-            }
+        barView.onSearchModePressed = { [weak self] in
+            self?.setSelectedTextEntryMode(.search)
+        }
+        barView.onAIChatModePressed = { [weak self] in
+            self?.setSelectedTextEntryMode(.aiChat)
         }
     }
 
@@ -653,7 +649,7 @@ class OmniBarViewController: UIViewController, OmniBar {
                 }
                 cancelAllAnimations()
 
-                let isExpanded = (barView as? DefaultOmniBarView)?.isSearchAreaExpanded == true
+                let isExpanded = barView.isSearchAreaExpanded
                 let isNewStateResting = !newState.isDifferentState(than: newState.onEditingStoppedState)
                 if !isExpanded && (isNewStateResting || !newState.showAIChatModeToggle) {
                     selectedTextEntryMode = .search
@@ -687,20 +683,18 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isBookmarksButtonHidden = !state.showBookmarksButton
         barView.isAIChatButtonHidden = !state.showAIChatButton
         
-        if let defaultOmniBarView = barView as? DefaultOmniBarView {
-            defaultOmniBarView.isExternalRefreshButtonHidden = !state.showRefreshOutsideAddressBar
-            defaultOmniBarView.externalRefreshButtonView.isEnabled = state.isBrowsing
-            defaultOmniBarView.selectedModeToggleState = selectedTextEntryMode
+        barView.isExternalRefreshButtonHidden = !state.showRefreshOutsideAddressBar
+        barView.externalRefreshButtonView.isEnabled = state.isBrowsing
+        barView.selectedModeToggleState = selectedTextEntryMode
 
-            let shouldShowModeToggle = state.showAIChatModeToggle
-            defaultOmniBarView.isModeToggleHidden = !shouldShowModeToggle
-            if shouldShowModeToggle {
-                barView.isAIChatButtonHidden = true
-            }
-
-            let shouldExpand = shouldShowModeToggle && selectedTextEntryMode == .aiChat
-            defaultOmniBarView.setSearchAreaExpanded(shouldExpand, animated: false)
+        let shouldShowModeToggle = state.showAIChatModeToggle
+        barView.isModeToggleHidden = !shouldShowModeToggle
+        if shouldShowModeToggle {
+            barView.isAIChatButtonHidden = true
         }
+
+        let shouldExpand = shouldShowModeToggle && selectedTextEntryMode == .aiChat
+        barView.setSearchAreaExpanded(shouldExpand, animated: false)
 
         if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled == false {
             applyCustomization()
@@ -779,6 +773,8 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func clear() {
         textField.text = nil
+        barView.aiChatTextView.text = nil
+        barView.updateTextFieldPlaceholderVisibility(hasText: false)
         omniDelegate?.onOmniQueryUpdated("")
     }
 
@@ -910,9 +906,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         selectedTextEntryMode = mode
         updateTextFieldPlaceholderForSelectedMode()
 
-        if let defaultOmniBarView = barView as? DefaultOmniBarView,
-           state.showAIChatModeToggle {
-            defaultOmniBarView.setSearchAreaExpanded(mode == .aiChat, animated: true)
+        if state.showAIChatModeToggle {
+            barView.setSearchAreaExpanded(mode == .aiChat, animated: true)
         }
     }
 

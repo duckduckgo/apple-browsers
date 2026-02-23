@@ -265,7 +265,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
     // MARK: - iPad Duck.ai Expanded Search Area (stored properties)
 
-    let duckAITextView: UITextView = {
+    let aiChatTextView: UITextView = {
         let textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.isHidden = true
@@ -274,9 +274,10 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         textView.textContainer.lineFragmentPadding = 0
         return textView
     }()
+
     var duckAITextViewDelegate: UITextViewDelegate? {
-        get { duckAITextView.delegate }
-        set { duckAITextView.delegate = newValue }
+        get { aiChatTextView.delegate }
+        set { aiChatTextView.delegate = newValue }
     }
     var onSearchAreaExpandedStateChanged: ((Bool) -> Void)?
     var onCollapseAnimationCompleted: (() -> Void)?
@@ -360,7 +361,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
-        searchAreaContainerView.addSubview(duckAITextView)
+        searchAreaContainerView.addSubview(aiChatTextView)
         searchAreaContainerView.addSubview(aiChatLeftButton)
 
         addSubview(activeOutlineView)
@@ -886,10 +887,10 @@ extension DefaultOmniBarView {
 
     func setUpExpandedSearchAreaConstraints() {
         NSLayoutConstraint.activate([
-            duckAITextView.topAnchor.constraint(equalTo: searchAreaView.textField.topAnchor),
-            duckAITextView.leadingAnchor.constraint(equalTo: searchAreaView.textField.leadingAnchor),
-            duckAITextView.trailingAnchor.constraint(equalTo: searchAreaView.textField.trailingAnchor),
-            duckAITextView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+            aiChatTextView.topAnchor.constraint(equalTo: searchAreaView.textField.topAnchor),
+            aiChatTextView.leadingAnchor.constraint(equalTo: searchAreaView.textField.leadingAnchor),
+            aiChatTextView.trailingAnchor.constraint(equalTo: searchAreaView.textField.trailingAnchor),
+            aiChatTextView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
         ])
 
         let bottomEqual = searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
@@ -914,12 +915,12 @@ extension DefaultOmniBarView {
     }
 
     func setUpExpandedTextViewProperties() {
-        duckAITextView.font = UIFont.daxBodyRegular()
-        duckAITextView.textColor = UIColor(designSystemColor: .textPrimary)
-        duckAITextView.tintColor = UIColor(designSystemColor: .accent)
-        duckAITextView.autocapitalizationType = .sentences
-        duckAITextView.autocorrectionType = .default
-        duckAITextView.isScrollEnabled = true
+        aiChatTextView.font = UIFont.daxBodyRegular()
+        aiChatTextView.textColor = UIColor(designSystemColor: .textPrimary)
+        aiChatTextView.tintColor = UIColor(designSystemColor: .accent)
+        aiChatTextView.autocapitalizationType = .sentences
+        aiChatTextView.autocorrectionType = .default
+        aiChatTextView.isScrollEnabled = true
     }
 
     func updateSearchAreaExpansion(animated: Bool) {
@@ -950,7 +951,7 @@ extension DefaultOmniBarView {
                 self.onCollapseAnimationCompleted = nil
             }
             if self.isSearchAreaExpanded {
-                self.duckAITextView.becomeFirstResponder()
+                self.aiChatTextView.becomeFirstResponder()
             }
         }
     }
@@ -961,13 +962,13 @@ extension DefaultOmniBarView {
             textField.text = ""
             textField.alpha = currentText.isEmpty ? 1 : 0
 
-            duckAITextView.text = currentText
-            duckAITextView.isHidden = false
-            searchAreaContainerView.bringSubviewToFront(duckAITextView)
+            aiChatTextView.text = currentText
+            aiChatTextView.isHidden = false
+            searchAreaContainerView.bringSubviewToFront(aiChatTextView)
         } else {
-            let currentText = duckAITextView.text ?? ""
-            duckAITextView.isHidden = true
-            duckAITextView.text = ""
+            let currentText = aiChatTextView.text ?? ""
+            aiChatTextView.isHidden = true
+            aiChatTextView.text = ""
 
             textField.text = currentText
             textField.alpha = 1

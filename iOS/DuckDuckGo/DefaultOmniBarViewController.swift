@@ -137,7 +137,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     override func endEditing() {
         if omniBarView.isSearchAreaExpanded {
-            omniBarView.duckAITextView.resignFirstResponder()
+            omniBarView.aiChatTextView.resignFirstResponder()
         }
         super.endEditing()
         editingStateViewController?.dismissAnimated()
@@ -315,7 +315,7 @@ extension DefaultOmniBarViewController {
     /// Handles the duck.ai ↔ search mode transition on iPad, preserving text and keyboard state.
     fileprivate func handleIPadModeToggleTransition(to mode: TextEntryMode) {
         if omniBarView.isSearchAreaExpanded {
-            modeToggleTextModel.updateText(omniBarView.duckAITextView.text ?? "")
+            modeToggleTextModel.updateText(omniBarView.aiChatTextView.text ?? "")
         }
 
         guard let transition = modeToggleTextModel.transition(to: mode) else {

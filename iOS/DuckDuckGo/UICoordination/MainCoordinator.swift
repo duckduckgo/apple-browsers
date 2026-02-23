@@ -65,6 +65,8 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var isSyncingEmbeddedExtensions = false
+    private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -152,7 +154,8 @@ final class MainCoordinator {
                                 productSurfaceTelemetry: productSurfaceTelemetry,
                                 sharedSecureVault: sharedSecureVault,
                                 privacyStats: privacyStats,
-                                voiceSearchHelper: voiceSearchHelper)
+                                voiceSearchHelper: voiceSearchHelper,
+                                launchSourceManager: launchSourceManager)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -211,6 +214,12 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         whatsNewRepository: whatsNewRepository)
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
+
+        // Apply tracker animation suppression early for cold starts
+        // This must happen before tabs load their URLs
+        if launchSourceManager.source == .standard {
+            tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
+        }
     }
 
     func start() {
@@ -218,39 +227,86 @@ final class MainCoordinator {
     }
 
     private func setupWebExtensions(privacyConfigurationManager: PrivacyConfigurationManaging) {
-        if #available(iOS 18.4, *), featureFlagger.isFeatureOn(.webExtensions) {
-            let webExtensionManager = WebExtensionManagerFactory.makeManager(
-                mainViewController: controller,
-                privacyConfigurationManager: privacyConfigurationManager,
-                autoconsentPreferences: AppUserDefaults()
-            )
-            self.webExtensionManager = webExtensionManager
+        self.privacyConfigurationManager = privacyConfigurationManager
 
-            self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(webExtensionManager: webExtensionManager,
-                                                                               mainViewController: controller)
+        guard #available(iOS 18.4, *) else { return }
 
-            tabManager.setWebExtensionManager(webExtensionManager)
-            controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
-            controller.setWebExtensionManager(webExtensionManager)
+        let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+            .flagDidChangePublisher
 
-            let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
-                .flagDidChangePublisher
-                .filter { $0.0 == .webExtensions }
-                .map { $0.1 }
-                .eraseToAnyPublisher()
+        let webExtensionsPublisher = flagPublisher?
+            .filter { $0.0 == .webExtensions }
+            .map { $0.1 }
+            .eraseToAnyPublisher()
 
-            webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
-                webExtensionManager: webExtensionManager,
-                featureFlagPublisher: publisher) { [weak self] in
-                    self?.clearWebExtensionReferences()
-                }
+        let embeddedExtensionPublisher = flagPublisher?
+            .filter { $0.0 == .embeddedExtension }
+            .map { $0.1 }
+            .eraseToAnyPublisher()
 
+        webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+            featureFlagPublisher: webExtensionsPublisher,
+            embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
+            onFeatureFlagEnabled: { [weak self] in
+                await self?.initializeWebExtensions()
+            },
+            onFeatureFlagDisabled: { [weak self] in
+                self?.clearWebExtensionReferences()
+            },
+            onEmbeddedExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            }
+        )
+
+        if featureFlagger.isFeatureOn(.webExtensions) {
             Task { @MainActor in
-                await webExtensionManager.loadInstalledExtensions()
+                await initializeWebExtensions()
             }
         } else {
             clearWebExtensionReferences()
         }
+    }
+
+    @available(iOS 18.4, *)
+    private func initializeWebExtensions() async {
+        guard let privacyConfigurationManager else { return }
+
+        let webExtensionManager = WebExtensionManagerFactory.makeManager(
+            mainViewController: controller,
+            privacyConfigurationManager: privacyConfigurationManager,
+            autoconsentPreferences: AppUserDefaults()
+        )
+        self.webExtensionManager = webExtensionManager
+
+        self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(
+            webExtensionManager: webExtensionManager,
+            mainViewController: controller
+        )
+
+        tabManager.setWebExtensionManager(webExtensionManager)
+        controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
+        controller.setWebExtensionManager(webExtensionManager)
+
+        await webExtensionManager.loadInstalledExtensions()
+        await syncEmbeddedExtensions()
+
+        webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+    }
+
+    @available(iOS 18.4, *)
+    private func syncEmbeddedExtensions() async {
+        guard !isSyncingEmbeddedExtensions else { return }
+        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+
+        isSyncingEmbeddedExtensions = true
+        defer { isSyncingEmbeddedExtensions = false }
+
+        var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
+        if featureFlagger.isFeatureOn(.embeddedExtension) {
+            enabledTypes.insert(.embedded)
+        }
+        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
 
     private func clearWebExtensionReferences() {
@@ -326,9 +382,23 @@ final class MainCoordinator {
 
     // MARK: App Lifecycle handling
 
-    func onForeground() {
+    func onForeground(isFirstForeground: Bool) {
+        // Apply tracker animation suppression based on launch source
+        // Must be called after launchSourceManager.handleAppAction sets the source
+        if isFirstForeground {
+            tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
+        }
+
+        // Clear external launch flags when app comes to foreground
+        // This ensures flags are reset for subsequent in-app navigations
+        tabManager.clearExternalLaunchFlags()
+
         controller.showBars()
         controller.onForeground()
+
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.didFocusWindow()
+        }
     }
 
     func onBackground() {
@@ -458,7 +528,7 @@ extension MainCoordinator: ShortcutItemHandling {
 
     private func handleQuery(_ query: String) {
         controller.clearNavigationStack()
-        controller.loadQueryInNewTab(query)
+        controller.loadQueryInNewTab(query, fromExternalLink: true)
     }
 
     private func handleSearchPassword() {

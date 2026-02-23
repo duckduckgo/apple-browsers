@@ -17,6 +17,8 @@
 //
 
 import AIChat
+import AppUpdaterShared
+import AttributedMetric
 import AutoconsentStats
 import Bookmarks
 import BrokenSitePrompt
@@ -57,7 +59,6 @@ import VPN
 import VPNAppState
 import WebExtensions
 import WebKit
-import AttributedMetric
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -219,6 +220,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let privacyStats: PrivacyStatsCollecting
     let autoconsentStats: AutoconsentStatsCollecting
+    private var autoconsentEventCoordinator: AutoconsentEventCoordinator?
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let newTabPageCustomizationModel: NewTabPageCustomizationModel
     private(set) lazy var newTabPageProtectionsReportModel: NewTabPageProtectionsReportModel = NewTabPageProtectionsReportModel(
@@ -360,7 +362,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
+    private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var isSyncingEmbeddedExtensions = false
+
+    /// Holder class that allows `WebExtensionAvailability` to be created before `super.init()`,
+    /// while still providing access to `webExtensionManager` which is set on `self` after `super.init()`.
+    private final class WebExtensionManagerHolder {
+        weak var appDelegate: AppDelegate?
+        var manager: WebExtensionManaging? {
+            appDelegate?.webExtensionManager
+        }
+    }
 
     private var didFinishLaunching = false
 
@@ -544,6 +558,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        webExtensionAvailability = WebExtensionAvailability(
+            featureFlagger: featureFlagger,
+            webExtensionManagerProvider: { [webExtensionManagerHolder] in
+                webExtensionManagerHolder.manager
+            }
+        )
 
         wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
@@ -835,7 +856,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 tld: tld,
                 autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences,
-                syncErrorHandler: syncErrorHandler
+                syncErrorHandler: syncErrorHandler,
+                webExtensionAvailability: webExtensionAvailability
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -866,7 +888,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             tld: tld,
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
-            syncErrorHandler: syncErrorHandler
+            syncErrorHandler: syncErrorHandler,
+            webExtensionAvailability: webExtensionAvailability
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,
@@ -979,6 +1002,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
         autoconsentStats = AutoconsentStats(keyValueStore: keyValueStore, isFeatureEnabled: { featureFlagger.isFeatureOn(.newTabPageAutoconsentStats) })
+        autoconsentEventCoordinator = Self.makeAutoconsentEventCoordinator(
+            autoconsentStats: autoconsentStats,
+            historyCoordinating: historyCoordinator,
+            featureFlagger: featureFlagger,
+            webExtensionAvailability: webExtensionAvailability
+        )
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
 #if !APPSTORE
@@ -1067,6 +1096,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         super.init()
+
+        webExtensionManagerHolder.appDelegate = self
 
         memoryPressureReporter = MemoryPressureReporter(
             featureFlagger: featureFlagger,
@@ -1676,31 +1707,89 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setupWebExtensions() {
-        if #available(macOS 15.4, *), featureFlagger.isFeatureOn(.webExtensions) {
+        guard #available(macOS 15.4, *) else { return }
+
+        let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+            .flagDidChangePublisher
+
+        let webExtensionsPublisher = flagPublisher?
+            .filter { $0.0 == .webExtensions }
+            .map { $0.1 }
+            .eraseToAnyPublisher()
+
+        let embeddedExtensionPublisher = flagPublisher?
+            .filter { $0.0 == .embeddedExtension }
+            .map { $0.1 }
+            .eraseToAnyPublisher()
+
+        webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
+            webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+            featureFlagPublisher: webExtensionsPublisher,
+            embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
+            onFeatureFlagEnabled: { [weak self] in
+                await self?.initializeWebExtensions()
+            },
+            onFeatureFlagDisabled: { [weak self] in
+                self?.webExtensionManager = nil
+            },
+            onEmbeddedExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            }
+        )
+
+        if featureFlagger.isFeatureOn(.webExtensions) {
+            // Create manager synchronously so it's available during state restoration.
+            // Tabs restored before the manager exists won't have webExtensionController attached.
             let webExtensionManager = WebExtensionManagerFactory.makeManager(
                 privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 autoconsentPreferences: cookiePopupProtectionPreferences
             )
             self.webExtensionManager = webExtensionManager
 
-            let publisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
-                .flagDidChangePublisher
-                .filter { $0.0 == .webExtensions }
-                .map { $0.1 }
-                .eraseToAnyPublisher()
-
-            webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
-                webExtensionManager: webExtensionManager,
-                featureFlagPublisher: publisher) { [weak self] in
-                    self?.webExtensionManager = nil
-                }
-
+            // Load extensions asynchronously - the controller is already attached to tabs
             Task {
                 await webExtensionManager.loadInstalledExtensions()
+                await syncEmbeddedExtensions()
             }
         } else {
-            self.webExtensionManager = nil
+            webExtensionManager = nil
         }
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func initializeWebExtensions() async {
+        guard webExtensionManager == nil else {
+            // Already initialized, just load extensions
+            await (webExtensionManager as? WebExtensionManager)?.loadInstalledExtensions()
+            await syncEmbeddedExtensions()
+            return
+        }
+
+        let webExtensionManager = WebExtensionManagerFactory.makeManager(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            autoconsentPreferences: cookiePopupProtectionPreferences
+        )
+        self.webExtensionManager = webExtensionManager
+
+        await webExtensionManager.loadInstalledExtensions()
+        await syncEmbeddedExtensions()
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func syncEmbeddedExtensions() async {
+        guard !isSyncingEmbeddedExtensions else { return }
+        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+
+        isSyncingEmbeddedExtensions = true
+        defer { isSyncingEmbeddedExtensions = false }
+
+        var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
+        if featureFlagger.isFeatureOn(.embeddedExtension) {
+            enabledTypes.insert(.embedded)
+        }
+        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
 
     // MARK: - PixelKit
@@ -2068,6 +2157,20 @@ extension AppDelegate: UserScriptDependenciesProviding {
             duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
             syncService: syncService,
             pinningManager: pinningManager
+        )
+    }
+
+    private static func makeAutoconsentEventCoordinator(
+        autoconsentStats: AutoconsentStatsCollecting,
+        historyCoordinating: HistoryCoordinating,
+        featureFlagger: FeatureFlagger,
+        webExtensionAvailability: WebExtensionAvailabilityProviding
+    ) -> AutoconsentEventCoordinator {
+        return AutoconsentEventCoordinator(
+            autoconsentStats: autoconsentStats,
+            historyCoordinating: historyCoordinating,
+            featureFlagger: featureFlagger,
+            webExtensionAvailability: webExtensionAvailability
         )
     }
 }

@@ -146,7 +146,8 @@ struct Foreground: ForegroundHandling {
         services.inactivityNotificationSchedulerService.resume()
         services.wideEventService.resume()
         appDependencies.launchSourceManager.handleAppAction(launchAction)
-        appDependencies.mainCoordinator.onForeground()
+
+        appDependencies.mainCoordinator.onForeground(isFirstForeground: isFirstForeground)
 
         appDependencies.backgroundTaskManager.endBackgroundTask()
 

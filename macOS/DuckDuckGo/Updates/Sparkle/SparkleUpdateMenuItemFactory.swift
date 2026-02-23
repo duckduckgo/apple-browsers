@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import Cocoa
 
 final class SparkleUpdateMenuItemFactory {

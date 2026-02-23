@@ -52,11 +52,11 @@ private enum BubbleBackedDialogMetrics {
 /// 2. **Child-level animations** (individual content views): Some views have internal state
 ///    transitions that don't change `state.type` (e.g., showing skip dialog, tutorial overlay).
 ///    - Child views use `.onboardingViewVisibleAfterDelay()` modifier
-///    - Delay matches parent's bubble animation duration for consistency
+///    - Delay is tuned relative to the parent's bubble animation duration and may slightly exceed it for smoother transitions
 enum OnboardingBubbleAnimationMetrics {
     /// How long the bubble takes to resize between steps
     static let bubbleResizeAnimationDuration = 0.25
-    /// How long to wait before fading in new content (should match bubble resize duration to ensure content appears after resize completes)
+    /// How long to wait before fading in new content (slightly exceeds bubble resize duration so content appears after resize visually completes)
     static let contentFadeInDelay = 0.3
 }
 
@@ -467,7 +467,7 @@ extension OnboardingRebranding {
             showBubbleContent = false
 
             // Show content after delay (matching bubble animation duration)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
                 withAnimation {
                     showBubbleContent = true
                 }
@@ -486,7 +486,6 @@ extension OnboardingRebranding {
 
             if #available(iOS 17, *) {
                 withAnimation(animation) {
-                    model.introState.showIntroViewContent = false
                     model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
                 } completion: {
                     model.browserComparisonState.animateComparisonText = true
@@ -498,6 +497,7 @@ extension OnboardingRebranding {
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
                     model.browserComparisonState.animateComparisonText = true
+                    model.browserComparisonState.showComparisonButton = true
                 }
             }
         }

@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 
 struct TextZoomEditorView: View {
 
@@ -34,7 +35,7 @@ struct TextZoomEditorView: View {
         } label: {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
         }
-        .buttonStyle(BrowsingMenuCloseButtonStyle())
+        .buttonStyle(CloseButtonStyle())
         .accessibilityLabel(UserText.keyCommandClose)
     }
 
@@ -46,7 +47,7 @@ struct TextZoomEditorView: View {
                 .frame(alignment: .center)
                 .foregroundStyle(Color(designSystemColor: .textPrimary))
                 // centers properly but also padds the sides in case a translation makes this overlap the close button
-                .padding(.horizontal, BrowsingMenuCloseButtonStyle.Constant.padding + 24)
+                .padding(.horizontal, CloseButtonStyle.Constant.padding + 24)
 
             HStack {
                 Spacer()

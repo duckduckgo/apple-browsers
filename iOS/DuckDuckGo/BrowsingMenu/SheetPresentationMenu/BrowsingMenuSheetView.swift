@@ -409,7 +409,7 @@ private struct BrowsingMenuHeaderView: View {
         Button(action: onDismiss) {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
         }
-        .buttonStyle(BrowsingMenuCloseButtonStyle())
+        .buttonStyle(CloseButtonStyle())
         .accessibilityLabel(UserText.keyCommandClose)
     }
 

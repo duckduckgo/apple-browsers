@@ -51,6 +51,8 @@ public class DataStoreIDManager: DataStoreIDManaging {
     public static let shared = DataStoreIDManager()
 
     private let store: KeyValueStoring
+    private let fireModeIDQueue = DispatchQueue(label: "com.duckduckgo.datastoreidmanager.firemode")
+
     init(store: KeyValueStoring = UserDefaults.app) {
         self.store = store
     }
@@ -71,16 +73,20 @@ public class DataStoreIDManager: DataStoreIDManaging {
     // MARK: - Fire Mode Container
 
     public var currentFireModeID: UUID {
-        if let uuidString = store.object(forKey: Constants.currentFireModeContainerID.rawValue) as? String,
-           let existingID = UUID(uuidString: uuidString)  {
-            return existingID
+        fireModeIDQueue.sync {
+            if let uuidString = store.object(forKey: Constants.currentFireModeContainerID.rawValue) as? String,
+               let existingID = UUID(uuidString: uuidString) {
+                return existingID
+            }
+            let newID = UUID()
+            store.set(newID.uuidString, forKey: Constants.currentFireModeContainerID.rawValue)
+            return newID
         }
-        let newID = UUID()
-        store.set(newID.uuidString, forKey: Constants.currentFireModeContainerID.rawValue)
-        return newID
     }
-    
+
     public func invalidateCurrentFireModeID() {
-        store.removeObject(forKey: Constants.currentFireModeContainerID.rawValue)
+        fireModeIDQueue.sync {
+            store.removeObject(forKey: Constants.currentFireModeContainerID.rawValue)
+        }
     }
 }

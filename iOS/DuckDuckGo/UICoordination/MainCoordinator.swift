@@ -32,7 +32,6 @@ import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import PrivacyStats
 import WebExtensions
-import DarkReader
 
 @MainActor
 protocol URLHandling: AnyObject {

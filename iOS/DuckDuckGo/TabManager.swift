@@ -69,7 +69,7 @@ class TabManager: TabManaging {
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
     private let contentScopeExperimentManager: ContentScopeExperimentsManaging
-    private let textZoomCoordinator: TextZoomCoordinating
+    private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
     private let fireproofing: Fireproofing
     private let websiteDataManager: WebsiteDataManaging
     private let appSettings: AppSettings
@@ -109,7 +109,7 @@ class TabManager: TabManaging {
          featureFlagger: FeatureFlagger,
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          appSettings: AppSettings,
-         textZoomCoordinator: TextZoomCoordinating,
+         textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
          websiteDataManager: WebsiteDataManaging,
          fireproofing: Fireproofing,
          maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
@@ -140,7 +140,7 @@ class TabManager: TabManaging {
         self.featureFlagger = featureFlagger
         self.contentScopeExperimentManager = contentScopeExperimentManager
         self.appSettings = appSettings
-        self.textZoomCoordinator = textZoomCoordinator
+        self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
         self.fireproofing = fireproofing
         self.maliciousSiteProtectionManager = maliciousSiteProtectionManager
@@ -183,6 +183,7 @@ class TabManager: TabManaging {
             )
         )
 
+        let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(fireMode: tab.fireTab)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
@@ -300,6 +301,7 @@ class TabManager: TabManaging {
             )
         )
 
+        let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(fireMode: tab.fireTab)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,

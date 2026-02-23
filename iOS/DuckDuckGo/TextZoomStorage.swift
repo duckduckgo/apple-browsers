@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import Common
+import Persistence
 
 protocol TextZoomStoring {
     func textZoomLevelForDomain(_ domain: String) -> TextZoomLevel?
@@ -27,12 +28,32 @@ protocol TextZoomStoring {
     func removeTextZoomLevel(forDomain domain: String)
     func resetTextZoomLevels(excludingDomains: [String])
     func resetTextZoomLevels(forVisitedDomains visitedDomains: [String], excludingDomains: [String])
+    func clearAll()
 }
 
 class TextZoomStorage: TextZoomStoring {
+    
+    enum TextZoomStorageKey: String {
+        case domainTextZoomStorage = "com.duckduckgo.ios.domainTextZoomStorage"
+        case fireModeTextZoomStorage = "com.duckduckgo.ios.fireModeTextZoom"
+    }
 
-    @UserDefaultsWrapper(key: .domainTextZoomStorage, defaultValue: [:])
-    var textZoomLevels: [String: Int]
+    private let store: KeyValueStoring
+    private let key: String
+
+    init(store: KeyValueStoring = UserDefaults.app, key: TextZoomStorageKey) {
+        self.store = store
+        self.key = key.rawValue
+    }
+
+    private var textZoomLevels: [String: Int] {
+        get {
+            store.object(forKey: key) as? [String: Int] ?? [:]
+        }
+        set {
+            store.set(newValue, forKey: key)
+        }
+    }
 
     func textZoomLevelForDomain(_ domain: String) -> TextZoomLevel? {
         guard let zoomLevel = textZoomLevels[domain] else {
@@ -70,6 +91,10 @@ class TextZoomStorage: TextZoomStoring {
             })
             || !visitedETLDplus1.contains(level.key)
         }
+    }
+
+    func clearAll() {
+        store.removeObject(forKey: key)
     }
 
 }

@@ -20,7 +20,7 @@
 import Foundation
 import Persistence
 import PrivacyConfig
-import enum Common.DevicePlatform
+import Common
 
 public final class LaunchOptionsHandler {
 
@@ -99,6 +99,17 @@ public final class LaunchOptionsHandler {
         let port = userDefaults.integer(forKey: Self.automationPort)
         guard UInt16(exactly: port) != nil, port > 0 else { return nil }
         return port
+    }
+
+    /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
+    public var isAutomationSession: Bool {
+        AutomationSession.isActive(automationPort: automationPort, isUITesting: isUITesting)
+    }
+
+    private var isUITesting: Bool {
+        environment["UITEST_MODE"] == "1" ||
+        environment["UITEST_MODE_ONBOARDING"] == "1" ||
+        arguments.contains("isRunningUITests")
     }
 
 #if DEBUG || ALPHA

@@ -136,12 +136,7 @@ final class MainMenu: NSMenu {
     private let pinningManager: PinningManager
     private let subscriptionManager: any SubscriptionManager
 
-    private lazy var webExtensionsMenuItem: NSMenuItem? = {
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            return NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
-        }
-        return nil
-    }()
+    private var webExtensionsMenuItem: NSMenuItem?
 
     // MARK: - Initialization
 
@@ -534,11 +529,26 @@ final class MainMenu: NSMenu {
     }
 
     private func updateWebExtensionsMenuItem() {
-        if let webExtensionsMenuItem,
-           webExtensionsMenuItem.parent == nil,
-           let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
-           let debugSubmenu = debugMenuItem.submenu {
-            debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
+        guard let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
+              let debugSubmenu = debugMenuItem.submenu else {
+            return
+        }
+
+        if #available(macOS 15.4, *) {
+            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                if webExtensionsMenuItem == nil {
+                    webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
+                        .submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
+                }
+                if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
+                    debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
+                }
+            } else {
+                if let webExtensionsMenuItem {
+                    debugSubmenu.removeItem(webExtensionsMenuItem)
+                    self.webExtensionsMenuItem = nil
+                }
+            }
         }
     }
 

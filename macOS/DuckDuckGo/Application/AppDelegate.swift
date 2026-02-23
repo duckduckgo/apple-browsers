@@ -1238,9 +1238,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         startupSync()
 
-        if [.normal, .uiTests].contains(AppVersion.runType) {
+        // Important: The following snippet will be removed once the flag `.startupMetrics` ships
+        if featureFlagger.isFeatureOn(.startupMetrics) == false, [.normal, .uiTests].contains(AppVersion.runType) {
             stateRestorationManager.applicationDidFinishLaunching()
         }
+
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
@@ -1349,6 +1351,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         userChurnScheduler.start()
 
         memoryUsageMonitor.enableIfNeeded(featureFlagger: featureFlagger)
+
+        // Important: State Restoration be exluded from didFinishLaunching performance measurement
+        if featureFlagger.isFeatureOn(.startupMetrics), [.normal, .uiTests].contains(AppVersion.runType) {
+            stateRestorationManager.applicationDidFinishLaunching()
+        }
 
         PixelKit.fire(GeneralPixel.launch, doNotEnforcePrefix: true)
     }

@@ -62,9 +62,9 @@ public class MockWKFrameInfoObject: NSObject {
         self.request = request
     }
 
-    /// Returns a WKFrameInfo instance that can be used in tests.
     override public func value(forUndefinedKey key: String) -> Any? { nil }
 
+    /// Returns a WKFrameInfo instance that can be used in tests.
     public var frameInfo: WKFrameInfo {
         withUnsafePointer(to: self) { $0.withMemoryRebound(to: WKFrameInfo.self, capacity: 1) { $0 } }.pointee
     }

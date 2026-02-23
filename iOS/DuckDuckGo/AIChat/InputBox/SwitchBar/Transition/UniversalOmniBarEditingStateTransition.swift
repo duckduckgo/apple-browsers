@@ -120,6 +120,7 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         }
 
         toVC.view.layer.sublayerTransform = CATransform3DMakeTranslation(0, -offsets.switcherYOffset, 0)
+        toVC.actionBarView?.alpha = 0
         toVC.switchBarVC.textEntryViewController.isExpandable = false
         toVC.setLogoYOffset(offsets.logoYOffset)
 

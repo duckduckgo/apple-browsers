@@ -632,9 +632,6 @@ public class AppUserDefaults: AppSettings {
 
     @UserDefaultsWrapper(key: .autoClearAIChatHistory, defaultValue: false)
     var autoClearAIChatHistory: Bool
-
-    @UserDefaultsWrapper(key: .adaptiveDarkModeEnabled, defaultValue: false)
-    var isAdaptiveDarkModeEnabled: Bool
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

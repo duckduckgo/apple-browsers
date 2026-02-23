@@ -119,5 +119,4 @@ class AppSettingsMock: AppSettings {
     var duckPlayerNativeUIWasUsed: Bool = false
     var duckPlayerNativeUISettingsMapped: Bool = false
     var autoClearAIChatHistory: Bool = false
-    var isAdaptiveDarkModeEnabled: Bool = false
 }

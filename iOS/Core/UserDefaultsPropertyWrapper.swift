@@ -192,9 +192,6 @@ public struct UserDefaultsWrapper<T> {
         case autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
         case aiChatContextualOnboardingSeen = "com.duckduckgo.ios.aiChatContextualOnboardingSeen"
         
-        // Adaptive Dark Mode
-        case adaptiveDarkModeEnabled = "com.duckduckgo.ios.adaptiveDarkModeEnabled"
-
         // Dax Easter Egg Logo
         case daxEasterEggLogoURL = "com.duckduckgo.ios.daxEasterEggLogoURL"
 

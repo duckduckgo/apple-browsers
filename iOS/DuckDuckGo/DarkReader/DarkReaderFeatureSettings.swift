@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Persistence
 import PrivacyConfig
 
 /// Provides access to the force dark mode feature configuration and user settings.
@@ -33,16 +34,27 @@ protocol DarkReaderFeatureSettings {
     func setDarkModeEnabled(_ enabled: Bool)
 }
 
+enum DarkReaderStorageKeys: String, StorageKeyDescribing {
+    case adaptiveDarkModeEnabled
+}
+
+struct DarkReaderKeys: StoringKeys {
+    let adaptiveDarkModeEnabled = StorageKey<Bool>(
+        DarkReaderStorageKeys.adaptiveDarkModeEnabled,
+        migrateLegacyKey: "com.duckduckgo.ios.adaptiveDarkModeEnabled"
+    )
+}
+
 /// Concrete implementation that reads from feature flags and app settings.
 final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     private let featureFlagger: FeatureFlagger
-    private let appSettings: AppSettings
+    private let storage: any KeyedStoring<DarkReaderKeys>
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+         storage: (any KeyedStoring<DarkReaderKeys>)? = nil) {
         self.featureFlagger = featureFlagger
-        self.appSettings = appSettings
+        self.storage = if let storage { storage } else { UserDefaults.app.keyedStoring() }
     }
 
     var isFeatureEnabled: Bool {
@@ -50,11 +62,11 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     }
 
     var isDarkModeEnabled: Bool {
-        appSettings.isAdaptiveDarkModeEnabled
+        storage.adaptiveDarkModeEnabled ?? false
     }
 
     func setDarkModeEnabled(_ enabled: Bool) {
-        appSettings.isAdaptiveDarkModeEnabled = enabled
+        storage.adaptiveDarkModeEnabled = enabled
         NotificationCenter.default.post(name: AppUserDefaults.Notifications.adaptiveDarkModeChanged, object: nil)
     }
 }

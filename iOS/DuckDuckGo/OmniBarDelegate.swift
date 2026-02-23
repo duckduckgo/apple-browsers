@@ -102,6 +102,9 @@ protocol OmniBarDelegate: AnyObject {
     /// Called when user selects a chat from the AI Chat history list
     func onChatHistorySelected(url: URL)
 
+    // MARK: - iPad Expanded Omnibar
+    func onOmniBarExpandedStateChanged(isExpanded: Bool)
+
     /// Returns whether search query text on a SERP should be auto-selected in the experimental address bar.
     func shouldAutoSelectTextForSERPQuery() -> Bool
 

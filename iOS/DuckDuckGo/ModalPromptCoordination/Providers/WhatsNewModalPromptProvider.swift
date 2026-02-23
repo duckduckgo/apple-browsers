@@ -171,6 +171,9 @@ private extension WhatsNewCoordinator {
                 onItemAction: { [weak self] action, cardId in
                     self?.measureCardTapped(cardId: cardId)
                     await self?.handleAction(action)
+                    if case .url = action {
+                        self?.dismiss(source: .itemAction)
+                    }
                 },
                 onPrimaryAction: { [weak self] action in
                     self?.measurePrimaryActionTapped()
@@ -252,6 +255,8 @@ private extension WhatsNewCoordinator {
             pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .pullDown)
         case .mainAction:
             pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .primaryAction)
+        case .itemAction:
+            pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .itemAction)
         }
     }
 
@@ -311,12 +316,14 @@ private extension WhatsNewCoordinator {
 
     enum DismissSource: String, CustomDebugStringConvertible {
         case closeButton
+        case itemAction
         case mainAction
         case pullDown
 
         var debugDescription: String {
             switch self {
             case .closeButton: "Close Button"
+            case .itemAction: "Item CTA"
             case .mainAction: "Main CTA"
             case .pullDown: "Pull Down"
             }

@@ -134,10 +134,172 @@ final class EmbeddedWebExtensionTests: XCTestCase {
     }
 }
 
-// MARK: - Version Comparison Tests
+// MARK: - SemanticVersionComparator Tests
 
 @available(macOS 15.4, iOS 18.4, *)
-final class VersionComparisonTests: XCTestCase {
+final class SemanticVersionComparatorTests: XCTestCase {
+
+    var comparator: SemanticVersionComparator!
+
+    override func setUp() {
+        super.setUp()
+        comparator = SemanticVersionComparator()
+    }
+
+    override func tearDown() {
+        comparator = nil
+        super.tearDown()
+    }
+
+    // MARK: - isVersion(_:newerThan:) Tests
+
+    // Basic version comparisons
+
+    func testWhenNewVersionHasHigherMajor_ThenReturnsTrue() {
+        XCTAssertTrue(comparator.isVersion("2.0.0", newerThan: "1.0.0"))
+        XCTAssertTrue(comparator.isVersion("10.0.0", newerThan: "9.0.0"))
+    }
+
+    func testWhenNewVersionHasHigherMinor_ThenReturnsTrue() {
+        XCTAssertTrue(comparator.isVersion("1.2.0", newerThan: "1.1.0"))
+        XCTAssertTrue(comparator.isVersion("1.10.0", newerThan: "1.9.0"))
+    }
+
+    func testWhenNewVersionHasHigherPatch_ThenReturnsTrue() {
+        XCTAssertTrue(comparator.isVersion("1.0.2", newerThan: "1.0.1"))
+        XCTAssertTrue(comparator.isVersion("1.0.10", newerThan: "1.0.9"))
+    }
+
+    func testWhenNewVersionHasLowerMajor_ThenReturnsFalse() {
+        XCTAssertFalse(comparator.isVersion("1.0.0", newerThan: "2.0.0"))
+        XCTAssertFalse(comparator.isVersion("9.0.0", newerThan: "10.0.0"))
+    }
+
+    func testWhenNewVersionHasLowerMinor_ThenReturnsFalse() {
+        XCTAssertFalse(comparator.isVersion("1.1.0", newerThan: "1.2.0"))
+    }
+
+    func testWhenNewVersionHasLowerPatch_ThenReturnsFalse() {
+        XCTAssertFalse(comparator.isVersion("1.0.1", newerThan: "1.0.2"))
+    }
+
+    // Equal versions
+
+    func testWhenVersionsAreEqual_ThenReturnsFalse() {
+        XCTAssertFalse(comparator.isVersion("1.2.3", newerThan: "1.2.3"))
+        XCTAssertFalse(comparator.isVersion("0.0.0", newerThan: "0.0.0"))
+        XCTAssertFalse(comparator.isVersion("10.20.30", newerThan: "10.20.30"))
+    }
+
+    // Different component lengths
+
+    func testWhenNewVersionHasMoreComponents_ThenComparesCorrectly() {
+        XCTAssertTrue(comparator.isVersion("1.0.0.1", newerThan: "1.0.0"))
+        XCTAssertTrue(comparator.isVersion("1.0.1.0", newerThan: "1.0.0"))
+        XCTAssertFalse(comparator.isVersion("1.0.0.0", newerThan: "1.0.0"))
+    }
+
+    func testWhenOldVersionHasMoreComponents_ThenComparesCorrectly() {
+        XCTAssertFalse(comparator.isVersion("1.0.0", newerThan: "1.0.0.1"))
+        XCTAssertFalse(comparator.isVersion("1.0.0", newerThan: "1.0.1.0"))
+        XCTAssertFalse(comparator.isVersion("1.0.0", newerThan: "1.0.0.0"))
+    }
+
+    func testWhenComparingTwoVsThreeComponents_ThenTrailingZerosAreImplicit() {
+        XCTAssertFalse(comparator.isVersion("1.0", newerThan: "1.0.0"))
+        XCTAssertFalse(comparator.isVersion("1.0.0", newerThan: "1.0"))
+        XCTAssertTrue(comparator.isVersion("1.1", newerThan: "1.0.0"))
+        XCTAssertTrue(comparator.isVersion("1.0.1", newerThan: "1.0"))
+    }
+
+    // Non-numeric components (e.g., "1.0.0-beta")
+
+    func testWhenVersionHasBetaSuffix_ThenNumericPartIsCompared() {
+        XCTAssertFalse(comparator.isVersion("1.0.0-beta", newerThan: "1.0.0"))
+        XCTAssertFalse(comparator.isVersion("1.0.0", newerThan: "1.0.0-beta"))
+        XCTAssertTrue(comparator.isVersion("1.0.1-beta", newerThan: "1.0.0"))
+        XCTAssertTrue(comparator.isVersion("1.0.1", newerThan: "1.0.0-beta"))
+    }
+
+    func testWhenVersionHasAlphaSuffix_ThenNumericPartIsCompared() {
+        XCTAssertFalse(comparator.isVersion("2.0.0-alpha", newerThan: "2.0.0"))
+        XCTAssertTrue(comparator.isVersion("2.0.1-alpha", newerThan: "2.0.0"))
+    }
+
+    func testWhenVersionHasRCSuffix_ThenNumericPartIsCompared() {
+        XCTAssertFalse(comparator.isVersion("1.0.0-rc1", newerThan: "1.0.0"))
+        XCTAssertTrue(comparator.isVersion("1.0.1-rc1", newerThan: "1.0.0"))
+    }
+
+    func testWhenBothVersionsHaveNonNumericSuffixes_ThenNumericPartsAreCompared() {
+        XCTAssertFalse(comparator.isVersion("1.0.0-beta", newerThan: "1.0.0-alpha"))
+        XCTAssertTrue(comparator.isVersion("1.0.1-alpha", newerThan: "1.0.0-beta"))
+    }
+
+    // Edge cases
+
+    func testWhenVersionsAreEmpty_ThenReturnsFalse() {
+        XCTAssertFalse(comparator.isVersion("", newerThan: ""))
+    }
+
+    func testWhenNewVersionIsEmpty_ThenReturnsFalse() {
+        XCTAssertFalse(comparator.isVersion("", newerThan: "1.0.0"))
+    }
+
+    func testWhenOldVersionIsEmpty_ThenReturnsTrue() {
+        XCTAssertTrue(comparator.isVersion("1.0.0", newerThan: ""))
+    }
+
+    func testWhenVersionsContainOnlyNonNumeric_ThenTreatedAsZero() {
+        XCTAssertFalse(comparator.isVersion("beta", newerThan: "alpha"))
+        XCTAssertFalse(comparator.isVersion("alpha", newerThan: "beta"))
+    }
+
+    func testWhenVersionsHaveLargeNumbers_ThenComparesCorrectly() {
+        XCTAssertTrue(comparator.isVersion("100.200.300", newerThan: "100.200.299"))
+        XCTAssertFalse(comparator.isVersion("100.200.299", newerThan: "100.200.300"))
+    }
+
+    func testWhenVersionsHaveManyComponents_ThenComparesCorrectly() {
+        XCTAssertTrue(comparator.isVersion("1.2.3.4.5.6", newerThan: "1.2.3.4.5.5"))
+        XCTAssertFalse(comparator.isVersion("1.2.3.4.5.5", newerThan: "1.2.3.4.5.6"))
+    }
+
+    // MARK: - shouldUpgrade Tests
+
+    func testWhenBundledVersionIsNil_ThenReturnsFalse() {
+        XCTAssertFalse(comparator.shouldUpgrade(installedVersion: "1.0.0", bundledVersion: nil))
+        XCTAssertFalse(comparator.shouldUpgrade(installedVersion: nil, bundledVersion: nil))
+    }
+
+    func testWhenInstalledVersionIsNil_ThenReturnsTrue() {
+        XCTAssertTrue(comparator.shouldUpgrade(installedVersion: nil, bundledVersion: "1.0.0"))
+    }
+
+    func testWhenBundledVersionIsNewer_ThenReturnsTrue() {
+        XCTAssertTrue(comparator.shouldUpgrade(installedVersion: "1.0.0", bundledVersion: "1.0.1"))
+        XCTAssertTrue(comparator.shouldUpgrade(installedVersion: "1.0.0", bundledVersion: "2.0.0"))
+    }
+
+    func testWhenBundledVersionIsOlder_ThenReturnsFalse() {
+        XCTAssertFalse(comparator.shouldUpgrade(installedVersion: "1.0.1", bundledVersion: "1.0.0"))
+        XCTAssertFalse(comparator.shouldUpgrade(installedVersion: "2.0.0", bundledVersion: "1.0.0"))
+    }
+
+    func testWhenVersionsAreEqual_ThenReturnsFalse() {
+        XCTAssertFalse(comparator.shouldUpgrade(installedVersion: "1.0.0", bundledVersion: "1.0.0"))
+    }
+
+    func testWhenVersionsHaveDifferentComponentCounts_ThenComparesCorrectly() {
+        XCTAssertTrue(comparator.shouldUpgrade(installedVersion: "1.0", bundledVersion: "1.0.1"))
+        XCTAssertFalse(comparator.shouldUpgrade(installedVersion: "1.0.0", bundledVersion: "1.0"))
+    }
+}
+
+// MARK: - WebExtensionManager installedEmbeddedExtension Tests
+
+@available(macOS 15.4, iOS 18.4, *)
+final class WebExtensionManagerEmbeddedExtensionTests: XCTestCase {
 
     var manager: WebExtensionManager!
     var installedExtensionStoringMock: InstalledWebExtensionStoringMock!
@@ -174,8 +336,6 @@ final class VersionComparisonTests: XCTestCase {
         configurationMock = nil
         super.tearDown()
     }
-
-    // MARK: - installedEmbeddedExtension Tests
 
     func testWhenNoEmbeddedExtensionInstalled_ThenReturnsNil() {
         installedExtensionStoringMock.installedExtensions = [

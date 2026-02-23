@@ -133,24 +133,6 @@ extension WebExtensionManager {
 
     /// Determines if the installed extension should be upgraded to the bundled version.
     private func shouldUpgrade(installed: InstalledWebExtension, bundledVersion: String?) -> Bool {
-        guard let bundledVersion, let installedVersion = installed.version else {
-            return bundledVersion != nil
-        }
-        return isVersion(bundledVersion, newerThan: installedVersion)
-    }
-
-    /// Semantic version comparison: returns true if `new` > `old`.
-    private func isVersion(_ new: String, newerThan old: String) -> Bool {
-        let newComponents = new.split(separator: ".").compactMap { Int($0) }
-        let oldComponents = old.split(separator: ".").compactMap { Int($0) }
-
-        let maxLength = max(newComponents.count, oldComponents.count)
-        for i in 0..<maxLength {
-            let newPart = i < newComponents.count ? newComponents[i] : 0
-            let oldPart = i < oldComponents.count ? oldComponents[i] : 0
-            if newPart > oldPart { return true }
-            if newPart < oldPart { return false }
-        }
-        return false
+        SemanticVersionComparator().shouldUpgrade(installedVersion: installed.version, bundledVersion: bundledVersion)
     }
 }

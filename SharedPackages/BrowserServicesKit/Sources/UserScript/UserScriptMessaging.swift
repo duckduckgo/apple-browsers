@@ -94,6 +94,7 @@ public final class UserScriptMessageBroker: NSObject {
     /// sub-features.
     public let context: String
     public let requiresRunInPageContentWorld: Bool
+    public let debug: Bool
 
     /// We determine which feature should receive a given message
     /// based on this
@@ -101,11 +102,13 @@ public final class UserScriptMessageBroker: NSObject {
 
     public init(context: String,
                 hostProvider: UserScriptHostProvider = SecurityOriginHostProvider(),
-                requiresRunInPageContentWorld: Bool = false
+                requiresRunInPageContentWorld: Bool = false,
+                debug: Bool = false
     ) {
         self.context = context
         self.hostProvider = hostProvider
         self.requiresRunInPageContentWorld = requiresRunInPageContentWorld
+        self.debug = debug
     }
 
     public func registerSubfeature(delegate: Subfeature) {
@@ -126,7 +129,8 @@ public final class UserScriptMessageBroker: NSObject {
                 context: context,
                 featureName: delegate.featureName,
                 subscriptionName: method,
-                params: params ?? [:] as [String: String]
+                params: params ?? [:] as [String: String],
+                debug: debug
         )
         else {
             return

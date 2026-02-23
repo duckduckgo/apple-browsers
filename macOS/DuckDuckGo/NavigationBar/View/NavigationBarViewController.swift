@@ -142,6 +142,8 @@ final class NavigationBarViewController: NSViewController {
     var isDownloadsPopoverShown: Bool {
         popovers.isDownloadsPopoverShown
     }
+
+    private var allowsUserInteraction: Bool = true
     private var isAutoFillAutosaveMessageVisible: Bool = false
 
     private var urlCancellable: AnyCancellable?
@@ -196,11 +198,12 @@ final class NavigationBarViewController: NSViewController {
         tabCollectionViewModel.isPopup
     }
 
-    var controlsForUserPrevention: [NSControl?] {
+    private var controlsForUserPrevention: [NSControl?] {
         return [homeButton,
                 optionsButton,
                 overflowButton,
                 bookmarkListButton,
+                downloadsButton,
                 passwordManagementButton,
                 addressBarViewController?.addressBarTextField,
                 addressBarViewController?.passiveTextField,
@@ -505,12 +508,6 @@ final class NavigationBarViewController: NSViewController {
 #if DEBUG || REVIEW
         addDebugNotificationListeners()
 #endif
-
-        if #available(macOS 15.4, *), !burnerMode.isBurner, let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            Task { @MainActor [weak self] in
-                await WebExtensionNavigationBarUpdater(webExtensionManager: webExtensionManager, container: self?.menuButtons).runUpdateLoop()
-            }
-        }
 
         memoryUsageDisplayer.setUpMemoryMonitorView()
     }
@@ -856,6 +853,14 @@ final class NavigationBarViewController: NSViewController {
                                          withDelegate: self)
         } else {
             Logger.passwordManager.error("Received save autofill data call, but there was no data to present")
+        }
+    }
+
+    func userInteraction(prevented: Bool) {
+        allowsUserInteraction = !prevented
+
+        controlsForUserPrevention.forEach { control in
+            control?.isEnabled = !prevented
         }
     }
 
@@ -1550,12 +1555,12 @@ final class NavigationBarViewController: NSViewController {
     }
 
     @objc private func showAutoconsentFeedback(_ sender: Notification) {
-        guard view.window?.isKeyWindow == true,
-              let topUrl = sender.userInfo?["topUrl"] as? URL,
-              let isCosmetic = sender.userInfo?["isCosmetic"] as? Bool
-        else { return }
-
         DispatchQueue.main.async { [weak self] in
+            guard self?.view.window?.isKeyWindow == true,
+                  let topUrl = sender.userInfo?["topUrl"] as? URL,
+                  let isCosmetic = sender.userInfo?["isCosmetic"] as? Bool
+            else { return }
+
             guard let self = self, self.tabCollectionViewModel.selectedTabViewModel?.tab.url == topUrl else {
                 return // if the tab is not active, don't show the popup
             }
@@ -1906,7 +1911,9 @@ extension NavigationBarViewController: NSMenuDelegate {
     public func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        BookmarksBarMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences)
+        let bookmarksMenu = BookmarksBarMenuFactory.makeMenuItem(NSApp.delegateTyped.appearancePreferences)
+        bookmarksMenu.isEnabled = allowsUserInteraction
+        menu.addItem(bookmarksMenu)
 
         menu.addItem(NSMenuItem.separator())
 

@@ -26,6 +26,7 @@ import Persistence
 import PixelKit
 import PixelExperimentKit
 import PrivacyConfig
+import WebExtensions
 
 protocol ContentBlockingProtocol {
 
@@ -86,7 +87,9 @@ final class AppContentBlocking {
         fireCoordinator: FireCoordinator,
         tld: TLD,
         autoconsentManagement: AutoconsentManagement,
-        contentScopePreferences: ContentScopePreferences
+        contentScopePreferences: ContentScopePreferences,
+        syncErrorHandler: SyncErrorHandling,
+        webExtensionAvailability: WebExtensionAvailabilityProviding?
     ) {
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
                                                                       fetchedData: configurationStore.loadData(for: .privacyConfiguration),
@@ -115,7 +118,9 @@ final class AppContentBlocking {
             fireCoordinator: fireCoordinator,
             tld: tld,
             autoconsentManagement: autoconsentManagement,
-            contentScopePreferences: contentScopePreferences
+            contentScopePreferences: contentScopePreferences,
+            syncErrorHandler: syncErrorHandler,
+            webExtensionAvailability: webExtensionAvailability
         )
     }
 
@@ -141,7 +146,9 @@ final class AppContentBlocking {
         fireCoordinator: FireCoordinator,
         tld: TLD,
         autoconsentManagement: AutoconsentManagement,
-        contentScopePreferences: ContentScopePreferences
+        contentScopePreferences: ContentScopePreferences,
+        syncErrorHandler: SyncErrorHandling,
+        webExtensionAvailability: WebExtensionAvailabilityProviding?
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
@@ -181,7 +188,9 @@ final class AppContentBlocking {
                                                   fireproofDomains: fireproofDomains,
                                                   fireCoordinator: fireCoordinator,
                                                   autoconsentManagement: autoconsentManagement,
-                                                  contentScopePreferences: contentScopePreferences)
+                                                  contentScopePreferences: contentScopePreferences,
+                                                  syncErrorHandler: syncErrorHandler,
+                                                  webExtensionAvailability: webExtensionAvailability)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

@@ -113,23 +113,11 @@ final class BookmarkTableRowView: NSTableRowView {
         return .normal
     }
 
-    private var isThemesFeatureEnabled: Bool {
-        NSApp.delegateTyped.featureFlagger.isFeatureOn(.themes)
-    }
-
     private var selectionBackgroundColor: NSColor {
-        if isThemesFeatureEnabled {
-            return palette.accentPrimary
-        }
-
-        return NSColor.selectedContentBackgroundColor
+        palette.accentPrimary
     }
 
     private var highlightBackgroundColor: NSColor {
-        if isThemesFeatureEnabled {
-            return palette.controlsFillPrimary
-        }
-
-        return NSColor.rowHover
+        palette.controlsFillPrimary
     }
 }

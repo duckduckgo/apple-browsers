@@ -36,6 +36,7 @@ final class AutoconsentManagement {
 
     // Task scheduling for pixel summary
     private var pendingSummaryTask: DispatchWorkItem?
+    private var pendingAdditionalParams: [String: String] = [:]
 
     private init() {
         setupNotificationObservers()
@@ -80,11 +81,14 @@ final class AutoconsentManagement {
         fireSummaryPixel()
     }
 
-    func firePixel(pixel: AutoconsentPixel) {
+    func firePixel(pixel: AutoconsentPixel, additionalParameters: [String: String] = [:]) {
         // Only schedule summary task if counter is currently empty
         if pixelCounter.isEmpty {
             // Cancel any existing pending task (shouldn't happen but safety first)
             pendingSummaryTask?.cancel()
+
+            // Store additional params for the summary pixel
+            pendingAdditionalParams = additionalParameters
 
             // Create new task for firing summary after 120 seconds
             let summaryTask = DispatchWorkItem { [weak self] in
@@ -104,13 +108,14 @@ final class AutoconsentManagement {
         pixelCounter[pixel.key, default: 0] += 1
 
         // fire daily pixel if needed
-        PixelKit.fire(pixel, frequency: .daily, includeAppVersionParameter: true)
+        PixelKit.fire(pixel, frequency: .daily, withAdditionalParameters: additionalParameters, includeAppVersionParameter: true)
     }
 
     func fireSummaryPixel() {
         if !pixelCounter.isEmpty {
-            PixelKit.fire(AutoconsentPixel.summary(events: pixelCounter), frequency: .standard, includeAppVersionParameter: true)
+            PixelKit.fire(AutoconsentPixel.summary(events: pixelCounter), frequency: .standard, withAdditionalParameters: pendingAdditionalParams, includeAppVersionParameter: true)
             pixelCounter = [:]
+            pendingAdditionalParams = [:]
             detectedByPatternsCache.removeAll()
             detectedByBothCache.removeAll()
             detectedOnlyRulesCache.removeAll()

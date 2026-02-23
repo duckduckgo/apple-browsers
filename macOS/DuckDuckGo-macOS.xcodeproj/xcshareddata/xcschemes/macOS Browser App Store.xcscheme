@@ -259,6 +259,26 @@
                ReferencedContainer = "container:../SharedPackages/URLPredictor">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppStoreAppUpdaterTests"
+               BuildableName = "AppStoreAppUpdaterTests"
+               BlueprintName = "AppStoreAppUpdaterTests"
+               ReferencedContainer = "container:LocalPackages/AppUpdater">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppUpdaterSharedTests"
+               BuildableName = "AppUpdaterSharedTests"
+               BlueprintName = "AppUpdaterSharedTests"
+               ReferencedContainer = "container:LocalPackages/AppUpdater">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

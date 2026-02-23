@@ -74,8 +74,10 @@ public extension OnboardingTheme {
             ),
             dismissButtonMetrics: dismissButtonMetrics,
             contextualOnboardingMetrics: OnboardingTheme.ContextualOnboardingMetrics(
+                containerPadding: EdgeInsets(top: 16, leading: 16, bottom: 58, trailing: 16),
                 contentSpacing: 20,
-                titleBodyVerticalSpacing: 10,
+                titleBodyVerticalSpacingVerticalLayout: 10,
+                titleBodyVerticalSpacingHorizontalLayout: 10,
                 titleBodyInset: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                 contextualTitleTextAlignment: .leading,
                 contextualBodyTextAlignment: .leading,

@@ -271,6 +271,17 @@ extension NewTabPageViewController {
 
         let onManualDismiss: () -> Void = { [weak self] in
             self?.dismissHostingController(didFinishNTPOnboarding: true)
+
+            if spec == .final {
+                let nextSpec = dialogProvider.nextHomeScreenMessageNew()
+                if nextSpec == .subscriptionPromotion {
+                    self?.chromeDelegate?.omniBar.endEditing()
+                    self?.showNextDaxDialog()
+                    return
+                }
+                dialogProvider.dismiss()
+            }
+
             // Show keyboard when manually dismiss the Dax tips.
             self?.chromeDelegate?.omniBar.beginEditing(animated: true)
         }

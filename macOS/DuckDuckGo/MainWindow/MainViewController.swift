@@ -230,7 +230,8 @@ final class MainViewController: NSViewController {
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatTabOpener: aiChatTabOpener,
             windowControllersManager: windowControllersManager,
-            pixelFiring: pixelFiring
+            pixelFiring: pixelFiring,
+            featureFlagger: featureFlagger
         )
         aiChatSummarizer = AIChatSummarizer(
             aiChatMenuConfig: aiChatMenuConfig,
@@ -424,7 +425,11 @@ final class MainViewController: NSViewController {
     func showBookmarkPromptIfNeeded() {
         guard !isInPopUpWindow,
               !bookmarksBarViewController.bookmarksBarPromptShown,
-              OnboardingActionsManager.isOnboardingFinished else { return }
+              OnboardingActionsManager.isOnboardingFinished
+        else {
+            return
+        }
+
         if bookmarksBarIsVisible {
             // Don't show this to users who obviously know about the bookmarks bar already
             bookmarksBarViewController.bookmarksBarPromptShown = true
@@ -1177,7 +1182,8 @@ extension MainViewController {
 
         tabBarViewController.fireButton.isEnabled = !prevented
         tabBarViewController.isInteractionPrevented = prevented
-        navigationBarViewController.controlsForUserPrevention.forEach { $0?.isEnabled = !prevented }
+
+        navigationBarViewController.userInteraction(prevented: prevented)
         bookmarksBarViewController.userInteraction(prevented: prevented)
     }
 }

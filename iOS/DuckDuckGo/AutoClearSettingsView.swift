@@ -52,7 +52,8 @@ struct AutoClearSettingsView: View {
     private var autoClearToggleSection: some View {
         Section {
             SettingsCellView(label: UserText.settingsAutomaticallyDeleteData,
-                             accessory: .toggle(isOn: viewModel.autoClearEnabledBinding))
+                             accessory: .toggle(isOn: viewModel.autoClearEnabledBinding),
+                             accessoryAccessibilityIdentifier: Constants.toggleAccessibilityIdentifier)
         } footer: {
             Text(UserText.settingsAutoClearToggleFooter)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -138,5 +139,11 @@ private struct TimingOptionRow: View {
         .listRowBackground(Color(designSystemColor: .surface))
         .accessibilityLabel(label)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+private extension AutoClearSettingsView {
+    enum Constants {
+        static let toggleAccessibilityIdentifier = "AutoclearEnabledToggle"
     }
 }

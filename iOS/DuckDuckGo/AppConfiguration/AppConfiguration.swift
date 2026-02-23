@@ -27,8 +27,6 @@ import WebKit
 
 struct AppConfiguration {
 
-    private let featureFlagger = AppDependencyProvider.shared.featureFlagger
-
     let atbAndVariantConfiguration = ATBAndVariantConfiguration()
     let persistentStoresConfiguration = PersistentStoresConfiguration()
     let onboardingConfiguration = OnboardingConfiguration()

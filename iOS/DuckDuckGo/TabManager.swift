@@ -47,6 +47,16 @@ protocol TabManaging {
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
 }
 
+/// Receives lifecycle events for TabViewController instances managed by TabManager.
+@MainActor
+protocol TabControllerCacheDelegate: AnyObject {
+    /// Called when a new TabViewController has been created and added to the cache for the first time.
+    func tabManager(_ tabManager: TabManager, didCreateController controller: TabViewController)
+    /// Called when a background tab's WebKit process terminated and its controller was evicted
+    /// from the cache. The tab still exists in the model; a replacement will be created on next activation.
+    func tabManager(_ tabManager: TabManager, didInvalidateController controller: TabViewController)
+}
+
 protocol TrackerAnimationSuppressing {
     @MainActor func markTabAsExternalLaunch(_ tab: Tab)
     @MainActor func clearExternalLaunchFlags()
@@ -60,6 +70,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private(set) var persistence: TabsModelPersisting
 
     private var tabControllerCache = [TabViewController]()
+
+    weak var cacheDelegate: (any TabControllerCacheDelegate)?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let bookmarksDatabase: CoreDataDatabase
@@ -240,6 +252,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             let tabInteractionState = interactionStateSource?.popLastStateForTab(tab)
             let controller = buildController(forTab: tab, inheritedAttribution: nil, interactionState: tabInteractionState)
             tabControllerCache.append(controller)
+            cacheDelegate?.tabManager(self, didCreateController: controller)
             return controller
         } else {
             return nil
@@ -249,7 +262,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
     }
-    
+
     @MainActor
     func viewModel(for tab: Tab) -> TabViewModel {
         if let controller = controller(for: tab) {
@@ -286,6 +299,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return current(createIfNeeded: true)!
     }
 
+    @MainActor
     func addURLRequest(_ request: URLRequest?,
                        with configuration: WKWebViewConfiguration,
                        inheritedAttribution: AdClickAttributionLogic.State?) -> TabViewController {
@@ -343,13 +357,15 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.loadViewIfNeeded()
         controller.applyInheritedAttribution(inheritedAttribution)
         tabControllerCache.append(controller)
+        cacheDelegate?.tabManager(self, didCreateController: controller)
 
         save()
         return controller
     }
 
     func addHomeTab() {
-        model.add(tab: Tab())
+        let tab = Tab()
+        model.add(tab: tab)
         model.select(tabAt: model.count - 1)
         save()
     }
@@ -404,6 +420,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if !inBackground {
             model.select(tabAt: index + 1)
         }
+
+        cacheDelegate?.tabManager(self, didCreateController: controller)
 
         save()
         return controller
@@ -471,6 +489,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             current()?.reload()
         } else {
             removeFromCache(controller)
+            cacheDelegate?.tabManager(self, didInvalidateController: controller)
         }
     }
 

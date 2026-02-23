@@ -52,7 +52,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
     /// Pixel firing for analytics.
-    private let pixelFiring: WebExtensionPixelFiring
+    let pixelFiring: WebExtensionPixelFiring
 
     // MARK: - AsyncStream
 
@@ -106,12 +106,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         installationStore.installedExtensions.map(\.uniqueIdentifier)
     }
 
-    public var hasInstalledExtensions: Bool {
-        !installationStore.installedExtensions.isEmpty
-    }
-
     public var loadedExtensions: Set<WKWebExtensionContext> {
         controller.extensionContexts
+    }
+
+    /// Whether the embedded autoconsent web extension is loaded and active.
+    public var isAutoconsentExtensionLoaded: Bool {
+        contexts.contains { $0.duckDuckGoWebExtensionType == .embedded }
     }
 
     // MARK: - Install/Uninstall
@@ -136,7 +137,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
 
             installationStore.add(installedExtension)
 
-            Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) (\(identifier))")
+            Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) v\(installedExtension.version ?? "unknown") (\(identifier))")
             pixelFiring.fire(.installed)
         } catch {
             Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
@@ -283,7 +284,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         for (installedExtension, result) in zip(extensions, results) {
             switch result {
             case .success:
-                Logger.webExtensions.debug("✅ Loaded extension `\(installedExtension.name ?? "")` | \(installedExtension.filename) | \(installedExtension.uniqueIdentifier)")
+                Logger.webExtensions.debug("✅ Loaded extension `\(installedExtension.name ?? "")` v\(installedExtension.version ?? "unknown") | \(installedExtension.filename) | \(installedExtension.uniqueIdentifier)")
                 successCount += 1
             case .failure(let failure):
                 Logger.webExtensions.error("❌ Failed to load web extension \(installedExtension.filename) (\(installedExtension.uniqueIdentifier)): \(failure.localizedDescription)")
@@ -326,6 +327,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         contexts.first { $0.uniqueIdentifier == identifier }?.webExtension.displayName
     }
 
+    public func extensionVersion(for identifier: String) -> String? {
+        installationStore.installedExtension(withUniqueIdentifier: identifier)?.version
+    }
+
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
         contexts.first { url.absoluteString.hasPrefix($0.baseURL.absoluteString) }
     }
@@ -334,73 +339,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         contexts.first { $0.uniqueIdentifier == identifier }
     }
 
-    // MARK: - Bundled Extension Management
-
-    public func installBundledExtension(resourceURL: URL, blockedDomains: Set<String> = []) async throws {
-        let identifier = Self.bundledExtensionIdentifier(for: resourceURL)
-        Logger.webExtensions.debug("🔄 Installing bundled extension from: \(resourceURL.path) with identifier: \(identifier)")
-
-        guard context(for: identifier) == nil else {
-            Logger.webExtensions.debug("⚠️ Bundled extension '\(identifier)' is already loaded")
-            return
-        }
-
-        do {
-            try await loader.loadBundledWebExtension(from: resourceURL, identifier: identifier, blockedDomains: blockedDomains, into: controller)
-            bundledExtensionIdentifiers.insert(identifier)
-            Logger.webExtensions.info("✅ Successfully installed bundled extension (\(identifier))")
-        } catch {
-            Logger.webExtensions.error("❌ Failed to install bundled extension: \(error.localizedDescription)")
-            throw WebExtensionError.failedToLoadWebExtension(error)
-        }
-
-        notifyUpdate()
-    }
-
-    public func uninstallBundledExtension(resourceURL: URL) throws {
-        let identifier = Self.bundledExtensionIdentifier(for: resourceURL)
-        Logger.webExtensions.debug("🔄 Uninstalling bundled extension: \(identifier)")
-
-        bundledExtensionIdentifiers.remove(identifier)
-
-        do {
-            try loader.unloadExtension(identifier: identifier, from: controller)
-            Logger.webExtensions.info("✅ Successfully uninstalled bundled extension (\(identifier))")
-        } catch {
-            Logger.webExtensions.debug("⚠️ Bundled extension '\(identifier)' was not loaded: \(error.localizedDescription)")
-        }
-
-        notifyUpdate()
-    }
-
-    public func isBundledExtension(_ context: WKWebExtensionContext) -> Bool {
-        bundledExtensionIdentifiers.contains(context.uniqueIdentifier)
-    }
-
-    public func updatePermissions(_ permissions: [WebExtensionMatchPatternPermission], forBundledExtensionAt resourceURL: URL) async throws {
-        let identifier = Self.bundledExtensionIdentifier(for: resourceURL)
-
-        guard let extensionContext = context(for: identifier) else {
-            Logger.webExtensions.error("❌ Cannot update permissions: bundled extension '\(identifier)' not loaded")
-            return
-        }
-
-        guard !permissions.isEmpty else { return }
-
-        for permission in permissions {
-            extensionContext.setPermissionStatus(permission.status, for: permission.matchPattern, expirationDate: nil)
-        }
-
-        Logger.webExtensions.debug("Applied \(permissions.count) permission update(s) for '\(identifier)'")
-    }
-
-    static func bundledExtensionIdentifier(for resourceURL: URL) -> String {
-        let data = Data(resourceURL.path.utf8)
-        let hash = SHA256.hash(data: data)
-        return hash.map { String(format: "%02x", $0) }.joined()
-    }
-
-    private func notifyUpdate() {
+    func notifyUpdate() {
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
     }
@@ -424,18 +363,12 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        openNewWindowUsing configuration: WKWebExtension.WindowConfiguration,
                                        for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionWindow)? {
-        if isBundledExtension(extensionContext) {
-            throw WebExtensionControllerDelegateError.notSupported
-        }
         return try await windowTabProvider.openNewWindow(using: configuration, for: extensionContext)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        openNewTabUsing configuration: WKWebExtension.TabConfiguration,
                                        for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionTab)? {
-        if isBundledExtension(extensionContext) {
-            throw WebExtensionControllerDelegateError.notSupported
-        }
         return try await windowTabProvider.openNewTab(using: configuration, for: extensionContext)
     }
 
@@ -447,9 +380,6 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        presentActionPopup action: WKWebExtension.Action,
                                        for extensionContext: WKWebExtensionContext) async throws {
-        if isBundledExtension(extensionContext) {
-            throw WebExtensionControllerDelegateError.notSupported
-        }
         try await windowTabProvider.presentPopup(action, for: extensionContext)
     }
 

@@ -1634,6 +1634,9 @@ extension Pixel {
         case webExtensionUninstallAllError
         case webExtensionLoaded
         case webExtensionLoadError
+        case webExtensionEmbeddedInstalled
+        case webExtensionEmbeddedUpgraded
+        case webExtensionEmbeddedInstallError
     }
 
 }
@@ -3200,6 +3203,9 @@ extension Pixel.Event {
         case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
         case .webExtensionLoaded: return "m_web_extension_loaded"
         case .webExtensionLoadError: return "m_web_extension_load_error"
+        case .webExtensionEmbeddedInstalled: return "m_web_extension_embedded_installed"
+        case .webExtensionEmbeddedUpgraded: return "m_web_extension_embedded_upgraded"
+        case .webExtensionEmbeddedInstallError: return "m_web_extension_embedded_install_error"
         }
     }
 }

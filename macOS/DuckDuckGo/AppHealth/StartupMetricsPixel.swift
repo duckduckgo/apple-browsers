@@ -24,6 +24,7 @@ import PixelKit
 struct StartupMetricsPixel: PixelKitEvent {
 
     let isOnBattery: Bool
+    let activeProcessorCount: Int?
     let durationOfAppInit: TimeInterval?
     let durationOfAppWillFinishLaunching: TimeInterval?
     let durationOfAppDidFinishLaunchingBeforeStateRestoration: TimeInterval?
@@ -38,33 +39,36 @@ struct StartupMetricsPixel: PixelKitEvent {
     }
 
     var parameters: [String: String]? {
-        var params = [
-            "is_on_battery": isOnBattery.description
-        ]
+        var params = [String: String]()
 
+        params["is_on_battery"] = isOnBattery.description
+
+        if let count = activeProcessorCount {
+            params["active_processor_count"] = StartupMetricsBuckets.bucketProcessorCount(count)
+        }
         if let duration = durationOfAppInit {
-            params["duration_of_app_init"] = bucket(seconds: duration)
+            params["duration_of_app_init"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
         if let duration = durationOfAppWillFinishLaunching {
-            params["duration_of_app_will_finish_launching"] = bucket(seconds: duration)
+            params["duration_of_app_will_finish_launching"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
         if let duration = durationOfAppDidFinishLaunchingBeforeStateRestoration {
-            params["duration_of_app_did_finish_launching_before_state_restoration"] = bucket(seconds: duration)
+            params["duration_of_app_did_finish_launching_before_state_restoration"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
         if let duration = durationOfAppDidFinishLaunchingAfterStateRestoration {
-            params["duration_of_app_did_finish_launching_after_state_restoration"] = bucket(seconds: duration)
+            params["duration_of_app_did_finish_launching_after_state_restoration"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
         if let duration = durationOfAppStateRestoration, duration > 0 {
-            params["duration_of_app_state_restoration"] = bucket(seconds: duration)
+            params["duration_of_app_state_restoration"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
         if let delta = deltaBetweenAppInitAndWillFinishLaunching {
-            params["delta_between_app_init_and_app_will_finish_launching"] = bucket(seconds: delta)
+            params["delta_between_app_init_and_app_will_finish_launching"] = StartupMetricsBuckets.bucketMilliseconds(delta)
         }
         if let delta = deltaBetweenAppWillFinishAndDidFinishLaunching {
-            params["delta_between_app_will_finish_and_app_did_finish"] = bucket(seconds: delta)
+            params["delta_between_app_will_finish_and_app_did_finish"] = StartupMetricsBuckets.bucketMilliseconds(delta)
         }
         if let delta = deltaBetweenLaunchAndDidDisplayInterface {
-            params["delta_between_launch_and_did_display_interface"] = bucket(seconds: delta)
+            params["delta_between_launch_and_did_display_interface"] = StartupMetricsBuckets.bucketMilliseconds(delta)
         }
 
         return params
@@ -72,36 +76,5 @@ struct StartupMetricsPixel: PixelKitEvent {
 
     var standardParameters: [PixelKitStandardParameter]? {
         [.pixelSource]
-    }
-}
-
-private extension StartupMetricsPixel {
-
-    func bucket(seconds: TimeInterval) -> String {
-        let ms = Int(seconds * 1000)
-        let bucket: Int
-
-        switch ms {
-        case ..<100:
-            bucket = 0
-        case ..<250:
-            bucket = 100
-        case ..<500:
-            bucket = 250
-        case ..<1000:
-            bucket = 500
-        case ..<2000:
-            bucket = 1000
-        case ..<3000:
-            bucket = 2000
-        case ..<5000:
-            bucket = 3000
-        case ..<10000:
-            bucket = 5000
-        default:
-            bucket = 10000
-        }
-
-        return String(bucket)
     }
 }

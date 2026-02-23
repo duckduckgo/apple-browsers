@@ -12,54 +12,60 @@
                 "key": "duration_of_app_init",
                 "type": "string",
                 "description": "Optional. Duration of app init in milliseconds, bucketed.",
-                "enum": ["0", "100", "250", "500", "1000", "2000", "3000", "5000", "10000"]
+                "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
                 "key": "duration_of_app_will_finish_launching",
                 "type": "string",
                 "description": "Optional. Duration of applicationWillFinishLaunching in milliseconds, bucketed.",
-                "enum": ["0", "100", "250", "500", "1000", "2000", "3000", "5000", "10000"]
+                "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
                 "key": "duration_of_app_did_finish_launching_before_state_restoration",
                 "type": "string",
                 "description": "Optional. Duration of applicationDidFinishLaunching before state restoration in milliseconds, bucketed.",
-                "enum": ["0", "100", "250", "500", "1000", "2000", "3000", "5000", "10000"]
+                "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
                 "key": "duration_of_app_did_finish_launching_after_state_restoration",
                 "type": "string",
                 "description": "Optional. Duration of applicationDidFinishLaunching after state restoration in milliseconds, bucketed.",
-                "enum": ["0", "100", "250", "500", "1000", "2000", "3000", "5000", "10000"]
+                "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
                 "key": "duration_of_app_state_restoration",
                 "type": "string",
                 "description": "Optional. Duration of app state restoration in milliseconds, bucketed. Only sent when greater than zero.",
-                "enum": ["0", "100", "250", "500", "1000", "2000", "3000", "5000", "10000"]
+                "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
                 "key": "delta_between_app_init_and_app_will_finish_launching",
                 "type": "string",
                 "description": "Optional. Time delta between app init and applicationWillFinishLaunching in milliseconds, bucketed.",
-                "enum": ["0", "100", "250", "500", "1000", "2000", "3000", "5000", "10000"]
+                "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
                 "key": "delta_between_app_will_finish_and_app_did_finish",
                 "type": "string",
                 "description": "Optional. Time delta between applicationWillFinishLaunching and applicationDidFinishLaunching in milliseconds, bucketed.",
-                "enum": ["0", "100", "250", "500", "1000", "2000", "3000", "5000", "10000"]
+                "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
                 "key": "delta_between_launch_and_did_display_interface",
                 "type": "string",
                 "description": "Optional. Time delta between app launch and first interface display in milliseconds, bucketed.",
-                "enum": ["0", "100", "250", "500", "1000", "2000", "3000", "5000", "10000"]
+                "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
                 "key": "is_on_battery",
                 "type": "boolean",
                 "description": "Optional. Whether the Mac is running on battery power at the time of launch."
+            },
+            {
+                "key": "active_processor_count",
+                "type": "string",
+                "description": "Optional. Number of active logical processors at launch time, bucketed.",
+                "enum": ["1", "2", "4", "8", "12"]
             }
         ]
     }

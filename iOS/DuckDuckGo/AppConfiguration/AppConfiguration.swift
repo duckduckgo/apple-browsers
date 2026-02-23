@@ -40,7 +40,6 @@ struct AppConfiguration {
 
     func start(isBookmarksDBFilePresent: Bool?) throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
-        PixelConfiguration.configure(with: featureFlagger)
 
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 

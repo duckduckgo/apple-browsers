@@ -119,6 +119,7 @@ final class AppDependencyProvider: DependencyProvider {
         let experimentManager = ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:))
 
         var featureFlagger: FeatureFlagger
+
         if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
             let mockFeatureFlagger = MockFeatureFlagger()
             self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
@@ -134,6 +135,9 @@ final class AppDependencyProvider: DependencyProvider {
             self.contentScopeExperimentsManager = defaultFeatureFlagger
             featureFlagger = defaultFeatureFlagger
         }
+
+        // Configuring PixelKit
+        PixelConfiguration.configure(with: featureFlagger)
 
         self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         self.freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(

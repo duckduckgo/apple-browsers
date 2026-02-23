@@ -92,7 +92,7 @@ public final class CrashCollection {
                 }
 
             // Only process crash diagnostics
-            let processedData = process(payloads.filter({ $0.crashDiagnostics?.isEmpty != true }))
+            let processedData = process(payloads.filter({ $0.crashDiagnostics?.isEmpty == false }))
 
             didFindCrashReports(pixelParameters, processedData) {
                 Task {

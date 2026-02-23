@@ -480,9 +480,10 @@ extension OnboardingRebranding {
 
             // Animation with small delay for a better effect when intro content disappear
             let animationDuration = OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration
+            let contentFadeInDelay = OnboardingBubbleAnimationMetrics.contentFadeInDelay
             let animation = Animation
                 .linear(duration: animationDuration)
-                .delay(OnboardingBubbleAnimationMetrics.contentFadeInDelay)
+                .delay(contentFadeInDelay)
 
             if #available(iOS 17, *) {
                 withAnimation(animation) {
@@ -495,7 +496,8 @@ extension OnboardingRebranding {
                 withAnimation(animation) {
                     model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
+                // iOS < 17 fallback: wait for total animation time (delay + duration)
+                DispatchQueue.main.asyncAfter(deadline: .now() + contentFadeInDelay + animationDuration) {
                     model.browserComparisonState.animateComparisonText = true
                     model.browserComparisonState.showComparisonButton = true
                 }

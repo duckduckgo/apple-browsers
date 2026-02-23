@@ -61,9 +61,19 @@ public protocol WebExtensionManaging: AnyObject {
     @discardableResult
     func uninstallAllExtensions() -> [Result<Void, Error>]
 
+    /// Syncs embedded extensions from the registry based on the enabled types.
+    /// Installs/upgrades enabled extensions and uninstalls disabled ones.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async
+
     /// Uninstalls an embedded extension of the given type if it's currently installed.
     @available(macOS 15.4, iOS 18.4, *)
     func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType)
+
+    /// Finds an installed extension by its embedded type.
+    @available(macOS 15.4, iOS 18.4, *)
+    func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension?
 
     /// Unloads all currently loaded extensions from memory without uninstalling them.
     /// This is useful when clearing browser data to ensure extensions don't interfere.

@@ -40,6 +40,7 @@ final class AIChatHistoryListViewController: UIViewController {
         static let escapeHatchTopPadding: CGFloat = 16
         static let escapeHatchHeaderHeight: CGFloat = 72
         static let escapeHatchBottomPadding: CGFloat = 16
+        /// Top content inset when escape hatch is shown so the card has visible space below the bar.
         static let escapeHatchTopContentInset: CGFloat = 8
     }
 
@@ -112,6 +113,7 @@ final class AIChatHistoryListViewController: UIViewController {
             .store(in: &cancellables)
     }
 
+    /// Shows or hides the escape hatch (Return to tab card) as the table header. Pass nil to hide.
     func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
         if model == currentEscapeHatchModel {
             return
@@ -119,6 +121,13 @@ final class AIChatHistoryListViewController: UIViewController {
         currentEscapeHatchModel = model
 
         if let model, let onTapped {
+            if let existingHosting = escapeHatchHostingController {
+                existingHosting.willMove(toParent: nil)
+                existingHosting.view.removeFromSuperview()
+                existingHosting.removeFromParent()
+            }
+            escapeHatchHostingController = nil
+
             let card = ReturnToTabCard(model: model, onTap: onTapped)
             let hosting = UIHostingController(rootView: card)
             hosting.view.backgroundColor = .clear

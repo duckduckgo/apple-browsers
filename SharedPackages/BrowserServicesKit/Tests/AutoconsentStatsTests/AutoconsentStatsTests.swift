@@ -32,8 +32,7 @@ final class AutoconsentStatsTests: XCTestCase {
         try await super.setUp()
         mockKeyValueStore = try MockKeyValueFileStore()
         autoconsentStats = AutoconsentStats(
-            keyValueStore: mockKeyValueStore,
-            isFeatureEnabled: { true },
+            keyValueStore: mockKeyValueStore
         )
     }
 

@@ -210,7 +210,7 @@ struct SaveLoginView: View {
     // MARK: - Features List
 
     @ViewBuilder
-    private func featuresView(useCompactFont: Bool = false) -> some View {
+    private func featuresView() -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center) {
                 Text(UserText.autofillOnboardingKeyFeaturesTitle)
@@ -228,20 +228,17 @@ struct SaveLoginView: View {
                 featuresListItem(
                     image: Image(uiImage: DesignSystemImages.Color.Size24.autofill),
                     title: UserText.autofillOnboardingKeyFeaturesSignInsTitle,
-                    subtitle: UserText.autofillOnboardingKeyFeaturesSignInsDescription,
-                    useCompactFont: useCompactFont
+                    subtitle: UserText.autofillOnboardingKeyFeaturesSignInsDescription
                 )
                 featuresListItem(
                     image: Image(uiImage: DesignSystemImages.Color.Size24.lock),
                     title: UserText.autofillOnboardingKeyFeaturesSecureStorageTitle,
-                    subtitle: viewModel.secureStorageDescription,
-                    useCompactFont: useCompactFont
+                    subtitle: viewModel.secureStorageDescription
                 )
                 featuresListItem(
                     image: Image(uiImage: DesignSystemImages.Color.Size24.sync),
                     title: UserText.autofillOnboardingKeyFeaturesSyncTitle,
-                    subtitle: UserText.autofillOnboardingKeyFeaturesSyncDescription,
-                    useCompactFont: useCompactFont
+                    subtitle: UserText.autofillOnboardingKeyFeaturesSyncDescription
                 )
             }
             .padding(.horizontal, Const.Size.featuresListPadding)
@@ -259,9 +256,9 @@ struct SaveLoginView: View {
     }
 
     @ViewBuilder
-    private func featuresListItem(image: Image, title: String, subtitle: String, useCompactFont: Bool = false) -> some View {
-        let titleFont = Font(useCompactFont ? UIFont.daxFootnoteSemibold() : UIFont.daxSubheadSemibold())
-        let subtitleFont = Font(useCompactFont ? UIFont.daxFootnoteRegular() : UIFont.daxSubheadRegular())
+    private func featuresListItem(image: Image, title: String, subtitle: String) -> some View {
+        let titleFont = Font(UIFont.daxSubheadSemibold())
+        let subtitleFont = Font(UIFont.daxSubheadRegular())
 
         HStack(alignment: .top, spacing: Const.Size.featuresListItemHorizontalSpacing) {
             image.frame(width: Const.Size.featuresListItemImageWidthHeight, height: Const.Size.featuresListItemImageWidthHeight)

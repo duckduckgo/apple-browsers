@@ -80,18 +80,6 @@ struct AutofillViews {
         }
     }
 
-    struct SemiboldHeadline: View {
-        let title: String
-
-        var body: some View {
-            Text(title)
-                .daxHeadline()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .frame(maxWidth: Const.Size.maxWidth)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
 
     struct Description: View {
         let text: String

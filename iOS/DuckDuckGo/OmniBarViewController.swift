@@ -31,6 +31,9 @@ class OmniBarViewController: UIViewController, OmniBar {
     // swiftlint:disable:next force_cast
     var barView: any OmniBarView { view as! OmniBarView }
 
+    /// Access to iPad-specific expandable search area features.
+    var expandableBarView: ExpandableOmniBarView? { barView as? ExpandableOmniBarView }
+
     var isBackButtonEnabled: Bool {
         get { barView.backButton.isEnabled }
         set { barView.backButton.isEnabled = newValue }
@@ -168,7 +171,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.refreshButton.isPointerInteractionEnabled = true
         barView.customizableButton.isPointerInteractionEnabled = true
         barView.clearButton.isPointerInteractionEnabled = true
-        barView.externalRefreshButtonView.isPointerInteractionEnabled = true
+        expandableBarView?.externalRefreshButtonView.isPointerInteractionEnabled = true
     }
 
     private func configureTextField() {
@@ -255,10 +258,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onAIChatBrandingPressed = { [weak self] in
             self?.onAIChatBrandingPressed()
         }
-        barView.onSearchModePressed = { [weak self] in
+        expandableBarView?.onSearchModePressed = { [weak self] in
             self?.setSelectedTextEntryMode(.search)
         }
-        barView.onAIChatModePressed = { [weak self] in
+        expandableBarView?.onAIChatModePressed = { [weak self] in
             self?.setSelectedTextEntryMode(.aiChat)
         }
     }
@@ -649,7 +652,7 @@ class OmniBarViewController: UIViewController, OmniBar {
                 }
                 cancelAllAnimations()
 
-                let isExpanded = barView.isSearchAreaExpanded
+                let isExpanded = expandableBarView?.isSearchAreaExpanded == true
                 let isNewStateResting = !newState.isDifferentState(than: newState.onEditingStoppedState)
                 if !isExpanded && (isNewStateResting || !newState.showAIChatModeToggle) {
                     selectedTextEntryMode = .search
@@ -683,18 +686,20 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isBookmarksButtonHidden = !state.showBookmarksButton
         barView.isAIChatButtonHidden = !state.showAIChatButton
         
-        barView.isExternalRefreshButtonHidden = !state.showRefreshOutsideAddressBar
-        barView.externalRefreshButtonView.isEnabled = state.isBrowsing
-        barView.selectedModeToggleState = selectedTextEntryMode
+        if let expandable = expandableBarView {
+            expandable.isExternalRefreshButtonHidden = !state.showRefreshOutsideAddressBar
+            expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
+            expandable.selectedModeToggleState = selectedTextEntryMode
 
-        let shouldShowModeToggle = state.showAIChatModeToggle
-        barView.isModeToggleHidden = !shouldShowModeToggle
-        if shouldShowModeToggle {
-            barView.isAIChatButtonHidden = true
+            let shouldShowModeToggle = state.showAIChatModeToggle
+            expandable.isModeToggleHidden = !shouldShowModeToggle
+            if shouldShowModeToggle {
+                barView.isAIChatButtonHidden = true
+            }
+
+            let shouldExpand = shouldShowModeToggle && selectedTextEntryMode == .aiChat
+            expandable.setSearchAreaExpanded(shouldExpand, animated: false)
         }
-
-        let shouldExpand = shouldShowModeToggle && selectedTextEntryMode == .aiChat
-        barView.setSearchAreaExpanded(shouldExpand, animated: false)
 
         if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled == false {
             applyCustomization()
@@ -773,8 +778,8 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func clear() {
         textField.text = nil
-        barView.aiChatTextView.text = nil
-        barView.updateTextFieldPlaceholderVisibility(hasText: false)
+        expandableBarView?.aiChatTextView.text = nil
+        expandableBarView?.updateTextFieldPlaceholderVisibility(hasText: false)
         omniDelegate?.onOmniQueryUpdated("")
     }
 
@@ -907,7 +912,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         updateTextFieldPlaceholderForSelectedMode()
 
         if state.showAIChatModeToggle {
-            barView.setSearchAreaExpanded(mode == .aiChat, animated: true)
+            expandableBarView?.setSearchAreaExpanded(mode == .aiChat, animated: true)
         }
     }
 

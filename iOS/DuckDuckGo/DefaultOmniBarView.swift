@@ -40,7 +40,7 @@ public enum OmniBarIcon {
     }
 }
 
-final class DefaultOmniBarView: UIView, OmniBarView {
+final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     var textField: TextFieldWithInsets! { searchAreaView.textField }
     var privacyInfoContainer: PrivacyInfoContainerView! { searchAreaView.privacyInfoContainer }

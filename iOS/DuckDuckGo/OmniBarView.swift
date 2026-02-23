@@ -84,7 +84,17 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     /// Callback triggered when the omnibar branding area is tapped while in AI Chat mode
     var onAIChatBrandingPressed: (() -> Void)? { get set }
 
-    // iPad duck.ai mode toggle
+    // static function is needed to allow creation of DefaultOmniBarView from xib
+    static func create() -> Self
+    static var expectedHeight: CGFloat { get }
+
+    func hideButtons()
+    func revealButtons()
+}
+
+/// iPad-specific extension for the duck.ai mode toggle and expandable search area.
+/// Separated from `OmniBarView` so the base protocol stays lean for all omnibar implementations.
+protocol ExpandableOmniBarView: OmniBarView {
     var externalRefreshButtonView: BrowserChromeButton { get }
     var isExternalRefreshButtonHidden: Bool { get set }
     var onSearchModePressed: (() -> Void)? { get set }
@@ -95,13 +105,6 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func setSearchAreaExpanded(_ expanded: Bool, animated: Bool)
     var aiChatTextView: UITextView { get }
     func updateTextFieldPlaceholderVisibility(hasText: Bool)
-
-    // static function is needed to allow creation of DefaultOmniBarView from xib
-    static func create() -> Self
-    static var expectedHeight: CGFloat { get }
-
-    func hideButtons()
-    func revealButtons()
 }
 
 protocol OmniBarStatusUpdateable: AnyObject {

@@ -733,6 +733,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     @objc private func searchAreaPressed() {
+        if isSearchAreaExpanded {
+            aiChatTextView.becomeFirstResponder()
+            return
+        }
         onTrackersViewPressed?()
     }
 

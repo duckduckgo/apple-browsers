@@ -328,9 +328,9 @@ extension DefaultOmniBarViewController {
             return
         }
 
-        // When switching to duck.ai without prior address bar interaction, the text field
-        // may contain the current page URL. Clear it so the expanded view starts empty.
-        if mode == .aiChat && !omniBarView.textField.isEditing {
+        // When switching to duck.ai without editing the auto-selected URL, clear it so
+        // the expanded view starts empty.
+        if mode == .aiChat && shouldClearTextWhenSwitchingToDuckAI() {
             omniBarView.textField.text = ""
         }
 
@@ -363,6 +363,29 @@ extension DefaultOmniBarViewController {
             self.refreshState(self.state.onEditingStartedState)
             self.omniDelegate?.onDidBeginEditing()
         }
+    }
+
+    private func shouldClearTextWhenSwitchingToDuckAI() -> Bool {
+        guard let textField = omniBarView.textField else {
+            return false
+        }
+
+        // Preserve non-URL user input when switching to duck.ai.
+        guard let text = textField.text,
+              URL(trimmedAddressBarString: text.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) != nil else {
+            return false
+        }
+
+        // If we're not editing, this is page URL display text.
+        guard textField.isEditing else { return true }
+
+        // If full URL text remains selected, user hasn't interacted with it yet.
+        guard let selectedTextRange = textField.selectedTextRange,
+              let selectedText = textField.text(in: selectedTextRange) else {
+            return false
+        }
+
+        return selectedText == text
     }
 }
 

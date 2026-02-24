@@ -52,7 +52,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     }
 
     var isDarkModeEnabled: Bool {
-        isFeatureEnabled && storage.adaptiveDarkModeEnabled ?? false
+        isFeatureEnabled && (storage.adaptiveDarkModeEnabled ?? false)
     }
 
     func setDarkModeEnabled(_ enabled: Bool) {

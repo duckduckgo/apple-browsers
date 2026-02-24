@@ -361,7 +361,7 @@ extension PrivacyDashboardViewController {
                                 debugFlags: privacyInfo.debugFlags,
                                 privacyExperiments: privacyInfo.privacyExperimentCohorts,
                                 isPirEnabled: nil,
-                                isForceDarkModeEnabled: nil,
+                                isForceDarkModeEnabled: breakageAdditionalInfo.isForceDarkModeEnabled,
                                 detectorMetrics: detectorMetrics)
     }
 

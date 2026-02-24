@@ -30,7 +30,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
     func fetchBroker(with brokerId: Int64) throws -> DataBroker?
 
-    func saveBroker(dataBroker: DataBroker) throws -> Int64
+    func saveBroker(brokerResource: BrokerResource) throws -> Int64
     func saveProfileQuery(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
     func fetchProfileQuery(with profileQueryId: Int64) throws -> ProfileQuery?
     func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws
@@ -431,11 +431,11 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
-    public func saveBroker(dataBroker: DataBroker) throws -> Int64 {
+    public func saveBroker(brokerResource: BrokerResource) throws -> Int64 {
         do {
-            return try vault.save(broker: dataBroker)
+            return try vault.save(brokerResource: brokerResource)
         } catch {
-            handleError(error, context: "DataBrokerProtectionDatabase.saveBroker dataBroker")
+            handleError(error, context: "DataBrokerProtectionDatabase.saveBroker brokerResource")
             throw error
         }
     }
@@ -627,9 +627,9 @@ extension DataBrokerProtectionDatabase {
         var brokerIDs = storedBrokers.compactMap(\.id)
 
         /// If none exists in the vault, populate them with bundled JSONs
-        if storedBrokers.isEmpty, let brokers = try localBrokerService.bundledBrokers() {
-            for broker in brokers {
-                let brokerId = try vault.save(broker: broker)
+        if storedBrokers.isEmpty, let brokerResources = try localBrokerService.bundledBrokers() {
+            for brokerResource in brokerResources {
+                let brokerId = try vault.save(brokerResource: brokerResource)
                 brokerIDs.append(brokerId)
             }
         }

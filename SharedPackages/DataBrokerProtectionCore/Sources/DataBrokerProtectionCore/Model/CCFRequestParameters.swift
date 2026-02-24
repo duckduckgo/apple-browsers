@@ -62,6 +62,14 @@ struct ActionRequest: Encodable {
             assertionFailure("Data not found. Please add the mission data to the encoding list.")
         }
 
+        if let json = action.json {
+            guard let rawActionObject = try JSONSerialization.jsonObject(with: json) as? [String: Any] else {
+                throw EncodingError.invalidValue(json, EncodingError.Context(codingPath: [CodingKeys.action], debugDescription: "Invalid action JSON payload"))
+            }
+            try container.encodeIfPresent(rawActionObject, forKey: .action)
+            return
+        }
+
         switch action {
         case let navigateAction as NavigateAction:
             try container.encode(navigateAction, forKey: .action)

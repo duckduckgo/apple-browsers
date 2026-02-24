@@ -38,17 +38,24 @@ internal final class ExpectationAction: Action {
     let expectations: [Item]
     let dataSource: DataSource?
     let actions: [Action]?
+    let json: Data?
 
     enum CodingKeys: String, CodingKey {
         case id, actionType, expectations, dataSource, actions
     }
 
-    init(id: String, actionType: ActionType, expectations: [Item], dataSource: DataSource?, actions: [Action]?) {
+    init(id: String,
+         actionType: ActionType,
+         expectations: [Item],
+         dataSource: DataSource?,
+         actions: [Action]?,
+         json: Data? = nil) {
         self.id = id
         self.actionType = actionType
         self.expectations = expectations
         self.dataSource = dataSource
         self.actions = actions
+        self.json = json
     }
 
     required init(from decoder: Decoder) throws {
@@ -63,6 +70,7 @@ internal final class ExpectationAction: Action {
         } else {
             self.actions = nil
         }
+        self.json = nil
     }
 
     func encode(to encoder: Encoder) throws {
@@ -74,5 +82,14 @@ internal final class ExpectationAction: Action {
 
         var actionsContainer = container.nestedUnkeyedContainer(forKey: .actions)
         try actions?.encode(to: &actionsContainer)
+    }
+
+    func with(json: Data?) -> ExpectationAction {
+        ExpectationAction(id: id,
+                          actionType: actionType,
+                          expectations: expectations,
+                          dataSource: dataSource,
+                          actions: actions,
+                          json: json)
     }
 }

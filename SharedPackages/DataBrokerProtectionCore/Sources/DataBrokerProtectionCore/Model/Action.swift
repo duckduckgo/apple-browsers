@@ -40,9 +40,12 @@ public protocol Action: Codable, Sendable {
     var actionType: ActionType { get }
     var needsEmail: Bool { get }
     var dataSource: DataSource { get }
+    var json: Data? { get }
+    func with(json: Data?) -> Self
 }
 
 extension Action {
     public var needsEmail: Bool { false }
     public var dataSource: DataSource { .userProfile }
+    public var json: Data? { nil }
 }

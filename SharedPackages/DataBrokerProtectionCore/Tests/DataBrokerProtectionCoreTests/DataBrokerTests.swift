@@ -25,7 +25,8 @@ final class DataBrokerTests: XCTestCase {
 
     func testInitValidBroker() throws {
         let jsonURL = Bundle.module.url(forResource: "valid-broker", withExtension: "json", subdirectory: "BundleResources")!
-        let broker = try DataBroker.initFromResource(jsonURL)
+        let brokerResource = try DataBroker.initFromResource(jsonURL)
+        let broker = brokerResource.broker
 
         XCTAssertEqual(broker.name, "DDG Fake Broker")
         XCTAssertEqual(broker.url, "fakebroker.com")

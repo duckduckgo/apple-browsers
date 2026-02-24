@@ -148,7 +148,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     // MARK: - Local fallback
 
-    public func bundledBrokers() throws -> [DataBroker]? {
+    public func bundledBrokers() throws -> [BrokerResource]? {
         try localBrokerProvider?.bundledBrokers()
     }
 
@@ -324,11 +324,10 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             guard changedBrokerFileNames.contains(fileName) else { continue }
 
             do {
-                var dataBroker = try DataBroker.initFromResource(fileURL)
-                dataBroker.setETag(eTagMapping[fileName] ?? "")
+                let brokerResource = try DataBroker.initFromResource(fileURL).with(eTag: eTagMapping[fileName] ?? "")
                 if activeBrokers.contains(fileName) {
-                    try upsertBroker(dataBroker)
-                    pixelHandler?.fire(.updateDataBrokersSuccess(dataBrokerFileName: fileName, removedAt: dataBroker.removedAtTimestamp))
+                    try upsertBroker(brokerResource)
+                    pixelHandler?.fire(.updateDataBrokersSuccess(dataBrokerFileName: fileName, removedAt: brokerResource.broker.removedAtTimestamp))
                 }
             } catch let error as DecodingError {
                 Logger.dataBrokerProtection.log("🧩 Failed to decode JSON file \(fileURL.lastPathComponent): \(error), skipping update")

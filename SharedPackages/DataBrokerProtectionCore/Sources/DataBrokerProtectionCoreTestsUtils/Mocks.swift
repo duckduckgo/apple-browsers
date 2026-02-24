@@ -548,12 +548,15 @@ public final class ResourcesRepositoryMock: ResourcesRepository {
 
     public init() {}
 
-    public func fetchBrokerFromResourceFiles() throws -> [DataBroker]? {
+    public func fetchBrokerResourcesFromFiles() throws -> [BrokerResource]? {
         wasFetchBrokerFromResourcesFilesCalled = true
         if shouldThrowOnFetch {
             throw DataBrokerProtectionError.unknown("Mock fetch error")
         }
-        return brokersList
+        return try brokersList?.map { broker in
+            let rawJSON = try JSONEncoder().encode(broker)
+            return BrokerResource(fileName: "\(broker.url).json", broker: broker, rawJSON: rawJSON)
+        }
     }
 
     public func reset() {
@@ -660,12 +663,12 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return
     }
 
-    public func save(broker: DataBroker) throws -> Int64 {
+    public func save(brokerResource _: BrokerResource) throws -> Int64 {
         wasBrokerSavedCalled = true
         return 1
     }
 
-    public func update(_ broker: DataBroker, with id: Int64) throws {
+    public func update(_ brokerResource: BrokerResource, with _: Int64) throws {
         wasBrokerUpdateCalled = true
         if shouldThrowOnUpdate {
             throw DataBrokerProtectionError.unknown("Mock update error")
@@ -1305,7 +1308,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
     }
 
-    public func saveBroker(dataBroker: DataBroker) throws -> Int64 {
+    public func saveBroker(brokerResource _: BrokerResource) throws -> Int64 {
         1
     }
 
@@ -2079,7 +2082,7 @@ public final class MockBrokerJSONService: BrokerJSONServiceProvider {
         didCallCheckForUpdates = true
     }
 
-    public func bundledBrokers() throws -> [DataBroker]? {
+    public func bundledBrokers() throws -> [BrokerResource]? {
         nil
     }
 
@@ -2091,7 +2094,7 @@ public final class MockBrokerJSONService: BrokerJSONServiceProvider {
 public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
     public init() {}
 
-    public func bundledBrokers() throws -> [DataBroker]? {
+    public func bundledBrokers() throws -> [BrokerResource]? {
         []
     }
 

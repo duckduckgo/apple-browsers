@@ -36,6 +36,7 @@ struct ClickAction: Action {
     let dataSource: DataSource?
     let choices: [Choice]?
     let `default`: Default?
+    let json: Data?
 
     let hasDefault: Bool
 
@@ -43,7 +44,14 @@ struct ClickAction: Action {
         let elements: [PageElement]?
     }
 
-    init(id: String, actionType: ActionType, elements: [PageElement]? = nil, dataSource: DataSource? = nil, choices: [Choice]? = nil, `default`: Default? = nil, hasDefault: Bool = false) {
+    init(id: String,
+         actionType: ActionType,
+         elements: [PageElement]? = nil,
+         dataSource: DataSource? = nil,
+         choices: [Choice]? = nil,
+         `default`: Default? = nil,
+         hasDefault: Bool = false,
+         json: Data? = nil) {
        self.id = id
        self.actionType = actionType
        self.elements = elements
@@ -51,6 +59,7 @@ struct ClickAction: Action {
        self.choices = choices
        self.default = `default`
        self.hasDefault = `default` != nil
+       self.json = json
    }
 
     init(from decoder: any Decoder) throws {
@@ -62,6 +71,7 @@ struct ClickAction: Action {
         self.choices = try container.decodeIfPresent([Choice].self, forKey: .choices)
         self.default = try container.decodeIfPresent(Default.self, forKey: .default)
         self.hasDefault = container.contains(.default)
+        self.json = nil
     }
 
     enum CodingKeys: String, CodingKey {
@@ -86,5 +96,16 @@ struct ClickAction: Action {
         } else {
             try container.encodeNil(forKey: .default)
         }
+    }
+
+    func with(json: Data?) -> ClickAction {
+        ClickAction(id: id,
+                    actionType: actionType,
+                    elements: elements,
+                    dataSource: dataSource,
+                    choices: choices,
+                    default: `default`,
+                    hasDefault: hasDefault,
+                    json: json)
     }
 }

@@ -29,7 +29,7 @@ protocol DarkReaderFeatureSettings {
 }
 
 enum DarkReaderStorageKeys: String, StorageKeyDescribing {
-    case forceDarkModeOnWebsitesEnabled = "com.duckduckgo.darkReader.forceDarkModeOnWebsitesEnabled"
+    case forceDarkModeOnWebsitesEnabled = "com_duckduckgo_darkReader_forceDarkModeOnWebsitesEnabled"
 }
 
 struct DarkReaderKeys: StoringKeys {

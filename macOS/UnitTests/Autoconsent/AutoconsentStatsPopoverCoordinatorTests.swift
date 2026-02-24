@@ -20,8 +20,10 @@ import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common
+import FeatureFlags
 import PersistenceTestingUtils
 import PixelKit
+import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -75,6 +77,7 @@ final class AutoconsentStatsPopoverCoordinatorTests: XCTestCase {
     var mockWindowControllersManager: WindowControllersManagerMock!
     var mockCookiePopupProtectionPreferences: CookiePopupProtectionPreferences!
     var mockAppearancePreferences: AppearancePreferences!
+    var mockFeatureFlagger: MockFeatureFlagger!
     var mockAutoconsentStats: MockAutoconsentStats!
     var mockPresenter: MockAutoconsentStatsPopoverPresenter!
     var mockOnboardingStateUpdater: MockOnboardingStateUpdater!
@@ -84,6 +87,7 @@ final class AutoconsentStatsPopoverCoordinatorTests: XCTestCase {
 
         mockKeyValueStore = try MockKeyValueFileStore()
         mockWindowControllersManager = WindowControllersManagerMock()
+        mockFeatureFlagger = MockFeatureFlagger()
         mockAutoconsentStats = MockAutoconsentStats()
 
         let cookiePopupProtectionPreferencesPersistor = MockCookiePopupProtectionPreferencesPersistor()
@@ -120,6 +124,7 @@ final class AutoconsentStatsPopoverCoordinatorTests: XCTestCase {
         mockWindowControllersManager = nil
         mockCookiePopupProtectionPreferences = nil
         mockAppearancePreferences = nil
+        mockFeatureFlagger = nil
         mockAutoconsentStats = nil
         mockPresenter = nil
         mockOnboardingStateUpdater = nil

@@ -324,26 +324,6 @@
                 "key": "extendedPerformance.totalResourcesSizeBucket",
                 "type": "string",
                 "description": "Total resources size bucket"
-            },
-            {
-                "key": "webKitFirstVisualLayoutMs",
-                "type": "integer",
-                "description": "WebKit first visual layout time in milliseconds from navigation start"
-            },
-            {
-                "key": "webKitFirstMeaningfulPaintMs",
-                "type": "integer",
-                "description": "WebKit first meaningful paint time in milliseconds from navigation start"
-            },
-            {
-                "key": "webKitDocumentCompleteMs",
-                "type": "integer",
-                "description": "WebKit document complete time in milliseconds from navigation start"
-            },
-            {
-                "key": "webKitAllResourcesCompleteMs",
-                "type": "integer",
-                "description": "WebKit all resources complete time in milliseconds from navigation start"
             }
         ]
     },
@@ -642,26 +622,6 @@
                 "key": "extendedPerformance.totalResourcesSizeBucket",
                 "type": "string",
                 "description": "Total resources size bucket"
-            },
-            {
-                "key": "webKitFirstVisualLayoutMs",
-                "type": "integer",
-                "description": "WebKit first visual layout time in milliseconds from navigation start"
-            },
-            {
-                "key": "webKitFirstMeaningfulPaintMs",
-                "type": "integer",
-                "description": "WebKit first meaningful paint time in milliseconds from navigation start"
-            },
-            {
-                "key": "webKitDocumentCompleteMs",
-                "type": "integer",
-                "description": "WebKit document complete time in milliseconds from navigation start"
-            },
-            {
-                "key": "webKitAllResourcesCompleteMs",
-                "type": "integer",
-                "description": "WebKit all resources complete time in milliseconds from navigation start"
             }
         ]
     }

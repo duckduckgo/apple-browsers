@@ -334,7 +334,8 @@ extension DefaultOmniBarViewController {
             omniBarView.textField.text = ""
         }
 
-        let shouldTransferKeyboard = transition.needsKeyboardTransfer && !isSuppressingKeyboardTransfer
+        let isKeyboardActive = omniBarView.aiChatTextView.isFirstResponder || omniBarView.textField.isFirstResponder
+        let shouldTransferKeyboard = transition.needsKeyboardTransfer && !isSuppressingKeyboardTransfer && isKeyboardActive
 
         if shouldTransferKeyboard {
             modeToggleTextModel.beginTransition()

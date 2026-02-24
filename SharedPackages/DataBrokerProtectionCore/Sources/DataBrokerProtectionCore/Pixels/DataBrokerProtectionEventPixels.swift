@@ -151,9 +151,6 @@ public final class DataBrokerProtectionEventPixels {
 
         #if os(iOS)
         fireBackgroundTaskSessionMetrics(isAuthenticated: isAuthenticated)
-        #endif
-
-        #if os(iOS) || DEBUG
         fireStalledOperationMetrics(for: data, isAuthenticated: isAuthenticated)
         #endif
     }

@@ -83,7 +83,8 @@ private extension NewTabPageView {
         GeometryReader { proxy in
             ScrollView {
                 LazyVStack(spacing: Metrics.sectionSpacing) {
-                    
+                    escapeHatchSectionView
+
                     messagesSectionView
                         .padding(.top, Metrics.nonGridSectionTopPadding)
                         .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
@@ -113,6 +114,8 @@ private extension NewTabPageView {
             }
 
             VStack(spacing: Metrics.sectionSpacing) {
+                escapeHatchSectionView
+
                 messagesSectionView
                     .padding(.top, Metrics.nonGridSectionTopPadding)
                     .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
@@ -121,6 +124,18 @@ private extension NewTabPageView {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .padding(Metrics.regularPadding)
+    }
+
+    @ViewBuilder
+    private var escapeHatchSectionView: some View {
+        if let escapeHatch = viewModel.escapeHatch {
+            ReturnToTabCard(model: escapeHatch) {
+                viewModel.onEscapeHatchTap?()
+            }
+            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+            .padding(.top, Metrics.nonGridSectionTopPadding)
+            .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+        }
     }
 
     private var messagesSectionView: some View {

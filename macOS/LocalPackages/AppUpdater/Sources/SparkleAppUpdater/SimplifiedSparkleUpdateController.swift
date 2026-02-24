@@ -29,7 +29,6 @@ import PrivacyConfig
 import Sparkle
 import Subscription
 
-
 /// Simplified Sparkle update controller.
 ///
 /// Update checks rely on Sparkle's built-in scheduling plus check-on-launch.

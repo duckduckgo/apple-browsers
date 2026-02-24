@@ -112,8 +112,14 @@ public final class DefaultFreeTrialConversionInstrumentationService: FreeTrialCo
             Task {
                 guard let self else { return }
                 // Attempt to fetch subscription snapshot from notification payload. Fallback to cache-first fetch when payload is missing.
-                let subscription = (notification.userInfo?[UserDefaultsCacheKey.subscription] as? DuckDuckGoSubscription) ?? await self.subscriptionFetcher()
-                guard let subscription else { return }
+                let subscription: DuckDuckGoSubscription
+                if let subscriptionFromPayload = notification.userInfo?[UserDefaultsCacheKey.subscription] as? DuckDuckGoSubscription {
+                    subscription = subscriptionFromPayload
+                } else if let fetched = await self.subscriptionFetcher() {
+                    subscription = fetched
+                } else {
+                    return
+                }
                 await self.handleSubscriptionChange(subscription)
             }
         }

@@ -80,18 +80,6 @@ struct AutofillViews {
         }
     }
 
-    struct SemiboldHeadline: View {
-        let title: String
-
-        var body: some View {
-            Text(title)
-                .daxHeadline()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .frame(maxWidth: Const.Size.maxWidth)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
 
     struct Description: View {
         let text: String
@@ -108,6 +96,7 @@ struct AutofillViews {
 
     struct SecureDescription: View {
         let text: String
+        var showIcon: Bool = true
 
         var body: some View {
             (iconText + Text(text))
@@ -119,20 +108,11 @@ struct AutofillViews {
         }
 
         private var iconText: Text {
-            Text("\(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)) ").baselineOffset(-1.0)
-        }
-    }
-
-    struct SecureDescriptionVariant: View {
-        let text: String
-
-        var body: some View {
-            Text(text)
-                .daxSubheadRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: Const.Size.maxWidth)
+            if showIcon {
+                Text("\(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)) ").baselineOffset(-1.0)
+            } else {
+                Text("")
+            }
         }
     }
 

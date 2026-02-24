@@ -309,7 +309,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
     case burnSingleTab
 
-   /// https://app.asana.com/1/137249556945/task/1213076120133808
+   /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213076120133808?focus=true
     case showNTPAfterIdleReturn
 
     /// Test-only feature flag for verifying UI test override mechanism.
@@ -704,7 +704,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAutoAttachContextByDefault:
             return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
         case .aiChatSync:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
             return .remoteReleasable(.feature(.duckAiChatHistory))
         case .showWhatsNewPromptOnDemand:

@@ -135,7 +135,7 @@ extension WKWebView {
         return .active
     }
 
-    @objc var mediaMutedState: UInt /*_WKMediaMutedState*/ {
+    @objc dynamic var mediaMutedState: UInt /*_WKMediaMutedState*/ {
         get {
             guard self.responds(to: Selector.mediaMutedState),
                   let method = class_getInstanceMethod(object_getClass(self), Selector.mediaMutedState) else {

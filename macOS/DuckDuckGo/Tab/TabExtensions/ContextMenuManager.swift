@@ -279,6 +279,11 @@ extension ContextMenuManager: WebViewContextMenuDelegate {
             }
         }
 
+        /// Workaround: `willShowContextMenu(withSelectedText:link:)` may be invoked **after** this API runs
+        if linkURL == nil, let sourceURL = webView.url {
+            self.linkURL = sourceURL.absoluteString
+        }
+
         self.webView = webView
 
         for (index, item) in menu.items.enumerated().reversed() {

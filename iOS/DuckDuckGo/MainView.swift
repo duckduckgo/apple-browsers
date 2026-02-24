@@ -140,7 +140,48 @@ extension MainViewFactory {
         coordinator.navigationBarContainer.addSubview(coordinator.navigationBarCollectionView)
     }
     
-    final class NavigationBarContainer: UIView { }
+    final class NavigationBarContainer: UIView {
+
+        /// Enables overflow hit testing for iPad expanded search area.
+        /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
+        var allowsOverflowHitTesting = false
+
+        override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            if let result = super.hitTest(point, with: event) {
+                return result
+            }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
+            return Self.deepHitTest(in: self, point: point, event: event)
+        }
+
+        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+            if super.point(inside: point, with: event) {
+                return true
+            }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return false }
+            return Self.deepHitTest(in: self, point: point, event: event) != nil
+        }
+
+        /// Recursively searches descendants for a view that claims the point,
+        /// bypassing intermediate views' bounds checks to support overflow content.
+        private static func deepHitTest(in view: UIView, point: CGPoint, event: UIEvent?) -> UIView? {
+            for subview in view.subviews.reversed() {
+                guard !subview.isHidden, subview.alpha > 0.01, subview.isUserInteractionEnabled else {
+                    continue
+                }
+                let convertedPoint = subview.convert(point, from: view)
+
+                if subview.point(inside: convertedPoint, with: event) {
+                    return subview.hitTest(convertedPoint, with: event)
+                }
+
+                if let result = deepHitTest(in: subview, point: convertedPoint, event: event) {
+                    return result
+                }
+            }
+            return nil
+        }
+    }
     private func createNavigationBarContainer() {
         coordinator.navigationBarContainer = NavigationBarContainer()
         superview.addSubview(coordinator.navigationBarContainer)

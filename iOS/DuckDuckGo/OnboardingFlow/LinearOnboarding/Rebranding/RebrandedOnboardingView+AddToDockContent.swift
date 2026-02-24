@@ -33,31 +33,26 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var showAddToDockTutorial = false
-        private let isAnimating: Binding<Bool>
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
 
         init(
-            isAnimating: Binding<Bool> = .constant(true),
             showTutorialAction: @escaping () -> Void,
             dismissAction: @escaping (_ fromAddToDock: Bool) -> Void
         ) {
-            self.isAnimating = isAnimating
             self.showTutorialAction = showTutorialAction
             self.dismissAction = dismissAction
         }
 
         var body: some View {
-            Group {
-                if showAddToDockTutorial {
-                    RebrandedOnboardingView.AddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
-                        dismissAction(true)
-                    }
-                } else {
-                    promoContent
+            if showAddToDockTutorial {
+                RebrandedOnboardingView.AddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
+                    dismissAction(true)
                 }
+                .onboardingViewVisibleAfterDelay(OnboardingBubbleAnimationMetrics.contentFadeInDelay) // OnboardingViewState does not change in this case so we need to manually fade in the content after bubble resizes.
+            } else {
+                promoContent
             }
-            .onboardingDaxDialogStyle()
         }
 
         private var promoContent: some View {
@@ -87,7 +82,9 @@ extension OnboardingRebranding.OnboardingView {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: {
                             showTutorialAction()
-                            showAddToDockTutorial = true
+                            withAnimation {
+                                showAddToDockTutorial = true
+                            }
                         }) { Text(UserText.AddToDockOnboarding.Buttons.tutorial) }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 

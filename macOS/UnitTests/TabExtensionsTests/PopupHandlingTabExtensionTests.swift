@@ -893,7 +893,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTemporaryAllowanceSet_ThenUserInitiatedStillWorks() {
+    func testWhenTemporaryAllowanceSet_ThenWebKitUserInitiatedActionUsesTemporaryAllowanceBypassReason() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         popupHandlingExtension = createExtension()
@@ -904,7 +904,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         // THEN - Should still be allowed
         let userInitiatedBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: userInitiatedAction, windowFeatures: windowFeatures)
-        XCTAssertEqual(userInitiatedBypassReason, .userInitiated(.webKitUserInitiated), "Expected userInitiated with webKitUserInitiated")
+        XCTAssertEqual(userInitiatedBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected temporary allowance bypass reason")
     }
 
     // MARK: - Edge Cases

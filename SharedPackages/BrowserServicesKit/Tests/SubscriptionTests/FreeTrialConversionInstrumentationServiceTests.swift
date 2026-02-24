@@ -39,7 +39,8 @@ final class FreeTrialConversionInstrumentationServiceTests: XCTestCase {
         sut = DefaultFreeTrialConversionInstrumentationService(
             wideEvent: mockWideEvent,
             notificationCenter: notificationCenter,
-            pixelHandler: mockPixelHandler
+            pixelHandler: mockPixelHandler,
+            subscriptionFetcher: { nil }
         )
         sut.startObservingSubscriptionChanges()
     }
@@ -255,6 +256,7 @@ final class FreeTrialConversionInstrumentationServiceTests: XCTestCase {
             wideEvent: disabledMockWideEvent,
             notificationCenter: disabledNotificationCenter,
             pixelHandler: disabledPixelHandler,
+            subscriptionFetcher: { nil },
             isFeatureEnabled: { false }
         )
         disabledSut.startObservingSubscriptionChanges()

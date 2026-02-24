@@ -566,12 +566,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
-        freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
-            wideEvent: wideEvent,
-            pixelHandler: FreeTrialPixelHandler(),
-            isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
-        )
-        freeTrialConversionService.startObservingSubscriptionChanges()
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
@@ -724,6 +718,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         subscriptionManager = defaultSubscriptionManager
+        freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
+            wideEvent: wideEvent,
+            pixelHandler: FreeTrialPixelHandler(),
+            subscriptionFetcher: { try? await defaultSubscriptionManager.getSubscription(cachePolicy: .cacheFirst) },
+            isFeatureEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
+        )
+        freeTrialConversionService.startObservingSubscriptionChanges()
 
         pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinnedTabsManager: pinnedTabsManager)
 

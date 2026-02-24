@@ -206,10 +206,10 @@ struct MapperToModel {
         try mechanism(phoneDB.phoneNumber).utf8String()!
     }
 
-    func mapToModel(_ brokerDB: BrokerDB) throws -> DataBroker {
+    func mapToResource(_ brokerDB: BrokerDB) throws -> BrokerResource {
         let decodedBroker = try jsonDecoder.decode(DataBroker.self, from: brokerDB.json)
 
-        return DataBroker(
+        let broker = DataBroker(
             id: brokerDB.id,
             name: brokerDB.name,
             url: brokerDB.url,
@@ -222,6 +222,12 @@ struct MapperToModel {
             eTag: brokerDB.eTag,
             removedAt: brokerDB.removedAt
         )
+
+        return BrokerResource(fileName: "\(broker.url).json", broker: broker, rawJSON: brokerDB.json)
+    }
+
+    func mapToModel(_ brokerDB: BrokerDB) throws -> DataBroker {
+        try mapToResource(brokerDB).broker
     }
 
     func mapToModel(_ profileQueryDB: ProfileQueryDB) throws -> ProfileQuery {

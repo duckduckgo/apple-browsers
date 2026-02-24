@@ -46,6 +46,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchBroker(with name: String) throws -> DataBroker?
     func fetchAllNonRemovedBrokers() throws -> [DataBroker]
     func fetchAllBrokers() throws -> [DataBroker]
+    func fetchAllBrokerResources() throws -> [BrokerResource]
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
 
     func save(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
@@ -145,6 +146,18 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
                                                       extractedProfileId: Int64) throws
 }
 
+public extension DataBrokerProtectionSecureVault {
+    func fetchAllBrokerResources() throws -> [BrokerResource] {
+        let jsonEncoder = JSONEncoder()
+        jsonEncoder.dateEncodingStrategy = .millisecondsSince1970
+
+        return try fetchAllBrokers().map { broker in
+            let data = try jsonEncoder.encode(broker)
+            return BrokerResource(fileName: "\(broker.url).json", broker: broker, rawJSON: data)
+        }
+    }
+}
+
 public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDatabaseProvider>: DataBrokerProtectionSecureVault {
     public typealias DataBrokerProtectionStorageProviders = SecureStorageProviders<T>
 
@@ -215,6 +228,12 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
 
         return try self.providers.database.fetchAllBrokers().map(mapper.mapToModel(_:))
+    }
+
+    public func fetchAllBrokerResources() throws -> [BrokerResource] {
+        let mapper = MapperToModel(mechanism: l2Decrypt(data:))
+
+        return try self.providers.database.fetchAllBrokers().map(mapper.mapToResource(_:))
     }
 
     public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {

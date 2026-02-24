@@ -106,9 +106,7 @@ struct DataBrokerRunCustomJSONView: View {
             .listStyle(.plain)
             .onChange(of: selectedBrokerUrl) { newValue in
                 guard let newValue else { return }
-                if let broker = viewModel.brokers.first(where: { $0.url == newValue }) {
-                    jsonText = broker.toJSONString()
-                }
+                jsonText = viewModel.brokerJSONString(for: newValue)
             }
 
             Divider()

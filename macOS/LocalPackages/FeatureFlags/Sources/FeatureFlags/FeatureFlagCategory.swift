@@ -89,9 +89,6 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .allowProTierPurchase:
             return .subscription
         case .popupBlocking,
-                .extendedUserInitiatedPopupTimeout,
-                .suppressEmptyPopUpsOnApproval,
-                .allowPopupsForCurrentPage,
                 .popupPermissionButtonPersistence:
             return .popupBlocking
         case .webNotifications:

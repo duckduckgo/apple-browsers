@@ -17,18 +17,12 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import Onboarding
 import DuckUI
+import Onboarding
+import SwiftUI
 
 private enum OnboardingViewMetrics {
     static let landingScreenDuration = 15.0
-}
-
-private enum OnboardingViewCopy {
-    static let introTitle = "Hi There!"
-    static let introMessage = "Ready for a faster browser that keeps you protected?"
-    static let browsersComparisonTitle = "Protections activated!"
 }
 
 private enum BubbleBackedDialogMetrics {
@@ -36,16 +30,44 @@ private enum BubbleBackedDialogMetrics {
     static let browsersComparisonAdditionalTopMargin: CGFloat = 0
     static let addressBarPositionAdditionalTopMargin: CGFloat = 0
     static let searchExperienceAdditionalTopMargin: CGFloat = 0
+    static let addToDockAdditionalTopMargin: CGFloat = 0
+    static let appIconPickerAdditionalTopMargin: CGFloat = 0
 }
 
 extension OnboardingRebranding.OnboardingView {
 
+    /// A theme-driven layout container for rebranded onboarding dialog steps.
+    ///
+    /// `LinearDialogContentContainer` arranges dialog content into a standardised vertical
+    /// stack without applying any visual chrome (backgrounds, shadows, or mascot elements).
+    /// The outer visual container — typically an ``OnboardingBubbleView`` — is responsible
+    /// for the surrounding decoration; this view handles **inner layout only**.
+    ///
+    /// The layout is split into two top-level groups separated by ``Metrics/outerSpacing``:
+    ///
+    /// ```
+    /// ┌──────────────────────────┐
+    /// │  Title                   │  ← required
+    /// │  Message                 │  ← optional
+    /// ├──────────────────────────┤  ← outerSpacing
+    /// │  Content                 │  ← optional (e.g. image, picker)
+    /// │  Actions                 │  ← required (buttons)
+    /// └──────────────────────────┘
+    /// ```
+    ///
+    /// All spacing values are supplied through ``Metrics`` and should be sourced from the
+    /// current ``OnboardingTheme`` to stay consistent with the 2026 design system.
     struct LinearDialogContentContainer<Title: View, Actions: View>: View {
 
+        /// Spacing values that control the vertical gaps between each region of the container.
         struct Metrics {
+            /// Spacing between the text group (title + message) and the content group (content + actions).
             let outerSpacing: CGFloat
+            /// Spacing between the title and the optional message within the text group.
             let textSpacing: CGFloat
+            /// Spacing between the optional content and the actions within the content group.
             let contentSpacing: CGFloat
+            /// Additional top padding applied above the actions view.
             let actionsSpacing: CGFloat
         }
 
@@ -55,6 +77,15 @@ extension OnboardingRebranding.OnboardingView {
         private let title: Title
         private let actions: Actions
 
+        /// Creates a new dialog content container.
+        ///
+        /// - Parameters:
+        ///   - metrics: Spacing configuration sourced from the current onboarding theme.
+        ///   - message: An optional subtitle or description displayed below the title.
+        ///   - content: An optional main content area (e.g. an illustration, picker, or comparison table)
+        ///              displayed above the action buttons.
+        ///   - title: A view builder producing the primary heading.
+        ///   - actions: A view builder producing the call-to-action buttons.
         init(
             metrics: Metrics,
             message: AnyView? = nil,
@@ -84,7 +115,8 @@ extension OnboardingRebranding.OnboardingView {
                         content
                     }
 
-                    actions.padding(.top, metrics.actionsSpacing)
+                    actions
+                        .padding(.top, metrics.actionsSpacing)
                 }
             }
         }
@@ -173,37 +205,10 @@ extension OnboardingRebranding {
             GeometryReader { geometry in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .center) {
-                        if let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type) {
-                            bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
-                                .frame(width: geometry.size.width, alignment: .center)
-                                .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
-                        } else {
-                            DaxDialogView(
-                                logoPosition: .top,
-                                matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
-                                showDialogBox: $model.introState.showDaxDialogBox,
-                                onTapGesture: {
-                                    model.tapped()
-                                },
-                                content: {
-                                    switch state.type {
-                                    case .browsersComparisonDialog:
-                                        EmptyView()
-                                    case .addToDockPromoDialog:
-                                        addToDockPromoView
-                                    case .chooseAppIconDialog:
-                                        appIconPickerView
-                                    default:
-                                        EmptyView()
-                                    }
-                                }
-                            )
+                        let bubbleConfiguration = bubbleBackedDialogConfiguration(for: state.type)
+                        bubbleBackedDialogView(state: state, configuration: bubbleConfiguration)
                             .frame(width: geometry.size.width, alignment: .center)
-                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin)
-                            .onAppear {
-                                model.introState.showDaxDialogBox = true
-                            }
-                        }
+                            .padding(.top, onboardingTheme.linearOnboardingMetrics.minTopMargin + bubbleConfiguration.additionalTopMargin)
                     }
                     .frame(minHeight: geometry.size.height, alignment: .top)
                     .background {
@@ -249,8 +254,7 @@ extension OnboardingRebranding {
             }
 
             return IntroDialogContent(
-                title: OnboardingViewCopy.introTitle,
-                message: OnboardingViewCopy.introMessage,
+                title: UserText.Onboarding.Intro.title,
                 skipOnboardingView: skipOnboardingView,
                 showCTA: $model.introState.showIntroButton,
                 continueAction: {
@@ -262,7 +266,7 @@ extension OnboardingRebranding {
 
         private var browsersComparisonView: some View {
             BrowsersComparisonContent(
-                title: OnboardingViewCopy.browsersComparisonTitle,
+                title: UserText.Onboarding.BrowsersComparison.title,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
                 cancelAction: model.cancelSetDefaultBrowserAction
             )
@@ -325,16 +329,18 @@ extension OnboardingRebranding {
                 introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
             case .browsersComparisonDialog:
                 browsersComparisonView
+            case .addToDockPromoDialog:
+                addToDockPromoView
             case .chooseAddressBarPositionDialog:
                 addressBarPositionView
             case .chooseSearchExperienceDialog:
                 searchExperienceSelectionView
-            default:
-                EmptyView()
+            case .chooseAppIconDialog:
+                appIconPickerView
             }
         }
 
-        private func bubbleBackedDialogConfiguration(for type: ViewState.Intro.IntroType) -> BubbleBackedDialogConfiguration? {
+        private func bubbleBackedDialogConfiguration(for type: ViewState.Intro.IntroType) -> BubbleBackedDialogConfiguration {
             switch type {
             case .startOnboardingDialog:
                 BubbleBackedDialogConfiguration(
@@ -368,15 +374,28 @@ extension OnboardingRebranding {
                     isVisible: true,
                     showsStepCounter: true
                 )
-            default:
-                nil
+            case .addToDockPromoDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .leading,
+                    additionalTopMargin: BubbleBackedDialogMetrics.addToDockAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
+            case .chooseAppIconDialog:
+                BubbleBackedDialogConfiguration(
+                    tailOffset: onboardingTheme.linearOnboardingMetrics.bubbleTailOffset,
+                    tailDirection: .trailing,
+                    additionalTopMargin: BubbleBackedDialogMetrics.appIconPickerAdditionalTopMargin,
+                    isVisible: true,
+                    showsStepCounter: true
+                )
             }
         }
 
         private var addToDockPromoView: some View {
             AddToDockPromoContent(
                 isAnimating: $model.addToDockState.isAnimating,
-                isSkipped: $model.isSkipped,
                 showTutorialAction: {
                     model.addToDockShowTutorialAction()
                 },
@@ -388,10 +407,7 @@ extension OnboardingRebranding {
 
         private var appIconPickerView: some View {
             AppIconPickerContent(
-                animateTitle: $model.appIconPickerContentState.animateTitle,
-                animateMessage: $model.appIconPickerContentState.animateMessage,
                 showContent: $model.appIconPickerContentState.showContent,
-                isSkipped: $model.isSkipped,
                 action: model.appIconPickerContinueAction
             )
             .onboardingDaxDialogStyle()

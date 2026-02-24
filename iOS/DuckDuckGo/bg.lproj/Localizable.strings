@@ -3013,11 +3013,14 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Изтриване на всички";
 
-/* Button to delete only the current tab in scoped fire confirmation dialog */
+/* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Изтриване на този чат";
-"scoped.fire.confirmation.delete.this.chat.description" = "„Изтриване на всички“ няма да изтрие историята на чатовете в Duck.ai.";
-"scoped.fire.confirmation.delete.this.tab.button" = "Изтриване на този раздел";
 
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "„Изтриване на всички“ няма да изтрие историята на чатовете в Duck.ai.";
+
+/* Button to delete only the current tab in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.tab.button" = "Изтриване на този раздел";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "Това ще отмени текущите изтегляния.";
@@ -3127,6 +3130,9 @@
 /* Settings screen cell title for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.title" = "Автоматично изпращане на съдържанието";
 
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Предложения за чат";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скриване на изображения, генерирани от изкуствен интелект";
 
@@ -3213,6 +3219,9 @@
 
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Показване на предложения за търсене при въвеждане, включително от отметките. Всички търсения са поверителни.";
+
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Показване на предложения от историята, отметките и (по избор) историята на чата с Duck.ai, когато въвеждате в лентата за търсене. Всички търсения са поверителни.";
 
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Заключване на приложение";
@@ -3691,6 +3700,12 @@
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Абонаментът е премахнат от това устройство.";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Отмяна на намаляването";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Планът ти ще бъде намален на %1$@ на %2$@.";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Актуализиране или отмяна на плана";
 
@@ -3784,8 +3799,14 @@
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Абонаментни планове";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Завършване на промяната в плана…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Завършване на покупката...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Извършва се промяна на плана…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Покупката се извършва...";

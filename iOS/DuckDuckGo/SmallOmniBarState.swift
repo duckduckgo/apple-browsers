@@ -394,7 +394,7 @@ struct SmallOmniBarState {
 
 extension OmnibarDependencyProvider {
     var isAIChatEnabledInSettings: Bool {
-        aiChatSettings.isAIChatAddressBarUserSettingsEnabled
+        aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton
     }
 
     var shouldShowSearchLoupeIfPossible: Bool {

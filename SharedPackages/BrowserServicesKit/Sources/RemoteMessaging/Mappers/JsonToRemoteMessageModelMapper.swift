@@ -364,6 +364,10 @@ struct JsonToRemoteMessageModelMapper {
             return .keyImport
         case .mobileCustomization:
             return .mobileCustomization
+        case .newTabOptions:
+            return .newTabOptions
+        case .splitBarMobile:
+            return .splitBarMobile
         case .pir:
             return .pir
         case .subscription:

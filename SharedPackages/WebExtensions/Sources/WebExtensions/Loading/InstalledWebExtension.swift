@@ -33,17 +33,28 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     /// Version string
     public let version: String?
 
+    /// If this is an embedded (bundled) extension, stores its type.
+    /// Nil for user-installed extensions.
+    public let embeddedType: DuckDuckGoWebExtensionType?
+
     public var id: String { uniqueIdentifier }
+
+    /// Whether this extension was installed from the app bundle (embedded).
+    public var isEmbedded: Bool {
+        embeddedType != nil
+    }
 
     public init(
         uniqueIdentifier: String,
         filename: String,
         name: String?,
-        version: String?
+        version: String?,
+        embeddedType: DuckDuckGoWebExtensionType? = nil
     ) {
         self.uniqueIdentifier = uniqueIdentifier
         self.filename = filename
         self.name = name
         self.version = version
+        self.embeddedType = embeddedType
     }
 }

@@ -945,6 +945,7 @@ class TabNavigationTests: UITestCase {
         openTestPage("Page #13")
         app.mainMenuAddBookmarkMenuItem.click()
         app.addBookmarkAlertAddButton.click()
+        app.dismissBookmarksBarPopover()
 
         // Navigate to different page
         app.activateAddressBar()
@@ -975,6 +976,7 @@ class TabNavigationTests: UITestCase {
         openTestPage("Page #13")
         app.mainMenuAddBookmarkMenuItem.click()
         app.addBookmarkAlertAddButton.click()
+        app.dismissBookmarksBarPopover()
 
         // Navigate to different page
         app.activateAddressBar()
@@ -1072,6 +1074,7 @@ class TabNavigationTests: UITestCase {
         openTestPage("Page #13")
         app.mainMenuAddBookmarkMenuItem.click()
         app.addBookmarkAlertAddButton.click()
+        app.dismissBookmarksBarPopover()
 
         // Navigate to different page
         app.activateAddressBar()
@@ -1102,6 +1105,7 @@ class TabNavigationTests: UITestCase {
         openTestPage("Page #13")
         app.mainMenuAddBookmarkMenuItem.click()
         app.addBookmarkAlertAddButton.click()
+        app.dismissBookmarksBarPopover()
 
         // Navigate to different page
         app.activateAddressBar()

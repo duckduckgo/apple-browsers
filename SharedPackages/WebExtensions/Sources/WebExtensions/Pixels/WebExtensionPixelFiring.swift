@@ -28,6 +28,11 @@ public enum WebExtensionPixelEvent {
     case uninstallAllError(error: Error)
     case loaded
     case loadError(error: Error)
+
+    // Embedded extension events
+    case embeddedInstalled
+    case embeddedUpgraded(fromVersion: String?, toVersion: String?)
+    case embeddedInstallError(error: Error)
 }
 
 /// Protocol for firing web extension pixels.

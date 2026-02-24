@@ -171,6 +171,7 @@ public extension DesignSystemImages {
             public static var identityBlockedPIR: DesignSystemImage { .init(resource: .identityBlockedPIRColor24) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestorationColor24) }
             public static var `import`: DesignSystemImage { .init(resource: .importColor24) }
+            public static var info: DesignSystemImage { .init(resource: .infoRecolorable24)}
             public static var key: DesignSystemImage { .init(resource: .keyColor24) }
             public static var keyAuto: DesignSystemImage { .init(resource: .keyAutoColor24) }
             public static var keyCheck: DesignSystemImage {
@@ -201,7 +202,6 @@ public extension DesignSystemImages {
             public static var siri: DesignSystemImage { .init(resource: .siriColor24) }
             public static var subscription: DesignSystemImage { .init(resource: .privacyProColor24) }
             public static var sync: DesignSystemImage { .init(resource: .syncColor24) }
-            public static var sync1: DesignSystemImage { .init(resource: .syncColor241) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayerColor24) }
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor24) }
             public static var vpnGrayscale: DesignSystemImage { .init(resource: .vpnGrayscaleColor24) }

@@ -25,72 +25,6 @@ import DesignResourcesKit
 
 extension Preferences {
 
-    // MARK: - Legacy: Superseded by `ThemeAppearanceViewV2`
-    //
-    struct ThemeAppearanceButton: View {
-        let title: String
-        let imageName: String
-        @Binding var isSelected: Bool
-
-        var body: some View {
-            VStack {
-                Button(action: { isSelected.toggle() }) {
-                    VStack(spacing: 2) {
-                        Image(imageName)
-                            .padding(2)
-                            .background(selectionBackground)
-                        Text(title)
-                    }
-                }
-                .padding(.horizontal, 2)
-                .buttonStyle(.plain)
-            }
-        }
-
-        @ViewBuilder
-        private var selectionBackground: some View {
-            if isSelected {
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color(.linkBlue), lineWidth: 2)
-            }
-        }
-
-    }
-
-    // MARK: - Legacy: Superseded by `ThemeAppearancePickerV2`
-    //
-    struct ThemeAppearancePicker: View {
-        @EnvironmentObject var model: AppearancePreferences
-
-        var body: some View {
-            HStack(spacing: 24) {
-                ForEach(ThemeAppearance.allCases, id: \.self) { theme in
-                    ThemeAppearanceButton(
-                        title: theme.displayName,
-                        imageName: theme.imageName,
-                        isSelected: isThemeSelected(theme)
-                    )
-                }
-            }
-            .onChange(of: model.themeAppearance) { _ in
-                PixelKit.fire(SettingsPixel.themeAppearanceChanged(source: .settings), frequency: .standard)
-            }
-        }
-
-        private func isThemeSelected(_ theme: ThemeAppearance) -> Binding<Bool> {
-            .init(
-                get: {
-                    model.themeAppearance == theme
-                },
-                set: { isSelected in
-                    if isSelected {
-                        model.themeAppearance = theme
-                    }
-                }
-            )
-        }
-    }
-
     // MARK: - Appearance View (Light / Dark / System)
     //
     struct ThemeAppearanceViewV2: View {
@@ -256,33 +190,25 @@ extension Preferences {
         @ObservedObject var aiChatModel: AIChatPreferences
         @ObservedObject var themeManager: ThemeManager
 
-        var isThemeSwitcherEnabled: Bool = false
-
         var body: some View {
             PreferencePane(UserText.appearance) {
 
                 // SECTION 1: Theme
                 PreferencePaneSection(UserText.theme) {
 
-                    if isThemeSwitcherEnabled {
-                        ThemeAppearancePickerV2(theme: themeManager.theme)
-                            .environmentObject(model)
-                            .padding(.bottom, 16)
+                    ThemeAppearancePickerV2(theme: themeManager.theme)
+                        .environmentObject(model)
+                        .padding(.bottom, 16)
 
-                        ThemesPickerView(theme: themeManager.theme)
-                            .environmentObject(model)
-                            .padding(.bottom, 16)
+                    ThemesPickerView(theme: themeManager.theme)
+                        .environmentObject(model)
+                        .padding(.bottom, 16)
 
-                        ThemesResetView()
-                            .environmentObject(model)
-                            .padding(.bottom, 16)
+                    ThemesResetView()
+                        .environmentObject(model)
+                        .padding(.bottom, 16)
 
-                        ToggleMenuItem(UserText.syncAppIconWithTheme, isOn: $model.syncAppIconWithTheme)
-
-                    } else {
-                        ThemeAppearancePicker()
-                            .environmentObject(model)
-                    }
+                    ToggleMenuItem(UserText.syncAppIconWithTheme, isOn: $model.syncAppIconWithTheme)
                 }
 
                 // SECTION 2: Address Bar

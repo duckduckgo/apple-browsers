@@ -245,7 +245,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         switchBarHandler.setToggleState(textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
-        let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
+        let escapeHatch = omniDelegate?.escapeHatchForEditingState()
+        let editingStateViewController = OmniBarEditingStateViewController(
+            switchBarHandler: switchBarHandler,
+            escapeHatch: escapeHatch
+        )
         editingStateViewController.delegate = self
 
         editingStateViewController.modalPresentationStyle = .custom
@@ -253,6 +257,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
+        editingStateViewController.useNewTransitionBehaviour = omniDelegate?.useNewOmnibarTransitionBehaviour() ?? false
 
         switchBarHandler.clearButtonTappedPublisher
             .receive(on: DispatchQueue.main)
@@ -366,6 +371,7 @@ extension DefaultOmniBarViewController {
 // MARK: - OmniBarEditingStateViewControllerDelegate
 
 extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
+
     func onQueryUpdated(_ query: String) {
     }
 
@@ -415,6 +421,10 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     func onDismissRequested() {
         // Fire cancel pixel only (no other side effects) when experimental bar is dismissed via back button
         omniDelegate?.onExperimentalAddressBarCancelPressed()
+    }
+
+    func onSwitchTabToIndex(_ index: Int) {
+        omniDelegate?.onSwitchTabToIndex(index)
     }
 }
 
@@ -504,8 +514,10 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        UniversalOmniBarEditingStateTransition(isPresenting: true,
-                                               addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+        let useNew = (presented as? OmniBarEditingStateViewController)?.useNewTransitionBehaviour ?? false
+        return UniversalOmniBarEditingStateTransition(isPresenting: true,
+                                                      addressBarPosition: dependencies.appSettings.currentAddressBarPosition,
+                                                      useNewTransitionBehaviour: useNew)
     }
 
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {

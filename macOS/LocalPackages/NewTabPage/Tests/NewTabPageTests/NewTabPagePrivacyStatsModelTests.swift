@@ -93,20 +93,13 @@ final class CapturingAutoconsentStats: AutoconsentStatsCollecting {
         clearAutoconsentStatsCallCount += 1
     }
 
-    func isEnabled() async -> Bool {
-        isEnabledCallCount += 1
-        return isEnabledValue
-    }
-
     var recordAutoconsentActionCalls: [(clicksMade: Int64, timeSpent: TimeInterval)] = []
     var clearAutoconsentStatsCallCount: Int = 0
     var fetchTotalCookiePopUpsBlockedCallCount: Int = 0
     var fetchAutoconsentDailyUsagePackCallCount: Int = 0
-    var isEnabledCallCount: Int = 0
     var totalCookiePopUpsBlocked: Int64 = 0
     var totalClicksMade: Int64 = 0
     var totalTimeSpent: TimeInterval = 0
-    var isEnabledValue: Bool = true
 }
 
 final class MockPrivacyStatsTrackerDataProvider: PrivacyStatsTrackerDataProviding {

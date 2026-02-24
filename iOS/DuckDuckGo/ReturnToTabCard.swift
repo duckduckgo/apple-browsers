@@ -121,7 +121,6 @@ private enum Metrics {
     static let shadowOffset2: CGFloat = 16
     static let cardPadding: CGFloat = 16
     static let labelToContentSpacing: CGFloat = 0
-    static let contentSpacing: CGFloat = 12
     static let titleToSubtitleSpacing: CGFloat = 2
     static let iconSize: CGFloat = 24
     static let iconCornerRadius: CGFloat = 4
@@ -135,7 +134,8 @@ private enum Metrics {
             title: "Tokamak - Wikipedia",
             subtitle: "en.wikipedia.org/wiki/Tokamak",
             isAITab: false,
-            domain: "en.wikipedia.org"
+            domain: "en.wikipedia.org",
+            targetTabIndex: 0
         ),
         onTap: {}
     )
@@ -149,7 +149,8 @@ private enum Metrics {
             title: "Good Dog Name Ideas",
             subtitle: "Duck.ai",
             isAITab: true,
-            domain: nil
+            domain: nil,
+            targetTabIndex: 0
         ),
         onTap: {}
     )

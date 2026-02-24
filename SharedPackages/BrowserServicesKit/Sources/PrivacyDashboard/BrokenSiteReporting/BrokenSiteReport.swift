@@ -319,10 +319,6 @@ public struct BrokenSiteReport {
             result["isPirEnabled"] = "true"
         }
 
-        if let isForceDarkModeEnabled {
-            result["isForceDarkModeEnabled"] = isForceDarkModeEnabled.description
-        }
-
         if let pageLoadTiming = pageLoadTiming {
             addPageLoadTimingParameters(to: &result, timing: pageLoadTiming)
         }
@@ -338,6 +334,9 @@ public struct BrokenSiteReport {
         result["atb"] = atb
         result["model"] = model
         result["variant"] = variant
+        if let isForceDarkModeEnabled {
+            result["isForceDarkModeEnabled"] = isForceDarkModeEnabled.description
+        }
 #endif
         return result
     }

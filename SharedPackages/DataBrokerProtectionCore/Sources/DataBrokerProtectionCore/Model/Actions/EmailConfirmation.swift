@@ -22,25 +22,21 @@ struct EmailConfirmationAction: Action {
     let id: String
     let actionType: ActionType
     let pollingTime: TimeInterval
-    let dataSource: DataSource?
     let json: Data?
 
     enum CodingKeys: CodingKey {
         case id
         case actionType
         case pollingTime
-        case dataSource
     }
 
     init(id: String,
          actionType: ActionType,
          pollingTime: TimeInterval,
-         dataSource: DataSource?,
          json: Data? = nil) {
         self.id = id
         self.actionType = actionType
         self.pollingTime = pollingTime
-        self.dataSource = dataSource
         self.json = json
     }
 
@@ -49,7 +45,6 @@ struct EmailConfirmationAction: Action {
         id = try container.decode(String.self, forKey: .id)
         actionType = try container.decode(ActionType.self, forKey: .actionType)
         pollingTime = try container.decode(TimeInterval.self, forKey: .pollingTime)
-        dataSource = try container.decodeIfPresent(DataSource.self, forKey: .dataSource)
         json = nil
     }
 
@@ -58,14 +53,12 @@ struct EmailConfirmationAction: Action {
         try container.encode(id, forKey: .id)
         try container.encode(actionType, forKey: .actionType)
         try container.encode(pollingTime, forKey: .pollingTime)
-        try container.encodeIfPresent(dataSource, forKey: .dataSource)
     }
 
     func with(json: Data?) -> EmailConfirmationAction {
         EmailConfirmationAction(id: id,
                                 actionType: actionType,
                                 pollingTime: pollingTime,
-                                dataSource: dataSource,
                                 json: json)
     }
 }

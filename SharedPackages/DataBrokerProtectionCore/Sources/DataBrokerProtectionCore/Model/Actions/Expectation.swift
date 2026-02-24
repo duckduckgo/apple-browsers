@@ -35,26 +35,17 @@ struct Item: Codable, Sendable {
 internal final class ExpectationAction: Action {
     let id: String
     let actionType: ActionType
-    let expectations: [Item]
-    let dataSource: DataSource?
-    let actions: [Action]?
     let json: Data?
 
     enum CodingKeys: String, CodingKey {
-        case id, actionType, expectations, dataSource, actions
+        case id, actionType
     }
 
     init(id: String,
          actionType: ActionType,
-         expectations: [Item],
-         dataSource: DataSource?,
-         actions: [Action]?,
          json: Data? = nil) {
         self.id = id
         self.actionType = actionType
-        self.expectations = expectations
-        self.dataSource = dataSource
-        self.actions = actions
         self.json = json
     }
 
@@ -62,14 +53,6 @@ internal final class ExpectationAction: Action {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
         self.actionType = try container.decode(ActionType.self, forKey: .actionType)
-        self.expectations = try container.decode([Item].self, forKey: .expectations)
-        self.dataSource = try container.decodeIfPresent(DataSource.self, forKey: .dataSource)
-        let actionsList = try container.decodeIfPresent([[String: Any]].self, forKey: .actions)
-        if let actionsList = actionsList {
-            self.actions = try Step.parse(actionsList)
-        } else {
-            self.actions = nil
-        }
         self.json = nil
     }
 
@@ -77,19 +60,11 @@ internal final class ExpectationAction: Action {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(actionType, forKey: .actionType)
-        try container.encode(expectations, forKey: .expectations)
-        try container.encode(dataSource, forKey: .dataSource)
-
-        var actionsContainer = container.nestedUnkeyedContainer(forKey: .actions)
-        try actions?.encode(to: &actionsContainer)
     }
 
     func with(json: Data?) -> ExpectationAction {
         ExpectationAction(id: id,
                           actionType: actionType,
-                          expectations: expectations,
-                          dataSource: dataSource,
-                          actions: actions,
                           json: json)
     }
 }

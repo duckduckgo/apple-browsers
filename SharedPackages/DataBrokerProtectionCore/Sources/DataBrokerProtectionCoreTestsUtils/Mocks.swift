@@ -2746,8 +2746,7 @@ public extension DataBroker {
                         EmailConfirmationAction(
                             id: "emailConfirmation",
                             actionType: .emailConfirmation,
-                            pollingTime: 30,
-                            dataSource: nil
+                            pollingTime: 30
                         )
                     ]
                 )

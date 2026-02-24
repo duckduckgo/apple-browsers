@@ -871,6 +871,6 @@ extension DataBrokerProtectionError {
 // swiftlint:enable force_try
 
 private struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
-    func bundledBrokers() throws -> [DataBroker]? { [] }
+    func bundledBrokers() throws -> [BrokerResource]? { [] }
     func checkForUpdates() async throws {}
 }

@@ -21,30 +21,18 @@ import Foundation
 struct SolveCaptchaAction: Action {
     let id: String
     let actionType: ActionType
-    let selector: String
-    let dataSource: DataSource?
-    let captchaType: String?
     let json: Data?
 
     enum CodingKeys: CodingKey {
         case id
         case actionType
-        case selector
-        case dataSource
-        case captchaType
     }
 
     init(id: String,
          actionType: ActionType,
-         selector: String,
-         dataSource: DataSource?,
-         captchaType: String?,
          json: Data? = nil) {
         self.id = id
         self.actionType = actionType
-        self.selector = selector
-        self.dataSource = dataSource
-        self.captchaType = captchaType
         self.json = json
     }
 
@@ -52,9 +40,6 @@ struct SolveCaptchaAction: Action {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         actionType = try container.decode(ActionType.self, forKey: .actionType)
-        selector = try container.decode(String.self, forKey: .selector)
-        dataSource = try container.decodeIfPresent(DataSource.self, forKey: .dataSource)
-        captchaType = try container.decodeIfPresent(String.self, forKey: .captchaType)
         json = nil
     }
 
@@ -62,17 +47,11 @@ struct SolveCaptchaAction: Action {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(actionType, forKey: .actionType)
-        try container.encode(selector, forKey: .selector)
-        try container.encodeIfPresent(dataSource, forKey: .dataSource)
-        try container.encodeIfPresent(captchaType, forKey: .captchaType)
     }
 
     func with(json: Data?) -> SolveCaptchaAction {
         SolveCaptchaAction(id: id,
                            actionType: actionType,
-                           selector: selector,
-                           dataSource: dataSource,
-                           captchaType: captchaType,
                            json: json)
     }
 }

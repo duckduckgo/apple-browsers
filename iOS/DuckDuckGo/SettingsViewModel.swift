@@ -176,7 +176,7 @@ final class SettingsViewModel: ObservableObject {
 
     let darkReaderFeatureSettings: DarkReaderFeatureSettings
 
-    var isForceWebsiteDarkModeEnabled: Bool {
+    var isForceWebsiteDarkModeAvailable: Bool {
         darkReaderFeatureSettings.isFeatureEnabled
     }
 
@@ -585,10 +585,10 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var darkModeBinding: Binding<Bool> {
+    var forceWebsiteDarkModeBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.darkReaderFeatureSettings.isDarkModeEnabled },
-            set: { self.darkReaderFeatureSettings.setDarkModeEnabled($0) }
+            get: { self.darkReaderFeatureSettings.isForceDarkModeEnabled },
+            set: { self.darkReaderFeatureSettings.setForceDarkModeEnabled($0) }
         )
     }
 

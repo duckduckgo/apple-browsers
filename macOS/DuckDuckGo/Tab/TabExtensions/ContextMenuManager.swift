@@ -50,7 +50,10 @@ final class ContextMenuManager: NSObject {
     }
 
     private var isWebViewSupportedScheme: Bool {
-        guard let linkURL, let scheme = URL(string: linkURL)?.scheme else {
+        guard let linkURL else {
+            return originalItems?[.openLinkInNewWindow] != nil
+        }
+        guard let scheme = URL(string: linkURL)?.scheme else {
             return false
         }
         return WKWebView.handlesURLScheme(scheme)

@@ -21,11 +21,6 @@ import SwiftUI
 import DuckUI
 import Onboarding
 
-private enum BrowsersComparisonContentCopy {
-    static let setAsDefaultBrowserCTA = "Choose Your Browser"
-    static let skipCTA = "Skip"
-}
-
 extension OnboardingRebranding.OnboardingView {
 
     struct BrowsersComparisonContent: View {
@@ -57,12 +52,12 @@ extension OnboardingRebranding.OnboardingView {
 
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: setAsDefaultBrowserAction) {
-                            Text(BrowsersComparisonContentCopy.setAsDefaultBrowserCTA)
+                            Text(UserText.Onboarding.BrowsersComparison.cta)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         Button(action: cancelAction) {
-                            Text(BrowsersComparisonContentCopy.skipCTA)
+                            Text(UserText.onboardingSkip)
                         }
                         .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                     }

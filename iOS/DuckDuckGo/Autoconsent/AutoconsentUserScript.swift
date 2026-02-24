@@ -484,8 +484,15 @@ extension AutoconsentUserScript {
     }
 
     func firePixel(pixel: AutoconsentPixel) {
-        // Delegate to the shared management instance to handle pixel firing and task scheduling
-        management.firePixel(pixel: pixel)
+        var additionalParams: [String: String] = [:]
+
+        // Add fromExtension=0 when web extensions are available but autoconsent extension is not
+        if webExtensionAvailability?.isAvailable == true &&
+           webExtensionAvailability?.isAutoconsentExtensionAvailable == false {
+            additionalParams["fromExtension"] = "0"
+        }
+
+        management.firePixel(pixel: pixel, additionalParameters: additionalParams)
     }
 }
 

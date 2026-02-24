@@ -120,6 +120,7 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         }
 
         toVC.view.layer.sublayerTransform = CATransform3DMakeTranslation(0, -offsets.switcherYOffset, 0)
+        toVC.actionBarView?.alpha = 0
         toVC.switchBarVC.textEntryViewController.isExpandable = false
         toVC.setLogoYOffset(offsets.logoYOffset)
 
@@ -137,6 +138,9 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         let hideLogoForTransition = useNewTransitionBehaviour && toVC.isEscapeHatchCardVisible
 
         animator.addAnimations {
+            if !self.isTopBarPosition {
+                fromVC.logoView?.alpha = 0
+            }
             if !self.useNewTransitionBehaviour {
                 toVC.view.alpha = 1.0
             }

@@ -34,7 +34,18 @@ class MainViewFactory {
     var superview: UIView {
         coordinator.superview
     }
-    
+
+    var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    var isiOS26: Bool {
+        if #available(iOS 26, *) {
+            return true
+        }
+        return false
+    }
+
     private init(parentController: UIViewController,
                  omnibarDependencies: OmnibarDependencyProvider,
                  featureFlagger: FeatureFlagger) {
@@ -264,7 +275,7 @@ extension MainViewFactory {
         let navigationBarCollectionView = coordinator.navigationBarCollectionView!
 
         #if compiler(>=6.2)
-        if #available(iOS 26, *) {
+        if #available(iOS 26, *), isPad {
             let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
             coordinator.constraints.navigationBarContainerTop = container.topAnchor.constraint(equalTo: guide.topAnchor)
         } else {
@@ -292,7 +303,7 @@ extension MainViewFactory {
         let tabBarContainer = coordinator.tabBarContainer!
 
         #if compiler(>=6.2)
-        if #available(iOS 26, *) {
+        if #available(iOS 26, *), isPad {
             let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
             coordinator.constraints.tabBarContainerTop = tabBarContainer.topAnchor.constraint(equalTo: guide.topAnchor)
         } else {
@@ -346,12 +357,6 @@ extension MainViewFactory {
     }
 
     private func constrainToolbar() {
-        let isiOS26: Bool
-        if #available(iOS 26, *) {
-            isiOS26 = true
-        } else {
-            isiOS26 = false
-        }
 
         // Changing this?  Best change TabSwitcherViewController too
         let toolbarWidthMod = isiOS26 ? 14.0 : 4.0

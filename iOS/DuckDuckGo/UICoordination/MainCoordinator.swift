@@ -115,6 +115,7 @@ final class MainCoordinator {
                                                          contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
+        let autoconsentManagementProvider = AutoconsentManagementProvider()
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
@@ -143,6 +144,7 @@ final class MainCoordinator {
                                 contentScopeExperimentManager: contentScopeExperimentManager,
                                 appSettings: AppDependencyProvider.shared.appSettings,
                                 textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                autoconsentManagementProvider: autoconsentManagementProvider,
                                 websiteDataManager: websiteDataManager,
                                 fireproofing: fireproofing,
                                 maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
@@ -163,6 +165,7 @@ final class MainCoordinator {
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         fireproofing: fireproofing,
                                         textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                        autoconsentManagementProvider: autoconsentManagementProvider,
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: privacyConfigurationManager,

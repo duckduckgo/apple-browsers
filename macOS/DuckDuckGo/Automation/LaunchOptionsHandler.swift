@@ -50,7 +50,11 @@ public final class LaunchOptionsHandler {
 
     /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
     public var isAutomationSession: Bool {
+#if DEBUG || REVIEW
         AutomationSession.isActive(automationPort: automationPort, isUITesting: isUITesting)
+#else
+        isUITesting
+#endif
     }
 
     public var onboardingStatus: OnboardingStatus {

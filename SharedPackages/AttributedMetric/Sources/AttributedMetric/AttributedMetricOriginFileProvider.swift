@@ -40,28 +40,12 @@ public protocol AttributedMetricOriginProvider: AnyObject {
 public final class AttributedMetricOriginFileProvider: AttributedMetricOriginProvider {
     public let origin: String?
 
-    /// Creates an instance with the given file name and `Bundle`.
+    /// Creates an instance that reads the origin from an xattr on the bundle path.
     /// - Parameters:
-    ///   - name: The name of the Txt file to extract the origin from.
-    ///   - bundle: The bundle where the file is located. In tests pass replace this with the test bundle.
-    public init(xattrName: String = "com.duckduckgo.origin", resourceName name: String = "Origin", bundle: Bundle = .main) {
-        // Try xattr first (set by variant DMG pipeline without re-signing)
-        if let value = getXattr(named: xattrName, from: bundle.bundlePath) {
-            origin = value
-        } else {
-            // Fall back to bundled file (legacy variant DMGs)
-            let url = bundle.url(forResource: name, withExtension: "txt")
-            origin = try? url
-                .flatMap(String.init(contentsOf:))?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .nilIfEmpty
-        }
-    }
-}
-
-private extension String {
-    var nilIfEmpty: String? {
-        return isEmpty ? nil : self
+    ///   - xattrName: The xattr name to read (set by the variant DMG pipeline).
+    ///   - bundle: The bundle whose path is checked for the xattr.
+    public init(xattrName: String = "com.duckduckgo.origin", bundle: Bundle = .main) {
+        origin = getXattr(named: xattrName, from: bundle.bundlePath)
     }
 }
 #endif

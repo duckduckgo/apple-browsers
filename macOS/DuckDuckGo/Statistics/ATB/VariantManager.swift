@@ -167,15 +167,7 @@ final class CampaignVariant {
     private let loadFromFile: () -> String?
 
     init(statisticsStore: StatisticsStore = LocalStatisticsStore(), loadFromFile: @escaping () -> String? = {
-        // Try xattr first (set by variant DMG pipeline without re-signing)
-        if let value = getXattr(named: "com.duckduckgo.variant", from: Bundle.main.bundlePath) {
-            return value
-        }
-        // Fall back to bundled file (legacy variant DMGs)
-        if let url = Bundle.main.url(forResource: "variant", withExtension: "txt") {
-            return try? String(contentsOf: url)
-        }
-        return nil
+        getXattr(named: "com.duckduckgo.variant", from: Bundle.main.bundlePath)
     }) {
         self.statisticsStore = statisticsStore
         self.loadFromFile = loadFromFile

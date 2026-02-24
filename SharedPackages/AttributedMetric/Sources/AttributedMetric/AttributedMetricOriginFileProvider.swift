@@ -16,7 +16,19 @@
 //  limitations under the License.
 //
 
+import Darwin
 import Foundation
+
+func getXattr(named name: String, from path: String) -> String? {
+    let length = getxattr(path, name, nil, 0, 0, 0)
+    guard length > 0 else { return nil }
+    var data = Data(count: length)
+    let result = data.withUnsafeMutableBytes {
+        getxattr(path, name, $0.baseAddress, length, 0, 0)
+    }
+    guard result >= 0 else { return nil }
+    return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+}
 
 /// A type that provides the `origin` used to anonymously track installations without tracking retention.
 public protocol AttributedMetricOriginProvider: AnyObject {
@@ -32,12 +44,18 @@ public final class AttributedMetricOriginFileProvider: AttributedMetricOriginPro
     /// - Parameters:
     ///   - name: The name of the Txt file to extract the origin from.
     ///   - bundle: The bundle where the file is located. In tests pass replace this with the test bundle.
-    public init(resourceName name: String = "Origin", bundle: Bundle = .main) {
-        let url = bundle.url(forResource: name, withExtension: "txt")
-        origin = try? url
-            .flatMap(String.init(contentsOf:))?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .nilIfEmpty
+    public init(xattrName: String = "com.duckduckgo.origin", resourceName name: String = "Origin", bundle: Bundle = .main) {
+        // Try xattr first (set by variant DMG pipeline without re-signing)
+        if let value = getXattr(named: xattrName, from: bundle.bundlePath) {
+            origin = value
+        } else {
+            // Fall back to bundled file (legacy variant DMGs)
+            let url = bundle.url(forResource: name, withExtension: "txt")
+            origin = try? url
+                .flatMap(String.init(contentsOf:))?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .nilIfEmpty
+        }
     }
 }
 

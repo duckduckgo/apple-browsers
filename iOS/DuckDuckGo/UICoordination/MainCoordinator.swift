@@ -66,8 +66,16 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
-    private var darkModeSettingObserver: AnyObject?
-    private var darkReaderFeatureSettings: DarkReaderFeatureSettings
+    private lazy var darkReaderFeatureSettings: DarkReaderFeatureSettings = {
+        AppDarkReaderFeatureSettings(
+            featureFlagger: featureFlagger,
+            onDarkModeChanged: { [weak self] in
+                if #available(iOS 18.4, *) {
+                    await self?.syncEmbeddedExtensions()
+                }
+            }
+        )
+    }()
     private var isSyncingEmbeddedExtensions = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
@@ -119,7 +127,6 @@ final class MainCoordinator {
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinator = Self.makeTextZoomCoordinator()
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
-        darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
@@ -217,6 +224,7 @@ final class MainCoordinator {
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
                                         whatsNewRepository: whatsNewRepository)
+        controller.setDarkReaderFeatureSettings(darkReaderFeatureSettings)
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
         // Apply tracker animation suppression early for cold starts
@@ -268,15 +276,6 @@ final class MainCoordinator {
                 await initializeWebExtensions()
             }
 
-            darkModeSettingObserver = NotificationCenter.default.addObserver(
-               forName: AppUserDefaults.Notifications.adaptiveDarkModeChanged,
-               object: nil,
-               queue: .main) { [weak self] _ in
-                   guard let self else { return }
-                   Task { @MainActor in
-                       await self.syncEmbeddedExtensions()
-                   }
-               }
         } else {
             clearWebExtensionReferences()
         }
@@ -330,7 +329,6 @@ final class MainCoordinator {
     private func clearWebExtensionReferences() {
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
-        darkModeSettingObserver = nil
         tabManager.setWebExtensionManager(nil)
         controller.setWebExtensionEventsCoordinator(nil)
         controller.setWebExtensionManager(nil)

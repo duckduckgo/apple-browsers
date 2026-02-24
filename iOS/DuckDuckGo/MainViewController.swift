@@ -277,6 +277,11 @@ class MainViewController: UIViewController {
         self.webExtensionManager = manager
     }
 
+    private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings?
+    func setDarkReaderFeatureSettings(_ settings: DarkReaderFeatureSettings) {
+        self.darkReaderFeatureSettings = settings
+    }
+
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         bookmarksDatabase: CoreDataDatabase,

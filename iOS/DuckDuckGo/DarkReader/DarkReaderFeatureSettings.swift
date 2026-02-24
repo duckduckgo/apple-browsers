@@ -50,11 +50,14 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     private let featureFlagger: FeatureFlagger
     private let storage: any KeyedStoring<DarkReaderKeys>
+    private let onDarkModeChanged: (() async -> Void)?
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         storage: (any KeyedStoring<DarkReaderKeys>)? = nil) {
+         storage: (any KeyedStoring<DarkReaderKeys>)? = nil,
+         onDarkModeChanged: (() async -> Void)? = nil) {
         self.featureFlagger = featureFlagger
         self.storage = if let storage { storage } else { UserDefaults.app.keyedStoring() }
+        self.onDarkModeChanged = onDarkModeChanged
     }
 
     var isFeatureEnabled: Bool {
@@ -67,6 +70,10 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     func setDarkModeEnabled(_ enabled: Bool) {
         storage.adaptiveDarkModeEnabled = enabled
-        NotificationCenter.default.post(name: AppUserDefaults.Notifications.adaptiveDarkModeChanged, object: nil)
+        if let onDarkModeChanged {
+            Task { @MainActor in
+                await onDarkModeChanged()
+            }
+        }
     }
 }

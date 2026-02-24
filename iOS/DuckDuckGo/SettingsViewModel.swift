@@ -174,7 +174,7 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }
 
-    lazy var darkReaderFeatureSettings: DarkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger)
+    let darkReaderFeatureSettings: DarkReaderFeatureSettings
 
     var isForceWebsiteDarkModeEnabled: Bool {
         darkReaderFeatureSettings.isFeatureEnabled
@@ -685,9 +685,11 @@ final class SettingsViewModel: ObservableObject {
          browsingMenuSheetCapability: BrowsingMenuSheetCapable,
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
-         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
+         darkReaderFeatureSettings: DarkReaderFeatureSettings = AppDarkReaderFeatureSettings()
     ) {
 
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
         self.legacyViewProvider = legacyViewProvider

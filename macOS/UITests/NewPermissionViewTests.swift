@@ -743,8 +743,7 @@ final class NewPermissionViewPopupTests: UITestCase {
                 "popupBlocking": true,
                 "extendedUserInitiatedPopupTimeout": true,
                 "suppressEmptyPopUpsOnApproval": true,
-                "allowPopupsForCurrentPage": true,
-                "popupPermissionButtonPersistence": true
+                "allowPopupsForCurrentPage": true
             ]
         )
 

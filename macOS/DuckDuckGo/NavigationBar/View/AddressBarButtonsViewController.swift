@@ -747,8 +747,7 @@ final class AddressBarButtonsViewController: NSViewController {
         // Show pop-up button when there's a blocked pop-up (permission is requested)
         if tabViewModel.usedPermissions.popups?.isRequested == true {
             popupsButton.buttonState = tabViewModel.usedPermissions.popups
-        } else if featureFlagger.isFeatureOn(.popupBlocking),
-                  featureFlagger.isFeatureOn(.popupPermissionButtonPersistence) {
+        } else if featureFlagger.isFeatureOn(.popupBlocking) {
             let pageInitiatedPopupOpened = tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false
             // Keep button visible (as .inactive) when a page-initiated pop-up was allowed or opened by the current page (always allowed)
             popupsButton.buttonState = pageInitiatedPopupOpened ? .inactive : tabViewModel.usedPermissions.popups // .inactive or nil
@@ -2015,9 +2014,9 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
         guard let state = tabViewModel.usedPermissions.popups ?? {
-            // If popup permission button persistence feature flag is enabled and a page-initiated popup was opened for the current page,
+            // If popup blocking is enabled and a page-initiated popup was opened for the current page,
             // return .inactive state for the pop-up button
-            if featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.popupPermissionButtonPersistence),
+            if featureFlagger.isFeatureOn(.popupBlocking),
                tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false { return .inactive } else { return nil }
         }() else {
             return

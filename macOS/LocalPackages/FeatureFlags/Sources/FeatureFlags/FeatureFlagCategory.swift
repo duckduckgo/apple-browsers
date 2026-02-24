@@ -91,8 +91,7 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .popupBlocking,
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
-                .allowPopupsForCurrentPage,
-                .popupPermissionButtonPersistence:
+                .allowPopupsForCurrentPage:
             return .popupBlocking
         case .webNotifications:
             return .webNotifications

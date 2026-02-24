@@ -18,9 +18,12 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import Combine
+import Core
 import Foundation
 import os.log
+import PrivacyConfig
 import UIKit
 
 // MARK: - State Enums
@@ -84,6 +87,7 @@ final class AIChatContextualChatSessionState {
 
     private let aiChatSettings: AIChatSettingsProvider
     private let pixelHandler: AIChatContextualModePixelFiring
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Core State (private(set) - mutations happen via methods)
 
@@ -117,9 +121,11 @@ final class AIChatContextualChatSessionState {
     // MARK: - Initialization
 
     init(aiChatSettings: AIChatSettingsProvider,
-         pixelHandler: AIChatContextualModePixelFiring) {
+         pixelHandler: AIChatContextualModePixelFiring,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.aiChatSettings = aiChatSettings
         self.pixelHandler = pixelHandler
+        self.featureFlagger = featureFlagger
         self.wasAutoAttachEnabled = aiChatSettings.isAutomaticContextAttachmentEnabled
         rebuildViewState()
     }
@@ -154,6 +160,11 @@ final class AIChatContextualChatSessionState {
     /// Whether automatic context collection is enabled
     var shouldAutoCollectContext: Bool {
         aiChatSettings.isAutomaticContextAttachmentEnabled
+    }
+
+    /// Whether multiple page contexts can be added to a single chat session
+    var supportsMultipleContexts: Bool {
+        featureFlagger.isFeatureOn(.multiplePageContexts)
     }
 
     // MARK: - Frontend Chat State Transitions
@@ -386,8 +397,16 @@ private extension AIChatContextualChatSessionState {
     }
 
     func canPushToFrontend() -> Bool {
-        let canPush = frontendState == .chatWithoutInitialContext || frontendState == .restoredChat
-        Logger.aiChat.debug("[SessionState] canPushToFrontend=\(canPush) (frontendState=\(self.frontendState))")
+        let canPush: Bool
+        switch frontendState {
+        case .chatWithoutInitialContext, .restoredChat:
+            canPush = true
+        case .chatWithInitialContext:
+            canPush = supportsMultipleContexts
+        case .noChat:
+            canPush = false
+        }
+        Logger.aiChat.debug("[SessionState] canPushToFrontend=\(canPush) (frontendState=\(self.frontendState), multipleContexts=\(self.supportsMultipleContexts))")
         return canPush
     }
 

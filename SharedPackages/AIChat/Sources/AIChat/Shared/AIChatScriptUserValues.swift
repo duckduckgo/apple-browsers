@@ -85,6 +85,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsHomePageEntryPoint: Bool
     public let supportsOpenAIChatLink: Bool
     public let supportsAIChatSync: Bool
+    public let supportsMultipleContexts: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -102,7 +103,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         appVersion: "",
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
-                                        supportsAIChatSync: false)
+                                        supportsAIChatSync: false,
+                                        supportsMultipleContexts: false)
 #endif
 
 #if os(macOS)
@@ -120,7 +122,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         appVersion: "",
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
-                                        supportsAIChatSync: false)
+                                        supportsAIChatSync: false,
+                                        supportsMultipleContexts: false)
 #endif
     }
 
@@ -138,7 +141,8 @@ public struct AIChatNativeConfigValues: Codable {
                 appVersion: String,
                 supportsHomePageEntryPoint: Bool = true,
                 supportsOpenAIChatLink: Bool = true,
-                supportsAIChatSync: Bool) {
+                supportsAIChatSync: Bool,
+                supportsMultipleContexts: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -155,6 +159,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsHomePageEntryPoint = supportsHomePageEntryPoint
         self.supportsOpenAIChatLink = supportsOpenAIChatLink
         self.supportsAIChatSync = supportsAIChatSync
+        self.supportsMultipleContexts = supportsMultipleContexts
     }
 }
 

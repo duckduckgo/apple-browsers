@@ -23,7 +23,7 @@ import Foundation
 ///
 /// Each trigger (startup, 1h, 2h, 4h, 8h, 24h) fires at most once per app session.
 /// Context parameters include bucketed memory usage, window count, standard/pinned tab counts,
-/// architecture, allocation usage, and uptime.
+/// architecture, and allocation usage.
 ///
 enum MemoryUsageIntervalPixel: PixelKitEvent {
 
@@ -60,6 +60,7 @@ enum MemoryUsageIntervalPixel: PixelKitEvent {
         case .memoryUsage(let trigger, let context):
             var params = context.parameters
             params["trigger"] = trigger.rawValue
+            params.removeValue(forKey: "uptime")
             return params
         }
     }

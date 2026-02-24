@@ -104,7 +104,7 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
         XCTAssertEqual(params?["sync_enabled"], "unknown")
         XCTAssertNotNil(params?["architecture"])
         XCTAssertEqual(params?["used_allocation"], "256")
-        XCTAssertNotNil(params?["uptime"])
+        XCTAssertNil(params?["uptime"])
     }
 
     // MARK: - Interval Triggering

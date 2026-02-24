@@ -249,7 +249,7 @@ final class MainCoordinator {
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             onFeatureFlagEnabled: { [weak self] in
-                await self?.initializeWebExtensions()
+                self?.initializeWebExtensions()
             },
             onFeatureFlagDisabled: { [weak self] in
                 self?.clearWebExtensionReferences()
@@ -260,16 +260,23 @@ final class MainCoordinator {
         )
 
         if featureFlagger.isFeatureOn(.webExtensions) {
-            Task { @MainActor in
-                await initializeWebExtensions()
-            }
+            initializeWebExtensions()
         } else {
             clearWebExtensionReferences()
         }
     }
 
     @available(iOS 18.4, *)
-    private func initializeWebExtensions() async {
+    private func initializeWebExtensions() {
+        guard webExtensionManager == nil else {
+            // Already initialized, just reload extensions
+            Task { @MainActor in
+                await webExtensionManager?.loadInstalledExtensions()
+                await syncEmbeddedExtensions()
+            }
+            return
+        }
+
         guard let privacyConfigurationManager else { return }
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
@@ -288,10 +295,12 @@ final class MainCoordinator {
         controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
         controller.setWebExtensionManager(webExtensionManager)
 
-        await webExtensionManager.loadInstalledExtensions()
-        await syncEmbeddedExtensions()
-
-        webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+        // Load extensions asynchronously - the controller is already attached to tabs
+        Task { @MainActor in
+            await webExtensionManager.loadInstalledExtensions()
+            await syncEmbeddedExtensions()
+            webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+        }
     }
 
     @available(iOS 18.4, *)

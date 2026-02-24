@@ -62,7 +62,6 @@ final class MockAutoconsentStats: AutoconsentStatsCollecting {
         )
     }
     func clearAutoconsentStats() async {}
-    func isEnabled() async -> Bool { true }
 }
 
 final class NewTabPageCoordinatorTests: XCTestCase {

@@ -406,9 +406,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
 
-    /// Global switch to display autoconsent stats on New Tab Page
-    case autoconsentStats
-
     /// Controls whether the Next Steps List widget is enabled on New Tab Page
     case nextStepsListWidget
 }

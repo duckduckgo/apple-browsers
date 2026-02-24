@@ -838,6 +838,8 @@ extension DefaultOmniBarView {
         aiChatLeftButton.alpha = 0.0
         NSLayoutConstraint.deactivate(aiChatModeConstraints)
 
+        searchAreaView.textField.isHidden = false
+
         if !isSearchAreaExpanded {
             searchAreaView.textField.alpha = 1.0
             searchAreaView.revealButtons()

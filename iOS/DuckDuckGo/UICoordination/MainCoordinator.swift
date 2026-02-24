@@ -65,6 +65,7 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
@@ -100,6 +101,7 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
@@ -212,7 +214,8 @@ final class MainCoordinator {
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
-                                        whatsNewRepository: whatsNewRepository)
+                                        whatsNewRepository: whatsNewRepository,
+                                        darkReaderFeatureSettings: darkReaderFeatureSettings)
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
         // Apply tracker animation suppression early for cold starts

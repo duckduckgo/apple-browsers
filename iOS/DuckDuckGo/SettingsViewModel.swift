@@ -174,6 +174,12 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }
 
+    let darkReaderFeatureSettings: DarkReaderFeatureSettings
+
+    var isForceWebsiteDarkModeEnabled: Bool {
+        darkReaderFeatureSettings.isFeatureEnabled
+    }
+
     var isBlackFridayCampaignEnabled: Bool {
         blackFridayCampaignProvider.isCampaignEnabled
     }
@@ -579,6 +585,13 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var darkModeBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.darkReaderFeatureSettings.isDarkModeEnabled },
+            set: { self.darkReaderFeatureSettings.setDarkModeEnabled($0) }
+        )
+    }
+
     var universalLinksBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.allowUniversalLinks },
@@ -672,9 +685,11 @@ final class SettingsViewModel: ObservableObject {
          browsingMenuSheetCapability: BrowsingMenuSheetCapable,
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
-         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
+         darkReaderFeatureSettings: DarkReaderFeatureSettings = AppDarkReaderFeatureSettings()
     ) {
 
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
         self.legacyViewProvider = legacyViewProvider

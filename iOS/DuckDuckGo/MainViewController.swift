@@ -277,6 +277,8 @@ class MainViewController: UIViewController {
         self.webExtensionManager = manager
     }
 
+    private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
+
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         bookmarksDatabase: CoreDataDatabase,
@@ -329,7 +331,8 @@ class MainViewController: UIViewController {
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
-        whatsNewRepository: WhatsNewMessageRepository
+        whatsNewRepository: WhatsNewMessageRepository,
+        darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -385,6 +388,7 @@ class MainViewController: UIViewController {
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
         self.whatsNewRepository = whatsNewRepository
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
 
         super.init(nibName: nil, bundle: nil)
         

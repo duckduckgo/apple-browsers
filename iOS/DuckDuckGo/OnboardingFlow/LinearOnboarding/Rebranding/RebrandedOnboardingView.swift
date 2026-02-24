@@ -526,6 +526,7 @@ private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
 private struct BackgroundExitingTransitionModifier: AnimatableModifier {
     var progress: CGFloat
     let screenWidth: CGFloat
+    let imageWidth: CGFloat
 
     var animatableData: CGFloat {
         get { progress }
@@ -534,7 +535,10 @@ private struct BackgroundExitingTransitionModifier: AnimatableModifier {
 
     func body(content: Content) -> some View {
         content
-            .offset(x: -screenWidth * progress)
+            // Slide left until image's trailing edge aligns with screen's leading edge
+            // Image is centered in frame, so: offset = -(frameCenter + imageHalfWidth)
+            // At progress=1.0: image trailing edge reaches x=0 (screen leading edge)
+            .offset(x: -(screenWidth / 2 + imageWidth / 2) * progress)
             .opacity(1.0 - progress)
     }
 }
@@ -546,7 +550,6 @@ struct ScrollableOnboardingBackground: View {
         static let enterDelay: TimeInterval = 0.3
         static let enterDuration: TimeInterval = 1.5
         static let backgroundImageWidth: CGFloat = 1366
-        static let backgroundImageHeight: CGFloat = 410
     }
 
     let viewState: OnboardingView.ViewState
@@ -564,14 +567,20 @@ struct ScrollableOnboardingBackground: View {
                     backgroundView(for: previousState, width: proxy.size.width)
                         .modifier(BackgroundExitingTransitionModifier(
                             progress: exitingTransitionProgress,
-                            screenWidth: proxy.size.width
+                            screenWidth: proxy.size.width,
+                            imageWidth: Metrics.backgroundImageWidth
                         ))
                         .zIndex(0)
                 }
 
                 // Current background (entering or static)
                 backgroundView(for: viewState, width: proxy.size.width)
-                    .offset(x: Metrics.backgroundImageWidth * (1 - enteringTransitionProgress))
+                    // Slide in from right with leadingOffset pixels already visible
+                    // Base offset positions image's leading edge at screen's trailing edge
+                    // Subtracting leadingOffset shifts image left to cater for empty space between illustration and leading edge.
+                    // At progress=0.0: image starts with leadingOffset visible from right edge
+                    // At progress=1.0: image is centered (offset=0)
+                    .offset(x: ((proxy.size.width + Metrics.backgroundImageWidth / 2) - viewState.leadingOffset) * (1 - enteringTransitionProgress))
                     .zIndex(1)
             }
             .frame(width: proxy.size.width, alignment: .bottomLeading)
@@ -625,7 +634,7 @@ struct ScrollableOnboardingBackground: View {
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: width, alignment: .center)
-                .frame(maxHeight: Metrics.backgroundImageHeight)
+                .frame(maxHeight: state.backgroundMaxHeight)
         }
         .ignoresSafeArea()
     }
@@ -636,14 +645,33 @@ extension OnboardingView.ViewState {
     var backgroundImage: Image {
         switch self {
         case .landing:
-            return OnboardingRebrandingImages.Linear.introBackground
+            return OnboardingRebrandingImages.Linear.landing
         case .onboarding(let intro):
             return intro.type.backgroundImage
+        }
+    }
+
+    var backgroundMaxHeight: CGFloat {
+        switch self {
+        case .landing:
+            return 527
+        case .onboarding(let intro):
+            return intro.type.backgroundMaxHeight
+        }
+    }
+
+    var leadingOffset: CGFloat {
+        switch self {
+        case .landing:
+            return 0
+        case .onboarding(let intro):
+            return intro.type.leadingOffset
         }
     }
 }
 
 extension OnboardingView.ViewState.Intro.IntroType {
+
     var backgroundImage: Image {
         switch self {
         case .startOnboardingDialog:
@@ -660,4 +688,39 @@ extension OnboardingView.ViewState.Intro.IntroType {
             return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
         }
     }
+
+    var backgroundMaxHeight: CGFloat {
+        switch self {
+        case .startOnboardingDialog:
+            return 404
+        case .browsersComparisonDialog:
+            return 216
+        case .addToDockPromoDialog:
+            return 286
+        case .chooseAppIconDialog:
+            return 272
+        case .chooseAddressBarPositionDialog:
+            return 360
+        case .chooseSearchExperienceDialog:
+            return 294
+        }
+    }
+
+    var leadingOffset: CGFloat {
+        switch self {
+        case .startOnboardingDialog:
+            return 320
+        case .browsersComparisonDialog:
+            return 380
+        case .addToDockPromoDialog:
+            return 194
+        case .chooseAppIconDialog:
+            return 300
+        case .chooseAddressBarPositionDialog:
+            return 246
+        case .chooseSearchExperienceDialog:
+            return 164
+        }
+    }
+
 }

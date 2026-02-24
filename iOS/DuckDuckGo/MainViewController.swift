@@ -97,6 +97,7 @@ class MainViewController: UIViewController {
     }()
 
     var newTabPageViewController: NewTabPageViewController?
+
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?
 
@@ -154,6 +155,7 @@ class MainViewController: UIViewController {
     private var aiChatCancellables = Set<AnyCancellable>()
     private var settingsCancellables = Set<AnyCancellable>()
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
+    private var currentNTPEscapeHatch: EscapeHatchModel?
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     let subscriptionDataReporter: SubscriptionDataReporting
@@ -1191,24 +1193,48 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.omniDelegate = self
     }
     
-    private func makeEscapeHatchModel(from tab: Tab) -> EscapeHatchModel? {
+    private func makeEscapeHatchModel(from tab: Tab, targetTabIndex: Int) -> EscapeHatchModel? {
         if tab.isAITab {
             return EscapeHatchModel(
                 title: UserText.omnibarFullAIChatModeDisplayTitle,
                 subtitle: "Duck.ai",
                 isAITab: true,
-                domain: nil
+                domain: nil,
+                targetTabIndex: targetTabIndex
             )
         }
         if let link = tab.link {
             let subtitle = link.url.host?.droppingWwwPrefix() ?? link.url.absoluteString
-            return EscapeHatchModel(title: link.displayTitle,
-                                    subtitle: subtitle,
-                                    isAITab: false,
-                                    domain: link.url.host
+            return EscapeHatchModel(
+                title: link.displayTitle,
+                subtitle: subtitle,
+                isAITab: false,
+                domain: link.url.host,
+                targetTabIndex: targetTabIndex
             )
         }
         return nil
+    }
+
+    private func buildEscapeHatch(tabSwitchedFromIndex: Int? = nil) -> EscapeHatchModel? {
+        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) else {
+            return nil
+        }
+        let tabs = tabManager.model.tabs
+        let currentIndex = tabManager.model.currentIndex
+        let targetIndex: Int?
+        if let fromIndex = tabSwitchedFromIndex,
+           tabs.indices.contains(fromIndex),
+           fromIndex != currentIndex {
+            targetIndex = fromIndex
+        } else if tabs.count > 1, currentIndex > 0 {
+            targetIndex = currentIndex - 1
+        } else {
+            targetIndex = nil
+        }
+        guard let targetIndex else { return nil }
+        let tab = tabManager.model.get(tabAt: targetIndex)
+        return makeEscapeHatchModel(from: tab, targetTabIndex: targetIndex)
     }
 
     fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, tabSwitchedFromIndex: Int? = nil) {
@@ -1256,29 +1282,9 @@ class MainViewController: UIViewController {
 
         newTabPageViewController = controller
 
-        if featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) {
-            let tabs = tabManager.model.tabs
-            let currentIndex = tabManager.model.currentIndex
-            let targetIndex: Int?
-            if let fromIndex = tabSwitchedFromIndex,
-               tabs.indices.contains(fromIndex),
-               fromIndex != currentIndex {
-                targetIndex = fromIndex
-            } else if tabs.count > 1, currentIndex > 0 {
-                targetIndex = currentIndex - 1
-            } else {
-                targetIndex = nil
-            }
-            if let targetIndex {
-                let tab = tabManager.model.get(tabAt: targetIndex)
-                let escapeHatchModel = makeEscapeHatchModel(from: tab)
-                controller.setEscapeHatch(escapeHatchModel, targetTabIndex: targetIndex)
-            } else {
-                controller.setEscapeHatch(nil, targetTabIndex: 0)
-            }
-        } else {
-            controller.setEscapeHatch(nil, targetTabIndex: 0)
-        }
+        let hatch = buildEscapeHatch(tabSwitchedFromIndex: tabSwitchedFromIndex)
+        controller.setEscapeHatch(hatch)
+        currentNTPEscapeHatch = hatch
 
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
@@ -3388,6 +3394,31 @@ extension MainViewController: OmniBarDelegate {
         Pixel.fire(pixel: .addressBarClickOnAIChat)
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
     }
+
+    func escapeHatchForEditingState() -> EscapeHatchModel? {
+        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn),
+              tabManager.model.currentTab?.link == nil else {
+            return nil
+        }
+        return currentNTPEscapeHatch
+    }
+
+    func useNewOmnibarTransitionBehaviour() -> Bool {
+        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+    }
+
+    func onSwitchTabToIndex(_ index: Int) {
+        guard tabManager.model.tabs.indices.contains(index), index != tabManager.model.currentIndex else {
+            viewCoordinator.omniBar.endEditing()
+            return
+        }
+        let tabToClose = tabManager.model.currentTab
+        select(tabAt: index)
+        viewCoordinator.omniBar.endEditing()
+        if let tabToClose {
+            closeTab(tabToClose)
+        }
+    }
 }
 
 // MARK: - AutocompleteViewControllerDelegate Methods
@@ -3487,10 +3518,17 @@ extension MainViewController: NewTabPageControllerDelegate {
 
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, index: Int) {
         guard tabManager.model.tabs.indices.contains(index) else {
-            controller.setEscapeHatch(nil, targetTabIndex: 0)
+            controller.setEscapeHatch(nil)
+            currentNTPEscapeHatch = nil
             return
         }
+        guard index != tabManager.model.currentIndex else { return }
+        let tabToClose = tabManager.model.currentTab
         select(tabAt: index)
+        if let tabToClose {
+            closeTab(tabToClose)
+        }
+        currentNTPEscapeHatch = nil
     }
 }
 

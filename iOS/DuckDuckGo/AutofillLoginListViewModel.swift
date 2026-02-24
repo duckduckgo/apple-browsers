@@ -416,7 +416,8 @@ class AutofillLoginListViewModel: ObservableObject {
                                       cookieConsentInfo: nil,
                                       debugFlags: "",
                                       privacyExperiments: "",
-                                      isPirEnabled: nil)
+                                      isPirEnabled: nil,
+                                      isForceDarkModeEnabled: nil)
 
         try? breakageReporter.report(report, reportMode: .regular, daysToExpiry: breakageReportIntervalDays)
     }

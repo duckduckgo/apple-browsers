@@ -26,6 +26,7 @@ import Networking
 import NetworkingTestingUtils
 import Persistence
 
+@MainActor
 final class SubscriptionSettingsViewModelTests: XCTestCase {
 
     var sut: SubscriptionSettingsViewModel!
@@ -665,7 +666,6 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
 
         sut.cancelPendingDowngrade()
 
-        await Task.yield()
         XCTAssertTrue(sut.state.isShowingGoogleView)
     }
 
@@ -702,7 +702,6 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertNil(sut.state.cancelDowngradeTransactionStatus)
     }
 
-    @MainActor
     func testSetCancelDowngradeError_SetsCancelDowngradeErrorInState() async  {
         sut = makeSUT()
         let error = AppStorePurchaseFlowError.purchaseFailed(NSError(domain: "Test", code: -1))
@@ -712,7 +711,6 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state.cancelDowngradeError, .purchaseFailed)
     }
 
-    @MainActor
     func testClearCancelDowngradeError_ClearsErrorInState() {
         sut = makeSUT()
         sut.setCancelDowngradeError(AppStorePurchaseFlowError.purchaseFailed(NSError(domain: "Test", code: -1)))

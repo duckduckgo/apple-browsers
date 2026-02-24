@@ -71,7 +71,9 @@ class MainViewController: UIViewController {
 
     var chromeManager: BrowserChromeManager!
 
+#if DEBUG || REVIEW
     var automationServer: AutomationServer?
+#endif
 
     var allowContentUnderflow = false {
         didSet {

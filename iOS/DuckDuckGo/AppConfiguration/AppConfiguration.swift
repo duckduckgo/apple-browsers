@@ -169,11 +169,15 @@ struct AppConfiguration {
 
     @MainActor
     private func startAutomationServerIfNeeded(mainViewController: MainViewController) -> AutomationServer? {
+#if DEBUG || REVIEW
         let launchOptionsHandler = LaunchOptionsHandler()
         guard launchOptionsHandler.automationPort != nil else {
             return nil
         }
         return AutomationServer(main: mainViewController, port: launchOptionsHandler.automationPort)
+#else
+        return nil
+#endif
     }
 
     // MARK: - Handle ATB and variant assigned logic here

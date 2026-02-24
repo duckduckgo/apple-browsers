@@ -277,11 +277,19 @@ struct Launching: LaunchingHandling {
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
 
+#if DEBUG || REVIEW
         mainCoordinator.controller.automationServer = configuration.finalize(
             reportingService: reportingService,
             mainViewController: mainCoordinator.controller,
             launchTaskManager: launchTaskManager
         )
+#else
+        _ = configuration.finalize(
+            reportingService: reportingService,
+            mainViewController: mainCoordinator.controller,
+            launchTaskManager: launchTaskManager
+        )
+#endif
 
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.

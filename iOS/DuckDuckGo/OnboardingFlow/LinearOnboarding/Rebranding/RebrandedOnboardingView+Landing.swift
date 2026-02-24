@@ -21,97 +21,92 @@ import SwiftUI
 import Onboarding
 import Lottie
 
-// MARK: - Metrics
-
-private enum LandingViewMetrics {
-    static let logoSize: CGFloat = 90          // Dax logo frame (square)
-    static let topPadding: CGFloat = 90        // Distance from top safe area to logo
-    static let welcomeBottomPadding: CGFloat = 8   // Spacing between logo and title text
-    static let horizontalPadding: CGFloat = 24
-    static let titleMaxWidth: CGFloat = 300
-
-    // Illustration (landscape Lottie, original canvas 4000x1622)
-    static let illustrationHeightRatio: CGFloat = 0.62
-    static let minIllustrationHeight: CGFloat = 430
-    static let maxIllustrationHeight: CGFloat = 560
-    static let illustrationWidth: CGFloat = 1200   // Final width after animation
-    static let illustrationHeight: CGFloat = 487   // Maintains 4000:1622 aspect ratio
-}
-
-private enum LandingViewAssets {
-    static let illustrationAnimation = "OnboardingLandingIllustrationAnimation"  // Mountains/landscape
-    static let logoAnimation = "OnboardingLandingLogoAnimation"                  // Dax logo
-}
-
-// MARK: - Component Animation
-
-private struct ComponentAnimationState {
-    var scale: CGFloat
-    var offset: CGSize  
-    var opacity: Double
-
-    static func start(
-        scale: CGFloat = 1.0,
-        offset: CGSize = .zero,
-        opacity: Double = 0.0
-    ) -> ComponentAnimationState {
-        ComponentAnimationState(scale: scale, offset: offset, opacity: opacity)
-    }
-
-    static func end(
-        scale: CGFloat = 1.0,
-        offset: CGSize = .zero,
-        opacity: Double = 1.0
-    ) -> ComponentAnimationState {
-        ComponentAnimationState(scale: scale, offset: offset, opacity: opacity)
-    }
-}
-
-// MARK: - Start / End States
-
-private enum LandingAnimationStates {
-
-    // Logo: scales down from 178% (AE 25% → 14% of canvas = 1.786x ratio) and fades in
-    static let logoStart = ComponentAnimationState.start(scale: 25.0 / 14.0, opacity: 0.0)
-    static let logoEnd = ComponentAnimationState.end()
-
-    // Text: fades in and slides up 49pt from below
-    static let textStart = ComponentAnimationState.start(opacity: 0.0)
-    static let textOffsetStart: CGSize = CGSize(width: 0, height: 49)
-    static let textEnd = ComponentAnimationState.end()
-
-    // Illustration: fades in and slides from off-screen (325pt right, 204pt below)
-    static let illustrationStart = ComponentAnimationState.start()
-    static let illustrationOffsetStart: CGSize = CGSize(width: 325, height: 204)
-    static let illustrationEnd = ComponentAnimationState.end()
-}
-
-// MARK: - Timing (from AE specs at 30fps)
-
-private enum LandingAnimationTiming {
-    // Logo: soft ease-out for scale + opacity, 0.4s delay to let illustration start first
-    static let logoAnimation: Animation = .timingCurve(0.26, 0.64, 0.48, 1.00, duration: 0.667).delay(0.4)
-
-    // Text offset: cubic-bezier with y1=2.70 creates an overshoot (slides past target, bounces back)
-    static let textOffsetAnimation: Animation = .timingCurve(0.40, 2.70, 0.74, 1.00, duration: 0.5).delay(0.4)
-
-    // Text opacity: simple ease for fade-in, synced with offset delay
-    static let textOpacityAnimation: Animation = .timingCurve(0.33, 0.00, 0.67, 1.00, duration: 0.2).delay(0.4)
-
-    // Illustration: slides in from bottom-right, starts almost immediately (0.133s ≈ 4 frames at 30fps)
-    static let illustrationAnimation: Animation = .timingCurve(0.10, 0.85, 0.64, 0.99, duration: 0.7).delay(0.133)
-}
-
 // MARK: - Landing View
 
 extension OnboardingRebranding.OnboardingView {
 
     struct LandingView: View {
+
+        private enum Assets {
+            static let illustrationAnimation = "OnboardingLandingIllustrationAnimation"  // Mountains/landscape
+            static let logoAnimation = "OnboardingLandingLogoAnimation"                  // Dax logo
+        }
+
+        // MARK: - Metrics
+
+        private enum Metrics {
+            static let logoSize: CGFloat = 125         // Dax logo frame (square)
+            static let topPadding: CGFloat = 96        // Distance from top safe area to logo
+            static let welcomeBottomPadding: CGFloat = 20  // Spacing between logo and title text
+            static let horizontalPadding: CGFloat = 16
+
+            // Illustration (landscape Lottie, original canvas 4000×1622)
+            static let illustrationWidth: CGFloat = 1200   // Final width after animation
+            static let illustrationHeight: CGFloat = 487   // Maintains 4000:1622 aspect ratio
+        }
+
+        // MARK: - Component Animation
+
+        private struct ComponentAnimationState {
+            var scale: CGFloat
+            var opacity: Double
+
+            static func start(
+                scale: CGFloat = 1.0,
+                opacity: Double = 0.0
+            ) -> ComponentAnimationState {
+                ComponentAnimationState(scale: scale, opacity: opacity)
+            }
+
+            static func end(
+                scale: CGFloat = 1.0,
+                opacity: Double = 1.0
+            ) -> ComponentAnimationState {
+                ComponentAnimationState(scale: scale, opacity: opacity)
+            }
+        }
+
+        // MARK: - Start / End States
+
+        private enum LandingAnimationStates {
+
+            // Logo: scales down from 178% (AE 25% → 14% of canvas = 1.786x ratio) and fades in
+            static let logoStart = ComponentAnimationState.start(scale: 25.0 / 14.0, opacity: 0.0)
+            static let logoEnd = ComponentAnimationState.end()
+
+            // Text: fades in and slides up 49pt from below
+            static let textStart = ComponentAnimationState.start(opacity: 0.0)
+            static let textOffsetStart: CGSize = CGSize(width: 0, height: 49)
+            static let textEnd = ComponentAnimationState.end()
+
+            // Illustration: fades in and slides from off-screen (325pt right, 204pt below)
+            static let illustrationStart = ComponentAnimationState.start()
+            static let illustrationOffsetStart: CGSize = CGSize(width: 325, height: 204)
+            static let illustrationEnd = ComponentAnimationState.end()
+        }
+
+        // MARK: - Timing (from AE specs at 30fps)
+
+        private enum LandingAnimationTiming {
+            // Logo: soft ease-out for scale + opacity, 0.4s delay to let illustration start first
+            static let logoAnimation: Animation = .timingCurve(0.26, 0.64, 0.48, 1.00, duration: 0.667).delay(0.4)
+
+            // Text offset: cubic-bezier with y1=2.70 creates an overshoot (slides past target, bounces back)
+            static let textOffsetAnimation: Animation = .timingCurve(0.40, 2.70, 0.74, 1.00, duration: 0.5).delay(0.4)
+
+            // Text opacity: simple ease for fade-in, synced with offset delay
+            static let textOpacityAnimation: Animation = .timingCurve(0.33, 0.00, 0.67, 1.00, duration: 0.2).delay(0.4)
+
+            // Illustration: slides in from bottom-right, starts almost immediately (0.133s ≈ 4 frames at 30fps)
+            static let illustrationAnimation: Animation = .timingCurve(0.10, 0.85, 0.64, 0.99, duration: 0.7).delay(0.133)
+        }
+
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         let animationNamespace: Namespace.ID
 
         @State private var logo = LandingAnimationStates.logoStart
+        @State private var logoAnimationFinished = false
         @State private var text = LandingAnimationStates.textStart
         @State private var textOffset = LandingAnimationStates.textOffsetStart
         @State private var illustration = LandingAnimationStates.illustrationStart
@@ -121,10 +116,10 @@ extension OnboardingRebranding.OnboardingView {
             GeometryReader { proxy in
                 ZStack(alignment: .bottom) {
                     welcomeView
-                        .padding(.top, LandingViewMetrics.topPadding)
+                        .padding(.top, Metrics.topPadding)
                         .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
 
-                    illustrationView(width: proxy.size.width, height: illustrationHeight(for: proxy.size.height))
+                    illustrationView
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
             }
@@ -136,12 +131,23 @@ extension OnboardingRebranding.OnboardingView {
         // MARK: - Welcome (logo + text)
 
         private var welcomeView: some View {
-            VStack(alignment: .center, spacing: LandingViewMetrics.welcomeBottomPadding) {
-
-                // Logo Lottie (stopped at last frame)
-                LandingLogoAnimationView(lottieAsset: LandingViewAssets.logoAnimation)
+            VStack(alignment: .center, spacing: Metrics.welcomeBottomPadding) {
+                // Logo Lottie (plays once then holds on the last frame)
+                Lottie.LottieView(animation: .asset(Assets.logoAnimation))
+                    .playing(loopMode: .playOnce)
+//                    .playbackMode(logoAnimationFinished
+//                        ? .paused(at: .progress(1))
+//                        : .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
+//                    .configure { animationView in
+//                        if !logoAnimationFinished,
+//                           !animationView.isAnimationPlaying,
+//                           animationView.currentProgress >= 1 {
+//                            Task { @MainActor in logoAnimationFinished = true }
+//                        }
+//                    }
+                    .resizable()
                     .matchedGeometryEffect(id: OnboardingView.daxGeometryEffectID, in: animationNamespace)
-                    .frame(width: LandingViewMetrics.logoSize, height: LandingViewMetrics.logoSize)
+                    .frame(width: Metrics.logoSize, height: Metrics.logoSize)
                     .scaleEffect(logo.scale)
                     .opacity(logo.opacity)
 
@@ -150,23 +156,23 @@ extension OnboardingRebranding.OnboardingView {
                     .font(onboardingTheme.typography.largeTitle)
                     .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: LandingViewMetrics.titleMaxWidth)
                     .offset(textOffset)
                     .opacity(text.opacity)
             }
-            .padding(.horizontal, LandingViewMetrics.horizontalPadding)
+            .padding(.horizontal, Metrics.horizontalPadding)
         }
 
         // MARK: - Illustration (mountains Lottie)
 
-        private func illustrationView(width: CGFloat, height: CGFloat) -> some View {
-            LandingIllustrationContainerView(
-                lottieAsset: LandingViewAssets.illustrationAnimation
-            )
-            .frame(width: LandingViewMetrics.illustrationWidth, height: LandingViewMetrics.illustrationHeight)
-            .offset(illustrationOffset)
-            .opacity(illustration.opacity)
-            .allowsHitTesting(false)
+        private var illustrationView: some View {
+            Lottie.LottieView(animation: .asset(Assets.illustrationAnimation))
+                .playbackMode(.playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
+                .resizable()
+                .clipped()
+                .frame(width: Metrics.illustrationWidth, height: Metrics.illustrationHeight)
+                .offset(illustrationOffset)
+                .opacity(illustration.opacity)
+                .allowsHitTesting(false)
         }
 
         // MARK: - Animation Sequencing
@@ -191,91 +197,6 @@ extension OnboardingRebranding.OnboardingView {
                 illustrationOffset = .zero
                 illustration = LandingAnimationStates.illustrationEnd
             }
-        }
-
-        private func illustrationHeight(for screenHeight: CGFloat) -> CGFloat {
-            let scaledHeight = screenHeight * LandingViewMetrics.illustrationHeightRatio
-            return min(max(scaledHeight, LandingViewMetrics.minIllustrationHeight), LandingViewMetrics.maxIllustrationHeight)
-        }
-    }
-}
-
-// MARK: - Logo Lottie (paused at last frame, used as a static logo display)
-
-private struct LandingLogoAnimationView: UIViewRepresentable {
-
-    let lottieAsset: String
-
-    func makeUIView(context: Context) -> UIView {
-        let container = UIView()
-        container.backgroundColor = .clear
-
-        let animationView = LottieAnimationView()
-        animationView.animation = LottieAnimation.asset(lottieAsset)
-        animationView.contentMode = .scaleAspectFit
-        animationView.loopMode = .playOnce
-        animationView.isUserInteractionEnabled = false
-        animationView.currentProgress = 1.0
-        animationView.translatesAutoresizingMaskIntoConstraints = false
-
-        container.addSubview(animationView)
-        NSLayoutConstraint.activate([
-            animationView.topAnchor.constraint(equalTo: container.topAnchor),
-            animationView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            animationView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            animationView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-        ])
-
-        return container
-    }
-
-    func updateUIView(_ uiView: UIView, context: Context) {
-        guard let animationView = uiView.subviews.first as? LottieAnimationView else { return }
-        if animationView.animation == nil {
-            animationView.animation = LottieAnimation.asset(lottieAsset)
-            animationView.currentProgress = 1.0
-        }
-    }
-}
-
-// MARK: - Illustration Lottie (auto-plays once on appear, pinned to container edges)
-
-private struct LandingIllustrationContainerView: UIViewRepresentable {
-
-    let lottieAsset: String
-
-    func makeUIView(context: Context) -> UIView {
-        let container = UIView()
-        container.clipsToBounds = true
-
-        let animationView = LottieAnimationView()
-        animationView.animation = LottieAnimation.asset(lottieAsset)
-        animationView.contentMode = .scaleAspectFit
-        animationView.loopMode = .playOnce
-        animationView.isUserInteractionEnabled = false
-        animationView.translatesAutoresizingMaskIntoConstraints = false
-
-        container.addSubview(animationView)
-        NSLayoutConstraint.activate([
-            animationView.topAnchor.constraint(equalTo: container.topAnchor),
-            animationView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            animationView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            animationView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-        ])
-
-        animationView.currentProgress = 0.0
-        DispatchQueue.main.async {
-            animationView.play(fromProgress: 0, toProgress: 1, loopMode: .playOnce)
-        }
-
-        return container
-    }
-
-    func updateUIView(_ uiView: UIView, context: Context) {
-        guard let animationView = uiView.subviews.first as? LottieAnimationView else { return }
-        if animationView.animation == nil {
-            animationView.animation = LottieAnimation.asset(lottieAsset)
-            animationView.play(fromProgress: 0, toProgress: 1, loopMode: .playOnce)
         }
     }
 }

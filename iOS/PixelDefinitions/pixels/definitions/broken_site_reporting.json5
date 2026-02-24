@@ -266,6 +266,11 @@
                 "description": "First Contentful Paint in milliseconds"
             },
             {
+                "key": "extendedPerformance.largestContentfulPaintMs",
+                "type": "integer",
+                "description": "Largest Contentful Paint in milliseconds"
+            },
+            {
                 "key": "extendedPerformance.domInteractiveMs",
                 "type": "integer",
                 "description": "DOM Interactive time in milliseconds"
@@ -577,6 +582,11 @@
                 "key": "extendedPerformance.firstContentfulPaintMs",
                 "type": "integer",
                 "description": "First Contentful Paint in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.largestContentfulPaintMs",
+                "type": "integer",
+                "description": "Largest Contentful Paint in milliseconds"
             },
             {
                 "key": "extendedPerformance.domInteractiveMs",

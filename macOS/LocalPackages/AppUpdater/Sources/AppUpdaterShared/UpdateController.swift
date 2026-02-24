@@ -50,7 +50,7 @@ public protocol SparkleUpdateControllerFactory {
 }
 
 /// Marker type extended by updater packages with concrete `instantiate(...)` implementations.
-/// See AppStoreUpdateController.swift and SparkleUpdateController.swift for concrete implementations.
+/// See AppStoreUpdateController.swift and SimplifiedSparkleUpdateController.swift for concrete implementations.
 public struct UpdateControllerFactory {}
 
 public protocol UpdateController: UpdateControllerObjC {

@@ -24,16 +24,16 @@ import PrivacyConfig
 protocol DarkReaderFeatureSettings {
 
     var isFeatureEnabled: Bool { get }
-    var isDarkModeEnabled: Bool { get }
-    func setDarkModeEnabled(_ enabled: Bool)
+    var isForceDarkModeEnabled: Bool { get }
+    func setForceDarkModeEnabled(_ enabled: Bool)
 }
 
 enum DarkReaderStorageKeys: String, StorageKeyDescribing {
-    case adaptiveDarkModeEnabled
+    case forceDarkModeOnWebsitesEnabled = "com.duckduckgo.darkReader.forceDarkModeOnWebsitesEnabled"
 }
 
 struct DarkReaderKeys: StoringKeys {
-    let adaptiveDarkModeEnabled = StorageKey<Bool>(DarkReaderStorageKeys.adaptiveDarkModeEnabled)
+    let forceDarkModeOnWebsitesEnabled = StorageKey<Bool>(DarkReaderStorageKeys.forceDarkModeOnWebsitesEnabled)
 }
 
 final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
@@ -51,11 +51,11 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
         featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
     }
 
-    var isDarkModeEnabled: Bool {
-        isFeatureEnabled && (storage.adaptiveDarkModeEnabled ?? false)
+    var isForceDarkModeEnabled: Bool {
+        isFeatureEnabled && (storage.forceDarkModeOnWebsitesEnabled ?? false)
     }
 
-    func setDarkModeEnabled(_ enabled: Bool) {
-        storage.adaptiveDarkModeEnabled = enabled
+    func setForceDarkModeEnabled(_ enabled: Bool) {
+        storage.forceDarkModeOnWebsitesEnabled = enabled
     }
 }

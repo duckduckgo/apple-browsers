@@ -933,6 +933,7 @@ extension DefaultOmniBarView {
         onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
 
         guard animated else {
+            searchAreaContainerView.applyShadowOpacityMultiplier(1)
             applyExpansionConstraints()
             applyExpansionClipping()
             layoutIfNeeded()
@@ -942,18 +943,27 @@ extension DefaultOmniBarView {
         layoutIfNeeded()
 
         if isSearchAreaExpanded {
+            searchAreaContainerView.applyShadowOpacityMultiplier(0)
             applyExpansionClipping()
         }
 
         applyExpansionConstraints()
 
-        UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: .curveEaseInOut) {
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+            if self.isSearchAreaExpanded {
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+            } else {
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
+            }
             self.layoutIfNeeded()
         } completion: { _ in
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
+            } else {
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
             }
             if self.isSearchAreaExpanded {
                 self.aiChatTextView.becomeFirstResponder()

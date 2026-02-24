@@ -69,6 +69,7 @@ final class MainCoordinator {
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
     private var darkReaderCancellable: AnyCancellable?
+    private var webExtensionLoadTask: Task<Void, Never>?
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -287,10 +288,14 @@ final class MainCoordinator {
     @available(iOS 18.4, *)
     private func initializeWebExtensions() {
         guard webExtensionManager == nil else {
-            // Already initialized, just reload extensions
-            Task { @MainActor in
-                await webExtensionManager?.loadInstalledExtensions()
-                await syncEmbeddedExtensions()
+            // Already initialized, just reload extensions and re-register tabs
+            webExtensionLoadTask?.cancel()
+            webExtensionLoadTask = Task { @MainActor [weak self] in
+                await self?.webExtensionManager?.loadInstalledExtensions()
+                guard !Task.isCancelled else { return }
+                await self?.syncEmbeddedExtensions()
+                guard !Task.isCancelled else { return }
+                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
             return
         }
@@ -314,10 +319,12 @@ final class MainCoordinator {
         controller.setWebExtensionManager(webExtensionManager)
 
         // Load extensions asynchronously - the controller is already attached to tabs
-        Task { @MainActor in
+        webExtensionLoadTask = Task { @MainActor [weak self] in
             await webExtensionManager.loadInstalledExtensions()
-            await syncEmbeddedExtensions()
-            webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+            guard !Task.isCancelled else { return }
+            await self?.syncEmbeddedExtensions()
+            guard !Task.isCancelled else { return }
+            self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
         }
     }
 
@@ -340,6 +347,8 @@ final class MainCoordinator {
     }
 
     private func clearWebExtensionReferences() {
+        webExtensionLoadTask?.cancel()
+        webExtensionLoadTask = nil
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
         tabManager.setWebExtensionManager(nil)

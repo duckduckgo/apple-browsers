@@ -21,6 +21,7 @@ import SwiftUI
 public enum OnboardingRebrandingImages {
 
     public enum Linear {
+        public static let landing = Image("Rebranding/linear-bg-landing", bundle: .module)
         public static let introBackground = Image("Rebranding/linear-bg-intro", bundle: .module)
         public static let browsersComparisonBackground = Image("Rebranding/linear-bg-browsers-comparison", bundle: .module)
         public static let addToDockBackground = Image("Rebranding/linear-bg-app-icon-color", bundle: .module)

@@ -139,7 +139,17 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     }
 
     func openAiChat(_ chatId: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
-        // TODO: implement
+        let tabOpener = AIChatTabOpener(
+            promptHandler: promptHandler,
+            aiChatTabManaging: windowControllersManager
+        )
+
+        var behavior = linkOpenBehavior(for: target, using: tabsPreferences)
+        if isCommandPressed() {
+            behavior = .newTab(selected: isShiftPressed())
+        }
+
+        tabOpener.openAIChatTab(with: .existingChat(chatId: chatId), behavior: behavior)
     }
 
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {

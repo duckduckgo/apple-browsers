@@ -355,14 +355,10 @@ extension DefaultOmniBarViewController {
         }
     }
 
-    /// Replicates the super's textFieldDidBeginEditing logic but deliberately skips
-    /// `selectAll` so text isn't highlighted when transferring from duck.ai mode.
     fileprivate func handleIPadTextFieldDidBeginEditingDuringTransfer() {
-        DispatchQueue.main.async {
-            _ = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView)
-            self.refreshState(self.state.onEditingStartedState)
-            self.omniDelegate?.onDidBeginEditing()
-        }
+        _ = omniDelegate?.onTextFieldDidBeginEditing(barView)
+        refreshState(state.onEditingStartedState)
+        omniDelegate?.onDidBeginEditing()
     }
 
     private func shouldClearTextWhenSwitchingToDuckAI() -> Bool {
@@ -514,17 +510,11 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) {
-        DispatchQueue.main.async {
-            _ = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView)
-            self.refreshState(self.state.onEditingStartedState)
-            self.omniDelegate?.onDidBeginEditing()
-        }
+        _ = omniDelegate?.onTextFieldDidBeginEditing(barView)
+        refreshState(state.onEditingStartedState)
+        omniDelegate?.onDidBeginEditing()
 
         omniBarView.layoutIfNeeded()
-        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
-            self.omniBarView.isActiveState = true
-            self.omniBarView.layoutIfNeeded()
-        }
     }
 }
 

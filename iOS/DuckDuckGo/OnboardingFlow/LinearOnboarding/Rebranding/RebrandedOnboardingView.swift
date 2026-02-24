@@ -266,7 +266,9 @@ extension OnboardingRebranding {
                     SkipOnboardingContent(
                         startBrowsingAction: model.confirmSkipOnboardingAction,
                         resumeOnboardingAction: {
-                            animateBrowserComparisonViewState(isResumingOnboarding: true)
+                            withAnimation {
+                                model.startOnboardingAction(isResumingOnboarding: true)
+                            }
                         }
                     )
                 )
@@ -278,7 +280,9 @@ extension OnboardingRebranding {
                 title: UserText.Onboarding.Intro.title,
                 skipOnboardingView: skipOnboardingView,
                 continueAction: {
-                    animateBrowserComparisonViewState(isResumingOnboarding: false)
+                    withAnimation {
+                        model.startOnboardingAction(isResumingOnboarding: false)
+                    }
                 },
                 skipAction: model.skipOnboardingAction
             )
@@ -461,36 +465,6 @@ extension OnboardingRebranding {
             DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
                 withAnimation {
                     showBubbleContent = true
-                }
-            }
-        }
-
-        private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
-            // Hide content of Intro dialog before animating
-            model.introState.showIntroViewContent = false
-
-            // Animation with small delay for a better effect when intro content disappear
-            let animationDuration = OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration
-            let contentFadeInDelay = OnboardingBubbleAnimationMetrics.contentFadeInDelay
-            let animation = Animation
-                .linear(duration: animationDuration)
-                .delay(contentFadeInDelay)
-
-            if #available(iOS 17, *) {
-                withAnimation(animation) {
-                    model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
-                } completion: {
-                    model.browserComparisonState.animateComparisonText = true
-                    model.browserComparisonState.showComparisonButton = true
-                }
-            } else {
-                withAnimation(animation) {
-                    model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
-                }
-                // iOS < 17 fallback: wait for total animation time (delay + duration)
-                DispatchQueue.main.asyncAfter(deadline: .now() + contentFadeInDelay + animationDuration) {
-                    model.browserComparisonState.animateComparisonText = true
-                    model.browserComparisonState.showComparisonButton = true
                 }
             }
         }

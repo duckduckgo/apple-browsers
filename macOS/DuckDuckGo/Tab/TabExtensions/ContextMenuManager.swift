@@ -59,7 +59,7 @@ final class ContextMenuManager: NSObject {
     fileprivate weak var webView: WKWebView?
 
     @MainActor
-    init(contextMenuScriptPublisher: some Publisher<ContextMenuUserScript?, Never>,
+    init(contextMenuSubfeaturePublisher: some Publisher<ContextMenuSubfeature?, Never>,
          contentPublisher: some Publisher<Tab.TabContent, Never>,
          tabsPreferences: TabsPreferences,
          isLoadedInSidebar: Bool = false,
@@ -74,9 +74,9 @@ final class ContextMenuManager: NSObject {
         self.tld = tld
         super.init()
 
-        contextMenuScriptPublisher
-            .sink { [weak self] contextMenuScript in
-                contextMenuScript?.delegate = self
+        contextMenuSubfeaturePublisher
+            .sink { [weak self] contextMenuSubfeature in
+                contextMenuSubfeature?.delegate = self
             }
             .store(in: &cancellables)
 

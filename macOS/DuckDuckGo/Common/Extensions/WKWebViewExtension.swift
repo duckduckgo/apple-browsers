@@ -151,7 +151,7 @@ extension WKWebView {
         set {
             guard self.responds(to: Selector.setPageMuted),
                   let method = class_getInstanceMethod(object_getClass(self), Selector.setPageMuted) else {
-                assertionFailure("WKWebView does not respond to selector _setMediaMutedState:")
+                assertionFailure("WKWebView does not respond to selector _setPageMuted:")
                 return
             }
             let imp = method_getImplementation(method)

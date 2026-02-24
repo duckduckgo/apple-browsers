@@ -17,63 +17,53 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import Persistence
 import PrivacyConfig
 
-/// Provides access to the force dark mode feature configuration and user settings.
 protocol DarkReaderFeatureSettings {
 
-    /// Whether the force dark mode feature is available (gated by feature flag).
     var isFeatureEnabled: Bool { get }
-
-    /// Whether the user has enabled force dark mode on websites.
-    var isDarkModeEnabled: Bool { get }
-
-    /// Updates the user's dark mode preference.
-    func setDarkModeEnabled(_ enabled: Bool)
+    var isForceDarkModeEnabled: Bool { get }
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> { get }
+    func setForceDarkModeEnabled(_ enabled: Bool)
 }
 
 enum DarkReaderStorageKeys: String, StorageKeyDescribing {
-    case adaptiveDarkModeEnabled
+    case forceDarkModeOnWebsitesEnabled = "com_duckduckgo_darkReader_forceDarkModeOnWebsitesEnabled"
 }
 
 struct DarkReaderKeys: StoringKeys {
-    let adaptiveDarkModeEnabled = StorageKey<Bool>(
-        DarkReaderStorageKeys.adaptiveDarkModeEnabled,
-        migrateLegacyKey: "com.duckduckgo.ios.adaptiveDarkModeEnabled"
-    )
+    let forceDarkModeOnWebsitesEnabled = StorageKey<Bool>(DarkReaderStorageKeys.forceDarkModeOnWebsitesEnabled)
 }
 
-/// Concrete implementation that reads from feature flags and app settings.
 final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     private let featureFlagger: FeatureFlagger
     private let storage: any KeyedStoring<DarkReaderKeys>
-    private let onDarkModeChanged: (() async -> Void)?
+    private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
+
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> {
+        forceDarkModeChangedSubject.eraseToAnyPublisher()
+    }
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         storage: (any KeyedStoring<DarkReaderKeys>)? = nil,
-         onDarkModeChanged: (() async -> Void)? = nil) {
+         storage: (any KeyedStoring<DarkReaderKeys>)? = nil) {
         self.featureFlagger = featureFlagger
         self.storage = if let storage { storage } else { UserDefaults.app.keyedStoring() }
-        self.onDarkModeChanged = onDarkModeChanged
     }
 
     var isFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
     }
 
-    var isDarkModeEnabled: Bool {
-        isFeatureEnabled && storage.adaptiveDarkModeEnabled ?? false
+    var isForceDarkModeEnabled: Bool {
+        isFeatureEnabled && (storage.forceDarkModeOnWebsitesEnabled ?? false)
     }
 
-    func setDarkModeEnabled(_ enabled: Bool) {
-        storage.adaptiveDarkModeEnabled = enabled
-        if let onDarkModeChanged {
-            Task { @MainActor in
-                await onDarkModeChanged()
-            }
-        }
+    func setForceDarkModeEnabled(_ enabled: Bool) {
+        storage.forceDarkModeOnWebsitesEnabled = enabled
+        forceDarkModeChangedSubject.send(enabled)
     }
 }

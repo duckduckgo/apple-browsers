@@ -27,7 +27,7 @@ import RemoteMessaging
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
-        favoritesModel.isEmpty
+        favoritesModel.isEmpty && newTabPageViewModel.escapeHatch == nil
     }
 
     private lazy var borderView = StyledTopBottomBorderView()
@@ -88,6 +88,18 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?, targetTabIndex: Int) {
+        newTabPageViewModel.escapeHatch = model
+        if model != nil {
+            newTabPageViewModel.onEscapeHatchTap = { [weak self] in
+                guard let self else { return }
+                self.delegate?.newTabPageDidRequestSwitchToTab(self, index: targetTabIndex)
+            }
+        } else {
+            newTabPageViewModel.onEscapeHatchTap = nil
+        }
     }
 
     override func viewDidLoad() {

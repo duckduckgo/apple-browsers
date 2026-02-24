@@ -74,12 +74,12 @@ struct SettingsAppearanceView: View {
                                        selectedOption: viewModel.themeStyleBinding)
 
                 // Force Dark Mode on websites
-                if viewModel.isForceWebsiteDarkModeEnabled {
+                if viewModel.isForceWebsiteDarkModeAvailable {
                     SettingsCellView(label: UserText.settingsForceWebsiteDarkMode,
-                                     accessory: .toggle(isOn: viewModel.darkModeBinding))
+                                     accessory: .toggle(isOn: viewModel.forceWebsiteDarkModeBinding))
                 }
             } footer: {
-                if viewModel.isForceWebsiteDarkModeEnabled {
+                if viewModel.isForceWebsiteDarkModeAvailable {
                     Text(UserText.settingsThemeSectionFooter)
                 } else {
                     EmptyView()

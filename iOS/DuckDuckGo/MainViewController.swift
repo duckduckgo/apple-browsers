@@ -277,10 +277,7 @@ class MainViewController: UIViewController {
         self.webExtensionManager = manager
     }
 
-    private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings?
-    func setDarkReaderFeatureSettings(_ settings: DarkReaderFeatureSettings) {
-        self.darkReaderFeatureSettings = settings
-    }
+    private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -334,7 +331,8 @@ class MainViewController: UIViewController {
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
-        whatsNewRepository: WhatsNewMessageRepository
+        whatsNewRepository: WhatsNewMessageRepository,
+        darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -390,6 +388,7 @@ class MainViewController: UIViewController {
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
         self.whatsNewRepository = whatsNewRepository
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
 
         super.init(nibName: nil, bundle: nil)
         
@@ -423,6 +422,7 @@ class MainViewController: UIViewController {
     }
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
+    private var expandedOmniBarDismissTapGesture: UITapGestureRecognizer?
 
     lazy var newTabDaxDialogFactory: NewTabDaxDialogsProvider = {
         NewTabDaxDialogsProvider(
@@ -472,6 +472,10 @@ class MainViewController: UIViewController {
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization)
+
+        if featureFlagger.isFeatureOn(.iPadAIToggle) {
+            viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
+        }
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -1191,7 +1195,27 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.omniDelegate = self
     }
     
-    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false) {
+    private func makeEscapeHatchModel(from tab: Tab) -> EscapeHatchModel? {
+        if tab.isAITab {
+            return EscapeHatchModel(
+                title: UserText.omnibarFullAIChatModeDisplayTitle,
+                subtitle: "Duck.ai",
+                isAITab: true,
+                domain: nil
+            )
+        }
+        if let link = tab.link {
+            let subtitle = link.url.host?.droppingWwwPrefix() ?? link.url.absoluteString
+            return EscapeHatchModel(title: link.displayTitle,
+                                    subtitle: subtitle,
+                                    isAITab: false,
+                                    domain: link.url.host
+            )
+        }
+        return nil
+    }
+
+    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, tabSwitchedFromIndex: Int? = nil) {
         guard !autoClearInProgress else { return }
         
         viewCoordinator.logoContainer.isHidden = false
@@ -1235,6 +1259,31 @@ class MainViewController: UIViewController {
         controller.chromeDelegate = self
 
         newTabPageViewController = controller
+
+        if featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) {
+            let tabs = tabManager.model.tabs
+            let currentIndex = tabManager.model.currentIndex
+            let targetIndex: Int?
+            if let fromIndex = tabSwitchedFromIndex,
+               tabs.indices.contains(fromIndex),
+               fromIndex != currentIndex {
+                targetIndex = fromIndex
+            } else if tabs.count > 1, currentIndex > 0 {
+                targetIndex = currentIndex - 1
+            } else {
+                targetIndex = nil
+            }
+            if let targetIndex {
+                let tab = tabManager.model.get(tabAt: targetIndex)
+                let escapeHatchModel = makeEscapeHatchModel(from: tab)
+                controller.setEscapeHatch(escapeHatchModel, targetTabIndex: targetIndex)
+            } else {
+                controller.setEscapeHatch(nil, targetTabIndex: 0)
+            }
+        } else {
+            controller.setEscapeHatch(nil, targetTabIndex: 0)
+        }
+
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
@@ -1542,19 +1591,21 @@ class MainViewController: UIViewController {
         allowContentUnderflow = false
         
         if tabManager.model.tabs.indices.contains(index) {
+            let tabSwitchedFromIndex = tabManager.model.currentIndex
             let tab = tabManager.select(tabAt: index)
-            select(tab: tab)
+            select(tab: tab, tabSwitchedFromIndex: tabSwitchedFromIndex)
         } else {
             assertionFailure("Invalid index selected")
         }
     }
 
-    fileprivate func select(tab: TabViewController) {
+    fileprivate func select(tab: TabViewController, tabSwitchedFromIndex passedFromIndex: Int? = nil) {
         let previousTab = currentTab
 
         hideNotificationBarIfBrokenSitePromptShown()
         if tab.link == nil {
-            attachHomeScreen()
+            let tabSwitchedFromIndex = passedFromIndex ?? previousTab.flatMap { tabManager.model.indexOf(tab: $0.tabModel) }
+            attachHomeScreen(tabSwitchedFromIndex: tabSwitchedFromIndex)
         } else {
             attachTab(tab: tab)
         }
@@ -1701,6 +1752,13 @@ class MainViewController: UIViewController {
     func dismissOmniBar() {
         hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
+
+        if aiChatAddressBarExperience.shouldShowModeToggle,
+           let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController,
+           omniBarVC.selectedTextEntryMode == .aiChat {
+            omniBarVC.setSelectedTextEntryMode(.search)
+        }
+
         refreshOmniBar()
     }
 
@@ -2052,12 +2110,14 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.dismiss()
 
+        let tabSwitchedFromIndex = tabManager.model.currentIndex
+
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.selectTab(existing)
         } else {
             tabManager.addHomeTab()
         }
-        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard)
+        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         themeColorManager.updateThemeColor()
@@ -3277,6 +3337,28 @@ extension MainViewController: OmniBarDelegate {
     func onDidBeginEditing() { }
     func onDidEndEditing() { }
 
+    // MARK: - iPad Expanded Omnibar
+
+    func onOmniBarExpandedStateChanged(isExpanded: Bool) {
+        if isExpanded {
+            hideSuggestionTray()
+            guard expandedOmniBarDismissTapGesture == nil else { return }
+            let tap = UITapGestureRecognizer(target: self, action: #selector(dismissExpandedOmniBar))
+            tap.cancelsTouchesInView = false
+            viewCoordinator.contentContainer.addGestureRecognizer(tap)
+            expandedOmniBarDismissTapGesture = tap
+        } else {
+            if let tap = expandedOmniBarDismissTapGesture {
+                viewCoordinator.contentContainer.removeGestureRecognizer(tap)
+                expandedOmniBarDismissTapGesture = nil
+            }
+        }
+    }
+
+    @objc private func dismissExpandedOmniBar() {
+        performCancel()
+    }
+
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped() {
         fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
@@ -3405,6 +3487,14 @@ extension MainViewController: NewTabPageControllerDelegate {
 
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {
         faviconsFetcherOnboarding.presentOnboardingIfNeeded(from: self)
+    }
+
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, index: Int) {
+        guard tabManager.model.tabs.indices.contains(index) else {
+            controller.setEscapeHatch(nil, targetTabIndex: 0)
+            return
+        }
+        select(tabAt: index)
     }
 }
 

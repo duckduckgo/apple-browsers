@@ -3098,7 +3098,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.fireproofed.sites" = "Fireproofed Sites";
 
 /* Settings screen toggle for forcing dark mode on websites */
-"settings.force.website.dark.mode" = "Force Sites To Use Dark Mode";
+"settings.force.website.dark.mode" = "Force Dark Mode for Websites";
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "General";
@@ -3272,7 +3272,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.theme" = "Theme";
 
 /* Footer shown right below the first section, which has the force dark mode item at the last position */
-"settings.theme.section.footer" = "Gives sites a dark appearance if you’re using dark theme";
+"settings.theme.section.footer" = "Gives websites a dark appearance if you’re using dark theme.";
 
 /* Title for the Settings View */
 "settings.title" = "Settings";

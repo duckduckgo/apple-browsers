@@ -451,7 +451,7 @@ extension MainViewController {
                                                       keyValueStore: keyValueStore
                                                   ),
                                                   whatsNewCoordinator: whatsNewCoordinator,
-                                                  darkReaderFeatureSettings: darkReaderFeatureSettings ?? AppDarkReaderFeatureSettings())
+                                                  darkReaderFeatureSettings: darkReaderFeatureSettings)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)

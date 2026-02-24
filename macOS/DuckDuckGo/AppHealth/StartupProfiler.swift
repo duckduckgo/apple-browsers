@@ -36,8 +36,23 @@ final class StartupProfiler: @unchecked Sendable {
         let startTime = currentTime()
 
         return StartupProfilerToken { [weak self] in
-            self?.processStepEnded(step: step, startTime: startTime)
+            guard let self else {
+                return
+            }
+
+            processStepEnded(step: step, startTime: startTime, endTime: currentTime())
         }
+    }
+
+    func measureSequence(initialStep: StartupStep) -> StartupProfilerSequence {
+        StartupProfilerSequence(
+            initialStep: initialStep,
+            timeProvider: { [weak self] in
+                self?.currentTime() ?? ProcessInfo.processInfo.systemUptime
+            },
+            onStepCompleted: { [weak self] step, startTime, endTime in
+                self?.processStepEnded(step: step, startTime: startTime, endTime: endTime)
+            })
     }
 
     func measureOnce(_ step: StartupStep, startStep referenceStep: StartupStep) {
@@ -62,8 +77,7 @@ private extension StartupProfiler {
         ProcessInfo.processInfo.systemUptime
     }
 
-    func processStepEnded(step: StartupStep, startTime: TimeInterval) {
-        let endTime = currentTime()
+    func processStepEnded(step: StartupStep, startTime: TimeInterval, endTime: TimeInterval) {
         let updatedMetrics = updateMetric(step: step, startTime: startTime, endTime: endTime)
 
         notifyCompletionIfNeeded(metrics: updatedMetrics)
@@ -112,5 +126,63 @@ final class StartupProfilerToken: @unchecked Sendable {
         }
 
         action?()
+    }
+}
+
+// MARK: - StartupProfilerSequence
+
+final class StartupProfilerSequence: @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var activeMeasurement: (step: StartupStep, startTime: TimeInterval)?
+    private let timeProvider: () -> TimeInterval
+    private let onStepCompleted: (_ step: StartupStep, _ startTime: TimeInterval, _ endTime: TimeInterval) -> Void
+
+    init(initialStep: StartupStep, timeProvider: @escaping () -> TimeInterval, onStepCompleted: @escaping (StartupStep, TimeInterval, TimeInterval) -> Void) {
+        self.timeProvider = timeProvider
+        self.onStepCompleted = onStepCompleted
+        self.activeMeasurement = (initialStep, timeProvider())
+    }
+
+    func advance(to nextStep: StartupStep) {
+        let nextStartTime = timeProvider()
+
+        guard let previous = consumeActiveMeasurement() else {
+            assertionFailure("Advancing after sequence was stopped")
+            return
+        }
+
+        signalCompletion(step: previous.step, startTime: previous.startTime)
+        beginStep(step: nextStep, startTime: nextStartTime)
+    }
+
+    func stop() {
+        guard let previous = consumeActiveMeasurement() else {
+            assertionFailure()
+            return
+        }
+
+        signalCompletion(step: previous.step, startTime: previous.startTime)
+    }
+}
+
+private extension StartupProfilerSequence {
+
+    func beginStep(step: StartupStep, startTime: TimeInterval) {
+        lock.withLock {
+            activeMeasurement = (step, startTime)
+        }
+    }
+
+    func consumeActiveMeasurement() -> (step: StartupStep, startTime: TimeInterval)? {
+        lock.withLock {
+            let output = activeMeasurement
+            activeMeasurement = nil
+            return output
+        }
+    }
+
+    func signalCompletion(step: StartupStep, startTime: TimeInterval) {
+        onStepCompleted(step, startTime, timeProvider())
     }
 }

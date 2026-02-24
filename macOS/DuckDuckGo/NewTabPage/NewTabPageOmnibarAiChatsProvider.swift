@@ -16,16 +16,64 @@
 //  limitations under the License.
 //
 
+import AIChat
+import Combine
+import Foundation
 import NewTabPage
 
 final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding {
 
+    private let suggestionsReader: AIChatSuggestionsReading
+    private var cancellables = Set<AnyCancellable>()
+
+    init(configProvider: NewTabPageOmnibarConfigProviding, suggestionsReader: AIChatSuggestionsReading) {
+        self.suggestionsReader = suggestionsReader
+
+        configProvider.modePublisher
+            .filter { $0 == .search }
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.suggestionsReader.tearDown()
+                }
+            }
+            .store(in: &cancellables)
+
+        Publishers.Merge(
+            configProvider.isAIChatShortcutEnabledPublisher.filter { !$0 }.map { _ in () },
+            configProvider.isAIChatSettingVisiblePublisher.filter { !$0 }.map { _ in () }
+        )
+        .sink { [weak self] in
+            Task { @MainActor in
+                self?.suggestionsReader.tearDown()
+            }
+        }
+        .store(in: &cancellables)
+    }
+
+    @MainActor
     func aiChats() async -> NewTabPageDataModel.AiChatsData {
-        return NewTabPageDataModel.AiChatsData(chats: [
-            NewTabPageDataModel.AiChat(chatId: "1", title: "What is the meaning of life?", pinned: true, lastEdit: "2026-02-23T10:00:00Z"),
-            NewTabPageDataModel.AiChat(chatId: "2", title: "How do black holes form?", pinned: false, lastEdit: "2026-02-22T15:30:00Z"),
-            NewTabPageDataModel.AiChat(chatId: "3", title: "Best practices for Swift concurrency", pinned: false, lastEdit: "2026-02-21T09:15:00Z"),
-        ])
+        let (pinned, recent) = await suggestionsReader.fetchSuggestions(query: nil)
+        let chats = (pinned + recent.reversed()).map { $0.asNewTabPageAiChat }
+        return NewTabPageDataModel.AiChatsData(chats: chats)
+    }
+
+}
+
+private extension AIChatSuggestion {
+
+    static let iso8601Formatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    var asNewTabPageAiChat: NewTabPageDataModel.AiChat {
+        NewTabPageDataModel.AiChat(
+            chatId: chatId,
+            title: title,
+            pinned: isPinned,
+            lastEdit: timestamp.map { Self.iso8601Formatter.string(from: $0) }
+        )
     }
 
 }

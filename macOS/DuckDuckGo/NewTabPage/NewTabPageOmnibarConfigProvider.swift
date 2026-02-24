@@ -86,6 +86,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let firePixel: (PixelKitEvent) -> Void
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
+    private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
@@ -118,6 +119,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             } catch {
                 Logger.newTabPageOmnibar.error("Failed to set omnibar mode in keyValueStore: \(error.localizedDescription)")
             }
+            modeSubject.send(newValue)
         }
     }
 
@@ -140,6 +142,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> {
         aiChatShortcutSettingProvider.isAIChatSettingVisiblePublisher
+    }
+
+    var modePublisher: AnyPublisher<NewTabPageDataModel.OmnibarMode, Never> {
+        modeSubject.eraseToAnyPublisher()
     }
 
     var showCustomizePopover: Bool {

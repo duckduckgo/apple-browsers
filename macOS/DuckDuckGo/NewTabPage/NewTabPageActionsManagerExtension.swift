@@ -183,6 +183,16 @@ extension NewTabPageActionsManager {
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
         )
+        let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
+            configProvider: omnibarConfigProvider,
+            suggestionsReader: AIChatSuggestionsReader(
+                suggestionsReader: SuggestionsReader(
+                    featureFlagger: featureFlagger,
+                    privacyConfig: contentBlocking.privacyConfigurationManager
+                ),
+                historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
+            )
+        )
         let stateProvider = NewTabPageStateProvider(
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger
@@ -233,7 +243,7 @@ extension NewTabPageActionsManager {
             NewTabPageRecentActivityClient(model: recentActivityModel),
             NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
-                                    aiChatsProvider: NewTabPageOmnibarAiChatsProvider(),
+                                    aiChatsProvider: aiChatsProvider,
                                     actionHandler: omnibarActionHandler),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])

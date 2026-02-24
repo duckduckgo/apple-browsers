@@ -22,6 +22,7 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     @MainActor
     var mode: NewTabPageDataModel.OmnibarMode { get set }
+    var modePublisher: AnyPublisher<NewTabPageDataModel.OmnibarMode, Never> { get }
 
     var isAIChatShortcutEnabled: Bool { get set }
     var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> { get }

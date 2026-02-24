@@ -3512,7 +3512,7 @@
 "settings.theme" = "Tema";
 
 /* Footer shown right below the first section, which has the force dark mode item at the last position */
-"settings.theme.section.footer" = "Suteikia svetainėms tamsią išvaizdą,kai naudojama tamsi tema.";
+"settings.theme.section.footer" = "Suteikia svetainėms tamsią išvaizdą, kai naudojama tamsi tema.";
 
 /* Title for the Settings View */
 "settings.title" = "Nustatymai";

@@ -662,7 +662,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAutoAttachContextByDefault:
             return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
         case .aiChatSync:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
             return .remoteReleasable(.feature(.duckAiChatHistory))
         case .showWhatsNewPromptOnDemand:

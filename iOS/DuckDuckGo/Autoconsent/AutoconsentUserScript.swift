@@ -469,6 +469,7 @@ extension AutoconsentUserScript {
         }
         guard let management else {
             Logger.autoconsent.error("Cache not properly set")
+            replyHandler(nil, "Cache not properly set")
             return
         }
         let heuristicMatch = report.state.heuristicPatterns.count > 0 || report.state.heuristicSnippets.count > 0

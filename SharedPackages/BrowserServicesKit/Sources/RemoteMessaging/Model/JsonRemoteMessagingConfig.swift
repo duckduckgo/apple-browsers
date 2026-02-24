@@ -165,6 +165,8 @@ public enum RemoteMessageResponse {
         case radarCheckPurple = "RadarCheckPurple"
         case keyImport = "KeyImport"
         case mobileCustomization = "MobileCustomization"
+        case newTabOptions = "NewTabOptions"
+        case splitBarMobile = "SplitBarMobile"
         case pir = "PIR"
         case subscription = "Subscription"
     }

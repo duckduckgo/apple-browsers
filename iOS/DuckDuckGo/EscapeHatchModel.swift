@@ -1,5 +1,6 @@
 //
-//  WebKitDeallocSwizzles.swift
+//  EscapeHatchModel.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,21 +18,11 @@
 //
 
 import Foundation
-import ObjectiveC.runtime
-import WebKit
 
-extension WKFrameInfo {
-
-    private static var isSwizzled = false
-    private static let originalDealloc = { class_getInstanceMethod(WKFrameInfo.self, NSSelectorFromString("dealloc"))! }()
-    private static let swizzledDealloc = { class_getInstanceMethod(WKFrameInfo.self, #selector(swizzled_dealloc))! }()
-
-    static func swizzleDealloc() {
-        guard !self.isSwizzled else { return }
-        self.isSwizzled = true
-        method_exchangeImplementations(originalDealloc, swizzledDealloc)
-    }
-
-    @objc
-    func swizzled_dealloc() { }
+/// Model for the NTP "Return to..." escape hatch card that navigates to the most recently used tab.
+struct EscapeHatchModel {
+    let title: String
+    let subtitle: String
+    let isAITab: Bool
+    let domain: String?
 }

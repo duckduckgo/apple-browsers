@@ -128,7 +128,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
     // MARK: - Trigger Elapsed Seconds
 
     func testTriggerElapsedSeconds() {
-        XCTAssertNil(MemoryUsageIntervalPixel.Trigger.startup.elapsedSeconds)
+        XCTAssertEqual(MemoryUsageIntervalPixel.Trigger.startup.elapsedSeconds, 120)
         XCTAssertEqual(MemoryUsageIntervalPixel.Trigger.h1.elapsedSeconds, 3600)
         XCTAssertEqual(MemoryUsageIntervalPixel.Trigger.h2.elapsedSeconds, 7200)
         XCTAssertEqual(MemoryUsageIntervalPixel.Trigger.h4.elapsedSeconds, 14400)

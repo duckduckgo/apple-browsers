@@ -603,7 +603,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .memoryUsageReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryUsageReporting))
         case .aiChatSync:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .heuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         case .nextStepsListWidget:

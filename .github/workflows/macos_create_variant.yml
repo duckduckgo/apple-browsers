@@ -15,6 +15,10 @@ on:
         description: "Origin variant. Used for measuring attribution only."
         required: false
         type: string
+      dmg-url:
+        description: "Custom DMG URL to use instead of the release DMG."
+        required: false
+        type: string
   workflow_call:
     inputs:
       atb-variant:
@@ -23,6 +27,10 @@ on:
         type: string
       origin-variant:
         description: "Origin variant. Used for measuring attribution only. Passed by the caller workflow."
+        required: false
+        type: string
+      dmg-url:
+        description: "Custom DMG URL to use instead of the release DMG."
         required: false
         type: string
     secrets:
@@ -40,6 +48,7 @@ jobs:
     env:
       ATB_VARIANT_NAME: ${{ inputs.atb-variant || github.event.inputs.atb-variant }}
       ORIGIN_VARIANT_NAME: ${{ inputs.origin-variant || github.event.inputs.origin-variant }}
+      DMG_URL: ${{ inputs.dmg-url || github.event.inputs.dmg-url }}
 
     runs-on: macos-15
     timeout-minutes: 15
@@ -55,6 +64,7 @@ jobs:
 
     - name: Download DMG artifact
       id: download-dmg-artifact
+      if: ${{ !env.DMG_URL }}
       continue-on-error: true
       uses: actions/download-artifact@v4
       with:
@@ -62,10 +72,15 @@ jobs:
         path: ${{ github.workspace }}/macOS
 
     - name: Download release app
-      # Download the release app only if download-dmg-artifact fails
-      if: ${{ steps.download-dmg-artifact.outcome == 'failure' }}
+      # Download the release app only if no custom URL and download-dmg-artifact fails
+      if: ${{ !env.DMG_URL && steps.download-dmg-artifact.outcome == 'failure' }}
       run: |
         curl -fLSs "${{ vars.RELEASE_DMG_URL }}" --output duckduckgo.dmg
+
+    - name: Download custom DMG
+      if: ${{ env.DMG_URL }}
+      run: |
+        curl -fLSs "${{ env.DMG_URL }}" --output duckduckgo.dmg
 
     - name: Extract App from DMG
       id: extract-app-from-dmg

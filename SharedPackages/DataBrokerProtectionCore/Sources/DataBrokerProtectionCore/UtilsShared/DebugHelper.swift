@@ -56,4 +56,14 @@ public enum DebugHelper {
 
         return djb2Hash(fallbackComponents.joined(separator: "|"))
     }
+
+    public static func prettyJSONString(from data: Data) -> String? {
+        guard let object = try? JSONSerialization.jsonObject(with: data),
+              JSONSerialization.isValidJSONObject(object),
+              let formattedData = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]) else {
+            return nil
+        }
+
+        return String(data: formattedData, encoding: .utf8)
+    }
 }

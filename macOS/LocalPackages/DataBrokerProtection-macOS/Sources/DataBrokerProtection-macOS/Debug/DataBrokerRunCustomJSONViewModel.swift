@@ -558,7 +558,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             return ""
         }
 
-        return String(data: brokerResource.rawJSON, encoding: .utf8) ?? ""
+        return DebugHelper.prettyJSONString(from: brokerResource.rawJSON) ?? (String(data: brokerResource.rawJSON, encoding: .utf8) ?? "")
     }
 
     var dbpEndpoint: String {

@@ -211,7 +211,7 @@ extension TabExtensionsBuilder {
                                  isBurner: args.isTabBurner)
         }
         add {
-            ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
+            ContextMenuManager(contextMenuSubfeaturePublisher: userScripts.map(\.?.contextMenuSubfeature),
                                contentPublisher: args.contentPublisher,
                                tabsPreferences: dependencies.tabsPreferences,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,

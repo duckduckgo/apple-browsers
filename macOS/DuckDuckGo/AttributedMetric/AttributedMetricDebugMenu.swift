@@ -49,6 +49,12 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
 
             NSMenuItem.separator()
 
+            NSMenuItem(title: "Bundle xattr variant: \(getXattr(named: "com.duckduckgo.variant", from: Bundle.main.bundlePath) ?? "nil")")
+
+            NSMenuItem(title: "Bundle xattr origin: \(getXattr(named: "com.duckduckgo.origin", from: Bundle.main.bundlePath) ?? "nil")")
+
+            NSMenuItem.separator()
+
             NSMenuItem(title: "Install Date: \(formatOptionalDate(attributedMetricDataStorage.installDate))")
 
             NSMenuItem(title: "Last Retention Threshold: \(attributedMetricDataStorage.lastRetentionThreshold?.description ?? "nil")")

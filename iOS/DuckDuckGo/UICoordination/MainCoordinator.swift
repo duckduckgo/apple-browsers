@@ -272,10 +272,12 @@ final class MainCoordinator {
         guard webExtensionManager == nil else {
             // Already initialized, just reload extensions and re-register tabs
             webExtensionLoadTask?.cancel()
-            webExtensionLoadTask = Task { @MainActor in
-                await webExtensionManager?.loadInstalledExtensions()
-                await syncEmbeddedExtensions()
-                webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+            webExtensionLoadTask = Task { @MainActor [weak self] in
+                await self?.webExtensionManager?.loadInstalledExtensions()
+                guard !Task.isCancelled else { return }
+                await self?.syncEmbeddedExtensions()
+                guard !Task.isCancelled else { return }
+                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
             return
         }
@@ -299,10 +301,12 @@ final class MainCoordinator {
         controller.setWebExtensionManager(webExtensionManager)
 
         // Load extensions asynchronously - the controller is already attached to tabs
-        webExtensionLoadTask = Task { @MainActor in
+        webExtensionLoadTask = Task { @MainActor [weak self] in
             await webExtensionManager.loadInstalledExtensions()
-            await syncEmbeddedExtensions()
-            webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+            guard !Task.isCancelled else { return }
+            await self?.syncEmbeddedExtensions()
+            guard !Task.isCancelled else { return }
+            self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
         }
     }
 

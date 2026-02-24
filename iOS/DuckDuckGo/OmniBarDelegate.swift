@@ -185,6 +185,8 @@ extension OmniBarDelegate {
     func onChatHistorySelected(url: URL) {
     }
 
+    func onOmniBarExpandedStateChanged(isExpanded: Bool) {}
+
     func shouldAutoSelectTextForSERPQuery() -> Bool { false }
 
     // Default no-op implementations for experimental address bar pixel hooks

@@ -29,9 +29,7 @@ extension MockFeatureFlagger {
             let updateFlags: [FeatureFlag] = [
                 .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
-                .updatesWontAutomaticallyRestartApp,
-                .appStoreUpdateFlow,
-                .updatesSimplifiedFlow
+                .appStoreUpdateFlow
             ]
             return updateFlags.filter { flag in
                 featuresStub[flag.rawValue] == true
@@ -42,9 +40,7 @@ extension MockFeatureFlagger {
             let updateFlags: [FeatureFlag] = [
                 .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
-                .updatesWontAutomaticallyRestartApp,
-                .appStoreUpdateFlow,
-                .updatesSimplifiedFlow
+                .appStoreUpdateFlow
             ]
             for flag in updateFlags {
                 featuresStub[flag.rawValue] = false

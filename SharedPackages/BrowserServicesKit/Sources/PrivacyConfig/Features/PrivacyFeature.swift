@@ -553,13 +553,6 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     case scamProtection
 }
 
-public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
-
-    // https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
-    case scheduledDefaultBrowserAndDockPromptsInactiveUser // macOS
-}
-
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 

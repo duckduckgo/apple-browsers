@@ -32,15 +32,18 @@ extension OnboardingRebranding.OnboardingView {
         private let skipAction: () -> Void
 
         @State private var showSkipOnboarding = false
+        @Binding var showContent: Bool
 
         init(
             title: String,
             skipOnboardingView: AnyView?,
+            showContent: Binding<Bool>,
             continueAction: @escaping () -> Void,
             skipAction: @escaping () -> Void
         ) {
             self.title = title
             self.skipOnboardingView = skipOnboardingView
+            self._showContent = showContent
             self.continueAction = continueAction
             self.skipAction = skipAction
         }
@@ -48,7 +51,6 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             if showSkipOnboarding {
                 skipOnboardingView
-                    .onboardingViewVisibleAfterDelay(OnboardingBubbleAnimationMetrics.contentFadeInDelay) // OnboardingViewState does not change in this case so we need to manually fade in the content after bubble resizes.
             } else {
                 content
             }
@@ -77,10 +79,13 @@ extension OnboardingRebranding.OnboardingView {
 
                         if skipOnboardingView != nil {
                             Button(action: {
-                                withAnimation {
-                                    showSkipOnboarding = true
-                                }
+                                showContent = false
+                                showSkipOnboarding = true
                                 skipAction()
+
+                                withAnimation(.default.delay(OnboardingBubbleAnimationMetrics.contentFadeInDelay)) {
+                                    showContent = true
+                                }
                             }) {
                                 Text(UserText.Onboarding.Intro.skipCTA)
                             }

@@ -45,9 +45,11 @@ private enum BubbleBackedDialogMetrics {
 ///    - Delay is tuned relative to the parent's bubble animation duration and may slightly exceed it for smoother transitions
 enum OnboardingBubbleAnimationMetrics {
     /// How long the bubble takes to resize between steps
-    static let bubbleResizeAnimationDuration = 0.25
-    /// How long to wait before fading in new content (slightly exceeds bubble resize duration so content appears after resize visually completes)
-    static let contentFadeInDelay = 0.3
+    static let bubbleResizeAnimationDuration: TimeInterval = 0.25
+    /// How long to wait before triggering state change after content fades out
+    static let contentFadeOutDelay: TimeInterval = 0.15
+    /// How long to wait before fading in new content (includes bubble resize duration plus buffer)
+    static let contentFadeInDelay: TimeInterval = 0.3
 }
 
 extension OnboardingRebranding.OnboardingView {
@@ -279,8 +281,9 @@ extension OnboardingRebranding {
             return IntroDialogContent(
                 title: UserText.Onboarding.Intro.title,
                 skipOnboardingView: skipOnboardingView,
+                showContent: $showBubbleContent,
                 continueAction: {
-                    withAnimation {
+                    hideContentAndPerformAction {
                         model.startOnboardingAction(isResumingOnboarding: false)
                     }
                 },
@@ -292,7 +295,11 @@ extension OnboardingRebranding {
             BrowsersComparisonContent(
                 title: UserText.Onboarding.BrowsersComparison.title,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
-                cancelAction: model.cancelSetDefaultBrowserAction
+                cancelAction: {
+                    hideContentAndPerformAction {
+                        model.cancelSetDefaultBrowserAction()
+                    }
+                }
             )
         }
 
@@ -300,10 +307,10 @@ extension OnboardingRebranding {
             state: ViewState.Intro,
             configuration: BubbleBackedDialogConfiguration
         ) -> some View {
-            let stepInfo: ViewState.Intro.StepInfo? = if configuration.showsStepCounter {
+            let stepInfo: ViewState.Intro.StepInfo = if configuration.showsStepCounter {
                 .init(currentStep: state.step.currentStep, totalSteps: state.step.totalSteps)
             } else {
-                nil
+                .hidden
             }
             return makeBubbleView(configuration: configuration, stepInfo: stepInfo) {
                 VStack {
@@ -315,15 +322,12 @@ extension OnboardingRebranding {
                 // Show content after initial bubble animation on first appearance
                 animateBubbleContentTransition()
             }
-            .onChange(of: state.type) { _ in
-                animateBubbleContentTransition()
-            }
         }
 
         @ViewBuilder
         private func makeBubbleView<Content: View>(
             configuration: BubbleBackedDialogConfiguration,
-            stepInfo: ViewState.Intro.StepInfo?,
+            stepInfo: ViewState.Intro.StepInfo,
             @ViewBuilder content: @escaping () -> Content
         ) -> some View {
             let tailPosition: OnboardingBubbleView<Content>.TailPosition = switch configuration.tailDirection {
@@ -333,23 +337,15 @@ extension OnboardingRebranding {
                 .bottom(offset: configuration.tailOffset, direction: .trailing)
             }
 
-            if let stepInfo {
-                OnboardingBubbleView.withStepProgressIndicator(
-                    tailPosition: tailPosition,
-                    currentStep: stepInfo.currentStep,
-                    totalSteps: stepInfo.totalSteps
-                ) {
-                    content()
-                }
-            } else {
-                OnboardingBubbleView(
-                    tailPosition: tailPosition,
-                    contentInsets: onboardingTheme.linearBubbleMetrics.contentInsets,
-                    arrowLength: onboardingTheme.linearBubbleMetrics.arrowLength,
-                    arrowWidth: onboardingTheme.linearBubbleMetrics.arrowWidth
-                ) {
-                    content()
-                }
+            // Always use withStepProgressIndicator to maintain consistent view identity
+            // Use isVisible to control whether the counter is shown
+            OnboardingBubbleView.withStepProgressIndicator(
+                tailPosition: tailPosition,
+                currentStep: stepInfo.currentStep,
+                totalSteps: stepInfo.totalSteps,
+                isVisible: configuration.showsStepCounter
+            ) {
+                content()
             }
         }
 
@@ -426,11 +422,15 @@ extension OnboardingRebranding {
 
         private var addToDockPromoView: some View {
             AddToDockPromoContent(
+                showContent: $showBubbleContent,
                 showTutorialAction: {
+                    // Don't use hideContentAndPerformAction here - the child handles it
                     model.addToDockShowTutorialAction()
                 },
                 dismissAction: { fromAddToDockTutorial in
-                    model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
+                    hideContentAndPerformAction {
+                        model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
+                    }
                 }
             )
         }
@@ -438,20 +438,31 @@ extension OnboardingRebranding {
         private var appIconPickerView: some View {
             AppIconPickerContent(
                 showContent: $model.appIconPickerContentState.showContent,
-                action: model.appIconPickerContinueAction
+                action: {
+                    hideContentAndPerformAction {
+                        model.appIconPickerContinueAction()
+                    }
+                }
             )
-            .onboardingDaxDialogStyle()
         }
 
         private var addressBarPositionView: some View {
             AddressBarPositionContent(
-                action: model.selectAddressBarPositionAction
+                action: {
+                    hideContentAndPerformAction {
+                        model.selectAddressBarPositionAction()
+                    }
+                }
             )
         }
 
         private var searchExperienceSelectionView: some View {
             SearchExperienceContent(
-                action: model.selectSearchExperienceAction
+                action: {
+                    hideContentAndPerformAction {
+                        model.selectSearchExperienceAction()
+                    }
+                }
             )
         }
 
@@ -465,6 +476,31 @@ extension OnboardingRebranding {
             DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
                 withAnimation {
                     showBubbleContent = true
+                }
+            }
+        }
+
+        /// Hides bubble content, performs an action that changes state, then shows new content.
+        ///
+        /// This three-phase sequence prevents cross-fading between old and new content:
+        /// 1. Hide current content (becomes invisible but keeps layout)
+        /// 2. Execute action after brief delay (triggers state change and bubble resize)
+        /// 3. Show new content after bubble finishes resizing
+        private func hideContentAndPerformAction(_ action: @escaping () -> Void) {
+            // Phase 1: Hide current content immediately
+            showBubbleContent = false
+
+            // Phase 2: After content fades out, trigger the state change
+            DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeOutDelay) {
+                // Call action without animation wrapper - the bubble resize animation
+                // is handled by .animation(..., value: state.type) modifier on the bubble view
+                action()
+
+                // Phase 3: After bubble resize completes, show new content
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                    withAnimation {
+                        showBubbleContent = true
+                    }
                 }
             }
         }

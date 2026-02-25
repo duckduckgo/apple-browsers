@@ -33,13 +33,16 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var showAddToDockTutorial = false
+        @Binding var showContent: Bool
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
 
         init(
+            showContent: Binding<Bool>,
             showTutorialAction: @escaping () -> Void,
             dismissAction: @escaping (_ fromAddToDock: Bool) -> Void
         ) {
+            self._showContent = showContent
             self.showTutorialAction = showTutorialAction
             self.dismissAction = dismissAction
         }
@@ -49,7 +52,6 @@ extension OnboardingRebranding.OnboardingView {
                 RebrandedOnboardingView.AddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
                     dismissAction(true)
                 }
-                .onboardingViewVisibleAfterDelay(OnboardingBubbleAnimationMetrics.contentFadeInDelay) // OnboardingViewState does not change in this case so we need to manually fade in the content after bubble resizes.
             } else {
                 promoContent
             }
@@ -81,9 +83,12 @@ extension OnboardingRebranding.OnboardingView {
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: {
+                            showContent = false
+                            showAddToDockTutorial = true
                             showTutorialAction()
-                            withAnimation {
-                                showAddToDockTutorial = true
+
+                            withAnimation(.default.delay(OnboardingBubbleAnimationMetrics.contentFadeInDelay)) {
+                                showContent = true
                             }
                         }) { Text(UserText.AddToDockOnboarding.Buttons.tutorial) }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)

@@ -45,50 +45,9 @@ public extension SubJobWebRunning {
     }
 
     func errorDetails(_ error: Error) -> String {
-        prettyPrintedJSON(from: [
+        DebugHelper.prettyPrintedJSON(from: [
             "type": String(describing: type(of: error)),
             "description": error.localizedDescription
         ])
-    }
-
-    func prettyPrintedJSON(from profiles: [ExtractedProfile], meta: [String: Any]?) -> String {
-        let profiles = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(profiles)))
-
-        return prettyPrintedJSON(from: [
-            "profiles": profiles ?? "unknown",
-            "meta": meta ?? [:]
-        ])
-    }
-
-    func prettyPrintedJSON(from value: Any) -> String {
-        let encoder = JSONEncoder()
-        let fallback = String(describing: value)
-
-        // Encodable
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        if let encodable = value as? Encodable,
-           let data = try? encoder.encode(AnyEncodable(encodable)) {
-            return String(data: data, encoding: .utf8) ?? fallback
-        }
-
-        // Foundation object
-        if JSONSerialization.isValidJSONObject(value),
-           let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted, .sortedKeys]) {
-            return String(data: data, encoding: .utf8) ?? fallback
-        }
-
-        return fallback
-    }
-}
-
-private struct AnyEncodable: Encodable {
-    private let encode: (Encoder) throws -> Void
-
-    init<T: Encodable>(_ value: T) {
-        self.encode = value.encode(to:)
-    }
-
-    func encode(to encoder: Encoder) throws {
-        try encode(encoder)
     }
 }

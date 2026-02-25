@@ -67,10 +67,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             .store(in: &cancellables)
     }
 
-    var useLegacyAutoRestartLogic: Bool {
-        (updateController as? any SparkleUpdateController)?.useLegacyAutoRestartLogic ?? false
-    }
-
     var shouldShowUpdateStatus: Bool {
         #if SPARKLE
         // For Sparkle builds: always show update status regardless of feature flag
@@ -79,10 +75,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         // For App Store builds: only show update status if feature flag is enabled
         return featureFlagger.isFeatureOn(.appStoreUpdateFlow)
         #endif
-    }
-
-    var mustCheckForUpdatesBeforeUserCanTakeAction: Bool {
-        !useLegacyAutoRestartLogic
     }
 
     @Published var updateState = UpdateState.upToDate

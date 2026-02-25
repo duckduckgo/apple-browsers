@@ -82,7 +82,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         XCTAssertEqual(params?["architecture"], "ARM")
         XCTAssertEqual(params?["sync_enabled"], "true")
         XCTAssertEqual(params?["used_allocation"], "512")
-        XCTAssertEqual(params?["uptime"], "240")
+        XCTAssertNil(params?["uptime"])
     }
 
     func testParametersForStartupTrigger() {
@@ -107,7 +107,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         XCTAssertEqual(params?["architecture"], "Intel")
         XCTAssertEqual(params?["sync_enabled"], "false")
         XCTAssertEqual(params?["used_allocation"], "64")
-        XCTAssertEqual(params?["uptime"], "0")
+        XCTAssertNil(params?["uptime"])
     }
 
     func testAllTriggerRawValues() {
@@ -128,7 +128,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
     // MARK: - Trigger Elapsed Seconds
 
     func testTriggerElapsedSeconds() {
-        XCTAssertNil(MemoryUsageIntervalPixel.Trigger.startup.elapsedSeconds)
+        XCTAssertEqual(MemoryUsageIntervalPixel.Trigger.startup.elapsedSeconds, 120)
         XCTAssertEqual(MemoryUsageIntervalPixel.Trigger.h1.elapsedSeconds, 3600)
         XCTAssertEqual(MemoryUsageIntervalPixel.Trigger.h2.elapsedSeconds, 7200)
         XCTAssertEqual(MemoryUsageIntervalPixel.Trigger.h4.elapsedSeconds, 14400)
@@ -175,8 +175,8 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .h1, context: context)
 
-        // 8 context params + 1 trigger = 9 total
-        XCTAssertEqual(pixel.parameters?.count, 9)
+        // 7 context params + 1 trigger = 8 total (uptime excluded from interval pixel)
+        XCTAssertEqual(pixel.parameters?.count, 8)
     }
 
     // MARK: - Unknown Fallback
@@ -217,7 +217,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .startup, context: context)
 
-        // All keys are still present even when values are "unknown"
-        XCTAssertEqual(pixel.parameters?.count, 9)
+        // All keys are still present even when values are "unknown" (uptime excluded from interval pixel)
+        XCTAssertEqual(pixel.parameters?.count, 8)
     }
 }

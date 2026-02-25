@@ -65,7 +65,9 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
+    private var webExtensionLoadTask: Task<Void, Never>?
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -100,6 +102,7 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
@@ -212,7 +215,8 @@ final class MainCoordinator {
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
-                                        whatsNewRepository: whatsNewRepository)
+                                        whatsNewRepository: whatsNewRepository,
+                                        darkReaderFeatureSettings: darkReaderFeatureSettings)
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
         // Apply tracker animation suppression early for cold starts
@@ -249,7 +253,7 @@ final class MainCoordinator {
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             onFeatureFlagEnabled: { [weak self] in
-                await self?.initializeWebExtensions()
+                self?.initializeWebExtensions()
             },
             onFeatureFlagDisabled: { [weak self] in
                 self?.clearWebExtensionReferences()
@@ -260,16 +264,27 @@ final class MainCoordinator {
         )
 
         if featureFlagger.isFeatureOn(.webExtensions) {
-            Task { @MainActor in
-                await initializeWebExtensions()
-            }
+            initializeWebExtensions()
         } else {
             clearWebExtensionReferences()
         }
     }
 
     @available(iOS 18.4, *)
-    private func initializeWebExtensions() async {
+    private func initializeWebExtensions() {
+        guard webExtensionManager == nil else {
+            // Already initialized, just reload extensions and re-register tabs
+            webExtensionLoadTask?.cancel()
+            webExtensionLoadTask = Task { @MainActor [weak self] in
+                await self?.webExtensionManager?.loadInstalledExtensions()
+                guard !Task.isCancelled else { return }
+                await self?.syncEmbeddedExtensions()
+                guard !Task.isCancelled else { return }
+                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+            }
+            return
+        }
+
         guard let privacyConfigurationManager else { return }
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
@@ -288,10 +303,14 @@ final class MainCoordinator {
         controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
         controller.setWebExtensionManager(webExtensionManager)
 
-        await webExtensionManager.loadInstalledExtensions()
-        await syncEmbeddedExtensions()
-
-        webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+        // Load extensions asynchronously - the controller is already attached to tabs
+        webExtensionLoadTask = Task { @MainActor [weak self] in
+            await webExtensionManager.loadInstalledExtensions()
+            guard !Task.isCancelled else { return }
+            await self?.syncEmbeddedExtensions()
+            guard !Task.isCancelled else { return }
+            self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+        }
     }
 
     @available(iOS 18.4, *)
@@ -310,6 +329,8 @@ final class MainCoordinator {
     }
 
     private func clearWebExtensionReferences() {
+        webExtensionLoadTask?.cancel()
+        webExtensionLoadTask = nil
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
         tabManager.setWebExtensionManager(nil)

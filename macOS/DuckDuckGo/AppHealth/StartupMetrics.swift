@@ -27,6 +27,8 @@ enum StartupStep: String, Codable, CaseIterable {
     case appDidFinishLaunchingAfterRestoration
     case appStateRestoration
     case appDidDisplayInterface
+
+    static let orderedSequence: [StartupStep] = [.appInit, .appWillFinishLaunching, .appDidFinishLaunchingBeforeRestoration, .appStateRestoration, .appDidFinishLaunchingAfterRestoration, .appDidDisplayInterface]
 }
 
 // MARK: - StartupMetrics
@@ -64,9 +66,13 @@ struct StartupMetrics: Codable {
 extension StartupMetrics: CustomStringConvertible {
 
     var description: String {
-        intervals
-            .map { key, value in
-                " - " + key.rawValue + ": " + String(value.duration) + "\n"
+        StartupStep.orderedSequence
+            .compactMap { step in
+                guard let interval = intervals[step] else {
+                    return nil
+                }
+
+                return " - " + step.rawValue + ": " + String(interval.duration) + "\n"
             }
             .reduce("") { partialResult, slice in
                 partialResult + slice

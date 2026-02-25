@@ -1139,7 +1139,12 @@ final class MainMenu: NSMenu {
     @MainActor
     @objc private func downloadAlphaBuild() {
         let url = URL(string: "https://staticcdn.duckduckgo.com/macos-desktop-browser/alpha/duckduckgo-alpha.dmg")!
-        Application.appDelegate.windowControllersManager.open(url, source: .ui, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(
+            url,
+            source: .userEntered(url.absoluteString, downloadRequested: true),
+            target: nil,
+            event: NSApp.currentEvent
+        )
     }
 
     @MainActor

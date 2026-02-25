@@ -123,6 +123,16 @@ public struct SecureVaultModels {
             return hash
         }
 
+        /// Compares credential content fields only, ignoring metadata like `id`, `created`, `lastUpdated`, and `lastUsed`.
+        /// The `signature` field is a hash of username, domain TLD, and password, so this covers password changes too.
+        func hasContentEqualTo(_ other: WebsiteAccount) -> Bool {
+            title == other.title
+                && username == other.username
+                && domain == other.domain
+                && notes == other.notes
+                && signature == other.signature
+        }
+
         public func name(tld: TLD, autofillDomainNameUrlMatcher: AutofillDomainNameUrlMatcher) -> String {
             if let title = self.title, !title.isEmpty {
                 return title

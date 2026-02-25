@@ -686,7 +686,7 @@ final class SettingsViewModel: ObservableObject {
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
-         darkReaderFeatureSettings: DarkReaderFeatureSettings = AppDarkReaderFeatureSettings()
+         darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
 
         self.darkReaderFeatureSettings = darkReaderFeatureSettings

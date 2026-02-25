@@ -48,7 +48,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
         forceDarkModeChangedSubject.eraseToAnyPublisher()
     }
 
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+    init(featureFlagger: FeatureFlagger,
          storage: (any KeyedStoring<DarkReaderKeys>)? = nil) {
         self.featureFlagger = featureFlagger
         self.storage = if let storage { storage } else { UserDefaults.app.keyedStoring() }

@@ -201,16 +201,7 @@ extension ReleaseNotesValues {
             downloadProgress = progress.toDownloadProgress
         }
 
-        // Hack: this is a bit of a hack to get the action button in our Release Notes to show
-        // the appropriate action.  This code only executes if autor-restarts are NOT allowed
-        // which means we're on the new update behavior.
-        //
-        // The rationale for this change is explained here:
-        // https://app.asana.com/1/137249556945/task/1210262960023979/comment/1210277947927308?focus=true
-        //
-        // This was done to provide a quick solution to an issue found during a ship review.
-        //
-        let automaticUpdate = updateController.useLegacyAutoRestartLogic ? updateController.areAutomaticUpdatesEnabled : updateController.isAtRestartCheckpoint
+        let automaticUpdate = updateController.isAtRestartCheckpoint
 
         self.init(status: status,
                   currentVersion: currentVersion,

@@ -24,6 +24,7 @@ import PrivacyConfig
 import Common
 import Core
 import Combine
+import BrowserServicesKitTestsUtils
 
 @testable import DuckDuckGo
 
@@ -42,7 +43,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
     private var mockNativeUIPresenter: MockDuckPlayerNativeUIPresenting!
     private var cancellables = Set<AnyCancellable>()
     private var mockDelayHandler: MockDelayHandler!
-    private var mockInternalUserdecider: MockInternalUserDecider!
+    private var mockInternalUserdecider: PrivacyConfig.MockInternalUserDecider!
 
     // MARK: - Setup
     override func setUp() {
@@ -52,7 +53,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
         mockFeatureFlagger = MockDuckPlayerFeatureFlagger()
         mockDelayHandler = MockDelayHandler()
-        mockInternalUserdecider = MockInternalUserDecider()
+        mockInternalUserdecider = PrivacyConfig.MockInternalUserDecider()
 
         playerSettings = MockDuckPlayerSettings(
             appSettings: mockAppSettings,
@@ -503,7 +504,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatures = []
         let url = URL(string: "https://youtube.com/watch?v=2782901a")!
         let request = URLRequest(url: url)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
 
         // When
@@ -521,7 +522,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         mockWebView.navigate(to: URL(string: "https://duckduckgo.com/?q=test")!)  // Set SERP Referrer
 
         let request = URLRequest(url: URL(string: "https://www.youtube.com/watch?v=aasdj111")!)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
         
         // When
@@ -553,7 +554,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Test 2: Verify DuckPlayer DOES work when navigating from SERP to YouTube
         let youtubeURL = URL(string: "https://www.youtube.com/watch?v=testVideo123")!
         let request = URLRequest(url: youtubeURL)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
         
         let delegateResult = sut.handleDelegateNavigation(navigationAction: navigationAction, webView: mockWebView)
@@ -569,7 +570,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         sut.handleDidStartLoading(webView: mockWebView)
         
         let request = URLRequest(url: URL(string: "https://www.youtube.com/watch?v=test123")!)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
         playerSettings.nativeUISERPEnabled = false
 

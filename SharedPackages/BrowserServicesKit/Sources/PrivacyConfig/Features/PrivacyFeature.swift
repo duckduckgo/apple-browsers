@@ -87,6 +87,8 @@ public enum PrivacyFeature: String {
     case popupBlocking
     case combinedPermissionView
     case pageContext
+    case webExtensions
+    case forceDarkModeOnWebsites
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -403,9 +405,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
 
-    /// Global switch to display autoconsent stats on New Tab Page
-    case autoconsentStats
-
     /// Controls whether the Next Steps List widget is enabled on New Tab Page
     case nextStepsListWidget
 }
@@ -637,4 +636,10 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
 
     /// Show popup permission button in inactive state when temporary allowance is active
     case popupPermissionButtonPersistence
+}
+
+public enum WebExtensionsSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .webExtensions }
+
+    case embeddedExtension
 }

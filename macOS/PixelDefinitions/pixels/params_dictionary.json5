@@ -42,6 +42,12 @@
         "type": "number",
         "description": "NSError code"
     },
+    "fromExtension": {
+        "key": "fromExtension",
+        "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
+        "type": "integer",
+        "enum": [0, 1]
+    },
     "themeName": {
         "key": "themeName",
         "enum": ["default", "coolGray", "desert", "green", "orange", "rose", "slateBlue", "violet"],

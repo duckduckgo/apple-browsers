@@ -23,10 +23,7 @@ import AutoconsentStats
 import Persistence
 import Common
 import SwiftUIExtensions
-import FeatureFlags
-import BrowserServicesKit
 import PixelKit
-import PrivacyConfig
 import os.log
 
 @MainActor
@@ -44,7 +41,6 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
     private let windowControllersManager: WindowControllersManagerProtocol
     private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     private let appearancePreferences: AppearancePreferences
-    private let featureFlagger: FeatureFlagger
     private let autoconsentStats: AutoconsentStatsCollecting
     private let presenter: AutoconsentStatsPopoverPresenting
     private let onboardingStateUpdater: ContextualOnboardingStateUpdater
@@ -64,7 +60,6 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
          windowControllersManager: WindowControllersManagerProtocol,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          appearancePreferences: AppearancePreferences,
-         featureFlagger: FeatureFlagger,
          onboardingStateUpdater: ContextualOnboardingStateUpdater,
          presenter: AutoconsentStatsPopoverPresenting? = nil) {
         self.autoconsentStats = autoconsentStats
@@ -72,7 +67,6 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
         self.windowControllersManager = windowControllersManager
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.appearancePreferences = appearancePreferences
-        self.featureFlagger = featureFlagger
         self.onboardingStateUpdater = onboardingStateUpdater
         self.presenter = presenter ?? AutoconsentStatsPopoverPresenter(
             windowControllersManager: windowControllersManager
@@ -81,7 +75,6 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
 
     func checkAndShowDialogIfNeeded() async {
         guard
-            isFeatureFlagEnabled(),
             !presenter.isPopoverBeingPresented(),
             isCPMEnabled(),
             isNotOnNTP(),
@@ -98,10 +91,6 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
     }
 
     // MARK: - Dialog Gatekeeping Checks
-
-    private func isFeatureFlagEnabled() -> Bool {
-        return featureFlagger.isFeatureOn(FeatureFlag.newTabPageAutoconsentStats)
-    }
 
     private func isCPMEnabled() -> Bool {
         return cookiePopupProtectionPreferences.isAutoconsentEnabled

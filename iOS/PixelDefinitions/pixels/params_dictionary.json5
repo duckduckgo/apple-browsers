@@ -33,6 +33,12 @@
         "description": "NSError code",
         "examples": [-1009, 42]
     },
+    "fromExtension": {
+        "key": "fromExtension",
+        "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
+        "type": "integer",
+        "enum": [0, 1]
+    },
     "isInternalUser": {
         "key": "is_internal_user",
         "description": "Whether the user is flagged as internal.  Should ONLY be sent with \"true\" value",

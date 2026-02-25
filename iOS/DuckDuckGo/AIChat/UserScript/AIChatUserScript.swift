@@ -95,6 +95,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
+    private(set) var messageDestinationPolicy: MessageOriginPolicy
     private var cancellables = Set<AnyCancellable>()
 
     var inputBoxHandler: AIChatInputBoxHandling? {
@@ -108,6 +109,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     init(handler: AIChatUserScriptHandling, debugSettings: AIChatDebugSettingsHandling) {
         self.handler = handler
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
+        self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
         super.init()
 
         // Set self as the metric reporting handler
@@ -123,6 +125,19 @@ final class AIChatUserScript: NSObject, Subfeature {
         if let ddgDomain = URL.ddg.host {
             rules.append(.exact(hostname: ddgDomain))
         }
+
+        if let duckAiDomain = URL.duckAi.host {
+            rules.append(.exact(hostname: duckAiDomain))
+        }
+
+        if let debugHostname = debugSettings.messagePolicyHostname {
+            rules.append(.exact(hostname: debugHostname))
+        }
+        return rules
+    }
+
+    private static func buildMessageDestinationRules(debugSettings: AIChatDebugSettingsHandling) -> [HostnameMatchingRule] {
+        var rules: [HostnameMatchingRule] = []
 
         if let duckAiDomain = URL.duckAi.host {
             rules.append(.exact(hostname: duckAiDomain))
@@ -264,6 +279,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     /// Pushes sync status change to the web content when sync state changes (login/logout, availability).
     func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
+        // Push only to websites matching origin policy
+        guard let host = webView?.url?.host,
+              messageDestinationPolicy.isAllowed(host) else { return }
+
         push(.syncStatusChanged(status))
     }
 

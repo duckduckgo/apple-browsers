@@ -23,6 +23,7 @@ import PixelKit
 import BrowserServicesKit
 import Subscription
 import RemoteMessaging
+import WebExtensions
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -85,13 +86,22 @@ struct Launching: LaunchingHandling {
                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
+        let webExtensionManagerHolder = WebExtensionManagerHolder()
+        let webExtensionAvailability = WebExtensionAvailability(
+            featureFlagger: featureFlagger,
+            webExtensionManagerProvider: {
+                webExtensionManagerHolder.manager
+            }
+        )
+
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,
                                                             sync: syncService.sync,
                                                             fireproofing: fireproofing,
                                                             contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                            syncErrorHandler: syncService.syncErrorHandler)
+                                                            syncErrorHandler: syncService.syncErrorHandler,
+                                                            webExtensionAvailability: webExtensionAvailability)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
@@ -218,6 +228,7 @@ struct Launching: LaunchingHandling {
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
 
+        webExtensionManagerHolder.manager = mainCoordinator.webExtensionManager
         systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
         remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: mainCoordinator.controller)

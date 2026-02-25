@@ -21,20 +21,13 @@ import SwiftUI
 import DuckUI
 import Onboarding
 
-private enum IntroDialogContentCopy {
-    static let continueCTA = "Let's do it!"
-    static let skipCTA = "I've been here before"
-}
-
 extension OnboardingRebranding.OnboardingView {
 
     struct IntroDialogContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         private let title: String
-        private let message: String
         private let skipOnboardingView: AnyView?
-        private var showCTA: Binding<Bool>
         private let continueAction: () -> Void
         private let skipAction: () -> Void
 
@@ -42,16 +35,12 @@ extension OnboardingRebranding.OnboardingView {
 
         init(
             title: String,
-            message: String,
             skipOnboardingView: AnyView?,
-            showCTA: Binding<Bool> = .constant(false),
             continueAction: @escaping () -> Void,
             skipAction: @escaping () -> Void
         ) {
             self.title = title
-            self.message = message
             self.skipOnboardingView = skipOnboardingView
-            self.showCTA = showCTA
             self.continueAction = continueAction
             self.skipAction = skipAction
         }
@@ -59,14 +48,9 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             if showSkipOnboarding {
                 skipOnboardingView
+                    .onboardingViewVisibleAfterDelay(OnboardingBubbleAnimationMetrics.contentFadeInDelay) // OnboardingViewState does not change in this case so we need to manually fade in the content after bubble resizes.
             } else {
                 content
-                    .onAppear {
-                        guard !showCTA.wrappedValue else { return }
-                        withAnimation {
-                            showCTA.wrappedValue = true
-                        }
-                    }
             }
         }
 
@@ -78,12 +62,6 @@ extension OnboardingRebranding.OnboardingView {
                     contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
                     actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
                 ),
-                message: AnyView(
-                    Text(message)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .font(onboardingTheme.typography.body)
-                        .multilineTextAlignment(.center)
-                ),
                 title: {
                     Text(title)
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
@@ -93,21 +71,22 @@ extension OnboardingRebranding.OnboardingView {
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: continueAction) {
-                            Text(IntroDialogContentCopy.continueCTA)
+                            Text(UserText.Onboarding.Intro.continueCTA)
                         }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         if skipOnboardingView != nil {
                             Button(action: {
-                                showSkipOnboarding = true
+                                withAnimation {
+                                    showSkipOnboarding = true
+                                }
                                 skipAction()
                             }) {
-                                Text(IntroDialogContentCopy.skipCTA)
+                                Text(UserText.Onboarding.Intro.skipCTA)
                             }
                             .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                         }
                     }
-                    .visibility(showCTA.wrappedValue ? .visible : .invisible)
                 }
             )
         }

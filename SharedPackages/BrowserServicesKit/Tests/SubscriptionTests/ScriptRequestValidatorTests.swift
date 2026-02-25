@@ -19,6 +19,7 @@
 import XCTest
 import WebKit
 @testable import Subscription
+import BrowserServicesKitTestsUtils
 import SubscriptionTestingUtilities
 
 @MainActor

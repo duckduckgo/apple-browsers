@@ -1,0 +1,628 @@
+{
+    "epbf": {
+        "description": "Broken site report submitted by user via Privacy Dashboard or app menu",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "siteUrl",
+                "type": "string",
+                "description": "The URL of the broken site (query items and fragment trimmed)"
+            },
+            {
+                "key": "category",
+                "type": "string",
+                "description": "Breakage category selected by the user",
+                "enum": [
+                    "",
+                    "comments",
+                    "blocked",
+                    "content",
+                    "dislike",
+                    "empty-spaces",
+                    "images",
+                    "layout",
+                    "links",
+                    "login",
+                    "other",
+                    "paywall",
+                    "shopping",
+                    "videos"
+                ]
+            },
+            {
+                "key": "description",
+                "type": "string",
+                "description": "Free-text description of the breakage provided by the user"
+            },
+            {
+                "key": "protectionsState",
+                "type": "boolean",
+                "description": "Whether protections are enabled for the site"
+            },
+            {
+                "key": "upgradedHttps",
+                "type": "boolean",
+                "description": "Whether the connection was upgraded to HTTPS"
+            },
+            {
+                "key": "tds",
+                "type": "string",
+                "description": "Tracker data set ETag"
+            },
+            {
+                "key": "remote_config_version",
+                "type": "string",
+                "description": "Privacy remote config version"
+            },
+            {
+                "key": "blockedTrackers",
+                "type": "string",
+                "description": "Comma-separated list of blocked tracker domains"
+            },
+            {
+                "key": "surrogates",
+                "type": "string",
+                "description": "Comma-separated list of installed surrogates"
+            },
+            {
+                "key": "gpc",
+                "type": "boolean",
+                "description": "Whether Global Privacy Control is enabled"
+            },
+            {
+                "key": "ampUrl",
+                "type": "string",
+                "description": "AMP URL if applicable"
+            },
+            {
+                "key": "urlParametersRemoved",
+                "type": "boolean",
+                "description": "Whether URL tracking parameters were removed"
+            },
+            {
+                "key": "os",
+                "type": "string",
+                "description": "OS version"
+            },
+            {
+                "key": "manufacturer",
+                "type": "string",
+                "description": "Device manufacturer"
+            },
+            {
+                "key": "reportFlow",
+                "type": "string",
+                "description": "Source of the report",
+                "enum": [
+                    "menu",
+                    "dashboard",
+                    "on_protections_off_menu",
+                    "on_protections_off_dashboard_main",
+                    "reload-three-times-within-20-seconds",
+                    "after_toggle_prompt"
+                ]
+            },
+            {
+                "key": "openerContext",
+                "type": "string",
+                "description": "Context in which the page was opened",
+                "enum": ["serp", "external", "navigation", ""]
+            },
+            {
+                "key": "vpnOn",
+                "type": "boolean",
+                "description": "Whether VPN is enabled"
+            },
+            {
+                "key": "userRefreshCount",
+                "type": "integer",
+                "description": "Number of user-initiated refreshes"
+            },
+            {
+                "key": "locale",
+                "type": "string",
+                "description": "User locale",
+                "pattern": "[a-z][a-z](-[A-Z][A-Z])?"
+            },
+            {
+                "key": "consentManaged",
+                "type": "string",
+                "description": "Whether cookie consent was managed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentOptoutFailed",
+                "type": "string",
+                "description": "Whether cookie consent opt-out failed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentSelftestFailed",
+                "type": "string",
+                "description": "Whether cookie consent self-test failed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentReloadLoop",
+                "type": "string",
+                "description": "Whether a cookie consent reload loop was detected",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentHeuristicEnabled",
+                "type": "string",
+                "description": "Whether cookie consent heuristic is enabled",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentRule",
+                "type": "string",
+                "description": "Cookie consent rule applied"
+            },
+            {
+                "key": "debugFlags",
+                "type": "string",
+                "description": "Debug flags"
+            },
+            {
+                "key": "contentScopeExperiments",
+                "type": "string",
+                "description": "Privacy experiments configuration"
+            },
+            {
+                "key": "lastSentDay",
+                "description": "Last day a report was sent for this site",
+                "format": "date"
+            },
+            {
+                "key": "httpErrorCodes",
+                "type": "string",
+                "description": "Comma-separated HTTP error status codes"
+            },
+            {
+                "key": "errorDescriptions",
+                "type": "string",
+                "description": "JSON-encoded array of error descriptions"
+            },
+            {
+                "key": "jsPerformance",
+                "type": "string",
+                "description": "Comma-separated JS performance values"
+            },
+            {
+                "key": "isPirEnabled",
+                "type": "string",
+                "description": "Whether Personal Information Removal is enabled. Only sent when true.",
+                "enum": ["true"]
+            },
+            {
+                "key": "isForceDarkModeEnabled",
+                "type": "boolean",
+                "description": "Whether force dark mode is enabled. Only sent when value is known."
+            },
+            {
+                "key": "siteType",
+                "type": "string",
+                "description": "Whether the site was loaded in desktop or mobile mode",
+                "enum": ["desktop", "mobile"]
+            },
+            "atb",
+            {
+                "key": "model",
+                "type": "string",
+                "description": "Device model identifier"
+            },
+            {
+                "key": "variant",
+                "type": "string",
+                "description": "Experiment variant"
+            },
+            {
+                "key": "adwallDetection.detected",
+                "type": "boolean",
+                "description": "Whether an ad wall was detected by the detector"
+            },
+            {
+                "key": "adwallDetection.results",
+                "type": "string",
+                "description": "Ad wall detection results"
+            },
+            {
+                "key": "botDetection.detected",
+                "type": "boolean",
+                "description": "Whether bot detection was triggered"
+            },
+            {
+                "key": "botDetection.results",
+                "type": "string",
+                "description": "Bot detection results"
+            },
+            {
+                "key": "fraudDetection.detected",
+                "type": "boolean",
+                "description": "Whether fraud detection was triggered"
+            },
+            {
+                "key": "fraudDetection.results",
+                "type": "string",
+                "description": "Fraud detection results"
+            },
+            {
+                "key": "youtubeAds.detected",
+                "type": "boolean",
+                "description": "Whether YouTube ads were detected"
+            },
+            {
+                "key": "youtubeAds.results",
+                "type": "string",
+                "description": "YouTube ads detection results"
+            },
+            {
+                "key": "extendedPerformance.firstContentfulPaintMs",
+                "type": "integer",
+                "description": "First Contentful Paint in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.largestContentfulPaintMs",
+                "type": "integer",
+                "description": "Largest Contentful Paint in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domInteractiveMs",
+                "type": "integer",
+                "description": "DOM Interactive time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domContentLoadedMs",
+                "type": "integer",
+                "description": "DOM Content Loaded time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domCompleteMs",
+                "type": "integer",
+                "description": "DOM Complete time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.loadCompleteMs",
+                "type": "integer",
+                "description": "Load Complete time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.timeToFirstByteMs",
+                "type": "integer",
+                "description": "Time to First Byte in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.redirectCountBucket",
+                "type": "string",
+                "description": "Redirect count bucket"
+            },
+            {
+                "key": "extendedPerformance.resourceCountBucket",
+                "type": "string",
+                "description": "Resource count bucket"
+            },
+            {
+                "key": "extendedPerformance.transferSizeBucket",
+                "type": "string",
+                "description": "Transfer size bucket"
+            },
+            {
+                "key": "extendedPerformance.decodedBodySizeBucket",
+                "type": "string",
+                "description": "Decoded body size bucket"
+            },
+            {
+                "key": "extendedPerformance.encodedBodySizeBucket",
+                "type": "string",
+                "description": "Encoded body size bucket"
+            },
+            {
+                "key": "extendedPerformance.totalResourcesSizeBucket",
+                "type": "string",
+                "description": "Total resources size bucket"
+            }
+        ]
+    },
+
+    "m_protection-toggled-off-breakage-report": {
+        "description": "Automatic breakage report sent when user toggles off protections for a site",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "siteUrl",
+                "type": "string",
+                "description": "The URL of the broken site (query items and fragment trimmed)"
+            },
+            {
+                "key": "upgradedHttps",
+                "type": "boolean",
+                "description": "Whether the connection was upgraded to HTTPS"
+            },
+            {
+                "key": "tds",
+                "type": "string",
+                "description": "Tracker data set ETag"
+            },
+            {
+                "key": "remote_config_version",
+                "type": "string",
+                "description": "Privacy remote config version"
+            },
+            {
+                "key": "blockedTrackers",
+                "type": "string",
+                "description": "Comma-separated list of blocked tracker domains"
+            },
+            {
+                "key": "surrogates",
+                "type": "string",
+                "description": "Comma-separated list of installed surrogates"
+            },
+            {
+                "key": "gpc",
+                "type": "boolean",
+                "description": "Whether Global Privacy Control is enabled"
+            },
+            {
+                "key": "ampUrl",
+                "type": "string",
+                "description": "AMP URL if applicable"
+            },
+            {
+                "key": "urlParametersRemoved",
+                "type": "boolean",
+                "description": "Whether URL tracking parameters were removed"
+            },
+            {
+                "key": "os",
+                "type": "string",
+                "description": "OS version"
+            },
+            {
+                "key": "manufacturer",
+                "type": "string",
+                "description": "Device manufacturer"
+            },
+            {
+                "key": "reportFlow",
+                "type": "string",
+                "description": "Source of the report",
+                "enum": [
+                    "menu",
+                    "dashboard",
+                    "on_protections_off_menu",
+                    "on_protections_off_dashboard_main",
+                    "reload-three-times-within-20-seconds",
+                    "after_toggle_prompt"
+                ]
+            },
+            {
+                "key": "openerContext",
+                "type": "string",
+                "description": "Context in which the page was opened",
+                "enum": ["serp", "external", "navigation", ""]
+            },
+            {
+                "key": "vpnOn",
+                "type": "boolean",
+                "description": "Whether VPN is enabled"
+            },
+            {
+                "key": "userRefreshCount",
+                "type": "integer",
+                "description": "Number of user-initiated refreshes"
+            },
+            {
+                "key": "locale",
+                "type": "string",
+                "description": "User locale",
+                "pattern": "[a-z][a-z](-[A-Z][A-Z])?"
+            },
+            {
+                "key": "consentManaged",
+                "type": "string",
+                "description": "Whether cookie consent was managed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentOptoutFailed",
+                "type": "string",
+                "description": "Whether cookie consent opt-out failed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentSelftestFailed",
+                "type": "string",
+                "description": "Whether cookie consent self-test failed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentReloadLoop",
+                "type": "string",
+                "description": "Whether a cookie consent reload loop was detected",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentHeuristicEnabled",
+                "type": "string",
+                "description": "Whether cookie consent heuristic is enabled",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentRule",
+                "type": "string",
+                "description": "Cookie consent rule applied"
+            },
+            {
+                "key": "debugFlags",
+                "type": "string",
+                "description": "Debug flags"
+            },
+            {
+                "key": "contentScopeExperiments",
+                "type": "string",
+                "description": "Privacy experiments configuration"
+            },
+            {
+                "key": "lastSentDay",
+                "description": "Last day a report was sent for this site",
+                "format": "date"
+            },
+            {
+                "key": "httpErrorCodes",
+                "type": "string",
+                "description": "Comma-separated HTTP error status codes"
+            },
+            {
+                "key": "errorDescriptions",
+                "type": "string",
+                "description": "JSON-encoded array of error descriptions"
+            },
+            {
+                "key": "jsPerformance",
+                "type": "string",
+                "description": "Comma-separated JS performance values"
+            },
+            {
+                "key": "isPirEnabled",
+                "type": "string",
+                "description": "Whether Personal Information Removal is enabled. Only sent when true.",
+                "enum": ["true"]
+            },
+            {
+                "key": "isForceDarkModeEnabled",
+                "type": "boolean",
+                "description": "Whether force dark mode is enabled. Only sent when value is known."
+            },
+            {
+                "key": "siteType",
+                "type": "string",
+                "description": "Whether the site was loaded in desktop or mobile mode",
+                "enum": ["desktop", "mobile"]
+            },
+            "atb",
+            {
+                "key": "model",
+                "type": "string",
+                "description": "Device model identifier"
+            },
+            {
+                "key": "variant",
+                "type": "string",
+                "description": "Experiment variant"
+            },
+            {
+                "key": "adwallDetection.detected",
+                "type": "boolean",
+                "description": "Whether an ad wall was detected by the detector"
+            },
+            {
+                "key": "adwallDetection.results",
+                "type": "string",
+                "description": "Ad wall detection results"
+            },
+            {
+                "key": "botDetection.detected",
+                "type": "boolean",
+                "description": "Whether bot detection was triggered"
+            },
+            {
+                "key": "botDetection.results",
+                "type": "string",
+                "description": "Bot detection results"
+            },
+            {
+                "key": "fraudDetection.detected",
+                "type": "boolean",
+                "description": "Whether fraud detection was triggered"
+            },
+            {
+                "key": "fraudDetection.results",
+                "type": "string",
+                "description": "Fraud detection results"
+            },
+            {
+                "key": "youtubeAds.detected",
+                "type": "boolean",
+                "description": "Whether YouTube ads were detected"
+            },
+            {
+                "key": "youtubeAds.results",
+                "type": "string",
+                "description": "YouTube ads detection results"
+            },
+            {
+                "key": "extendedPerformance.firstContentfulPaintMs",
+                "type": "integer",
+                "description": "First Contentful Paint in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.largestContentfulPaintMs",
+                "type": "integer",
+                "description": "Largest Contentful Paint in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domInteractiveMs",
+                "type": "integer",
+                "description": "DOM Interactive time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domContentLoadedMs",
+                "type": "integer",
+                "description": "DOM Content Loaded time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domCompleteMs",
+                "type": "integer",
+                "description": "DOM Complete time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.loadCompleteMs",
+                "type": "integer",
+                "description": "Load Complete time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.timeToFirstByteMs",
+                "type": "integer",
+                "description": "Time to First Byte in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.redirectCountBucket",
+                "type": "string",
+                "description": "Redirect count bucket"
+            },
+            {
+                "key": "extendedPerformance.resourceCountBucket",
+                "type": "string",
+                "description": "Resource count bucket"
+            },
+            {
+                "key": "extendedPerformance.transferSizeBucket",
+                "type": "string",
+                "description": "Transfer size bucket"
+            },
+            {
+                "key": "extendedPerformance.decodedBodySizeBucket",
+                "type": "string",
+                "description": "Decoded body size bucket"
+            },
+            {
+                "key": "extendedPerformance.encodedBodySizeBucket",
+                "type": "string",
+                "description": "Encoded body size bucket"
+            },
+            {
+                "key": "extendedPerformance.totalResourcesSizeBucket",
+                "type": "string",
+                "description": "Total resources size bucket"
+            }
+        ]
+    }
+}

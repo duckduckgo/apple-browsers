@@ -161,7 +161,7 @@ public class DataBrokerProtectionFeature: Subfeature {
 
         installTaskCancellationTimer()
 
-        Logger.action.log("Pushing into WebView: \(method.rawValue) params \(String(describing: params), privacy: .public)")
+        Logger.action.log("Pushing into WebView: \(method.rawValue) params \(DebugHelper.prettyPrintedJSON(from: params), privacy: .public)")
 
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
 

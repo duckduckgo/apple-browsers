@@ -223,10 +223,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
     case newPermissionView
 
-    /// Tab closing event recreation (failsafe for removing private API)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
-    case tabClosingEventRecreation
-
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
     case firstTimeQuitSurvey
@@ -318,7 +314,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
                 .popupPermissionButtonPersistence,
-                .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
                 .firstTimeQuitSurvey,
                 .aiChatOmnibarOnboarding,
@@ -431,7 +426,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledDefaultBrowserAndDockPromptsInactiveUser,
-                .tabClosingEventRecreation,
                 .terminationDeciderSequence,
                 .crashCollectionDisableKeysSorting,
                 .crashCollectionLimitCallStackTreeDepth:
@@ -569,8 +563,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications))
         case .newPermissionView:
             return .remoteReleasable(.feature(.combinedPermissionView))
-        case .tabClosingEventRecreation:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         case .firstTimeQuitSurvey:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
         case .terminationDeciderSequence:

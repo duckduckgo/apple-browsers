@@ -1290,7 +1290,7 @@ final class AttributedMetricManagerTests: XCTestCase {
     ///
     /// ## Test Validation
     /// - No pixels fire for any trigger when isReturningUser is true
-    /// - Covers all trigger types: appDidStart, userDidSearch, userDidSelectAD, userDidDuckAIChat
+    /// - Covers all trigger types: appDidStart, userDidSearch, userDidSelectAD, userDidDuckAIChat, userDidSubscribe, userDidSync
     func testNoPixelsFireForReturningUser() {
         var pixelFired = false
 
@@ -1314,6 +1314,8 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.attributionManager.process(trigger: .userDidSearch)
         fixture.attributionManager.process(trigger: .userDidSelectAD)
         fixture.attributionManager.process(trigger: .userDidDuckAIChat)
+        fixture.attributionManager.process(trigger: .userDidSubscribe)
+        fixture.attributionManager.process(trigger: .userDidSync(devicesCount: 1))
 
         XCTAssertFalse(pixelFired, "No pixels should fire for a returning user")
     }

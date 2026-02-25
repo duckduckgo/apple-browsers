@@ -17,12 +17,12 @@
 //  limitations under the License.
 //
 
-import Combine
 import XCTest
 @testable import DuckDuckGo
 import BrowserServicesKit
 import Persistence
 import PersistenceTestingUtils
+import Combine
 
 class DarkReaderFeatureSettingsTests: XCTestCase {
 

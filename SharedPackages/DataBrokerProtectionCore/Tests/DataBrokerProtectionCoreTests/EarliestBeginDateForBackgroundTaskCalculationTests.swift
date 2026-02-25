@@ -139,8 +139,8 @@ final class EarliestBeginDateForBackgroundTaskCalculationTests: XCTestCase {
 
         /// Add brokers
         let jsonURL = Bundle.module.url(forResource: usesChildBroker ? "valid-child-broker" : "valid-broker", withExtension: "json", subdirectory: "BundleResources")!
-        let brokerResource = try DataBroker.initFromResource(jsonURL)
-        let brokerId = try database.saveBroker(brokerResource: brokerResource)
+        let broker = try DataBroker.initFromResource(jsonURL)
+        let brokerId = try database.saveBroker(dataBroker: broker)
 
         /// Add profile queries + scans
         let profileQueries: [ProfileQuery] = [

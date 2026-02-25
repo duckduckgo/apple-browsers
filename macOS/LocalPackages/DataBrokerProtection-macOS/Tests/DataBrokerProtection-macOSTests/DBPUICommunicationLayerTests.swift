@@ -21,7 +21,6 @@ import WebKit
 @testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
-import BrowserServicesKitTestsUtils
 import PrivacyConfig
 
 final class DBPUICommunicationLayerTests: XCTestCase {
@@ -34,7 +33,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
-        let scriptMessage = WKScriptMessage.mock()
+        let scriptMessage = await WKScriptMessage()
 
         // When
         let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)
@@ -59,7 +58,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
-        let scriptMessage = WKScriptMessage.mock()
+        let scriptMessage = await WKScriptMessage()
 
         // When
         let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)
@@ -84,7 +83,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
-        let scriptMessage = WKScriptMessage.mock()
+        let scriptMessage = await WKScriptMessage()
 
         // When
         let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)
@@ -109,7 +108,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
-        let scriptMessage = WKScriptMessage.mock()
+        let scriptMessage = await WKScriptMessage()
 
         // When
         let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)
@@ -130,7 +129,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         // Given
         let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
         let handshakeParams: [String: Any] = ["version": 4]
-        let scriptMessage = WKScriptMessage.mock()
+        let scriptMessage = await WKScriptMessage()
 
         // When
         let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)
@@ -162,7 +161,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(),
                                           vpnBypassService: mockVPNBypassService,
                                           privacyConfig: mockPrivacyConfig)
-        let scriptMessage = WKScriptMessage.mock()
+        let scriptMessage = await WKScriptMessage()
 
         // When
         let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.getFeatureConfig.rawValue)

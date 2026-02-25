@@ -548,15 +548,12 @@ public final class ResourcesRepositoryMock: ResourcesRepository {
 
     public init() {}
 
-    public func fetchBrokerResourcesFromFiles() throws -> [BrokerResource]? {
+    public func fetchBrokerFromResourceFiles() throws -> [DataBroker]? {
         wasFetchBrokerFromResourcesFilesCalled = true
         if shouldThrowOnFetch {
             throw DataBrokerProtectionError.unknown("Mock fetch error")
         }
-        return try brokersList?.map { broker in
-            let rawJSON = try JSONEncoder().encode(broker)
-            return BrokerResource(broker: broker, rawJSON: rawJSON)
-        }
+        return brokersList
     }
 
     public func reset() {
@@ -620,8 +617,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var scanJobData = [ScanJobData]()
     public var optOutJobData = [OptOutJobData]()
     public var lastPreferredRunDateOnScan: Date?
-    public var lastSavedBrokerResource: BrokerResource?
-    public var lastUpdatedBrokerResource: BrokerResource?
 
     public var wasDeleteOptOutEmailConfirmationCalled = false
     public var lastDeletedEmailConfirmationProfileQueryId: Int64?
@@ -651,8 +646,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         scanJobData.removeAll()
         optOutJobData.removeAll()
         lastPreferredRunDateOnScan = nil
-        lastSavedBrokerResource = nil
-        lastUpdatedBrokerResource = nil
     }
 
     public func save(profile: DataBrokerProtectionProfile) throws -> Int64 {
@@ -667,15 +660,13 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return
     }
 
-    public func save(brokerResource: BrokerResource) throws -> Int64 {
+    public func save(broker: DataBroker) throws -> Int64 {
         wasBrokerSavedCalled = true
-        lastSavedBrokerResource = brokerResource
         return 1
     }
 
-    public func update(_ brokerResource: BrokerResource, with _: Int64) throws {
+    public func update(_ broker: DataBroker, with id: Int64) throws {
         wasBrokerUpdateCalled = true
-        lastUpdatedBrokerResource = brokerResource
         if shouldThrowOnUpdate {
             throw DataBrokerProtectionError.unknown("Mock update error")
         }
@@ -712,13 +703,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func fetchAllBrokers() throws -> [DataBroker] {
         return brokers
-    }
-
-    public func fetchAllBrokerResources() throws -> [BrokerResource] {
-        return brokers.map { broker in
-            let data = (try? JSONEncoder().encode(broker)) ?? Data()
-            return BrokerResource(broker: broker, rawJSON: data)
-        }
     }
 
     public func fetchAllNonRemovedBrokers() throws -> [DataBroker] {
@@ -1321,7 +1305,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
     }
 
-    public func saveBroker(brokerResource _: BrokerResource) throws -> Int64 {
+    public func saveBroker(dataBroker: DataBroker) throws -> Int64 {
         1
     }
 
@@ -2095,7 +2079,7 @@ public final class MockBrokerJSONService: BrokerJSONServiceProvider {
         didCallCheckForUpdates = true
     }
 
-    public func bundledBrokers() throws -> [BrokerResource]? {
+    public func bundledBrokers() throws -> [DataBroker]? {
         nil
     }
 
@@ -2107,7 +2091,7 @@ public final class MockBrokerJSONService: BrokerJSONServiceProvider {
 public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
     public init() {}
 
-    public func bundledBrokers() throws -> [BrokerResource]? {
+    public func bundledBrokers() throws -> [DataBroker]? {
         []
     }
 
@@ -2759,7 +2743,8 @@ public extension DataBroker {
                         EmailConfirmationAction(
                             id: "emailConfirmation",
                             actionType: .emailConfirmation,
-                            pollingTime: 30
+                            pollingTime: 30,
+                            dataSource: nil
                         )
                     ]
                 )

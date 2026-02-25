@@ -77,7 +77,7 @@ final class DataBrokerJobTests: XCTestCase {
         let mockActionsHandler = MockActionsHandler(stepType: .scan)
         sut.actionsHandler = mockActionsHandler
 
-        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "url")
+        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
 
         // When
         _ = await sut.evaluateActionAndHaltIfNeeded(action)
@@ -91,7 +91,7 @@ final class DataBrokerJobTests: XCTestCase {
         let sut = optOutJob
         let mockActionsHandler = MockActionsHandler(stepType: .optOut)
         sut.actionsHandler = mockActionsHandler
-        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "url")
+        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
 
         // When
         _ = await sut.evaluateActionAndHaltIfNeeded(action)

@@ -25,11 +25,7 @@ public enum TabsModelMode: Int {
     case fire = 1
 }
 
-protocol TabsModelProtocol {
-    var count: Int { get }
-}
-
-public class TabsModel: NSObject, NSCoding, TabsModelProtocol {
+public class TabsModel: NSObject, NSCoding, MutableTabCollection {
 
     private struct NSCodingKeys {
         static let legacyIndex = "currentIndex"

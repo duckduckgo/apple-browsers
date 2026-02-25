@@ -54,7 +54,11 @@ struct DownloadsList: View {
         if viewModel.sections.isEmpty {
             emptyState
         } else {
-            listWithBottomToolbar
+            if #available(iOS 26, *) {
+                listWithBottomToolbarLiquidGlass
+            } else {
+                listWithBottomToolbar
+            }
         }
     }
     
@@ -71,7 +75,24 @@ struct DownloadsList: View {
         .background(Color.background)
         .edgesIgnoringSafeArea(.bottom)
     }
-    
+
+    @available(iOS 26, *)
+    private var listWithBottomToolbarLiquidGlass: some View {
+        listWithBackground.toolbar {
+            if editMode == .active {
+                ToolbarItem(placement: .bottomBar) {
+                    deleteAllButton
+                }
+            }
+
+            ToolbarSpacer(.flexible, placement: .bottomBar)
+
+            ToolbarItem(placement: .bottomBar) {
+                editButton
+            }
+        }
+    }
+
     @ViewBuilder
     private var listWithBottomToolbar: some View {
         listWithBackground.toolbar {
@@ -80,7 +101,7 @@ struct DownloadsList: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private var listWithBackground: some View {
         if #available(iOS 16.0, *) {
@@ -91,57 +112,35 @@ struct DownloadsList: View {
             list
         }
     }
-    
-    @ViewBuilder
-    private var toolbarButtons: some View {
-        if editMode == .active {
-            Button {
-                self.deleteAll()
-            } label: {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.trash)
-            }
-            .buttonStyle(.plain)
-        }
 
-        if #unavailable(iOS 26) {
-            Spacer()
+    private var deleteAllButton: some View {
+        Button {
+            self.deleteAll()
+        } label: {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.trash)
         }
+        .buttonStyle(.plain)
+    }
+
+    private var editButton: some View {
 
         EditButton().environment(\.editMode, $editMode)
             .foregroundColor(.barButton)
             .buttonStyle(.plain)
+
     }
-    
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        // Required due to iOS 14 issue of buttons ignoring styling
-        ToolbarItem(placement: .bottomBar) {
-            HStack {
-                Button {
-                    self.deleteAll()
-                } label: {
-                    Text(UserText.downloadsListDeleteAllButton)
-                        .foregroundColor(.deleteAll)
-                }
-                .foregroundColor(.deleteAll)
-                .buttonStyle(.plain)
-                
-                Spacer(minLength: 0)
-            }
-            .opacity(editMode == .active ? 1.0 : 0.0)
+
+    @ViewBuilder
+    private var toolbarButtons: some View {
+        if editMode == .active {
+            deleteAllButton
         }
-        ToolbarItem(placement: .bottomBar) {
-            Spacer()
-        }
-        ToolbarItem(placement: .bottomBar) {
-            HStack {
-                EditButton().environment(\.editMode, $editMode)
-                    .foregroundColor(.barButton)
-                Spacer(minLength: 0)
-            }
-        }
+
+        Spacer()
+
+        editButton
     }
-    
+
     private var list: some View {
         List {
             ForEach(viewModel.sections) { section in

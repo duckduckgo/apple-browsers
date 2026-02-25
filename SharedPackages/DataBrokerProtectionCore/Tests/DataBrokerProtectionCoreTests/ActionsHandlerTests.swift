@@ -45,8 +45,8 @@ final class ActionsHandlerTests: XCTestCase {
     }
 
     func testWhenNextStepDoesNotFindAnyMoreActions_thenNilIsReturned() {
-        let firstAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
-        let secondAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
+        let firstAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url")
+        let secondAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url")
         let step = Step(type: .scan, actions: [firstAction, secondAction])
         let sut = ActionsHandler.forScan(step)
 
@@ -57,8 +57,8 @@ final class ActionsHandlerTests: XCTestCase {
     }
 
     func testWhenNextStepFindsAnAction_thenThatNextActionIsReturned() {
-        let firstAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
-        let secondAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
+        let firstAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url")
+        let secondAction = NavigateAction(id: "navigate", actionType: .navigate, url: "url")
         let step = Step(type: .scan, actions: [firstAction, secondAction])
         let sut = ActionsHandler.forScan(step)
 
@@ -243,7 +243,7 @@ final class ActionsHandlerTests: XCTestCase {
     func testWhenOptOutHaltsAtEmailConfirmation_thenStopsBeforeEmailConfirmationAction() {
         let action1 = createTestAction(id: "navigate1")
         let action2 = createTestAction(id: "navigate2")
-        let emailAction = EmailConfirmationAction(id: "email", actionType: .emailConfirmation, pollingTime: 1, dataSource: nil)
+        let emailAction = EmailConfirmationAction(id: "email", actionType: .emailConfirmation, pollingTime: 1)
         let action3 = createTestAction(id: "navigate3")
         let action4 = createTestAction(id: "navigate4")
 
@@ -258,7 +258,7 @@ final class ActionsHandlerTests: XCTestCase {
     func testWhenOptOutDoesNotHaltAtEmailConfirmation_thenIncludesAllActions() {
         let action1 = createTestAction(id: "navigate1")
         let action2 = createTestAction(id: "navigate2")
-        let emailAction = EmailConfirmationAction(id: "email", actionType: .emailConfirmation, pollingTime: 1, dataSource: nil)
+        let emailAction = EmailConfirmationAction(id: "email", actionType: .emailConfirmation, pollingTime: 1)
         let action3 = createTestAction(id: "navigate3")
         let action4 = createTestAction(id: "navigate4")
 
@@ -276,7 +276,7 @@ final class ActionsHandlerTests: XCTestCase {
     func testWhenEmailConfirmationContinuation_thenReplacesEmailActionWithNavigateAndContinues() throws {
         let action1 = createTestAction(id: "navigate1")
         let action2 = createTestAction(id: "navigate2")
-        let emailAction = EmailConfirmationAction(id: "email", actionType: .emailConfirmation, pollingTime: 1, dataSource: nil)
+        let emailAction = EmailConfirmationAction(id: "email", actionType: .emailConfirmation, pollingTime: 1)
         let action3 = createTestAction(id: "navigate3")
         let action4 = createTestAction(id: "navigate4")
 
@@ -296,7 +296,7 @@ final class ActionsHandlerTests: XCTestCase {
     // MARK: - Test Helpers
 
     private func createTestAction(id: String) -> NavigateAction {
-        return NavigateAction(id: id, actionType: .navigate, url: "https://example.com", ageRange: [], dataSource: nil)
+        return NavigateAction(id: id, actionType: .navigate, url: "https://example.com")
     }
 
     private func createStepWithActions(_ actionIds: [String]) -> Step {

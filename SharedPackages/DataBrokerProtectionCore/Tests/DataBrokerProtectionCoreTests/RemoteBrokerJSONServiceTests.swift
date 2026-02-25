@@ -344,6 +344,78 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         try? realFileManager.removeItem(at: tempDir)
     }
 
+    func testWhenProcessBrokerJSONsUpdatesExistingBroker_thenVaultUpdateUsesRawFilePayload() throws {
+        let testBrokerContent = """
+        {
+            "name": "Broker",
+            "url": "example.com",
+            "steps": [
+                {
+                    "stepType": "scan",
+                    "actions": [
+                        {
+                            "actionType": "navigate",
+                            "id": "navigate-1",
+                            "url": "https://example.com",
+                            "brokerOwnedField": "preserve-me",
+                            "brokerOwnedNested": {
+                                "flag": true
+                            }
+                        }
+                    ]
+                }
+            ],
+            "version": "1.0.1",
+            "schedulingConfig": {
+                "retryError": 48,
+                "confirmOptOutScan": 72,
+                "maintenanceScan": 120,
+                "maxAttempts": -1
+            },
+            "optOutUrl": "https://example.com"
+        }
+        """
+
+        vault.shouldReturnOldVersionBroker = true
+
+        let realFileManager = FileManager.default
+        let testRemoteService = RemoteBrokerJSONService(
+            featureFlagger: MockFeatureFlagger(),
+            settings: settings,
+            vault: vault,
+            fileManager: realFileManager,
+            urlSession: urlSession,
+            authenticationManager: authenticationManager,
+            pixelHandler: pixelHandler,
+            localBrokerProvider: localBrokerJSONService
+        )
+
+        let tempDir = realFileManager.temporaryDirectory.appendingPathComponent("test-etag-raw-payload")
+        let jsonDir = tempDir.appendingPathComponent("json")
+        try realFileManager.createDirectory(at: jsonDir, withIntermediateDirectories: true)
+
+        let testFile = jsonDir.appendingPathComponent("example.com.json")
+        try testBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
+
+        try testRemoteService.processBrokerJSONs(
+            eTag: "test-etag-raw-payload",
+            fileNames: ["example.com.json"],
+            eTagMapping: ["example.com.json": "etag-raw"],
+            activeBrokers: ["example.com.json"],
+            testBrokers: []
+        )
+
+        XCTAssertTrue(vault.wasBrokerUpdateCalled)
+        XCTAssertFalse(vault.wasBrokerSavedCalled)
+
+        let updatedBrokerResource = try XCTUnwrap(vault.lastUpdatedBrokerResource)
+        XCTAssertEqual(updatedBrokerResource.rawJSON, Data(testBrokerContent.utf8))
+        XCTAssertEqual(updatedBrokerResource.broker.eTag, "etag-raw")
+
+        // Clean up
+        try? realFileManager.removeItem(at: tempDir)
+    }
+
     func testWhenProcessBrokerJSONsWithInvalidJSON_thenFailurePixelIsFired() throws {
         let invalidBrokerContent = "{ invalid json content"
 

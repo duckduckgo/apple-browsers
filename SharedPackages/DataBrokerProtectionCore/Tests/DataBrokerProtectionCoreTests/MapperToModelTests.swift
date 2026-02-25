@@ -124,4 +124,54 @@ final class MapperToModelTests: XCTestCase {
         // Then
         XCTAssertEqual(result.url, brokerDB.name)
     }
+
+    func testMapToModel_legacyNormalizedBrokerJSON_decodesSuccessfully() throws {
+        // Given
+        let legacyBrokerJSON = """
+            {
+                "name": "ExampleBroker",
+                "url": "example.com",
+                "steps": [
+                    {
+                        "stepType": "scan",
+                        "actions": [
+                            {
+                                "actionType": "click",
+                                "id": "click-1",
+                                "dataSource": "userProfile",
+                                "elements": [
+                                    {
+                                        "type": "button",
+                                        "selector": "#submit"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "version": "1.0.0",
+                "schedulingConfig": {"retryError": 48, "confirmOptOutScan": 72, "maintenanceScan": 120, "maxAttempts": -1},
+                "optOutUrl": "https://example.com"
+            }
+            """.data(using: .utf8)!
+        let brokerDB = BrokerDB(
+            id: 1,
+            name: "ExampleBroker",
+            json: legacyBrokerJSON,
+            version: "1.0.0",
+            url: "example.com",
+            eTag: "legacy-etag",
+            removedAt: nil
+        )
+
+        // When
+        let result = try sut.mapToModel(brokerDB)
+
+        // Then
+        XCTAssertEqual(result.name, "ExampleBroker")
+        XCTAssertEqual(result.url, "example.com")
+        XCTAssertEqual(result.steps.count, 1)
+        XCTAssertEqual(result.steps.first?.actions.count, 1)
+        XCTAssertEqual(result.steps.first?.actions.first?.actionType, .click)
+    }
 }

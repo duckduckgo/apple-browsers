@@ -129,12 +129,10 @@ public enum DataBrokerHierarchy: Int {
 }
 
 public struct BrokerResource {
-    public let fileName: String
     public let broker: DataBroker
     public let rawJSON: Data
 
-    public init(fileName: String, broker: DataBroker, rawJSON: Data) {
-        self.fileName = fileName
+    public init(broker: DataBroker, rawJSON: Data) {
         self.broker = broker
         self.rawJSON = rawJSON
     }
@@ -142,7 +140,7 @@ public struct BrokerResource {
     func with(eTag: String) -> BrokerResource {
         var brokerWithETag = broker
         brokerWithETag.setETag(eTag)
-        return BrokerResource(fileName: fileName, broker: brokerWithETag, rawJSON: rawJSON)
+        return BrokerResource(broker: brokerWithETag, rawJSON: rawJSON)
     }
 }
 
@@ -286,7 +284,7 @@ public struct DataBroker: Codable, Sendable {
             let jsonDecoder = JSONDecoder()
             jsonDecoder.dateDecodingStrategy = .millisecondsSince1970
             let broker = try jsonDecoder.decode(DataBroker.self, from: data)
-            return BrokerResource(fileName: url.lastPathComponent, broker: broker, rawJSON: data)
+            return BrokerResource(broker: broker, rawJSON: data)
         } catch {
             Logger.dataBrokerProtection.error("DataBroker error: initFromResource, error: \(error.localizedDescription, privacy: .public)")
             throw error

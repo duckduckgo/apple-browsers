@@ -170,11 +170,13 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
         for brokerResource in brokerResources {
             do {
                 try upsertBroker(brokerResource)
-                pixelHandler.fire(.updateDataBrokersSuccess(dataBrokerFileName: brokerResource.fileName, removedAt: brokerResource.broker.removedAtTimestamp))
+                let brokerFileName = "\(brokerResource.broker.url).json"
+                pixelHandler.fire(.updateDataBrokersSuccess(dataBrokerFileName: brokerFileName, removedAt: brokerResource.broker.removedAtTimestamp))
             } catch {
                 let broker = brokerResource.broker
+                let brokerFileName = "\(broker.url).json"
                 Logger.dataBrokerProtection.log("🧩 Error updating broker: \(broker.name, privacy: .public), with version: \(broker.version, privacy: .public)")
-                pixelHandler.fire(.updateDataBrokersFailure(dataBrokerFileName: brokerResource.fileName, removedAt: broker.removedAtTimestamp, error: error))
+                pixelHandler.fire(.updateDataBrokersFailure(dataBrokerFileName: brokerFileName, removedAt: broker.removedAtTimestamp, error: error))
             }
         }
     }

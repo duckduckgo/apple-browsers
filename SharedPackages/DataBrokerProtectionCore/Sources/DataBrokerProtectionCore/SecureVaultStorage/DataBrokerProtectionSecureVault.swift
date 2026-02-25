@@ -153,7 +153,7 @@ public extension DataBrokerProtectionSecureVault {
 
         return try fetchAllBrokers().map { broker in
             let data = try jsonEncoder.encode(broker)
-            return BrokerResource(fileName: "\(broker.url).json", broker: broker, rawJSON: data)
+            return BrokerResource(broker: broker, rawJSON: data)
         }
     }
 }

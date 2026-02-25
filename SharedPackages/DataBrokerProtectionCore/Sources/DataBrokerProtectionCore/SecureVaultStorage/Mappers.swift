@@ -223,7 +223,7 @@ struct MapperToModel {
             removedAt: brokerDB.removedAt
         )
 
-        return BrokerResource(fileName: "\(broker.url).json", broker: broker, rawJSON: brokerDB.json)
+        return BrokerResource(broker: broker, rawJSON: brokerDB.json)
     }
 
     func mapToModel(_ brokerDB: BrokerDB) throws -> DataBroker {

@@ -555,7 +555,7 @@ public final class ResourcesRepositoryMock: ResourcesRepository {
         }
         return try brokersList?.map { broker in
             let rawJSON = try JSONEncoder().encode(broker)
-            return BrokerResource(fileName: "\(broker.url).json", broker: broker, rawJSON: rawJSON)
+            return BrokerResource(broker: broker, rawJSON: rawJSON)
         }
     }
 

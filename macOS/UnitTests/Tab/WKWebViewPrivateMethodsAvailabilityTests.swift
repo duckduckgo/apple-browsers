@@ -68,4 +68,8 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_isPlayingAudio")))
     }
 
+    func testWebViewConfigurationRespondsTo_processName() {
+        XCTAssertTrue(WKWebViewConfiguration.instancesRespond(to: WKWebViewConfiguration.ProcessNameSelector.processName))
+        XCTAssertTrue(WKWebViewConfiguration.instancesRespond(to: WKWebViewConfiguration.ProcessNameSelector.setProcessName))
+    }
 }

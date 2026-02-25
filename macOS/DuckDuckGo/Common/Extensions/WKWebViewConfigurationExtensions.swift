@@ -81,28 +81,27 @@ extension WKWebViewConfiguration {
 
 }
 
-private extension WKWebViewConfiguration {
+extension WKWebViewConfiguration {
 
-    static let processNameKey: String = "processDisplayName"
-
-    var supportsProcessNameSelector: Bool {
-        responds(to: NSSelectorFromString("_" + Self.processNameKey)) || responds(to: NSSelectorFromString(Self.processNameKey))
+    enum ProcessNameSelector {
+        static let processName = NSSelectorFromString("_processDisplayName")
+        static let setProcessName = NSSelectorFromString("_setProcessDisplayName:")
     }
 
     var systemProcessName: String? {
         get {
-            guard supportsProcessNameSelector else {
+            guard responds(to: ProcessNameSelector.processName) else {
                 return nil
             }
 
-            return value(forKey: Self.processNameKey) as? String
+            return value(forKey: NSStringFromSelector(ProcessNameSelector.processName)) as? String
         }
         set {
-            guard supportsProcessNameSelector else {
+            guard responds(to: ProcessNameSelector.setProcessName) else {
                 return
             }
 
-            setValue(newValue, forKey: Self.processNameKey)
+            perform(ProcessNameSelector.setProcessName, with: newValue)
         }
     }
 }

@@ -103,7 +103,12 @@ public final class LaunchOptionsHandler {
 
     /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
     public var isAutomationSession: Bool {
-        AutomationSession.isActive(automationPort: automationPort, isUITesting: isUITesting)
+        isWebDriverAutomationSession || isUITesting
+    }
+
+    /// Returns true only when WebDriver automation is active.
+    public var isWebDriverAutomationSession: Bool {
+        AutomationSession.isWebDriverActive(automationPort: automationPort)
     }
 
     private var isUITesting: Bool {

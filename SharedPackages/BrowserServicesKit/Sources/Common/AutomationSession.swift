@@ -17,7 +17,7 @@
 //
 
 public enum AutomationSession {
-    public static func isActive(automationPort: Int?, isUITesting: Bool) -> Bool {
-        automationPort != nil || isUITesting
+    public static func isWebDriverActive(automationPort: Int?) -> Bool {
+        automationPort != nil
     }
 }

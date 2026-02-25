@@ -52,6 +52,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     // MARK: - isFeatureEnabled
 
+    @available(iOS 18.4, *)
     func testIsFeatureEnabled_WhenFlagIsOn_ReturnsTrue() {
         mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
@@ -101,7 +102,17 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     // MARK: - setForceDarkModeEnabled
 
+    func testSetForceDarkModeEnabled_WhenFeatureDisabled_DoesNotPersistValue() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        sut = makeSUT()
+
+        sut.setForceDarkModeEnabled(true)
+        XCTAssertNil(mockStore.object(forKey: DarkReaderStorageKeys.forceDarkModeOnWebsitesEnabled.rawValue))
+    }
+
+    @available(iOS 18.4, *)
     func testSetForceDarkModeEnabled_PersistsValue() {
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
 
         sut.setForceDarkModeEnabled(true)
@@ -113,7 +124,9 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     // MARK: - forceDarkModeChangedPublisher
 
+    @available(iOS 18.4, *)
     func testForceDarkModeChangedPublisher_EmitsValueOnChange() {
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
         var receivedValues: [Bool] = []
         let cancellable = sut.forceDarkModeChangedPublisher
@@ -124,6 +137,19 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
         sut.setForceDarkModeEnabled(true)
 
         XCTAssertEqual(receivedValues, [true, false, true])
+        cancellable.cancel()
+    }
+
+    func testForceDarkModeChangedPublisher_WhenFeatureDisabled_DoesNotEmit() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        sut = makeSUT()
+        var receivedValues: [Bool] = []
+        let cancellable = sut.forceDarkModeChangedPublisher
+            .sink { receivedValues.append($0) }
+
+        sut.setForceDarkModeEnabled(true)
+
+        XCTAssertTrue(receivedValues.isEmpty)
         cancellable.cancel()
     }
 }

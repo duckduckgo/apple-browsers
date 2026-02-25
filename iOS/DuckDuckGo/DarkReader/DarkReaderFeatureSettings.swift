@@ -55,7 +55,8 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     }
 
     var isFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
+        guard #available(iOS 18.4, *) else { return false }
+        return featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
     }
 
     var isForceDarkModeEnabled: Bool {
@@ -63,6 +64,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     }
 
     func setForceDarkModeEnabled(_ enabled: Bool) {
+        guard isFeatureEnabled else { return }
         storage.forceDarkModeOnWebsitesEnabled = enabled
         forceDarkModeChangedSubject.send(enabled)
     }

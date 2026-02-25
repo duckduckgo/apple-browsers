@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import QuartzCore
 
 // MARK: - StartupProfilerDelegate
 
@@ -74,7 +75,7 @@ final class StartupProfiler: @unchecked Sendable {
 private extension StartupProfiler {
 
     func currentTime() -> TimeInterval {
-        ProcessInfo.processInfo.systemUptime
+        CACurrentMediaTime()
     }
 
     func processStepEnded(step: StartupStep, startTime: TimeInterval, endTime: TimeInterval) {

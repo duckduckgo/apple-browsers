@@ -68,8 +68,7 @@ final class MainCoordinator {
     private var webExtensionFeatureFlagHandler: AnyObject?
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
-    private var darkReaderCancellable: AnyCancellable?
-    private var privacyConfigCancellable: AnyCancellable?
+    private var darkReaderCancellables = Set<AnyCancellable>()
     private var webExtensionLoadTask: Task<Void, Never>?
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
@@ -231,7 +230,6 @@ final class MainCoordinator {
         }
 
         subscribeToDarkReaderChanges()
-        subscribeToPrivacyConfigChanges()
     }
 
     func start() {
@@ -239,29 +237,31 @@ final class MainCoordinator {
     }
 
     private func subscribeToDarkReaderChanges() {
-        darkReaderCancellable = darkReaderFeatureSettings.forceDarkModeChangedPublisher
+        darkReaderFeatureSettings.forceDarkModeChangedPublisher
             .sink { [weak self] _ in
                 guard #available(iOS 18.4, *) else { return }
                 Task { @MainActor in
                     await self?.syncEmbeddedExtensions()
                 }
             }
-    }
+            .store(in: &darkReaderCancellables)
 
-    private func subscribeToPrivacyConfigChanges() {
-        guard #available(iOS 18.4, *) else { return }
-        privacyConfigCancellable = privacyConfigurationManager?.updatesPublisher
+        darkReaderFeatureSettings.excludedDomainsChangedPublisher
             .sink { [weak self] in
+                guard #available(iOS 18.4, *) else { return }
                 Task { @MainActor in
                     self?.syncDarkReaderExcludedDomains()
                 }
             }
+            .store(in: &darkReaderCancellables)
     }
 
     private func setupWebExtensions(privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.privacyConfigurationManager = privacyConfigurationManager
 
         guard #available(iOS 18.4, *) else { return }
+
+        subscribeToDarkReaderChanges()
 
         let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
             .flagDidChangePublisher
@@ -374,6 +374,7 @@ final class MainCoordinator {
         webExtensionLoadTask = nil
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
+        darkReaderCancellables.removeAll()
         tabManager.setWebExtensionManager(nil)
         controller.setWebExtensionEventsCoordinator(nil)
         controller.setWebExtensionManager(nil)

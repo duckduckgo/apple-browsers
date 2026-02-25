@@ -159,6 +159,23 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     // MARK: - excludedDomains
 
+    // MARK: - excludedDomainsChangedPublisher
+
+    func testExcludedDomainsChangedPublisher_EmitsWhenPrivacyConfigChanges() {
+        sut = makeSUT()
+        var receivedCount = 0
+        let cancellable = sut.excludedDomainsChangedPublisher
+            .sink { receivedCount += 1 }
+
+        mockPrivacyConfigManager.updatesSubject.send()
+        mockPrivacyConfigManager.updatesSubject.send()
+
+        XCTAssertEqual(receivedCount, 2)
+        cancellable.cancel()
+    }
+
+    // MARK: - excludedDomains
+
     func testExcludedDomains_ReturnsExceptionsListFromPrivacyConfig() {
         let mockConfig = mockPrivacyConfigManager.privacyConfig as! MockPrivacyConfiguration
         mockConfig.exceptionsList = { feature in

@@ -18,6 +18,7 @@
 //
 
 import Combine
+import Core
 import Foundation
 import Persistence
 import PrivacyConfig
@@ -28,6 +29,7 @@ protocol DarkReaderFeatureSettings {
     var isForceDarkModeEnabled: Bool { get }
     var excludedDomains: [String] { get }
     var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> { get }
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> { get }
     func setForceDarkModeEnabled(_ enabled: Bool)
 }
 
@@ -45,9 +47,15 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let storage: any KeyedStoring<DarkReaderKeys>
     private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
+    private let excludedDomainsChangedSubject = PassthroughSubject<Void, Never>()
+    private var cancellables = Set<AnyCancellable>()
 
     var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> {
         forceDarkModeChangedSubject.eraseToAnyPublisher()
+    }
+
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> {
+        excludedDomainsChangedSubject.eraseToAnyPublisher()
     }
 
     init(featureFlagger: FeatureFlagger,
@@ -56,6 +64,21 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.storage = if let storage { storage } else { UserDefaults.app.keyedStoring() }
+
+        privacyConfigurationManager.updatesPublisher
+            .sink { [weak self] in
+                self?.excludedDomainsChangedSubject.send()
+            }
+            .store(in: &cancellables)
+
+        (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+            .flagDidChangePublisher
+            .filter { $0.0 == .forceDarkModeOnWebsites }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.forceDarkModeChangedSubject.send(self.isForceDarkModeEnabled)
+            }
+            .store(in: &cancellables)
     }
 
     var isFeatureEnabled: Bool {

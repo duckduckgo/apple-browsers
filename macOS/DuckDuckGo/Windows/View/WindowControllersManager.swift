@@ -249,7 +249,8 @@ extension WindowControllersManager {
         let behavior = LinkOpenBehavior(
             event: event,
             switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpened,
-            canOpenLinkInCurrentTab: canOpenLinkInCurrentTab
+            canOpenLinkInCurrentTab: canOpenLinkInCurrentTab,
+            shouldSelectNewTab: !canOpenLinkInCurrentTab // when user intent was to open in current context (no key modifiers) – always select the new tab.
         )
 
         open(url, with: behavior, source: source, target: targetWindowController)
@@ -273,9 +274,7 @@ extension WindowControllersManager {
         case (.newTab, _), (.currentTab, _): // windowController == nil || isPopUpWindow == true
             // Open in new tab in last active regular window
             // when called from popup window or there is no windows open
-            // always select when opening [bookmark|history item] without modifiers from a popup window (linkOpenBehavior == .currentTab)
-            let selected = linkOpenBehavior.shouldSelectNewTab || linkOpenBehavior == .currentTab
-            show(url: url, source: source, newTab: true, selected: selected)
+            show(url: url, source: source, newTab: true, selected: linkOpenBehavior.shouldSelectNewTab)
 
         case (.newWindow(let selected), _):
             // Open in new window

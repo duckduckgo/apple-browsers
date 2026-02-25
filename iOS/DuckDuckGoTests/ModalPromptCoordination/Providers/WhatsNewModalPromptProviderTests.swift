@@ -484,7 +484,7 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     }
 
     @Test("Check URL Item Action Callback Dismisses Modal With Item Action Type")
-    func whenURLItemActionCallbackInvokedThenDismissPixelFiresWithItemActionType() async {
+    func whenURLItemActionCallbackInvokedThenDismissPixelFiresWithItemActionType() async throws {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
         let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
@@ -507,12 +507,13 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         _ = coordinator.provideModalPrompt()
 
         let testAction = RemoteAction.url(value: "https://example.com")
+        let onItemAction = try #require(mockMapper.capturedOnItemAction)
 
         // WHEN — handleAction is called from an unstructured Task inside
         // dismiss(onComplete:), so we wait for the mock to be invoked.
         await confirmation { confirmed in
             mockHandler.onHandleActionCalled = { confirmed() }
-            await mockMapper.capturedOnItemAction?(testAction, "card-123")
+            await onItemAction(testAction, "card-123")
         }
 
         // THEN

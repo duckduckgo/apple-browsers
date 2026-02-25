@@ -146,8 +146,11 @@ extension WebExtensionManager {
         }
 
         let currentDenied = Set(context.deniedPermissionMatchPatterns.keys)
-        let newDeniedPatterns: Set<WKWebExtension.MatchPattern> = Set(excludedDomains.compactMap {
-            try? WKWebExtension.MatchPattern(scheme: "*", host: $0, path: "/*")
+        let newDeniedPatterns: Set<WKWebExtension.MatchPattern> = Set(excludedDomains.flatMap { domain -> [WKWebExtension.MatchPattern] in
+            [
+                try? WKWebExtension.MatchPattern(scheme: "*", host: domain, path: "/*"),
+                try? WKWebExtension.MatchPattern(scheme: "*", host: "*.\(domain)", path: "/*")
+            ].compactMap { $0 }
         })
 
         let toRevoke = currentDenied.subtracting(newDeniedPatterns)

@@ -513,7 +513,7 @@ private struct BackgroundExitingTransitionModifier: AnimatableModifier {
             // Image is centered in frame, so: offset = -(frameCenter + imageHalfWidth)
             // At progress=1.0: image trailing edge reaches x=0 (screen leading edge)
             .offset(x: -(screenWidth / 2 + imageWidth / 2) * progress)
-            .opacity(1.0 - progress)
+            .opacity(1.0 - progress * 2) // Fade out background twice as fast as it slides out.
     }
 }
 

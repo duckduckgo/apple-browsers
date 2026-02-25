@@ -18,6 +18,7 @@
 
 import Foundation
 import QuartzCore
+import os.log
 
 // MARK: - StartupProfilerDelegate
 
@@ -31,7 +32,12 @@ final class StartupProfiler: @unchecked Sendable {
 
     private let lock = NSLock()
     private var metrics = StartupMetrics()
+    private let logger: Logger
     weak var delegate: StartupProfilerDelegate?
+
+    init(logger: Logger = .profiler) {
+        self.logger = logger
+    }
 
     func startMeasuring(_ step: StartupStep) -> StartupProfilerToken {
         let startTime = currentTime()
@@ -105,6 +111,7 @@ private extension StartupProfiler {
             return
         }
 
+        logger.log(level: .debug, "🏁 [Startup Metrics]\n\(metrics.description, privacy: .public)")
         delegate?.startupProfiler(self, didCompleteWithMetrics: metrics)
     }
 }
@@ -153,7 +160,7 @@ final class StartupProfilerSequence: @unchecked Sendable {
             return
         }
 
-        signalCompletion(step: previous.step, startTime: previous.startTime)
+        signalCompletion(step: previous.step, startTime: previous.startTime, endTime: nextStartTime)
         beginStep(step: nextStep, startTime: nextStartTime)
     }
 
@@ -163,7 +170,7 @@ final class StartupProfilerSequence: @unchecked Sendable {
             return
         }
 
-        signalCompletion(step: previous.step, startTime: previous.startTime)
+        signalCompletion(step: previous.step, startTime: previous.startTime, endTime: timeProvider())
     }
 }
 
@@ -183,7 +190,7 @@ private extension StartupProfilerSequence {
         }
     }
 
-    func signalCompletion(step: StartupStep, startTime: TimeInterval) {
-        onStepCompleted(step, startTime, timeProvider())
+    func signalCompletion(step: StartupStep, startTime: TimeInterval, endTime: TimeInterval) {
+        onStepCompleted(step, startTime, endTime)
     }
 }

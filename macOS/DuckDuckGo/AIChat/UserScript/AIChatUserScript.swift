@@ -30,6 +30,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
     private(set) var messageOriginPolicy: MessageOriginPolicy
+    private(set) var messageDestinationPolicy: MessageOriginPolicy
 
     private var cancellables: Set<AnyCancellable> = []
 
@@ -39,24 +40,28 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     init(handler: AIChatUserScriptHandling, urlSettings: KeyedStoring<AIChatDebugURLSettings>) {
         self.handler = handler
-        var rules = [HostnameMatchingRule]()
+        var originRules = [HostnameMatchingRule]()
+        var destinationRules = [HostnameMatchingRule]()
 
         /// Default rule for DuckDuckGo AI Chat
         if let ddgDomain = URL.duckDuckGo.host {
-            rules.append(.exact(hostname: ddgDomain))
+            originRules.append(.exact(hostname: ddgDomain))
         }
 
         /// Default rule for standalone DuckDuckGo AI Chat
         if let duckAiDomain = URL.duckAi.host {
-            rules.append(.exact(hostname: duckAiDomain))
+            originRules.append(.exact(hostname: duckAiDomain))
+            destinationRules.append(.exact(hostname: duckAiDomain))
         }
 
         /// Check if a custom hostname is provided in the URL settings
         /// Custom hostnames are used for debugging purposes
         if let customURLHostname = urlSettings.customURLHostname {
-            rules.append(.exact(hostname: customURLHostname))
+            originRules.append(.exact(hostname: customURLHostname))
+            destinationRules.append(.exact(hostname: customURLHostname))
         }
-        self.messageOriginPolicy = .only(rules: rules)
+        self.messageOriginPolicy = .only(rules: originRules)
+        self.messageDestinationPolicy = .only(rules: destinationRules)
         super.init()
 
         handler.aiChatNativePromptPublisher
@@ -97,9 +102,13 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     private func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
-        guard let webView else {
+        // Push only to websites matching origin policy
+        guard let webView,
+              let host = webView.url?.host,
+              messageDestinationPolicy.isAllowed(host) else {
             return
         }
+
         broker?.push(method: AIChatUserScriptMessages.submitSyncStatusChanged.rawValue, params: status, for: self, into: webView)
     }
 

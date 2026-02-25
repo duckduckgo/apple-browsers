@@ -90,7 +90,10 @@ public final class CrashCollection {
                     params["bundle"] = metadataJSON?["bundleIdentifier"] as? String
                     return params
                 }
-            let processedData = process(payloads)
+
+            // Only process crash diagnostics
+            let processedData = process(payloads.filter({ $0.crashDiagnostics?.isEmpty == false }))
+
             didFindCrashReports(pixelParameters, processedData) {
                 Task {
                     for payload in processedData {

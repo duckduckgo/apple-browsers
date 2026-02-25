@@ -38,6 +38,12 @@ enum WebExtensionPixel: PixelKitEvent {
     case loaded
     case loadError(error: Error)
 
+    // MARK: - Embedded Extensions
+
+    case embeddedInstalled
+    case embeddedUpgraded(fromVersion: String?, toVersion: String?)
+    case embeddedInstallError(error: Error)
+
     // MARK: - PixelKitEvent
 
     var name: String {
@@ -58,11 +64,29 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_loaded"
         case .loadError:
             return "m_mac_web_extension_load_error"
+        case .embeddedInstalled:
+            return "m_mac_web_extension_embedded_installed"
+        case .embeddedUpgraded:
+            return "m_mac_web_extension_embedded_upgraded"
+        case .embeddedInstallError:
+            return "m_mac_web_extension_embedded_install_error"
         }
     }
 
     var parameters: [String: String]? {
-        return nil
+        switch self {
+        case .embeddedUpgraded(let fromVersion, let toVersion):
+            var params: [String: String] = [:]
+            if let fromVersion {
+                params["from_version"] = fromVersion
+            }
+            if let toVersion {
+                params["to_version"] = toVersion
+            }
+            return params.isEmpty ? nil : params
+        default:
+            return nil
+        }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
@@ -93,6 +117,12 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .loaded
         case .loadError(let error):
             pixel = .loadError(error: error)
+        case .embeddedInstalled:
+            pixel = .embeddedInstalled
+        case .embeddedUpgraded(let fromVersion, let toVersion):
+            pixel = .embeddedUpgraded(fromVersion: fromVersion, toVersion: toVersion)
+        case .embeddedInstallError(let error):
+            pixel = .embeddedInstallError(error: error)
         }
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }

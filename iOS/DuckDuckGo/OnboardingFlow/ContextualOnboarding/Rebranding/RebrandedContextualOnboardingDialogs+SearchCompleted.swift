@@ -30,8 +30,7 @@ extension OnboardingRebranding {
         @Environment(\.horizontalSizeClass) private var hSizeClass
         @Environment(\.onboardingTheme) private var theme
 
-        var title = "That’s DuckDuckGo Search!"
-        var message = "Private. Fast. Fewer ads."
+        var message = UserText.Onboarding.ContextualOnboarding.onboardingFirstSearchDoneMessage
         var cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
 
         @State private var showNextScreen: Bool = false
@@ -57,8 +56,7 @@ extension OnboardingRebranding {
         private var searchDoneContent: some View {
             OnboardingRebranding.ContextualDaxDialogContent(
                 orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
-                title: title,
-                message: message.attributed
+                message: message
             ) {
                 Button {
                     gotItAction()
@@ -70,13 +68,23 @@ extension OnboardingRebranding {
                 } label: {
                     Text(cta)
                 }
+                .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
                 .buttonStyle(theme.primaryButtonStyle.style)
             }
         }
 
         private var searchDoneFollowUpContent: some View {
-            OnboardingRebranding.OnboardingTrySiteDialogContent(message: message, viewModel: viewModel)
+            OnboardingRebranding.OnboardingTrySiteDialogContent(viewModel: viewModel)
         }
 
     }
+
+}
+
+private extension OnboardingRebranding.OnboardingSearchDoneDialog {
+
+    enum Metrics {
+        static let buttonMaxWidth = MetricBuilder<CGFloat?>(default: nil).iPhone(landscape: 174.0).iPad(174.0)
+    }
+
 }

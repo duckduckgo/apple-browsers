@@ -43,6 +43,7 @@ final class MemoryUsageThresholdReporter {
     private let memoryUsageMonitor: MemoryUsageMonitoring
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
+    private let launchDate: Date
     private let logger: Logger?
     private let checkInterval: TimeInterval
     private var featureFlagCancellable: AnyCancellable?
@@ -66,18 +67,21 @@ final class MemoryUsageThresholdReporter {
     ///   - memoryUsageMonitor: The monitor that provides memory usage readings
     ///   - featureFlagger: Feature flag provider to check if reporting is enabled
     ///   - pixelFiring: The pixel firing service for sending analytics
+    ///   - launchDate: The date the app was launched, used to compute uptime in minutes.
     ///   - checkInterval: The interval between memory checks. Defaults to 30 seconds.
     ///   - logger: Optional logger for debugging
     init(
         memoryUsageMonitor: MemoryUsageMonitoring,
         featureFlagger: FeatureFlagger,
         pixelFiring: PixelFiring?,
+        launchDate: Date = Date(),
         checkInterval: TimeInterval = MemoryUsageThresholdReporter.defaultCheckInterval,
         logger: Logger? = nil
     ) {
         self.memoryUsageMonitor = memoryUsageMonitor
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
+        self.launchDate = launchDate
         self.checkInterval = checkInterval
         self.logger = logger
         subscribeToFeatureFlagUpdates()
@@ -157,7 +161,9 @@ final class MemoryUsageThresholdReporter {
         guard shouldProceed, featureFlagger.isFeatureOn(.memoryUsageReporting) else { return }
 
         let report = memoryUsageMonitor.getCurrentMemoryUsage()
-        let pixel = MemoryUsagePixel.pixel(forMB: report.physFootprintMB)
+        let threshold = MemoryUsagePixel.threshold(forMB: report.physFootprintMB)
+        let uptimeMinutes = Int(Date().timeIntervalSince(launchDate) / 60.0)
+        let pixel = MemoryUsagePixel.memoryUsage(threshold: threshold, uptimeMinutes: uptimeMinutes)
 
         let shouldFire: Bool = lock.withLock {
             let now = Date()

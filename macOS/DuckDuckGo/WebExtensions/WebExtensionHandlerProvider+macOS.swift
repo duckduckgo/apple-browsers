@@ -17,15 +17,16 @@
 //
 
 import AppKit
+import PrivacyConfig
 import WebExtensions
 import WebKit
-import PrivacyConfig
 
 @available(macOS 15.4, *)
 final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let autoconsentPreferences: AutoconsentPreferencesProviding
+    private let autoconsentMessageHandler: MacOSAutoconsentMessageHandlerDelegate
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -33,20 +34,19 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
+        self.autoconsentMessageHandler = MacOSAutoconsentMessageHandlerDelegate()
     }
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
-        switch context.duckDuckGoExtensionType {
-        case .ddgInternalExtension:
+        switch context.duckDuckGoWebExtensionType {
+        case .embedded:
             return [AutoconsentWebExtensionMessageHandler(
                 privacyConfigurationManager: privacyConfigurationManager,
-                autoconsentPreferences: autoconsentPreferences
+                autoconsentPreferences: autoconsentPreferences,
+                delegate: autoconsentMessageHandler
             )]
         default:
-            return [AutoconsentWebExtensionMessageHandler(
-                privacyConfigurationManager: privacyConfigurationManager,
-                autoconsentPreferences: autoconsentPreferences
-            )]
+            return []
         }
     }
 }

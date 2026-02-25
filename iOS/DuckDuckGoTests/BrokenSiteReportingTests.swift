@@ -115,7 +115,8 @@ final class BrokenSiteReportingTests: XCTestCase {
                                       cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true, consentReloadLoop: nil, consentRule: "test-cmp", consentHeuristicEnabled: nil),
                                       debugFlags: "",
                                       privacyExperiments: "",
-                                      isPirEnabled: nil)
+                                      isPirEnabled: nil,
+                                      isForceDarkModeEnabled: nil)
 
         let reporter = BrokenSiteReporter(pixelHandler: { params in
 

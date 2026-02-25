@@ -162,10 +162,12 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     func applicationDidFinishLaunching() {
         let isRelaunchingAutomatically = self.isRelaunchingAutomatically
         self.isRelaunchingAutomatically = false
-        // don‘t automatically restore windows if relaunched 2nd time with no recently updated app session state
-        readLastSessionState(restoreWindows: !service.isAppStateFileStale || isRelaunchingAutomatically, restoreRegularTabs: shouldRestoreRegularTabs)
+        let restoreWindows = !service.isAppStateFileStale || isRelaunchingAutomatically
+        let restoreRegularTabs = shouldRestoreRegularTabs || isRelaunchingAutomatically
+        // don't automatically restore windows if relaunched 2nd time with no recently updated app session state
+        readLastSessionState(restoreWindows: restoreWindows, restoreRegularTabs: restoreRegularTabs)
 
-        detectUnexpectedAppTermination()
+        detectUnexpectedAppTermination(didRestoreRegularTabs: restoreRegularTabs)
 
         stateChangedCancellable = Publishers.Merge(
                 Application.appDelegate.windowControllersManager.stateChanged,
@@ -180,10 +182,11 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     }
 
     func applicationWillTerminate() {
+        let isInInitialState = Application.appDelegate.windowControllersManager.isInInitialState
         stateChangedCancellable?.cancel()
         appDidTerminateAsExpected = true
         sessionRestorePromptCoordinator.applicationWillTerminate()
-        if Application.appDelegate.windowControllersManager.isInInitialState {
+        if isInInitialState {
             service.clearState(sync: true)
         } else {
             persistAppState(sync: true)
@@ -226,7 +229,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         tabsPreferences.migratePinnedTabsSettingIfNecessary(nil)
     }
 
-    private func detectUnexpectedAppTermination() {
+    private func detectUnexpectedAppTermination(didRestoreRegularTabs: Bool) {
 #if DEBUG
         guard AppVersion.runType != .normal else {
             return
@@ -245,8 +248,9 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected)
 
         // Display a prompt to restore the last session when the user has disabled "restore previous session".
+        // Don't show the prompt if tabs were already restored (e.g. during automatic relaunch).
         // Don't show the prompt if relaunched 2nd time with no recently updated app session state (crash loop).
-        if !shouldRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
+        if !didRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
             sessionRestorePromptCoordinator.showRestoreSessionPrompt { [weak self] restoreSession in
                 guard let self, restoreSession else { return }
                 restoreLastSessionState(interactive: true, includeRegularTabs: true)

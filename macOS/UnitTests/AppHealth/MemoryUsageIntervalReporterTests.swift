@@ -65,12 +65,12 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
 
     // MARK: - Startup Pixel
 
-    func testWhenStarted_ThenFiresStartupPixel() async {
+    func testWhenStartedAndStartupDelayElapsed_ThenFiresStartupPixel() async {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 1024
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = makeSUT()
-        sut.startMonitoringForTesting()
+        sut.startMonitoringForTesting(startTime: Date().addingTimeInterval(-121))
 
         // When
         await sut.checkIntervalsNow()
@@ -83,13 +83,27 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
         XCTAssertEqual(call.frequency, .standard)
     }
 
+    func testWhenStartedAndStartupDelayNotElapsed_ThenDoesNotFireStartupPixel() async {
+        // Given
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 1024
+        mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
+        sut = makeSUT()
+        sut.startMonitoringForTesting(startTime: Date())
+
+        // When
+        await sut.checkIntervalsNow()
+
+        // Then
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+    }
+
     func testWhenStarted_ThenStartupPixelIncludesContextParameters() async {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 2500
         mockAllocationStats.totalUsedBytes = 300 * 1_048_576 // 300 MB -> bucket 256
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = makeSUT()
-        sut.startMonitoringForTesting()
+        sut.startMonitoringForTesting(startTime: Date().addingTimeInterval(-121))
 
         // When
         await sut.checkIntervalsNow()
@@ -104,7 +118,7 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
         XCTAssertEqual(params?["sync_enabled"], "unknown")
         XCTAssertNotNil(params?["architecture"])
         XCTAssertEqual(params?["used_allocation"], "256")
-        XCTAssertNotNil(params?["uptime"])
+        XCTAssertNil(params?["uptime"])
     }
 
     // MARK: - Interval Triggering
@@ -177,6 +191,20 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["trigger"], "startup")
     }
 
+    func testWhenLessThanTwoMinutesElapsed_ThenNoPixelsFire() async {
+        // Given
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 2048
+        mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
+        sut = makeSUT()
+        sut.startMonitoringForTesting(startTime: Date().addingTimeInterval(-60)) // 1 min
+
+        // When
+        await sut.checkIntervalsNow()
+
+        // Then
+        XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
+    }
+
     // MARK: - Deduplication
 
     func testWhenCheckCalledTwice_ThenEachTriggerFiresOnlyOnce() async {
@@ -200,7 +228,7 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
         mockMemoryUsageMonitor.currentPhysFootprintMB = 512
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = makeSUT()
-        sut.startMonitoringForTesting()
+        sut.startMonitoringForTesting(startTime: Date().addingTimeInterval(-121))
 
         // When - fire, reset, fire again
         await sut.checkIntervalsNow()
@@ -231,7 +259,7 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
 
     // MARK: - Feature Flag Lifecycle (Production Combine Path)
 
-    func testWhenFeatureFlagEnabledViaPublisher_ThenStartsMonitoringAndFiresStartup() async throws {
+    func testWhenFeatureFlagEnabledViaPublisher_ThenStartupDoesNotFireBeforeDelay() async throws {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 1024
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
@@ -242,38 +270,58 @@ final class MemoryUsageIntervalReporterTests: XCTestCase {
         // 2. Background task to spawn and collect context via MainActor.run
         try await Task.sleep(nanoseconds: NSEC_PER_MSEC * 500)
 
-        // Then - startup pixel should have been fired via the production Combine path
+        // Then - startup pixel should NOT fire within the 2-minute delay window
         let startupFired = mockPixelFiring.actualFireCalls.contains { $0.pixel.parameters?["trigger"] == "startup" }
-        XCTAssertTrue(startupFired, "Startup pixel should fire when feature flag is enabled via publisher")
+        XCTAssertFalse(startupFired, "Startup pixel should not fire before the 2-minute delay elapses")
     }
 
-    func testWhenFeatureFlagToggledOffThenOn_ThenSessionResetsAndStartupFiresAgain() async throws {
+    func testWhenFeatureFlagToggledOffThenOn_ThenSessionResetsAndNoPixelsFire() async throws {
         // Given - start with flag ON
         mockMemoryUsageMonitor.currentPhysFootprintMB = 512
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = makeSUT(checkInterval: 0.1)
 
-        // Allow initial session to start and fire startup
+        // Allow initial session to start (startup won't fire due to 2-minute delay)
         try await Task.sleep(nanoseconds: NSEC_PER_MSEC * 500)
 
-        let initialStartupCount = mockPixelFiring.actualFireCalls
-            .filter { $0.pixel.parameters?["trigger"] == "startup" }.count
-        XCTAssertEqual(initialStartupCount, 1, "Initial session should fire startup once")
+        let initialCount = mockPixelFiring.actualFireCalls.count
+        XCTAssertEqual(initialCount, 0, "No pixels should fire within the startup delay window")
 
         // When - toggle OFF (triggers stopMonitoring which resets state)
         mockFeatureFlagger.enabledFeatureFlags = []
         mockFeatureFlagger.triggerUpdate()
         try await Task.sleep(nanoseconds: NSEC_PER_MSEC * 300)
 
-        // When - toggle ON again (fresh session)
+        // When - toggle ON again (fresh session with new start time)
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         mockFeatureFlagger.triggerUpdate()
         try await Task.sleep(nanoseconds: NSEC_PER_MSEC * 500)
 
+        // Then - still no pixels fired because each session resets the start time
+        let totalFires = mockPixelFiring.actualFireCalls.count
+        XCTAssertEqual(totalFires, 0, "No pixels should fire since each session restarts the 2-minute delay")
+    }
+
+    func testWhenFeatureFlagToggledOffThenOn_ThenStartupFiresAgainAfterDelay() async {
+        // Given - first session with startup delay elapsed
+        mockMemoryUsageMonitor.currentPhysFootprintMB = 512
+        mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
+        sut = makeSUT()
+        sut.startMonitoringForTesting(startTime: Date().addingTimeInterval(-121))
+
+        await sut.checkIntervalsNow()
+        let firstStartupCount = mockPixelFiring.actualFireCalls
+            .filter { $0.pixel.parameters?["trigger"] == "startup" }.count
+        XCTAssertEqual(firstStartupCount, 1)
+
+        // When - simulate OFF->ON toggle with a fresh session where delay has elapsed
+        sut.startMonitoringForTesting(startTime: Date().addingTimeInterval(-121))
+        await sut.checkIntervalsNow()
+
         // Then - startup should have fired twice (once per session)
         let totalStartupFires = mockPixelFiring.actualFireCalls
             .filter { $0.pixel.parameters?["trigger"] == "startup" }.count
-        XCTAssertEqual(totalStartupFires, 2, "Startup pixel should fire again after OFF->ON toggle (new session)")
+        XCTAssertEqual(totalStartupFires, 2, "Startup pixel should fire again after session reset")
     }
 
     // MARK: - Memory Bucketing in Context

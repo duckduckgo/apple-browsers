@@ -59,14 +59,14 @@ final class UIInteractionManager {
                     switch launchAction {
                     case .openURL, .handleShortcutItem:
                         await self.launchActionHandler.handleLaunchAction(launchAction)
-                    case .showKeyboard:
-                        break // Do nothing here for showKeyboard
+                    case .standardLaunch:
+                        break // Do nothing here for standardLaunch
                     }
                     onWebViewReadyForInteractions()
                 }
                 await group.waitForAll()
                 // Handle keyboard launch after data clearing and auth to avoid interfering with the auth screen
-                if case .showKeyboard = launchAction {
+                if case .standardLaunch = launchAction {
                     self.launchActionHandler.handleLaunchAction(launchAction)
                 }
                 onAppReadyForInteractions()

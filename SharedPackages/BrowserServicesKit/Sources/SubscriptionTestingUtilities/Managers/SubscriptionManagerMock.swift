@@ -159,6 +159,13 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         }
     }
 
+    public var subscriptionTierOptionsResult: Result<SubscriptionTierOptions, Error>?
+    public var subscriptionTierOptionsIncludeProTierCalled: Bool?
+    public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {
+        subscriptionTierOptionsIncludeProTierCalled = includeProTier
+        return subscriptionTierOptionsResult ?? .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
+    }
+
     public func adopt(tokenContainer: Networking.TokenContainer) async throws {
         self.resultTokenContainer = tokenContainer
     }

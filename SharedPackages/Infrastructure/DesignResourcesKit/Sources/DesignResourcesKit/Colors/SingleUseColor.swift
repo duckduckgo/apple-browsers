@@ -65,7 +65,10 @@ public extension SingleUseColor {
         case buttonsSecondaryDefault
         case buttonsSecondaryText
 
+        case controlsFillPrimary
+
         case decorationPrimary
+        case decorationSecondary
     }
 
 }

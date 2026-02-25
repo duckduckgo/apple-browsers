@@ -194,13 +194,6 @@ private extension AIChatContextualSheetCoordinator {
                 guard let self else { return nil }
                 return self.makeWebViewController()
             },
-            onOpenSettings: { [weak self] in
-                guard let self else { return }
-                self.sheetViewController?.dismiss(animated: true) { [weak self] in
-                    guard let self else { return }
-                    self.delegate?.aiChatContextualSheetCoordinatorDidRequestOpenSettings(self)
-                }
-            },
             pixelHandler: pixelHandler
         )
         sheetVC.delegate = self

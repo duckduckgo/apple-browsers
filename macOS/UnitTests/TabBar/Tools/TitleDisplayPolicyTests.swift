@@ -88,27 +88,4 @@ final class TitleDisplayPolicyTests: XCTestCase {
     func testTitleTransitionDoesNotAnimateWhenPreviousTitleWasEmpty() {
         XCTAssertTrue(policy.mustAnimateTitleTransition(title: "New Title", previousTitle: "") == false)
     }
-
-    // MARK: - New Title Fade In
-
-    func testTitleAnimatesFadeInWhenDomainDiffers() {
-        let targetURL = URL(string: "https://example.com/page")
-        let previousURL = URL(string: "https://different.com/page")
-
-        XCTAssertTrue(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == true)
-    }
-
-    func testTitleDoesNotAnimateFadeInDomainMatches() {
-        let targetURL = URL(string: "https://example.com/page1")
-        let previousURL = URL(string: "https://example.com/page2")
-
-        XCTAssertTrue(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == false)
-    }
-
-    func testTitleDoesNotAnimateFadeInWhenSameDomainDifferentSubdomains() {
-        let targetURL = URL(string: "https://www.example.com/page")
-        let previousURL = URL(string: "https://blog.example.com/page")
-
-        XCTAssertTrue(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == false)
-    }
 }

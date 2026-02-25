@@ -21,7 +21,6 @@ import Foundation
 protocol TitleDisplayPolicy {
     func mustSkipDisplayingTitle(title: String, url: URL?, previousTitle: String?, previousURL: URL?, isLoading: Bool) -> Bool
     func mustAnimateTitleTransition(title: String, previousTitle: String) -> Bool
-    func mustAnimateNewTitleFadeIn(targetURL: URL?, previousURL: URL?) -> Bool
 }
 
 struct DefaultTitleDisplayPolicy: TitleDisplayPolicy {
@@ -41,11 +40,5 @@ struct DefaultTitleDisplayPolicy: TitleDisplayPolicy {
     ///
     func mustAnimateTitleTransition(title: String, previousTitle: String) -> Bool {
         title != previousTitle && previousTitle.isEmpty == false
-    }
-
-    /// Fade-In animation is only performed when visiting a different
-    ///
-    func mustAnimateNewTitleFadeIn(targetURL: URL?, previousURL: URL?) -> Bool {
-        targetURL?.host?.dropSubdomain() != previousURL?.host?.dropSubdomain()
     }
 }

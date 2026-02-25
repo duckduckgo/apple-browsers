@@ -26,6 +26,7 @@ protocol DarkReaderFeatureSettings {
 
     var isFeatureEnabled: Bool { get }
     var isForceDarkModeEnabled: Bool { get }
+    var excludedDomains: [String] { get }
     var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> { get }
     func setForceDarkModeEnabled(_ enabled: Bool)
 }
@@ -41,6 +42,7 @@ struct DarkReaderKeys: StoringKeys {
 final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let storage: any KeyedStoring<DarkReaderKeys>
     private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
 
@@ -49,8 +51,10 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     }
 
     init(featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          storage: (any KeyedStoring<DarkReaderKeys>)? = nil) {
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.storage = if let storage { storage } else { UserDefaults.app.keyedStoring() }
     }
 
@@ -61,6 +65,10 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     var isForceDarkModeEnabled: Bool {
         isFeatureEnabled && (storage.forceDarkModeOnWebsitesEnabled ?? false)
+    }
+
+    var excludedDomains: [String] {
+        privacyConfigurationManager.privacyConfig.exceptionsList(forFeature: .forceDarkModeOnWebsites)
     }
 
     func setForceDarkModeEnabled(_ enabled: Bool) {

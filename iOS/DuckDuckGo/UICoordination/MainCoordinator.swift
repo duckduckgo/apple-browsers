@@ -69,6 +69,7 @@ final class MainCoordinator {
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
     private var darkReaderCancellable: AnyCancellable?
+    private var privacyConfigCancellable: AnyCancellable?
     private var webExtensionLoadTask: Task<Void, Never>?
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
@@ -104,7 +105,8 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger)
+        self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
+                                                                      privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
@@ -229,6 +231,7 @@ final class MainCoordinator {
         }
 
         subscribeToDarkReaderChanges()
+        subscribeToPrivacyConfigChanges()
     }
 
     func start() {
@@ -241,6 +244,16 @@ final class MainCoordinator {
                 guard #available(iOS 18.4, *) else { return }
                 Task { @MainActor in
                     await self?.syncEmbeddedExtensions()
+                }
+            }
+    }
+
+    private func subscribeToPrivacyConfigChanges() {
+        guard #available(iOS 18.4, *) else { return }
+        privacyConfigCancellable = privacyConfigurationManager?.updatesPublisher
+            .sink { [weak self] in
+                Task { @MainActor in
+                    self?.syncDarkReaderExcludedDomains()
                 }
             }
     }
@@ -344,6 +357,16 @@ final class MainCoordinator {
             enabledTypes.insert(.darkReader)
         }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+        syncDarkReaderExcludedDomains()
+    }
+
+    @available(iOS 18.4, *)
+    private func syncDarkReaderExcludedDomains() {
+        guard darkReaderFeatureSettings.isForceDarkModeEnabled else { return }
+        webExtensionManager?.updateExcludedDomains(
+            darkReaderFeatureSettings.excludedDomains,
+            forExtensionType: .darkReader
+        )
     }
 
     private func clearWebExtensionReferences() {

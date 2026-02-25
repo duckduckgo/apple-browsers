@@ -296,7 +296,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private func shouldAutoSelectTextForUrl(_ textField: UITextField) -> Bool {
         guard let textFieldText = textField.text else { return false }
-        return URL(trimmedAddressBarString: textFieldText.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) != nil
+        if URL(trimmedAddressBarString: textFieldText.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) != nil {
+            return true
+        }
+        return omniDelegate?.shouldAutoSelectTextForSERPQuery() ?? false
     }
 }
 

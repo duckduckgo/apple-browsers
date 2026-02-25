@@ -1,0 +1,126 @@
+//
+//  StartupMetricsBuckets.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+// MARK: - StartupMetricsBuckets
+
+enum StartupMetricsBuckets {
+
+    /// Buckets an active processor count into predefined ranges.
+    /// - Returns: Lower bound of the matching range: `"1"`, `"2"`, `"4"`, `"8"`, or `"12"`.
+    ///
+    static func bucketProcessorCount(_ count: Int) -> String {
+        switch count {
+        case ..<2:
+            return "1"
+        case ..<4:
+            return "2"
+        case ..<8:
+            return "4"
+        case ..<12:
+            return "8"
+        default:
+            return "12"
+        }
+    }
+
+    /// Buckets a window count into predefined ranges.
+    /// - Returns: Lower bound of the matching range: `0`, `1`, `2`, `4`, `7`, `11`, or `21`.
+    ///
+    static func bucketWindowCount(_ count: Int) -> Int {
+        switch count {
+        case ..<1:
+            return 0
+        case 1:
+            return 1
+        case 2..<4:
+            return 2
+        case 4..<7:
+            return 4
+        case 7..<11:
+            return 7
+        case 11..<21:
+            return 11
+        default:
+            return 21
+        }
+    }
+
+    /// Buckets a tab count into predefined ranges.
+    /// - Returns: Lower bound of the matching range: `0`, `1`, `2`, `4`, `7`, `11`, `21`, or `51`.
+    ///
+    static func bucketTabCount(_ count: Int) -> Int {
+        switch count {
+        case ..<1:
+            return 0
+        case 1:
+            return 1
+        case 2..<4:
+            return 2
+        case 4..<7:
+            return 4
+        case 7..<11:
+            return 7
+        case 11..<21:
+            return 11
+        case 21..<51:
+            return 21
+        default:
+            return 51
+        }
+    }
+
+    /// Buckets a `TimeInterval` (in seconds) into a millisecond range and returns the result as a `String`.
+    ///
+    static func bucketMilliseconds(_ seconds: TimeInterval) -> String {
+        bucketMillisecondsAsInt(seconds).description
+    }
+
+    /// Returns the `TimeInterval` (in seconds) expressed in milliseconds and returns the lower bound of the matching bucket.
+    /// - Returns: `0, 100, 200, 300, 400, 500, 1000, 2000, 3000, 5000, 10000`
+    ///
+    static func bucketMillisecondsAsInt(_ seconds: TimeInterval) -> Int {
+        let ms = Int(seconds * 1000)
+
+        switch ms {
+        case ..<100:
+            return 0
+        case ..<200:
+            return 100
+        case ..<300:
+            return 200
+        case ..<400:
+            return 300
+        case ..<500:
+            return 400
+        case ..<1000:
+            return 500
+        case ..<2000:
+            return 1000
+        case ..<3000:
+            return 2000
+        case ..<5000:
+            return 3000
+        case ..<10000:
+            return 5000
+        default:
+            return 10000
+        }
+    }
+}

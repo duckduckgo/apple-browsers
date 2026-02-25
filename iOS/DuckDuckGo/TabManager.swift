@@ -67,6 +67,7 @@ protocol TrackerAnimationSuppressing {
 class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private(set) var model: TabsModel
+    private(set) var fireModel: TabsModel
     private(set) var persistence: TabsModelPersisting
 
     private var tabControllerCache = [TabViewController]()
@@ -113,6 +114,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     init(model: TabsModel,
+         fireModel: TabsModel,
          persistence: TabsModelPersisting,
          previewsSource: TabPreviewsSource,
          interactionStateSource: TabInteractionStateSource?,
@@ -146,6 +148,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          launchSourceManager: LaunchSourceManaging
     ) {
         self.model = model
+        self.fireModel = fireModel
         self.persistence = persistence
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
@@ -504,7 +507,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func save() {
-        persistence.save(model: model)
+        persistence.save(model: model, for: .normal)
+        persistence.save(model: fireModel, for: .fire)
     }
 
     @MainActor

@@ -71,19 +71,21 @@ class TabsModelPersistenceTests: XCTestCase {
         return model
     }
 
+    // MARK: - Normal Key Tests
+
     func testBeforeModelSavedThenGetIsNil() throws {
-        XCTAssertNil(try persistence.getTabsModel())
+        XCTAssertNil(try persistence.getTabsModel(for: .normal))
     }
 
     func testWhenModelSavedThenGetIsNotNil() throws {
-        persistence.save(model: model)
-        XCTAssertNotNil(try persistence.getTabsModel())
+        persistence.save(model: model, for: .normal)
+        XCTAssertNotNil(try persistence.getTabsModel(for: .normal))
     }
 
     func testWhenModelIsSavedThenGetLoadsCompleteTabs() throws {
-        persistence.save(model: model)
+        persistence.save(model: model, for: .normal)
 
-        let loaded = try persistence.getTabsModel()
+        let loaded = try persistence.getTabsModel(for: .normal)
         XCTAssertNotNil(loaded)
         XCTAssertEqual(loaded?.get(tabAt: 0), firstTab)
         XCTAssertEqual(loaded?.get(tabAt: 1), secondTab)
@@ -93,23 +95,23 @@ class TabsModelPersistenceTests: XCTestCase {
     func testWhenModelIsSavedThenGetLoadsModelWithCurrentSelection() throws {
         let model = self.model
         model.select(tabAt: 1)
-        persistence.save(model: model)
+        persistence.save(model: model, for: .normal)
 
-        let loaded = try persistence.getTabsModel()
+        let loaded = try persistence.getTabsModel(for: .normal)
         XCTAssertNotNil(loaded)
         XCTAssertEqual(loaded?.count, 2)
         XCTAssertEqual(loaded?.currentIndex, 1)
     }
 
     func testWhenMigratingEmptyNoModelIsReturned() throws {
-        XCTAssertNil(try persistence.getTabsModel())
+        XCTAssertNil(try persistence.getTabsModel(for: .normal))
     }
 
     func testWhenMigratingExistingItIsReturnedAndCleared() throws {
         let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
         mockLegacyStore.set(data, forKey: "com.duckduckgo.opentabs")
 
-        let loaded = try persistence.getTabsModel()
+        let loaded = try persistence.getTabsModel(for: .normal)
         XCTAssertNotNil(loaded)
         XCTAssertEqual(loaded?.count, 2)
         XCTAssertEqual(loaded?.currentIndex, 0)
@@ -122,10 +124,63 @@ class TabsModelPersistenceTests: XCTestCase {
         let newData = try NSKeyedArchiver.archivedData(withRootObject: TabsModel(desktop: false), requiringSecureCoding: false)
         try mockStore.set(newData, forKey: "TabsModelKey")
 
-        let loaded = try persistence.getTabsModel()
+        let loaded = try persistence.getTabsModel(for: .normal)
         XCTAssertNotNil(loaded)
         XCTAssertEqual(loaded?.count, 1)
         XCTAssertEqual(loaded?.currentIndex, 0)
+    }
+
+    // MARK: - Fire Key Tests
+
+    func testWhenFireModelNotSavedThenGetReturnsNil() throws {
+        XCTAssertNil(try persistence.getTabsModel(for: .fire))
+    }
+
+    func testWhenFireModelSavedThenGetReturnsModel() throws {
+        let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
+        persistence.save(model: fireModel, for: .fire)
+
+        let loaded = try persistence.getTabsModel(for: .fire)
+        XCTAssertNotNil(loaded)
+        XCTAssertEqual(loaded?.count, 1)
+    }
+
+    func testWhenFireModelSavedThenGetLoadsWithFireMode() throws {
+        let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
+        persistence.save(model: fireModel, for: .fire)
+
+        let loaded = try persistence.getTabsModel(for: .fire)
+        XCTAssertEqual(loaded?.mode, .fire)
+    }
+
+    func testWhenClearAllThenBothKeysCleared() throws {
+        persistence.save(model: model, for: .normal)
+        let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
+        persistence.save(model: fireModel, for: .fire)
+
+        persistence.clearAll()
+
+        XCTAssertNil(try persistence.getTabsModel(for: .normal))
+        XCTAssertNil(try persistence.getTabsModel(for: .fire))
+    }
+
+    func testWhenClearNormalThenFireModelUntouched() throws {
+        persistence.save(model: model, for: .normal)
+        let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
+        persistence.save(model: fireModel, for: .fire)
+
+        persistence.clear(for: .normal)
+
+        XCTAssertNil(try persistence.getTabsModel(for: .normal))
+        XCTAssertNotNil(try persistence.getTabsModel(for: .fire))
+    }
+
+    func testLegacyMigrationDoesNotRunForFireKey() throws {
+        let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
+        mockLegacyStore.set(data, forKey: "com.duckduckgo.opentabs")
+
+        let loaded = try persistence.getTabsModel(for: .fire)
+        XCTAssertNil(loaded)
     }
 
 }

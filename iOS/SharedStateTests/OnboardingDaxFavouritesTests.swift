@@ -94,6 +94,7 @@ import AIChatTestingUtilities
                                                                               webExtensionAvailability: nil)
 
         let tabManager = TabManager(model: tabsModel,
+                                    fireModel: TabsModel(tabs: [], desktop: false, mode: .fire),
                                     persistence: tabsPersistence,
                                     previewsSource: MockTabPreviewsSource(),
                                     interactionStateSource: nil,

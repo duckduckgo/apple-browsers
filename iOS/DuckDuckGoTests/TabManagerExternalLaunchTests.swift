@@ -240,6 +240,7 @@ final class TabManagerExternalLaunchTests {
         )
         return TabManager(
             model: model,
+            fireModel: TabsModel(tabs: [], desktop: false, mode: .fire),
             persistence: tabsPersistence,
             previewsSource: previewsSource,
             interactionStateSource: TabInteractionStateDiskSource(),

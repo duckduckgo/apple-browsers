@@ -20,6 +20,11 @@
 import Foundation
 import Core
 
+public enum TabsModelMode: Int {
+    case normal = 0
+    case fire = 1
+}
+
 protocol TabsModelProtocol {
     var count: Int { get }
 }
@@ -31,8 +36,10 @@ public class TabsModel: NSObject, NSCoding, TabsModelProtocol {
         static let currentIndex = "currentIndex2"
         static let legacyTabs = "tabs"
         static let tabs = "tabs2"
+        static let mode = "mode"
     }
 
+    let mode: TabsModelMode
     private(set) var currentIndex: Int
     @Published private(set) var tabs: [Tab]
 
@@ -40,8 +47,14 @@ public class TabsModel: NSObject, NSCoding, TabsModelProtocol {
         return tabs.contains(where: { !$0.viewed })
     }
         
-    public init(tabs: [Tab] = [], currentIndex: Int = 0, desktop: Bool) {
-        self.tabs = tabs.isEmpty ? [Tab(desktop: desktop)] : tabs
+    public init(tabs: [Tab] = [], currentIndex: Int = 0, desktop: Bool, mode: TabsModelMode = .normal) {
+        self.mode = mode
+        switch mode {
+        case .normal:
+            self.tabs = tabs.isEmpty ? [Tab(desktop: desktop)] : tabs
+        case .fire:
+            self.tabs = tabs
+        }
         self.currentIndex = currentIndex
     }
 
@@ -69,12 +82,19 @@ public class TabsModel: NSObject, NSCoding, TabsModelProtocol {
         if currentIndex < 0 || currentIndex >= tabs.count {
             currentIndex = 0
         }
-        self.init(tabs: tabs, currentIndex: currentIndex, desktop: UIDevice.current.userInterfaceIdiom == .pad)
+
+        let rawMode = decoder.containsValue(forKey: NSCodingKeys.mode)
+            ? decoder.decodeInteger(forKey: NSCodingKeys.mode)
+            : TabsModelMode.normal.rawValue
+        let mode = TabsModelMode(rawValue: rawMode) ?? .normal
+
+        self.init(tabs: tabs, currentIndex: currentIndex, desktop: UIDevice.current.userInterfaceIdiom == .pad, mode: mode)
     }
 
     public func encode(with coder: NSCoder) {
         coder.encode(tabs, forKey: NSCodingKeys.tabs)
         coder.encode(currentIndex, forKey: NSCodingKeys.currentIndex)
+        coder.encode(mode.rawValue, forKey: NSCodingKeys.mode)
     }
 
     var currentTab: Tab? {
@@ -125,7 +145,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelProtocol {
     func remove(at index: Int) {
         let selectedTab = safeGetTabAt(currentIndex)
         tabs.remove(at: index)
-        if tabs.isEmpty {
+        if tabs.isEmpty && mode == .normal {
             tabs.append(Tab())
         }
         setCurrentTab(selectedTab)
@@ -162,7 +182,9 @@ public class TabsModel: NSObject, NSCoding, TabsModelProtocol {
 
     func clearAll() {
         tabs.removeAll()
-        tabs.append(Tab())
+        if mode == .normal {
+            tabs.append(Tab())
+        }
         currentIndex = 0
     }
     

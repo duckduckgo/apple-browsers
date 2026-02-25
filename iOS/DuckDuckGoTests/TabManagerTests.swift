@@ -137,6 +137,7 @@ final class TabManagerTests: XCTestCase {
         let tabsPersistence = TabsModelPersistence(store: MockKeyValueFileStore(),
                                                    legacyStore: MockKeyValueStore())
         return TabManager(model: model,
+                          fireModel: TabsModel(tabs: [], desktop: false, mode: .fire),
                           persistence: tabsPersistence,
                           previewsSource: previewsSource,
                           interactionStateSource: TabInteractionStateDiskSource(),

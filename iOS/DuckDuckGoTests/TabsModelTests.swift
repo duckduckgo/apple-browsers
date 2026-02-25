@@ -203,4 +203,45 @@ class TabsModelTests: XCTestCase {
         XCTAssertFalse(filledModel.tabExists(withHost: "domaindoesnotexist"))
     }
 
+    // MARK: - Fire Mode
+
+    func testWhenFireModeModelCreatedWithEmptyTabsThenTabsAreEmpty() {
+        let model = TabsModel(tabs: [], desktop: false, mode: .fire)
+        XCTAssertEqual(model.count, 0)
+        XCTAssertEqual(model.mode, .fire)
+    }
+
+    func testWhenFireModeModelCreatedWithTabsThenTabsArePreserved() {
+        let model = TabsModel(tabs: [
+            Tab(link: exampleLink),
+            Tab(link: exampleLink)
+        ], desktop: false, mode: .fire)
+        XCTAssertEqual(model.count, 2)
+    }
+
+    func testWhenFireModeLastTabRemovedThenNoHomeTabInserted() {
+        let model = TabsModel(tabs: [Tab(link: exampleLink)], desktop: false, mode: .fire)
+        model.remove(at: 0)
+        XCTAssertEqual(model.count, 0)
+        XCTAssertTrue(model.tabs.isEmpty)
+    }
+
+    func testWhenFireModeClearAllThenTabsAreCompletelyEmpty() {
+        let model = TabsModel(tabs: [
+            Tab(link: exampleLink),
+            Tab(link: exampleLink)
+        ], desktop: false, mode: .fire)
+        model.clearAll()
+        XCTAssertEqual(model.count, 0)
+        XCTAssertTrue(model.tabs.isEmpty)
+        XCTAssertEqual(model.currentIndex, 0)
+    }
+
+    func testWhenNormalModeClearAllThenHomeTabRemains() {
+        let model = filledModel
+        model.clearAll()
+        XCTAssertEqual(model.count, 1)
+        XCTAssertNil(model.get(tabAt: 0).link)
+    }
+
 }

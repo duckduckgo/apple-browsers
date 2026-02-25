@@ -289,6 +289,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Startup Metrics Feature Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
     case startupMetrics
+
+    /// Private Process Name Flag
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
+    case privateProcessName
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -416,7 +420,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
                 .aiChatSidebarResizable,
-                .startupMetrics:
+                .startupMetrics,
+                .privateProcessName:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -597,6 +602,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .startupMetrics:
             return .internalOnly()
+        case .privateProcessName:
+            return .disabled
         }
     }
 }

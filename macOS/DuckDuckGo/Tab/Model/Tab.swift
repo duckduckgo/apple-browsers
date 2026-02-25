@@ -300,6 +300,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         let configuration = webViewConfiguration ?? WKWebViewConfiguration()
         configuration.applyStandardConfiguration(contentBlocking: privacyFeatures.contentBlocking,
                                                  burnerMode: burnerMode,
+                                                 privateProcessName: featureFlagger.isFeatureOn(.privateProcessName),
                                                  earlyAccessHandlers: specialPagesUserScript.map { [$0] } ?? [])
         self.webViewConfiguration = configuration
         let userContentController = configuration.userContentController as? UserContentController

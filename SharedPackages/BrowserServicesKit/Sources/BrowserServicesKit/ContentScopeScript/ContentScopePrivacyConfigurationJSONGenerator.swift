@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import PrivacyConfig
+import Common
 import Foundation
+import os.log
+import PrivacyConfig
 
 /// A protocol that defines an interface for generating a JSON representation of a the privacy configuration file.
 /// It can be used to create customised configurations
@@ -26,22 +28,35 @@ public protocol CustomisedPrivacyConfigurationJSONGenerating {
 }
 
 /// A JSON generator for content scope privacy configuration.
+///
+/// Optionally injects tracker protection settings (tracker data, allowlist, unprotected domains,
+/// CTL state) into the configuration for the C-S-S `trackerProtection` feature.
 public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating {
     let featureFlagger: FeatureFlagger
     let privacyConfigurationManager: PrivacyConfigurationManaging
+    let trackerProtectionDataSource: TrackerProtectionDataSource?
+    let ctlEnabled: Bool
 
-    public init(featureFlagger: FeatureFlagger, privacyConfigurationManager: PrivacyConfigurationManaging) {
+    public init(featureFlagger: FeatureFlagger,
+                privacyConfigurationManager: PrivacyConfigurationManaging,
+                trackerProtectionDataSource: TrackerProtectionDataSource? = nil,
+                ctlEnabled: Bool = false) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.trackerProtectionDataSource = trackerProtectionDataSource
+        self.ctlEnabled = ctlEnabled
     }
 
-    /// Generates and returns the privacy configuration as JSON data.
-    ///
-    /// Note: this was used for an experiment but left so that in the future we can pass ContentScope only the needed configuration
     public var privacyConfiguration: Data? {
         guard let config = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig) else { return nil }
 
-        let newConfig = PrivacyConfigurationData(features: config.features, unprotectedTemporary: config.unprotectedTemporary, trackerAllowlist: config.trackerAllowlist, version: config.version)
+        var features = config.features
+
+        if let dataSource = trackerProtectionDataSource {
+            features = injectTrackerProtectionSettings(into: features, from: dataSource)
+        }
+
+        let newConfig = PrivacyConfigurationData(features: features, unprotectedTemporary: config.unprotectedTemporary, trackerAllowlist: config.trackerAllowlist, version: config.version)
         return try? newConfig.toJSONData(
             excludeFeatures: [
                 PrivacyConfigurationData.CodingKeys.trackerAllowlist.rawValue,
@@ -50,4 +65,43 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
         )
     }
 
+    private func injectTrackerProtectionSettings(into features: [String: PrivacyConfigurationData.PrivacyFeature],
+                                                 from dataSource: TrackerProtectionDataSource) -> [String: PrivacyConfigurationData.PrivacyFeature] {
+        var mutableFeatures = features
+
+        let existingFeature = mutableFeatures["trackerProtection"]
+        var settings: [String: Any] = existingFeature?.settings ?? [:]
+
+        if let encodedData = dataSource.encodedTrackerData {
+            settings["trackerData"] = encodedData
+        } else {
+            Logger.contentBlocking.warning("TrackerProtection: No encodedTrackerData available")
+        }
+
+        let privacyConfig = privacyConfigurationManager.privacyConfig
+
+        var allowlistDict: [String: [[String: Any]]] = [:]
+        for (domain, entries) in privacyConfig.trackerAllowlist.entries {
+            allowlistDict[domain] = entries.map { entry in
+                ["rule": entry.rule, "domains": entry.domains]
+            }
+        }
+        settings["allowlist"] = allowlistDict
+
+        settings["tempUnprotectedDomains"] = privacyConfig.tempUnprotectedDomains
+        settings["userUnprotectedDomains"] = privacyConfig.userUnprotectedDomains
+        settings["blockingEnabled"] = privacyConfig.isEnabled(featureKey: .contentBlocking)
+        settings["ctlEnabled"] = ctlEnabled
+
+        let trackerProtectionFeature = PrivacyConfigurationData.PrivacyFeature(
+            state: existingFeature?.state ?? "enabled",
+            exceptions: existingFeature?.exceptions ?? [],
+            settings: settings,
+            minSupportedVersion: existingFeature?.minSupportedVersion,
+            hash: existingFeature?.hash
+        )
+
+        mutableFeatures["trackerProtection"] = trackerProtectionFeature
+        return mutableFeatures
+    }
 }

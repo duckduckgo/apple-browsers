@@ -291,8 +291,12 @@ extension ContextMenuManager: WebViewContextMenuDelegate {
             return
         }
 
-        onWillShowContextMenu = { [weak self] in
-            self?.refreshMenuItemsAndResetScriptState(menu: menu)
+        onWillShowContextMenu = { [weak self, weak menu] in
+            guard let self, let menu else {
+                return
+            }
+
+            self.refreshMenuItemsAndResetScriptState(menu: menu)
         }
     }
 

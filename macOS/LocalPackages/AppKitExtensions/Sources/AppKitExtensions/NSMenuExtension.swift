@@ -72,10 +72,10 @@ public extension NSMenu {
     /// This API removes / re-adds all items, effectively forcing a relayout cycle
     ///
     func forceRelayout() {
-        let items = items
+        let currentItems = items
         removeAllItems()
 
-        for item in items {
+        for item in currentItems {
             addItem(item)
         }
     }

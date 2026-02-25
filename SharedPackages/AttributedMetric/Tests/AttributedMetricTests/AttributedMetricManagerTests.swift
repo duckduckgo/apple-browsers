@@ -510,7 +510,7 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// | Days Since Install | Ad Clicks | Bucketed Count | Parameters |
     /// |-------------------|-----------|----------------|------------|
     /// | 0 (install day)   | any       | -              | No pixel fired (isSameDayOfInstallDate check) |
-    /// | 1+ (any other day)| varies    | varies         | count=bucketed, day_average=raw_count, origin/installDate |
+    /// | 1+ (any other day)| varies    | varies         | count=bucketed, day_average=days_counted, origin/installDate |
     ///
     /// ## Bucket Configuration
     /// - user_average_ad_clicks_past_week: [2, 5] → ≤2 maps to 0, ≤5 maps to 1, >5 maps to 2
@@ -559,7 +559,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
-        XCTAssertNotNil(capturedDayAverage, "Should capture day average")
+        XCTAssertEqual(capturedDayAverage, 1, "Should report 1 day counted (ad click recorded on day 0)")
     }
 
     // MARK: - Average Duck.AI Chat Tests
@@ -571,7 +571,7 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// | Days Since Install | AI Chats | Bucketed Count | Parameters |
     /// |-------------------|----------|----------------|------------|
     /// | 0 (install day)   | any      | -              | No pixel fired (isSameDayOfInstallDate check) |
-    /// | 1+ (any other day)| varies   | varies         | count=bucketed, day_average=raw_count, origin/installDate |
+    /// | 1+ (any other day)| varies   | varies         | count=bucketed, day_average=days_counted, origin/installDate |
     ///
     /// ## Bucket Configuration
     /// - user_average_duck_ai_usage_past_week: [5, 9] → ≤5 maps to 0, ≤9 maps to 1, >9 maps to 2
@@ -620,7 +620,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
-        XCTAssertNotNil(capturedDayAverage, "Should capture day average")
+        XCTAssertEqual(capturedDayAverage, 1, "Should report 1 day counted (Duck.AI chat recorded on day 0)")
     }
 
     // MARK: - Subscription Tests

@@ -509,11 +509,15 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         let testAction = RemoteAction.url(value: "https://example.com")
         let onItemAction = try #require(mockMapper.capturedOnItemAction)
 
-        // WHEN — handleAction is called from an unstructured Task inside
-        // dismiss(onComplete:), so we wait for the mock to be invoked.
-        await confirmation { confirmed in
-            mockHandler.onHandleActionCalled = { confirmed() }
-            await onItemAction(testAction, "card-123")
+        // WHEN — handleAction is deferred to an unstructured Task inside
+        // dismiss(onComplete:); bridge via continuation so we wait for it.
+        await withCheckedContinuation { continuation in
+            mockHandler.onHandleActionCalled = {
+                continuation.resume()
+            }
+            Task { @MainActor in
+                await onItemAction(testAction, "card-123")
+            }
         }
 
         // THEN

@@ -1090,6 +1090,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             memoryUsageMonitor: memoryUsageMonitor,
             featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
+            launchDate: appLaunchDate,
             logger: .memory
         )
 

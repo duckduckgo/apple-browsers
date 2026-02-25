@@ -170,7 +170,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowControllersManager: windowControllersManager,
         cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
         appearancePreferences: appearancePreferences,
-        featureFlagger: featureFlagger,
         onboardingStateUpdater: onboardingContextualDialogsManager
     )
 
@@ -1001,11 +1000,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
-        autoconsentStats = AutoconsentStats(keyValueStore: keyValueStore, isFeatureEnabled: { featureFlagger.isFeatureOn(.newTabPageAutoconsentStats) })
+        autoconsentStats = AutoconsentStats(keyValueStore: keyValueStore)
         autoconsentEventCoordinator = Self.makeAutoconsentEventCoordinator(
             autoconsentStats: autoconsentStats,
             historyCoordinating: historyCoordinator,
-            featureFlagger: featureFlagger,
             webExtensionAvailability: webExtensionAvailability
         )
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
@@ -1428,8 +1426,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireAutoconsentDailyPixel() {
-        guard featureFlagger.isFeatureOn(.newTabPageAutoconsentStats) else { return }
-
         Task {
             let dailyStats = await autoconsentStats.fetchAutoconsentDailyUsagePack().asPixelParameters()
             PixelKit.fire(AutoconsentPixel.usageStats(stats: dailyStats), frequency: .daily)
@@ -2163,13 +2159,11 @@ extension AppDelegate: UserScriptDependenciesProviding {
     private static func makeAutoconsentEventCoordinator(
         autoconsentStats: AutoconsentStatsCollecting,
         historyCoordinating: HistoryCoordinating,
-        featureFlagger: FeatureFlagger,
         webExtensionAvailability: WebExtensionAvailabilityProviding
     ) -> AutoconsentEventCoordinator {
         return AutoconsentEventCoordinator(
             autoconsentStats: autoconsentStats,
             historyCoordinating: historyCoordinating,
-            featureFlagger: featureFlagger,
             webExtensionAvailability: webExtensionAvailability
         )
     }

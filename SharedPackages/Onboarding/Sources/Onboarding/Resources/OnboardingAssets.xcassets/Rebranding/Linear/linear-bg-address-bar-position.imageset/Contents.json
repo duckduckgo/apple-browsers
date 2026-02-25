@@ -3,6 +3,16 @@
     {
       "filename" : "linear-bg-address-bar-position-light.pdf",
       "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "linear-bg-address-bar-positioni-dark.pdf",
+      "idiom" : "universal"
     }
   ],
   "info" : {

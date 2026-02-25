@@ -3,6 +3,16 @@
     {
       "filename" : "linear-bg-add-to-dock-light.pdf",
       "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "linear-bg-add-to-dock-dark.pdf",
+      "idiom" : "universal"
     }
   ],
   "info" : {

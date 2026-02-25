@@ -619,7 +619,7 @@ extension OnboardingView.ViewState {
     var backgroundImage: Image {
         switch self {
         case .landing:
-            return OnboardingRebrandingImages.Linear.landing
+            return OnboardingRebrandingImages.Linear.landingBackground
         case .onboarding(let intro):
             return intro.type.backgroundImage
         }

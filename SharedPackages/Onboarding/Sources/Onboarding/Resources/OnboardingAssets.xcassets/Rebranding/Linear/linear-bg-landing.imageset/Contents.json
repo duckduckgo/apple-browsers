@@ -3,6 +3,16 @@
     {
       "filename" : "linear-bg-landing.pdf",
       "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "linear-bg-landing-dark.pdf",
+      "idiom" : "universal"
     }
   ],
   "info" : {

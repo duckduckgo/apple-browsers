@@ -1076,12 +1076,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
         let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionManager)
         let defaultBrowserProvider = SystemDefaultBrowserProvider()
+        let returningUserProvider = AttributedMetricReturningUserProvider(
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore)
+        )
         self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
                                                                dataStoring: attributedMetricDataStorage,
                                                                featureFlagger: featureFlagger,
                                                                originProvider: AttributedMetricOriginFileProvider(),
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
+                                                               returningUserProvider: returningUserProvider,
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 

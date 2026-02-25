@@ -345,6 +345,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
     }
 
     func testWhenProcessBrokerJSONsUpdatesExistingBroker_thenVaultUpdateUsesRawFilePayload() throws {
+        // Given: broker JSON contains fields not modeled by native action structs.
         let testBrokerContent = """
         {
             "name": "Broker",
@@ -357,8 +358,8 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
                             "actionType": "navigate",
                             "id": "navigate-1",
                             "url": "https://example.com",
-                            "brokerOwnedField": "preserve-me",
-                            "brokerOwnedNested": {
+                            "newField": "hello-world",
+                            "anotherNewField": {
                                 "flag": true
                             }
                         }
@@ -397,6 +398,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         let testFile = jsonDir.appendingPathComponent("example.com.json")
         try testBrokerContent.write(to: testFile, atomically: true, encoding: .utf8)
 
+        // When: processing JSONs for an existing broker (update path, not insert path).
         try testRemoteService.processBrokerJSONs(
             eTag: "test-etag-raw-payload",
             fileNames: ["example.com.json"],
@@ -405,12 +407,46 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             testBrokers: []
         )
 
+        // Then: vault update is used and raw bytes are forwarded as-is.
         XCTAssertTrue(vault.wasBrokerUpdateCalled)
         XCTAssertFalse(vault.wasBrokerSavedCalled)
 
         let updatedBrokerResource = try XCTUnwrap(vault.lastUpdatedBrokerResource)
         XCTAssertEqual(updatedBrokerResource.rawJSON, Data(testBrokerContent.utf8))
         XCTAssertEqual(updatedBrokerResource.broker.eTag, "etag-raw")
+
+        // And: decoded raw JSON still contains full broker shape.
+        let decodedRawBrokerJSON = try XCTUnwrap(
+            try JSONSerialization.jsonObject(with: updatedBrokerResource.rawJSON) as? [String: Any]
+        )
+        XCTAssertEqual(decodedRawBrokerJSON["name"] as? String, "Broker")
+        XCTAssertEqual(decodedRawBrokerJSON["url"] as? String, "example.com")
+        XCTAssertEqual(decodedRawBrokerJSON["version"] as? String, "1.0.1")
+        XCTAssertEqual(decodedRawBrokerJSON["optOutUrl"] as? String, "https://example.com")
+
+        let schedulingConfig = try XCTUnwrap(decodedRawBrokerJSON["schedulingConfig"] as? [String: Any])
+        XCTAssertEqual(schedulingConfig["retryError"] as? Int, 48)
+        XCTAssertEqual(schedulingConfig["confirmOptOutScan"] as? Int, 72)
+        XCTAssertEqual(schedulingConfig["maintenanceScan"] as? Int, 120)
+        XCTAssertEqual(schedulingConfig["maxAttempts"] as? Int, -1)
+
+        let steps = try XCTUnwrap(decodedRawBrokerJSON["steps"] as? [[String: Any]])
+        XCTAssertEqual(steps.count, 1)
+        let step = try XCTUnwrap(steps.first)
+        XCTAssertEqual(step["stepType"] as? String, "scan")
+
+        let actions = try XCTUnwrap(step["actions"] as? [[String: Any]])
+        XCTAssertEqual(actions.count, 1)
+        let action = try XCTUnwrap(actions.first)
+        XCTAssertEqual(action["actionType"] as? String, "navigate")
+        XCTAssertEqual(action["id"] as? String, "navigate-1")
+        XCTAssertEqual(action["url"] as? String, "https://example.com")
+
+        // Critical assertion: unknown broker-owned fields are preserved.
+        XCTAssertEqual(action["newField"] as? String, "hello-world")
+
+        let anotherNewField = try XCTUnwrap(action["anotherNewField"] as? [String: Any])
+        XCTAssertEqual(anotherNewField["flag"] as? Bool, true)
 
         // Clean up
         try? realFileManager.removeItem(at: tempDir)

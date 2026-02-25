@@ -50,6 +50,22 @@ final class DataBrokerTests: XCTestCase {
         XCTAssertFalse(broker.performsOptOutWithinParent())
     }
 
+    func testInitFromResource_preservesRawBrokerFileBytes() throws {
+        // Given: a bundled broker JSON resource.
+        let jsonURL = try XCTUnwrap(Bundle.module.url(
+            forResource: "valid-broker",
+            withExtension: "json",
+            subdirectory: "BundleResources"
+        ))
+        let expectedRawBytes = try Data(contentsOf: jsonURL)
+
+        // When: loading the broker resource from file.
+        let brokerResource = try DataBroker.initFromResource(jsonURL)
+
+        // Then: raw JSON bytes are preserved for storage/injection paths.
+        XCTAssertEqual(brokerResource.rawJSON, expectedRawBytes)
+    }
+
     func testInitInvalidBrokerWithUnsupportedStep() throws {
         let jsonURL = Bundle.module.url(forResource: "invalid-broker-with-unsupported-step", withExtension: "json", subdirectory: "BundleResources")!
         let expectation = XCTestExpectation(description: "Unsupported step type")

@@ -200,16 +200,16 @@ extension OnboardingRebranding {
                     landingView
                 case let .onboarding(viewState):
                     onboardingDialogView(state: viewState)
-//#if DEBUG || ALPHA
-//                        .safeAreaInset(edge: .bottom) {
-//                            Button {
-//                                model.overrideOnboardingCompleted()
-//                            } label: {
-//                                Text(UserText.Onboarding.Intro.Debug.skip)
-//                            }
-//                            .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
-//                        }
-//#endif
+#if DEBUG || ALPHA
+                        .safeAreaInset(edge: .bottom) {
+                            Button {
+                                model.overrideOnboardingCompleted()
+                            } label: {
+                                Text(UserText.Onboarding.Intro.Debug.skip)
+                            }
+                            .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
+                        }
+#endif
                 }
             }
             .overlay(alignment: .topLeading) {

@@ -508,9 +508,12 @@ struct WhatsNewCoordinatorPixelTrackingTests {
 
         let testAction = RemoteAction.url(value: "https://example.com")
 
-        // WHEN
-        await mockMapper.capturedOnItemAction?(testAction, "card-123")
-        await Task.yield()
+        // WHEN — handleAction is called from an unstructured Task inside
+        // dismiss(onComplete:), so we wait for the mock to be invoked.
+        await confirmation { confirmed in
+            mockHandler.onHandleActionCalled = { confirmed() }
+            await mockMapper.capturedOnItemAction?(testAction, "card-123")
+        }
 
         // THEN
         #expect(mockHandler.didCallHandleAction)

@@ -174,6 +174,12 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }
 
+    let darkReaderFeatureSettings: DarkReaderFeatureSettings
+
+    var isForceWebsiteDarkModeAvailable: Bool {
+        darkReaderFeatureSettings.isFeatureEnabled
+    }
+
     var isBlackFridayCampaignEnabled: Bool {
         blackFridayCampaignProvider.isCampaignEnabled
     }
@@ -579,6 +585,16 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var forceWebsiteDarkModeBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.forceWebsiteDarkMode },
+            set: {
+                self.darkReaderFeatureSettings.setForceDarkModeEnabled($0)
+                self.state.forceWebsiteDarkMode = $0
+            }
+        )
+    }
+
     var universalLinksBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.allowUniversalLinks },
@@ -672,9 +688,11 @@ final class SettingsViewModel: ObservableObject {
          browsingMenuSheetCapability: BrowsingMenuSheetCapable,
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
-         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
+         darkReaderFeatureSettings: DarkReaderFeatureSettings = AppDarkReaderFeatureSettings()
     ) {
 
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
         self.legacyViewProvider = legacyViewProvider
@@ -743,6 +761,7 @@ extension SettingsViewModel {
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
             showMenuInSheet: browsingMenuSheetCapability.isEnabled,
+            forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoClearAIChatHistory: appSettings.autoClearAIChatHistory,

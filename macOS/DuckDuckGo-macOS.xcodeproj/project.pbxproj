@@ -2950,6 +2950,14 @@
 		B57B123F2F4CFAFD00B610F1 /* StartupMetricsBuckets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57B123E2F4CFAFD00B610F1 /* StartupMetricsBuckets.swift */; };
 		B57B12402F4CFAFD00B610F1 /* StartupMetricsBuckets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57B123E2F4CFAFD00B610F1 /* StartupMetricsBuckets.swift */; };
 		B59845C62F22777700A25DA4 /* MemoryUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59845C52F22774C00A25DA4 /* MemoryUsageTests.swift */; };
+		B598E7B82F4F745E00F19027 /* StartupMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B62F4F745E00F19027 /* StartupMetricsTests.swift */; };
+		B598E7B92F4F745E00F19027 /* StartupProfilerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */; };
+		B598E7BA2F4F745E00F19027 /* StartupMetricsBucketsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B42F4F745E00F19027 /* StartupMetricsBucketsTests.swift */; };
+		B598E7BB2F4F745E00F19027 /* StartupMetricsPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */; };
+		B598E7BC2F4F745E00F19027 /* StartupMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B62F4F745E00F19027 /* StartupMetricsTests.swift */; };
+		B598E7BD2F4F745E00F19027 /* StartupProfilerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */; };
+		B598E7BE2F4F745E00F19027 /* StartupMetricsBucketsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B42F4F745E00F19027 /* StartupMetricsBucketsTests.swift */; };
+		B598E7BF2F4F745E00F19027 /* StartupMetricsPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */; };
 		B59AB6442EFB179F00C2F87A /* SearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59AB6432EFB179F00C2F87A /* SearchField.swift */; };
 		B59AB6452EFB179F00C2F87A /* SearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59AB6432EFB179F00C2F87A /* SearchField.swift */; };
 		B5AE99532E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
@@ -5815,6 +5823,10 @@
 		B57B12382F4CE34100B610F1 /* StartupMetricsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsPixel.swift; sourceTree = "<group>"; };
 		B57B123E2F4CFAFD00B610F1 /* StartupMetricsBuckets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsBuckets.swift; sourceTree = "<group>"; };
 		B59845C52F22774C00A25DA4 /* MemoryUsageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageTests.swift; sourceTree = "<group>"; };
+		B598E7B42F4F745E00F19027 /* StartupMetricsBucketsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsBucketsTests.swift; sourceTree = "<group>"; };
+		B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsPixelTests.swift; sourceTree = "<group>"; };
+		B598E7B62F4F745E00F19027 /* StartupMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsTests.swift; sourceTree = "<group>"; };
+		B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupProfilerTests.swift; sourceTree = "<group>"; };
 		B59AB6432EFB179F00C2F87A /* SearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchField.swift; sourceTree = "<group>"; };
 		B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
 		B5AE99522E84A5D900F45912 /* ThemeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeName.swift; sourceTree = "<group>"; };
@@ -12207,6 +12219,10 @@
 				3727A5A92F180136002E10E1 /* MemoryPressureReporterTests.swift */,
 				ED4B8BD82E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift */,
 				EDF339132E8BFD110062E7C3 /* MockWatchdogDiagnosticProvider.swift */,
+				B598E7B42F4F745E00F19027 /* StartupMetricsBucketsTests.swift */,
+				B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */,
+				B598E7B62F4F745E00F19027 /* StartupMetricsTests.swift */,
+				B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */,
 				EDF339142E8BFD110062E7C3 /* WatchdogEventMapperTests.swift */,
 			);
 			path = AppHealth;
@@ -15417,6 +15433,10 @@
 				B6C843DB2BA1CAB6006FDEC3 /* FilePresenterTests.swift in Sources */,
 				CC438E232EBCEB5A008537AD /* MockDefaultBrowserAndDockPromptUIProvider.swift in Sources */,
 				B6619EF72B10DFF700CD9186 /* InstructionsFormatParserTests.swift in Sources */,
+				B598E7BC2F4F745E00F19027 /* StartupMetricsTests.swift in Sources */,
+				B598E7BD2F4F745E00F19027 /* StartupProfilerTests.swift in Sources */,
+				B598E7BE2F4F745E00F19027 /* StartupMetricsBucketsTests.swift in Sources */,
+				B598E7BF2F4F745E00F19027 /* StartupMetricsPixelTests.swift in Sources */,
 				3706FE21293F661700E42796 /* DownloadsPreferencesTests.swift in Sources */,
 				CC8E70D32F0EC0A2008C8070 /* NewTabPageNextStepsCardsPersistorTests.swift in Sources */,
 				3706FE22293F661700E42796 /* FireproofDomainsTests.swift in Sources */,
@@ -17812,6 +17832,10 @@
 				37D23789288009CF00BCE03B /* TabCollectionViewModelTests+PinnedTabs.swift in Sources */,
 				1D3B1AC62937A478006F4388 /* BWRequestTests.swift in Sources */,
 				845B43362DB69F2E00D46001 /* SwiftObjectRetainCycleBreakerTests.swift in Sources */,
+				B598E7B82F4F745E00F19027 /* StartupMetricsTests.swift in Sources */,
+				B598E7B92F4F745E00F19027 /* StartupProfilerTests.swift in Sources */,
+				B598E7BA2F4F745E00F19027 /* StartupMetricsBucketsTests.swift in Sources */,
+				B598E7BB2F4F745E00F19027 /* StartupMetricsPixelTests.swift in Sources */,
 				B630793A26731F2600DCEE41 /* FileDownloadManagerTests.swift in Sources */,
 				376731992C7F36B200EB097B /* UserBackgroundImageTests.swift in Sources */,
 				560C6EDB2CCA6D5200D411E2 /* OnboardingFireButtonDialogViewModelTests.swift in Sources */,

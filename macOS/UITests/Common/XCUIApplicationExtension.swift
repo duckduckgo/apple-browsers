@@ -40,6 +40,8 @@ extension XCUIApplication {
         static let addressBarPassiveTextField = "AddressBarViewController.passiveTextField"
         static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
+        static let bookmarksBarPopoverShow = "BookmarksBarPopover.show"
+        static let bookmarksBarPopoverHide = "BookmarksBarPopover.hide"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
         static let backButton = "NavigationBarViewController.BackButton"
@@ -128,22 +130,6 @@ extension XCUIApplication {
 
     var bundleID: String? {
         value(forKey: "bundleID") as? String
-    }
-
-    /// Dismiss popover with the passed button identifier if exists. If it does not exist it continues the execution without failing.
-    /// - Parameter buttonIdentifier: The button identifier we want to tap from the popover
-    func dismissPopover(buttonIdentifier: String) {
-        let popover = popovers.firstMatch
-        guard popover.exists else {
-            return
-        }
-
-        let button = popover.buttons[buttonIdentifier]
-        guard button.exists else {
-            return
-        }
-
-        button.tap()
     }
 
     /// Enforces single a single window by:
@@ -429,6 +415,17 @@ extension XCUIApplication {
         }
 
         bookmarksPanelShortcutButton.tap()
+    }
+
+    func dismissBookmarksBarPopover(shouldDisplayBar: Bool = false) {
+        let targetIdentifier = shouldDisplayBar ? AccessibilityIdentifiers.bookmarksBarPopoverShow : AccessibilityIdentifiers.bookmarksBarPopoverHide
+        let targetButton = buttons[targetIdentifier]
+        XCTAssertTrue(
+            targetButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Bookmarks Bar Popover didn't show within a reasonable timeframe"
+        )
+
+        targetButton.tap()
     }
 
     func verifyBookmarkOrder(expectedOrder: [String], mode: BookmarkMode) {

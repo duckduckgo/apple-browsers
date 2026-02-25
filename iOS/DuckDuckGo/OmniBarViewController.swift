@@ -31,6 +31,9 @@ class OmniBarViewController: UIViewController, OmniBar {
     // swiftlint:disable:next force_cast
     var barView: any OmniBarView { view as! OmniBarView }
 
+    /// Access to iPad-specific expandable search area features.
+    var expandableBarView: ExpandableOmniBarView? { barView as? ExpandableOmniBarView }
+
     var isBackButtonEnabled: Bool {
         get { barView.backButton.isEnabled }
         set { barView.backButton.isEnabled = newValue }
@@ -59,6 +62,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     internal var textFieldTapped = true
     internal var textEntryMode: TextEntryMode = .search
+    private(set) var selectedTextEntryMode: TextEntryMode = .search
 
     // MARK: - Animation
 
@@ -167,14 +171,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.refreshButton.isPointerInteractionEnabled = true
         barView.customizableButton.isPointerInteractionEnabled = true
         barView.clearButton.isPointerInteractionEnabled = true
+        expandableBarView?.externalRefreshButtonView.isPointerInteractionEnabled = true
     }
 
     private func configureTextField() {
-        let theme = ThemeManager.shared.currentTheme
-
         textField.delegate = self
-        textField.attributedPlaceholder = NSAttributedString(string: UserText.searchDuckDuckGo,
-                                                             attributes: [.foregroundColor: theme.searchBarTextPlaceholderColor])
+        updateTextFieldPlaceholderForSelectedMode()
 
         textField.textDragInteraction?.isEnabled = false
 
@@ -255,6 +257,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
         barView.onAIChatBrandingPressed = { [weak self] in
             self?.onAIChatBrandingPressed()
+        }
+        expandableBarView?.onSearchModePressed = { [weak self] in
+            self?.setSelectedTextEntryMode(.search)
+        }
+        expandableBarView?.onAIChatModePressed = { [weak self] in
+            self?.setSelectedTextEntryMode(.aiChat)
         }
     }
 
@@ -633,7 +641,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         cancelAllAnimations()
     }
 
-    private func refreshState(_ newState: any OmniBarState) {
+    func refreshState(_ newState: any OmniBarState) {
         let oldState: OmniBarState = self.state
         if state.requiresUpdate(transitioningInto: newState) {
             Logger.general.debug("OmniBar entering \(newState.description) from \(self.state.description)")
@@ -643,6 +651,13 @@ class OmniBarViewController: UIViewController, OmniBar {
                     clear()
                 }
                 cancelAllAnimations()
+
+                let isExpanded = expandableBarView?.isSearchAreaExpanded == true
+                let isNewStateResting = !newState.isDifferentState(than: newState.onEditingStoppedState)
+                if !isExpanded && (isNewStateResting || !newState.showAIChatModeToggle) {
+                    selectedTextEntryMode = .search
+                    updateTextFieldPlaceholderForSelectedMode()
+                }
             }
             state = newState
         }
@@ -662,7 +677,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isMenuButtonHidden = !state.showMenu
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
-        barView.isRefreshButtonHidden = !state.showRefresh
+        barView.isRefreshButtonHidden = !state.showRefresh || state.showRefreshOutsideAddressBar
         barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
@@ -670,11 +685,29 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isForwardButtonHidden = !state.showForwardButton
         barView.isBookmarksButtonHidden = !state.showBookmarksButton
         barView.isAIChatButtonHidden = !state.showAIChatButton
+        
+        if let expandable = expandableBarView {
+            expandable.isExternalRefreshButtonHidden = !state.showRefreshOutsideAddressBar
+            expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
+            expandable.selectedModeToggleState = selectedTextEntryMode
 
-        applyCustomization()
+            let isAddressBarSelected = textField.isEditing || expandable.isSearchAreaExpanded
+            let shouldShowModeToggle = state.showAIChatModeToggle && isAddressBarSelected
+            expandable.isModeToggleHidden = !shouldShowModeToggle
+            if shouldShowModeToggle {
+                barView.isAIChatButtonHidden = true
+            }
 
-        let shouldShowAIChat = state.showAIChatFullModeBranding
-        barView.isFullAIChatHidden = !shouldShowAIChat
+            let shouldExpand = shouldShowModeToggle && selectedTextEntryMode == .aiChat
+            expandable.setSearchAreaExpanded(shouldExpand, animated: false)
+        }
+
+        if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled == false {
+            applyCustomization()
+
+            let shouldShowAIChat = state.showAIChatFullModeBranding
+            barView.isFullAIChatHidden = !shouldShowAIChat
+        }
     }
 
     private func applyCustomization() {
@@ -708,7 +741,12 @@ class OmniBarViewController: UIViewController, OmniBar {
             resignFirstResponder()
 
             DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
-            
+
+            if selectedTextEntryMode == .aiChat {
+                omniDelegate?.onPromptSubmitted(query, tools: nil)
+                return
+            }
+
             if let url = URL(trimmedAddressBarString: query, useUnifiedLogic: isUsingUnifiedPredictor), url.isValid(usingUnifiedLogic: isUsingUnifiedPredictor) {
                 omniDelegate?.onOmniQuerySubmitted(url.absoluteString)
             } else {
@@ -741,6 +779,8 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func clear() {
         textField.text = nil
+        expandableBarView?.aiChatTextView.text = nil
+        expandableBarView?.updateTextFieldPlaceholderVisibility(hasText: false)
         omniDelegate?.onOmniQueryUpdated("")
     }
 
@@ -866,6 +906,29 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onAIChatPressed() {
         omniDelegate?.onAIChatPressed()
+    }
+
+    func setSelectedTextEntryMode(_ mode: TextEntryMode) {
+        selectedTextEntryMode = mode
+        updateTextFieldPlaceholderForSelectedMode()
+
+        if state.showAIChatModeToggle {
+            expandableBarView?.setSearchAreaExpanded(mode == .aiChat, animated: true)
+        }
+    }
+
+    private func updateTextFieldPlaceholderForSelectedMode() {
+        let theme = ThemeManager.shared.currentTheme
+        let placeholder: String = {
+            if selectedTextEntryMode == .aiChat {
+                return UserText.searchInputFieldPlaceholderDuckAI
+            } else {
+                return UserText.searchDuckDuckGo
+            }
+        }()
+
+        textField.attributedPlaceholder = NSAttributedString(string: placeholder,
+                                                             attributes: [.foregroundColor: theme.searchBarTextPlaceholderColor])
     }
 
     private func onDismissPressed() {

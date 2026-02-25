@@ -142,7 +142,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
-        messageHandling.getDataForMessageType(.nativeConfigValues)
+        let isFireWindow = await isFireWindowMessage(message)
+        return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -357,7 +358,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         func makeErrorResponse(_ reason: String) -> AIChatErrorResponse {
-            pixelFiring?.fire(AIChatPixel.aiChatSyncScopedSyncTokenError(reason: reason), frequency: .dailyAndStandard)
+            fireSyncDailyAndStandardPixel(AIChatPixel.aiChatSyncScopedSyncTokenError(reason: reason))
             return AIChatErrorResponse(reason: reason)
         }
 
@@ -365,7 +366,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             guard let syncHandler = makeSyncHandler() else {
                 return makeErrorResponse("internal error")
             }
-            return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
+            let payload = try await syncHandler.getScopedToken()
+            fireSyncAiChatActiveDailyIfNeeded()
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -396,12 +399,18 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
-            pixelFiring?.fire(AIChatPixel.aiChatSyncEncryptionError(reason: "invalid parameters"), frequency: .dailyAndStandard)
+            Task { @MainActor [weak self] in
+                self?.fireSyncDailyAndStandardPixel(AIChatPixel.aiChatSyncEncryptionError(reason: "invalid parameters"))
+            }
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.encrypt(data))
+            let payload = try syncHandler.encrypt(data)
+            Task { @MainActor [weak self] in
+                self?.fireSyncAiChatActiveDailyIfNeeded()
+            }
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason: String
             switch error {
@@ -410,7 +419,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             default:
                 reason = "internal error"
             }
-            pixelFiring?.fire(AIChatPixel.aiChatSyncEncryptionError(reason: reason), frequency: .dailyAndStandard)
+            Task { @MainActor [weak self] in
+                self?.fireSyncDailyAndStandardPixel(AIChatPixel.aiChatSyncEncryptionError(reason: reason))
+            }
             return AIChatErrorResponse(reason: reason)
         }
     }
@@ -425,15 +436,23 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
-            pixelFiring?.fire(AIChatPixel.aiChatSyncDecryptionError(reason: "invalid parameters"), frequency: .dailyAndStandard)
+            Task { @MainActor [weak self] in
+                self?.fireSyncDailyAndStandardPixel(AIChatPixel.aiChatSyncDecryptionError(reason: "invalid parameters"))
+            }
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.decrypt(data))
+            let payload = try syncHandler.decrypt(data)
+            Task { @MainActor [weak self] in
+                self?.fireSyncAiChatActiveDailyIfNeeded()
+            }
+            return AIChatPayloadResponse(payload: payload)
         } catch {
             let reason = error.localizedDescription
-            pixelFiring?.fire(AIChatPixel.aiChatSyncDecryptionError(reason: reason), frequency: .dailyAndStandard)
+            Task { @MainActor [weak self] in
+                self?.fireSyncDailyAndStandardPixel(AIChatPixel.aiChatSyncDecryptionError(reason: reason))
+            }
             return AIChatErrorResponse(reason: "internal error")
         }
     }
@@ -463,7 +482,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let dict = params as? [String: Any],
               let enabled = dict["enabled"] as? Bool else {
-            pixelFiring?.fire(AIChatPixel.aiChatSyncHistoryEnabledError(reason: "invalid parameters"), frequency: .dailyAndStandard)
+            Task { @MainActor [weak self] in
+                self?.fireSyncDailyAndStandardPixel(AIChatPixel.aiChatSyncHistoryEnabledError(reason: "invalid parameters"))
+            }
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
@@ -481,6 +502,26 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
         return AIChatSyncHandler(sync: sync, httpRequestErrorHandler: syncErrorHandler.handleAiChatsError)
     }
+
+    @MainActor
+    private func isFireWindowMessage(_ message: UserScriptMessage) -> Bool {
+        guard let windowController = message.messageWebView?.window?.windowController as? MainWindowController else {
+            return false
+        }
+
+        return windowController.mainViewController.isBurner
+    }
+
+    @MainActor
+    private func fireSyncAiChatActiveDailyIfNeeded() {
+        pixelFiring?.fire(GeneralPixel.syncAiChatActiveDaily, frequency: .legacyDailyNoSuffix)
+    }
+
+    @MainActor
+    private func fireSyncDailyAndStandardPixel(_ pixel: PixelKitEvent) {
+        pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
+    }
+
 }
 // swiftlint:enable inclusive_language
 

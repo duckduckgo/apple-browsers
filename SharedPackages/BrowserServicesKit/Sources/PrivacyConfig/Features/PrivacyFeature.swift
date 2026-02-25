@@ -46,7 +46,6 @@ public enum PrivacyFeature: String {
     case sync
     case privacyDashboard
     case updates
-    case updatesWontAutomaticallyRestartApp
     case privacyPro
     case sslCertificates
     case toggleReports
@@ -88,6 +87,8 @@ public enum PrivacyFeature: String {
     case popupBlocking
     case combinedPermissionView
     case pageContext
+    case webExtensions
+    case forceDarkModeOnWebsites
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -142,14 +143,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
 
-    /// Tab closing event recreation feature flag (failsafe for removing private API)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
-    case tabClosingEventRecreation
-
-    /// Feature flag for Themes
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
-    case themes
-
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
@@ -181,6 +174,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
     case crashCollectionLimitCallStackTreeDepth
+
+    /// Ctrl+click compatibility fix to preserve right click behavior
+    case controlClickFix
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -238,6 +234,12 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091
     case burnSingleTab
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
+    case showNTPAfterIdleReturn
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
+    case suppressTrackerAnimationOnColdStart
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -364,9 +366,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
-    /// Controls different input sizes and fade out animation for toggle.
-    case fadeOutOnToggle
-
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
@@ -381,6 +380,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
+
+    case sidebarResizable
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -397,8 +398,8 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
 
-    /// Global switch to display autoconsent stats on New Tab Page
-    case autoconsentStats
+    /// Controls whether the Next Steps List widget is enabled on New Tab Page
+    case nextStepsListWidget
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -552,13 +553,6 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     case scamProtection
 }
 
-public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
-
-    // https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
-    case scheduledDefaultBrowserAndDockPromptsInactiveUser // macOS
-}
-
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 
@@ -630,11 +624,8 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
     case popupPermissionButtonPersistence
 }
 
-public enum UpdatesSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .updates
-    }
+public enum WebExtensionsSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .webExtensions }
 
-    /// Simplified update flow without expiration logic
-    case simplifiedFlow
+    case embeddedExtension
 }

@@ -97,6 +97,7 @@ class MainViewController: UIViewController {
     }()
 
     var newTabPageViewController: NewTabPageViewController?
+
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?
 
@@ -154,6 +155,7 @@ class MainViewController: UIViewController {
     private var aiChatCancellables = Set<AnyCancellable>()
     private var settingsCancellables = Set<AnyCancellable>()
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
+    private var currentNTPEscapeHatch: EscapeHatchModel?
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     let subscriptionDataReporter: SubscriptionDataReporting
@@ -211,6 +213,7 @@ class MainViewController: UIViewController {
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
     let aiChatSettings: AIChatSettingsProvider
+    let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     let privacyStats: PrivacyStatsProviding
 
     let customConfigurationURLProvider: CustomConfigurationURLProviding
@@ -276,6 +279,8 @@ class MainViewController: UIViewController {
         self.webExtensionManager = manager
     }
 
+    private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
+
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         bookmarksDatabase: CoreDataDatabase,
@@ -304,6 +309,7 @@ class MainViewController: UIViewController {
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
         aiChatSettings: AIChatSettingsProvider,
+        aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
         themeManager: ThemeManaging,
@@ -327,7 +333,8 @@ class MainViewController: UIViewController {
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         privacyStats: PrivacyStatsProviding,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
-        whatsNewRepository: WhatsNewMessageRepository
+        whatsNewRepository: WhatsNewMessageRepository,
+        darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -344,6 +351,7 @@ class MainViewController: UIViewController {
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
+        self.aiChatAddressBarExperience = aiChatAddressBarExperience
         self.experimentalAIChatManager = experimentalAIChatManager
         self.previewsSource = previewsSource
         self.tabManager = tabManager
@@ -382,6 +390,7 @@ class MainViewController: UIViewController {
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
         self.whatsNewRepository = whatsNewRepository
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
 
         super.init(nibName: nil, bundle: nil)
         
@@ -415,6 +424,7 @@ class MainViewController: UIViewController {
     }
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
+    private var expandedOmniBarDismissTapGesture: UITapGestureRecognizer?
 
     lazy var newTabDaxDialogFactory: NewTabDaxDialogsProvider = {
         NewTabDaxDialogsProvider(
@@ -458,11 +468,16 @@ class MainViewController: UIViewController {
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
+                                                              aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization)
+
+        if featureFlagger.isFeatureOn(.iPadAIToggle) {
+            viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
+        }
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -500,6 +515,7 @@ class MainViewController: UIViewController {
         registerForKeyboardNotifications()
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
+        registerForWebExtensionNotifications()
 
         decorate()
 
@@ -596,6 +612,7 @@ class MainViewController: UIViewController {
                                                       featureFlagger: featureFlagger,
                                                       aichatIPadTabFeature: aichatIPadTabFeature,
                                                       aiChatSettings: aiChatSettings,
+                                                      aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
                                                       mobileCustomization: mobileCustomization)
@@ -901,7 +918,28 @@ class MainViewController: UIViewController {
                                                selector: #selector(refreshViewsBasedOnDuckPlayerPresentation),
                                                name: DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated,
                                                object: nil)
-        
+    }
+
+    private func registerForWebExtensionNotifications() {
+        if #available(iOS 18.4, *) {
+            NotificationCenter.default.addObserver(
+                forName: .webExtensionAutoconsentDashboardStateRefresh,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleWebExtensionDashboardStateRefresh(notification)
+            }
+        }
+    }
+
+    @available(iOS 18.4, *)
+    @objc private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
+        guard let domain = notification.userInfo?[AutoconsentNotification.UserInfoKeys.domain] as? String,
+              let consentStatus = notification.userInfo?[AutoconsentNotification.UserInfoKeys.consentStatus] as? ConsentStatusInfo,
+              currentTab?.url?.host == domain else {
+            return
+        }
+        currentTab?.privacyInfo?.cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
     @objc func onAddressBarPositionChanged() {
@@ -1159,7 +1197,51 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.omniDelegate = self
     }
     
-    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false) {
+    private func makeEscapeHatchModel(from tab: Tab, targetTabIndex: Int) -> EscapeHatchModel? {
+        if tab.isAITab {
+            return EscapeHatchModel(
+                title: UserText.omnibarFullAIChatModeDisplayTitle,
+                subtitle: "Duck.ai",
+                isAITab: true,
+                domain: nil,
+                targetTabIndex: targetTabIndex
+            )
+        }
+        if let link = tab.link {
+            let subtitle = link.url.host?.droppingWwwPrefix() ?? link.url.absoluteString
+            return EscapeHatchModel(
+                title: link.displayTitle,
+                subtitle: subtitle,
+                isAITab: false,
+                domain: link.url.host,
+                targetTabIndex: targetTabIndex
+            )
+        }
+        return nil
+    }
+
+    private func buildEscapeHatch(tabSwitchedFromIndex: Int? = nil) -> EscapeHatchModel? {
+        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) else {
+            return nil
+        }
+        let tabs = tabManager.model.tabs
+        let currentIndex = tabManager.model.currentIndex
+        let targetIndex: Int?
+        if let fromIndex = tabSwitchedFromIndex,
+           tabs.indices.contains(fromIndex),
+           fromIndex != currentIndex {
+            targetIndex = fromIndex
+        } else if tabs.count > 1, currentIndex > 0 {
+            targetIndex = currentIndex - 1
+        } else {
+            targetIndex = nil
+        }
+        guard let targetIndex else { return nil }
+        let tab = tabManager.model.get(tabAt: targetIndex)
+        return makeEscapeHatchModel(from: tab, targetTabIndex: targetIndex)
+    }
+
+    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, tabSwitchedFromIndex: Int? = nil) {
         guard !autoClearInProgress else { return }
         
         viewCoordinator.logoContainer.isHidden = false
@@ -1203,6 +1285,11 @@ class MainViewController: UIViewController {
         controller.chromeDelegate = self
 
         newTabPageViewController = controller
+
+        let hatch = buildEscapeHatch(tabSwitchedFromIndex: tabSwitchedFromIndex)
+        controller.setEscapeHatch(hatch)
+        currentNTPEscapeHatch = hatch
+
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
@@ -1356,14 +1443,14 @@ class MainViewController: UIViewController {
     /// - Parameters:
     ///   - query: The search query to be loaded.
     ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
-    func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none) {
+    func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none, fromExternalLink: Bool = false) {
         dismissOmniBar()
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled) else {
             Logger.lifecycle.error("Couldn't form URL for query: \(query, privacy: .public)")
             return
         }
 
-        loadUrlInNewTab(url, reuseExisting: reuseExisting, inheritedAttribution: nil)
+        loadUrlInNewTab(url, reuseExisting: reuseExisting, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
     }
 
     /// Load URL in a new tab, with option to reuse an existing tab.
@@ -1493,12 +1580,16 @@ class MainViewController: UIViewController {
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false) {
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
+
+        // Mark tab as external launch if opened from external URL or shortcut
+        if fromExternalLink {
+            tabManager.markTabAsExternalLaunch(tab.tabModel)
+            // For external launches, only the new tab should suppress tracker animations
+            tabManager.setSuppressTrackerAnimationOnFirstLoad(for: tab.tabModel, shouldSuppress: true)
+        }
+
         dismissOmniBar()
         attachTab(tab: tab)
-
-        if #available(iOS 18.4, *) {
-            webExtensionEventsCoordinator?.didOpenTab(tab)
-        }
     }
 
     func select(tabAt index: Int) {
@@ -1506,19 +1597,21 @@ class MainViewController: UIViewController {
         allowContentUnderflow = false
         
         if tabManager.model.tabs.indices.contains(index) {
+            let tabSwitchedFromIndex = tabManager.model.currentIndex
             let tab = tabManager.select(tabAt: index)
-            select(tab: tab)
+            select(tab: tab, tabSwitchedFromIndex: tabSwitchedFromIndex)
         } else {
             assertionFailure("Invalid index selected")
         }
     }
 
-    fileprivate func select(tab: TabViewController) {
+    fileprivate func select(tab: TabViewController, tabSwitchedFromIndex passedFromIndex: Int? = nil) {
         let previousTab = currentTab
 
         hideNotificationBarIfBrokenSitePromptShown()
         if tab.link == nil {
-            attachHomeScreen()
+            let tabSwitchedFromIndex = passedFromIndex ?? previousTab.flatMap { tabManager.model.indexOf(tab: $0.tabModel) }
+            attachHomeScreen(tabSwitchedFromIndex: tabSwitchedFromIndex)
         } else {
             attachTab(tab: tab)
         }
@@ -1530,6 +1623,10 @@ class MainViewController: UIViewController {
         }
 
         if #available(iOS 18.4, *) {
+            if let previousTab {
+                webExtensionEventsCoordinator?.didDeselectTabs([previousTab])
+            }
+            webExtensionEventsCoordinator?.didSelectTabs([tab])
             webExtensionEventsCoordinator?.didActivateTab(tab, previousActiveTab: previousTab)
         }
     }
@@ -1661,6 +1758,13 @@ class MainViewController: UIViewController {
     func dismissOmniBar() {
         hideSuggestionTray()
         viewCoordinator.omniBar.endEditing()
+
+        if aiChatAddressBarExperience.shouldShowModeToggle,
+           let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController,
+           omniBarVC.selectedTextEntryMode == .aiChat {
+            omniBarVC.setSelectedTextEntryMode(.search)
+        }
+
         refreshOmniBar()
     }
 
@@ -2012,16 +2116,33 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.dismiss()
 
+        let tabSwitchedFromIndex = tabManager.model.currentIndex
+
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.selectTab(existing)
         } else {
             tabManager.addHomeTab()
         }
-        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard)
+        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         themeColorManager.updateThemeColor()
         showBars() // In case the browser chrome bars are hidden when calling this method
+    }
+
+    // MARK: - Idle return NTP (dismiss overlays so NTP is visible)
+    /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.
+    func prepareForIdleReturnNTP(completion: @escaping () -> Void) {
+        guard let presented = presentedViewController, !presented.isBeingDismissed else {
+            completion()
+            return
+        }
+        // Don't dismiss the omni bar's editing state (keyboard/switch), we're reusing NTP and want to preserve focus
+        if presented is OmniBarEditingStateViewController {
+            completion()
+            return
+        }
+        presented.dismiss(animated: true, completion: completion)
     }
     
     func updateFindInPage() {
@@ -2087,7 +2208,11 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
                 if let redirectURLComponents = notification.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents {
-                    deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
+                    if redirectURLComponents.path == "/subscriptions/plans" {
+                        deepLinkTarget = .subscriptionPlanChangeFlow(redirectURLComponents: redirectURLComponents)
+                    } else {
+                        deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
+                    }
                 } else {
                     deepLinkTarget = .subscriptionFlow()
                 }
@@ -3145,6 +3270,12 @@ extension MainViewController: OmniBarDelegate {
         return selectQueryText
     }
 
+    func shouldAutoSelectTextForSERPQuery() -> Bool {
+        let shouldSelect = isSERPPresented && skipSERPFlow
+        skipSERPFlow = false
+        return shouldSelect
+    }
+
     func onRefreshPressed() {
         hideSuggestionTray()
         currentTab?.refresh()
@@ -3218,6 +3349,28 @@ extension MainViewController: OmniBarDelegate {
     func onDidBeginEditing() { }
     func onDidEndEditing() { }
 
+    // MARK: - iPad Expanded Omnibar
+
+    func onOmniBarExpandedStateChanged(isExpanded: Bool) {
+        if isExpanded {
+            hideSuggestionTray()
+            guard expandedOmniBarDismissTapGesture == nil else { return }
+            let tap = UITapGestureRecognizer(target: self, action: #selector(dismissExpandedOmniBar))
+            tap.cancelsTouchesInView = false
+            viewCoordinator.contentContainer.addGestureRecognizer(tap)
+            expandedOmniBarDismissTapGesture = tap
+        } else {
+            if let tap = expandedOmniBarDismissTapGesture {
+                viewCoordinator.contentContainer.removeGestureRecognizer(tap)
+                expandedOmniBarDismissTapGesture = nil
+            }
+        }
+    }
+
+    @objc private func dismissExpandedOmniBar() {
+        performCancel()
+    }
+
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped() {
         fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
@@ -3250,6 +3403,31 @@ extension MainViewController: OmniBarDelegate {
     func onAIChatBrandingPressed() {
         Pixel.fire(pixel: .addressBarClickOnAIChat)
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
+    }
+
+    func escapeHatchForEditingState() -> EscapeHatchModel? {
+        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn),
+              tabManager.model.currentTab?.link == nil else {
+            return nil
+        }
+        return currentNTPEscapeHatch
+    }
+
+    func useNewOmnibarTransitionBehaviour() -> Bool {
+        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+    }
+
+    func onSwitchTabToIndex(_ index: Int) {
+        guard tabManager.model.tabs.indices.contains(index), index != tabManager.model.currentIndex else {
+            viewCoordinator.omniBar.endEditing()
+            return
+        }
+        let tabToClose = tabManager.model.currentTab
+        select(tabAt: index)
+        viewCoordinator.omniBar.endEditing()
+        if let tabToClose {
+            closeTab(tabToClose)
+        }
     }
 }
 
@@ -3347,6 +3525,21 @@ extension MainViewController: NewTabPageControllerDelegate {
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {
         faviconsFetcherOnboarding.presentOnboardingIfNeeded(from: self)
     }
+
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, index: Int) {
+        guard tabManager.model.tabs.indices.contains(index) else {
+            controller.setEscapeHatch(nil)
+            currentNTPEscapeHatch = nil
+            return
+        }
+        guard index != tabManager.model.currentIndex else { return }
+        let tabToClose = tabManager.model.currentTab
+        select(tabAt: index)
+        if let tabToClose {
+            closeTab(tabToClose)
+        }
+        currentNTPEscapeHatch = nil
+    }
 }
 
 extension MainViewController: TabDelegate {
@@ -3435,7 +3628,7 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
-        _ = tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
+        tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
         animateBackgroundTab()
     }
 
@@ -3722,6 +3915,16 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController) {
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         updateCurrentTab()
+    }
+
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
+        if #available(iOS 18.4, *) {
+            for tab in tabs {
+                if let tabController = tabManager.controller(for: tab) {
+                    webExtensionEventsCoordinator?.didCloseTab(tabController)
+                }
+            }
+        }
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {
@@ -4015,6 +4218,19 @@ extension MainViewController: FireExecutorDelegate {
     func willStartBurningTabs(fireRequest: FireRequest) {
         omniBar.endEditing()
         findInPageView?.done()
+
+        if #available(iOS 18.4, *) {
+            switch fireRequest.scope {
+            case .all:
+                for tab in tabManager.model.tabs {
+                    if let tabController = tabManager.controller(for: tab) {
+                        webExtensionEventsCoordinator?.didCloseTab(tabController)
+                    }
+                }
+            case .tab:
+                break
+            }
+        }
     }
     
     func didFinishBurningTabs(fireRequest: FireRequest) {
@@ -4031,6 +4247,10 @@ extension MainViewController: FireExecutorDelegate {
     
     func willStartBurningData(fireRequest: FireRequest) {
         self.clearInProgress = true
+        if #available(iOS 18.4, *) {
+            webExtensionEventsCoordinator?.extensionsWillUnload()
+            webExtensionManager?.unloadAllExtensions()
+        }
     }
     
     func didFinishBurningData(fireRequest: FireRequest) {
@@ -4060,6 +4280,12 @@ extension MainViewController: FireExecutorDelegate {
         // because data could potentially delete a contextual chat that needs syncing
         if syncService.authState != .inactive {
             syncService.scheduler.requestSyncImmediately()
+        }
+        if #available(iOS 18.4, *) {
+            Task { @MainActor [weak self] in
+                await self?.webExtensionManager?.loadInstalledExtensions()
+                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+            }
         }
         switch fireRequest.trigger {
         case .manualFire:
@@ -4640,4 +4866,21 @@ extension MainViewController {
         }
     }
 
+}
+
+// MARK: - ConsentStatusInfo to CookieConsentInfo Conversion
+
+@available(iOS 18.4, *)
+extension ConsentStatusInfo {
+    func toCookieConsentInfo() -> CookieConsentInfo {
+        CookieConsentInfo(
+            consentManaged: consentManaged,
+            cosmetic: cosmetic,
+            optoutFailed: optoutFailed,
+            selftestFailed: selftestFailed,
+            consentReloadLoop: consentReloadLoop,
+            consentRule: consentRule,
+            consentHeuristicEnabled: consentHeuristicEnabled
+        )
+    }
 }

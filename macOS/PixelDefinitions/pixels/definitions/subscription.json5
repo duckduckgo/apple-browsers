@@ -246,6 +246,20 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_mac_direct_subscription_settings_cancel-pending-downgrade_click": {
+        "description": "Fired when the user clicks to cancel a pending downgrade in subscription settings (direct distribution)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_store_subscription_settings_cancel-pending-downgrade_click": {
+        "description": "Fired when the user clicks to cancel a pending downgrade in subscription settings (App Store distribution)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
 
     "m_mac_store_privacy-pro_app_subscription-purchase_failure": {
         "description": "The error encountered when an App Store subscription purchase fails",

@@ -587,8 +587,11 @@ final class SettingsViewModel: ObservableObject {
 
     var forceWebsiteDarkModeBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.darkReaderFeatureSettings.isForceDarkModeEnabled },
-            set: { self.darkReaderFeatureSettings.setForceDarkModeEnabled($0) }
+            get: { self.state.forceWebsiteDarkMode },
+            set: {
+                self.darkReaderFeatureSettings.setForceDarkModeEnabled($0)
+                self.state.forceWebsiteDarkMode = $0
+            }
         )
     }
 
@@ -758,6 +761,7 @@ extension SettingsViewModel {
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
             showMenuInSheet: browsingMenuSheetCapability.isEnabled,
+            forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoClearAIChatHistory: appSettings.autoClearAIChatHistory,

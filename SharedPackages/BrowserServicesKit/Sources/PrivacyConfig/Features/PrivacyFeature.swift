@@ -46,7 +46,6 @@ public enum PrivacyFeature: String {
     case sync
     case privacyDashboard
     case updates
-    case updatesWontAutomaticallyRestartApp
     case privacyPro
     case sslCertificates
     case toggleReports
@@ -637,15 +636,6 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
 
     /// Show popup permission button in inactive state when temporary allowance is active
     case popupPermissionButtonPersistence
-}
-
-public enum UpdatesSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .updates
-    }
-
-    /// Simplified update flow without expiration logic
-    case simplifiedFlow
 }
 
 public enum WebExtensionsSubfeature: String, PrivacySubfeature {

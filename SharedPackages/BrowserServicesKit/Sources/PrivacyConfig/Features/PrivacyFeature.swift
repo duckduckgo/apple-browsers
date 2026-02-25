@@ -46,7 +46,6 @@ public enum PrivacyFeature: String {
     case sync
     case privacyDashboard
     case updates
-    case updatesWontAutomaticallyRestartApp
     case privacyPro
     case sslCertificates
     case toggleReports
@@ -143,10 +142,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Feature flag for a macOS Tahoe fix only
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
-
-    /// Tab closing event recreation feature flag (failsafe for removing private API)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
-    case tabClosingEventRecreation
 
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
@@ -406,9 +401,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
 
-    /// Global switch to display autoconsent stats on New Tab Page
-    case autoconsentStats
-
     /// Controls whether the Next Steps List widget is enabled on New Tab Page
     case nextStepsListWidget
 }
@@ -638,15 +630,6 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
     /// Allow popups for current page after permission approval (until next navigation)
     case allowPopupsForCurrentPage
 
-}
-
-public enum UpdatesSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .updates
-    }
-
-    /// Simplified update flow without expiration logic
-    case simplifiedFlow
 }
 
 public enum WebExtensionsSubfeature: String, PrivacySubfeature {

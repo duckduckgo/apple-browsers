@@ -31,6 +31,7 @@ protocol DarkReaderFeatureSettings {
     var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> { get }
     var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> { get }
     func setForceDarkModeEnabled(_ enabled: Bool)
+    func themeDidChange()
 }
 
 enum DarkReaderStorageKeys: String, StorageKeyDescribing {
@@ -45,6 +46,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let appSettings: AppSettings
     private let storage: any KeyedStoring<DarkReaderKeys>
     private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
     private let excludedDomainsChangedSubject = PassthroughSubject<Void, Never>()
@@ -60,9 +62,11 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
+         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          storage: (any KeyedStoring<DarkReaderKeys>)? = nil) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.appSettings = appSettings
         self.storage = if let storage { storage } else { UserDefaults.app.keyedStoring() }
 
         privacyConfigurationManager.updatesPublisher
@@ -81,8 +85,13 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
             .store(in: &cancellables)
     }
 
+    private var isLightTheme: Bool {
+        appSettings.currentThemeStyle == .light
+    }
+
     var isFeatureEnabled: Bool {
         guard #available(iOS 18.4, *) else { return false }
+        guard !isLightTheme else { return false }
         return featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
     }
 
@@ -98,5 +107,9 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
         guard isFeatureEnabled else { return }
         storage.forceDarkModeOnWebsitesEnabled = enabled
         forceDarkModeChangedSubject.send(enabled)
+    }
+
+    func themeDidChange() {
+        forceDarkModeChangedSubject.send(isForceDarkModeEnabled)
     }
 }

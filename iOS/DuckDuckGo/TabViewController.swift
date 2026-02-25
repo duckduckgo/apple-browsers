@@ -3063,6 +3063,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.debugScript.instrumentation = instrumentation
         userScripts.surrogatesScript.delegate = self
         userScripts.contentBlockerUserScript.delegate = self
+        userScripts.trackerProtectionSubfeature.delegate = self
         userScripts.autofillUserScript.emailDelegate = emailManager
         userScripts.autofillUserScript.vaultDelegate = vaultManager
         userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
@@ -3182,6 +3183,63 @@ extension TabViewController: SurrogatesUserScriptDelegate {
         userScriptDetectedTracker(tracker)
     }
 
+}
+
+// MARK: - TrackerProtectionSubfeatureDelegate
+extension TabViewController: TrackerProtectionSubfeatureDelegate {
+
+    func trackerProtectionShouldProcessTrackers(_ subfeature: TrackerProtectionSubfeature) -> Bool {
+        return privacyInfo?.isFor(self.url) ?? false
+    }
+
+    func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
+                           didDetectTracker tracker: TrackerProtectionSubfeature.TrackerDetection) {
+        guard let url = url else { return }
+
+        let state: BlockingState = tracker.blocked ? .blocked : .allowed(reason: .otherThirdPartyRequest)
+        let eTLDplus1 = URL(string: tracker.url)?.host
+        let entity = tracker.entityName.map { Entity(displayName: $0, domains: nil, prevalence: tracker.prevalence) }
+        let detectedRequest = DetectedRequest(url: tracker.url,
+                                              eTLDplus1: eTLDplus1,
+                                              knownTracker: nil,
+                                              entity: entity,
+                                              state: state,
+                                              pageUrl: tracker.pageUrl)
+
+        adClickAttributionLogic.onRequestDetected(request: detectedRequest)
+
+        if detectedRequest.isBlocked && fireWoFollowUp {
+            fireWoFollowUp = false
+            Pixel.fire(pixel: .daxDialogsWithoutTrackersFollowUp)
+        }
+
+        privacyInfo?.trackerInfo.addDetectedTracker(detectedRequest, onPageWithURL: url)
+
+        guard detectedRequest.isBlocked,
+              let host = detectedRequest.url.url?.host,
+              let entityName = ContentBlocking.shared.trackerDataManager.trackerData.findParentEntityOrFallback(forHost: host)?.displayName else {
+            return
+        }
+
+        Task {
+            await privacyStats.recordBlockedTracker(entityName)
+        }
+    }
+
+    func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
+                           didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
+        guard let url = url, let surrogateHost = URL(string: surrogate.url)?.host else { return }
+
+        let entity = Entity(displayName: surrogateHost, domains: nil, prevalence: nil)
+        let detectedRequest = DetectedRequest(url: surrogate.url,
+                                              eTLDplus1: surrogateHost,
+                                              knownTracker: nil,
+                                              entity: entity,
+                                              state: .blocked,
+                                              pageUrl: surrogate.pageUrl)
+
+        privacyInfo?.trackerInfo.addInstalledSurrogateHost(surrogateHost, for: detectedRequest, onPageWithURL: url)
+    }
 }
 
 // MARK: - PrintingSubfeatureDelegate

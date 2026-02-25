@@ -59,6 +59,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let historyViewUserScript: HistoryViewUserScript
     let newTabPageUserScript: NewTabPageUserScript?
     let serpSettingsUserScript: SERPSettingsUserScript?
+    let trackerProtectionSubfeature = TrackerProtectionSubfeature()
     let faviconScript = FaviconUserScript()
 
     private let contentScopePreferences: ContentScopePreferences
@@ -108,7 +109,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                            currentCohorts: currentCohorts,
                                            themeVariant: themeVariant)
         do {
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager, trackerProtectionDataSource: sourceProvider.trackerProtectionDataSource))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
             if let error = error as? UserScriptError {
@@ -196,6 +197,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         if let pageContextUserScript {
             contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         }
+
+        contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
 
         if let subscriptionUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)

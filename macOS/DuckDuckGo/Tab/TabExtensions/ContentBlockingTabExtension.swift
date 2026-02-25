@@ -73,7 +73,8 @@ final class ContentBlockingTabExtension: NSObject {
          cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockerRulesUserScriptPublisher: some Publisher<ContentBlockerRulesUserScript?, Never>,
-         surrogatesUserScriptPublisher: some Publisher<SurrogatesUserScript?, Never>) {
+         surrogatesUserScriptPublisher: some Publisher<SurrogatesUserScript?, Never>,
+         trackerProtectionSubfeaturePublisher: some Publisher<TrackerProtectionSubfeature?, Never>) {
 
         self.cbaTimeReporter = cbaTimeReporter
         self.fbBlockingEnabledProvider = fbBlockingEnabledProvider
@@ -88,6 +89,9 @@ final class ContentBlockingTabExtension: NSObject {
         }.store(in: &cancellables)
         surrogatesUserScriptPublisher.sink { [weak self] surrogatesUserScript in
             surrogatesUserScript?.delegate = self
+        }.store(in: &cancellables)
+        trackerProtectionSubfeaturePublisher.sink { [weak self] trackerProtectionSubfeature in
+            trackerProtectionSubfeature?.delegate = self
         }.store(in: &cancellables)
     }
 
@@ -173,6 +177,44 @@ extension ContentBlockingTabExtension: SurrogatesUserScriptDelegate {
 
     func surrogatesUserScript(_ script: SurrogatesUserScript, detectedTracker tracker: DetectedRequest, withSurrogate host: String) {
         trackersSubject.send(DetectedTracker(request: tracker, type: .trackerWithSurrogate(host: host)))
+    }
+}
+
+extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
+
+    func trackerProtectionShouldProcessTrackers(_ subfeature: TrackerProtectionSubfeature) -> Bool {
+        return true
+    }
+
+    func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
+                           didDetectTracker tracker: TrackerProtectionSubfeature.TrackerDetection) {
+        let state: BlockingState = tracker.blocked ? .blocked : .allowed(reason: .otherThirdPartyRequest)
+        let eTLDplus1 = URL(string: tracker.url)?.host
+        let entity = tracker.entityName.map { Entity(displayName: $0, domains: nil, prevalence: tracker.prevalence) }
+        let detectedRequest = DetectedRequest(url: tracker.url,
+                                              eTLDplus1: eTLDplus1,
+                                              knownTracker: nil,
+                                              entity: entity,
+                                              state: state,
+                                              pageUrl: tracker.pageUrl)
+        trackersSubject.send(DetectedTracker(request: detectedRequest, type: .tracker))
+
+        if detectedRequest.isBlocked && detectedRequest.ownerName == fbBlockingEnabledProvider.fbEntity {
+            fbBlockingEnabledProvider.trackerDetected()
+        }
+    }
+
+    func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
+                           didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
+        let surrogateHost = URL(string: surrogate.url)?.host ?? ""
+        let entity = Entity(displayName: surrogateHost, domains: nil, prevalence: nil)
+        let detectedRequest = DetectedRequest(url: surrogate.url,
+                                              eTLDplus1: surrogateHost,
+                                              knownTracker: nil,
+                                              entity: entity,
+                                              state: .blocked,
+                                              pageUrl: surrogate.pageUrl)
+        trackersSubject.send(DetectedTracker(request: detectedRequest, type: .trackerWithSurrogate(host: surrogateHost)))
     }
 }
 

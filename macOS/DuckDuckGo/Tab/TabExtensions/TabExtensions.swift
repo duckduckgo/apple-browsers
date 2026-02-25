@@ -149,7 +149,8 @@ extension TabExtensionsBuilder {
                                         cbaTimeReporter: dependencies.cbaTimeReporter,
                                         privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                                         contentBlockerRulesUserScriptPublisher: userScripts.map(\.?.contentBlockerRulesScript),
-                                        surrogatesUserScriptPublisher: userScripts.map(\.?.surrogatesScript))
+                                        surrogatesUserScriptPublisher: userScripts.map(\.?.surrogatesScript),
+                                        trackerProtectionSubfeaturePublisher: userScripts.map(\.?.trackerProtectionSubfeature))
         }
 
         let specialErrorPageTabExtension = add {

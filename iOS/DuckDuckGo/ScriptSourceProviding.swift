@@ -41,6 +41,7 @@ public protocol ScriptSourceProviding {
     var currentCohorts: [ContentScopeExperimentData] { get }
     var syncErrorHandler: SyncErrorHandling { get }
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
+    var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
 
 }
 
@@ -77,6 +78,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     var currentCohorts: [ContentScopeExperimentData] = []
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
+    let trackerProtectionDataSource: TrackerProtectionDataSource?
 
     init(dependencies: Dependencies) {
 
@@ -97,6 +99,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
         syncErrorHandler = dependencies.syncErrorHandler
         webExtensionAvailability = dependencies.webExtensionAvailability
+        trackerProtectionDataSource = DefaultTrackerProtectionDataSource(contentBlockingManager: contentBlockingManager)
 
         contentScopeProperties = ContentScopeProperties(gpcEnabled: dependencies.appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,

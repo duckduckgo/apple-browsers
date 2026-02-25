@@ -52,6 +52,7 @@ protocol ScriptSourceProviding {
     var syncServiceProvider: () -> DDGSyncing? { get }
     var syncErrorHandler: SyncErrorHandling { get }
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
+    var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -119,6 +120,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let syncServiceProvider: () -> DDGSyncing?
     let syncErrorHandler: SyncErrorHandling
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
+    let trackerProtectionDataSource: TrackerProtectionDataSource?
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -166,6 +168,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.syncServiceProvider = syncServiceProvider
         self.syncErrorHandler = syncErrorHandler
         self.webExtensionAvailability = webExtensionAvailability
+        self.trackerProtectionDataSource = DefaultTrackerProtectionDataSource(contentBlockingManager: contentBlockingManager)
 
         self.newTabPageActionsManager = newTabPageActionsManager
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()

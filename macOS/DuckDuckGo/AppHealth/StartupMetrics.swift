@@ -35,7 +35,9 @@ struct StartupMetrics: Codable {
 
     private(set) var intervals = [StartupStep: Interval]()
 
+    @discardableResult
     mutating func update(step: StartupStep, startTime: TimeInterval, endTime: TimeInterval) -> Self {
+        assert(startTime <= endTime)
         intervals[step] = Interval(start: startTime, end: endTime)
         return self
     }

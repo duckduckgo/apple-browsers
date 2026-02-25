@@ -31,6 +31,7 @@ final class MockRemoteMessagingActionHandler: RemoteMessagingActionHandling {
     func handleAction(_ remoteAction: RemoteAction, context: PresentationContext) async {
         didCallHandleAction = true
         capturedRemoteAction = remoteAction
+        capturedPresenter = context.presenter
         capturedPresentationContext = context
         onHandleActionCalled?()
     }

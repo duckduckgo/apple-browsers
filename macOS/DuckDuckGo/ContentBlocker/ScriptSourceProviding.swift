@@ -34,8 +34,6 @@ import WebExtensions
 protocol ScriptSourceProviding {
 
     var featureFlagger: FeatureFlagger { get }
-    var contentBlockerRulesConfig: ContentBlockerUserScriptConfig? { get }
-    var surrogatesConfig: SurrogatesUserScriptConfig? { get }
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var autofillSourceProvider: AutofillUserScriptSourceProvider? { get }
     var autoconsentManagement: AutoconsentManagement { get }
@@ -92,8 +90,6 @@ protocol ScriptSourceProviding {
 }
 
 struct ScriptSourceProvider: ScriptSourceProviding {
-    private(set) var contentBlockerRulesConfig: ContentBlockerUserScriptConfig?
-    private(set) var surrogatesConfig: SurrogatesUserScriptConfig?
     private(set) var onboardingActionsManager: OnboardingActionsManaging?
     private(set) var newTabPageActionsManager: NewTabPageActionsManager?
     private(set) var historyViewActionsManager: HistoryViewActionsManager?
@@ -171,8 +167,6 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.trackerProtectionDataSource = DefaultTrackerProtectionDataSource(contentBlockingManager: contentBlockingManager)
 
         self.newTabPageActionsManager = newTabPageActionsManager
-        self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
-        self.surrogatesConfig = buildSurrogatesConfig()
         self.sessionKey = generateSessionKey()
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
@@ -211,56 +205,6 @@ struct ScriptSourceProvider: ScriptSourceProviding {
                 error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
-        }
-    }
-
-    private func buildContentBlockerRulesConfig() -> ContentBlockerUserScriptConfig {
-
-        let tdsName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
-        let trackerData = contentBlockingManager.currentRules.first(where: { $0.name == tdsName })?.trackerData
-
-        let ctlTrackerData = (contentBlockingManager.currentRules.first(where: {
-            $0.name == DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName
-        })?.trackerData)
-
-        do {
-            return try DefaultContentBlockerUserScriptConfig(privacyConfiguration: privacyConfigurationManager.privacyConfig,
-                                                             trackerData: trackerData,
-                                                             ctlTrackerData: ctlTrackerData,
-                                                             tld: tld,
-                                                             trackerDataManager: trackerDataManager)
-        } catch {
-            if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
-            }
-            fatalError("Failed to initialize DefaultContentBlockerUserScriptConfig: \(error.localizedDescription)")
-        }
-    }
-
-    private func buildSurrogatesConfig() -> SurrogatesUserScriptConfig {
-
-        let isDebugBuild: Bool
-#if DEBUG
-        isDebugBuild = true
-#else
-        isDebugBuild = false
-#endif
-
-        let surrogates = configStorage.loadData(for: .surrogates)?.utf8String() ?? ""
-        let allTrackers = mergeTrackerDataSets(rules: contentBlockingManager.currentRules)
-        do {
-            return try DefaultSurrogatesUserScriptConfig(privacyConfig: privacyConfigurationManager.privacyConfig,
-                                                         surrogates: surrogates,
-                                                         trackerData: allTrackers.trackerData,
-                                                         encodedSurrogateTrackerData: allTrackers.encodedTrackerData,
-                                                         trackerDataManager: trackerDataManager,
-                                                         tld: tld,
-                                                         isDebugBuild: isDebugBuild)
-        } catch {
-            if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
-            }
-            fatalError("Failed to initialize DefaultSurrogatesUserScriptConfig: \(error.localizedDescription)")
         }
     }
 

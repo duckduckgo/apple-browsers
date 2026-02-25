@@ -3061,8 +3061,6 @@ extension TabViewController: UserContentControllerDelegate {
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
         userScripts.debugScript.instrumentation = instrumentation
-        userScripts.surrogatesScript.delegate = self
-        userScripts.contentBlockerUserScript.delegate = self
         userScripts.trackerProtectionSubfeature.delegate = self
         userScripts.autofillUserScript.emailDelegate = emailManager
         userScripts.autofillUserScript.vaultDelegate = vaultManager

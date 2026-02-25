@@ -41,8 +41,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
     let clickToLoadScript: ClickToLoadUserScript
 
-    let contentBlockerRulesScript: ContentBlockerRulesUserScript
-    let surrogatesScript: SurrogatesUserScript
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     let autofillScript: WebsiteAutofillUserScript
@@ -71,8 +69,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
         self.contentScopePreferences = contentScopePreferences
         clickToLoadScript = ClickToLoadUserScript()
-        contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
-        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
             windowControllersManager: sourceProvider.windowControllersManager,

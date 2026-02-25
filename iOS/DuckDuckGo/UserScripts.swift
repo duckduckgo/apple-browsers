@@ -32,8 +32,6 @@ import WebKit
 
 final class UserScripts: UserScriptsProvider {
 
-    let contentBlockerUserScript: ContentBlockerRulesUserScript
-    let surrogatesScript: SurrogatesUserScript
     let autofillUserScript: AutofillUserScript
     let loginFormDetectionScript: LoginFormDetectionUserScript?
     let contentScopeUserScript: ContentScopeUserScript
@@ -71,8 +69,6 @@ final class UserScripts: UserScriptsProvider {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
-        contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
-        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
@@ -140,8 +136,6 @@ final class UserScripts: UserScriptsProvider {
         var scripts: [UserScript?] = [
             debugScript,
             findInPageScript,
-            surrogatesScript,
-            contentBlockerUserScript,
             fullScreenVideoScript,
             autofillUserScript,
             loginFormDetectionScript,

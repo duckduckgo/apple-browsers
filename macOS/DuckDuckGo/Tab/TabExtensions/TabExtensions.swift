@@ -148,8 +148,6 @@ extension TabExtensionsBuilder {
                                         userContentControllerFuture: args.userContentControllerFuture,
                                         cbaTimeReporter: dependencies.cbaTimeReporter,
                                         privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
-                                        contentBlockerRulesUserScriptPublisher: userScripts.map(\.?.contentBlockerRulesScript),
-                                        surrogatesUserScriptPublisher: userScripts.map(\.?.surrogatesScript),
                                         trackerProtectionSubfeaturePublisher: userScripts.map(\.?.trackerProtectionSubfeature))
         }
 

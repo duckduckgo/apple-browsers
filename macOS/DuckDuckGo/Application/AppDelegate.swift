@@ -413,12 +413,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     // swiftlint:disable cyclomatic_complexity
     override init() {
-        startupProfiler = StartupProfiler()
-
+        let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appInit)
         defer {
             profilerToken.stop()
         }
+
+        self.startupProfiler = startupProfiler
 
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
         let didCrashDuringCrashHandlersSetUp = UserDefaultsWrapper(key: .didCrashDuringCrashHandlersSetUp, defaultValue: false)

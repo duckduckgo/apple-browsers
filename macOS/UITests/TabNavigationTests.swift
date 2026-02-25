@@ -351,10 +351,10 @@ class TabNavigationTests: UITestCase {
         XCTAssertTrue(mainWindow.tabs["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Window count should stay main + popup.
         XCTAssertEqual(app.windows.count, 2)
-        // Source page should remain active in the main window.
-        XCTAssertTrue(mainWindow.webViews["Popup Bookmark Source"].exists)
-        // Target page should not be active (background tab check).
-        XCTAssertFalse(mainWindow.webViews["Popup Bookmark Target"].exists)
+        // Target page should be active in the main window.
+        XCTAssertTrue(mainWindow.webViews["Popup Bookmark Target"].exists)
+        // Source page should no longer be active.
+        XCTAssertFalse(mainWindow.webViews["Popup Bookmark Source"].exists)
         // Source tab should still exist.
         XCTAssertTrue(mainWindow.tabs["Popup Bookmark Source"].exists)
         // Main window should have source + target tabs.
@@ -402,10 +402,10 @@ class TabNavigationTests: UITestCase {
         XCTAssertTrue(mainWindow.tabs["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Window count should stay main + popup.
         XCTAssertEqual(app.windows.count, 2)
-        // Source page should remain active in the main window.
-        XCTAssertTrue(mainWindow.webViews["Popup History Source"].exists)
-        // Target page should not be active (background tab check).
-        XCTAssertFalse(mainWindow.webViews["Popup History Target"].exists)
+        // Target page should be active in the main window.
+        XCTAssertTrue(mainWindow.webViews["Popup History Target"].exists)
+        // Source page should no longer be active.
+        XCTAssertFalse(mainWindow.webViews["Popup History Source"].exists)
         // Source tab should still exist.
         XCTAssertTrue(mainWindow.tabs["Popup History Source"].exists)
         // Main window should have source + target tabs.

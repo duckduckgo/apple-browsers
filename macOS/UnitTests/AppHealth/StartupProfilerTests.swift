@@ -26,21 +26,21 @@ final class StartupProfilerTests: XCTestCase {
     func testStartMeasuringRecordsStep() {
         let profiler = StartupProfiler()
 
-        let token = profiler.startMeasuring(.appInit)
+        let token = profiler.startMeasuring(.appDelegateInit)
         token.stop()
 
         let metrics = profiler.exportMetrics()
-        XCTAssertNotNil(metrics.intervals[.appInit])
+        XCTAssertNotNil(metrics.intervals[.appDelegateInit])
     }
 
     func testStartMeasuringRecordsDuration() throws {
         let profiler = StartupProfiler()
 
-        let token = profiler.startMeasuring(.appInit)
+        let token = profiler.startMeasuring(.appDelegateInit)
         token.stop()
 
         let metrics = profiler.exportMetrics()
-        let duration = try XCTUnwrap(metrics.duration(step: .appInit))
+        let duration = try XCTUnwrap(metrics.duration(step: .appDelegateInit))
         XCTAssert(duration >= 0)
     }
 
@@ -49,15 +49,15 @@ final class StartupProfilerTests: XCTestCase {
     func testMeasureOnceRecordsStepFromReferenceStart() {
         let profiler = StartupProfiler()
 
-        let token = profiler.startMeasuring(.appInit)
+        let token = profiler.startMeasuring(.appDelegateInit)
         token.stop()
 
-        profiler.measureOnce(.appWillFinishLaunching, startStep: .appInit)
+        profiler.measureOnce(.appWillFinishLaunching, startStep: .appDelegateInit)
 
         let metrics = profiler.exportMetrics()
         XCTAssertNotNil(metrics.intervals[.appWillFinishLaunching])
 
-        let referenceStart = metrics.intervals[.appInit]?.start
+        let referenceStart = metrics.intervals[.appDelegateInit]?.start
         let measuredStart = metrics.intervals[.appWillFinishLaunching]?.start
         XCTAssertEqual(referenceStart, measuredStart)
     }
@@ -65,21 +65,21 @@ final class StartupProfilerTests: XCTestCase {
     func testMeasureOnceDoesNotOverwriteExistingStep() {
         let profiler = StartupProfiler()
 
-        let token = profiler.startMeasuring(.appInit)
+        let token = profiler.startMeasuring(.appDelegateInit)
         token.stop()
 
-        let originalEnd = profiler.exportMetrics().intervals[.appInit]?.end
+        let originalEnd = profiler.exportMetrics().intervals[.appDelegateInit]?.end
 
-        profiler.measureOnce(.appInit, startStep: .appInit)
+        profiler.measureOnce(.appDelegateInit, startStep: .appDelegateInit)
 
-        let afterEnd = profiler.exportMetrics().intervals[.appInit]?.end
+        let afterEnd = profiler.exportMetrics().intervals[.appDelegateInit]?.end
         XCTAssertEqual(originalEnd, afterEnd)
     }
 
     func testMeasureOnceDoesNothingWhenReferenceStepMissing() {
         let profiler = StartupProfiler()
 
-        profiler.measureOnce(.appWillFinishLaunching, startStep: .appInit)
+        profiler.measureOnce(.appWillFinishLaunching, startStep: .appDelegateInit)
 
         let metrics = profiler.exportMetrics()
         XCTAssertNil(metrics.intervals[.appWillFinishLaunching])
@@ -90,35 +90,35 @@ final class StartupProfilerTests: XCTestCase {
     func testMeasureSequenceRecordsInitialStep() {
         let profiler = StartupProfiler()
 
-        let sequence = profiler.measureSequence(initialStep: .appInit)
+        let sequence = profiler.measureSequence(initialStep: .appDelegateInit)
         sequence.stop()
 
         let metrics = profiler.exportMetrics()
-        XCTAssertNotNil(metrics.intervals[.appInit])
+        XCTAssertNotNil(metrics.intervals[.appDelegateInit])
     }
 
     func testMeasureSequenceAdvanceRecordsBothSteps() {
         let profiler = StartupProfiler()
 
-        let sequence = profiler.measureSequence(initialStep: .appInit)
+        let sequence = profiler.measureSequence(initialStep: .appDelegateInit)
         sequence.advance(to: .appWillFinishLaunching)
         sequence.stop()
 
         let metrics = profiler.exportMetrics()
-        XCTAssertNotNil(metrics.intervals[.appInit])
+        XCTAssertNotNil(metrics.intervals[.appDelegateInit])
         XCTAssertNotNil(metrics.intervals[.appWillFinishLaunching])
     }
 
     func testMeasureSequenceMultipleAdvances() {
         let profiler = StartupProfiler()
 
-        let sequence = profiler.measureSequence(initialStep: .appInit)
+        let sequence = profiler.measureSequence(initialStep: .appDelegateInit)
         sequence.advance(to: .appWillFinishLaunching)
         sequence.advance(to: .appDidFinishLaunchingBeforeRestoration)
         sequence.stop()
 
         let metrics = profiler.exportMetrics()
-        XCTAssertNotNil(metrics.intervals[.appInit])
+        XCTAssertNotNil(metrics.intervals[.appDelegateInit])
         XCTAssertNotNil(metrics.intervals[.appWillFinishLaunching])
         XCTAssertNotNil(metrics.intervals[.appDidFinishLaunchingBeforeRestoration])
     }
@@ -155,7 +155,7 @@ final class StartupProfilerTests: XCTestCase {
         let delegate = MockStartupProfilerDelegate()
         profiler.delegate = delegate
 
-        let token = profiler.startMeasuring(.appInit)
+        let token = profiler.startMeasuring(.appDelegateInit)
         token.stop()
 
         XCTAssertFalse(delegate.didComplete)
@@ -182,21 +182,21 @@ final class StartupProfilerTests: XCTestCase {
         var completedSteps = [StartupStep]()
 
         let sequence = StartupProfilerSequence(
-            initialStep: .appInit,
+            initialStep: .appDelegateInit,
             timeProvider: { 0 },
             onStepCompleted: { step, _, _ in completedSteps.append(step) }
         )
 
         sequence.stop()
 
-        XCTAssertEqual(completedSteps, [.appInit])
+        XCTAssertEqual(completedSteps, [.appDelegateInit])
     }
 
     func testSequenceAdvanceRecordsCurrentAndStartsNext() {
         var completedSteps = [StartupStep]()
 
         let sequence = StartupProfilerSequence(
-            initialStep: .appInit,
+            initialStep: .appDelegateInit,
             timeProvider: { 0 },
             onStepCompleted: { step, _, _ in completedSteps.append(step) }
         )
@@ -204,7 +204,7 @@ final class StartupProfilerTests: XCTestCase {
         sequence.advance(to: .appWillFinishLaunching)
         sequence.stop()
 
-        XCTAssertEqual(completedSteps, [.appInit, .appWillFinishLaunching])
+        XCTAssertEqual(completedSteps, [.appDelegateInit, .appWillFinishLaunching])
     }
 
     func testSequenceUsesTimeProvider() {
@@ -212,7 +212,7 @@ final class StartupProfilerTests: XCTestCase {
         var recordedIntervals = [(start: TimeInterval, end: TimeInterval)]()
 
         let sequence = StartupProfilerSequence(
-            initialStep: .appInit,
+            initialStep: .appDelegateInit,
             timeProvider: { time },
             onStepCompleted: { _, start, end in recordedIntervals.append((start, end)) }
         )

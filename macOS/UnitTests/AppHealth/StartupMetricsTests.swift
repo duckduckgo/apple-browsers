@@ -25,27 +25,27 @@ final class StartupMetricsTests: XCTestCase {
 
     func testUpdateRecordsInterval() throws {
         var metrics = StartupMetrics()
-        metrics.update(step: .appInit, startTime: 1.0, endTime: 2.0)
+        metrics.update(step: .appDelegateInit, startTime: 1.0, endTime: 2.0)
 
-        let intervalForInit = try XCTUnwrap(metrics.intervals[.appInit])
+        let intervalForInit = try XCTUnwrap(metrics.intervals[.appDelegateInit])
         XCTAssertEqual(intervalForInit.start, 1.0)
         XCTAssertEqual(intervalForInit.end, 2.0)
     }
 
     func testUpdateReturnsSelf() {
         var metrics = StartupMetrics()
-        let returned = metrics.update(step: .appInit, startTime: 1.0, endTime: 2.0)
+        let returned = metrics.update(step: .appDelegateInit, startTime: 1.0, endTime: 2.0)
 
-        XCTAssertNotNil(returned.intervals[.appInit])
+        XCTAssertNotNil(returned.intervals[.appDelegateInit])
     }
 
     func testUpdateOverwritesPreviousValue() {
         var metrics = StartupMetrics()
-        metrics.update(step: .appInit, startTime: 1.0, endTime: 2.0)
-        metrics.update(step: .appInit, startTime: 3.0, endTime: 5.0)
+        metrics.update(step: .appDelegateInit, startTime: 1.0, endTime: 2.0)
+        metrics.update(step: .appDelegateInit, startTime: 3.0, endTime: 5.0)
 
-        XCTAssertEqual(metrics.intervals[.appInit]?.start, 3.0)
-        XCTAssertEqual(metrics.intervals[.appInit]?.end, 5.0)
+        XCTAssertEqual(metrics.intervals[.appDelegateInit]?.start, 3.0)
+        XCTAssertEqual(metrics.intervals[.appDelegateInit]?.end, 5.0)
     }
 
     // MARK: - IsComplete
@@ -58,7 +58,7 @@ final class StartupMetricsTests: XCTestCase {
 
     func testIsCompleteReturnsFalseWhenPartial() {
         var metrics = StartupMetrics()
-        metrics.update(step: .appInit, startTime: 0, endTime: 1)
+        metrics.update(step: .appDelegateInit, startTime: 0, endTime: 1)
         metrics.update(step: .appWillFinishLaunching, startTime: 1, endTime: 2)
 
         XCTAssertFalse(metrics.isComplete)
@@ -75,14 +75,14 @@ final class StartupMetricsTests: XCTestCase {
     func testDurationReturnsNilForUnrecordedStep() {
         let metrics = StartupMetrics()
 
-        XCTAssertNil(metrics.duration(step: .appInit))
+        XCTAssertNil(metrics.duration(step: .appDelegateInit))
     }
 
     func testDurationReturnsCorrectValue() {
         var metrics = StartupMetrics()
-        metrics.update(step: .appInit, startTime: 1.0, endTime: 3.5)
+        metrics.update(step: .appDelegateInit, startTime: 1.0, endTime: 3.5)
 
-        XCTAssertEqual(metrics.duration(step: .appInit), 2.5)
+        XCTAssertEqual(metrics.duration(step: .appDelegateInit), 2.5)
     }
 
     // MARK: - Time Elapsed Between
@@ -91,22 +91,22 @@ final class StartupMetricsTests: XCTestCase {
         var metrics = StartupMetrics()
         metrics.update(step: .appWillFinishLaunching, startTime: 2.0, endTime: 3.0)
 
-        XCTAssertNil(metrics.timeElapsedBetween(endOf: .appInit, startOf: .appWillFinishLaunching))
+        XCTAssertNil(metrics.timeElapsedBetween(endOf: .appDelegateInit, startOf: .appWillFinishLaunching))
     }
 
     func testTimeElapsedBetweenReturnsNilWhenLatestStepsMissing() {
         var metrics = StartupMetrics()
-        metrics.update(step: .appInit, startTime: 1.0, endTime: 2.0)
+        metrics.update(step: .appDelegateInit, startTime: 1.0, endTime: 2.0)
 
-        XCTAssertNil(metrics.timeElapsedBetween(endOf: .appInit, startOf: .appWillFinishLaunching))
+        XCTAssertNil(metrics.timeElapsedBetween(endOf: .appDelegateInit, startOf: .appWillFinishLaunching))
     }
 
     func testTimeElapsedBetweenReturnsTheCorrectDelta() {
         var metrics = StartupMetrics()
-        metrics.update(step: .appInit, startTime: 1.0, endTime: 2.0)
+        metrics.update(step: .appDelegateInit, startTime: 1.0, endTime: 2.0)
         metrics.update(step: .appWillFinishLaunching, startTime: 3.0, endTime: 4.0)
 
-        XCTAssertEqual(metrics.timeElapsedBetween(endOf: .appInit, startOf: .appWillFinishLaunching), 1.0)
+        XCTAssertEqual(metrics.timeElapsedBetween(endOf: .appDelegateInit, startOf: .appWillFinishLaunching), 1.0)
     }
 
     // MARK: - Interval

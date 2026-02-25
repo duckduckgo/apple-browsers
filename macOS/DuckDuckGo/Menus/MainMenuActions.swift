@@ -151,8 +151,8 @@ extension AppDelegate {
             assertionFailure("Wrong represented object")
             return
         }
-        DispatchQueue.main.async {
-            self.windowControllersManager.open(historyEntry, with: NSApp.currentEvent)
+        DispatchQueue.main.async { [event=NSApp.currentEvent] in
+            self.windowControllersManager.open(historyEntry, with: event)
         }
     }
 
@@ -399,9 +399,9 @@ extension AppDelegate {
             return
         }
 
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [event=NSApp.currentEvent] in
             PixelKit.fire(NavigationEngagementPixel.navigateToBookmark(source: .menu, isFavorite: bookmark.isFavorite))
-            self.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
+            self.windowControllersManager.open(bookmark, with: event)
         }
     }
 

@@ -378,7 +378,7 @@ final class MainViewController: NSViewController {
 
         adjustFirstResponder(force: true)
 
-        startupProfiler.measureOnce(.appDidDisplayInterface, startStep: .appInit)
+        startupProfiler.measureOnce(.appDidDisplayInterface, startStep: .appDelegateInit)
     }
 
     var bookmarkBarPromptObserver: Any?

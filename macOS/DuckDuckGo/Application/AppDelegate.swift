@@ -414,7 +414,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // swiftlint:disable cyclomatic_complexity
     override init() {
         let startupProfiler = StartupProfiler()
-        let profilerToken = startupProfiler.startMeasuring(.appInit)
+        let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)
         defer {
             profilerToken.stop()
         }

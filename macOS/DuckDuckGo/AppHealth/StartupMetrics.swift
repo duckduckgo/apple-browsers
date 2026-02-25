@@ -21,14 +21,15 @@ import Foundation
 // MARK: - StartupStep
 
 enum StartupStep: String, Codable, CaseIterable {
-    case appInit
+    case appDelegateInit
     case appWillFinishLaunching
     case appDidFinishLaunchingBeforeRestoration
     case appDidFinishLaunchingAfterRestoration
     case appStateRestoration
     case appDidDisplayInterface
+    case mainMenuInit
 
-    static let orderedSequence: [StartupStep] = [.appInit, .appWillFinishLaunching, .appDidFinishLaunchingBeforeRestoration, .appStateRestoration, .appDidFinishLaunchingAfterRestoration, .appDidDisplayInterface]
+    static let orderedSequence: [StartupStep] = [.appDelegateInit, .mainMenuInit, .appWillFinishLaunching, .appDidFinishLaunchingBeforeRestoration, .appStateRestoration, .appDidFinishLaunchingAfterRestoration, .appDidDisplayInterface]
 }
 
 // MARK: - StartupMetrics

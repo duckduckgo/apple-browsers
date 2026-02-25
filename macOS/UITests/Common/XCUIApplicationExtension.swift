@@ -407,16 +407,6 @@ extension XCUIApplication {
         }
     }
 
-    /// Shows the bookmarks panel shortcut and taps it. If the bookmarks shortcut is visible, it only taps it.
-    func openBookmarksPanel() {
-        let bookmarksPanelShortcutButton = buttons[AccessibilityIdentifiers.bookmarksPanelShortcutButton]
-        if !bookmarksPanelShortcutButton.exists {
-            typeKey("k", modifierFlags: [.command, .shift])
-        }
-
-        bookmarksPanelShortcutButton.tap()
-    }
-
     func dismissBookmarksBarPopover(shouldDisplayBar: Bool = false) {
         let targetIdentifier = shouldDisplayBar ? AccessibilityIdentifiers.bookmarksBarPopoverShow : AccessibilityIdentifiers.bookmarksBarPopoverHide
         let targetButton = buttons[targetIdentifier]

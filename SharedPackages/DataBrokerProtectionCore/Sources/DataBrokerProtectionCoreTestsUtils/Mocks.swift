@@ -714,6 +714,13 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return brokers
     }
 
+    public func fetchAllBrokerResources() throws -> [BrokerResource] {
+        return brokers.map { broker in
+            let data = (try? JSONEncoder().encode(broker)) ?? Data()
+            return BrokerResource(broker: broker, rawJSON: data)
+        }
+    }
+
     public func fetchAllNonRemovedBrokers() throws -> [DataBroker] {
         return brokers.filter { !$0.isRemoved }
     }

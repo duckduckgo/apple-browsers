@@ -146,18 +146,6 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
                                                       extractedProfileId: Int64) throws
 }
 
-public extension DataBrokerProtectionSecureVault {
-    func fetchAllBrokerResources() throws -> [BrokerResource] {
-        let jsonEncoder = JSONEncoder()
-        jsonEncoder.dateEncodingStrategy = .millisecondsSince1970
-
-        return try fetchAllBrokers().map { broker in
-            let data = try jsonEncoder.encode(broker)
-            return BrokerResource(broker: broker, rawJSON: data)
-        }
-    }
-}
-
 public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDatabaseProvider>: DataBrokerProtectionSecureVault {
     public typealias DataBrokerProtectionStorageProviders = SecureStorageProviders<T>
 

@@ -86,7 +86,8 @@ struct BrokerProfileScanSubJob {
 
         let metadata = ScanWideEventRecorder.Metadata(
             from: brokerProfileQueryData.scanJobData,
-            referenceDate: stageCalculator.startTime
+            referenceDate: stageCalculator.startTime,
+            isFreeScan: !isAuthenticated
         )
         let scanWideEventRecorder = ScanWideEventRecorder.startIfPossible(
             wideEvent: dependencies.wideEvent,

@@ -92,6 +92,17 @@ final class ScanWideEventRecorderTests: XCTestCase {
         XCTAssertEqual(metadata.intervalStart, referenceDate)
     }
 
+    func testMetadataIncludesIsFreeScanWhenProvided() {
+        let referenceDate = Date(timeIntervalSince1970: 500)
+        let scanJob = ScanJobData(brokerId: 1,
+                                  profileQueryId: 1,
+                                  historyEvents: [])
+
+        let metadata = ScanWideEventRecorder.Metadata(from: scanJob, referenceDate: referenceDate, isFreeScan: true)
+
+        XCTAssertTrue(metadata.isFreeScan)
+    }
+
     // MARK: - Recorder
 
     func testStartIfPossibleStartsNewFlow() {
@@ -99,7 +110,8 @@ final class ScanWideEventRecorderTests: XCTestCase {
 
         let initialMetadata = ScanWideEventRecorder.Metadata(intervalStart: Date(timeIntervalSince1970: 10),
                                                             attemptNumber: 1,
-                                                            attemptType: .newScan)
+                                                            attemptType: .newScan,
+                                                            isFreeScan: true)
 
         let recorder = ScanWideEventRecorder.startIfPossible(wideEvent: wideEventMock,
                                                              attemptID: attemptID,
@@ -113,13 +125,15 @@ final class ScanWideEventRecorderTests: XCTestCase {
         let startedData = wideEventMock.started.first as? ScanWideEventData
         XCTAssertEqual(startedData?.attemptNumber, 1)
         XCTAssertEqual(startedData?.attemptType, .newScan)
+        XCTAssertEqual(startedData?.isFreeScan, true)
         XCTAssertEqual(startedData?.scanInterval?.start, Date(timeIntervalSince1970: 10))
     }
 
     func testStartIfPossibleReusesExistingFlow() {
         let initialMetadata = ScanWideEventRecorder.Metadata(intervalStart: Date(timeIntervalSince1970: 10),
                                                             attemptNumber: 1,
-                                                            attemptType: .newScan)
+                                                            attemptType: .newScan,
+                                                            isFreeScan: false)
 
         _ = ScanWideEventRecorder.startIfPossible(wideEvent: wideEventMock,
                                                   attemptID: attemptID,
@@ -131,7 +145,8 @@ final class ScanWideEventRecorderTests: XCTestCase {
 
         let updatedMetadata = ScanWideEventRecorder.Metadata(intervalStart: Date(timeIntervalSince1970: 5),
                                                              attemptNumber: 2,
-                                                             attemptType: .maintenanceScan)
+                                                             attemptType: .maintenanceScan,
+                                                             isFreeScan: false)
 
         _ = ScanWideEventRecorder.startIfPossible(wideEvent: wideEventMock,
                                                   attemptID: attemptID,

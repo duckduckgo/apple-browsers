@@ -1,5 +1,6 @@
 //
-//  SparkleUpdaterAvailabilityChecker.swift
+//  EscapeHatchModel.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -15,20 +16,14 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-import AppUpdaterShared
+
 import Foundation
-import Sparkle
 
-public final class SparkleUpdaterAvailabilityChecker: UpdaterAvailabilityChecking {
-    public var updater: UpdaterAvailabilityChecking?
-
-    /// When the update is not available (equal to nil) we will return true so the Updater can
-    /// check for the last try instead.
-    public var canCheckForUpdates: Bool {
-        return updater?.canCheckForUpdates ?? true
-    }
-
-    public init(updater: UpdaterAvailabilityChecking? = nil) {
-        self.updater = updater
-    }
+/// Model for the NTP "Return to..." escape hatch card that navigates to the most recently used tab.
+struct EscapeHatchModel: Equatable {
+    let title: String
+    let subtitle: String
+    let isAITab: Bool
+    let domain: String?
+    let targetTabIndex: Int
 }

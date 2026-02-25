@@ -8,16 +8,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -29,16 +24,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -50,16 +40,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -71,16 +56,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -92,16 +72,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -113,16 +88,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -134,16 +104,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -155,16 +120,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -176,16 +136,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -197,16 +152,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -218,16 +168,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -239,16 +184,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -260,16 +200,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -281,16 +216,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -302,16 +232,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -323,16 +248,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "consentHeuristicEnabled",
                 "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },
@@ -344,6 +264,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "fromExtension",
             {
                 "key": "init",
                 "description": "Number of autoconsent init pixels fired.",
@@ -428,12 +349,6 @@
                 "key": "consentHeuristicEnabled",
                 "description": "Whether the user is in CPM heuristic experiment treatment group",
                 "type": "number"
-            },
-            {
-                "key": "fromExtension",
-                "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
-                "type": "string",
-                "enum": ["0", "1"]
             }
         ]
     },

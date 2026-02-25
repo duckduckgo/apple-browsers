@@ -12,15 +12,18 @@ _create_origins_and_variants() {
 	local response="$1"
 	local origin_field="Origin"
 	local atb_field="ATB"
+	local macos_field="Produce macOS build?"
 
 	# for each element in the data array.
 	# filter out element with null `origin` and those starting with `funnel_playstore` (they will never be used for downloading the macOS browser).
+	# filter out element with `Produce macOS build?` set to "No".
 	# select `origin` and `variant` from the custom_fields response and make a key:value pair structure like {origin: <origin_value>, variant: <variant_value>}.
 	# if variant is not null we need to create two entries. One only with `origin` and one with `origin` and `variant`
 	# replace the new line with a comma
 	# remove the trailing comma at the end of the line.
 	jq -c '.data[]
 		| select(.custom_fields[] | select(.name == "'"${origin_field}"'") | (.text_value != null and (.text_value | startswith("funnel_playstore") | not)))
+		| select(.custom_fields[] | select(.name == "'"${macos_field}"'") | (.enum_value.name != "No"))
 		| {origin: (.custom_fields[] | select(.name == "'"${origin_field}"'") | .text_value), variant: (.custom_fields[] | select(.name == "'"${atb_field}"'") | .text_value)}
 		| if .variant != null then {origin}, {origin, variant} else {origin} end' <<< "$response"
 }
@@ -31,7 +34,7 @@ _create_origins_and_variants() {
 # Returns a JSON string consisting of a list of `origin-variant` pairs concatenated by a comma. Eg. `{"origin":"app","variant":"ab"},{"origin":"app.search","variant":null}`.
 _fetch_origin_tasks() {
 	# Fetches only tasks that have not been completed yet, includes in the response section name, name of the task and its custom fields.
-	local query="completed_since=now&opt_fields=name,custom_fields.id_prefix,custom_fields.name,custom_fields.text_value&opt_expand=custom_fields&opt_fields=memberships.section.name&limit=100"
+	local query="completed_since=now&opt_fields=name,custom_fields.id_prefix,custom_fields.name,custom_fields.text_value,custom_fields.enum_value&opt_expand=custom_fields&opt_fields=memberships.section.name&limit=100"
 
 	local url="${asana_api_url}/sections/${ORIGIN_ASANA_SECTION_ID}/tasks?${query}"
 	local response

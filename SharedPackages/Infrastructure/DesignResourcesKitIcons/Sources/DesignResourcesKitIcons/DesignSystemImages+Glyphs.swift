@@ -253,6 +253,7 @@ public extension DesignSystemImages {
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize16) }
             public static var permissionCamera: DesignSystemImage { .init(resource: .video16) }
             public static var permissionCameraSolid: DesignSystemImage { .init(resource: .videoSolid16) }
+            public static var undo: DesignSystemImage { .init(resource: .undo16)}
             public static var update: DesignSystemImage { .init(resource: .update16) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid16) }
             public static var viewGridSolid: DesignSystemImage { .init(resource: .viewGridSolid16) }

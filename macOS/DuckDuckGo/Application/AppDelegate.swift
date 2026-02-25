@@ -405,7 +405,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
     var memoryUsageIntervalReporter: MemoryUsageIntervalReporter?
 
-    let startupProfiler = StartupProfiler()
+    let startupProfiler: StartupProfiler
 
     /// The date this app instance was launched, used for computing uptime in memory pixels.
     private let appLaunchDate = Date()
@@ -413,6 +413,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     // swiftlint:disable cyclomatic_complexity
     override init() {
+        startupProfiler = StartupProfiler()
+
         let profilerToken = startupProfiler.startMeasuring(.appInit)
         defer {
             profilerToken.stop()

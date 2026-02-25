@@ -160,7 +160,7 @@ final class StartupProfilerSequence: @unchecked Sendable {
             return
         }
 
-        signalCompletion(step: previous.step, startTime: previous.startTime)
+        signalCompletion(step: previous.step, startTime: previous.startTime, endTime: nextStartTime)
         beginStep(step: nextStep, startTime: nextStartTime)
     }
 
@@ -170,7 +170,7 @@ final class StartupProfilerSequence: @unchecked Sendable {
             return
         }
 
-        signalCompletion(step: previous.step, startTime: previous.startTime)
+        signalCompletion(step: previous.step, startTime: previous.startTime, endTime: timeProvider())
     }
 }
 
@@ -190,7 +190,7 @@ private extension StartupProfilerSequence {
         }
     }
 
-    func signalCompletion(step: StartupStep, startTime: TimeInterval) {
-        onStepCompleted(step, startTime, timeProvider())
+    func signalCompletion(step: StartupStep, startTime: TimeInterval, endTime: TimeInterval) {
+        onStepCompleted(step, startTime, endTime)
     }
 }

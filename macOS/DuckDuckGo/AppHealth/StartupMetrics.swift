@@ -92,7 +92,7 @@ extension StartupMetrics {
             end - start
         }
 
-        func timeElapsedSince(endOf earliest: Interval) -> TimeInterval? {
+        func timeElapsedSince(endOf earliest: Interval) -> TimeInterval {
             start - earliest.end
         }
     }

@@ -28,8 +28,8 @@ extension OnboardingRebranding.OnboardingView {
     struct LandingView: View {
 
         private enum Assets {
-            static let illustrationAnimation = "OnboardingLandingIllustrationAnimation"  // Mountains/landscape
-            static let logoAnimation = "OnboardingLandingLogoAnimation"                  // Dax logo
+            static let backgroundLottieFileName = "OnboardingLandingIllustrationAnimation"  // Mountains/landscape
+            static let logoLottieFileName = "OnboardingLandingLogoAnimation"                  // Dax logo
         }
 
         // MARK: - Metrics
@@ -97,8 +97,8 @@ extension OnboardingRebranding.OnboardingView {
             // Text opacity: simple ease for fade-in, synced with offset delay
             static let textOpacityAnimation: Animation = .timingCurve(0.33, 0.00, 0.67, 1.00, duration: 0.2).delay(0.4)
 
-            // Illustration: slides in from bottom-right, starts almost immediately (0.133s ≈ 4 frames at 30fps)
-            static let illustrationAnimation: Animation = .timingCurve(0.10, 0.85, 0.64, 0.99, duration: 0.7).delay(0.133)
+            // Background: slides in from bottom-right, starts almost immediately (0.133s ≈ 4 frames at 30fps)
+            static let backgroundAnimation: Animation = .timingCurve(0.10, 0.85, 0.64, 0.99, duration: 0.7).delay(0.133)
         }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
@@ -132,16 +132,13 @@ extension OnboardingRebranding.OnboardingView {
 
         private var logoAndTextView: some View {
             VStack(alignment: .center, spacing: Metrics.welcomeBottomPadding) {
-                // Logo Lottie (plays once then holds on the last frame)
-                Lottie.LottieView(animation: .asset(Assets.logoAnimation))
+                Lottie.LottieView(animation: .asset(Assets.logoLottieFileName))
                     .playing(loopMode: .playOnce)
                     .resizable()
-                    .matchedGeometryEffect(id: RebrandedOnboardingView.daxGeometryEffectID, in: animationNamespace)
+                    .matchedGeometryEffect(id: OnboardingView.daxGeometryEffectID, in: animationNamespace)
                     .frame(width: Metrics.logoSize, height: Metrics.logoSize)
                     .scaleEffect(logo.scale)
                     .opacity(logo.opacity)
-
-                // Text
                 Text(UserText.onboardingWelcomeHeader)
                     .font(onboardingTheme.typography.largeTitle)
                     .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
@@ -155,8 +152,7 @@ extension OnboardingRebranding.OnboardingView {
         // MARK: - Background
 
         private var backgroundView: some View {
-            Lottie.LottieView(animation: .asset(Assets.illustrationAnimation))
-                //.playbackMode(.playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
+            Lottie.LottieView(animation: .asset(Assets.backgroundLottieFileName))
                 .playing(loopMode: .playOnce)
                 .resizable()
                 .clipped()
@@ -183,8 +179,8 @@ extension OnboardingRebranding.OnboardingView {
                 text = LandingAnimationStates.textEnd
             }
 
-            // Illustration: position slide-in
-            withAnimation(LandingAnimationTiming.illustrationAnimation) {
+            // Bacground: position slide-in
+            withAnimation(LandingAnimationTiming.backgroundAnimation) {
                 illustrationOffset = .zero
                 illustration = LandingAnimationStates.illustrationEnd
             }

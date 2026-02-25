@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct DownloadsList: View {
     @Environment(\.presentationMode) var presentationMode
@@ -37,13 +38,15 @@ struct DownloadsList: View {
             makeCancelDownloadAlert(for: rowModel)
         }
     }
-    
+
+    @ViewBuilder
     private var doneButton: some View {
-        Button(action: {
-            presentationMode.wrappedValue.dismiss()
-        },
-               label: { Text(UserText.navigationTitleDone).foregroundColor(.barButton).bold() })
-            .opacity(editMode == .inactive ? 1.0 : 0.0)
+        if editMode == .inactive {
+            Button(action: {
+                presentationMode.wrappedValue.dismiss()
+            },
+                   label: { Text(UserText.navigationTitleDone).foregroundColor(.barButton).bold() })
+        }
     }
     
     @ViewBuilder
@@ -91,15 +94,19 @@ struct DownloadsList: View {
     
     @ViewBuilder
     private var toolbarButtons: some View {
-        Button {
-            self.deleteAll()
-        } label: {
-            Text(UserText.downloadsListDeleteAllButton)
-                .foregroundColor(.deleteAll)
+        if editMode == .active {
+            Button {
+                self.deleteAll()
+            } label: {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.trash)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
-        .opacity(editMode == .active ? 1.0 : 0.0)
-        Spacer()
+
+        if #unavailable(iOS 26) {
+            Spacer()
+        }
+
         EditButton().environment(\.editMode, $editMode)
             .foregroundColor(.barButton)
             .buttonStyle(.plain)

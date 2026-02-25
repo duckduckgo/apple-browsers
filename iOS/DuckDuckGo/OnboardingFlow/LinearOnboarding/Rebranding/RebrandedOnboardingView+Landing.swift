@@ -115,11 +115,11 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             GeometryReader { proxy in
                 ZStack(alignment: .bottom) {
-                    welcomeView
+                    logoAndTextView
                         .padding(.top, Metrics.topPadding)
                         .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
 
-                    illustrationView
+                    backgroundView
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
             }
@@ -128,25 +128,15 @@ extension OnboardingRebranding.OnboardingView {
             }
         }
 
-        // MARK: - Welcome (logo + text)
+        // MARK: - Logo + text
 
-        private var welcomeView: some View {
+        private var logoAndTextView: some View {
             VStack(alignment: .center, spacing: Metrics.welcomeBottomPadding) {
                 // Logo Lottie (plays once then holds on the last frame)
                 Lottie.LottieView(animation: .asset(Assets.logoAnimation))
                     .playing(loopMode: .playOnce)
-//                    .playbackMode(logoAnimationFinished
-//                        ? .paused(at: .progress(1))
-//                        : .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
-//                    .configure { animationView in
-//                        if !logoAnimationFinished,
-//                           !animationView.isAnimationPlaying,
-//                           animationView.currentProgress >= 1 {
-//                            Task { @MainActor in logoAnimationFinished = true }
-//                        }
-//                    }
                     .resizable()
-                    .matchedGeometryEffect(id: OnboardingView.daxGeometryEffectID, in: animationNamespace)
+                    .matchedGeometryEffect(id: RebrandedOnboardingView.daxGeometryEffectID, in: animationNamespace)
                     .frame(width: Metrics.logoSize, height: Metrics.logoSize)
                     .scaleEffect(logo.scale)
                     .opacity(logo.opacity)
@@ -162,11 +152,12 @@ extension OnboardingRebranding.OnboardingView {
             .padding(.horizontal, Metrics.horizontalPadding)
         }
 
-        // MARK: - Illustration (mountains Lottie)
+        // MARK: - Background
 
-        private var illustrationView: some View {
+        private var backgroundView: some View {
             Lottie.LottieView(animation: .asset(Assets.illustrationAnimation))
-                .playbackMode(.playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
+                //.playbackMode(.playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
+                .playing(loopMode: .playOnce)
                 .resizable()
                 .clipped()
                 .frame(width: Metrics.illustrationWidth, height: Metrics.illustrationHeight)

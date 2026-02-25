@@ -68,7 +68,8 @@ final class NewTabPageNextStepsCardsProviderFacade: NewTabPageNextStepsCardsProv
                 cardActionsHandler: cardActionsHandler
             ),
             appearancePreferences: appearancePreferences,
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            scheduler: scheduler
         )
         self.featureFlagger = featureFlagger
         self.singleCardProvider = singleCardProvider

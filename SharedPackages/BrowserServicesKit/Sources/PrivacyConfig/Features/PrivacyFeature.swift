@@ -366,9 +366,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
-    /// Controls different input sizes and fade out animation for toggle.
-    case fadeOutOnToggle
-
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 

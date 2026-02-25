@@ -58,7 +58,7 @@ extension TabContent {
         case historyEntry
         /// Used for bookmarks opened from browser UI
         case bookmark(isFavorite: Bool)
-        /// Used for URLs opened from browser UI (mostrly internal, e.g. settings, bookmarks, history, etc.)
+        /// Used for URLs opened from internal browser UI (mostly for URLs like email protection, duck.ai, duckduckgo.com, etc.)
         case ui
         /// Used for links opened from the web view
         case link

@@ -35,7 +35,7 @@ final class TitleDisplayPolicyTests: XCTestCase {
         XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: true))
     }
 
-    func testTitleIsNotSkippedWhenHostMatchesAndTitleIsPlaceholderAfterLoading() {
+    func testTitleIsNotSkippedWhenHostAndTitlesMatchAfterLoading() {
         let url = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://www.example.com/")
         let title = "example.com page"
@@ -64,7 +64,7 @@ final class TitleDisplayPolicyTests: XCTestCase {
         }
     }
 
-    func testTitleIsSkippedWhenNothingChanged() {
+    func testTitleIsSkippedWhenHostDiffersButTitlesMatch() {
         let url = URL(string: "https://www.example.com/")
         let previousURL = URL(string: "https://www.different.com/")
         let title = "Custom Page Title"

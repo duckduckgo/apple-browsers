@@ -28,17 +28,20 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockStore: MockKeyValueStore!
+    private var mockPrivacyConfigManager: MockPrivacyConfigurationManager!
     private var sut: AppDarkReaderFeatureSettings!
 
     override func setUp() {
         super.setUp()
         mockFeatureFlagger = MockFeatureFlagger()
         mockStore = MockKeyValueStore()
+        mockPrivacyConfigManager = MockPrivacyConfigurationManager()
     }
 
     override func tearDown() {
         mockFeatureFlagger = nil
         mockStore = nil
+        mockPrivacyConfigManager = nil
         sut = nil
         super.tearDown()
     }
@@ -46,6 +49,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
     private func makeSUT() -> AppDarkReaderFeatureSettings {
         AppDarkReaderFeatureSettings(
             featureFlagger: mockFeatureFlagger,
+            privacyConfigurationManager: mockPrivacyConfigManager,
             storage: mockStore.keyedStoring()
         )
     }
@@ -125,5 +129,26 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
         XCTAssertEqual(receivedValues, [true, false, true])
         cancellable.cancel()
+    }
+
+    // MARK: - excludedDomains
+
+    func testExcludedDomains_ReturnsExceptionsListFromPrivacyConfig() {
+        let mockConfig = mockPrivacyConfigManager.privacyConfig as! MockPrivacyConfiguration
+        mockConfig.exceptionsList = { feature in
+            if feature == .forceDarkModeOnWebsites {
+                return ["example.com", "test.org"]
+            }
+            return []
+        }
+        sut = makeSUT()
+
+        XCTAssertEqual(sut.excludedDomains, ["example.com", "test.org"])
+    }
+
+    func testExcludedDomains_WhenNoExceptions_ReturnsEmptyArray() {
+        sut = makeSUT()
+
+        XCTAssertEqual(sut.excludedDomains, [])
     }
 }

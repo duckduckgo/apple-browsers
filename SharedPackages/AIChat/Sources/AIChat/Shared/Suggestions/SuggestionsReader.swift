@@ -49,6 +49,7 @@ public final class SuggestionsReader: SuggestionsReading {
     public enum ReaderError: Error, LocalizedError {
         case webViewNotInitialized
         case scriptNotInitialized
+        case operationSuperseded
         case navigationFailed(Error)
 
         public var errorDescription: String? {
@@ -57,6 +58,8 @@ public final class SuggestionsReader: SuggestionsReading {
                 return "WebView not initialized"
             case .scriptNotInitialized:
                 return "UserScript not initialized"
+            case .operationSuperseded:
+                return "Operation superseded"
             case .navigationFailed(let error):
                 return "Navigation failed: \(error.localizedDescription)"
             }
@@ -150,7 +153,7 @@ public final class SuggestionsReader: SuggestionsReading {
             // Fetch suggestions from this domain
             let fetchResult = await withCheckedContinuation { continuation in
                 // Resume any previous continuation to avoid leaking a suspended caller
-                self.fetchContinuation?.resume(returning: .failure(ReaderError.scriptNotInitialized))
+                self.fetchContinuation?.resume(returning: .failure(ReaderError.operationSuperseded))
                 self.fetchContinuation = continuation
                 script.fetchChats(query: query, maxChats: maxChats, since: since)
             }
@@ -330,7 +333,7 @@ public final class SuggestionsReader: SuggestionsReading {
 
         return await withCheckedContinuation { continuation in
             // Resume any previous continuation to avoid leaking a suspended caller
-            self.navigationContinuation?.resume(returning: .failure(ReaderError.webViewNotInitialized))
+            self.navigationContinuation?.resume(returning: .failure(ReaderError.operationSuperseded))
             self.navigationContinuation = continuation
 
             if #available(iOS 15.0, macOS 12.0, *) {

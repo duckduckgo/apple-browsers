@@ -95,7 +95,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let removedAtParamKey = "removed_at"
         public static let isAuthenticated = "isAuthenticated"
         public static let clickActionDelayReductionOptimizationKey = "click_action_delay_reduction_optimization"
-        public static let isFreeScan = "free-scan"
+        public static let isFreeScan = "free_scan"
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String)

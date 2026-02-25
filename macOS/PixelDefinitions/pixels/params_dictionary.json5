@@ -204,7 +204,7 @@
         "enum": ["true", "false"]
     },
     "dbpIsFreeScan": {
-        "key": "free-scan",
+        "key": "free_scan",
         "type": "string",
         "description": "Whether this is a free (unauthenticated) scan",
         "enum": ["true", "false"]

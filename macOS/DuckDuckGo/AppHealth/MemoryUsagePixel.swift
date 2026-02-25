@@ -21,7 +21,6 @@ import PixelKit
 /// Threshold memory usage pixels that fire once daily when memory enters a specific bucket.
 enum MemoryUsagePixel: PixelKitEvent {
 
-    /// The memory threshold bucket, independent of context parameters.
     // swiftlint:disable identifier_name
     enum Threshold {
         case less512

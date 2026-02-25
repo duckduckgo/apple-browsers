@@ -176,9 +176,9 @@ main() {
 
 	# All SwiftTesting test cases have the same class name in JUnit report, so we can omit it from the task name
 	if [[ "${class_name}" == "SwiftTesting" ]]; then
-		task_name="${testcase_name}"
+		local task_name="${testcase_name}"
 	else
-		task_name="${class_name}.${testcase_name}"
+		local task_name="${class_name}.${testcase_name}"
 	fi
 	echo "Processing ${task_name}"
 

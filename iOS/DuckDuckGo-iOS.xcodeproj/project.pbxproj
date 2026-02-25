@@ -1305,6 +1305,7 @@
 		9F0B19AB2EA5DF78001FA867 /* ModalPromptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0B19A92EA5DF78001FA867 /* ModalPromptProvider.swift */; };
 		9F0B19B42EA5E4FA001FA867 /* DefaultBrowserModalPromptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0B19AF2EA5E4FA001FA867 /* DefaultBrowserModalPromptProvider.swift */; };
 		9F0B19B72EA5E74F001FA867 /* ModalPromptCoordinationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0B19B62EA5E740001FA867 /* ModalPromptCoordinationManager.swift */; };
+		9F104B942F4EA27200FD6139 /* RebrandedScrollableOnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F104B932F4EA26600FD6139 /* RebrandedScrollableOnboardingBackground.swift */; };
 		9F16230B2CA0F0190093C4FC /* DebouncerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F16230A2CA0F0190093C4FC /* DebouncerTests.swift */; };
 		9F1798572CD2443F0073018B /* AddToDockPromoViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1798562CD2443F0073018B /* AddToDockPromoViewModelTests.swift */; };
 		9F197B6A2F483C6D0050CEA9 /* OnboardingViewWithDelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F197B692F483C6D0050CEA9 /* OnboardingViewWithDelay.swift */; };
@@ -3859,6 +3860,7 @@
 		9F0B19A92EA5DF78001FA867 /* ModalPromptProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptProvider.swift; sourceTree = "<group>"; };
 		9F0B19AF2EA5E4FA001FA867 /* DefaultBrowserModalPromptProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserModalPromptProvider.swift; sourceTree = "<group>"; };
 		9F0B19B62EA5E740001FA867 /* ModalPromptCoordinationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManager.swift; sourceTree = "<group>"; };
+		9F104B932F4EA26600FD6139 /* RebrandedScrollableOnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebrandedScrollableOnboardingBackground.swift; sourceTree = "<group>"; };
 		9F16230A2CA0F0190093C4FC /* DebouncerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebouncerTests.swift; sourceTree = "<group>"; };
 		9F1798562CD2443F0073018B /* AddToDockPromoViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockPromoViewModelTests.swift; sourceTree = "<group>"; };
 		9F197B692F483C6D0050CEA9 /* OnboardingViewWithDelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewWithDelay.swift; sourceTree = "<group>"; };
@@ -7579,6 +7581,7 @@
 		9F0369F52F231EA000A00DCA /* Rebranding */ = {
 			isa = PBXGroup;
 			children = (
+				9F104B932F4EA26600FD6139 /* RebrandedScrollableOnboardingBackground.swift */,
 				9F0369F62F231EB100A00DCA /* RebrandedOnboardingView.swift */,
 				684AD584729021CB790678D8 /* Components */,
 				9D93808DA913E2DBAFF3340C /* OnboardingRebranding.swift */,
@@ -12067,6 +12070,7 @@
 				9F3C7FE02D7990740061FA72 /* DefaultBrowserInfoStore.swift in Sources */,
 				CBF259902D47BEC700AC63E4 /* AuthenticationService.swift in Sources */,
 				C14414762EB10DC30057F921 /* AIChatFullModeFeature.swift in Sources */,
+				9F104B942F4EA27200FD6139 /* RebrandedScrollableOnboardingBackground.swift in Sources */,
 				C14414812EB10DC30057F921 /* AIChatIPadTabFeature.swift in Sources */,
 				D2598F08B4814DF6EAB5407D /* IPadTabChatHistoryCoordinator.swift in Sources */,
 				569B072A2DD7378700E0719A /* ThreatProtectionView.swift in Sources */,

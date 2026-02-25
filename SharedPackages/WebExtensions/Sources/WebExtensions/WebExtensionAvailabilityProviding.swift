@@ -25,9 +25,6 @@ public protocol WebExtensionAvailabilityProviding {
     /// Whether web extensions are available (requires iOS 18.4+/macOS 15.4+ and feature flag enabled)
     var isAvailable: Bool { get }
 
-    /// Whether web extensions are available AND have any installed extensions
-    var hasInstalledExtensions: Bool { get }
-
     /// Whether the embedded autoconsent web extension is loaded and active
     var isAutoconsentExtensionAvailable: Bool { get }
 }

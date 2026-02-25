@@ -92,6 +92,21 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func revealButtons()
 }
 
+/// iPad-specific extension for the duck.ai mode toggle and expandable search area.
+/// Separated from `OmniBarView` so the base protocol stays lean for all omnibar implementations.
+protocol ExpandableOmniBarView: OmniBarView {
+    var externalRefreshButtonView: BrowserChromeButton { get }
+    var isExternalRefreshButtonHidden: Bool { get set }
+    var onSearchModePressed: (() -> Void)? { get set }
+    var onAIChatModePressed: (() -> Void)? { get set }
+    var isSearchAreaExpanded: Bool { get }
+    var selectedModeToggleState: TextEntryMode { get set }
+    var isModeToggleHidden: Bool { get set }
+    func setSearchAreaExpanded(_ expanded: Bool, animated: Bool)
+    var aiChatTextView: UITextView { get }
+    func updateTextFieldPlaceholderVisibility(hasText: Bool)
+}
+
 protocol OmniBarStatusUpdateable: AnyObject {
     var isPrivacyInfoContainerHidden: Bool { get set }
     var isClearButtonHidden: Bool { get set }

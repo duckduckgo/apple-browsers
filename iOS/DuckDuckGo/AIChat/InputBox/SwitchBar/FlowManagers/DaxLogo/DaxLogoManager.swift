@@ -33,6 +33,7 @@ final class DaxLogoManager {
 
     private var isHomeDaxVisible: Bool = false
     private var isAIDaxVisible: Bool = false
+    private var forcedHidden: Bool = false
 
     private var progress: CGFloat = 0
 
@@ -94,6 +95,12 @@ final class DaxLogoManager {
         updateState()
     }
 
+    func setForcedHidden(_ hidden: Bool) {
+        guard forcedHidden != hidden else { return }
+        forcedHidden = hidden
+        updateState()
+    }
+
     func updateSwipeProgress(_ progress: CGFloat) {
         self.progress = progress
 
@@ -101,6 +108,10 @@ final class DaxLogoManager {
     }
 
     private func updateState() {
+        if forcedHidden {
+            daxLogoView.alpha = 0
+            return
+        }
         if isHomeDaxVisible != isAIDaxVisible {
             // Keep progress in one state, only update alpha
             daxLogoView.updateProgress(isAIDaxVisible ? 1 : 0)

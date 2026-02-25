@@ -30,6 +30,7 @@ public struct ReleaseNotesValues: Codable {
     enum Status: String {
         case loaded
         case loading
+        case loadingError
         case updateReady
         case updateDownloading
         case updatePreparing
@@ -176,7 +177,7 @@ extension ReleaseNotesValues {
 
             pixelFiring?.fire(UpdateFlowPixels.releaseNotesEmpty, frequency: .dailyAndCount)
 
-            self.init(status: updateController.updateProgress.toStatus,
+            self.init(status: .loadingError,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,
                       automaticUpdate: updateController.areAutomaticUpdatesEnabled)

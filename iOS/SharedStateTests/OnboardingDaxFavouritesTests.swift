@@ -245,6 +245,7 @@ import AIChatTestingUtilities
 private struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     var isFeatureEnabled: Bool = false
     var isForceDarkModeEnabled: Bool = false
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     func setForceDarkModeEnabled(_ enabled: Bool) {}
 }
 

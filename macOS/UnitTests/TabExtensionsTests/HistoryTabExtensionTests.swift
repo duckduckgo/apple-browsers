@@ -39,7 +39,6 @@ class HistoryTabExtensionTests: XCTestCase {
         let trackersPublisher: AnyPublisher<DetectedTracker, Never> = Empty().eraseToAnyPublisher()
         let urlPublisher: AnyPublisher<URL?, Never> = Empty().eraseToAnyPublisher()
         let titlePublisher: AnyPublisher<String?, Never> = Empty().eraseToAnyPublisher()
-        let popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never> = Empty().eraseToAnyPublisher()
 
         let mockScriptProvider = MockScriptProvider(historyViewUserScript: HistoryViewUserScript())
         let scriptsSubject = CurrentValueSubject<MockScriptProvider, Never>(mockScriptProvider)
@@ -51,7 +50,6 @@ class HistoryTabExtensionTests: XCTestCase {
             trackersPublisher: trackersPublisher,
             urlPublisher: urlPublisher,
             titlePublisher: titlePublisher,
-            popupManagedPublisher: popupManagedPublisher,
             scriptsPublisher: scriptsSubject.eraseToAnyPublisher(),
             webViewPublisher: webViewSubject.eraseToAnyPublisher()
         )

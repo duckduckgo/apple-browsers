@@ -22,6 +22,7 @@ import WebKit
 import Combine
 import PrivacyConfig
 import Core
+import BrowserServicesKitTestsUtils
 
 @testable import DuckDuckGo
 
@@ -48,7 +49,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         playerSettings = MockDuckPlayerSettings(appSettings: mockAppSettings,
                                                 privacyConfigManager: mockPrivacyConfig,
                                                 featureFlagger: featureFlagger,
-                                                internalUserDecider: MockInternalUserDecider())
+                                                internalUserDecider: PrivacyConfig.MockInternalUserDecider())
         player = MockDuckPlayer(settings: playerSettings, featureFlagger: featureFlagger)
 
         // Create and assign the mock tab navigator
@@ -408,7 +409,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Arrange
         let youtubeURL = URL(string: "https://www.youtube.com/watch?v=abc123")!
         let request = URLRequest(url: youtubeURL)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
 
@@ -424,7 +425,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Arrange
         let youtubeURL = URL(string: "https://www.youtube.com/watch?v=abc123")!
         let request = URLRequest(url: youtubeURL)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
         playerSettings.mode = .disabled
 
@@ -440,7 +441,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Arrange
         let youtubeURL = URL(string: "https://www.youtube.com/watch?v=abc123")!
         let request = URLRequest(url: youtubeURL)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
         playerSettings.mode = .alwaysAsk
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
@@ -457,7 +458,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Arrange
         let youtubeURL = URL(string: "https://www.youtube.com/watch?v=abc123")!
         let request = URLRequest(url: youtubeURL)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, navigationType: .backForward, targetFrame: mockFrameInfo)
         playerSettings.mode = .enabled
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
@@ -474,7 +475,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Arrange
         let youtubeURL = URL(string: "https://www.youtube.com/watch?v=abc123")!
         let request = URLRequest(url: youtubeURL)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
         playerSettings.mode = .enabled
         playerSettings.allowFirstVideo = true
@@ -492,7 +493,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Arrange
         let youtubeURL = URL(string: "https://www.youtube.com/watch?v=abc123")!
         let request = URLRequest(url: youtubeURL)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
         playerSettings.mode = .enabled
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
@@ -548,7 +549,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Arrange
         let duckPlayerURL = URL(string: "duck://player/abc123")!
         let request = URLRequest(url: duckPlayerURL)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
         playerSettings.mode = .enabled
         playerSettings.openInNewTab = true
@@ -600,7 +601,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Arrange
         let youtubeURL = URL(string: "https://www.youtube.com/watch?v=abc123#searching")!
         let request = URLRequest(url: youtubeURL)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let mockFrameInfo = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
         playerSettings.mode = .enabled
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]

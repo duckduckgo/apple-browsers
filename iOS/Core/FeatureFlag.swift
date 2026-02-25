@@ -218,9 +218,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213313932650457
     case iPadAIToggle
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039
-    case fadeOutOnToggle
-
     /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
     case attributedMetrics
@@ -309,7 +306,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
     case burnSingleTab
 
-   /// https://app.asana.com/1/137249556945/task/1213076120133808
+   /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213076120133808?focus=true
     case showNTPAfterIdleReturn
 
     /// Test-only feature flag for verifying UI test override mechanism.
@@ -334,6 +331,12 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true
     case webExtensions
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275565?focus=true
+    case embeddedExtension
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213278892205657?focus=true
+    case forceDarkModeOnWebsites
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208707884599795?focus=true
     case autofillOnboardingExperiment
@@ -443,7 +446,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .fullDuckAIMode,
              .iPadDuckaiOnTab,
              .iPadAIToggle,
-             .fadeOutOnToggle,
              .attributedMetrics,
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
@@ -476,6 +478,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .uiTestExperiment,
              .onboardingRebranding,
              .webExtensions,
+             .embeddedExtension,
+             .forceDarkModeOnWebsites,
              .autofillOnboardingExperiment,
              .supportsSyncChatsDeletion,
              .fireMode,
@@ -655,8 +659,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.iPadDuckaiOnTab))
         case .iPadAIToggle:
             return .internalOnly()
-        case .fadeOutOnToggle:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .onboardingSearchExperience:
@@ -696,7 +698,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAutoAttachContextByDefault:
             return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
         case .aiChatSync:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
             return .remoteReleasable(.feature(.duckAiChatHistory))
         case .showWhatsNewPromptOnDemand:
@@ -729,6 +731,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .webExtensions:
             return .internalOnly()
+        case .embeddedExtension:
+            return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
+        case .forceDarkModeOnWebsites:
+            return .remoteReleasable(.feature(.forceDarkModeOnWebsites))
         case .autofillOnboardingExperiment:
             return .remoteReleasable(.subfeature(AutofillSubfeature.onboardingExperiment))
         case .supportsSyncChatsDeletion:

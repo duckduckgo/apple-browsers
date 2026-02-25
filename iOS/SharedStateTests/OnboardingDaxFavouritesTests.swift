@@ -90,7 +90,8 @@ import AIChatTestingUtilities
                                                                               fireproofing: fireproofing,
                                                                               contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                               internalUserDecider: MockInternalUserDecider(),
-                                                                              syncErrorHandler: CapturingAdapterErrorHandler())
+                                                                              syncErrorHandler: CapturingAdapterErrorHandler(),
+                                                                              webExtensionAvailability: nil)
 
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
@@ -180,7 +181,8 @@ import AIChatTestingUtilities
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
             privacyStats: MockPrivacyStats(),
-            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
+            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -238,6 +240,12 @@ import AIChatTestingUtilities
         XCTAssertTrue(contextualOnboardingLogicMock.didCallEnableAddFavoriteFlow)
     }
 
+}
+
+private struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
+    var isFeatureEnabled: Bool = false
+    var isForceDarkModeEnabled: Bool = false
+    func setForceDarkModeEnabled(_ enabled: Bool) {}
 }
 
 // swiftlint:enable force_try

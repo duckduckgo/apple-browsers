@@ -45,7 +45,6 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         }
     }
     private var cancellables = Set<AnyCancellable>()
-    private var isInitialized = false
 
     // MARK: - MessageNames
     enum MessageNames: String, CaseIterable {
@@ -54,6 +53,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         case reportInitException
         case browserRestart
         case retryUpdate
+        case retryFetchReleaseNotes
     }
 
     public init(updateController: any SparkleUpdateController,
@@ -77,6 +77,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         .reportInitException: reportInitException,
         .browserRestart: browserRestart,
         .retryUpdate: retryUpdate,
+        .retryFetchReleaseNotes: retryFetchReleaseNotes,
     ]
 
     @MainActor
@@ -86,7 +87,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
     }
 
     public func onUpdate() {
-        guard AppVersion.runType != .uiTests, isInitialized,
+        guard AppVersion.runType != .uiTests,
               let webView, webView.url == releaseNotesURL else { return }
 
         let values = ReleaseNotesValues(from: updateController, pixelFiring: pixelFiring, keyValueStore: keyValueStore)
@@ -99,8 +100,6 @@ extension ReleaseNotesUserScript {
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        isInitialized = true
-
         // Initialize the page right after sending the initial setup result
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             self?.onUpdate()
@@ -117,6 +116,14 @@ extension ReleaseNotesUserScript {
 
     @MainActor
     private func retryUpdate(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        DispatchQueue.main.async { [weak self] in
+            self?.updateController.checkForUpdateSkippingRollout()
+        }
+        return nil
+    }
+
+    @MainActor
+    private func retryFetchReleaseNotes(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         DispatchQueue.main.async { [weak self] in
             self?.updateController.checkForUpdateSkippingRollout()
         }

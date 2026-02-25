@@ -1433,8 +1433,10 @@ public struct UserText {
     public static let settingsSync = NSLocalizedString("settings.sync", value: "Sync & Backup", comment: "Settings screen cell text for sync and backup")
     public static let settingsLogins = NSLocalizedString("settings.logins", value: "Passwords & Autofill", comment: "Settings screen cell text for passwords")
 
-    // Appeareance Section
+    // Appearance Section
     public static let settingsTheme = NSLocalizedString("settings.theme", value: "Theme", comment: "Settings screen cell text for theme")
+    public static let settingsForceWebsiteDarkMode = NSLocalizedString("settings.force.website.dark.mode", value: "Force Dark Mode for Websites", comment: "Settings screen toggle for forcing dark mode on websites")
+    public static let settingsThemeSectionFooter = NSLocalizedString("settings.theme.section.footer", value: "Gives websites a dark appearance if you’re using dark theme.", comment: "Footer shown right below the first section, which has the force dark mode item at the last position")
     public static let settingsIcon = NSLocalizedString("settings.icon", value: "App Icon", comment: "Settings screen cell text for app icon selection")
     public static let settingsFirebutton = NSLocalizedString("settings.firebutton", value: "Fire Button Animation", comment: "Settings screen cell text for fire button animation")
     public static let settingsCustomizableButtonDeleteTabsAndData = NSLocalizedString("settings.customizable.button.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Label for customizable toolbar button that deletes tabs and data")
@@ -2015,12 +2017,6 @@ public struct UserText {
     // MARK: - AI Chat Context Chip
     public static let aiChatAttachPageContent = NSLocalizedString("duckai.attach.page.content", value: "Attach Page Content", comment: "Menu option to attach current page content to Duck.ai chat")
     public static let aiChatContextChipInfoFooter = NSLocalizedString("duckai.context.chip.info", value: "Sent with your message to Duck.ai", comment: "Info text shown below the context chip explaining that content will be sent with the message")
-
-    // MARK: - AI Chat Contextual Onboarding
-    public static let aiChatContextualOnboardingTitle = NSLocalizedString("duckai.contextual.onboarding.title", value: "Ask about this page", comment: "Title for the Duck.ai contextual onboarding screen")
-    public static let aiChatContextualOnboardingBody = NSLocalizedString("duckai.contextual.onboarding.body", value: "Duck.ai can now help answer questions about the page you're viewing.\n\nPage content is only included when you attach it. You can change this anytime in Settings.", comment: "Body text for the Duck.ai contextual onboarding screen explaining the feature")
-    public static let aiChatContextualOnboardingGotIt = NSLocalizedString("duckai.contextual.onboarding.gotIt", value: "Got It", comment: "Primary button text to dismiss the Duck.ai contextual onboarding screen")
-    public static let aiChatContextualOnboardingViewSettings = NSLocalizedString("duckai.contextual.onboarding.viewSettings", value: "View Settings", comment: "Secondary button text to open settings from the Duck.ai contextual onboarding screen")
 
     // MARK: - AI Features Picker Footer
     public static let settingsAIPickerFooterDescription = NSLocalizedString(

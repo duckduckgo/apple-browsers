@@ -509,12 +509,6 @@ final class NavigationBarViewController: NSViewController {
         addDebugNotificationListeners()
 #endif
 
-        if #available(macOS 15.4, *), !burnerMode.isBurner, let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            Task { @MainActor [weak self] in
-                await WebExtensionNavigationBarUpdater(webExtensionManager: webExtensionManager, container: self?.menuButtons).runUpdateLoop()
-            }
-        }
-
         memoryUsageDisplayer.setUpMemoryMonitorView()
     }
 
@@ -1561,12 +1555,12 @@ final class NavigationBarViewController: NSViewController {
     }
 
     @objc private func showAutoconsentFeedback(_ sender: Notification) {
-        guard view.window?.isKeyWindow == true,
-              let topUrl = sender.userInfo?["topUrl"] as? URL,
-              let isCosmetic = sender.userInfo?["isCosmetic"] as? Bool
-        else { return }
-
         DispatchQueue.main.async { [weak self] in
+            guard self?.view.window?.isKeyWindow == true,
+                  let topUrl = sender.userInfo?["topUrl"] as? URL,
+                  let isCosmetic = sender.userInfo?["isCosmetic"] as? Bool
+            else { return }
+
             guard let self = self, self.tabCollectionViewModel.selectedTabViewModel?.tab.url == topUrl else {
                 return // if the tab is not active, don't show the popup
             }

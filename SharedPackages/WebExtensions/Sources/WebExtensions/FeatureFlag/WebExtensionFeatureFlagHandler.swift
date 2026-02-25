@@ -21,59 +21,137 @@ import Foundation
 
 /// Handles feature flag changes for web extensions.
 ///
-/// When the feature flag is disabled, this handler automatically uninstalls all extensions
-/// and calls the provided callback for additional cleanup.
+/// When the main web extensions feature flag is disabled, this handler automatically
+/// uninstalls all extensions and calls the provided callback for cleanup.
+/// When enabled, it calls the provided callback for initialization.
+///
+/// When the embedded extension feature flag is disabled, only embedded extensions are uninstalled.
+/// When enabled, it calls the provided callback for installation.
 ///
 /// Usage:
 /// ```swift
-/// let publisher = featureFlagPublisher
+/// let webExtensionsPublisher = featureFlagPublisher
 ///     .filter { $0.0 == .webExtensions }
 ///     .map { $0.1 }
 ///     .eraseToAnyPublisher()
 ///
+/// let embeddedPublisher = featureFlagPublisher
+///     .filter { $0.0 == .embeddedExtension }
+///     .map { $0.1 }
+///     .eraseToAnyPublisher()
+///
 /// handler = WebExtensionFeatureFlagHandler(
-///     webExtensionManager: manager,
-///     featureFlagPublisher: publisher,
+///     webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+///     featureFlagPublisher: webExtensionsPublisher,
+///     embeddedExtensionFlagPublisher: embeddedPublisher,
+///     onFeatureFlagEnabled: { [weak self] in
+///         await self?.initializeWebExtensions()
+///     },
 ///     onFeatureFlagDisabled: { [weak self] in
 ///         self?.cleanupReferences()
+///     },
+///     onEmbeddedExtensionFlagEnabled: { [weak self] in
+///         await self?.syncEmbeddedExtensions()
 ///     }
 /// )
 /// ```
 @available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionFeatureFlagHandler {
 
-    private var cancellable: AnyCancellable?
-    private weak var webExtensionManager: WebExtensionManaging?
+    private var webExtensionsCancellable: AnyCancellable?
+    private var embeddedExtensionCancellable: AnyCancellable?
+    private let webExtensionManagerProvider: () -> WebExtensionManaging?
+    private let onFeatureFlagEnabled: (() async -> Void)?
     private let onFeatureFlagDisabled: () -> Void
+    private let onEmbeddedExtensionFlagEnabled: (() async -> Void)?
+
+    private var isWebExtensionsFlagEnabled = false
+    private var isEmbeddedExtensionFlagEnabled = false
+    private var webExtensionsEnableTask: Task<Void, Never>?
+    private var embeddedExtensionEnableTask: Task<Void, Never>?
 
     /// Creates a feature flag handler.
     /// - Parameters:
-    ///   - webExtensionManager: The web extension manager to call uninstallAllExtensions on.
-    ///   - featureFlagPublisher: A publisher that emits `true` when the feature is enabled and `false` when disabled.
-    ///                          This should be pre-filtered for the webExtensions flag.
-    ///   - onFeatureFlagDisabled: Callback invoked when the feature flag is disabled, after uninstalling extensions.
-    public init(webExtensionManager: WebExtensionManaging?,
+    ///   - webExtensionManagerProvider: A closure that returns the current web extension manager. Called when uninstalling extensions.
+    ///   - featureFlagPublisher: A publisher that emits `true` when the main webExtensions feature is enabled.
+    ///   - embeddedExtensionFlagPublisher: A publisher that emits `true` when the embedded extension feature is enabled.
+    ///   - onFeatureFlagEnabled: Callback invoked when the main feature flag is enabled. Use this to load/initialize extensions.
+    ///   - onFeatureFlagDisabled: Callback invoked when the main feature flag is disabled, after uninstalling extensions.
+    ///   - onEmbeddedExtensionFlagEnabled: Callback invoked when the embedded extension feature flag is enabled. Use this to sync/install embedded extensions.
+    public init(webExtensionManagerProvider: @escaping () -> WebExtensionManaging?,
                 featureFlagPublisher: AnyPublisher<Bool, Never>?,
-                onFeatureFlagDisabled: @escaping () -> Void) {
-        self.webExtensionManager = webExtensionManager
+                embeddedExtensionFlagPublisher: AnyPublisher<Bool, Never>? = nil,
+                onFeatureFlagEnabled: (() async -> Void)? = nil,
+                onFeatureFlagDisabled: @escaping () -> Void,
+                onEmbeddedExtensionFlagEnabled: (() async -> Void)? = nil) {
+        self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.onFeatureFlagEnabled = onFeatureFlagEnabled
         self.onFeatureFlagDisabled = onFeatureFlagDisabled
-        subscribeToFeatureFlagChanges(featureFlagPublisher)
+        self.onEmbeddedExtensionFlagEnabled = onEmbeddedExtensionFlagEnabled
+        subscribeToWebExtensionsFlagChanges(featureFlagPublisher)
+        subscribeToEmbeddedExtensionFlagChanges(embeddedExtensionFlagPublisher)
     }
 
-    private func subscribeToFeatureFlagChanges(_ publisher: AnyPublisher<Bool, Never>?) {
+    private func subscribeToWebExtensionsFlagChanges(_ publisher: AnyPublisher<Bool, Never>?) {
         guard let publisher else { return }
 
-        cancellable = publisher
+        webExtensionsCancellable = publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] enabled in
-                if !enabled {
-                    self?.handleFeatureFlagDisabled()
+                if enabled {
+                    self?.handleWebExtensionsFlagEnabled()
+                } else {
+                    self?.handleWebExtensionsFlagDisabled()
                 }
             }
     }
 
-    private func handleFeatureFlagDisabled() {
-        webExtensionManager?.uninstallAllExtensions()
+    private func subscribeToEmbeddedExtensionFlagChanges(_ publisher: AnyPublisher<Bool, Never>?) {
+        guard let publisher else { return }
+
+        embeddedExtensionCancellable = publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] enabled in
+                if enabled {
+                    self?.handleEmbeddedExtensionFlagEnabled()
+                } else {
+                    self?.handleEmbeddedExtensionFlagDisabled()
+                }
+            }
+    }
+
+    private func handleWebExtensionsFlagEnabled() {
+        guard let onFeatureFlagEnabled else { return }
+        isWebExtensionsFlagEnabled = true
+        webExtensionsEnableTask?.cancel()
+        webExtensionsEnableTask = Task { @MainActor [weak self] in
+            guard self?.isWebExtensionsFlagEnabled == true else { return }
+            await onFeatureFlagEnabled()
+        }
+    }
+
+    private func handleWebExtensionsFlagDisabled() {
+        isWebExtensionsFlagEnabled = false
+        webExtensionsEnableTask?.cancel()
+        webExtensionsEnableTask = nil
+        webExtensionManagerProvider()?.uninstallAllExtensions()
         onFeatureFlagDisabled()
+    }
+
+    private func handleEmbeddedExtensionFlagEnabled() {
+        guard let onEmbeddedExtensionFlagEnabled else { return }
+        isEmbeddedExtensionFlagEnabled = true
+        embeddedExtensionEnableTask?.cancel()
+        embeddedExtensionEnableTask = Task { @MainActor [weak self] in
+            guard self?.isEmbeddedExtensionFlagEnabled == true else { return }
+            await onEmbeddedExtensionFlagEnabled()
+        }
+    }
+
+    private func handleEmbeddedExtensionFlagDisabled() {
+        isEmbeddedExtensionFlagEnabled = false
+        embeddedExtensionEnableTask?.cancel()
+        embeddedExtensionEnableTask = nil
+        webExtensionManagerProvider()?.uninstallEmbeddedExtension(type: .embedded)
     }
 }

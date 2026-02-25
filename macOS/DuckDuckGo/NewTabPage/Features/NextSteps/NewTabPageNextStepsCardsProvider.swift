@@ -19,6 +19,7 @@
 import Common
 import Combine
 import CombineSchedulers
+import Foundation
 import NewTabPage
 import PixelKit
 import UserScript

@@ -903,7 +903,8 @@
                 "enum": ["on", "off", "unsupported", "unknown"]
             },
             "dbpParentBroker",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_ios_dbp_search_stage_main_status_no_results": {
@@ -942,7 +943,8 @@
             "dbpParentBroker",
             "dbpActionId",
             "dbpActionType",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_ios_dbp_search_stage_main_status_error": {
@@ -995,7 +997,8 @@
                 "type": "string"
             },
             "dbpActionType",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_ios_dbp_data_broker_action-failed_error": {

@@ -798,7 +798,8 @@
                 "enum": ["on", "off", "unsupported", "unknown"]
             },
             "dbpParentBroker",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_mac_dbp_search_stage_main_status_no_results": {
@@ -837,7 +838,8 @@
             "dbpParentBroker",
             "dbpActionId",
             "dbpActionType",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_mac_dbp_search_stage_main_status_error": {
@@ -886,7 +888,8 @@
             "dbpParentBroker",
             "dbpActionId",
             "dbpActionType",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_mac_dbp_data_broker_action-failed_error": {

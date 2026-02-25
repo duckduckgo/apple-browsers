@@ -178,6 +178,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
                                                  isManual: false,
                                                  isAuthenticated: false,
+                                                 isFreeScan: true,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
@@ -195,6 +196,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
                                                  isManual: true,
                                                  isAuthenticated: false,
+                                                 isFreeScan: true,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
@@ -213,6 +215,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
                                                  isManual: false,
                                                  isAuthenticated: false,
+                                                 isFreeScan: true,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
                                                  parentURL: nil,
@@ -223,6 +226,44 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
         XCTAssertNotNil(calculator)
         XCTAssertFalse(calculator.isImmediateOperation)
+    }
+
+    func testCreateScanStageContext_whenFreeScan_setsIsFreeScanTrue() {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
+                                                 isManual: false,
+                                                 isAuthenticated: false,
+                                                 isFreeScan: true,
+                                                 database: mockDatabase,
+                                                 pixelHandler: mockPixelHandler,
+                                                 parentURL: nil,
+                                                 vpnConnectionState: "connected",
+                                                 vpnBypassStatus: "enabled",
+                                                 featureFlagger: MockDBPFeatureFlagger())
+
+        let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
+        XCTAssertNotNil(calculator)
+        XCTAssertTrue(calculator.isFreeScan)
+    }
+
+    func testCreateScanStageContext_whenPaidScan_setsIsFreeScanFalse() {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
+                                                 isManual: false,
+                                                 isAuthenticated: true,
+                                                 isFreeScan: false,
+                                                 database: mockDatabase,
+                                                 pixelHandler: mockPixelHandler,
+                                                 parentURL: nil,
+                                                 vpnConnectionState: "connected",
+                                                 vpnBypassStatus: "enabled",
+                                                 featureFlagger: MockDBPFeatureFlagger())
+
+        let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
+        XCTAssertNotNil(calculator)
+        XCTAssertFalse(calculator.isFreeScan)
     }
 
     // MARK: - markScanStarted

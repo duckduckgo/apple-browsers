@@ -53,6 +53,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         featureFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
 
         await fulfillment(of: [callbackExpectation], timeout: 1.0)
         XCTAssertTrue(mockWebExtensionManager.uninstallAllExtensionsCalled)
@@ -94,6 +95,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         featureFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
 
         await fulfillment(of: [callbackExpectation], timeout: 1.0)
     }
@@ -112,6 +114,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         featureFlagSubject.send(false)
         featureFlagSubject.send(true)
         featureFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
 
         await fulfillment(of: [disabledExpectation], timeout: 1.0)
     }
@@ -213,6 +216,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         embeddedFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
 
         await fulfillment(of: [uninstallExpectation], timeout: 1.0)
         XCTAssertEqual(mockWebExtensionManager.uninstalledEmbeddedType, .embedded)
@@ -246,6 +250,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         embeddedFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
 
         await fulfillment(of: [uninstallExpectation], timeout: 1.0)
         XCTAssertFalse(mockWebExtensionManager.uninstallAllExtensionsCalled)
@@ -491,6 +496,8 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension? {
         nil
     }
+
+    func updateExcludedDomains(_ excludedDomains: [String], forExtensionType type: WebExtensions.DuckDuckGoWebExtensionType) {}
 
     func unloadAllExtensions() {}
 

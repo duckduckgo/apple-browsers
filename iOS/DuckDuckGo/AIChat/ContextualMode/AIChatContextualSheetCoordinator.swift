@@ -151,18 +151,20 @@ final class AIChatContextualSheetCoordinator {
     }
 
     /// Called by TabViewController when the page navigates to a new URL.
-    func notifyPageChanged() async {
-        guard hasActiveSheet else { return }
+    func notifyPageChanged(url: URL? = nil) async {
+
 
         sessionState.notifyPageChanged()
 
-        guard sessionState.shouldAutoCollectContext else {
+        if sessionState.shouldAutoCollectContext {
+            let didTrigger = pageContextHandler.triggerContextCollection()
+            if !didTrigger {
+                sessionState.clearProcessingNavigationFlag()
+            }
+        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat {
+            sessionState.notifyFrontendOfNavigation()
             sessionState.clearProcessingNavigationFlag()
-            return
-        }
-
-        let didTrigger = pageContextHandler.triggerContextCollection()
-        if !didTrigger {
+        } else {
             sessionState.clearProcessingNavigationFlag()
         }
     }

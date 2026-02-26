@@ -73,7 +73,7 @@ struct SheetViewState {
 enum SheetEffect {
     case submitPrompt(prompt: String, context: AIChatPageContextData?)
     case reloadWebView
-    case pushContextToFrontend(AIChatPageContextData)
+    case pushContextToFrontend(AIChatPageContextData?)
     case clearPrompt
 }
 
@@ -162,7 +162,6 @@ final class AIChatContextualChatSessionState {
         aiChatSettings.isAutomaticContextAttachmentEnabled
     }
 
-    /// Whether multiple page contexts can be added to a single chat session
     var supportsMultipleContexts: Bool {
         featureFlagger.isFeatureOn(.multiplePageContexts)
     }
@@ -271,6 +270,15 @@ final class AIChatContextualChatSessionState {
         Logger.aiChat.debug("[SessionState] Page navigation detected")
         clearUserDowngradeOnNavigation()
         isProcessingNavigation = true
+    }
+
+    /// Sends a null context to the frontend as a navigation signal.
+    /// Used when auto-collect is OFF but multiple contexts are supported,
+    /// so the FE can show the "Add page content" button for the new page.
+    func notifyFrontendOfNavigation() {
+        guard supportsMultipleContexts, canPushToFrontend() else { return }
+        emit(.pushContextToFrontend(nil))
+        Logger.aiChat.debug("[SessionState] Sent null context navigation signal to frontend")
     }
 
     /// Clear the navigation processing flag (called when collection can't start)

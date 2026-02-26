@@ -44,21 +44,21 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenFeatureFlagDisabledThenUninstallAllExtensionsIsCalled() {
-        var callbackCalled = false
+    func testWhenFeatureFlagDisabledThenUninstallAllExtensionsIsCalled() async throws {
+        let callbackExpectation = expectation(description: "onFeatureFlagDisabled called")
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
-            onFeatureFlagDisabled: { callbackCalled = true }
+            onFeatureFlagDisabled: { callbackExpectation.fulfill() }
         )
 
         featureFlagSubject.send(false)
 
+        await fulfillment(of: [callbackExpectation], timeout: 1.0)
         XCTAssertTrue(mockWebExtensionManager.uninstallAllExtensionsCalled)
-        XCTAssertTrue(callbackCalled)
     }
 
-    func testWhenFeatureFlagEnabledThenUninstallAllExtensionsIsNotCalled() {
+    func testWhenFeatureFlagEnabledThenUninstallAllExtensionsIsNotCalled() async throws {
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
@@ -67,6 +67,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         featureFlagSubject.send(true)
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertFalse(mockWebExtensionManager.uninstallAllExtensionsCalled)
         XCTAssertFalse(callbackCalled)
@@ -84,25 +85,26 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         XCTAssertFalse(callbackCalled)
     }
 
-    func testWhenWebExtensionManagerProviderReturnsNilThenCallbackIsStillCalled() {
-        var callbackCalled = false
+    func testWhenWebExtensionManagerProviderReturnsNilThenCallbackIsStillCalled() async throws {
+        let callbackExpectation = expectation(description: "onFeatureFlagDisabled called")
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { nil },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
-            onFeatureFlagDisabled: { callbackCalled = true }
+            onFeatureFlagDisabled: { callbackExpectation.fulfill() }
         )
 
         featureFlagSubject.send(false)
 
-        XCTAssertTrue(callbackCalled)
+        await fulfillment(of: [callbackExpectation], timeout: 1.0)
     }
 
-    func testWhenFeatureFlagToggledMultipleTimesThenOnlyDisableTriggersUninstall() {
-        var callbackCount = 0
+    func testWhenFeatureFlagToggledMultipleTimesThenOnlyDisableTriggersUninstall() async throws {
+        let disabledExpectation = expectation(description: "onFeatureFlagDisabled called twice")
+        disabledExpectation.expectedFulfillmentCount = 2
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
-            onFeatureFlagDisabled: { callbackCount += 1 }
+            onFeatureFlagDisabled: { disabledExpectation.fulfill() }
         )
 
         featureFlagSubject.send(true)
@@ -111,7 +113,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         featureFlagSubject.send(true)
         featureFlagSubject.send(false)
 
-        XCTAssertEqual(callbackCount, 2)
+        await fulfillment(of: [disabledExpectation], timeout: 1.0)
     }
 
     // MARK: - Feature Flag Enabled Tests
@@ -153,32 +155,56 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         var enabledCount = 0
         var disabledCount = 0
 
-        let enabledExpectation = expectation(description: "onFeatureFlagEnabled called twice")
-        enabledExpectation.expectedFulfillmentCount = 2
+        let firstEnabled = expectation(description: "first onFeatureFlagEnabled")
+        let secondEnabled = expectation(description: "second onFeatureFlagEnabled")
+
+        let firstDisabled = expectation(description: "first onFeatureFlagDisabled")
+        let secondDisabled = expectation(description: "second onFeatureFlagDisabled")
 
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagEnabled: {
                 enabledCount += 1
-                enabledExpectation.fulfill()
+                if enabledCount == 1 {
+                    firstEnabled.fulfill()
+                } else {
+                    secondEnabled.fulfill()
+                }
             },
-            onFeatureFlagDisabled: { disabledCount += 1 }
+            onFeatureFlagDisabled: {
+                disabledCount += 1
+                if disabledCount == 1 {
+                    firstDisabled.fulfill()
+                } else {
+                    secondDisabled.fulfill()
+                }
+            }
         )
 
         featureFlagSubject.send(true)
-        featureFlagSubject.send(false)
-        featureFlagSubject.send(true)
-        featureFlagSubject.send(false)
+        await fulfillment(of: [firstEnabled], timeout: 1.0)
 
-        await fulfillment(of: [enabledExpectation], timeout: 1.0)
+        featureFlagSubject.send(false)
+        await fulfillment(of: [firstDisabled], timeout: 1.0)
+
+        featureFlagSubject.send(true)
+        await fulfillment(of: [secondEnabled], timeout: 1.0)
+
+        featureFlagSubject.send(false)
+        await fulfillment(of: [secondDisabled], timeout: 1.0)
+
         XCTAssertEqual(enabledCount, 2)
         XCTAssertEqual(disabledCount, 2)
     }
 
     // MARK: - Embedded Extension Flag Tests
 
-    func testWhenEmbeddedFlagDisabledThenUninstallEmbeddedExtensionIsCalled() {
+    func testWhenEmbeddedFlagDisabledThenUninstallEmbeddedExtensionIsCalled() async throws {
+        let uninstallExpectation = expectation(description: "uninstallEmbeddedExtension called")
+        mockWebExtensionManager.uninstallEmbeddedExtensionHandler = {
+            uninstallExpectation.fulfill()
+        }
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
@@ -188,11 +214,11 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
 
         embeddedFlagSubject.send(false)
 
-        XCTAssertTrue(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
+        await fulfillment(of: [uninstallExpectation], timeout: 1.0)
         XCTAssertEqual(mockWebExtensionManager.uninstalledEmbeddedType, .embedded)
     }
 
-    func testWhenEmbeddedFlagEnabledThenUninstallEmbeddedExtensionIsNotCalled() {
+    func testWhenEmbeddedFlagEnabledThenUninstallEmbeddedExtensionIsNotCalled() async throws {
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
@@ -201,11 +227,16 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         embeddedFlagSubject.send(true)
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertFalse(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
     }
 
-    func testWhenEmbeddedFlagDisabledThenOnlyEmbeddedExtensionIsUninstalled() {
+    func testWhenEmbeddedFlagDisabledThenOnlyEmbeddedExtensionIsUninstalled() async throws {
+        let uninstallExpectation = expectation(description: "uninstallEmbeddedExtension called")
+        mockWebExtensionManager.uninstallEmbeddedExtensionHandler = {
+            uninstallExpectation.fulfill()
+        }
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
@@ -216,7 +247,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
 
         embeddedFlagSubject.send(false)
 
-        XCTAssertTrue(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
+        await fulfillment(of: [uninstallExpectation], timeout: 1.0)
         XCTAssertFalse(mockWebExtensionManager.uninstallAllExtensionsCalled)
         XCTAssertFalse(callbackCalled)
     }
@@ -262,8 +293,11 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         var enabledCount = 0
         var disabledCount = 0
 
-        let enabledExpectation = expectation(description: "onEmbeddedExtensionFlagEnabled called twice")
-        enabledExpectation.expectedFulfillmentCount = 2
+        let firstEnabled = expectation(description: "first onEmbeddedExtensionFlagEnabled")
+        let secondEnabled = expectation(description: "second onEmbeddedExtensionFlagEnabled")
+
+        let firstDisabled = expectation(description: "first embedded disabled")
+        let secondDisabled = expectation(description: "second embedded disabled")
 
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
@@ -272,20 +306,35 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             onFeatureFlagDisabled: {},
             onEmbeddedExtensionFlagEnabled: {
                 enabledCount += 1
-                enabledExpectation.fulfill()
+                if enabledCount == 1 {
+                    firstEnabled.fulfill()
+                } else {
+                    secondEnabled.fulfill()
+                }
             }
         )
 
         mockWebExtensionManager.uninstallEmbeddedExtensionHandler = {
             disabledCount += 1
+            if disabledCount == 1 {
+                firstDisabled.fulfill()
+            } else {
+                secondDisabled.fulfill()
+            }
         }
 
         embeddedFlagSubject.send(true)
-        embeddedFlagSubject.send(false)
-        embeddedFlagSubject.send(true)
-        embeddedFlagSubject.send(false)
+        await fulfillment(of: [firstEnabled], timeout: 1.0)
 
-        await fulfillment(of: [enabledExpectation], timeout: 1.0)
+        embeddedFlagSubject.send(false)
+        await fulfillment(of: [firstDisabled], timeout: 1.0)
+
+        embeddedFlagSubject.send(true)
+        await fulfillment(of: [secondEnabled], timeout: 1.0)
+
+        embeddedFlagSubject.send(false)
+        await fulfillment(of: [secondDisabled], timeout: 1.0)
+
         XCTAssertEqual(enabledCount, 2)
         XCTAssertEqual(disabledCount, 2)
     }
@@ -293,7 +342,6 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     // MARK: - Race Condition Prevention Tests
 
     func testWhenWebExtensionsFlagRapidlyToggledEnabledThenDisabledThenEnableCallbackDoesNotRunAfterDisable() async throws {
-        var enabledCallbackExecuted = false
         var disabledCallbackExecuted = false
         var enabledCallbackExecutedAfterDisabled = false
 
@@ -302,7 +350,6 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagEnabled: {
                 try? await Task.sleep(for: .milliseconds(50))
-                enabledCallbackExecuted = true
                 if disabledCallbackExecuted {
                     enabledCallbackExecutedAfterDisabled = true
                 }
@@ -322,7 +369,6 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     }
 
     func testWhenEmbeddedFlagRapidlyToggledEnabledThenDisabledThenEnableCallbackDoesNotRunAfterDisable() async throws {
-        var enabledCallbackExecuted = false
         var disabledCallbackExecuted = false
         var enabledCallbackExecutedAfterDisabled = false
 
@@ -333,7 +379,6 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             onFeatureFlagDisabled: {},
             onEmbeddedExtensionFlagEnabled: {
                 try? await Task.sleep(for: .milliseconds(50))
-                enabledCallbackExecuted = true
                 if disabledCallbackExecuted {
                     enabledCallbackExecutedAfterDisabled = true
                 }

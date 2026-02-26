@@ -43,13 +43,6 @@ struct AIChatDebugView: View {
                 .foregroundColor(.red)
             }
 
-            Section(header: Text("Contextual Onboarding")) {
-                Button("Reset Context Sheet Onboarding") {
-                    viewModel.resetContextualOnboarding()
-                }
-                .foregroundColor(.red)
-            }
-
             Section(header: Text("Contextual Session Timer"),
                     footer: Text(viewModel.sessionTimerDescription)) {
                 ForEach(viewModel.sessionTimerPresets, id: \.seconds) { preset in
@@ -91,7 +84,6 @@ struct AIChatDebugView: View {
 
 private final class AIChatDebugViewModel: ObservableObject {
     private var debugSettings = AIChatDebugSettings()
-    private var aiChatSettings = AIChatSettings()
 
     struct SessionTimerPreset {
         let label: String
@@ -167,10 +159,6 @@ private final class AIChatDebugViewModel: ObservableObject {
         debugSettings.reset()
         enteredHostname = ""
         customURL = ""
-    }
-
-    func resetContextualOnboarding() {
-        aiChatSettings.resetContextualOnboarding()
     }
 
     func setSessionTimer(seconds: Int) {

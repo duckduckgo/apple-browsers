@@ -1454,16 +1454,12 @@
 "duckai.context.chip.info" = "Üzeneteddel együtt elküldve a Duck.ai-nak";
 
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-"duckai.contextual.onboarding.body" = "A Duck.ai mostantól segíthet az éppen megtekintett oldallal kapcsolatos kérdések megválaszolásában.\n\nAz oldal tartalma csak akkor kerül továbbításra, ha csatolod. Ezt bármikor megváltoztathatod a Beállításokban.";
 
 /* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.gotIt" = "Megvan";
 
 /* Title for the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.title" = "Kérdezz az oldallal kapcsolatban";
 
 /* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.viewSettings" = "Megjelenítési beállítások";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "A DuckDuckGo AI-funkciói privátak és opcionálisak. Az adataidat nem használjuk fel az AI tanítására.";
@@ -3337,6 +3333,9 @@
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Tűzálló webhelyek";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Sötét mód kényszerítése a webhelyeken";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Általános";
 
@@ -3507,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Kinézet";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Sötét téma használata esetén sötét megjelenést kölcsönöz a webhelyeknek.";
 
 /* Title for the Settings View */
 "settings.title" = "Beállítások";

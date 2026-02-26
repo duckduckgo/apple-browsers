@@ -33,7 +33,10 @@ struct StartupMetricsPixel: PixelKitEvent {
     let activeProcessorCount: Int?
 
     /// Time spent in the app's `init` method (seconds), or `nil` if unavailable.
-    let durationOfAppInit: TimeInterval?
+    let durationOfAppDelegateInit: TimeInterval?
+
+    /// Time spent in the Main Menu `init` method (seconds), or `nil` if unavailable.
+    let durationOfMainMenuInit: TimeInterval?
 
     /// Time spent in `applicationWillFinishLaunching(_:)` (seconds), or `nil` if unavailable.
     let durationOfAppWillFinishLaunching: TimeInterval?
@@ -54,13 +57,16 @@ struct StartupMetricsPixel: PixelKitEvent {
     let deltaBetweenAppWillFinishAndDidFinishLaunching: TimeInterval?
 
     /// Elapsed time from app launch to the first interface display (seconds), or `nil` if unavailable.
-    let deltaBetweenLaunchAndDidDisplayInterface: TimeInterval?
+    let timeToInteractive: TimeInterval?
 
     /// Number of windows restored during state restoration, or `nil` if unavailable.
     let numberOfWindowsRestored: Int?
 
     /// Number of tabs restored during state restoration, or `nil` if unavailable.
     let numberOfTabsRestored: Int?
+
+    /// Indicates if Session Restoration was enabled
+    let sessionRestorationEnabled: Bool
 
     /// Pixel Name
     var name: String {
@@ -73,12 +79,16 @@ struct StartupMetricsPixel: PixelKitEvent {
 
         params["battery_power"] = isOnBattery.description
         params["architecture"] = architecture
+        params["session_restoration_enabled"] = sessionRestorationEnabled.description
 
         if let count = activeProcessorCount {
             params["active_processor_count"] = StartupMetricsBuckets.bucketProcessorCount(count)
         }
-        if let duration = durationOfAppInit {
-            params["duration_of_app_init"] = StartupMetricsBuckets.bucketMilliseconds(duration)
+        if let duration = durationOfAppDelegateInit {
+            params["duration_of_app_delegate_init"] = StartupMetricsBuckets.bucketMilliseconds(duration)
+        }
+        if let duration = durationOfMainMenuInit {
+            params["duration_of_main_menu_init"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
         if let duration = durationOfAppWillFinishLaunching {
             params["duration_of_app_will_finish_launching"] = StartupMetricsBuckets.bucketMilliseconds(duration)
@@ -98,14 +108,14 @@ struct StartupMetricsPixel: PixelKitEvent {
         if let delta = deltaBetweenAppWillFinishAndDidFinishLaunching {
             params["delta_between_app_will_finish_and_app_did_finish"] = StartupMetricsBuckets.bucketMilliseconds(delta)
         }
-        if let delta = deltaBetweenLaunchAndDidDisplayInterface {
-            params["delta_between_launch_and_did_display_interface"] = StartupMetricsBuckets.bucketMilliseconds(delta)
+        if let delta = timeToInteractive {
+            params["time_to_interactive"] = StartupMetricsBuckets.bucketMilliseconds(delta)
         }
         if let count = numberOfWindowsRestored {
-            params["number_of_windows_restored"] = StartupMetricsBuckets.bucketWindowCount(count)
+            params["windows"] = StartupMetricsBuckets.bucketWindowCount(count)
         }
         if let count = numberOfTabsRestored {
-            params["number_of_tabs_restored"] = StartupMetricsBuckets.bucketTabCount(count)
+            params["tabs"] = StartupMetricsBuckets.bucketTabCount(count)
         }
 
         return params

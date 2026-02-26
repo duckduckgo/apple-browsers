@@ -105,6 +105,7 @@ protocol ExpandableOmniBarView: OmniBarView {
     func setSearchAreaExpanded(_ expanded: Bool, animated: Bool)
     var aiChatTextView: UITextView { get }
     func updateTextFieldPlaceholderVisibility(hasText: Bool)
+    func updateLeftIconForMode(_ mode: TextEntryMode)
 }
 
 protocol OmniBarStatusUpdateable: AnyObject {

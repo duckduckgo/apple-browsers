@@ -264,7 +264,6 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
             Text(label)
                 .daxBodyRegular()
                 .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary): Color(designSystemColor: .textSecondary))
-            Spacer()
             Menu {
                 ForEach(options, id: \.self) { option in
 
@@ -289,7 +288,9 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
                         .foregroundColor(Color(UIColor.tertiaryLabel))
                         .padding(.trailing, -2)
                 }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
+            .frame(maxWidth: .infinity)
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }

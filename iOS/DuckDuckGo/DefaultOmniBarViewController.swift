@@ -476,7 +476,6 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         let newQuery = textView.text ?? ""
 
         modeToggleTextModel.updateText(newQuery)
-        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
 
         if modeToggleTextModel.isTransitioning, !omniBarView.isSearchAreaExpanded {
             omniBarView.textField.text = newQuery
@@ -490,6 +489,8 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         } else {
             refreshState(state.onTextEnteredState)
         }
+
+        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {

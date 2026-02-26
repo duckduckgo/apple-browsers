@@ -150,6 +150,8 @@ final class AdClickAttributionTabExtension: TabExtension {
             logic.applyInheritedAttribution(state: inheritedAttribution)
         }
 
+        logic.onRulesChanged(latestRules: dependencies.contentBlockingManager.currentRules)
+
         trackerInfoPublisher
             .sink { [weak self] tracker in
                 self?.logic.onRequestDetected(request: tracker)

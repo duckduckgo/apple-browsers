@@ -75,14 +75,14 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
     // MARK: - sendPixel
 
-    func testWhenSendPixelWithValidParamsThenReturnsSuccess() async {
+    func testWhenSendPixelWithValidParamsThenReturnsSuccess() async throws {
         let message = createMessage(method: "sendPixel", params: ["pixelName": "test", "type": "impression"])
 
         let result = await handler.handleMessage(message)
 
         if case .success(let response) = result {
-            let dict = response as? [String: String]
-            XCTAssertEqual(dict?["response"], "ok")
+            let dict = try XCTUnwrap(response as? [String: Any])
+            XCTAssertEqual(dict["response"] as? String, "ok")
         } else {
             XCTFail("Expected success result")
         }
@@ -128,7 +128,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
     // MARK: - cookiePopupHandled
 
-    func testWhenCookiePopupHandledWithValidParamsThenReturnsSuccess() async {
+    func testWhenCookiePopupHandledWithValidParamsThenReturnsSuccess() async throws {
         let msg: [String: Any] = [
             "url": "https://example.com/page",
             "cmp": "test-cmp",
@@ -139,8 +139,8 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         let result = await handler.handleMessage(message)
 
         if case .success(let response) = result {
-            let dict = response as? [String: String]
-            XCTAssertEqual(dict?["response"], "ok")
+            let dict = try XCTUnwrap(response as? [String: Any])
+            XCTAssertEqual(dict["response"] as? String, "ok")
         } else {
             XCTFail("Expected success result")
         }
@@ -641,7 +641,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
     // MARK: - extensionLog
 
-    func testWhenExtensionLogWithMessageThenReturnsSuccess() async {
+    func testWhenExtensionLogWithMessageThenReturnsSuccess() async throws {
         let message = createMessage(
             method: "extensionLog",
             params: ["message": "Test log message"]
@@ -650,14 +650,14 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         let result = await handler.handleMessage(message)
 
         if case .success(let response) = result {
-            let dict = response as? [String: String]
-            XCTAssertEqual(dict?["response"], "ok")
+            let dict = try XCTUnwrap(response as? [String: Any])
+            XCTAssertEqual(dict["response"] as? String, "ok")
         } else {
             XCTFail("Expected success result")
         }
     }
 
-    func testWhenExtensionLogWithEmptyMessageThenReturnsSuccess() async {
+    func testWhenExtensionLogWithEmptyMessageThenReturnsSuccess() async throws {
         let message = createMessage(
             method: "extensionLog",
             params: ["message": ""]
@@ -666,8 +666,8 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         let result = await handler.handleMessage(message)
 
         if case .success(let response) = result {
-            let dict = response as? [String: String]
-            XCTAssertEqual(dict?["response"], "ok")
+            let dict = try XCTUnwrap(response as? [String: Any])
+            XCTAssertEqual(dict["response"] as? String, "ok")
         } else {
             XCTFail("Expected success result")
         }

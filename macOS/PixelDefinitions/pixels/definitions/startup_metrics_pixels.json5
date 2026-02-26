@@ -9,9 +9,15 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "duration_of_app_init",
+                "key": "duration_of_app_delegate_init",
                 "type": "string",
-                "description": "Optional. Duration of app init in milliseconds, bucketed.",
+                "description": "Optional. Duration of AppDelegate init in milliseconds, bucketed.",
+                "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
+            },
+            {
+                "key": "duration_of_main_menu_init",
+                "type": "string",
+                "description": "Optional. Duration of Main Menu init in milliseconds, bucketed.",
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
@@ -51,9 +57,9 @@
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
-                "key": "delta_between_launch_and_did_display_interface",
+                "key": "time_to_interactive",
                 "type": "string",
-                "description": "Optional. Time delta between app launch and first interface display in milliseconds, bucketed.",
+                "description": "Optional. Elapsed time from app launch to the first interface display in milliseconds, bucketed.",
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
@@ -74,16 +80,21 @@
                 "enum": ["1", "2", "4", "8", "12"]
             },
             {
-                "key": "number_of_windows_restored",
+                "key": "windows",
                 "type": "string",
                 "description": "Optional. Number of windows restored during state restoration, bucketed.",
                 "enum": ["0", "1", "2", "4", "7", "11", "21"]
             },
             {
-                "key": "number_of_tabs_restored",
+                "key": "tabs",
                 "type": "string",
                 "description": "Optional. Number of tabs restored during state restoration, bucketed.",
                 "enum": ["0", "1", "2", "4", "7", "11", "21", "51"]
+            },
+            {
+                "key": "session_restoration_enabled",
+                "type": "boolean",
+                "description": "Whether session restoration was enabled at launch time."
             }
         ]
     }

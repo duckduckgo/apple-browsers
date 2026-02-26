@@ -447,6 +447,8 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
         nil
     }
 
+    func updateExcludedDomains(_ excludedDomains: [String], forExtensionType type: WebExtensions.DuckDuckGoWebExtensionType) {}
+
     func unloadAllExtensions() {}
 
     func extensionName(for identifier: String) -> String? { nil }

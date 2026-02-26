@@ -172,7 +172,7 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
             XCTAssertNotNil(mockDelegate.pixelSent)
             XCTAssertEqual(mockDelegate.pixelSent?.name, "autoconsent_test")
             XCTAssertEqual(mockDelegate.pixelSent?.type, "unique")
-            XCTAssertEqual(mockDelegate.pixelSent?.params["key1"], "value1")
+            XCTAssertEqual(mockDelegate.pixelSent?.params["key1"] as? String, "value1")
         case .failure(let error):
             XCTFail("Expected success but got failure: \(error)")
         case .noHandler:

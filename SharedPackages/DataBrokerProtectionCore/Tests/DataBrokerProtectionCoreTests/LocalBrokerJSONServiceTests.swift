@@ -115,7 +115,8 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         if let vault = self.vault {
             let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
             repository.lastCheckedVersion = nil
-            resources.brokerResourcesList = [try brokerResource(fileName: "local-broker-1.0.1")]
+            let expectedBrokerResource = try brokerResource(fileName: "local-broker-1.0.1")
+            resources.brokerResourcesList = [expectedBrokerResource]
             vault.shouldReturnOldVersionBroker = true
 
             try await sut.checkForUpdates()
@@ -124,6 +125,11 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
             XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
             XCTAssertTrue(vault.wasBrokerUpdateCalled)
             XCTAssertFalse(vault.wasBrokerSavedCalled)
+
+            let updatedBrokerResource = try XCTUnwrap(vault.lastUpdatedBrokerResource)
+            XCTAssertEqual(updatedBrokerResource.rawJSON, expectedBrokerResource.rawJSON)
+            let updatedPayload = try jsonObject(from: updatedBrokerResource.rawJSON)
+            XCTAssertEqual((updatedPayload["addedDatetime"] as? NSNumber)?.int64Value, 1725632531153)
         } else {
             XCTFail("Mock vault issue")
         }
@@ -150,7 +156,8 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         if let vault = self.vault {
             let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider)
             repository.lastCheckedVersion = nil
-            resources.brokerResourcesList = [try brokerResource(fileName: "local-broker-1.0.0")]
+            let expectedBrokerResource = try brokerResource(fileName: "local-broker-1.0.0")
+            resources.brokerResourcesList = [expectedBrokerResource]
             vault.profileQueries = [.mock]
 
             try await sut.checkForUpdates()
@@ -159,6 +166,12 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
             XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
             XCTAssertFalse(vault.wasBrokerUpdateCalled)
             XCTAssertTrue(vault.wasBrokerSavedCalled)
+
+            let savedBrokerResource = try XCTUnwrap(vault.lastSavedBrokerResource)
+            XCTAssertEqual(savedBrokerResource.rawJSON, expectedBrokerResource.rawJSON)
+            let savedPayload = try jsonObject(from: savedBrokerResource.rawJSON)
+            XCTAssertEqual((savedPayload["addedDatetime"] as? NSNumber)?.int64Value, 1725632531153)
+
             XCTAssertTrue(areDatesEqualIgnoringSeconds(
                 date1: Date(),
                 date2: vault.lastPreferredRunDateOnScan)
@@ -285,6 +298,37 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         XCTAssertFalse(cocoaErrorPixels.isEmpty, "cocoaError pixel should still be fired for resource fetch failures")
     }
 
+    func testWhenMockVaultHasBrokers_thenFetchAllBrokerResourcesReturnsMatchingResources() throws {
+        guard let vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let broker = DataBroker(
+            id: 99,
+            name: "Broker",
+            url: "broker.com",
+            steps: [],
+            version: "1.0.0",
+            schedulingConfig: .mock,
+            optOutUrl: "",
+            eTag: "etag-1",
+            removedAt: nil
+        )
+        vault.brokers = [broker]
+
+        let brokerResources = try vault.fetchAllBrokerResources()
+
+        XCTAssertEqual(brokerResources.count, 1)
+        let fetchedResource = try XCTUnwrap(brokerResources.first)
+        XCTAssertEqual(fetchedResource.broker.url, broker.url)
+        XCTAssertEqual(fetchedResource.broker.version, broker.version)
+
+        let decodedBroker = try JSONDecoder().decode(DataBroker.self, from: fetchedResource.rawJSON)
+        XCTAssertEqual(decodedBroker.url, broker.url)
+        XCTAssertEqual(decodedBroker.version, broker.version)
+    }
+
     private func brokerResource(fileName: String) throws -> BrokerResource {
         let fileURL = try XCTUnwrap(
             Bundle.module.url(
@@ -294,6 +338,10 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
             )
         )
         return try DataBroker.initFromResource(fileURL)
+    }
+
+    private func jsonObject(from data: Data) throws -> [String: Any] {
+        try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
 }

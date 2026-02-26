@@ -670,7 +670,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return 1
     }
 
-    public func update(_ brokerResource: BrokerResource, with _: Int64) throws {
+    public func update(_ brokerResource: BrokerResource, with id: Int64) throws {
         wasBrokerUpdateCalled = true
         lastUpdatedBrokerResource = brokerResource
         if shouldThrowOnUpdate {
@@ -712,10 +712,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 
     public func fetchAllBrokerResources() throws -> [BrokerResource] {
-        return brokers.map { broker in
-            let data = (try? JSONEncoder().encode(broker)) ?? Data()
-            return BrokerResource(broker: broker, rawJSON: data)
-        }
+        return []
     }
 
     public func fetchAllNonRemovedBrokers() throws -> [DataBroker] {

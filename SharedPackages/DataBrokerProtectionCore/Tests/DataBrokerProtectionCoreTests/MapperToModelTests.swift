@@ -248,20 +248,13 @@ final class MapperToModelTests: XCTestCase {
         // When: broker JSON is decoded to typed model and action request payload is encoded for WebView injection.
         let mappedBroker = try sut.mapToModel(brokerDB)
         let action = try XCTUnwrap(mappedBroker.steps.first?.actions.first)
-        let params = Params(state: ActionRequest(action: action, data: .userData(
-            ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 1985),
-            nil
-        )))
-
-        let encodedParams = try JSONEncoder().encode(params)
-        let rootObject = try XCTUnwrap(try JSONSerialization.jsonObject(with: encodedParams) as? [String: Any])
-        let state = try XCTUnwrap(rootObject["state"] as? [String: Any])
-        let encodedAction = try XCTUnwrap(state["action"] as? [String: Any])
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil)))
+        let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
 
         // Then: DB -> model mapping still preserves new fields for final action payload encoding.
-        XCTAssertEqual(encodedAction["actionType"] as? String, "navigate")
-        XCTAssertEqual(encodedAction["someNewField"] as? String, "hello-world")
-        XCTAssertEqual((encodedAction["anotherNewField"] as? [String: Any])?["flag"] as? Bool, true)
+        XCTAssertEqual(rawActionPayload["actionType"] as? String, "navigate")
+        XCTAssertEqual(rawActionPayload["someNewField"] as? String, "hello-world")
+        XCTAssertEqual((rawActionPayload["anotherNewField"] as? [String: Any])?["flag"] as? Bool, true)
     }
 
     func testMapToModel_legacyBrokerDBJSON_canStillEncodeActionRequestPayload() throws {
@@ -314,25 +307,25 @@ final class MapperToModelTests: XCTestCase {
         // When: broker JSON is mapped and then encoded as a WebView action payload.
         let mappedBroker = try sut.mapToModel(brokerDB)
         let action = try XCTUnwrap(mappedBroker.steps.first?.actions.first)
-        let params = Params(state: ActionRequest(action: action, data: .userData(
-            ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 1985),
-            nil
-        )))
-        let encodedParams = try JSONEncoder().encode(params)
-        let rootObject = try XCTUnwrap(try JSONSerialization.jsonObject(with: encodedParams) as? [String: Any])
-        let state = try XCTUnwrap(rootObject["state"] as? [String: Any])
-        let encodedAction = try XCTUnwrap(state["action"] as? [String: Any])
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil)))
+        let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
 
         // Then: legacy fields are still forwarded because encoding uses attached action JSON.
-        XCTAssertEqual(encodedAction["actionType"] as? String, "fillForm")
-        XCTAssertEqual(encodedAction["id"] as? String, "fill-1")
-        XCTAssertEqual(encodedAction["selector"] as? String, "#opt-out-form")
-        XCTAssertEqual(encodedAction["dataSource"] as? String, "userProfile")
+        XCTAssertEqual(rawActionPayload["actionType"] as? String, "fillForm")
+        XCTAssertEqual(rawActionPayload["id"] as? String, "fill-1")
+        XCTAssertEqual(rawActionPayload["selector"] as? String, "#opt-out-form")
+        XCTAssertEqual(rawActionPayload["dataSource"] as? String, "userProfile")
 
-        let elements = try XCTUnwrap(encodedAction["elements"] as? [[String: Any]])
+        let elements = try XCTUnwrap(rawActionPayload["elements"] as? [[String: Any]])
         let firstElement = try XCTUnwrap(elements.first)
         XCTAssertEqual(firstElement["type"] as? String, "email")
         XCTAssertEqual(firstElement["selector"] as? String, "input[type='email']")
         XCTAssertEqual((firstElement["parent"] as? [String: Any])?["selector"] as? String, "#email-wrapper")
+    }
+
+    // MARK: - Helpers
+
+    private func makeProfileQuery() -> ProfileQuery {
+        ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 1985)
     }
 }

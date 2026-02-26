@@ -365,6 +365,9 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidDismiss(_ viewController: AIChatContextualSheetViewController) {
+        if sessionState.supportsMultipleContexts {
+            stopObservingContextUpdates()
+        }
         startSessionTimer()
     }
 

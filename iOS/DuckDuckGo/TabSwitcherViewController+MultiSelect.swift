@@ -265,6 +265,7 @@ extension TabSwitcherViewController {
                            containsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
                            showAIChatButton: showAIChatButton)
 
+        titleBarView.topItem?.titleView = isEditing ? nil : segmentedPickerHostingController?.view
         titleBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
         titleBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
         toolbar.items = barsHandler.bottomBarItems

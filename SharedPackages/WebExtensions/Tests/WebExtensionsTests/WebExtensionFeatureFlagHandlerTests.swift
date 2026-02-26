@@ -316,8 +316,11 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
 
         mockWebExtensionManager.uninstallEmbeddedExtensionHandler = {
             disabledCount += 1
-            if disabledCount == 1 { firstDisabled.fulfill() }
-            else { secondDisabled.fulfill() }
+            if disabledCount == 1 {
+                firstDisabled.fulfill()
+            } else {
+                secondDisabled.fulfill()
+            }
         }
 
         embeddedFlagSubject.send(true)

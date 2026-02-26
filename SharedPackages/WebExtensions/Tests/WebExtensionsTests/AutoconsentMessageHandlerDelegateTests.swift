@@ -118,7 +118,7 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
             "consentHeuristicEnabled": true
         ]
         let params: [String: Any] = [
-            "domain": "example.com",
+            "url": "https://example.com",
             "consentStatus": consentStatus
         ]
         let message = WebExtensionMessage(

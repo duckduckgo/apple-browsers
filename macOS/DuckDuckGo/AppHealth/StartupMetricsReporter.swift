@@ -24,16 +24,16 @@ final class StartupMetricsReporter: StartupProfilerDelegate {
 
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
-    private let startupPreferences: StartupPreferences
+    private let previousSessionRestored: Bool
     private let windowContextProvider: () -> WindowContext
     private let environment: SystemEnvironment
 
-    init(featureFlagger: FeatureFlagger, pixelFiring: PixelFiring?, windowContext: @autoclosure @escaping () -> WindowContext, startupPreferences: StartupPreferences, environment: SystemEnvironment = .current) {
+    init(environment: SystemEnvironment = .current, featureFlagger: FeatureFlagger, pixelFiring: PixelFiring?, previousSessionRestored: Bool, windowContext: @autoclosure @escaping () -> WindowContext) {
+        self.environment = environment
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
-        self.startupPreferences = startupPreferences
+        self.previousSessionRestored = previousSessionRestored
         self.windowContextProvider = windowContext
-        self.environment = environment
     }
 
     func startupProfiler(_ profiler: StartupProfiler, didCompleteWithMetrics metrics: StartupMetrics) {
@@ -42,7 +42,7 @@ final class StartupMetricsReporter: StartupProfilerDelegate {
         }
 
         Task { @MainActor in
-            let pixel = buildMetricsPixel(metrics: metrics, windowContext: windowContextProvider(), environment: environment, startupPreferences: startupPreferences)
+            let pixel = buildMetricsPixel(metrics: metrics, windowContext: windowContextProvider(), environment: environment, previousSessionRestored: previousSessionRestored)
             pixelFiring.fire(pixel, frequency: .standard)
         }
     }
@@ -52,12 +52,12 @@ final class StartupMetricsReporter: StartupProfilerDelegate {
 
 private extension StartupMetricsReporter {
 
-    func buildMetricsPixel(metrics: StartupMetrics, windowContext: WindowContext, environment: SystemEnvironment, startupPreferences: StartupPreferences) -> StartupMetricsPixel {
+    func buildMetricsPixel(metrics: StartupMetrics, windowContext: WindowContext, environment: SystemEnvironment, previousSessionRestored: Bool) -> StartupMetricsPixel {
         StartupMetricsPixel(
             architecture: environment.architecture,
             activeProcessorCount: environment.activeProcessorCount,
             isOnBattery: environment.isOnBattery,
-            sessionRestoration: startupPreferences.restorePreviousSession,
+            sessionRestoration: previousSessionRestored,
             windows: windowContext.windows,
             tabs: windowContext.standardTabs,
             appDelegateInit: metrics.duration(step: .appDelegateInit),

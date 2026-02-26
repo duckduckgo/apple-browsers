@@ -1139,8 +1139,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let metricsReporter = StartupMetricsReporter(
             featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
-            windowContext: WindowContext(windowControllersManager: windowControllersManager),
-            startupPreferences: startupPreferences
+            previousSessionRestored: startupPreferences.restorePreviousSession,
+            windowContext: WindowContext(windowControllersManager: windowControllersManager)
         )
         startupProfiler.delegate = metricsReporter
         startupMetricsReporter = metricsReporter

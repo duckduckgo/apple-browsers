@@ -2989,6 +2989,8 @@
 		B5F31F472F50C7650060E5C1 /* SystemEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F31F452F50C7650060E5C1 /* SystemEnvironment.swift */; };
 		B5F31F492F50C7950060E5C1 /* StartupMetricsReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F31F482F50C7950060E5C1 /* StartupMetricsReporter.swift */; };
 		B5F31F4A2F50C7950060E5C1 /* StartupMetricsReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F31F482F50C7950060E5C1 /* StartupMetricsReporter.swift */; };
+		B5F31F4C2F50E2B90060E5C1 /* StartupMetricsReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F31F4B2F50E2B90060E5C1 /* StartupMetricsReporterTests.swift */; };
+		B5F31F4D2F50E2B90060E5C1 /* StartupMetricsReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F31F4B2F50E2B90060E5C1 /* StartupMetricsReporterTests.swift */; };
 		B5F7BDC92EBD1D9D00ECE33A /* TabFaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */; };
 		B5F7BDCA2EBD1D9D00ECE33A /* TabFaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */; };
 		B602E7CF2A93A5FF00F12201 /* WKBackForwardListExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */; };
@@ -5849,6 +5851,7 @@
 		B5ECC1952EF1D24B0046A1C7 /* ScriptStyleProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptStyleProvider.swift; sourceTree = "<group>"; };
 		B5F31F452F50C7650060E5C1 /* SystemEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemEnvironment.swift; sourceTree = "<group>"; };
 		B5F31F482F50C7950060E5C1 /* StartupMetricsReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsReporter.swift; sourceTree = "<group>"; };
+		B5F31F4B2F50E2B90060E5C1 /* StartupMetricsReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsReporterTests.swift; sourceTree = "<group>"; };
 		B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKBackForwardListExtension.swift; sourceTree = "<group>"; };
 		B602E8152A1E2570006D261F /* URL+NetworkProtection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "URL+NetworkProtection.swift"; sourceTree = "<group>"; };
 		B602E81C2A1E25B0006D261F /* NEOnDemandRuleExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NEOnDemandRuleExtension.swift; sourceTree = "<group>"; };
@@ -12229,6 +12232,7 @@
 				EDF339132E8BFD110062E7C3 /* MockWatchdogDiagnosticProvider.swift */,
 				B598E7B42F4F745E00F19027 /* StartupMetricsBucketsTests.swift */,
 				B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */,
+				B5F31F4B2F50E2B90060E5C1 /* StartupMetricsReporterTests.swift */,
 				B598E7B62F4F745E00F19027 /* StartupMetricsTests.swift */,
 				B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */,
 				EDF339142E8BFD110062E7C3 /* WatchdogEventMapperTests.swift */,
@@ -15430,6 +15434,7 @@
 				9FFBEE832DE016E70058B11A /* MockDefaultBrowserAndDockPromptStatusUpdateNotifier.swift in Sources */,
 				567A23CE2C80CF3D0010F66C /* SpecialErrorPageUserScriptTests.swift in Sources */,
 				9F39106A2B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */,
+				B5F31F4C2F50E2B90060E5C1 /* StartupMetricsReporterTests.swift in Sources */,
 				C149975B2DE762B600FF8F0F /* SubscriptionPagesUseSubscriptionFeatureTests.swift in Sources */,
 				9FAD623B2BCFDB32007F3A65 /* WebsiteInfoHelpers.swift in Sources */,
 				9FB4AF542DED8C0700BE416F /* DefaultBrowserAndDockPromptPixelEventTests.swift in Sources */,
@@ -17718,6 +17723,7 @@
 				9F26060E2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift in Sources */,
 				37DB56F22C3B36B80093D4DC /* RemoteMessagingClientTests.swift in Sources */,
 				1E8995E12DCD05280093EFBA /* PreferencesSectionTests.swift in Sources */,
+				B5F31F4D2F50E2B90060E5C1 /* StartupMetricsReporterTests.swift in Sources */,
 				4B9292C32667103100AD2C21 /* PasteboardBookmarkTests.swift in Sources */,
 				F1AFDBD22C231B7A00710F2C /* SubscriptionAppStoreRestorerTests.swift in Sources */,
 				BBE9A9AB2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift in Sources */,

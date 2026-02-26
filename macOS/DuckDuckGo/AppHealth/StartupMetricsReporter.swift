@@ -36,14 +36,15 @@ final class StartupMetricsReporter: StartupProfilerDelegate {
         self.environment = environment
     }
 
-    @MainActor
     func startupProfiler(_ profiler: StartupProfiler, didCompleteWithMetrics metrics: StartupMetrics) {
-        guard featureFlagger.isFeatureOn(.startupMetrics) else {
+        guard featureFlagger.isFeatureOn(.startupMetrics), let pixelFiring else {
             return
         }
 
-        let pixel = buildMetricsPixel(metrics: metrics, windowContext: windowContextProvider(), environment: environment, startupPreferences: startupPreferences)
-        pixelFiring?.fire(pixel, frequency: .standard)
+        Task { @MainActor in
+            let pixel = buildMetricsPixel(metrics: metrics, windowContext: windowContextProvider(), environment: environment, startupPreferences: startupPreferences)
+            pixelFiring.fire(pixel, frequency: .standard)
+        }
     }
 }
 

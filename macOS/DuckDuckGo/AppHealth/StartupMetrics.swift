@@ -26,10 +26,10 @@ enum StartupStep: String, Codable, CaseIterable {
     case appDidFinishLaunchingBeforeRestoration
     case appDidFinishLaunchingAfterRestoration
     case appStateRestoration
-    case appDidDisplayInterface
     case mainMenuInit
+    case timeToInteractive
 
-    static let orderedSequence: [StartupStep] = [.appDelegateInit, .mainMenuInit, .appWillFinishLaunching, .appDidFinishLaunchingBeforeRestoration, .appStateRestoration, .appDidFinishLaunchingAfterRestoration, .appDidDisplayInterface]
+    static let orderedSequence: [StartupStep] = [.appDelegateInit, .mainMenuInit, .appWillFinishLaunching, .appDidFinishLaunchingBeforeRestoration, .appStateRestoration, .appDidFinishLaunchingAfterRestoration, .timeToInteractive]
 }
 
 // MARK: - StartupMetrics

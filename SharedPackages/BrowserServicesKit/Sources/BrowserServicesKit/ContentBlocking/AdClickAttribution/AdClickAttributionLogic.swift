@@ -230,8 +230,20 @@ public class AdClickAttributionLogic {
     }
 
     public func onRequestDetected(request: DetectedRequest) {
-        guard registerFirstActivity,
-            BlockingState.allowed(reason: .adClickAttribution) == request.state else { return }
+        guard registerFirstActivity else { return }
+
+        let isAttributionMatch: Bool
+        if case .allowed(reason: .adClickAttribution) = request.state {
+            isAttributionMatch = true
+        } else if case .activeAttribution(let vendor, _, _) = state,
+                  let host = request.domain,
+                  tld.eTLDplus1(host) == vendor {
+            isAttributionMatch = true
+        } else {
+            isAttributionMatch = false
+        }
+
+        guard isAttributionMatch else { return }
 
         eventReporting?.fire(.adAttributionActive)
         registerFirstActivity = false

@@ -200,6 +200,9 @@ extension OnboardingRebranding {
                     landingView
                 case let .onboarding(viewState):
                     onboardingDialogView(state: viewState)
+                        .transition( //Scale content from 0.1 to 1.0 and fade in when appearing for the first time
+                            .scale.combined(with: .opacity)
+                        )
 #if DEBUG || ALPHA
                         .safeAreaInset(edge: .bottom) {
                             Button {
@@ -255,7 +258,9 @@ extension OnboardingRebranding {
             LandingView(animationNamespace: animationNamespace) {
                 // Dismiss the landing screen 2s after all entrance animations finish
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    model.onAppear()
+                    withAnimation {
+                        model.onAppear()
+                    }
                 }
             }
             .ignoresSafeArea(edges: .bottom)

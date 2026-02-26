@@ -68,4 +68,24 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_isPlayingAudio")))
     }
 
+    func testWebViewConfigurationRespondsTo_processName() {
+        XCTAssertTrue(WKWebViewConfiguration.instancesRespond(to: WKWebViewConfiguration.ProcessNameSelector.processName))
+        XCTAssertTrue(WKWebViewConfiguration.instancesRespond(to: WKWebViewConfiguration.ProcessNameSelector.setProcessName))
+    }
+
+    @MainActor
+    func testApplyStandardConfigurationDoesModifyProcessNameWhenPrivateProcessNameIsEnabled() {
+        let configuration = WKWebViewConfiguration()
+
+        configuration.applyStandardConfiguration(contentBlocking: MockContentBlocking(), burnerMode: .regular, privateProcessName: true)
+        XCTAssertEqual(configuration.systemProcessName, "DuckDuckGo Web Content")
+    }
+
+    @MainActor
+    func testApplyStandardConfigurationDoesNotModifyProcessNameWhenPrivateProcessNameIsDisabled() {
+        let configuration = WKWebViewConfiguration()
+
+        configuration.applyStandardConfiguration(contentBlocking: MockContentBlocking(), burnerMode: .regular, privateProcessName: false)
+        XCTAssertEqual(configuration.systemProcessName, "")
+    }
 }

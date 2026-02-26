@@ -96,9 +96,18 @@ final class EmbeddedWebExtensionTests: XCTestCase {
         XCTAssertEqual(descriptor?.resourceFilename, "duckduckgo-embedded-web-extension.zip")
     }
 
+    func testRegistryContainsDarkReaderExtension() {
+        let descriptor = EmbeddedWebExtensionRegistry.descriptor(for: .darkReader)
+
+        XCTAssertNotNil(descriptor)
+        XCTAssertEqual(descriptor?.type, .darkReader)
+        XCTAssertEqual(descriptor?.resourceFilename, "darkreader.zip")
+    }
+
     func testRegistryAllContainsExpectedExtensions() {
         XCTAssertFalse(EmbeddedWebExtensionRegistry.all.isEmpty)
         XCTAssertTrue(EmbeddedWebExtensionRegistry.all.contains { $0.type == .embedded })
+        XCTAssertTrue(EmbeddedWebExtensionRegistry.all.contains { $0.type == .darkReader })
     }
 
     // MARK: - DuckDuckGoWebExtensionType Tests

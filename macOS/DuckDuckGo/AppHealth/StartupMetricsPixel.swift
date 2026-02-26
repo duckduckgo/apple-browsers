@@ -102,10 +102,10 @@ struct StartupMetricsPixel: PixelKitEvent {
             params["delta_between_launch_and_did_display_interface"] = StartupMetricsBuckets.bucketMilliseconds(delta)
         }
         if let count = numberOfWindowsRestored {
-            params["number_of_windows_restored"] = String(StartupMetricsBuckets.bucketWindowCount(count))
+            params["number_of_windows_restored"] = StartupMetricsBuckets.bucketWindowCount(count)
         }
         if let count = numberOfTabsRestored {
-            params["number_of_tabs_restored"] = String(StartupMetricsBuckets.bucketTabCount(count))
+            params["number_of_tabs_restored"] = StartupMetricsBuckets.bucketTabCount(count)
         }
 
         return params

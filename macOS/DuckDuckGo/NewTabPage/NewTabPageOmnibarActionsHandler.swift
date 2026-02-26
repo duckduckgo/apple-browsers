@@ -138,7 +138,16 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
     }
 
-    func openAiChat(_ chatId: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+    func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPage.NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+        let pixel: NewTabPagePixel
+        switch (isPinned, trigger) {
+        case (true, .mouse): pixel = .aiChatRecentChatSelectedPinnedMouse
+        case (true, .keyboard): pixel = .aiChatRecentChatSelectedPinnedKeyboard
+        case (false, .mouse): pixel = .aiChatRecentChatSelectedMouse
+        case (false, .keyboard): pixel = .aiChatRecentChatSelectedKeyboard
+        }
+        firePixel(pixel)
+
         let tabOpener = AIChatTabOpener(
             promptHandler: promptHandler,
             aiChatTabManaging: windowControllersManager

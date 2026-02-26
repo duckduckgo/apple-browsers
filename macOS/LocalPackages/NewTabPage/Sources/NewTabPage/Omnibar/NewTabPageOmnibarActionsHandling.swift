@@ -28,6 +28,6 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget)
 
     @MainActor
-    func openAiChat(_ chatId: String, target: NewTabPageDataModel.OpenTarget)
+    func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPageDataModel.OpenTarget)
 
 }

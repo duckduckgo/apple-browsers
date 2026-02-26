@@ -192,9 +192,16 @@ public extension NewTabPageDataModel {
 
     // MARK: - omnibar_openAiChat
 
+    enum OpenAiChatTrigger: String, Codable {
+        case mouse
+        case keyboard
+    }
+
     struct OpenAiChatAction: Codable, Equatable {
         let chatId: String
         let target: OpenTarget
+        let trigger: OpenAiChatTrigger
+        let isPinned: Bool?
     }
 
     // MARK: - omnibar_getAiChats

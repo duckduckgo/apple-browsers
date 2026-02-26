@@ -715,7 +715,6 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func fetchAllBrokerResources() throws -> [BrokerResource] {
         let fileManager = MockFileManager()
-        fileManager.fixtureBundle = brokerFixturesBundle
         fileManager.fixtureFileNames = [
             "valid-broker",
             "valid-broker-1.0.1",
@@ -2124,7 +2123,6 @@ public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
 public final class MockFileManager: FileManager, @unchecked Sendable {
     public var hasUnzippedContent = false
 
-    public var fixtureBundle: Bundle?
     public var fixtureFileNames: [String]?
     private let fileNames = [
         "valid-child-broker",
@@ -2136,7 +2134,7 @@ public final class MockFileManager: FileManager, @unchecked Sendable {
     ]
     private var fileURLs: [URL] {
         return (fixtureFileNames ?? fileNames).compactMap {
-            fixtureBundle?.url(forResource: $0, withExtension: "json", subdirectory: "BundleResources")
+            Bundle.module.url(forResource: $0, withExtension: "json", subdirectory: "BundleResources")
         }
     }
 

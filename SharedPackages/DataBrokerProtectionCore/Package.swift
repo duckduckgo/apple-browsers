@@ -63,6 +63,7 @@ let package = Package(
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],
+            resources: [.copy("BundleResources")],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

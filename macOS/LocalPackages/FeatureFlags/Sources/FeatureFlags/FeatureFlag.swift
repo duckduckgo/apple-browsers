@@ -479,7 +479,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .webExtensions:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .syncSeamlessAccountSwitching:

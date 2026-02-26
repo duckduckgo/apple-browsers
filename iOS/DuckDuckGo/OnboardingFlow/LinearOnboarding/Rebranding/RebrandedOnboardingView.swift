@@ -299,6 +299,7 @@ extension OnboardingRebranding {
 
         private var browsersComparisonView: some View {
             BrowsersComparisonContent(
+                showContent: $showBubbleContent,
                 title: UserText.Onboarding.BrowsersComparison.title,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
                 cancelAction: {

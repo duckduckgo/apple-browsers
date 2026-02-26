@@ -60,6 +60,7 @@ class SuggestionTrayViewController: UIViewController {
     private var autocompleteController: AutocompleteViewController?
     private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
+    private var pendingEscapeHatchModel: EscapeHatchModel?
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesModel: FavoritesListInteracting
     private let historyManager: HistoryManaging
@@ -164,8 +165,8 @@ class SuggestionTrayViewController: UIViewController {
         switch type {
         case .autocomplete(let query):
             canShow = canDisplayAutocompleteSuggestions(forQuery: query, animated: animated)
-        case.favorites:
-            canShow = canDisplayFavorites
+        case .favorites:
+            canShow = canDisplayFavorites || hasRemoteMessages || pendingEscapeHatchModel != nil
         }
         return canShow
     }
@@ -269,6 +270,11 @@ class SuggestionTrayViewController: UIViewController {
         return !newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
     }
 
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        pendingEscapeHatchModel = model
+        newTabPage?.setEscapeHatch(model)
+    }
+
     private func displayFavoritesIfNeeded(animated: Bool, onInstall: @escaping () -> Void = {}) {
         if newTabPage == nil {
             installNewTabPage(animated: animated, onInstall: onInstall)
@@ -300,6 +306,7 @@ class SuggestionTrayViewController: UIViewController {
         if hideBorder {
             controller.hideBorderView()
         }
+        controller.setEscapeHatch(pendingEscapeHatchModel)
 
         install(controller: controller,
                 animated: animated,

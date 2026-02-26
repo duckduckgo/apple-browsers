@@ -181,7 +181,8 @@ import AIChatTestingUtilities
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
             privacyStats: MockPrivacyStats(),
-            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
+            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -239,6 +240,16 @@ import AIChatTestingUtilities
         XCTAssertTrue(contextualOnboardingLogicMock.didCallEnableAddFavoriteFlow)
     }
 
+}
+
+private struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
+    var isFeatureEnabled: Bool = false
+    var isForceDarkModeEnabled: Bool = false
+    var excludedDomains: [String] = []
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+    func setForceDarkModeEnabled(_ enabled: Bool) {}
+    func themeDidChange() {}
 }
 
 // swiftlint:enable force_try

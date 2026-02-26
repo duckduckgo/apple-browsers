@@ -72,6 +72,18 @@ struct SettingsAppearanceView: View {
                 SettingsPickerCellView(label: UserText.settingsTheme,
                                        options: ThemeStyle.allCases,
                                        selectedOption: viewModel.themeStyleBinding)
+
+                // Force Dark Mode on websites
+                if viewModel.isForceWebsiteDarkModeAvailable {
+                    SettingsCellView(label: UserText.settingsForceWebsiteDarkMode,
+                                     accessory: .toggle(isOn: viewModel.forceWebsiteDarkModeBinding))
+                }
+            } footer: {
+                if viewModel.isForceWebsiteDarkModeAvailable {
+                    Text(UserText.settingsThemeSectionFooter)
+                } else {
+                    EmptyView()
+                }
             }
 
             // AddressBar specific settings

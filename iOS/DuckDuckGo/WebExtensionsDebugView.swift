@@ -85,6 +85,8 @@ struct WebExtensionsDebugView: View {
                 Text("Installed Extensions (\(installedExtensions.count))")
             }
 
+            darkReaderSection
+
             if !installedExtensions.isEmpty {
                 Section {
                     Button(role: .destructive) {
@@ -108,6 +110,27 @@ struct WebExtensionsDebugView: View {
         }
         .refreshable {
             refreshExtensions()
+        }
+    }
+
+    @ViewBuilder
+    private var darkReaderSection: some View {
+        if let installed = webExtensionManager.installedEmbeddedExtension(for: .darkReader),
+           let context = webExtensionManager.context(for: installed.uniqueIdentifier) {
+            let denied = context.deniedPermissionMatchPatterns.keys.sorted { $0.description < $1.description }
+            Section {
+                if denied.isEmpty {
+                    Text("No excluded domains")
+                        .foregroundColor(.secondary)
+                } else {
+                    ForEach(denied.map(\.description), id: \.self) { pattern in
+                        Text(pattern)
+                            .font(.caption)
+                    }
+                }
+            } header: {
+                Text("Dark Reader Excluded Domains (\(denied.count))")
+            }
         }
     }
 

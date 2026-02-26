@@ -28,7 +28,6 @@ extension OnboardingRebranding.OnboardingView {
 
         private let title: String
         private let skipOnboardingView: AnyView?
-        private var showCTA: Binding<Bool>
         private let continueAction: () -> Void
         private let skipAction: () -> Void
 
@@ -37,13 +36,11 @@ extension OnboardingRebranding.OnboardingView {
         init(
             title: String,
             skipOnboardingView: AnyView?,
-            showCTA: Binding<Bool> = .constant(false),
             continueAction: @escaping () -> Void,
             skipAction: @escaping () -> Void
         ) {
             self.title = title
             self.skipOnboardingView = skipOnboardingView
-            self.showCTA = showCTA
             self.continueAction = continueAction
             self.skipAction = skipAction
         }
@@ -51,14 +48,9 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             if showSkipOnboarding {
                 skipOnboardingView
+                    .onboardingViewVisibleAfterDelay(OnboardingBubbleAnimationMetrics.contentFadeInDelay) // OnboardingViewState does not change in this case so we need to manually fade in the content after bubble resizes.
             } else {
                 content
-                    .onAppear {
-                        guard !showCTA.wrappedValue else { return }
-                        withAnimation {
-                            showCTA.wrappedValue = true
-                        }
-                    }
             }
         }
 
@@ -85,7 +77,9 @@ extension OnboardingRebranding.OnboardingView {
 
                         if skipOnboardingView != nil {
                             Button(action: {
-                                showSkipOnboarding = true
+                                withAnimation {
+                                    showSkipOnboarding = true
+                                }
                                 skipAction()
                             }) {
                                 Text(UserText.Onboarding.Intro.skipCTA)
@@ -93,7 +87,6 @@ extension OnboardingRebranding.OnboardingView {
                             .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
                         }
                     }
-                    .visibility(showCTA.wrappedValue ? .visible : .invisible)
                 }
             )
         }

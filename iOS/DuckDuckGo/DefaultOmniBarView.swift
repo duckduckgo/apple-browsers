@@ -927,8 +927,10 @@ extension DefaultOmniBarView {
         aiChatTextView.font = UIFont.daxBodyRegular()
         aiChatTextView.textColor = UIColor(designSystemColor: .textPrimary)
         aiChatTextView.tintColor = UIColor(designSystemColor: .accent)
-        aiChatTextView.autocapitalizationType = .sentences
-        aiChatTextView.autocorrectionType = .default
+        aiChatTextView.autocapitalizationType = .none
+        aiChatTextView.autocorrectionType = .no
+        aiChatTextView.spellCheckingType = .no
+        aiChatTextView.keyboardType = .webSearch
         aiChatTextView.isScrollEnabled = true
     }
 

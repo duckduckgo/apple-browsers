@@ -2193,6 +2193,7 @@ class TabNavigationTests: UITestCase {
         openTestPage("Page #16")
         app.mainMenuAddBookmarkMenuItem.click()
         app.addBookmarkAlertAddButton.click()
+        app.dismissBookmarksBarPopover(shouldDisplayBar: true, requirePopover: false)
         if !app.bookmarksBar.exists {
             app.mainMenuToggleBookmarksBarMenuItem.click()
         }

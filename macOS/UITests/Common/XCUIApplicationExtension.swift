@@ -407,13 +407,16 @@ extension XCUIApplication {
         }
     }
 
-    func dismissBookmarksBarPopover(shouldDisplayBar: Bool = false) {
+    func dismissBookmarksBarPopover(shouldDisplayBar: Bool = false, requirePopover: Bool = false) {
         let targetIdentifier = shouldDisplayBar ? AccessibilityIdentifiers.bookmarksBarPopoverShow : AccessibilityIdentifiers.bookmarksBarPopoverHide
         let targetButton = buttons[targetIdentifier]
-        XCTAssertTrue(
-            targetButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Bookmarks Bar Popover didn't show within a reasonable timeframe"
-        )
+        let timeout = requirePopover ? UITests.Timeouts.elementExistence : 0.5
+        guard targetButton.waitForExistence(timeout: timeout) else {
+            if requirePopover {
+                XCTFail("Bookmarks Bar Popover didn't show within a reasonable timeframe")
+            }
+            return
+        }
 
         targetButton.tap()
     }

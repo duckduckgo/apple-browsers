@@ -130,15 +130,12 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
         context.uniqueIdentifier = identifier
 
-        // In future, we should grant only what the extension requests.
-        let matchPatterns = context.webExtension.allRequestedMatchPatterns
+        let matchPatterns = webExtension.allRequestedMatchPatterns
         for pattern in matchPatterns {
             context.setPermissionStatus(.grantedExplicitly, for: pattern, expirationDate: nil)
         }
-        let permissions: [WKWebExtension.Permission] = (["activeTab", "alarms", "clipboardWrite", "contextMenus", "cookies", "declarativeNetRequest", "declarativeNetRequestFeedback", "declarativeNetRequestWithHostAccess", "menus", "nativeMessaging", "notifications", "scripting", "sidePanel", "storage", "tabs", "unlimitedStorage", "webNavigation", "webRequest"]).map {
-            WKWebExtension.Permission($0)
-        }
-        for permission in permissions {
+
+        for permission in webExtension.requestedPermissions {
             context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
         }
 

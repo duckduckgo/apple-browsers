@@ -100,7 +100,7 @@ final class StartupMetricsReporterTests: XCTestCase {
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["architecture"], environment.architecture)
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["active_processor_count"], environment.activeProcessorCount.description)
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["active_processor_count"], "8")
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["battery_power"], environment.isOnBattery!.description)
     }
 

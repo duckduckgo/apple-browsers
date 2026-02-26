@@ -22,10 +22,43 @@ import DesignResourcesKitIcons
 public struct BrowsersComparisonModel {
 
     public static let privacyFeatures: [PrivacyFeature] = {
-        PrivacyFeature.FeatureType.allCases.map { featureType in
+        orderedFeatureTypes.map { featureType in
             PrivacyFeature(type: featureType, browsersSupport: browsersSupport(for: featureType))
         }
     }()
+
+    // For this iOS copy rollout, English users see an AI chat row in position 2 and the erase-data row removed.
+    // All other locales/platforms keep the original feature order.
+    private static var orderedFeatureTypes: [PrivacyFeature.FeatureType] {
+#if os(iOS)
+        if isEnglishLanguage {
+            var featureTypes: [PrivacyFeature.FeatureType] = [
+                .privateSearch,
+                .privateAIChat,
+                .blockThirdPartyTrackers,
+                .blockCookiePopups,
+                .blockCreepyAds
+            ]
+            return featureTypes
+        }
+#endif
+
+        var featureTypes: [PrivacyFeature.FeatureType] = [
+            .privateSearch,
+            .blockThirdPartyTrackers,
+            .blockCookiePopups,
+            .blockCreepyAds,
+            .eraseBrowsingData
+        ]
+#if os(macOS)
+        featureTypes.append(.duckplayer)
+#endif
+        return featureTypes
+    }
+
+    private static var isEnglishLanguage: Bool {
+        Locale.preferredLanguages.first?.lowercased().hasPrefix("en") ?? false
+    }
 
     private static func browsersSupport(for feature: PrivacyFeature.FeatureType) -> [PrivacyFeature.BrowserSupport] {
         Browser.allCases.map { browser in
@@ -53,6 +86,13 @@ public struct BrowsersComparisonModel {
                     availability = .unavailable
                 }
             case .blockCreepyAds:
+                switch browser {
+                case .ddg:
+                    availability = .available
+                case .safari:
+                    availability = .unavailable
+                }
+            case .privateAIChat:
                 switch browser {
                 case .ddg:
                     availability = .available
@@ -122,6 +162,7 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 public static let cookiePopups = NSLocalizedString("onboarding.highlights.browsers.features.cookiePopups.title", bundle: Bundle.module, value: "Block cookie pop-ups", comment: "Message to highlight how the browser allows you to block cookie pop-ups")
                 public static let creepyAds = NSLocalizedString("onboarding.highlights.browsers.features.creepyAds.title", bundle: Bundle.module, value: "Block targeted ads", comment: "Message to highlight browser capability of blocking creepy ads")
                 public static let eraseBrowsingData = NSLocalizedString("onboarding.highlights.browsers.features.eraseBrowsingData.title", bundle: Bundle.module, value: "Delete browsing data with one button", comment: "Message to highlight browser capability of swiftly erase browsing data")
+                public static let privateAIChatEnglish = "Use AI privately or opt out entirely"
                 public static let duckplayer = NSLocalizedString("onboarding.highlights.browsers.features.duckplayer.title", bundle: Bundle.module, value: "Play YouTube without targeted ads", comment: "Message to highlight browser capability of watching YouTube videos without targeted ads")
             }
         }
@@ -137,6 +178,7 @@ extension BrowsersComparisonModel.PrivacyFeature {
         case blockThirdPartyTrackers
         case blockCookiePopups
         case blockCreepyAds
+        case privateAIChat
         case eraseBrowsingData
         #if os(macOS)
         case duckplayer
@@ -152,6 +194,8 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 UserText.BrowsersComparison.Features.cookiePopups
             case .blockCreepyAds:
                 UserText.BrowsersComparison.Features.creepyAds
+            case .privateAIChat:
+                UserText.BrowsersComparison.Features.privateAIChatEnglish
             case .eraseBrowsingData:
                 UserText.BrowsersComparison.Features.eraseBrowsingData
             #if os(macOS)
@@ -171,6 +215,8 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 DesignSystemImages.Color.Size24.cookieBlocked
             case .blockCreepyAds:
                 DesignSystemImages.Color.Size24.adsBlocked
+            case .privateAIChat:
+                DesignSystemImages.Glyphs.Size24.chat
             case .eraseBrowsingData:
                 DesignSystemImages.Color.Size24.fire
             #if os(macOS)

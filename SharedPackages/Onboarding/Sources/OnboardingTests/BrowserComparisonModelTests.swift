@@ -55,11 +55,42 @@ final class BrowserComparisonModelTests: XCTestCase {
     }
 
     func testWhenIsNotHighlightsThenBrowserComparisonFeatureEraseBrowsingDataIsCorrect() throws {
+#if os(iOS)
+        guard !(Locale.preferredLanguages.first?.lowercased().hasPrefix("en") ?? false) else {
+            throw XCTSkip("English iOS-specific variant replaces this row")
+        }
+#endif
+
         // WHEN
         let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .eraseBrowsingData })?.type.title)
 
         // THEN
         XCTAssertEqual(result, BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.eraseBrowsingData)
+    }
+
+    func testWhenLanguageIsEnglishThenAIChatRowIsSecond() throws {
+#if os(iOS)
+        guard Locale.preferredLanguages.first?.lowercased().hasPrefix("en") ?? false else {
+            throw XCTSkip("English iOS-specific ordering test")
+        }
+#else
+        throw XCTSkip("iOS-specific ordering test")
+#endif
+
+        XCTAssertGreaterThan(BrowsersComparisonModel.privacyFeatures.count, 1)
+        XCTAssertEqual(BrowsersComparisonModel.privacyFeatures[1].type, .privateAIChat)
+    }
+
+    func testWhenLanguageIsEnglishThenEraseBrowsingDataRowIsRemoved() throws {
+#if os(iOS)
+        guard Locale.preferredLanguages.first?.lowercased().hasPrefix("en") ?? false else {
+            throw XCTSkip("English iOS-specific variant test")
+        }
+#else
+        throw XCTSkip("iOS-specific variant test")
+#endif
+
+        XCTAssertNil(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .eraseBrowsingData }))
     }
 
 }

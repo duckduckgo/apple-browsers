@@ -263,8 +263,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     lazy var userScripts: [UserScript] = [
         debugScript,
-        surrogatesScript,
-        contentBlockerRulesScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
         autofillScript

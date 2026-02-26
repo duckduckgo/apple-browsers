@@ -24,6 +24,7 @@ import Foundation
 import Navigation
 import PrivacyConfig
 import Subscription
+import TrackerRadarKit
 import os.log
 
 struct DetectedTracker {

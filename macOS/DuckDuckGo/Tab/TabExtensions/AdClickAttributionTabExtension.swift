@@ -79,7 +79,6 @@ protocol ContentBlockerScriptProtocol: AnyObject {
     var currentAdClickAttributionVendor: String? { get set }
     var supplementaryTrackerData: [TrackerData] { get set }
 }
-extension ContentBlockerRulesUserScript: ContentBlockerScriptProtocol {}
 
 final class AdClickAttributionTabExtension: TabExtension {
 
@@ -126,7 +125,6 @@ final class AdClickAttributionTabExtension: TabExtension {
 
     init(inheritedAttribution: AdClickAttributionLogic.State?,
          userContentControllerFuture: some Publisher<some UserContentControllerProtocol, Never>,
-         contentBlockerRulesScriptPublisher: some Publisher<(any ContentBlockerScriptProtocol)?, Never>,
          trackerInfoPublisher: some Publisher<DetectedRequest, Never>,
          dependencies: some AdClickAttributionDependencies,
          dateTimeProvider: @escaping () -> Date = Date.init,
@@ -148,7 +146,7 @@ final class AdClickAttributionTabExtension: TabExtension {
         }.store(in: &cancellables)
     }
 
-    private func delayedInitialization(with userContentController: UserContentControllerProtocol, inheritedAttribution: AdClickAttributionLogic.State?, contentBlockerRulesScriptPublisher: some Publisher<(any ContentBlockerScriptProtocol)?, Never>, trackerInfoPublisher: some Publisher<DetectedRequest, Never>) {
+    private func delayedInitialization(with userContentController: UserContentControllerProtocol, inheritedAttribution: AdClickAttributionLogic.State?, Never>, trackerInfoPublisher: some Publisher<DetectedRequest, Never>) {
 
         Logger.contentBlocking.debug("<\(self.logic.debugID)> Performing delayed initialization")
 
@@ -158,16 +156,6 @@ final class AdClickAttributionTabExtension: TabExtension {
         if let inheritedAttribution {
             logic.applyInheritedAttribution(state: inheritedAttribution)
         }
-
-        contentBlockerRulesScriptPublisher
-            .compactMap { $0 }
-            .sink { [weak self] contentBlockerRulesScript in
-                guard let self else { return }
-
-                self.contentBlockerRulesScript = contentBlockerRulesScript
-                self.logic.onRulesChanged(latestRules: self.dependencies.contentBlockingManager.currentRules)
-            }
-            .store(in: &cancellables)
 
         trackerInfoPublisher
             .sink { [weak self] tracker in

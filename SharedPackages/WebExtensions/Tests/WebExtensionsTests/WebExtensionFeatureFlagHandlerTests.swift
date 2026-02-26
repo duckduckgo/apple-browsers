@@ -45,18 +45,18 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     }
 
     func testWhenFeatureFlagDisabledThenUninstallAllExtensionsIsCalled() async throws {
-        var callbackCalled = false
+        let callbackExpectation = expectation(description: "onFeatureFlagDisabled called")
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
-            onFeatureFlagDisabled: { callbackCalled = true }
+            onFeatureFlagDisabled: { callbackExpectation.fulfill() }
         )
 
         featureFlagSubject.send(false)
         try await Task.sleep(for: .milliseconds(100))
 
+        await fulfillment(of: [callbackExpectation], timeout: 1.0)
         XCTAssertTrue(mockWebExtensionManager.uninstallAllExtensionsCalled)
-        XCTAssertTrue(callbackCalled)
     }
 
     func testWhenFeatureFlagEnabledThenUninstallAllExtensionsIsNotCalled() async throws {
@@ -87,25 +87,26 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     }
 
     func testWhenWebExtensionManagerProviderReturnsNilThenCallbackIsStillCalled() async throws {
-        var callbackCalled = false
+        let callbackExpectation = expectation(description: "onFeatureFlagDisabled called")
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { nil },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
-            onFeatureFlagDisabled: { callbackCalled = true }
+            onFeatureFlagDisabled: { callbackExpectation.fulfill() }
         )
 
         featureFlagSubject.send(false)
         try await Task.sleep(for: .milliseconds(100))
 
-        XCTAssertTrue(callbackCalled)
+        await fulfillment(of: [callbackExpectation], timeout: 1.0)
     }
 
     func testWhenFeatureFlagToggledMultipleTimesThenOnlyDisableTriggersUninstall() async throws {
-        var callbackCount = 0
+        let disabledExpectation = expectation(description: "onFeatureFlagDisabled called twice")
+        disabledExpectation.expectedFulfillmentCount = 2
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
-            onFeatureFlagDisabled: { callbackCount += 1 }
+            onFeatureFlagDisabled: { disabledExpectation.fulfill() }
         )
 
         featureFlagSubject.send(true)
@@ -115,7 +116,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         featureFlagSubject.send(false)
         try await Task.sleep(for: .milliseconds(100))
 
-        XCTAssertEqual(callbackCount, 2)
+        await fulfillment(of: [disabledExpectation], timeout: 1.0)
     }
 
     // MARK: - Feature Flag Enabled Tests
@@ -186,6 +187,10 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     // MARK: - Embedded Extension Flag Tests
 
     func testWhenEmbeddedFlagDisabledThenUninstallEmbeddedExtensionIsCalled() async throws {
+        let uninstallExpectation = expectation(description: "uninstallEmbeddedExtension called")
+        mockWebExtensionManager.uninstallEmbeddedExtensionHandler = {
+            uninstallExpectation.fulfill()
+        }
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
@@ -196,7 +201,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         embeddedFlagSubject.send(false)
         try await Task.sleep(for: .milliseconds(100))
 
-        XCTAssertTrue(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
+        await fulfillment(of: [uninstallExpectation], timeout: 1.0)
         XCTAssertEqual(mockWebExtensionManager.uninstalledEmbeddedType, .embedded)
     }
 
@@ -215,6 +220,10 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     }
 
     func testWhenEmbeddedFlagDisabledThenOnlyEmbeddedExtensionIsUninstalled() async throws {
+        let uninstallExpectation = expectation(description: "uninstallEmbeddedExtension called")
+        mockWebExtensionManager.uninstallEmbeddedExtensionHandler = {
+            uninstallExpectation.fulfill()
+        }
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
@@ -226,7 +235,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         embeddedFlagSubject.send(false)
         try await Task.sleep(for: .milliseconds(100))
 
-        XCTAssertTrue(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
+        await fulfillment(of: [uninstallExpectation], timeout: 1.0)
         XCTAssertFalse(mockWebExtensionManager.uninstallAllExtensionsCalled)
         XCTAssertFalse(callbackCalled)
     }

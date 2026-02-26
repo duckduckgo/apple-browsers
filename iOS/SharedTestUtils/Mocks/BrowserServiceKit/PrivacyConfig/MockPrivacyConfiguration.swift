@@ -107,8 +107,10 @@ class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
         fatalError("not implemented")
     }
 
-    var updatesSubject = PassthroughSubject<Void, Never>()
-    lazy var updatesPublisher: AnyPublisher<Void, Never> = updatesSubject.eraseToAnyPublisher()
+    let updatesSubject = PassthroughSubject<Void, Never>()
+    lazy var updatesPublisher: AnyPublisher<Void, Never> = updatesSubject
+        .prepend(())
+        .eraseToAnyPublisher()
     var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
     var internalUserDecider: InternalUserDecider = MockInternalUserDecider()
 

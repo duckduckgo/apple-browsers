@@ -91,7 +91,7 @@ extension TabSwitcherViewController {
             UIView.transition(with: view,
                               duration: 0.3,
                               options: .transitionCrossDissolve, animations: {
-                self.refreshTitle()
+                self.refreshTitleViews()
                 self.collectionView.reloadData()
             }, completion: { _ in
                 self.isProcessingUpdates = false
@@ -138,7 +138,7 @@ extension TabSwitcherViewController {
         self.isEditing = false
         collectionView.reloadData()
         updateUIForSelectionMode()
-        refreshTitle()
+        refreshTitleViews()
     }
 
     func closeAllTabs() {

@@ -51,7 +51,8 @@ public class DataStoreIDManager: DataStoreIDManaging {
     public static let shared = DataStoreIDManager()
 
     private let store: KeyValueStoring
-    private let fireModeIDQueue = DispatchQueue(label: "com.duckduckgo.datastoreidmanager.firemode")
+    private let fireModeIDQueue = DispatchQueue(label: "com.duckduckgo.datastoreidmanager.firemode",
+                                                qos: .userInitiated)
 
     init(store: KeyValueStoring = UserDefaults.app) {
         self.store = store

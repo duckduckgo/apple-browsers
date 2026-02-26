@@ -108,6 +108,7 @@ final class ScanWideEventRecorder {
         queue.async {
             self.data.attemptNumber = metadata.attemptNumber
             self.data.attemptType = metadata.attemptType
+            self.data.isFreeScan = metadata.isFreeScan
             self.data.scanInterval?.start = metadata.intervalStart
             self.wideEvent.updateFlow(self.data)
         }

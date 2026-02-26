@@ -44,7 +44,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenFeatureFlagDisabledThenUninstallAllExtensionsIsCalled() {
+    func testWhenFeatureFlagDisabledThenUninstallAllExtensionsIsCalled() async throws {
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
@@ -53,12 +53,13 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         featureFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertTrue(mockWebExtensionManager.uninstallAllExtensionsCalled)
         XCTAssertTrue(callbackCalled)
     }
 
-    func testWhenFeatureFlagEnabledThenUninstallAllExtensionsIsNotCalled() {
+    func testWhenFeatureFlagEnabledThenUninstallAllExtensionsIsNotCalled() async throws {
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
@@ -67,6 +68,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         featureFlagSubject.send(true)
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertFalse(mockWebExtensionManager.uninstallAllExtensionsCalled)
         XCTAssertFalse(callbackCalled)
@@ -84,7 +86,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         XCTAssertFalse(callbackCalled)
     }
 
-    func testWhenWebExtensionManagerProviderReturnsNilThenCallbackIsStillCalled() {
+    func testWhenWebExtensionManagerProviderReturnsNilThenCallbackIsStillCalled() async throws {
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { nil },
@@ -93,11 +95,12 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         featureFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertTrue(callbackCalled)
     }
 
-    func testWhenFeatureFlagToggledMultipleTimesThenOnlyDisableTriggersUninstall() {
+    func testWhenFeatureFlagToggledMultipleTimesThenOnlyDisableTriggersUninstall() async throws {
         var callbackCount = 0
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
@@ -110,6 +113,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         featureFlagSubject.send(false)
         featureFlagSubject.send(true)
         featureFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertEqual(callbackCount, 2)
     }
@@ -167,18 +171,21 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         featureFlagSubject.send(true)
+        try await Task.sleep(for: .milliseconds(300))
         featureFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(300))
         featureFlagSubject.send(true)
+        try await Task.sleep(for: .milliseconds(300))
         featureFlagSubject.send(false)
 
-        await fulfillment(of: [enabledExpectation], timeout: 1.0)
+        await fulfillment(of: [enabledExpectation], timeout: 3.0)
         XCTAssertEqual(enabledCount, 2)
         XCTAssertEqual(disabledCount, 2)
     }
 
     // MARK: - Embedded Extension Flag Tests
 
-    func testWhenEmbeddedFlagDisabledThenUninstallEmbeddedExtensionIsCalled() {
+    func testWhenEmbeddedFlagDisabledThenUninstallEmbeddedExtensionIsCalled() async throws {
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
@@ -187,12 +194,13 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         embeddedFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertTrue(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
         XCTAssertEqual(mockWebExtensionManager.uninstalledEmbeddedType, .embedded)
     }
 
-    func testWhenEmbeddedFlagEnabledThenUninstallEmbeddedExtensionIsNotCalled() {
+    func testWhenEmbeddedFlagEnabledThenUninstallEmbeddedExtensionIsNotCalled() async throws {
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
@@ -201,11 +209,12 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         embeddedFlagSubject.send(true)
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertFalse(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
     }
 
-    func testWhenEmbeddedFlagDisabledThenOnlyEmbeddedExtensionIsUninstalled() {
+    func testWhenEmbeddedFlagDisabledThenOnlyEmbeddedExtensionIsUninstalled() async throws {
         var callbackCalled = false
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
@@ -215,6 +224,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         )
 
         embeddedFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertTrue(mockWebExtensionManager.uninstallEmbeddedExtensionCalled)
         XCTAssertFalse(mockWebExtensionManager.uninstallAllExtensionsCalled)
@@ -281,11 +291,14 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         }
 
         embeddedFlagSubject.send(true)
+        try await Task.sleep(for: .milliseconds(300))
         embeddedFlagSubject.send(false)
+        try await Task.sleep(for: .milliseconds(300))
         embeddedFlagSubject.send(true)
+        try await Task.sleep(for: .milliseconds(300))
         embeddedFlagSubject.send(false)
 
-        await fulfillment(of: [enabledExpectation], timeout: 1.0)
+        await fulfillment(of: [enabledExpectation], timeout: 3.0)
         XCTAssertEqual(enabledCount, 2)
         XCTAssertEqual(disabledCount, 2)
     }

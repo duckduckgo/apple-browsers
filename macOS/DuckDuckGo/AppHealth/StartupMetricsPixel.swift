@@ -40,8 +40,11 @@ struct StartupMetricsPixel: PixelKitEvent {
     /// Number of windows restored during state restoration, or `nil` if unavailable.
     let windows: Int?
 
-    /// Number of tabs restored during state restoration, or `nil` if unavailable.
-    let tabs: Int?
+    /// Number of standard tabs restored during state restoration, or `nil` if unavailable.
+    let standardTabs: Int?
+
+    /// Number of pinned tabs restored during state restoration, or `nil` if unavailable.
+    let pinnedTabs: Int?
 
     // MARK: - Timing
 
@@ -92,8 +95,11 @@ struct StartupMetricsPixel: PixelKitEvent {
         if let isOnBattery {
             params["battery_power"] = isOnBattery.description
         }
-        if let count = tabs {
-            params["tabs"] = StartupMetricsBuckets.bucketTabCount(count)
+        if let count = standardTabs {
+            params["standard_tabs"] = StartupMetricsBuckets.bucketTabCount(count)
+        }
+        if let count = pinnedTabs {
+            params["pinned_tabs"] = StartupMetricsBuckets.bucketTabCount(count)
         }
         if let count = windows {
             params["windows"] = StartupMetricsBuckets.bucketWindowCount(count)

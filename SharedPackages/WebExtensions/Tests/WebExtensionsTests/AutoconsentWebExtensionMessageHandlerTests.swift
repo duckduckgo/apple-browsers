@@ -73,57 +73,53 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         }
     }
 
-    // MARK: - sendPixel (Not Implemented)
+    // MARK: - sendPixel
 
-    func testWhenSendPixelThenReturnsNotImplementedError() async {
+    func testWhenSendPixelWithValidParamsThenReturnsSuccess() async {
         let message = createMessage(method: "sendPixel", params: ["pixelName": "test", "type": "impression"])
 
         let result = await handler.handleMessage(message)
 
-        if case .failure(let error) = result {
-            let handlerError = error as? WebExtensionMessageHandlerError
-            if case .unknownMethod(let method) = handlerError {
-                XCTAssertEqual(method, "sendPixel")
-            } else {
-                XCTFail("Expected unknownMethod error for sendPixel")
-            }
+        if case .success(let response) = result {
+            let dict = response as? [String: String]
+            XCTAssertEqual(dict?["response"], "ok")
         } else {
-            XCTFail("Expected failure result")
+            XCTFail("Expected success result")
         }
     }
 
-    // MARK: - refreshCpmDashboardState (Not Implemented)
+    // MARK: - refreshCpmDashboardState
 
-    func testWhenRefreshCpmDashboardStateThenReturnsNotImplementedError() async {
+    func testWhenRefreshCpmDashboardStateWithNoParamsThenReturnsMissingParameterError() async {
         let message = createMessage(method: "refreshCpmDashboardState")
 
         let result = await handler.handleMessage(message)
 
         if case .failure(let error) = result {
             let handlerError = error as? WebExtensionMessageHandlerError
-            if case .unknownMethod(let method) = handlerError {
-                XCTAssertEqual(method, "refreshCpmDashboardState")
+            if case .missingParameter = handlerError {
+                // Expected
             } else {
-                XCTFail("Expected unknownMethod error")
+                XCTFail("Expected missingParameter error")
             }
         } else {
             XCTFail("Expected failure result")
         }
     }
 
-    // MARK: - showCpmAnimation (Not Implemented)
+    // MARK: - showCpmAnimation
 
-    func testWhenShowCpmAnimationThenReturnsNotImplementedError() async {
+    func testWhenShowCpmAnimationWithNoParamsThenReturnsMissingParameterError() async {
         let message = createMessage(method: "showCpmAnimation")
 
         let result = await handler.handleMessage(message)
 
         if case .failure(let error) = result {
             let handlerError = error as? WebExtensionMessageHandlerError
-            if case .unknownMethod(let method) = handlerError {
-                XCTAssertEqual(method, "showCpmAnimation")
+            if case .missingParameter = handlerError {
+                // Expected
             } else {
-                XCTFail("Expected unknownMethod error")
+                XCTFail("Expected missingParameter error")
             }
         } else {
             XCTFail("Expected failure result")
@@ -191,7 +187,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     // MARK: - isFeatureEnabled
 
     func testWhenIsFeatureEnabledWithValidParametersThenReturnsEnabled() async {
-        mockPrivacyConfiguration.isFeatureEnabledCheck = { _, _ in true }
+        mockPrivacyConfiguration.isFeatureEnabledForDomainCheck = { _, _ in true }
         let message = createMessage(
             method: "isFeatureEnabled",
             params: ["featureName": "autoconsent", "url": "https://example.com"]
@@ -208,7 +204,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     func testWhenIsFeatureEnabledWithDisabledFeatureThenReturnsDisabled() async {
-        mockPrivacyConfiguration.isFeatureEnabledCheck = { _, _ in false }
+        mockPrivacyConfiguration.isFeatureEnabledForDomainCheck = { _, _ in false }
         let message = createMessage(
             method: "isFeatureEnabled",
             params: ["featureName": "autoconsent", "url": "https://example.com"]
@@ -281,7 +277,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     func testWhenIsFeatureEnabledWithInvalidURLFormatThenStillReturnsResult() async {
-        mockPrivacyConfiguration.isFeatureEnabledCheck = { _, _ in true }
+        mockPrivacyConfiguration.isFeatureEnabledForDomainCheck = { _, _ in true }
         let message = createMessage(
             method: "isFeatureEnabled",
             params: ["featureName": "autoconsent", "url": "not-a-valid-url"]

@@ -87,24 +87,63 @@ extension OnboardingRebranding.OnboardingView {
         // MARK: - Timing (from AE reference at 30fps — iOS_Intro_Prod.json)
 
         private enum LandingAnimationTiming {
-            // Group (CTRL_Logo): ease-in-out scale, delay ≈ 3 frames
-            static let groupScaleAnimation: Animation = .timingCurve(0.66, 0, 0.34, 1, duration: 1.4).delay(0.1)
-            // Group (CTRL_Logo): ease-out slide up, delay ≈ 3 frames
-            static let groupOffsetAnimation: Animation = .timingCurve(0.4, 0.737, 0.74, 1.0, duration: 1.167).delay(0.1)
 
-            // Logo local scale: ease-out, delay ≈ 11.8 frames
-            static let logoScaleAnimation: Animation = .timingCurve(0.26, 0.642, 0.48, 1.0, duration: 0.673).delay(0.393)
+            // MARK: Delays & durations (seconds, derived from AE at 30 fps)
 
-            // Text offset: ease-out slide up, delay ≈ 11.8 frames
-            static let textOffsetAnimation: Animation = .timingCurve(0.4, 0.774, 0.74, 1.0, duration: 0.507).delay(0.393)
+            // Group (CTRL_Logo)
+            static let groupScaleDelay: TimeInterval = 0.1
+            static let groupScaleDuration: TimeInterval = 1.4
+            static let groupOffsetDelay: TimeInterval = 0.1
+            static let groupOffsetDuration: TimeInterval = 1.167
 
-            // Text opacity: simple ease fade-in, synced with offset delay
-            static let textOpacityAnimation: Animation = .timingCurve(0.333, 0, 0.667, 1.0, duration: 0.221).delay(0.393)
+            // Logo local scale
+            static let logoScaleDelay: TimeInterval = 0.393
+            static let logoScaleDuration: TimeInterval = 0.673
+
+            // Text offset & opacity
+            static let textOffsetDelay: TimeInterval = 0.393
+            static let textOffsetDuration: TimeInterval = 0.507
+            static let textOpacityDelay: TimeInterval = 0.393
+            static let textOpacityDuration: TimeInterval = 0.221
+
+            // Lottie playback parameters
+            static let logoLottieFPS: Double = 30
+            static let logoLottieTotalFrames: Double = 60
+            static let illustrationLottieFPS: Double = 30
+            static let illustrationLottieStartFrame: Double = 22
+            static let illustrationLottieTotalFrames: Double = 89
+
+            // MARK: Computed durations
+
+            static let logoLottieDuration: TimeInterval = logoLottieTotalFrames / logoLottieFPS
+            static let illustrationLottiePlaybackDuration: TimeInterval = (illustrationLottieTotalFrames - illustrationLottieStartFrame) / illustrationLottieFPS
+
+            /// Time from `.onAppear` until every entrance animation (SwiftUI + Lottie) has finished.
+            static var totalDuration: TimeInterval {
+                max(
+                    groupScaleDelay + groupScaleDuration,
+                    groupOffsetDelay + groupOffsetDuration,
+                    logoScaleDelay + logoScaleDuration,
+                    textOffsetDelay + textOffsetDuration,
+                    textOpacityDelay + textOpacityDuration,
+                    logoLottieDuration,
+                    illustrationLottiePlaybackDuration
+                )
+            }
+
+            // MARK: SwiftUI Animations
+
+            static let groupScaleAnimation: Animation = .timingCurve(0.66, 0, 0.34, 1, duration: groupScaleDuration).delay(groupScaleDelay)
+            static let groupOffsetAnimation: Animation = .timingCurve(0.4, 0.737, 0.74, 1.0, duration: groupOffsetDuration).delay(groupOffsetDelay)
+            static let logoScaleAnimation: Animation = .timingCurve(0.26, 0.642, 0.48, 1.0, duration: logoScaleDuration).delay(logoScaleDelay)
+            static let textOffsetAnimation: Animation = .timingCurve(0.4, 0.774, 0.74, 1.0, duration: textOffsetDuration).delay(textOffsetDelay)
+            static let textOpacityAnimation: Animation = .timingCurve(0.333, 0, 0.667, 1.0, duration: textOpacityDuration).delay(textOpacityDelay)
         }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         let animationNamespace: Namespace.ID
+        var onAnimationComplete: () -> Void
 
         @State private var groupScale = LandingAnimationStates.groupScaleStart
         @State private var groupOffsetY = LandingAnimationStates.groupOffsetYStart
@@ -115,11 +154,11 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             GeometryReader { proxy in
                 ZStack(alignment: .bottom) {
+                    backgroundView
+
                     logoAndTextView
                         .padding(.top, Metrics.topPadding)
                         .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
-
-                    backgroundView
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
             }
@@ -159,7 +198,11 @@ extension OnboardingRebranding.OnboardingView {
             // Illustration Lottie — entrance animation is internal (NULL parent scales/slides up).
             // Start from frame 22 to match the reference's st=-22 time offset.
             Lottie.LottieView(animation: .asset(Assets.backgroundLottieFileName))
-                .playbackMode(.playing(.fromProgress(22.0 / 89.0, toProgress: 1.0, loopMode: .playOnce)))
+                .playbackMode(.playing(.fromProgress(
+                    LandingAnimationTiming.illustrationLottieStartFrame / LandingAnimationTiming.illustrationLottieTotalFrames,
+                    toProgress: 1.0,
+                    loopMode: .playOnce
+                )))
                 .resizable()
                 .clipped()
                 .frame(width: Metrics.illustrationWidth, height: Metrics.illustrationHeight)
@@ -191,6 +234,11 @@ extension OnboardingRebranding.OnboardingView {
             }
 
             // Background: no SwiftUI animation — Lottie plays from frame 22 internally
+
+            // Notify parent when all animations (SwiftUI + Lottie) have finished
+            DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.totalDuration) {
+                onAnimationComplete()
+            }
         }
     }
 }

@@ -543,7 +543,7 @@ public final class BrokerUpdaterRepositoryMock: BrokerUpdaterRepository {
 
 public final class ResourcesRepositoryMock: ResourcesRepository {
     public var wasFetchBrokerFromResourcesFilesCalled = false
-    public var brokersList: [DataBroker]?
+    public var brokerResourcesList: [BrokerResource]?
     public var shouldThrowOnFetch = false
 
     public init() {}
@@ -553,17 +553,14 @@ public final class ResourcesRepositoryMock: ResourcesRepository {
         if shouldThrowOnFetch {
             throw DataBrokerProtectionError.unknown("Mock fetch error")
         }
-        return try brokersList?.map { broker in
-            let rawJSON = try JSONEncoder().encode(broker)
-            return BrokerResource(broker: broker, rawJSON: rawJSON)
-        }
+        return brokerResourcesList
     }
 
     public func reset() {
         wasFetchBrokerFromResourcesFilesCalled = false
         shouldThrowOnFetch = false
-        brokersList?.removeAll()
-        brokersList = nil
+        brokerResourcesList?.removeAll()
+        brokerResourcesList = nil
     }
 }
 

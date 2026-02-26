@@ -370,7 +370,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
         eventsHandler.fire(.profileSaved)
         freeTrialConversionService?.markPIRActivated()
 
-        _ = await refreshFreeScanState()
+        await refreshFreeScanState()
         await startImmediateScanOperations()
     }
 

@@ -429,7 +429,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
         let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
         eventPixels.markInitialScansStarted()
 
-        _ = await refreshFreeScanState()
+        await refreshFreeScanState()
 
         eventsHandler.fire(.profileSaved)
         await fireMonitoringPixels()

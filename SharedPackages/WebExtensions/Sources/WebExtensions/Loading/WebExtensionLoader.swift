@@ -52,10 +52,12 @@ public final class WebExtensionLoader: WebExtensionLoading {
     }
 
     private let storageProvider: WebExtensionStorageProviding
+    private let isInspectable: Bool
     public weak var delegate: WebExtensionLoadingDelegate?
 
-    public init(storageProvider: WebExtensionStorageProviding) {
+    public init(storageProvider: WebExtensionStorageProviding, isInspectable: Bool = false) {
         self.storageProvider = storageProvider
+        self.isInspectable = isInspectable
     }
 
     @MainActor
@@ -140,8 +142,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
             context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
         }
 
-        // For debugging purposes
-        context.isInspectable = true
+        context.isInspectable = isInspectable
         return context
     }
 }

@@ -23,7 +23,8 @@ import Common
 public final class LaunchOptionsHandler {
 
     /// Launch argument key used by UI tests to override onboarding completion state.
-    private static let onboardingOverrideCompletedKey = "isOnboardingCompleted"
+    /// Matches UserDefaultsWrapper.Key.onboardingFinished
+    private static let onboardingOverrideCompletedKey = "onboarding.finished"
 
     private static let automationPortKey = "automationPort"
     private let userDefaults: UserDefaults

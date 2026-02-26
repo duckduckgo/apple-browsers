@@ -120,7 +120,7 @@ public final class DataBrokerProtectionEventPixels {
         repository.markInitialScansStarted()
     }
 
-    public func fireInitialScansTotalDurationPixel(numberOfProfileQueries: Int, isFreeScan: Bool) {
+    public func fireInitialScansTotalDurationPixel(numberOfProfileQueries: Int, isFreeScan: Bool?) {
         guard let startDate = repository.initialScansStartDate() else {
             Logger.dataBrokerProtection.error("Tried to fire initial scans duration pixel but no start date found")
             return

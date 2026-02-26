@@ -1393,7 +1393,7 @@ public final class MockAppVersion: AppVersionNumberProvider {
 
 public final class MockStageDurationCalculator: StageDurationCalculator {
     public var isImmediateOperation: Bool = false
-    public var isFreeScan: Bool = false
+    public var isFreeScan: Bool?
     public var attemptId: UUID = UUID()
     public var tries = 1
     public var stage: Stage?

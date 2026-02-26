@@ -405,7 +405,7 @@ extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
             let hasCompletedInitialScans = try database.haveAllScansRunAtLeastOnce()
             if hasCompletedInitialScans {
                 let profile = try database.fetchProfile()
-                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0, isFreeScan: currentRunIsFreeScan ?? false)
+                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0, isFreeScan: currentRunIsFreeScan)
             }
         } catch {
             Logger.dataBrokerProtection.error("Error when calculating if we should send the initial scans duration pixel, error: \(error.localizedDescription, privacy: .public)")

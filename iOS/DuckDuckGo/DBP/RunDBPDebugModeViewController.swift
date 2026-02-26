@@ -895,7 +895,7 @@ extension DataBroker {
 final class FakeStageDurationCalculator: StageDurationCalculator {
     var attemptId: UUID = UUID()
     var isImmediateOperation: Bool = false
-    var isFreeScan: Bool = false
+    var isFreeScan: Bool?
     var tries = 1
     
     func durationSinceLastStage() -> Double { 0.0 }

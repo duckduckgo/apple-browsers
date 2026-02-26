@@ -43,7 +43,7 @@ public enum Stage: String {
 public protocol StageDurationCalculator {
     var attemptId: UUID { get }
     var isImmediateOperation: Bool { get }
-    var isFreeScan: Bool { get }
+    var isFreeScan: Bool? { get }
     var tries: Int { get }
 
     func durationSinceLastStage() -> Double
@@ -90,7 +90,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let startTime: Date
     let parentURL: String?
     let isAuthenticated: Bool
-    let isFreeScan: Bool
+    let isFreeScan: Bool?
     var lastStateTime: Date
     private(set) var actionID: String?
     private(set) var actionType: String?
@@ -109,7 +109,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          isImmediateOperation: Bool = false,
          parentURL: String? = nil,
          isAuthenticated: Bool = true,
-         isFreeScan: Bool = false,
+         isFreeScan: Bool?,
          vpnConnectionState: String,
          vpnBypassStatus: String,
          featureFlagger: DBPFeatureFlagging) {

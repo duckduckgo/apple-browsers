@@ -276,6 +276,15 @@ extension WindowControllersManager {
             // when called from popup window or there is no windows open
             show(url: url, source: source, newTab: true, selected: linkOpenBehavior.shouldSelectNewTab)
 
+            // for `selected == false` order the window below the popup window without activating it.
+            if !linkOpenBehavior.shouldSelectNewTab,
+               target !== lastKeyMainWindowController,
+               let lastKeyWindow = lastKeyMainWindowController?.window,
+               let popupWindow = target?.window {
+                lastKeyWindow.order(.below, relativeTo: popupWindow.windowNumber)
+                popupWindow.makeKey()
+            }
+
         case (.newWindow(let selected), _):
             // Open in new window
             WindowsManager.openNewWindow(with: url, source: source, isBurner: setBurner, showWindow: selected)
@@ -381,7 +390,9 @@ extension WindowControllersManager {
 
     private func show(url: URL?, in windowController: MainWindowController, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool) {
         let viewController = windowController.mainViewController
-        windowController.window?.makeKeyAndOrderFront(self)
+        if selected || windowController !== lastKeyMainWindowController /* only activate `selected == false` when the target window is not last known key window */ {
+            windowController.window?.makeKeyAndOrderFront(self)
+        }
 
         let tabCollectionViewModel = viewController.tabCollectionViewModel
         let tabCollection = tabCollectionViewModel.tabCollection

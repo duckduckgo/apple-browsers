@@ -130,9 +130,34 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(viewModel.tab.uid, tab.uid)
     }
 
+    func testWhenFireModeFlagIsDisabledThenCurrentBrowsingModeRevertsToNormal() throws {
+        let tabsModel = TabsModel(desktop: false)
+        let flagger = MockFeatureFlagger()
+        let manager = try makeManager(tabsModel, featureFlagger: flagger)
+
+        // Fire mode enabled
+        flagger.enabledFeatureFlags = [.fireMode]
+        
+        // Default value is normal
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+        
+        // Setting mode with flag enabled
+        manager.setBrowsingMode(.fire)
+
+        // Mode updated
+        XCTAssertEqual(manager.currentBrowsingMode, .fire)
+
+        // Disabling fire mode
+        flagger.enabledFeatureFlags = []
+        
+        // Mode reverts back to normal
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+    }
+
     func makeManager(_ model: TabsModel,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
                      historyManager: MockHistoryManager = MockHistoryManager(),
+                     featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager()) throws -> TabManager {
         let tabsPersistence = TabsModelPersistence(store: MockKeyValueFileStore(),
                                                    legacyStore: MockKeyValueStore())
@@ -151,7 +176,7 @@ final class TabManagerTests: XCTestCase {
                           contextualOnboardingPresenter: ContextualOnboardingPresenterMock(),
                           contextualOnboardingLogic: ContextualOnboardingLogicMock(),
                           onboardingPixelReporter: OnboardingPixelReporterMock(),
-                          featureFlagger: MockFeatureFlagger(),
+                          featureFlagger: featureFlagger,
                           contentScopeExperimentManager: MockContentScopeExperimentManager(),
                           appSettings: AppSettingsMock(),
                           textZoomCoordinatorProvider: MockTextZoomCoordinatorProvider(),

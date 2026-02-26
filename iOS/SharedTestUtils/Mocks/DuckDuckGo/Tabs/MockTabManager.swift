@@ -91,4 +91,12 @@ class MockTabManager: TabManaging {
         closeTabAndNavigateToHomepageCalledWith = tab
         closeTabAndNavigateToHomepageClearTabHistory = clearTabHistory
     }
+    
+    private(set) var setBrowsingModeCalled = false
+    private(set) var setBrowsingModeCalledWith: BrowsingMode?
+    
+    func setBrowsingMode(_ mode: BrowsingMode) {
+        setBrowsingModeCalled = true
+        setBrowsingModeCalledWith = mode
+    }
 }

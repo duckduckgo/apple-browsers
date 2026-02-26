@@ -75,7 +75,16 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private(set) var model: TabsModel
     private(set) var fireModel: TabsModel
     private(set) var persistence: TabsModelPersisting
-    private(set) var currentBrowsingMode: BrowsingMode = .normal
+    private var fireModeCapability: FireModeCapable {
+        FireModeCapability.create(using: featureFlagger)
+    }
+    private var _currentBrowsingMode: BrowsingMode = .normal
+    var currentBrowsingMode: BrowsingMode {
+        guard fireModeCapability.isFireModeEnabled else {
+            return .normal
+        }
+        return _currentBrowsingMode
+    }
 
     private var tabControllerCache = [TabViewController]()
 
@@ -199,7 +208,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         guard mode != currentBrowsingMode else {
             return
         }
-        currentBrowsingMode = mode
+        _currentBrowsingMode = mode
         // TODO: - Fire pixel
     }
 

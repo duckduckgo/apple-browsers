@@ -61,7 +61,7 @@ extension MainViewController {
         }
         
         var findInPageCommands = [UIKeyCommand]()
-        if findInPageView.findInPage != nil {
+        if findInPageView?.findInPage != nil {
             findInPageCommands = [
                 UIKeyCommand(title: "", action: #selector(keyboardFindNext), input: "g", modifierFlags: .command,
                              discoverabilityTitle: UserText.keyCommandFindNext),
@@ -130,11 +130,11 @@ extension MainViewController {
     }
 
     @objc func keyboardFindNext() {
-        self.findInPageView.findInPage?.next()
+        self.findInPageView?.findInPage?.next()
     }
 
     @objc func keyboardFindPrevious() {
-        self.findInPageView.findInPage?.previous()
+        self.findInPageView?.findInPage?.previous()
     }
 
     @objc func keyboardLocation() {
@@ -154,7 +154,7 @@ extension MainViewController {
     
     @objc func keyboardEscape() {
         guard tabSwitcherController == nil else { return }
-        findInPageView.done()
+        findInPageView?.done()
         hideSuggestionTray()
         performCancel()
     }

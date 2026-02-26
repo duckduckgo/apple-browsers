@@ -101864,66 +101864,6 @@
         }
       }
     },
-    "update.available.menu.item" : {
-      "comment" : "Title of the menu item that informs user that a new update is available. Clicking on the menu item installs the update",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update verfügbar – jetzt installieren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Update Available - Install Now"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actualización disponible - Instalar ahora"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mise à jour disponible : installer"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aggiornamento disponibile - Installa ora"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update beschikbaar - nu installeren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dostępna aktualizacja — zainstaluj teraz"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atualização disponível – Instalar agora"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Доступно обновление – установить сейчас"
-          }
-        }
-      }
-    },
     "update.available.menu.item.app.store" : {
       "comment" : "Title of the menu item that informs user that a new update is available in the App Store. Clicking on the menu item takes the user to the App Store",
       "extractionState" : "extracted_with_value",

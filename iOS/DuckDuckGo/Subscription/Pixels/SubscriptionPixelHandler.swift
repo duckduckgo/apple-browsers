@@ -33,6 +33,12 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
     let pixelKit: PixelKit?
 
     public func handle(pixel: Subscription.SubscriptionPixelType) {
+
+        guard pixelKit != nil else {
+            assertionFailure("PixelKit not initialised!")
+            return
+        }
+
         switch pixel {
         case .invalidRefreshToken:
             pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)
@@ -52,6 +58,12 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
     }
 
     public func handle(pixel: Subscription.KeychainManager.Pixel) {
+
+        guard pixelKit != nil else {
+            assertionFailure("PixelKit not initialised!")
+            return
+        }
+
         switch pixel {
         case .deallocatedWithBacklog:
             pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDeallocatedWithBacklog(source), frequency: .dailyAndCount)

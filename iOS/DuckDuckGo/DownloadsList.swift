@@ -54,11 +54,15 @@ struct DownloadsList: View {
         if viewModel.sections.isEmpty {
             emptyState
         } else {
+#if compiler(>=6.2)
             if #available(iOS 26, *) {
                 listWithBottomToolbarLiquidGlass
             } else {
                 listWithBottomToolbar
             }
+#else
+            listWithBottomToolbar
+#endif // compiler(>=6.2)
         }
     }
     
@@ -76,6 +80,7 @@ struct DownloadsList: View {
         .edgesIgnoringSafeArea(.bottom)
     }
 
+#if compiler(>=6.2)
     @available(iOS 26, *)
     private var listWithBottomToolbarLiquidGlass: some View {
         listWithBackground.toolbar {
@@ -92,6 +97,7 @@ struct DownloadsList: View {
             }
         }
     }
+#endif // compiler(>=6.2)
 
     @ViewBuilder
     private var listWithBottomToolbar: some View {

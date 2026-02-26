@@ -86,6 +86,6 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
         let configuration = WKWebViewConfiguration()
 
         configuration.applyStandardConfiguration(contentBlocking: MockContentBlocking(), burnerMode: .regular, privateProcessName: false)
-        XCTAssertNil(configuration.systemProcessName)
+        XCTAssertEqual(configuration.systemProcessName, "")
     }
 }

@@ -187,7 +187,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     // MARK: - isFeatureEnabled
 
     func testWhenIsFeatureEnabledWithValidParametersThenReturnsEnabled() async {
-        mockPrivacyConfiguration.isFeatureEnabledCheck = { _, _ in true }
+        mockPrivacyConfiguration.isFeatureEnabledForDomainCheck = { _, _ in true }
         let message = createMessage(
             method: "isFeatureEnabled",
             params: ["featureName": "autoconsent", "url": "https://example.com"]
@@ -204,7 +204,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     func testWhenIsFeatureEnabledWithDisabledFeatureThenReturnsDisabled() async {
-        mockPrivacyConfiguration.isFeatureEnabledCheck = { _, _ in false }
+        mockPrivacyConfiguration.isFeatureEnabledForDomainCheck = { _, _ in false }
         let message = createMessage(
             method: "isFeatureEnabled",
             params: ["featureName": "autoconsent", "url": "https://example.com"]
@@ -277,7 +277,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     func testWhenIsFeatureEnabledWithInvalidURLFormatThenStillReturnsResult() async {
-        mockPrivacyConfiguration.isFeatureEnabledCheck = { _, _ in true }
+        mockPrivacyConfiguration.isFeatureEnabledForDomainCheck = { _, _ in true }
         let message = createMessage(
             method: "isFeatureEnabled",
             params: ["featureName": "autoconsent", "url": "not-a-valid-url"]

@@ -105,6 +105,8 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     func setForceDarkModeEnabled(_ enabled: Bool) {
         guard isFeatureEnabled else { return }
+        let previousValue = storage.forceDarkModeOnWebsitesEnabled ?? false
+        guard previousValue != enabled else { return }
         storage.forceDarkModeOnWebsitesEnabled = enabled
         forceDarkModeChangedSubject.send(enabled)
     }

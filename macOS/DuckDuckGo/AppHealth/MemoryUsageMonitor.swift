@@ -115,10 +115,10 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
             return "\(formattedValue) MB"
         }
 
-        /// Comparison string showing resident, physical footprint, and WebContent values.
+        /// Comparison string showing physical footprint and WebContent values.
         var comparisonString: String {
             let wcCount = webContentProcessCount.map(String.init) ?? "?"
-            return "R:\(residentMemoryString) | F:\(footprintMemoryString) | WC:\(webContentMemoryString)(\(wcCount))"
+            return "F:\(footprintMemoryString) | WC:\(webContentMemoryString)(\(wcCount))"
         }
 
         private static let oneMB: UInt64 = 1_048_576

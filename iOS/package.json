@@ -7,6 +7,7 @@
     "validate-defs-without-formatting": "validate-ddg-pixel-defs ./PixelDefinitions",
     "validate-pixel-defs": "validate-ddg-pixel-defs ./PixelDefinitions && prettier ./PixelDefinitions --check",
     "validate-pixel-debug-logs": "validate-ddg-pixel-logs",
+    "validate-wide-event-debug-logs": "validate-ddg-wide-event-logs",
     "pixel-lint": "prettier ./PixelDefinitions --check",
     "pixel-lint.fix": "prettier ./PixelDefinitions --write"
   },

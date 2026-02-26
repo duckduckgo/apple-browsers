@@ -35,7 +35,9 @@
         },
         "sample_rate": {
             "type": "number",
-            "description": "Sample rate for this event"
+            "description": "Sample rate for this event",
+            "minimum": 0,
+            "maximum": 1
         }
     },
     "feature": {

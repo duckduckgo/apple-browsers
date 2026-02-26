@@ -718,9 +718,8 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         fileManager.fixtureBundle = brokerFixturesBundle
         fileManager.fixtureFileNames = [
             "valid-broker",
-            "local-broker-1.0.0",
-            "local-broker-1.0.1",
-            "local-broker-removed-1.0.0"
+            "valid-broker-1.0.1",
+            "valid-broker-removed-1.0.1"
         ]
         fileManager.hasUnzippedContent = true
         let fileURLs = try fileManager.contentsOfDirectory(at: URL(string: "http://example.com")!, includingPropertiesForKeys: nil)
@@ -2128,12 +2127,12 @@ public final class MockFileManager: FileManager, @unchecked Sendable {
     public var fixtureBundle: Bundle?
     public var fixtureFileNames: [String]?
     private let fileNames = [
+        "valid-child-broker",
         "valid-broker",
+        "valid-broker-1.0.1",
+        "valid-broker-removed-1.0.1",
         "invalid-broker-with-unsupported-step",
         "invalid-broker-with-unsupported-action",
-        "local-broker-1.0.0",
-        "local-broker-1.0.1",
-        "local-broker-removed-1.0.0"
     ]
     private var fileURLs: [URL] {
         return (fixtureFileNames ?? fileNames).compactMap {

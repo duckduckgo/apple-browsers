@@ -45,6 +45,12 @@ protocol TabManaging {
     func controller(for tab: Tab) -> TabViewController?
     /// Closes the tab and navigates to homepage reusing an existing homepage or creating a new one
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
+    @MainActor func setBrowsingMode(_ mode: BrowsingMode)
+}
+
+public enum BrowsingMode: Int, CaseIterable {
+    case fire = 0
+    case normal = 1
 }
 
 /// Receives lifecycle events for TabViewController instances managed by TabManager.
@@ -69,6 +75,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private(set) var model: TabsModel
     private(set) var fireModel: TabsModel
     private(set) var persistence: TabsModelPersisting
+    private(set) var currentBrowsingMode: BrowsingMode = .normal
 
     private var tabControllerCache = [TabViewController]()
 
@@ -185,6 +192,15 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {
         self.webExtensionManager = manager
+    }
+    
+    @MainActor
+    func setBrowsingMode(_ mode: BrowsingMode) {
+        guard mode != currentBrowsingMode else {
+            return
+        }
+        currentBrowsingMode = mode
+        // TODO: - Fire pixel
     }
 
     @MainActor

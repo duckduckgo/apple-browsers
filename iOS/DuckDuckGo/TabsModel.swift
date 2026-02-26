@@ -20,11 +20,6 @@
 import Foundation
 import Core
 
-public enum TabsModelMode: Int {
-    case normal = 0
-    case fire = 1
-}
-
 public class TabsModel: NSObject, NSCoding, MutableTabCollection {
 
     private struct NSCodingKeys {
@@ -35,7 +30,7 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
         static let mode = "mode"
     }
 
-    let mode: TabsModelMode
+    let mode: BrowsingMode
     private(set) var currentIndex: Int
     @Published private(set) var tabs: [Tab]
 
@@ -43,7 +38,7 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
         return tabs.contains(where: { !$0.viewed })
     }
         
-    public init(tabs: [Tab] = [], currentIndex: Int = 0, desktop: Bool, mode: TabsModelMode = .normal) {
+    public init(tabs: [Tab] = [], currentIndex: Int = 0, desktop: Bool, mode: BrowsingMode = .normal) {
         self.mode = mode
         switch mode {
         case .normal:
@@ -81,8 +76,8 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
 
         let rawMode = decoder.containsValue(forKey: NSCodingKeys.mode)
             ? decoder.decodeInteger(forKey: NSCodingKeys.mode)
-            : TabsModelMode.normal.rawValue
-        let mode = TabsModelMode(rawValue: rawMode) ?? .normal
+            : BrowsingMode.normal.rawValue
+        let mode = BrowsingMode(rawValue: rawMode) ?? .normal
 
         self.init(tabs: tabs, currentIndex: currentIndex, desktop: UIDevice.current.userInterfaceIdiom == .pad, mode: mode)
     }

@@ -58,35 +58,10 @@ public protocol BrowserAutomationProvider: AnyObject {
     func newTab() -> String?
 
     /// Execute a script in the current tab's webview
-    /// The default implementation uses callAsyncJavaScript on the webview.
-    /// Override if the platform needs custom script execution.
     func executeScript(_ script: String, args: [String: Any]) async -> Result<Any?, Error>
 
     /// Take a screenshot of the current webview
     /// - Parameter rect: Optional rect to crop the screenshot (for element screenshots)
     /// - Returns: PNG image data, or nil if screenshot failed
     func takeScreenshot(rect: CGRect?) async -> Data?
-}
-
-// MARK: - Default Implementation
-
-public extension BrowserAutomationProvider {
-    @available(macOS 12.0, iOS 15.0, *)
-    func executeScript(_ script: String, args: [String: Any]) async -> Result<Any?, Error> {
-        guard let webView = currentWebView else {
-            return .failure(AutomationServerError.noWindow)
-        }
-
-        do {
-            let result = try await webView.callAsyncJavaScript(
-                script,
-                arguments: args,
-                in: nil,
-                contentWorld: .page
-            )
-            return .success(result)
-        } catch {
-            return .failure(error)
-        }
-    }
 }

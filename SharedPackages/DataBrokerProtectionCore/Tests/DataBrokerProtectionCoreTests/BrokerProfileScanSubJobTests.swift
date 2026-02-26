@@ -244,7 +244,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
         XCTAssertNotNil(calculator)
-        XCTAssertTrue(calculator.isFreeScan)
+        XCTAssertEqual(calculator.isFreeScan, true)
     }
 
     func testCreateScanStageContext_whenPaidScan_setsIsFreeScanFalse() {
@@ -263,7 +263,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
         XCTAssertNotNil(calculator)
-        XCTAssertFalse(calculator.isFreeScan)
+        XCTAssertEqual(calculator.isFreeScan, false)
     }
 
     // MARK: - markScanStarted
@@ -274,6 +274,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -292,6 +293,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -316,6 +318,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -391,6 +394,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -421,6 +425,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -446,6 +451,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -472,6 +478,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -494,6 +501,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      parentURL: nil,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -674,6 +682,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -702,6 +711,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -729,6 +739,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -756,6 +767,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())

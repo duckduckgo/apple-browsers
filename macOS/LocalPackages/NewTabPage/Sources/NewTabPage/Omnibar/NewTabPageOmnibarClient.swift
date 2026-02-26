@@ -148,7 +148,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let action: NewTabPageDataModel.OpenAiChatAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        await actionHandler.openAiChat(action.chatId, isPinned: action.isPinned ?? false, trigger: action.trigger, target: action.target)
+        await actionHandler.openAiChat(action.chatId, isPinned: action.isPinned ?? false, trigger: action.trigger ?? .mouse, target: action.target)
         return nil
     }
 

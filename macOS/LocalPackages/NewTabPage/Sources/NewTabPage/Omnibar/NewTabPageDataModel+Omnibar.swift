@@ -200,7 +200,7 @@ public extension NewTabPageDataModel {
     struct OpenAiChatAction: Codable, Equatable {
         let chatId: String
         let target: OpenTarget
-        let trigger: OpenAiChatTrigger
+        let trigger: OpenAiChatTrigger?
         let isPinned: Bool?
     }
 

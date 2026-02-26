@@ -107,7 +107,8 @@ final class AIChatContextualSheetCoordinator {
         self.pixelHandler = pixelHandler
         self.sessionState = AIChatContextualChatSessionState(
             aiChatSettings: aiChatSettings,
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            featureFlagger: featureFlagger
         )
     }
 

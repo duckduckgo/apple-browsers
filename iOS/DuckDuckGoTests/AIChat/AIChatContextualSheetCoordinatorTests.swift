@@ -104,6 +104,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockDelegate: MockDelegate!
     private var mockPresentingVC: MockPresentingViewController!
     private var mockSettings: MockAIChatSettingsProvider!
+    private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
 
@@ -113,6 +114,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockSettings = MockAIChatSettingsProvider()
+        mockFeatureFlagger = MockFeatureFlagger()
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         sut = AIChatContextualSheetCoordinator(
@@ -121,7 +123,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: mockFeatureFlagger,
             pageContextHandler: mockPageContextHandler
         )
         mockDelegate = MockDelegate()
@@ -135,6 +137,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockDelegate = nil
         mockPresentingVC = nil
         mockSettings = nil
+        mockFeatureFlagger = nil
         mockPageContextHandler = nil
         contentBlockingSubject = nil
         super.tearDown()
@@ -301,6 +304,61 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     // MARK: - Session Timer Tests
 
+    // MARK: - Multiple Page Contexts Tests
+
+    @MainActor
+    func testNotifyPageChangedSendsNavigationSignalWhenAutoCollectOffAndMultipleContextsEnabled() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+
+        // Start a chat so hasActiveChat is true
+        sut.sessionState.handlePromptSubmission("Hello")
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        var receivedNullPush = false
+        var cancellable: AnyCancellable?
+        cancellable = sut.sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend(let data) = effect, data == nil {
+                    receivedNullPush = true
+                }
+                _ = cancellable // retain
+            }
+
+        // When
+        await sut.notifyPageChanged()
+
+        // Then - null signal sent to FE, no context collection triggered
+        XCTAssertTrue(receivedNullPush)
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
+    @MainActor
+    func testNotifyPageChangedDoesNotSendNavigationSignalWhenMultipleContextsDisabled() async {
+        // Given - flag OFF (default)
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+
+        sut.sessionState.handlePromptSubmission("Hello")
+
+        var receivedPush = false
+        var cancellable: AnyCancellable?
+        cancellable = sut.sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend = effect {
+                    receivedPush = true
+                }
+                _ = cancellable
+            }
+
+        // When
+        await sut.notifyPageChanged()
+
+        // Then - no signal sent (backward compatible)
+        XCTAssertFalse(receivedPush)
+    }
 
     // MARK: - Helpers
 

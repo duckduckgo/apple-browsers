@@ -132,10 +132,16 @@ final class StartupMetricsPixelTests: XCTestCase {
         XCTAssertEqual(pixel.parameters?["windows"], "4")
     }
 
-    func testParametersIncludeTabsWhenProvided() {
-        let pixel = buildStartupMetricsPixel(tabs: 30)
+    func testParametersIncludeStandardTabsWhenProvided() {
+        let pixel = buildStartupMetricsPixel(standardTabs: 30)
 
-        XCTAssertEqual(pixel.parameters?["tabs"], "21")
+        XCTAssertEqual(pixel.parameters?["standard_tabs"], "21")
+    }
+
+    func testParametersIncludePinnedTabsWhenProvided() {
+        let pixel = buildStartupMetricsPixel(pinnedTabs: 30)
+
+        XCTAssertEqual(pixel.parameters?["pinned_tabs"], "21")
     }
 
     // MARK: - Optional Parameters Nil
@@ -155,7 +161,8 @@ final class StartupMetricsPixelTests: XCTestCase {
         XCTAssertNil(params["app_will_finish_to_app_did_finish_launching"])
         XCTAssertNil(params["time_to_interactive"])
         XCTAssertNil(params["windows"])
-        XCTAssertNil(params["tabs"])
+        XCTAssertNil(params["standard_tabs"])
+        XCTAssertNil(params["pinned_tabs"])
     }
 
     // MARK: - Bucketing
@@ -178,10 +185,16 @@ final class StartupMetricsPixelTests: XCTestCase {
         XCTAssertEqual(pixel.parameters?["windows"], "11")
     }
 
-    func testTabCountIsBucketed() {
-        let pixel = buildStartupMetricsPixel(tabs: 9)
+    func testStandardTabCountIsBucketed() {
+        let pixel = buildStartupMetricsPixel(standardTabs: 9)
 
-        XCTAssertEqual(pixel.parameters?["tabs"], "7")
+        XCTAssertEqual(pixel.parameters?["standard_tabs"], "7")
+    }
+
+    func testPinnedTabCountIsBucketed() {
+        let pixel = buildStartupMetricsPixel(pinnedTabs: 9)
+
+        XCTAssertEqual(pixel.parameters?["pinned_tabs"], "7")
     }
 }
 
@@ -195,7 +208,8 @@ private extension StartupMetricsPixelTests {
         isOnBattery: Bool = false,
         sessionRestoration: Bool = false,
         windows: Int? = nil,
-        tabs: Int? = nil,
+        standardTabs: Int? = nil,
+        pinnedTabs: Int? = nil,
         appDelegateInit: TimeInterval? = nil,
         mainMenuInit: TimeInterval? = nil,
         appWillFinishLaunching: TimeInterval? = nil,
@@ -212,7 +226,8 @@ private extension StartupMetricsPixelTests {
             isOnBattery: isOnBattery,
             sessionRestoration: sessionRestoration,
             windows: windows,
-            tabs: tabs,
+            standardTabs: standardTabs,
+            pinnedTabs: pinnedTabs,
             appDelegateInit: appDelegateInit,
             mainMenuInit: mainMenuInit,
             appWillFinishLaunching: appWillFinishLaunching,

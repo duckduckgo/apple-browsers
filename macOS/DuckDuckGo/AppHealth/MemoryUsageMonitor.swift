@@ -255,8 +255,10 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
     /// Returns `nil` if the private API is unavailable or fails, so callers can
     /// distinguish "0 bytes used" from "unable to measure."
     private static func getWebContentProcessMemory() -> (totalBytes: UInt64, processCount: Int)? {
-        guard let processInfoList = WKProcessPool.perform(Selector(("_webContentProcessInfo")))?
-            .takeUnretainedValue() as? [NSObject] else {
+        let selector = Selector(("_webContentProcessInfo"))
+        guard WKProcessPool.responds(to: selector),
+              let processInfoList = WKProcessPool.perform(selector)?
+                .takeUnretainedValue() as? [NSObject] else {
             return nil
         }
 

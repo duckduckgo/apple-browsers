@@ -116,6 +116,8 @@ enum UserText {
     static let syncWithAnotherDeviceShowCodeToPasteExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.show-code-to-paste-explanation", bundle: Bundle.module, value: "Paste code in DuckDuckGo App", comment: "Sync with another device dialog show code explanation")
     static let syncWithAnotherDeviceUseQRCode = NSLocalizedString("preferences.sync.sync-with-another-device.use-qr-code-link", bundle: Bundle.module, value: "Use QR Code Instead", comment: "Sync with another device dialog use qr code link")
     static let syncWithAnotherDeviceUseTextCode = NSLocalizedString("preferences.sync.sync-with-another-device.use-text-code-link", bundle: Bundle.module, value: "Use Text Code Instead", comment: "Sync with another device dialog view text code link")
+    static let syncSingleDeviceSetupPrompt = NSLocalizedString("preferences.sync.single-device-setup.prompt", bundle: Bundle.module, value: "Don't have another device?", comment: "Prompt shown on 'sync with another device' screen to guide user who may only have a single device")
+    static let syncSingleDeviceSetupAction = NSLocalizedString("preferences.sync.single-device-setup.action", bundle: Bundle.module, value: "Turn On Sync & Backup", comment: "Button to turn on sync and backup for a single device")
 
     // Save recovery PDF dialog
     static let saveRecoveryPDF = NSLocalizedString("prefrences.sync.save-recovery-pdf", bundle: Bundle.module, value: "Save Your Recovery Code", comment: "Caption for a button to save Sync recovery PDF")

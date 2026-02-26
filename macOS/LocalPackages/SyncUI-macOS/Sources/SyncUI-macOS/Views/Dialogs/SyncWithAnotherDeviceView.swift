@@ -66,6 +66,10 @@ struct SyncWithAnotherDeviceView: View {
             .frame(minWidth: 380)
             .roundedBorder()
 
+            if model.shouldShowSingleDeviceSyncPromo {
+                singleDeviceSyncPromo()
+            }
+
         }
     buttons: {
         Button(UserText.cancel) {
@@ -219,6 +223,29 @@ struct SyncWithAnotherDeviceView: View {
         .frame(width: 348)
     }
 
+    fileprivate func singleDeviceSyncPromo() -> some View {
+        Button {
+            model.delegate?.turnOnSync()
+        } label: {
+            AdaptiveStack {
+                Text(UserText.syncSingleDeviceSetupPrompt)
+                    .foregroundColor(.primary)
+            } trailing: {
+                HStack(spacing: 4) {
+                    Text(UserText.syncSingleDeviceSetupAction)
+                        .foregroundColor(.secondary)
+                    Image(.chevronMediumRight16)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+        .roundedBorder()
+        .frame(minWidth: 380)
+    }
+
     private func shareContent(_ sharedText: String) {
         guard let contentView = NSApp.keyWindow?.contentView else {
             return
@@ -226,5 +253,61 @@ struct SyncWithAnotherDeviceView: View {
         let sharingPicker = NSSharingServicePicker(items: [sharedText])
 
         sharingPicker.show(relativeTo: contentView.frame, of: contentView, preferredEdge: .maxY)
+    }
+}
+
+/// Lays out two children side-by-side when they fit, or stacked vertically (leading-aligned) when they don't.
+///
+private struct AdaptiveStack<Leading: View, Trailing: View>: View {
+    let leading: Leading
+    let trailing: Trailing
+    var spacing: CGFloat = 8
+
+    @State private var useVerticalLayout = false
+
+    init(spacing: CGFloat = 8, @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
+        self.spacing = spacing
+        self.leading = leading()
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        if useVerticalLayout {
+            VStack(alignment: .leading, spacing: spacing) {
+                leading
+                trailing
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            HStack {
+                leading
+                Spacer()
+                trailing
+            }
+            .background(
+                GeometryReader { geo in
+                    HStack(spacing: spacing) {
+                        leading.fixedSize()
+                        trailing.fixedSize()
+                    }
+                    .hidden()
+                    .fixedSize()
+                    .background(GeometryReader { inner in
+                        Color.clear.preference(key: AdaptiveStackOverflowKey.self, value: inner.size.width > geo.size.width)
+                    })
+                }
+                .hidden()
+            )
+            .onPreferenceChange(AdaptiveStackOverflowKey.self) { overflows in
+                useVerticalLayout = overflows
+            }
+        }
+    }
+}
+
+private struct AdaptiveStackOverflowKey: PreferenceKey {
+    static var defaultValue = false
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = value || nextValue()
     }
 }

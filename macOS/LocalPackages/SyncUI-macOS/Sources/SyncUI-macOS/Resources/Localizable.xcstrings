@@ -3299,6 +3299,30 @@
         }
       }
     },
+    "preferences.sync.single-device-setup.action" : {
+      "comment" : "Button to turn on sync and backup for a single device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn On Sync & Backup"
+          }
+        }
+      }
+    },
+    "preferences.sync.single-device-setup.prompt" : {
+      "comment" : "Prompt shown on 'sync with another device' screen to guide user who may only have a single device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't have another device?"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.dialog-subtitle1" : {
       "comment" : "Sync with another device dialog subtitle - Instruction with sync menu path item inserted",
       "extractionState" : "stale",

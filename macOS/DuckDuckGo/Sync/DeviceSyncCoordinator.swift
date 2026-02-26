@@ -152,7 +152,7 @@ extension DeviceSyncCoordinator: SyncSettingsViewHandling {
 
     func syncWithAnotherDevicePressed(source: SyncDeviceButtonTouchpoint?) async {
         presentDialog()
-        await dialogController.syncWithAnotherDevicePressed(source: nil)
+        await dialogController.syncWithAnotherDevicePressed(source: source)
     }
 
     func syncWithServerPressed() async {

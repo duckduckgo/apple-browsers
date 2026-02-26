@@ -19,6 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Combine
+import CombineSchedulers
 import DDGSync
 import Foundation
 import NewTabPage
@@ -51,6 +52,8 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     private let syncService: DDGSyncing?
+
+    private let scheduler: AnySchedulerOf<DispatchQueue>
 
     private var debugPersistor: NewTabPageNextStepsCardsDebugPersistor = {
         NewTabPageNextStepsCardsDebugPersistor()
@@ -122,7 +125,9 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     /// For protocol conformance; this provider expects to display a single card at a time (not expandable).
     var isViewExpandedPublisher: AnyPublisher<Bool, Never> {
-        $isViewExpanded.dropFirst().eraseToAnyPublisher()
+        $isViewExpanded.dropFirst()
+            .subscribe(on: scheduler)
+            .eraseToAnyPublisher()
     }
 
     @Published private var cardList: [NewTabPageDataModel.CardID] = []
@@ -141,6 +146,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         let cardsDidBecomeOutdated = appearancePreferences.$isContinueSetUpCardsViewOutdated.removeDuplicates()
 
         return Publishers.CombineLatest(cards, cardsDidBecomeOutdated)
+            .subscribe(on: scheduler)
             .map { cards, isOutdated -> [NewTabPageDataModel.CardID] in
                 guard !isOutdated else {
                     return []
@@ -163,7 +169,8 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          emailManager: EmailManager = EmailManager(),
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
-         syncService: DDGSyncing?) {
+         syncService: DDGSyncing?,
+         scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         self.cardActionHandler = cardActionHandler
         self.pixelHandler = pixelHandler
         self.persistor = persistor
@@ -178,6 +185,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.duckPlayerPreferences = duckPlayerPreferences
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
         self.syncService = syncService
+        self.scheduler = scheduler
         self.shouldUseAdvancedCardOrdering = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering)
         self.standardCards = defaultStandardCards
 

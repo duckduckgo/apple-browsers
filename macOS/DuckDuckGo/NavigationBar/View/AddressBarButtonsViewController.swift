@@ -2137,6 +2137,9 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         toggleControl.menu = createSearchModeToggleContextMenu()
+        toggleControl.setAccessibilityElement(true)
+        toggleControl.setAccessibilityRole(.radioGroup)
+        toggleControl.setAccessibilityIdentifier("AddressBarButtonsViewController.searchModeToggleControl")
 
         trailingButtonsContainer.addArrangedSubview(toggleControl)
         toggleControl.isHidden = true

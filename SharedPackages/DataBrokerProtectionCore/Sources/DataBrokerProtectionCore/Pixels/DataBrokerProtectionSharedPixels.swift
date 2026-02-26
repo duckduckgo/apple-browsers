@@ -95,6 +95,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let removedAtParamKey = "removed_at"
         public static let isAuthenticated = "isAuthenticated"
         public static let clickActionDelayReductionOptimizationKey = "click_action_delay_reduction_optimization"
+        public static let isFreeScan = "free_scan"
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String)
@@ -123,10 +124,10 @@ public enum DataBrokerProtectionSharedPixels {
 #if os(iOS)
     case scanStarted(dataBroker: String)
 #endif
-    case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, isAuthenticated: Bool)
-    case scanNoResults(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionID: String, actionType: String, isAuthenticated: Bool)
-    case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionId: String, actionType: String, isAuthenticated: Bool)
-    case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, parent: String, actionId: String, actionType: String)
+    case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, isAuthenticated: Bool, isFreeScan: Bool?)
+    case scanNoResults(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionID: String, actionType: String, isAuthenticated: Bool, isFreeScan: Bool?)
+    case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionId: String, actionType: String, isAuthenticated: Bool, isFreeScan: Bool?)
+    case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, parent: String, actionId: String, actionType: String, isFreeScan: Bool?)
 
     // Stage Pixels
     case optOutEmailGenerate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
@@ -170,9 +171,9 @@ public enum DataBrokerProtectionSharedPixels {
 
     // Initial scans pixels
     // https://app.asana.com/0/1204006570077678/1206981742767458/f
-    case initialScanTotalDuration(duration: Double, profileQueries: Int)
-    case initialScanSiteLoadDuration(duration: Double, hasError: Bool, brokerURL: String)
-    case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String)
+    case initialScanTotalDuration(duration: Double, profileQueries: Int, isFreeScan: Bool?)
+    case initialScanSiteLoadDuration(duration: Double, hasError: Bool, brokerURL: String, isFreeScan: Bool?)
+    case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String, isFreeScan: Bool?)
     case initialScanPreStartDuration(duration: Double)
 
     // Custom stats
@@ -402,48 +403,52 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .scanStarted(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
 #endif
-        case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let isAuthenticated):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.matchesFoundKey: String(matchesFound),
-                    Consts.durationParamKey: String(duration),
-                    Consts.triesKey: String(tries),
-                    Consts.isImmediateOperation: isImmediateOperation.description,
-                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent,
-                    Consts.isAuthenticated: isAuthenticated.description]
-        case .scanNoResults(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionID, let actionType, let isAuthenticated):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: dataBrokerVersion,
-                    Consts.durationParamKey: String(duration),
-                    Consts.triesKey: String(tries),
-                    Consts.isImmediateOperation: isImmediateOperation.description,
-                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent,
-                    Consts.actionIDKey: actionID,
-                    Consts.actionTypeKey: actionType,
-                    Consts.isAuthenticated: isAuthenticated.description]
-        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionId, let actionType, let isAuthenticated):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: dataBrokerVersion,
-                    Consts.durationParamKey: String(duration),
-                    Consts.errorCategoryKey: category,
-                    Consts.errorDetailsKey: details,
-                    Consts.isImmediateOperation: isImmediateOperation.description,
-                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent,
-                    Consts.actionIDKey: actionId,
-                    Consts.actionTypeKey: actionType,
-                    Consts.isAuthenticated: isAuthenticated.description]
-        case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let parent, let actionId, let actionType):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: dataBrokerVersion,
-                    Consts.triesKey: String(tries),
-                    Consts.parentKey: parent,
-                    Consts.actionIDKey: actionId,
-                    Consts.actionTypeKey: actionType]
+        case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let isAuthenticated, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.matchesFoundKey: String(matchesFound),
+                          Consts.durationParamKey: String(duration),
+                          Consts.triesKey: String(tries),
+                          Consts.isImmediateOperation: isImmediateOperation.description,
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus,
+                          Consts.parentKey: parent,
+                          Consts.isAuthenticated: isAuthenticated.description]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .scanNoResults(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionID, let actionType, let isAuthenticated, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: dataBrokerVersion,
+                          Consts.durationParamKey: String(duration),
+                          Consts.triesKey: String(tries),
+                          Consts.isImmediateOperation: isImmediateOperation.description,
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus,
+                          Consts.parentKey: parent,
+                          Consts.actionIDKey: actionID,
+                          Consts.actionTypeKey: actionType,
+                          Consts.isAuthenticated: isAuthenticated.description]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionId, let actionType, let isAuthenticated, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: dataBrokerVersion,
+                          Consts.durationParamKey: String(duration),
+                          Consts.errorCategoryKey: category,
+                          Consts.errorDetailsKey: details,
+                          Consts.isImmediateOperation: isImmediateOperation.description,
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus,
+                          Consts.parentKey: parent,
+                          Consts.actionIDKey: actionId,
+                          Consts.actionTypeKey: actionType,
+                          Consts.isAuthenticated: isAuthenticated.description]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let parent, let actionId, let actionType, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: dataBrokerVersion,
+                          Consts.triesKey: String(tries),
+                          Consts.parentKey: parent,
+                          Consts.actionIDKey: actionId,
+                          Consts.actionTypeKey: actionType]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs, let isAuthenticated):
             return [Consts.started: String(started),
                     Consts.orphaned: String(orphaned),
@@ -502,12 +507,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.backendServiceCallSite: backendServiceCallSite.rawValue,
                     Consts.dataBrokerParamKey: dataBroker ?? "unknown",
                     Consts.dataBrokerVersionKey: brokerVersion ?? "unknown"]
-        case .initialScanTotalDuration(let duration, let profileQueries):
-            return [Consts.durationInMs: String(duration), Consts.profileQueries: String(profileQueries)]
-        case .initialScanSiteLoadDuration(let duration, let hasError, let brokerURL):
-            return [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
-        case .initialScanPostLoadingDuration(let duration, let hasError, let brokerURL):
-            return [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
+        case .initialScanTotalDuration(let duration, let profileQueries, let isFreeScan):
+            let params = [Consts.durationInMs: String(duration), Consts.profileQueries: String(profileQueries)]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .initialScanSiteLoadDuration(let duration, let hasError, let brokerURL, let isFreeScan):
+            let params = [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .initialScanPostLoadingDuration(let duration, let hasError, let brokerURL, let isFreeScan):
+            let params = [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .initialScanPreStartDuration(let duration):
             return [Consts.durationInMs: String(duration)]
         case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate, let clickActionDelayReductionOptimization):
@@ -661,6 +669,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return [.pixelSource]
 #endif
         }
+    }
+}
+
+extension DataBrokerProtectionSharedPixels {
+    private func addFreeScanParamIfNeeded(to params: [String: String], isFreeScan: Bool?) -> [String: String] {
+        guard let isFreeScan else { return params }
+        var newParams = params
+        newParams[Consts.isFreeScan] = isFreeScan.description
+        return newParams
     }
 }
 

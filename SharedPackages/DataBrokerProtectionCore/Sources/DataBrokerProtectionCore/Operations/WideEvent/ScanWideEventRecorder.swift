@@ -144,7 +144,7 @@ extension ScanWideEventRecorder.Metadata {
     ///   - set to confirmationOptOutScan if the most recent event is optOutRequested
     ///   - set to maintenanceScan if the most recent event is either optOutConfirmed, noMatchFound, matchesFound, or reAppearence (sic)
     ///   - set to newScan if there has been no scan success event, maintenanceScan otherwise
-    init(from scanJobData: ScanJobData, referenceDate: Date, isFreeScan: Bool = false) {
+    init(from scanJobData: ScanJobData, referenceDate: Date, isFreeScan: Bool) {
         let sortedEvents = scanJobData.historyEvents.sorted { $0.date < $1.date }
 
         let lastSuccessDate = sortedEvents.last(where: { $0.isScanSuccessEvent() })?.date

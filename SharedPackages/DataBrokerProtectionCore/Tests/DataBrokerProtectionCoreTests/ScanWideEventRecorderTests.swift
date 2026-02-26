@@ -47,7 +47,7 @@ final class ScanWideEventRecorderTests: XCTestCase {
                                   profileQueryId: 1,
                                   historyEvents: [])
 
-        let metadata = ScanWideEventRecorder.Metadata(from: scanJob, referenceDate: referenceDate)
+        let metadata = ScanWideEventRecorder.Metadata(from: scanJob, referenceDate: referenceDate, isFreeScan: false)
 
         XCTAssertEqual(metadata.intervalStart, referenceDate)
         XCTAssertEqual(metadata.attemptNumber, 1)
@@ -67,7 +67,7 @@ final class ScanWideEventRecorderTests: XCTestCase {
                                   profileQueryId: 1,
                                   historyEvents: historyEvents)
 
-        let metadata = ScanWideEventRecorder.Metadata(from: scanJob, referenceDate: referenceDate)
+        let metadata = ScanWideEventRecorder.Metadata(from: scanJob, referenceDate: referenceDate, isFreeScan: false)
 
         XCTAssertEqual(metadata.attemptNumber, 3, "Two attempts recorded after success plus the new one about to start.")
         XCTAssertEqual(metadata.intervalStart, Date(timeIntervalSince1970: 3_000))
@@ -85,7 +85,7 @@ final class ScanWideEventRecorderTests: XCTestCase {
                                   profileQueryId: 1,
                                   historyEvents: historyEvents)
 
-        let metadata = ScanWideEventRecorder.Metadata(from: scanJob, referenceDate: referenceDate)
+        let metadata = ScanWideEventRecorder.Metadata(from: scanJob, referenceDate: referenceDate, isFreeScan: false)
 
         XCTAssertEqual(metadata.attemptType, .confirmOptOutScan)
         XCTAssertEqual(metadata.attemptNumber, 1)

@@ -1003,6 +1003,15 @@ extension DefaultOmniBarView {
         textField.alpha = hasText ? 0 : 1
     }
 
+    func updateLeftIconForMode(_ mode: TextEntryMode) {
+        switch mode {
+        case .aiChat:
+            searchAreaView.loupeIconView.image = DesignSystemImages.Glyphs.Size24.aiChat
+        case .search:
+            searchAreaView.loupeIconView.image = DesignSystemImages.Glyphs.Size24.findSearchSmall
+        }
+    }
+
     private func applyExpansionConstraints() {
         if isSearchAreaExpanded {
             searchStackBottomEqualConstraint?.isActive = false

@@ -406,6 +406,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var memoryUsageIntervalReporter: MemoryUsageIntervalReporter?
 
     let startupProfiler: StartupProfiler
+    private var startupMetricsReporter: StartupMetricsReporter?
 
     /// The date this app instance was launched, used for computing uptime in memory pixels.
     private let appLaunchDate = Date()
@@ -1111,11 +1112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             memoryUsageMonitor: memoryUsageMonitor,
-            windowContext: WindowContext(
-                standardTabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count },
-                pinnedTabs: windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count },
-                windows: windowControllersManager.mainWindowControllers.count
-            ),
+            windowContext: WindowContext(windowControllersManager: windowControllersManager),
             isSyncEnabled: { [weak self] in
                 guard let syncService = self?.syncService else { return nil }
 
@@ -1129,11 +1126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             memoryUsageMonitor: memoryUsageMonitor,
             featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
-            windowContext: WindowContext(
-                standardTabs: windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count },
-                pinnedTabs: windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count },
-                windows: windowControllersManager.mainWindowControllers.count
-            ),
+            windowContext: WindowContext(windowControllersManager: windowControllersManager),
             isSyncEnabled: { [weak self] in
                 guard let syncService = self?.syncService else { return nil }
 
@@ -1142,6 +1135,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             launchDate: appLaunchDate,
             logger: .memory
         )
+
+        let metricsReporter = StartupMetricsReporter(
+            featureFlagger: featureFlagger,
+            pixelFiring: PixelKit.shared,
+            windowContext: WindowContext(windowControllersManager: windowControllersManager),
+            startupPreferences: startupPreferences
+        )
+        startupProfiler.delegate = metricsReporter
+        startupMetricsReporter = metricsReporter
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
     }

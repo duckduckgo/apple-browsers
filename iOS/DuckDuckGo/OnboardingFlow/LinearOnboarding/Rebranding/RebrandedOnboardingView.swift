@@ -200,7 +200,7 @@ extension OnboardingRebranding {
                     landingView
                 case let .onboarding(viewState):
                     onboardingDialogView(state: viewState)
-                        .transition( //Scale content from 0.1 to 1.0 and fade in when appearing for the first time
+                        .transition( // Scale content from 0.1 to 1.0 and fade in when appearing for the first time
                             .scale.combined(with: .opacity)
                         )
 #if DEBUG || ALPHA
@@ -273,7 +273,7 @@ extension OnboardingRebranding {
                     SkipOnboardingContent(
                         startBrowsingAction: model.confirmSkipOnboardingAction,
                         resumeOnboardingAction: {
-                            hideContentAndPerformAction {
+                            animateContentTransition {
                                 model.startOnboardingAction(isResumingOnboarding: true)
                             }
                         }
@@ -288,7 +288,7 @@ extension OnboardingRebranding {
                 skipOnboardingView: skipOnboardingView,
                 showContent: $showBubbleContent,
                 continueAction: {
-                    hideContentAndPerformAction {
+                    animateContentTransition {
                         model.startOnboardingAction(isResumingOnboarding: false)
                     }
                 },
@@ -301,7 +301,7 @@ extension OnboardingRebranding {
                 title: UserText.Onboarding.BrowsersComparison.title,
                 setAsDefaultBrowserAction: model.setDefaultBrowserAction,
                 cancelAction: {
-                    hideContentAndPerformAction {
+                    animateContentTransition {
                         model.cancelSetDefaultBrowserAction()
                     }
                 }
@@ -325,7 +325,7 @@ extension OnboardingRebranding {
             }
             .onAppear {
                 // Show content after initial bubble animation on first appearance
-                animateBubbleContentTransition()
+                animateContentTransition()
             }
         }
 
@@ -429,11 +429,11 @@ extension OnboardingRebranding {
             AddToDockPromoContent(
                 showContent: $showBubbleContent,
                 showTutorialAction: {
-                    // Don't use hideContentAndPerformAction here - the child handles it
+                    // Don't use animateContentTransition here - the child handles it
                     model.addToDockShowTutorialAction()
                 },
                 dismissAction: { fromAddToDockTutorial in
-                    hideContentAndPerformAction {
+                    animateContentTransition {
                         model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
                     }
                 }
@@ -444,7 +444,7 @@ extension OnboardingRebranding {
             AppIconPickerContent(
                 showContent: $model.appIconPickerContentState.showContent,
                 action: {
-                    hideContentAndPerformAction {
+                    animateContentTransition {
                         model.appIconPickerContinueAction()
                     }
                 }
@@ -454,7 +454,7 @@ extension OnboardingRebranding {
         private var addressBarPositionView: some View {
             AddressBarPositionContent(
                 action: {
-                    hideContentAndPerformAction {
+                    animateContentTransition {
                         model.selectAddressBarPositionAction()
                     }
                 }
@@ -464,44 +464,43 @@ extension OnboardingRebranding {
         private var searchExperienceSelectionView: some View {
             SearchExperienceContent(
                 action: {
-                    hideContentAndPerformAction {
+                    animateContentTransition {
                         model.selectSearchExperienceAction()
                     }
                 }
             )
         }
 
-        /// Animates bubble content visibility with a hide → delay → show sequence.
-        /// Use this for content changes that don't trigger `.onChange(of: state.type)`.
-        private func animateBubbleContentTransition() {
-            // Hide content
-            showBubbleContent = false
-
-            // Show content after delay (matching bubble animation duration)
-            DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
-                withAnimation {
-                    showBubbleContent = true
-                }
-            }
-        }
-
-        /// Hides bubble content, performs an action that changes state, then shows new content.
+        /// Animates bubble content with a hide → optional action → show sequence.
         ///
         /// This three-phase sequence prevents cross-fading between old and new content:
-        /// 1. Hide current content (becomes invisible but keeps layout)
-        /// 2. Execute action after brief delay (triggers state change and bubble resize)
+        /// 1. Hide current content (sets opacity to 0)
+        /// 2. Optionally execute action after brief delay (triggers state change and bubble resize)
         /// 3. Show new content after bubble finishes resizing
-        private func hideContentAndPerformAction(_ action: @escaping () -> Void) {
+        ///
+        /// - Parameter action: Optional closure to execute between hiding and showing content.
+        ///                     If nil, content is shown immediately after fade-in delay (for initial appearance).
+        private func animateContentTransition(action: (() -> Void)? = nil) {
             // Phase 1: Hide current content immediately
             showBubbleContent = false
 
-            // Phase 2: After content fades out, trigger the state change
-            DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeOutDelay) {
-                // Call action without animation wrapper - the bubble resize animation
-                // is handled by .animation(..., value: state.type) modifier on the bubble view
-                action()
+            if let action {
+                // Phase 2: After content fades out, trigger the action
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeOutDelay) {
+                    // Call action without animation wrapper
+                    // The bubble resize animation is handled by .animation(..., value: state.type) modifier on the bubble view
+                    action()
+                }
 
                 // Phase 3: After bubble resize completes, show new content
+                let totalDelay = OnboardingBubbleAnimationMetrics.contentFadeOutDelay + OnboardingBubbleAnimationMetrics.contentFadeInDelay
+                DispatchQueue.main.asyncAfter(deadline: .now() + totalDelay) {
+                    withAnimation {
+                        showBubbleContent = true
+                    }
+                }
+            } else {
+                // First appearance of bubble. Show content after fade-in delay
                 DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
                     withAnimation {
                         showBubbleContent = true

@@ -158,28 +158,39 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         var enabledCount = 0
         var disabledCount = 0
 
-        let enabledExpectation = expectation(description: "onFeatureFlagEnabled called twice")
-        enabledExpectation.expectedFulfillmentCount = 2
+        let firstEnabled = expectation(description: "first onFeatureFlagEnabled")
+        let secondEnabled = expectation(description: "second onFeatureFlagEnabled")
+
+        let firstDisabled = expectation(description: "first onFeatureFlagDisabled")
+        let secondDisabled = expectation(description: "second onFeatureFlagDisabled")
 
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagEnabled: {
                 enabledCount += 1
-                enabledExpectation.fulfill()
+                if enabledCount == 1 { firstEnabled.fulfill() }
+                else { secondEnabled.fulfill() }
             },
-            onFeatureFlagDisabled: { disabledCount += 1 }
+            onFeatureFlagDisabled: {
+                disabledCount += 1
+                if disabledCount == 1 { firstDisabled.fulfill() }
+                else { secondDisabled.fulfill() }
+            }
         )
 
         featureFlagSubject.send(true)
-        try await Task.sleep(for: .milliseconds(300))
-        featureFlagSubject.send(false)
-        try await Task.sleep(for: .milliseconds(300))
-        featureFlagSubject.send(true)
-        try await Task.sleep(for: .milliseconds(300))
-        featureFlagSubject.send(false)
+        await fulfillment(of: [firstEnabled], timeout: 1.0)
 
-        await fulfillment(of: [enabledExpectation], timeout: 3.0)
+        featureFlagSubject.send(false)
+        await fulfillment(of: [firstDisabled], timeout: 1.0)
+
+        featureFlagSubject.send(true)
+        await fulfillment(of: [secondEnabled], timeout: 1.0)
+
+        featureFlagSubject.send(false)
+        await fulfillment(of: [secondDisabled], timeout: 1.0)
+
         XCTAssertEqual(enabledCount, 2)
         XCTAssertEqual(disabledCount, 2)
     }
@@ -281,8 +292,11 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
         var enabledCount = 0
         var disabledCount = 0
 
-        let enabledExpectation = expectation(description: "onEmbeddedExtensionFlagEnabled called twice")
-        enabledExpectation.expectedFulfillmentCount = 2
+        let firstEnabled = expectation(description: "first onEmbeddedExtensionFlagEnabled")
+        let secondEnabled = expectation(description: "second onEmbeddedExtensionFlagEnabled")
+
+        let firstDisabled = expectation(description: "first embedded disabled")
+        let secondDisabled = expectation(description: "second embedded disabled")
 
         sut = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.mockWebExtensionManager },
@@ -291,23 +305,29 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             onFeatureFlagDisabled: {},
             onEmbeddedExtensionFlagEnabled: {
                 enabledCount += 1
-                enabledExpectation.fulfill()
+                if enabledCount == 1 { firstEnabled.fulfill() }
+                else { secondEnabled.fulfill() }
             }
         )
 
         mockWebExtensionManager.uninstallEmbeddedExtensionHandler = {
             disabledCount += 1
+            if disabledCount == 1 { firstDisabled.fulfill() }
+            else { secondDisabled.fulfill() }
         }
 
         embeddedFlagSubject.send(true)
-        try await Task.sleep(for: .milliseconds(300))
-        embeddedFlagSubject.send(false)
-        try await Task.sleep(for: .milliseconds(300))
-        embeddedFlagSubject.send(true)
-        try await Task.sleep(for: .milliseconds(300))
-        embeddedFlagSubject.send(false)
+        await fulfillment(of: [firstEnabled], timeout: 1.0)
 
-        await fulfillment(of: [enabledExpectation], timeout: 3.0)
+        embeddedFlagSubject.send(false)
+        await fulfillment(of: [firstDisabled], timeout: 1.0)
+
+        embeddedFlagSubject.send(true)
+        await fulfillment(of: [secondEnabled], timeout: 1.0)
+
+        embeddedFlagSubject.send(false)
+        await fulfillment(of: [secondDisabled], timeout: 1.0)
+
         XCTAssertEqual(enabledCount, 2)
         XCTAssertEqual(disabledCount, 2)
     }
@@ -315,7 +335,6 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     // MARK: - Race Condition Prevention Tests
 
     func testWhenWebExtensionsFlagRapidlyToggledEnabledThenDisabledThenEnableCallbackDoesNotRunAfterDisable() async throws {
-        var enabledCallbackExecuted = false
         var disabledCallbackExecuted = false
         var enabledCallbackExecutedAfterDisabled = false
 
@@ -324,7 +343,6 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagEnabled: {
                 try? await Task.sleep(for: .milliseconds(50))
-                enabledCallbackExecuted = true
                 if disabledCallbackExecuted {
                     enabledCallbackExecutedAfterDisabled = true
                 }
@@ -344,7 +362,6 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     }
 
     func testWhenEmbeddedFlagRapidlyToggledEnabledThenDisabledThenEnableCallbackDoesNotRunAfterDisable() async throws {
-        var enabledCallbackExecuted = false
         var disabledCallbackExecuted = false
         var enabledCallbackExecutedAfterDisabled = false
 
@@ -355,7 +372,6 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             onFeatureFlagDisabled: {},
             onEmbeddedExtensionFlagEnabled: {
                 try? await Task.sleep(for: .milliseconds(50))
-                enabledCallbackExecuted = true
                 if disabledCallbackExecuted {
                     enabledCallbackExecutedAfterDisabled = true
                 }

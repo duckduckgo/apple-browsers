@@ -143,13 +143,17 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> {
         let cards = $cardList.dropFirst().removeDuplicates()
-        let cardsDidBecomeOutdated = appearancePreferences.$isContinueSetUpCardsViewOutdated.removeDuplicates()
-        let cardsDidClose = appearancePreferences.$continueSetUpCardsClosed.removeDuplicates()
+        let cardsAreVisible = appearancePreferences.$isContinueSetUpCardsViewOutdated
+            .combineLatest(appearancePreferences.$continueSetUpCardsClosed)
+            .map { isOutdated, isClosed in
+                !(isOutdated || isClosed)
+            }
+            .removeDuplicates()
 
-        return Publishers.CombineLatest3(cards, cardsDidBecomeOutdated, cardsDidClose)
+        return Publishers.CombineLatest(cards, cardsAreVisible)
             .subscribe(on: scheduler)
-            .map { cards, isOutdated, isClosed -> [NewTabPageDataModel.CardID] in
-                guard !isOutdated, !isClosed else {
+            .map { cards, areVisible -> [NewTabPageDataModel.CardID] in
+                guard areVisible else {
                     return []
                 }
                 return cards

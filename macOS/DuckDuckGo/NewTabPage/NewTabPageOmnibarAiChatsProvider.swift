@@ -18,15 +18,19 @@
 
 import AIChat
 import Combine
+import FeatureFlags
+import PrivacyConfig
 import Foundation
 import NewTabPage
 
 final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding {
 
+    private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading
     private var cancellables = Set<AnyCancellable>()
 
-    init(configProvider: NewTabPageOmnibarConfigProviding, suggestionsReader: AIChatSuggestionsReading) {
+    init(featureFlagger: FeatureFlagger, configProvider: NewTabPageOmnibarConfigProviding, suggestionsReader: AIChatSuggestionsReading) {
+        self.featureFlagger = featureFlagger
         self.suggestionsReader = suggestionsReader
 
         configProvider.modePublisher
@@ -52,6 +56,9 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
 
     @MainActor
     func aiChats() async -> NewTabPageDataModel.AiChatsData {
+        guard featureFlagger.isFeatureOn(.aiChatNtpRecentChats) else {
+            return .empty
+        }
         let (pinned, recent) = await suggestionsReader.fetchSuggestions(query: nil)
         let chats = (pinned + recent.reversed()).map { $0.asNewTabPageAiChat }
         return NewTabPageDataModel.AiChatsData(chats: chats)

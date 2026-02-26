@@ -184,6 +184,7 @@ extension NewTabPageActionsManager {
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
         )
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
+            featureFlagger: featureFlagger,
             configProvider: omnibarConfigProvider,
             suggestionsReader: AIChatSuggestionsReader(
                 suggestionsReader: SuggestionsReader(

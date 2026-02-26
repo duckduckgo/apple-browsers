@@ -390,6 +390,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case supportsSyncChatsDeletion
 
     case sidebarResizable
+
+    /// Enables recent AI chats on the New Tab Page omnibar
+    case ntpRecentChats
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

@@ -169,13 +169,19 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             featureFlagPublisher: featureFlagSubject.eraseToAnyPublisher(),
             onFeatureFlagEnabled: {
                 enabledCount += 1
-                if enabledCount == 1 { firstEnabled.fulfill() }
-                else { secondEnabled.fulfill() }
+                if enabledCount == 1 {
+                    firstEnabled.fulfill()
+                } else {
+                    secondEnabled.fulfill()
+                }
             },
             onFeatureFlagDisabled: {
                 disabledCount += 1
-                if disabledCount == 1 { firstDisabled.fulfill() }
-                else { secondDisabled.fulfill() }
+                if disabledCount == 1 {
+                    firstDisabled.fulfill()
+                } else {
+                    secondDisabled.fulfill()
+                }
             }
         )
 
@@ -305,15 +311,21 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
             onFeatureFlagDisabled: {},
             onEmbeddedExtensionFlagEnabled: {
                 enabledCount += 1
-                if enabledCount == 1 { firstEnabled.fulfill() }
-                else { secondEnabled.fulfill() }
+                if enabledCount == 1 {
+                    firstEnabled.fulfill()
+                } else {
+                    secondEnabled.fulfill()
+                }
             }
         )
 
         mockWebExtensionManager.uninstallEmbeddedExtensionHandler = {
             disabledCount += 1
-            if disabledCount == 1 { firstDisabled.fulfill() }
-            else { secondDisabled.fulfill() }
+            if disabledCount == 1 {
+                firstDisabled.fulfill()
+            } else {
+                secondDisabled.fulfill()
+            }
         }
 
         embeddedFlagSubject.send(true)

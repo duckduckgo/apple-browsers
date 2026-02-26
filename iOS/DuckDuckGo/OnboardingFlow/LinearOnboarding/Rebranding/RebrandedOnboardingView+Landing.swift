@@ -28,21 +28,21 @@ extension OnboardingRebranding.OnboardingView {
     struct LandingView: View {
 
         private enum Assets {
-            static let backgroundLottieFileName = "OnboardingLandingIllustrationAnimation"  // Mountains/landscape
-            static let logoLottieFileName = "OnboardingLandingLogoAnimation"                  // Dax logo
+            static let backgroundLottieFileName = "OnboardingLandingIllustrationAnimation"
+            static let logoLottieFileName = "OnboardingLandingLogoAnimation"
         }
 
         // MARK: - Metrics
 
         private enum Metrics {
-            static let logoSize: CGFloat = 125         // Dax logo frame (square)
-            static let topPadding: CGFloat = 96        // Distance from top safe area to logo
-            static let welcomeBottomPadding: CGFloat = 20  // Spacing between logo and title text
+            static let logoSize: CGFloat = 125 // Dax logo frame (square)
+            static let topPadding: CGFloat = 96 // Distance from top safe area to logo
+            static let welcomeBottomPadding: CGFloat = 20 // Spacing between logo and title text
             static let horizontalPadding: CGFloat = 16
 
             // Illustration (landscape Lottie, original canvas 4000×1622)
-            static let illustrationWidth: CGFloat = 1200   // Final width after animation
-            static let illustrationHeight: CGFloat = 487   // Maintains 4000:1622 aspect ratio
+            static let illustrationWidth: CGFloat = 1200 // Final width after animation
+            static let illustrationHeight: CGFloat = 487 // Maintains 4000:1622 aspect ratio
         }
 
         // MARK: - Component Animation
@@ -70,47 +70,47 @@ extension OnboardingRebranding.OnboardingView {
 
         private enum LandingAnimationStates {
 
-            // Logo: scales down from 178% (AE 25% → 14% of canvas = 1.786x ratio) and fades in
-            static let logoStart = ComponentAnimationState.start(scale: 25.0 / 14.0, opacity: 0.0)
+            // Group (matches CTRL_Logo parent in AE): scales 141.05% → 108.5%, slides up
+            static let groupScaleStart: CGFloat = 141.05 / 108.5  // ≈ 1.3
+            static let groupOffsetYStart: CGFloat = 100            // ~11.8% of canvas height (tune by eye)
+
+            // Logo: scales down from local 77.2% → 43.2% (ratio ≈ 1.787). No opacity animation.
+            static let logoStart = ComponentAnimationState.start(scale: 77.2 / 43.2, opacity: 1.0)
             static let logoEnd = ComponentAnimationState.end()
 
-            // Text: fades in and slides up 49pt from below
+            // Text: fades in and slides up (local offset relative to group)
             static let textStart = ComponentAnimationState.start(opacity: 0.0)
             static let textOffsetStart: CGSize = CGSize(width: 0, height: 49)
             static let textEnd = ComponentAnimationState.end()
-
-            // Illustration: fades in and slides from off-screen (325pt right, 204pt below)
-            static let illustrationStart = ComponentAnimationState.start()
-            static let illustrationOffsetStart: CGSize = CGSize(width: 325, height: 204)
-            static let illustrationEnd = ComponentAnimationState.end()
         }
 
-        // MARK: - Timing (from AE specs at 30fps)
+        // MARK: - Timing (from AE reference at 30fps — iOS_Intro_Prod.json)
 
         private enum LandingAnimationTiming {
-            // Logo: soft ease-out for scale + opacity, 0.4s delay to let illustration start first
-            static let logoAnimation: Animation = .timingCurve(0.26, 0.64, 0.48, 1.00, duration: 0.667).delay(0.4)
+            // Group (CTRL_Logo): ease-in-out scale, delay ≈ 3 frames
+            static let groupScaleAnimation: Animation = .timingCurve(0.66, 0, 0.34, 1, duration: 1.4).delay(0.1)
+            // Group (CTRL_Logo): ease-out slide up, delay ≈ 3 frames
+            static let groupOffsetAnimation: Animation = .timingCurve(0.4, 0.737, 0.74, 1.0, duration: 1.167).delay(0.1)
 
-            // Text offset: cubic-bezier with y1=2.70 creates an overshoot (slides past target, bounces back)
-            static let textOffsetAnimation: Animation = .timingCurve(0.40, 2.70, 0.74, 1.00, duration: 0.5).delay(0.4)
+            // Logo local scale: ease-out, delay ≈ 11.8 frames
+            static let logoScaleAnimation: Animation = .timingCurve(0.26, 0.642, 0.48, 1.0, duration: 0.673).delay(0.393)
 
-            // Text opacity: simple ease for fade-in, synced with offset delay
-            static let textOpacityAnimation: Animation = .timingCurve(0.33, 0.00, 0.67, 1.00, duration: 0.2).delay(0.4)
+            // Text offset: ease-out slide up, delay ≈ 11.8 frames
+            static let textOffsetAnimation: Animation = .timingCurve(0.4, 0.774, 0.74, 1.0, duration: 0.507).delay(0.393)
 
-            // Background: slides in from bottom-right, starts almost immediately (0.133s ≈ 4 frames at 30fps)
-            static let backgroundAnimation: Animation = .timingCurve(0.10, 0.85, 0.64, 0.99, duration: 0.7).delay(0.133)
+            // Text opacity: simple ease fade-in, synced with offset delay
+            static let textOpacityAnimation: Animation = .timingCurve(0.333, 0, 0.667, 1.0, duration: 0.221).delay(0.393)
         }
 
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         let animationNamespace: Namespace.ID
 
+        @State private var groupScale = LandingAnimationStates.groupScaleStart
+        @State private var groupOffsetY = LandingAnimationStates.groupOffsetYStart
         @State private var logo = LandingAnimationStates.logoStart
-        @State private var logoAnimationFinished = false
         @State private var text = LandingAnimationStates.textStart
         @State private var textOffset = LandingAnimationStates.textOffsetStart
-        @State private var illustration = LandingAnimationStates.illustrationStart
-        @State private var illustrationOffset = LandingAnimationStates.illustrationOffsetStart
 
         var body: some View {
             GeometryReader { proxy in
@@ -132,13 +132,15 @@ extension OnboardingRebranding.OnboardingView {
 
         private var logoAndTextView: some View {
             VStack(alignment: .center, spacing: Metrics.welcomeBottomPadding) {
+                // Logo Lottie (internal animation plays the Dax entrance; no opacity fade)
                 Lottie.LottieView(animation: .asset(Assets.logoLottieFileName))
                     .playing(loopMode: .playOnce)
                     .resizable()
                     .matchedGeometryEffect(id: OnboardingView.daxGeometryEffectID, in: animationNamespace)
                     .frame(width: Metrics.logoSize, height: Metrics.logoSize)
                     .scaleEffect(logo.scale)
-                    .opacity(logo.opacity)
+
+                // Text
                 Text(UserText.onboardingWelcomeHeader)
                     .font(onboardingTheme.typography.largeTitle)
                     .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
@@ -147,43 +149,48 @@ extension OnboardingRebranding.OnboardingView {
                     .opacity(text.opacity)
             }
             .padding(.horizontal, Metrics.horizontalPadding)
+            .scaleEffect(groupScale)
+            .offset(y: groupOffsetY)
         }
 
         // MARK: - Background
 
         private var backgroundView: some View {
+            // Illustration Lottie — entrance animation is internal (NULL parent scales/slides up).
+            // Start from frame 22 to match the reference's st=-22 time offset.
             Lottie.LottieView(animation: .asset(Assets.backgroundLottieFileName))
-                .playing(loopMode: .playOnce)
+                .playbackMode(.playing(.fromProgress(22.0 / 89.0, toProgress: 1.0, loopMode: .playOnce)))
                 .resizable()
                 .clipped()
                 .frame(width: Metrics.illustrationWidth, height: Metrics.illustrationHeight)
-                .offset(illustrationOffset)
-                .opacity(illustration.opacity)
                 .allowsHitTesting(false)
         }
 
         // MARK: - Animation Sequencing
 
         private func animateEntrance() {
-            // Logo: scale + opacity
-            withAnimation(LandingAnimationTiming.logoAnimation) {
+            // Group (CTRL_Logo): scale + offset
+            withAnimation(LandingAnimationTiming.groupScaleAnimation) {
+                groupScale = 1.0
+            }
+            withAnimation(LandingAnimationTiming.groupOffsetAnimation) {
+                groupOffsetY = 0
+            }
+
+            // Logo: local scale only (no opacity — internal Lottie creates the entrance)
+            withAnimation(LandingAnimationTiming.logoScaleAnimation) {
                 logo = LandingAnimationStates.logoEnd
             }
 
-            // Text: offset with overshoot curve
+            // Text: offset + opacity
             withAnimation(LandingAnimationTiming.textOffsetAnimation) {
                 textOffset = .zero
             }
-            // Text: opacity with separate curve
             withAnimation(LandingAnimationTiming.textOpacityAnimation) {
                 text = LandingAnimationStates.textEnd
             }
 
-            // Bacground: position slide-in
-            withAnimation(LandingAnimationTiming.backgroundAnimation) {
-                illustrationOffset = .zero
-                illustration = LandingAnimationStates.illustrationEnd
-            }
+            // Background: no SwiftUI animation — Lottie plays from frame 22 internally
         }
     }
 }

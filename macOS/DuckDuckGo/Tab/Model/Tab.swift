@@ -621,13 +621,13 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         // reload if content differs or user-entered
         guard newContent != self.content || newContent.isUserEnteredUrl else { return nil }
+
         self.content = newContent
 
-        dismissPresentedAlert()
+        // Set the Title, even if it's nil: prevent stale UI!
+        self.title = newContent.title
 
-        if let title = content.title {
-            self.title = title
-        }
+        dismissPresentedAlert()
 
         if error != nil { error = nil }
 
@@ -656,7 +656,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             // maybe it worths adding another content type like .interruptedLoad(URL) to display a URL in the address bar
             self.content = .none
         }
-        self.updateTitle() // The title might not change if webView doesn't think anything is different so update title here as well
+
+        // We're no longer updating the `title` property here, as we may be end up rendering the `window.title` of the (previous) document.
+        // Such update will take place whenever the `webView.title` property is updated.
     }
 
     var lastSelectedAt: Date?

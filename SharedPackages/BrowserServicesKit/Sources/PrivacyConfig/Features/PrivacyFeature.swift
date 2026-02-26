@@ -143,10 +143,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
 
-    /// Tab closing event recreation feature flag (failsafe for removing private API)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
-    case tabClosingEventRecreation
-
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
@@ -370,9 +366,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
-    /// Controls different input sizes and fade out animation for toggle.
-    case fadeOutOnToggle
-
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
@@ -558,13 +551,6 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
     case scamProtection
-}
-
-public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
-
-    // https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
-    case scheduledDefaultBrowserAndDockPromptsInactiveUser // macOS
 }
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {

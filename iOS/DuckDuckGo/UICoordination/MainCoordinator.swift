@@ -228,7 +228,6 @@ final class MainCoordinator {
             tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
         }
 
-        subscribeToDarkReaderChanges()
     }
 
     func start() {
@@ -259,8 +258,6 @@ final class MainCoordinator {
         self.privacyConfigurationManager = privacyConfigurationManager
 
         guard #available(iOS 18.4, *) else { return }
-
-        subscribeToDarkReaderChanges()
 
         let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
             .flagDidChangePublisher
@@ -329,6 +326,7 @@ final class MainCoordinator {
         tabManager.setWebExtensionManager(webExtensionManager)
         controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
         controller.setWebExtensionManager(webExtensionManager)
+        subscribeToDarkReaderChanges()
 
         // Load extensions asynchronously - the controller is already attached to tabs
         webExtensionLoadTask = Task { @MainActor [weak self] in

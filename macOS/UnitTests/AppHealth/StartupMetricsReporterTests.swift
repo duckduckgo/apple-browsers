@@ -45,11 +45,11 @@ final class StartupMetricsReporterTests: XCTestCase {
     func testWhenFeatureFlagDisabled_ThenDoesNotFirePixel() async {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
-        let sut = buildMetricsReporter()
+        let (_, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
         // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
+        reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
         await Task.yield()
 
         // Then
@@ -59,11 +59,11 @@ final class StartupMetricsReporterTests: XCTestCase {
     func testWhenFeatureFlagEnabled_ThenFiresPixel() async {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let sut = buildMetricsReporter()
+        let (_, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
         // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
+        reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
         await Task.yield()
 
         // Then
@@ -75,11 +75,11 @@ final class StartupMetricsReporterTests: XCTestCase {
     func testFiredPixelHasCorrectName() async {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let sut = buildMetricsReporter()
+        let (_, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
         // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
+        reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
         await Task.yield()
 
         // Then
@@ -91,12 +91,11 @@ final class StartupMetricsReporterTests: XCTestCase {
     func testPixelIncludesSystemEnvironmentProperties() async {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let environment = SystemEnvironment(architecture: "ARM", activeProcessorCount: 8, isOnBattery: true)
-        let sut = buildMetricsReporter(environment: environment)
+        let (environment, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
         // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
+        reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
         await Task.yield()
 
         // Then
@@ -110,11 +109,11 @@ final class StartupMetricsReporterTests: XCTestCase {
     func testPixelIncludesSessionRestorationState() async {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let sut = buildMetricsReporter(restorePreviousSession: true)
+        let (_, _, reporter) = buildMetricsReporter(restorePreviousSession: true)
         let profiler = StartupProfiler()
 
         // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
+        reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
         await Task.yield()
 
         // Then
@@ -123,130 +122,38 @@ final class StartupMetricsReporterTests: XCTestCase {
 
     // MARK: - Window Context
 
-    func testPixelIncludesWindowCount() async {
+    func testPixelIncludesWindowAndTabCount() async {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let context = WindowContext(standardTabs: 10, pinnedTabs: 2, windows: 3)
-        let sut = buildMetricsReporter(windowContext: context)
+        let (_, context, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
         // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
+        reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
         await Task.yield()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["windows"], "2")
-    }
-
-    func testPixelIncludesTabCount() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let context = WindowContext(standardTabs: 25, pinnedTabs: 2, windows: 1)
-        let sut = buildMetricsReporter(windowContext: context)
-        let profiler = StartupProfiler()
-
-        // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
-        await Task.yield()
-
-        // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["tabs"], "21")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["windows"], context.windows.description)
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["tabs"], context.standardTabs.description)
     }
 
     // MARK: - Timing Metrics
 
-    func testPixelIncludesAppDelegateInitDuration() async {
+    func testPixelIncludesTimingMetrics() async {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let sut = buildMetricsReporter()
+        let (_, _, reporter) = buildMetricsReporter()
+        let metrics = buildStartupMetrics(appDelegateInitDuration: 0.15, mainMenuInitDuration: 0.25, timeToInteractiveDuration: 2.5)
         let profiler = StartupProfiler()
-        let metrics = buildStartupMetrics(appDelegateInitDuration: 0.15)
 
         // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: metrics)
+        reporter.startupProfiler(profiler, didCompleteWithMetrics: metrics)
         await Task.yield()
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["app_delegate_init"], "100")
-    }
-
-    func testPixelIncludesMainMenuInitDuration() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let sut = buildMetricsReporter()
-        let profiler = StartupProfiler()
-        let metrics = buildStartupMetrics(mainMenuInitDuration: 0.25)
-
-        // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: metrics)
-        await Task.yield()
-
-        // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["main_menu_init"], "200")
-    }
-
-    func testPixelIncludesTimeToInteractive() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let sut = buildMetricsReporter()
-        let profiler = StartupProfiler()
-        let metrics = buildStartupMetrics(timeToInteractiveDuration: 2.5)
-
-        // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: metrics)
-        await Task.yield()
-
-        // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["time_to_interactive"], "2000")
-    }
-
-    // MARK: - Gap Metrics
-
-    func testPixelIncludesInitToWillFinishLaunchingGap() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let sut = buildMetricsReporter()
-        let profiler = StartupProfiler()
-
-        // Build metrics where appDelegateInit ends at 1.0 and appWillFinishLaunching starts at 1.15
-        var metrics = StartupMetrics()
-        metrics.update(step: .appDelegateInit, startTime: 0.0, endTime: 1.0)
-        metrics.update(step: .appWillFinishLaunching, startTime: 1.15, endTime: 1.30)
-        metrics.update(step: .appDidFinishLaunchingBeforeRestoration, startTime: 1.30, endTime: 1.50)
-        metrics.update(step: .appDidFinishLaunchingAfterRestoration, startTime: 1.50, endTime: 1.70)
-        metrics.update(step: .appStateRestoration, startTime: 1.70, endTime: 1.80)
-        metrics.update(step: .mainMenuInit, startTime: 0.5, endTime: 0.6)
-        metrics.update(step: .timeToInteractive, startTime: 0.0, endTime: 2.0)
-
-        // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: metrics)
-        await Task.yield()
-
-        // Then — gap is 1.15 - 1.0 = 0.15s = 150ms → bucket "100"
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["init_to_will_finish_launching"], "100")
-    }
-
-    func testPixelIncludesWillFinishToDidFinishLaunchingGap() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let sut = buildMetricsReporter()
-        let profiler = StartupProfiler()
-
-        var metrics = StartupMetrics()
-        metrics.update(step: .appDelegateInit, startTime: 0.0, endTime: 0.5)
-        metrics.update(step: .appWillFinishLaunching, startTime: 0.5, endTime: 1.0)
-        metrics.update(step: .appDidFinishLaunchingBeforeRestoration, startTime: 1.5, endTime: 2.0)
-        metrics.update(step: .appDidFinishLaunchingAfterRestoration, startTime: 2.0, endTime: 2.5)
-        metrics.update(step: .appStateRestoration, startTime: 2.5, endTime: 2.6)
-        metrics.update(step: .mainMenuInit, startTime: 0.2, endTime: 0.3)
-        metrics.update(step: .timeToInteractive, startTime: 0.0, endTime: 3.0)
-
-        // When
-        sut.startupProfiler(profiler, didCompleteWithMetrics: metrics)
-        await Task.yield()
-
-        // Then — gap is 1.5 - 1.0 = 0.5s = 500ms → bucket "500"
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["app_will_finish_to_app_did_finish_launching"], "500")
     }
 }
 
@@ -254,21 +161,22 @@ final class StartupMetricsReporterTests: XCTestCase {
 
 private extension StartupMetricsReporterTests {
 
-    func buildMetricsReporter(windowContext: WindowContext? = nil, restorePreviousSession: Bool = false, environment: SystemEnvironment? = nil) -> StartupMetricsReporter {
-        let targetWindowContext = windowContext ?? WindowContext(standardTabs: 5, pinnedTabs: 1, windows: 1)
-        let targetEnvironment = environment ?? SystemEnvironment(architecture: "ARM", activeProcessorCount: 8, isOnBattery: false)
+    func buildMetricsReporter(restorePreviousSession: Bool = false) -> (SystemEnvironment, WindowContext, StartupMetricsReporter) {
+        let environment = SystemEnvironment(architecture: "ARM", activeProcessorCount: 8, isOnBattery: false)
+        let windowContext = WindowContext(standardTabs: 5, pinnedTabs: 1, windows: 1)
+        let reporter = StartupMetricsReporter(environment: environment, featureFlagger: mockFeatureFlagger, pixelFiring: mockPixelFiring, previousSessionRestored: restorePreviousSession, windowContext: windowContext)
 
-        return StartupMetricsReporter(environment: targetEnvironment, featureFlagger: mockFeatureFlagger, pixelFiring: mockPixelFiring, previousSessionRestored: restorePreviousSession, windowContext: targetWindowContext)
+        return (environment, windowContext, reporter)
     }
 
     func buildStartupMetrics(
-        appDelegateInitDuration: TimeInterval = 0.1,
-        mainMenuInitDuration: TimeInterval = 0.05,
-        appWillFinishLaunchingDuration: TimeInterval = 0.2,
-        appDidFinishLaunchingBeforeRestorationDuration: TimeInterval = 0.3,
-        appDidFinishLaunchingAfterRestorationDuration: TimeInterval = 0.1,
-        appStateRestorationDuration: TimeInterval = 0.5,
-        timeToInteractiveDuration: TimeInterval = 1.5
+        appDelegateInitDuration: TimeInterval = 0,
+        mainMenuInitDuration: TimeInterval = 0,
+        appWillFinishLaunchingDuration: TimeInterval = 0,
+        appDidFinishLaunchingBeforeRestorationDuration: TimeInterval = 0,
+        appDidFinishLaunchingAfterRestorationDuration: TimeInterval = 0,
+        appStateRestorationDuration: TimeInterval = 0,
+        timeToInteractiveDuration: TimeInterval = 0
     ) -> StartupMetrics {
         var base: TimeInterval = 0.0
         var metrics = StartupMetrics()

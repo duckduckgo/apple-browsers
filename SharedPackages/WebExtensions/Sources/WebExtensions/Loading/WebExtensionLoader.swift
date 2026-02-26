@@ -61,6 +61,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
     }
 
     @MainActor
+    @discardableResult
     public func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
         // Check if extension is already loaded (idempotent operation)
         if let existingContext = controller.extensionContexts.first(where: { $0.uniqueIdentifier == identifier }) {

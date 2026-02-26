@@ -78,15 +78,7 @@ extension OnboardingRebranding.OnboardingView {
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         if skipOnboardingView != nil {
-                            Button(action: {
-                                showContent = false
-                                showSkipOnboarding = true
-                                skipAction()
-
-                                withAnimation(.default.delay(OnboardingBubbleAnimationMetrics.contentFadeInDelay)) {
-                                    showContent = true
-                                }
-                            }) {
+                            Button(action: showSkipOnboardingDialog) {
                                 Text(UserText.Onboarding.Intro.skipCTA)
                             }
                             .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
@@ -94,6 +86,46 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
+        }
+
+        /// Handles the transition from intro to skip onboarding dialog with proper animation timing.
+        ///
+        /// This function orchestrates a three-phase animation sequence:
+        /// 1. Hide current content (sets opacity to 0 via parent's showContent binding)
+        /// 2. Switch to skip dialog and animate bubble resize
+        /// 3. Show new content after bubble finishes resizing
+        ///
+        /// Note: The bubble resize is triggered by the withAnimation wrapping showSkipOnboarding.
+        /// Unlike state.type changes which trigger the parent's .animation() modifier, this internal
+        /// view switch requires an explicit animation context to smoothly resize the bubble.
+        private func showSkipOnboardingDialog() {
+            // Phase 1: Hide current content
+            showContent = false
+            skipAction()
+
+            if #available(iOS 17.0, *) {
+                // Phase 2: Animate view switch and bubble resize
+                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                    showSkipOnboarding = true
+                } completion: {
+                    // Phase 3: Show new content after bubble finishes resizing
+                    withAnimation {
+                        showContent = true
+                    }
+                }
+            } else {
+                // Phase 2: Animate view switch and bubble resize
+                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                    showSkipOnboarding = true
+                }
+
+                // Phase 3: Show new content after bubble finishes resizing (timing-based fallback)
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                    withAnimation {
+                        showContent = true
+                    }
+                }
+            }
         }
 
     }

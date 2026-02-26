@@ -298,37 +298,6 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         XCTAssertFalse(cocoaErrorPixels.isEmpty, "cocoaError pixel should still be fired for resource fetch failures")
     }
 
-    func testWhenMockVaultHasBrokers_thenFetchAllBrokerResourcesReturnsMatchingResources() throws {
-        guard let vault else {
-            XCTFail("Mock vault issue")
-            return
-        }
-
-        let broker = DataBroker(
-            id: 99,
-            name: "Broker",
-            url: "broker.com",
-            steps: [],
-            version: "1.0.0",
-            schedulingConfig: .mock,
-            optOutUrl: "",
-            eTag: "etag-1",
-            removedAt: nil
-        )
-        vault.brokers = [broker]
-
-        let brokerResources = try vault.fetchAllBrokerResources()
-
-        XCTAssertEqual(brokerResources.count, 1)
-        let fetchedResource = try XCTUnwrap(brokerResources.first)
-        XCTAssertEqual(fetchedResource.broker.url, broker.url)
-        XCTAssertEqual(fetchedResource.broker.version, broker.version)
-
-        let decodedBroker = try JSONDecoder().decode(DataBroker.self, from: fetchedResource.rawJSON)
-        XCTAssertEqual(decodedBroker.url, broker.url)
-        XCTAssertEqual(decodedBroker.version, broker.version)
-    }
-
     private func brokerResource(fileName: String) throws -> BrokerResource {
         let fileURL = try XCTUnwrap(
             Bundle.module.url(

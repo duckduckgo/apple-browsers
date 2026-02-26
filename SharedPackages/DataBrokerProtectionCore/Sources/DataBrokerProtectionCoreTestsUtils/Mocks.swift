@@ -619,6 +619,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var lastPreferredRunDateOnScan: Date?
     public var lastSavedBrokerResource: BrokerResource?
     public var lastUpdatedBrokerResource: BrokerResource?
+    public var brokerFixturesBundle: Bundle?
 
     public var wasDeleteOptOutEmailConfirmationCalled = false
     public var lastDeletedEmailConfirmationProfileQueryId: Int64?
@@ -650,6 +651,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         lastPreferredRunDateOnScan = nil
         lastSavedBrokerResource = nil
         lastUpdatedBrokerResource = nil
+        brokerFixturesBundle = nil
     }
 
     public func save(profile: DataBrokerProtectionProfile) throws -> Int64 {
@@ -712,7 +714,18 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 
     public func fetchAllBrokerResources() throws -> [BrokerResource] {
-        return []
+        let fileManager = MockFileManager()
+        fileManager.fixtureBundle = brokerFixturesBundle
+        fileManager.fixtureFileNames = [
+            "valid-broker",
+            "local-broker-1.0.0",
+            "local-broker-1.0.1",
+            "local-broker-removed-1.0.0"
+        ]
+        fileManager.hasUnzippedContent = true
+        let fileURLs = try fileManager.contentsOfDirectory(at: URL(string: "http://example.com")!, includingPropertiesForKeys: nil)
+
+        return try fileURLs.map(DataBroker.initFromResource(_:))
     }
 
     public func fetchAllNonRemovedBrokers() throws -> [DataBroker] {
@@ -2112,8 +2125,21 @@ public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
 public final class MockFileManager: FileManager, @unchecked Sendable {
     public var hasUnzippedContent = false
 
-    let fileNames = ["valid-broker", "invalid-broker-with-unsupported-type", "invalid-broker-with-unsupported-action"]
-    lazy var fileURLs = fileNames.compactMap { Bundle.module.url(forResource: $0, withExtension: "json", subdirectory: "Resources") }
+    public var fixtureBundle: Bundle?
+    public var fixtureFileNames: [String]?
+    private let fileNames = [
+        "valid-broker",
+        "invalid-broker-with-unsupported-step",
+        "invalid-broker-with-unsupported-action",
+        "local-broker-1.0.0",
+        "local-broker-1.0.1",
+        "local-broker-removed-1.0.0"
+    ]
+    private var fileURLs: [URL] {
+        return (fixtureFileNames ?? fileNames).compactMap {
+            fixtureBundle?.url(forResource: $0, withExtension: "json", subdirectory: "BundleResources")
+        }
+    }
 
     public override func fileExists(atPath path: String, isDirectory: UnsafeMutablePointer<ObjCBool>?) -> Bool {
         hasUnzippedContent

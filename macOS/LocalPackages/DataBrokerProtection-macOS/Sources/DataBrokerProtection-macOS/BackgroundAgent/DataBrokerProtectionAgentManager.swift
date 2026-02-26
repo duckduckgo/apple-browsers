@@ -223,7 +223,7 @@ public final class DataBrokerProtectionAgentManager {
     /// Snapshots the current authentication state and caches whether this is a free scan run.
     /// Returns the current `isAuthenticated` value for callers that need it.
     @discardableResult
-    private func refreshFreeScanState() async -> Bool {
+    private func refreshIsAuthenticatedState() async -> Bool {
         let isAuthenticated = await authenticationManager.isUserAuthenticated
         currentRunIsFreeScan = !isAuthenticated
         return isAuthenticated
@@ -346,7 +346,7 @@ private extension DataBrokerProtectionAgentManager {
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
         Task {
-            let isAuthenticated = await refreshFreeScanState()
+            let isAuthenticated = await refreshIsAuthenticatedState()
             if isAuthenticated {
                 queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
             } else {
@@ -429,7 +429,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
         let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
         eventPixels.markInitialScansStarted()
 
-        await refreshFreeScanState()
+        await refreshIsAuthenticatedState()
 
         eventsHandler.fire(.profileSaved)
         await fireMonitoringPixels()

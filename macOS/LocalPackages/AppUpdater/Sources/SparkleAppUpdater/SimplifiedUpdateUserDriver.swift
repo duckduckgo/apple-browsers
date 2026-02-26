@@ -31,19 +31,6 @@ public final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
 
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
-    private var pendingUpdateSince: Date {
-        get { (try? settings.pendingUpdateSince) ?? .distantPast }
-        set { try? settings.set(newValue, for: \.pendingUpdateSince) }
-    }
-
-    public func updateLastUpdateDownloadedDate() {
-        pendingUpdateSince = Date()
-    }
-
-    public var timeIntervalSinceLastUpdateDownloaded: TimeInterval {
-        Date().timeIntervalSince(pendingUpdateSince)
-    }
-
     private var onDismiss: () -> Void = {}
 
     private var bytesToDownload: UInt64 = 0
@@ -68,7 +55,6 @@ public final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
 
     private func dismissCurrentUpdate() {
         onDismiss()
-        pendingUpdateSince = .distantPast
     }
 
     /// Cancels the current update and dismisses any UI.

@@ -34,17 +34,20 @@ extension UIViewController {
         return []
     }
 
-    public func presentShareSheet(withItems activityItems: [Any], fromButtonItem buttonItem: UIBarButtonItem, completion: UIActivityViewController.CompletionWithItemsHandler? = nil) {
+    public func presentShareSheet(withItems activityItems: [Any], fromView sourceView: UIView, atPoint point: Point? = nil, overrideInterfaceStyle: UIUserInterfaceStyle? = nil, widthObserver: AppWidthObserver = .shared, completion: UIActivityViewController.CompletionWithItemsHandler? = nil) {
         let activities = buildActivities()
         let shareController = UIActivityViewController(activityItems: activityItems, applicationActivities: activities)
         shareController.completionWithItemsHandler = completion
-        present(controller: shareController, fromButtonItem: buttonItem)
-    }
 
-    public func presentShareSheet(withItems activityItems: [Any], fromView sourceView: UIView, atPoint point: Point? = nil, overrideInterfaceStyle: UIUserInterfaceStyle? = nil, completion: UIActivityViewController.CompletionWithItemsHandler? = nil) {
-        let activities = buildActivities()
-        let shareController = UIActivityViewController(activityItems: activityItems, applicationActivities: activities)
-        shareController.completionWithItemsHandler = completion
+        if #available(iOS 26, *), !widthObserver.isLargeWidth {
+            // Force the sheet to show on small/phone mode
+            //  Not that 'isSmall' above is not used to determine which UI to show on iPad, only in onboarding
+            shareController.modalPresentationStyle = .formSheet
+        } else {
+            // This is the pre iOS 26 default anyway
+            shareController.modalPresentationStyle = .automatic
+        }
+
         if let overrideInterfaceStyle {
             shareController.overrideUserInterfaceStyle = overrideInterfaceStyle
         }

@@ -503,32 +503,38 @@ final class AttributedMetricManagerTests: XCTestCase {
 
     // MARK: - Average AD Click Tests
 
-    /// Tests average ad click pixel (does not fire on install day)
+    /// Tests average ad click pixel (does not fire on install day, includes day_average)
     ///
     /// ## Input → Output Mapping
     ///
     /// | Days Since Install | Ad Clicks | Bucketed Count | Parameters |
     /// |-------------------|-----------|----------------|------------|
     /// | 0 (install day)   | any       | -              | No pixel fired (isSameDayOfInstallDate check) |
-    /// | 1+ (any other day)| varies    | varies         | count=bucketed, origin/installDate |
+    /// | 1+ (any other day)| varies    | varies         | count=bucketed, day_average=days_counted, origin/installDate |
     ///
     /// ## Bucket Configuration
     /// - user_average_ad_clicks_past_week: [2, 5] → ≤2 maps to 0, ≤5 maps to 1, >5 maps to 2
     ///
     /// ## Test Validation
     /// - Pixel does NOT fire on install day (day 0)
-    /// - Pixel fires on subsequent days with bucketed count
+    /// - Pixel fires on subsequent days with bucketed count and day_average
     /// - Trigger: .userDidSelectAD calls processAverageAdClick()
     func testProcessAverageAdClick() {
         let pixelExpectation = XCTestExpectation(description: "Average ad click pixel fired")
         var capturedCount: Int?
+        var capturedDayAverage: Int?
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
             case "attributed_metric_average_ad_clicks_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
+                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
+                    return
+                }
+                if capturedDayAverage == nil {
+                    XCTFail("Missing or invalid day_average parameter")
                     return
                 }
                 pixelExpectation.fulfill()
@@ -553,36 +559,43 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
+        XCTAssertEqual(capturedDayAverage, 1, "Should report 1 day counted (ad click recorded on day 0)")
     }
 
     // MARK: - Average Duck.AI Chat Tests
 
-    /// Tests average Duck.AI chat pixel (does not fire on install day)
+    /// Tests average Duck.AI chat pixel (does not fire on install day, includes day_average)
     ///
     /// ## Input → Output Mapping
     ///
     /// | Days Since Install | AI Chats | Bucketed Count | Parameters |
     /// |-------------------|----------|----------------|------------|
     /// | 0 (install day)   | any      | -              | No pixel fired (isSameDayOfInstallDate check) |
-    /// | 1+ (any other day)| varies   | varies         | count=bucketed, origin/installDate |
+    /// | 1+ (any other day)| varies   | varies         | count=bucketed, day_average=days_counted, origin/installDate |
     ///
     /// ## Bucket Configuration
     /// - user_average_duck_ai_usage_past_week: [5, 9] → ≤5 maps to 0, ≤9 maps to 1, >9 maps to 2
     ///
     /// ## Test Validation
     /// - Pixel does NOT fire on install day (day 0)
-    /// - Pixel fires on subsequent days with bucketed count
+    /// - Pixel fires on subsequent days with bucketed count and day_average
     /// - Trigger: .userDidDuckAIChat calls processAverageDuckAIChat()
     func testProcessAverageDuckAIChat() {
         let pixelExpectation = XCTestExpectation(description: "Average Duck.AI chat pixel fired")
         var capturedCount: Int?
+        var capturedDayAverage: Int?
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
             case "attributed_metric_average_duck_ai_usage_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
+                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
+                    return
+                }
+                if capturedDayAverage == nil {
+                    XCTFail("Missing or invalid day_average parameter")
                     return
                 }
                 pixelExpectation.fulfill()
@@ -607,6 +620,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
+        XCTAssertEqual(capturedDayAverage, 1, "Should report 1 day counted (Duck.AI chat recorded on day 0)")
     }
 
     // MARK: - Subscription Tests

@@ -1415,6 +1415,7 @@ public final class MockAppVersion: AppVersionNumberProvider {
 
 public final class MockStageDurationCalculator: StageDurationCalculator {
     public var isImmediateOperation: Bool = false
+    public var isFreeScan: Bool?
     public var attemptId: UUID = UUID()
     public var tries = 1
     public var stage: Stage?
@@ -2435,13 +2436,16 @@ public final class MockDataBrokerProtectionEventPixelsRepository: DataBrokerProt
         return false
     }
 
+    public var customInitialScansStartDate: Date?
+
     public func initialScansStartDate() -> Date? {
-        return nil
+        return customInitialScansStartDate
     }
 
     public func clear() {
         wasMarkWeeklyPixelSentCalled = false
         customGetLatestWeeklyPixel = nil
+        customInitialScansStartDate = nil
     }
 }
 

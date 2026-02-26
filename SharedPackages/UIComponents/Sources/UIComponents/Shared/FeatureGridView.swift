@@ -25,7 +25,6 @@ public enum FeatureGridLayoutConstants {
     public static let contentSpacing: CGFloat = 12
     public static let textSpacing: CGFloat = 6
     public static let cardPadding: CGFloat = 12
-    public static let cornerRadius: CGFloat = 8
     public static let borderWidth: CGFloat = 1
 
     public static let iconContainerSize: CGFloat = 32
@@ -33,6 +32,19 @@ public enum FeatureGridLayoutConstants {
 
     public static let defaultColumns: Int = 2
     public static let defaultCellMinHeight: CGFloat = 90
+
+#if os(iOS)
+    private static var isiOS26: Bool {
+        if #available(iOS 26, *) {
+            return true
+        } else {
+            return false
+        }
+    }
+    public static let cornerRadius: CGFloat = Self.isiOS26 ? 24 : 8
+#elseif os(macOS)
+    public static let cornerRadius: CGFloat = 8
+#endif
 }
 
 private typealias LayoutConstants = FeatureGridLayoutConstants

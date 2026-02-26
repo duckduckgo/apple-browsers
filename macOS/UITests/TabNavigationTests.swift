@@ -2085,6 +2085,18 @@ class TabNavigationTests: UITestCase {
         app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
+        func panelBookmarkTargetItem() -> XCUIElement {
+            let bookmarksPanelPopover = app.popovers.firstMatch
+            if !bookmarksPanelPopover.exists {
+                app.openBookmarksPanel()
+            }
+
+            XCTAssertTrue(bookmarksPanelPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+            let item = bookmarksPanelPopover.outlines.firstMatch.staticTexts["Panel Bookmark Target"].firstMatch
+            XCTAssertTrue(item.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+            return item
+        }
+
         // Open test page and bookmark it.
         openTestPage("Panel Bookmark Target")
         app.mainMenuAddBookmarkMenuItem.click()
@@ -2096,11 +2108,8 @@ class TabNavigationTests: UITestCase {
         openTestPage("Panel Bookmark Source")
 
         // Regular click from bookmarks panel should open current tab.
-        app.openBookmarksPanel()
-        var panelBookmarkItem = app.popovers.firstMatch.outlines.firstMatch.staticTexts["Panel Bookmark Target"].firstMatch
-        // Bookmark item should be visible in the panel.
-        XCTAssertTrue(panelBookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        panelBookmarkItem.click()
+        var panelBookmarkItem = panelBookmarkTargetItem()
+        panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         // Target page should be active in the current tab.
         XCTAssertTrue(app.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // No new window should be created.
@@ -2113,12 +2122,10 @@ class TabNavigationTests: UITestCase {
         // Cmd click from panel should open background tab.
         app.activateAddressBar()
         openTestPage("Panel Bookmark Source")
-        app.openBookmarksPanel()
-        panelBookmarkItem = app.popovers.firstMatch.outlines.firstMatch.staticTexts["Panel Bookmark Target"].firstMatch
-        // Bookmark item should be visible in the panel.
-        XCTAssertTrue(panelBookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        panelBookmarkItem = panelBookmarkTargetItem()
+        let commandPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         XCUIElement.perform(withKeyModifiers: [.command]) {
-            panelBookmarkItem.click()
+            commandPanelBookmarkClick.click()
         }
         // Target tab should be created.
         XCTAssertTrue(app.tabs["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -2133,12 +2140,10 @@ class TabNavigationTests: UITestCase {
         try app.tabs.element(boundBy: 1).closeTab()
 
         // Cmd+Shift click from panel should open selected tab.
-        app.openBookmarksPanel()
-        panelBookmarkItem = app.popovers.firstMatch.outlines.firstMatch.staticTexts["Panel Bookmark Target"].firstMatch
-        // Bookmark item should be visible in the panel.
-        XCTAssertTrue(panelBookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        panelBookmarkItem = panelBookmarkTargetItem()
+        let commandShiftPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         XCUIElement.perform(withKeyModifiers: [.command, .shift]) {
-            panelBookmarkItem.click()
+            commandShiftPanelBookmarkClick.click()
         }
         // Target page should be active.
         XCTAssertTrue(app.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -2155,12 +2160,10 @@ class TabNavigationTests: UITestCase {
         app.closeCurrentTab()
 
         // Cmd+Option click from panel should open background window.
-        app.openBookmarksPanel()
-        panelBookmarkItem = app.popovers.firstMatch.outlines.firstMatch.staticTexts["Panel Bookmark Target"].firstMatch
-        // Bookmark item should be visible in the panel.
-        XCTAssertTrue(panelBookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        panelBookmarkItem = panelBookmarkTargetItem()
+        let commandOptionPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         XCUIElement.perform(withKeyModifiers: [.command, .option]) {
-            panelBookmarkItem.click()
+            commandOptionPanelBookmarkClick.click()
         }
         let backgroundWindow = app.windows.element(boundBy: 1)
         // Background window should appear.
@@ -2171,12 +2174,10 @@ class TabNavigationTests: UITestCase {
         XCTAssertEqual(app.windows.count, 2)
 
         // Cmd+Option+Shift click from panel should open selected window.
-        app.windows.firstMatch.openBookmarksPanel()
-        panelBookmarkItem = app.popovers.firstMatch.outlines.firstMatch.staticTexts["Panel Bookmark Target"].firstMatch
-        // Bookmark item should be visible in the panel.
-        XCTAssertTrue(panelBookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        panelBookmarkItem = panelBookmarkTargetItem()
+        let commandOptionShiftPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         XCUIElement.perform(withKeyModifiers: [.command, .option, .shift]) {
-            panelBookmarkItem.click()
+            commandOptionShiftPanelBookmarkClick.click()
         }
         let activeWindow = app.windows.firstMatch
         // Target page should load in the active new window.

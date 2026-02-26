@@ -709,6 +709,12 @@
                 "description": "Ordinal number for attempts within the current scan cycle"
             },
             {
+                "key": "feature.data.ext.scan.free_scan",
+                "type": "string",
+                "description": "Whether this scan attempt belongs to a free (unauthenticated) user",
+                "enum": ["true", "false"]
+            },
+            {
                 "key": "feature.data.ext.scan.latency_ms",
                 "type": "string",
                 "description": "Duration in milliseconds between the scan attempt start and completion"
@@ -798,7 +804,8 @@
                 "enum": ["on", "off", "unsupported", "unknown"]
             },
             "dbpParentBroker",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_mac_dbp_search_stage_main_status_no_results": {
@@ -837,7 +844,8 @@
             "dbpParentBroker",
             "dbpActionId",
             "dbpActionType",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_mac_dbp_search_stage_main_status_error": {
@@ -886,7 +894,8 @@
             "dbpParentBroker",
             "dbpActionId",
             "dbpActionType",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_mac_dbp_data_broker_action-failed_error": {

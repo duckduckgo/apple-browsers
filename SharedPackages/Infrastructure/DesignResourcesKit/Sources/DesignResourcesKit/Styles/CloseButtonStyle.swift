@@ -1,6 +1,5 @@
 //
-//  BrowsingMenuCloseButtonStyle.swift
-//  DuckDuckGo
+//  CloseButtonStyle.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,9 +18,13 @@
 
 import SwiftUI
 
-struct BrowsingMenuCloseButtonStyle: ButtonStyle {
+#if os(iOS)
 
-    func makeBody(configuration: Configuration) -> some View {
+public struct CloseButtonStyle: ButtonStyle {
+
+    public init() { }
+
+    public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundColor(Color(designSystemColor: .iconsSecondary))
             .padding(Constant.padding)
@@ -30,12 +33,14 @@ struct BrowsingMenuCloseButtonStyle: ButtonStyle {
             .padding(Constant.padding)
             .contentShape(Circle()) // Makes whole button area tappable, when there's no background
     }
-    
+
     private func backgroundColor(_ isPressed: Bool) -> Color {
         isPressed ? Color(designSystemColor: .controlsFillTertiary) : Color(designSystemColor: .controlsFillPrimary)
     }
 
-    struct Constant {
-        static let padding: CGFloat = 4
+    public struct Constant {
+        public static let padding: CGFloat = 4
     }
 }
+
+#endif // os(iOS)

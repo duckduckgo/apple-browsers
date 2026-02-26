@@ -98,9 +98,9 @@ public enum DataBrokerProtectionSharedPixels {
         public static let isFreeScan = "free_scan"
     }
 
-    case httpError(error: Error, code: Int, dataBroker: String, version: String)
-    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?)
-    case otherError(error: Error, dataBroker: String, version: String)
+    case httpError(error: Error, code: Int, dataBroker: String, version: String, isFreeScan: Bool?)
+    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?, isFreeScan: Bool?)
+    case otherError(error: Error, dataBroker: String, version: String, isFreeScan: Bool?)
     case databaseError(error: Error, functionOccurredIn: String)
     case cocoaError(error: Error, functionOccurredIn: String)
     case miscError(error: Error, functionOccurredIn: String)
@@ -308,21 +308,24 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 
     public var parameters: [String: String]? {
         switch self {
-        case .httpError(_, let code, let dataBroker, let version):
-            return ["code": String(code),
-                    Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: version]
-        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent):
-            return ["actionID": actionId,
-                    "message": message,
-                    Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: version,
-                    "stepType": stepType?.rawValue ?? "unknown",
-                    Consts.parentKey: dataBrokerParent ?? ""]
-        case .otherError(let error, let dataBroker, let version):
-            return ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
-                    Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: version]
+        case .httpError(_, let code, let dataBroker, let version, let isFreeScan):
+            let params = ["code": String(code),
+                          Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: version]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent, let isFreeScan):
+            let params = ["actionID": actionId,
+                          "message": message,
+                          Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: version,
+                          "stepType": stepType?.rawValue ?? "unknown",
+                          Consts.parentKey: dataBrokerParent ?? ""]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .otherError(let error, let dataBroker, let version, let isFreeScan):
+            let params = ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
+                          Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: version]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .databaseError(_, let functionOccurredIn),
                 .cocoaError(_, let functionOccurredIn),
                 .miscError(_, let functionOccurredIn):
@@ -712,9 +715,9 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultDatabaseRecreated:
                 self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
-            case .httpError(let error, _, _, _),
-                    .actionFailedError(let error, _, _, _, _, _, _),
-                    .otherError(let error, _, _):
+            case .httpError(let error, _, _, _, _),
+                    .actionFailedError(let error, _, _, _, _, _, _, _),
+                    .otherError(let error, _, _, _):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),
                     .cocoaError(let error, _),

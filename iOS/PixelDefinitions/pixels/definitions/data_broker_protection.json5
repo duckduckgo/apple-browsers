@@ -1035,7 +1035,8 @@
                 "type": "string",
                 "enum": ["scan", "optOut", "unknown"]
             },
-            "dbpParentBroker"
+            "dbpParentBroker",
+            "dbpIsFreeScan"
         ]
     },
     "m_ios_dbp_notification_sent_first_scan_complete": {

@@ -926,7 +926,8 @@
                 "type": "string",
                 "enum": ["scan", "optOut", "unknown"]
             },
-            "dbpParentBroker"
+            "dbpParentBroker",
+            "dbpIsFreeScan"
         ]
     },
     "m_mac_dbp_engagement_dau": {

@@ -49,7 +49,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
 
     func testMemoryUsagePixelNames() {
         // Given/When
-        let pixels: [(MemoryUsagePixel, String)] = [
+        let thresholds: [(MemoryUsagePixel.Threshold, String)] = [
             (.less512, "m_mac_memory_usage_less_512"),
             (.range512_1023, "m_mac_memory_usage_512_1023"),
             (.range1024_2047, "m_mac_memory_usage_1024_2047"),
@@ -60,29 +60,26 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         ]
 
         // Then
-        for (pixel, expectedName) in pixels {
-            XCTAssertEqual(pixel.name, expectedName, "Pixel name mismatch for \(pixel)")
+        for (threshold, expectedName) in thresholds {
+            let pixel = MemoryUsagePixel.memoryUsage(threshold: threshold, uptimeMinutes: 0)
+            XCTAssertEqual(pixel.name, expectedName, "Pixel name mismatch for \(threshold)")
         }
     }
 
     func testMemoryUsagePixelParameters() {
         // Given/When
-        let allPixels: [MemoryUsagePixel] = [
-            .less512, .range512_1023, .range1024_2047, .range2048_4095,
-            .range4096_8191, .range8192_16383, .range16384_more
-        ]
+        let pixel = MemoryUsagePixel.memoryUsage(threshold: .less512, uptimeMinutes: 42)
 
         // Then
-        for pixel in allPixels {
-            XCTAssertNil(pixel.parameters, "Pixel should have no parameters: \(pixel)")
-        }
+        XCTAssertEqual(pixel.parameters?["uptime"], "42")
+        XCTAssertEqual(pixel.parameters?.count, 1)
     }
 
     // MARK: - Pixel Selection Tests
 
-    func testPixelSelection_ForVariousMemoryValues() {
+    func testThresholdSelection_ForVariousMemoryValues() {
         // Test bucket boundaries
-        let testCases: [(Double, MemoryUsagePixel)] = [
+        let testCases: [(Double, MemoryUsagePixel.Threshold)] = [
             // Less than 512MB bucket
             (0, .less512),
             (100, .less512),
@@ -125,12 +122,15 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
             (32768, .range16384_more)
         ]
 
-        for (memoryMB, expectedPixel) in testCases {
+        for (memoryMB, expectedThreshold) in testCases {
             // When
-            let pixel = MemoryUsagePixel.pixel(forMB: memoryMB)
+            let threshold = MemoryUsagePixel.threshold(forMB: memoryMB)
 
             // Then
-            XCTAssertEqual(pixel, expectedPixel, "Memory \(memoryMB) MB should map to \(expectedPixel)")
+            XCTAssertEqual(
+                MemoryUsagePixel.memoryUsage(threshold: threshold, uptimeMinutes: 0).name,
+                MemoryUsagePixel.memoryUsage(threshold: expectedThreshold, uptimeMinutes: 0).name,
+                "Memory \(memoryMB) MB should map to \(expectedThreshold)")
         }
     }
 
@@ -156,7 +156,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
     func testWhenFeatureFlagEnabled_ThenFiresPixelImmediately() {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 1024
-        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.range1024_2047, frequency: .daily)]
+        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.memoryUsage(threshold: .range1024_2047, uptimeMinutes: 0), frequency: .daily)]
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = MemoryUsageThresholdReporter(
             memoryUsageMonitor: mockMemoryUsageMonitor,
@@ -174,7 +174,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
     func testWhenFeatureFlagToggledOff_ThenStopsMonitoring() {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 1024
-        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.range1024_2047, frequency: .daily)]
+        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.memoryUsage(threshold: .range1024_2047, uptimeMinutes: 0), frequency: .daily)]
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = MemoryUsageThresholdReporter(
             memoryUsageMonitor: mockMemoryUsageMonitor,
@@ -203,7 +203,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
     func testWhenMemoryChanges_ThenFiresCorrectThresholdPixel() {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 400
-        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.less512, frequency: .daily)]
+        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.memoryUsage(threshold: .less512, uptimeMinutes: 0), frequency: .daily)]
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = MemoryUsageThresholdReporter(
             memoryUsageMonitor: mockMemoryUsageMonitor,
@@ -221,7 +221,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
     func testWhenMemoryIsHigh_ThenFiresCorrectBucketPixel() {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 20000
-        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.range16384_more, frequency: .daily)]
+        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.memoryUsage(threshold: .range16384_more, uptimeMinutes: 0), frequency: .daily)]
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = MemoryUsageThresholdReporter(
             memoryUsageMonitor: mockMemoryUsageMonitor,
@@ -241,7 +241,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         mockMemoryUsageMonitor.currentResidentMB = 2000   // Would be 2-4GB bucket
         mockMemoryUsageMonitor.currentPhysFootprintMB = 700  // Should be 512-1023 bucket
         mockPixelFiring.expectedFireCalls = [
-            .init(pixel: MemoryUsagePixel.range512_1023, frequency: .daily)
+            .init(pixel: MemoryUsagePixel.memoryUsage(threshold: .range512_1023, uptimeMinutes: 0), frequency: .daily)
         ]
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = MemoryUsageThresholdReporter(
@@ -262,7 +262,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
     func testWhenSamePixelFiredTwice_ThenOnlyFiresOnce() {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 1024
-        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.range1024_2047, frequency: .daily)]
+        mockPixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.memoryUsage(threshold: .range1024_2047, uptimeMinutes: 0), frequency: .daily)]
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = MemoryUsageThresholdReporter(
             memoryUsageMonitor: mockMemoryUsageMonitor,
@@ -285,8 +285,8 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 400
         mockPixelFiring.expectedFireCalls = [
-            .init(pixel: MemoryUsagePixel.less512, frequency: .daily),
-            .init(pixel: MemoryUsagePixel.range1024_2047, frequency: .daily)
+            .init(pixel: MemoryUsagePixel.memoryUsage(threshold: .less512, uptimeMinutes: 0), frequency: .daily),
+            .init(pixel: MemoryUsagePixel.memoryUsage(threshold: .range1024_2047, uptimeMinutes: 0), frequency: .daily)
         ]
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = MemoryUsageThresholdReporter(
@@ -309,8 +309,8 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 400
         mockPixelFiring.expectedFireCalls = [
-            .init(pixel: MemoryUsagePixel.less512, frequency: .daily),
-            .init(pixel: MemoryUsagePixel.range1024_2047, frequency: .daily)
+            .init(pixel: MemoryUsagePixel.memoryUsage(threshold: .less512, uptimeMinutes: 0), frequency: .daily),
+            .init(pixel: MemoryUsagePixel.memoryUsage(threshold: .range1024_2047, uptimeMinutes: 0), frequency: .daily)
         ]
         mockFeatureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
         sut = MemoryUsageThresholdReporter(
@@ -334,7 +334,7 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
     // MARK: - Boundary Tests
 
     func testBucketBoundaries_ExactValues() {
-        let boundaryTests: [(Double, MemoryUsagePixel)] = [
+        let boundaryTests: [(Double, MemoryUsagePixel.Threshold)] = [
             (512, .range512_1023),
             (1024, .range1024_2047),
             (2048, .range2048_4095),
@@ -343,12 +343,12 @@ final class MemoryUsageThresholdReporterTests: XCTestCase {
             (16384, .range16384_more),
         ]
 
-        for (memoryMB, expectedPixel) in boundaryTests {
+        for (memoryMB, expectedThreshold) in boundaryTests {
             // Given
             let monitor = MockMemoryUsageMonitor()
             monitor.currentPhysFootprintMB = memoryMB
             let pixelFiring = PixelKitMock()
-            pixelFiring.expectedFireCalls = [.init(pixel: expectedPixel, frequency: .daily)]
+            pixelFiring.expectedFireCalls = [.init(pixel: MemoryUsagePixel.memoryUsage(threshold: expectedThreshold, uptimeMinutes: 0), frequency: .daily)]
             let featureFlagger = MockFeatureFlagger()
             featureFlagger.enabledFeatureFlags = [.memoryUsageReporting]
 

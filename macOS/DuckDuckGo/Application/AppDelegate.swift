@@ -914,8 +914,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let onboardingManager = onboardingContextualDialogsManager
         let notificationPresenter = DefaultBrowserAndDockPromptNotificationPresenter(reportABrowserProblemPresenter: Self.openReportABrowserProblem)
-        defaultBrowserAndDockPromptService = DefaultBrowserAndDockPromptService(featureFlagger: featureFlagger,
-                                                                                privacyConfigManager: privacyConfigurationManager,
+        defaultBrowserAndDockPromptService = DefaultBrowserAndDockPromptService(privacyConfigManager: privacyConfigurationManager,
                                                                                 keyValueStore: keyValueStore,
                                                                                 notificationPresenter: notificationPresenter,
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted })
@@ -1090,6 +1089,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             memoryUsageMonitor: memoryUsageMonitor,
             featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
+            launchDate: appLaunchDate,
             logger: .memory
         )
 

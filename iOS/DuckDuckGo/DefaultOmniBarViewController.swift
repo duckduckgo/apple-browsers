@@ -296,7 +296,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private func shouldAutoSelectTextForUrl(_ textField: UITextField) -> Bool {
         guard let textFieldText = textField.text else { return false }
-        return URL(trimmedAddressBarString: textFieldText.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) != nil
+        if URL(trimmedAddressBarString: textFieldText.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) != nil {
+            return true
+        }
+        return omniDelegate?.shouldAutoSelectTextForSERPQuery() ?? false
     }
 }
 
@@ -328,13 +331,14 @@ extension DefaultOmniBarViewController {
             return
         }
 
-        // When switching to duck.ai without prior address bar interaction, the text field
-        // may contain the current page URL. Clear it so the expanded view starts empty.
-        if mode == .aiChat && !omniBarView.textField.isEditing {
+        // When switching to duck.ai without editing the auto-selected URL, clear it so
+        // the expanded view starts empty.
+        if mode == .aiChat && shouldClearTextWhenSwitchingToDuckAI() {
             omniBarView.textField.text = ""
         }
 
-        let shouldTransferKeyboard = transition.needsKeyboardTransfer && !isSuppressingKeyboardTransfer
+        let isKeyboardActive = omniBarView.aiChatTextView.isFirstResponder || omniBarView.textField.isFirstResponder
+        let shouldTransferKeyboard = transition.needsKeyboardTransfer && !isSuppressingKeyboardTransfer && isKeyboardActive
 
         if shouldTransferKeyboard {
             modeToggleTextModel.beginTransition()
@@ -354,14 +358,33 @@ extension DefaultOmniBarViewController {
         }
     }
 
-    /// Replicates the super's textFieldDidBeginEditing logic but deliberately skips
-    /// `selectAll` so text isn't highlighted when transferring from duck.ai mode.
     fileprivate func handleIPadTextFieldDidBeginEditingDuringTransfer() {
-        DispatchQueue.main.async {
-            _ = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView)
-            self.refreshState(self.state.onEditingStartedState)
-            self.omniDelegate?.onDidBeginEditing()
+        _ = omniDelegate?.onTextFieldDidBeginEditing(barView)
+        refreshState(state.onEditingStartedState)
+        omniDelegate?.onDidBeginEditing()
+    }
+
+    private func shouldClearTextWhenSwitchingToDuckAI() -> Bool {
+        guard let textField = omniBarView.textField else {
+            return false
         }
+
+        // Preserve non-URL user input when switching to duck.ai.
+        guard let text = textField.text,
+              URL(trimmedAddressBarString: text.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) != nil else {
+            return false
+        }
+
+        // If we're not editing, this is page URL display text.
+        guard textField.isEditing else { return true }
+
+        // If full URL text remains selected, user hasn't interacted with it yet.
+        guard let selectedTextRange = textField.selectedTextRange,
+              let selectedText = textField.text(in: selectedTextRange) else {
+            return false
+        }
+
+        return selectedText == text
     }
 }
 
@@ -453,7 +476,6 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         let newQuery = textView.text ?? ""
 
         modeToggleTextModel.updateText(newQuery)
-        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
 
         if modeToggleTextModel.isTransitioning, !omniBarView.isSearchAreaExpanded {
             omniBarView.textField.text = newQuery
@@ -467,6 +489,8 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         } else {
             refreshState(state.onTextEnteredState)
         }
+
+        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -490,17 +514,11 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) {
-        DispatchQueue.main.async {
-            _ = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView)
-            self.refreshState(self.state.onEditingStartedState)
-            self.omniDelegate?.onDidBeginEditing()
-        }
+        _ = omniDelegate?.onTextFieldDidBeginEditing(barView)
+        refreshState(state.onEditingStartedState)
+        omniDelegate?.onDidBeginEditing()
 
         omniBarView.layoutIfNeeded()
-        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
-            self.omniBarView.isActiveState = true
-            self.omniBarView.layoutIfNeeded()
-        }
     }
 }
 

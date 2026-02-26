@@ -218,9 +218,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213313932650457
     case iPadAIToggle
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039
-    case fadeOutOnToggle
-
     /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
     case attributedMetrics
@@ -452,7 +449,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .fullDuckAIMode,
              .iPadDuckaiOnTab,
              .iPadAIToggle,
-             .fadeOutOnToggle,
              .attributedMetrics,
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
@@ -667,8 +663,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.iPadDuckaiOnTab))
         case .iPadAIToggle:
             return .internalOnly()
-        case .fadeOutOnToggle:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .onboardingSearchExperience:
@@ -710,7 +704,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .multiplePageContexts:
             return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
         case .aiChatSync:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
             return .remoteReleasable(.feature(.duckAiChatHistory))
         case .showWhatsNewPromptOnDemand:

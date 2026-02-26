@@ -459,6 +459,7 @@ public final class AttributedMetricManager {
         pixelKit?.fire(AttributedMetricPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin,
                                                                          installDate: originOrInstall.installDate,
                                                                          count: bucket.value,
+                                                                         dayAverage: result.daysCounted,
                                                                          bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
                        includeAppVersionParameter: false,
@@ -494,6 +495,7 @@ public final class AttributedMetricManager {
         pixelKit?.fire(AttributedMetricPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin,
                                                                             installDate: originOrInstall.installDate,
                                                                             count: bucket.value,
+                                                                            dayAverage: result.daysCounted,
                                                                             bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
                        includeAppVersionParameter: false,
@@ -504,7 +506,6 @@ public final class AttributedMetricManager {
     // https://app.asana.com/1/137249556945/project/1205842942115003/task/1211301604929613?focus=true
 
     func processSubscriptionDay() {
-
         Logger.attributedMetric.log("Processing subscription purchase")
         guard dataStorage.subscriptionDate == nil else { return }
         dataStorage.subscriptionDate = dateProvider.now()

@@ -293,10 +293,14 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x011D34))
         case .buttonsPrimaryDefault:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen30)
+        case .buttonsPrimarySelected:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin60, darkColor: RebrandingColor.Pollen.pollen40)
         case .buttonsPrimaryText:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
         case .buttonsSecondaryDefault:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.gray10, darkColor: RebrandingColor.GrayScale.gray80)
+        case .buttonsSecondarySelected:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.gray20, darkColor: RebrandingColor.GrayScale.gray90)
         case .buttonsSecondaryText:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.Eggshell.eggshell10)
         case .controlsFillPrimary:

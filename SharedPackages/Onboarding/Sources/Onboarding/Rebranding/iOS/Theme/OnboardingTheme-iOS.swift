@@ -52,8 +52,10 @@ public extension OnboardingTheme {
             optionsListIconColor: Color(singleUseColor: .rebranding(.accentPrimary)),
             optionsListTextColor: Color(singleUseColor: .rebranding(.textLink)),
             primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
+            primaryButtonSelectedColor: Color(singleUseColor: .rebranding(.buttonsPrimarySelected)),
             primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText)),
             secondaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.controlsFillPrimary)),
+            secondaryButtonSelectedColor: Color(singleUseColor: .rebranding(.buttonsSecondarySelected)),
             secondaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsSecondaryText))
         )
         let bubbleMetrics = BubbleMetrics(

@@ -64,9 +64,11 @@ public extension SingleUseColor {
         case surfaceTertiary
 
         case buttonsPrimaryDefault
+        case buttonsPrimarySelected
         case buttonsPrimaryText
 
         case buttonsSecondaryDefault
+        case buttonsSecondarySelected
         case buttonsSecondaryText
 
         case controlsFillPrimary

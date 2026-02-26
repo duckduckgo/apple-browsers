@@ -45,10 +45,14 @@ public extension OnboardingTheme {
 
         /// Primary button background color.
         public let primaryButtonBackgroundColor: Color
+        /// Primary button background color when selected.
+        public let primaryButtonSelectedColor: Color
         /// Primary button foreground/text color.
         public let primaryButtonTextColor: Color
         /// Secondary button background color.
         public let secondaryButtonBackgroundColor: Color
+        /// Secondary button background color when selected.
+        public let secondaryButtonSelectedColor: Color
         /// Secondary button foreground/text color.
         public let secondaryButtonTextColor: Color
 
@@ -64,8 +68,10 @@ public extension OnboardingTheme {
             optionsListIconColor: Color,
             optionsListTextColor: Color,
             primaryButtonBackgroundColor: Color,
+            primaryButtonSelectedColor: Color,
             primaryButtonTextColor: Color,
             secondaryButtonBackgroundColor: Color,
+            secondaryButtonSelectedColor: Color,
             secondaryButtonTextColor: Color
         ) {
             self.background = background
@@ -78,8 +84,10 @@ public extension OnboardingTheme {
             self.optionsListIconColor = optionsListIconColor
             self.optionsListTextColor = optionsListTextColor
             self.primaryButtonBackgroundColor = primaryButtonBackgroundColor
+            self.primaryButtonSelectedColor = primaryButtonSelectedColor
             self.primaryButtonTextColor = primaryButtonTextColor
             self.secondaryButtonBackgroundColor = secondaryButtonBackgroundColor
+            self.secondaryButtonSelectedColor = secondaryButtonSelectedColor
             self.secondaryButtonTextColor = secondaryButtonTextColor
         }
 
@@ -108,8 +116,10 @@ public extension OnboardingTheme {
                 optionsListIconColor: optionsListIconColor,
                 optionsListTextColor: optionsListTextColor,
                 primaryButtonBackgroundColor: primaryButtonBackgroundColor,
+                primaryButtonSelectedColor: primaryButtonBackgroundColor,
                 primaryButtonTextColor: primaryButtonTextColor,
                 secondaryButtonBackgroundColor: primaryButtonBackgroundColor,
+                secondaryButtonSelectedColor: primaryButtonBackgroundColor,
                 secondaryButtonTextColor: primaryButtonTextColor
             )
         }

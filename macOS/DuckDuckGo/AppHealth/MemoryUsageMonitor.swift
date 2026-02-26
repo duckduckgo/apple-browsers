@@ -265,8 +265,11 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
         var totalBytes: UInt64 = 0
         var processCount = 0
 
+        let pidSelector = Selector(("pid"))
         for processInfo in processInfoList {
-            guard let pid = processInfo.value(forKey: "pid") as? pid_t, pid > 0 else { continue }
+            guard processInfo.responds(to: pidSelector),
+                  let pid = processInfo.value(forKey: "pid") as? pid_t,
+                  pid > 0 else { continue }
 
             var taskInfo = proc_taskinfo()
             let size = Int32(MemoryLayout<proc_taskinfo>.size)

@@ -60,7 +60,9 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
             return .empty
         }
         let (pinned, recent) = await suggestionsReader.fetchSuggestions(query: nil)
-        let chats = (pinned + recent.reversed()).map { $0.asNewTabPageAiChat }
+        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
+        viewModel.setChats(pinned: pinned, recent: recent)
+        let chats = viewModel.filteredSuggestions.map { $0.asNewTabPageAiChat }
         return NewTabPageDataModel.AiChatsData(chats: chats)
     }
 

@@ -99,9 +99,9 @@ final class StartupMetricsReporterTests: XCTestCase {
         await Task.yield()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["architecture"], "ARM")
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["active_processor_count"], "8")
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["battery_power"], "true")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["architecture"], environment.architecture)
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["active_processor_count"], environment.activeProcessorCount.description)
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["battery_power"], environment.isOnBattery!.description)
     }
 
     // MARK: - Session Restoration
@@ -125,7 +125,7 @@ final class StartupMetricsReporterTests: XCTestCase {
     func testPixelIncludesWindowAndTabCount() async {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
-        let (_, context, reporter) = buildMetricsReporter()
+        let (_, _, reporter) = buildMetricsReporter()
         let profiler = StartupProfiler()
 
         // When
@@ -133,8 +133,9 @@ final class StartupMetricsReporterTests: XCTestCase {
         await Task.yield()
 
         // Then
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["windows"], context.windows.description)
-        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["tabs"], context.standardTabs.description)
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["windows"], "1")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["standard_tabs"], "4")
+        XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["pinned_tabs"], "1")
     }
 
     // MARK: - Timing Metrics

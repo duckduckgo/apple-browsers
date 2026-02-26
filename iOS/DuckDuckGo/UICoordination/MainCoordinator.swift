@@ -18,7 +18,6 @@
 //
 
 import Foundation
-import os.log
 import Core
 import Combine
 import BrowserServicesKit

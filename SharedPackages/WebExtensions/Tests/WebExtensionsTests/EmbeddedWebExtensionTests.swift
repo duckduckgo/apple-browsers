@@ -93,7 +93,7 @@ final class EmbeddedWebExtensionTests: XCTestCase {
 
         XCTAssertNotNil(descriptor)
         XCTAssertEqual(descriptor?.type, .embedded)
-        XCTAssertEqual(descriptor?.resourceFilename, "com.duckduckgo.web-extension.embedded.zip")
+        XCTAssertEqual(descriptor?.resourceFilename, "duckduckgo-embedded-web-extension.zip")
     }
 
     func testRegistryAllContainsExpectedExtensions() {
@@ -286,7 +286,7 @@ final class SemanticVersionComparatorTests: XCTestCase {
         XCTAssertFalse(comparator.shouldUpgrade(installedVersion: "2.0.0", bundledVersion: "1.0.0"))
     }
 
-    func testWhenVersionsAreEqual_ThenReturnsFalse() {
+    func testWhenVersionsAreEqual_ThenShouldUpgradeReturnsFalse() {
         XCTAssertFalse(comparator.shouldUpgrade(installedVersion: "1.0.0", bundledVersion: "1.0.0"))
     }
 

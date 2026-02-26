@@ -59,9 +59,9 @@
             },
             {
                 "key": "wc_total_memory",
-                "type": "number",
-                "enum": [0, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536],
-                "description": "Total resident memory of all WebContent processes in MB, bucketed"
+                "type": "string",
+                "enum": ["0", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536", "unknown"],
+                "description": "Total resident memory of all WebContent processes in MB, bucketed. 'unknown' if unavailable."
             }
         ]
     }

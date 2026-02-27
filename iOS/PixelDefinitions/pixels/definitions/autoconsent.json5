@@ -102,7 +102,7 @@
         "description": "Fires when the autoconsent management cache is not set when handling a report message.",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["form_factor"],
+        "suffixes": ["form_factor", "daily"],
         "parameters": ["appVersion"]
     },
     "m_autoconsent_summary": {

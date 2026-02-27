@@ -469,7 +469,7 @@ extension AutoconsentUserScript {
         }
         guard let management else {
             Logger.autoconsent.error("Cache not properly set")
-            PixelKit.fire(AutoconsentPixel.errorCacheNotSet)
+            PixelKit.fire(AutoconsentPixel.errorCacheNotSet, frequency: .daily)
             replyHandler(nil, "Cache not properly set")
             return
         }

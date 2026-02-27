@@ -26,6 +26,7 @@ class BrowserChromeButton: UIButton {
         case primary
         case secondary
         case tabSwitcher
+        case toolbar
     }
 
     var type: ButtonType {
@@ -42,14 +43,14 @@ class BrowserChromeButton: UIButton {
         self.type = type
         super.init(frame: .zero)
 
-        applyConfiguration()
+        applyConfiguration(animated: false)
     }
     
     required init?(coder: NSCoder) {
         self.type = .primary
         super.init(coder: coder)
 
-        applyConfiguration()
+        applyConfiguration(animated: false)
     }
 
     func addBorder(borderFrame: CGRect = CGRect(x: 0, y: 0, width: 80, height: 40)) {
@@ -152,6 +153,8 @@ class BrowserChromeButton: UIButton {
             return .omniBarDefault()
         case .tabSwitcher:
             return .tabSwitcherDefault()
+        case .toolbar:
+            return .omniBarDefault()
         }
     }
 }
@@ -185,6 +188,14 @@ private extension BrowserChromeButton.ButtonType {
             default:
                 return UIColor(designSystemColor: .iconsSecondary)
             }
+
+        case .toolbar:
+            switch state {
+            case .disabled:
+                return UIColor(singleUseColor: SingleUseColor.toolbarButton).withAlphaComponent(0.5)
+            default:
+                return UIColor(singleUseColor: SingleUseColor.toolbarButton)
+            }
         }
     }
 }
@@ -213,4 +224,36 @@ private extension UIButton.Configuration {
 
         return config
     }
+
+}
+
+extension BrowserChromeButton {
+
+    static func createToolbarButtonItem(title: String, image: UIImage?, action: (() -> Void)? = nil) -> UIBarButtonItem {
+        let button = BrowserChromeButton(.toolbar)
+        if let image = image {
+            button.setImage(image)
+        }
+
+        if let action = action {
+            button.addAction(UIAction{ _ in
+                action()
+            }, for: .touchUpInside)
+        }
+
+        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+
+        let barItem = UIBarButtonItem(customView: button)
+
+#if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            barItem.hidesSharedBackground = true
+        }
+#endif
+
+        barItem.title = title
+
+        return barItem
+    }
+
 }

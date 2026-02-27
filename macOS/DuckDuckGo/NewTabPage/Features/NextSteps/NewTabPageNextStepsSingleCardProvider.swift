@@ -19,6 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Combine
+import CombineSchedulers
 import DDGSync
 import Foundation
 import NewTabPage
@@ -51,6 +52,8 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     private let syncService: DDGSyncing?
+
+    private let scheduler: AnySchedulerOf<DispatchQueue>
 
     private var debugPersistor: NewTabPageNextStepsCardsDebugPersistor = {
         NewTabPageNextStepsCardsDebugPersistor()
@@ -122,15 +125,17 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     /// For protocol conformance; this provider expects to display a single card at a time (not expandable).
     var isViewExpandedPublisher: AnyPublisher<Bool, Never> {
-        $isViewExpanded.dropFirst().eraseToAnyPublisher()
+        $isViewExpanded.dropFirst()
+            .subscribe(on: scheduler)
+            .eraseToAnyPublisher()
     }
 
     @Published private var cardList: [NewTabPageDataModel.CardID] = []
 
-    /// Returns the list of cards to be displayed, or an empty list if the continue set up cards view is considered outdated.
+    /// Returns the list of cards to be displayed, or an empty list if the continue set up cards view is considered outdated or was previously closed.
     /// The widget only shows the first card in the list, but we provide the full list of available cards so it can show a progress indicator.
     var cards: [NewTabPageDataModel.CardID] {
-        guard !appearancePreferences.isContinueSetUpCardsViewOutdated else {
+        guard !appearancePreferences.isContinueSetUpCardsViewOutdated, !appearancePreferences.continueSetUpCardsClosed else {
             return []
         }
         return cardList
@@ -138,11 +143,17 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> {
         let cards = $cardList.dropFirst().removeDuplicates()
-        let cardsDidBecomeOutdated = appearancePreferences.$isContinueSetUpCardsViewOutdated.removeDuplicates()
+        let cardsAreVisible = appearancePreferences.$isContinueSetUpCardsViewOutdated
+            .combineLatest(appearancePreferences.$continueSetUpCardsClosed)
+            .map { isOutdated, isClosed in
+                !(isOutdated || isClosed)
+            }
+            .removeDuplicates()
 
-        return Publishers.CombineLatest(cards, cardsDidBecomeOutdated)
-            .map { cards, isOutdated -> [NewTabPageDataModel.CardID] in
-                guard !isOutdated else {
+        return Publishers.CombineLatest(cards, cardsAreVisible)
+            .subscribe(on: scheduler)
+            .map { cards, areVisible -> [NewTabPageDataModel.CardID] in
+                guard areVisible else {
                     return []
                 }
                 return cards
@@ -163,7 +174,8 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          emailManager: EmailManager = EmailManager(),
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
-         syncService: DDGSyncing?) {
+         syncService: DDGSyncing?,
+         scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         self.cardActionHandler = cardActionHandler
         self.pixelHandler = pixelHandler
         self.persistor = persistor
@@ -178,6 +190,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.duckPlayerPreferences = duckPlayerPreferences
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
         self.syncService = syncService
+        self.scheduler = scheduler
         self.shouldUseAdvancedCardOrdering = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering)
         self.standardCards = defaultStandardCards
 

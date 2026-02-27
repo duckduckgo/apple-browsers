@@ -172,7 +172,7 @@ final class PermissionCenterViewModel: ObservableObject {
 
     /// Whether "Only allow pop-ups for this visit" option should be shown (based on feature flags)
     var showAllowPopupsForThisVisitOption: Bool {
-        featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.allowPopupsForCurrentPage)
+        featureFlagger.isFeatureOn(.popupBlocking)
     }
 
     // MARK: - Initialization

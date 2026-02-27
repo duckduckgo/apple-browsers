@@ -561,10 +561,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         handler.updateCurrentText(textView.text ?? "")
         handler.markUserInteraction()
 
-        // Only reload input views when fadeOutOnToggle is OFF to preserve legacy behavior.
-        // When ON, reloadInputViews() on every keystroke causes the publisher to deliver
+        // On iPad, reload input views on each keystroke (old behavior, without fade-out animation)
+        // On iPhone, skip reloadInputViews() as it causes the publisher to deliver
         // stale text values that interfere with iOS autocomplete.
-        // When deleting .fadeOutOnToggle flag, delete textView.reloadInputViews() here as this fixes
         // https://app.asana.com/1/137249556945/inbox/1210947754150827/item/1212750684390654/story/1212749500239461?focus=true
         if !handler.isUsingFadeOutAnimation {
             textView.reloadInputViews()

@@ -69,12 +69,14 @@ final class ReportingService {
         let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
         let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionManager)
         let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
+        let returningUserProvider = AttributedMetricReturningUserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
                                                                dataStoring: attributedMetricDataStorage,
                                                                featureFlagger: featureFlagging,
                                                                originProvider: nil,
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
+                                                               returningUserProvider: returningUserProvider,
                                                                settingsProvider: settingsProvider)
         addNotificationsObserver()
     }
@@ -301,8 +303,21 @@ struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
     func isFreeTrial() async -> Bool {
         (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).hasActiveTrialOffer) ?? false
     }
-    
+
     var isActive: Bool {
         subscriptionManager.isUserAuthenticated
+    }
+}
+
+struct AttributedMetricReturningUserProvider: AttributedMetricReturningUserProviding {
+
+    private let statisticsStore: StatisticsStore
+
+    init(statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
+        self.statisticsStore = statisticsStore
+    }
+
+    var isReturningUser: Bool {
+        statisticsStore.variant == VariantIOS.returningUser.name
     }
 }

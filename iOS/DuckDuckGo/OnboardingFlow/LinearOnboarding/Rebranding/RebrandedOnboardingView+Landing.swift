@@ -41,8 +41,13 @@ extension OnboardingRebranding.OnboardingView {
             static let horizontalPadding: CGFloat = 16
 
             // Illustration (landscape Lottie, original canvas 4000×1622)
-            static let illustrationWidth: CGFloat = 1200 // Final width after animation
+            static let illustrationWidth: CGFloat = 1200
             static let illustrationHeight: CGFloat = 487 // Maintains 4000:1622 aspect ratio
+            static let illustrationScalePad: CGFloat = 1.4
+
+            // Small-screen adjustments (e.g. iPhone SE — screen height ≤ 667 pt)
+            static let smallScreenHeightThreshold: CGFloat = 700
+            static let textScaleSmallScreen: CGFloat = 0.8
         }
 
         // MARK: - Component Animation
@@ -140,6 +145,7 @@ extension OnboardingRebranding.OnboardingView {
             static let textOpacityAnimation: Animation = .timingCurve(0.333, 0, 0.667, 1.0, duration: textOpacityDuration).delay(textOpacityDelay)
         }
 
+        @Environment(\.horizontalSizeClass) private var horizontalSizeClass
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         let animationNamespace: Namespace.ID
@@ -156,7 +162,7 @@ extension OnboardingRebranding.OnboardingView {
                 ZStack(alignment: .bottom) {
                     backgroundView
 
-                    logoAndTextView
+                    logoAndTextView(screenHeight: proxy.size.height)
                         .padding(.top, Metrics.topPadding)
                         .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
                 }
@@ -167,10 +173,17 @@ extension OnboardingRebranding.OnboardingView {
             }
         }
 
+        private var illustrationScale: CGFloat {
+            horizontalSizeClass == .regular ? Metrics.illustrationScalePad : 1.0
+        }
+
         // MARK: - Logo + text
 
-        private var logoAndTextView: some View {
-            VStack(alignment: .center, spacing: Metrics.welcomeBottomPadding) {
+        private func logoAndTextView(screenHeight: CGFloat) -> some View {
+            let isSmallScreen = screenHeight < Metrics.smallScreenHeightThreshold
+            let textScale = isSmallScreen ? Metrics.textScaleSmallScreen : 1.0
+
+            return VStack(alignment: .center, spacing: Metrics.welcomeBottomPadding) {
                 // Logo Lottie (internal animation plays the Dax entrance; no opacity fade)
                 Lottie.LottieView(animation: .asset(Assets.logoLottieFileName))
                     .playing(loopMode: .playOnce)
@@ -184,6 +197,7 @@ extension OnboardingRebranding.OnboardingView {
                     .font(onboardingTheme.typography.largeTitle)
                     .foregroundStyle(onboardingTheme.colorPalette.textPrimary)
                     .multilineTextAlignment(.center)
+                    .scaleEffect(textScale)
                     .offset(textOffset)
                     .opacity(text.opacity)
             }
@@ -205,7 +219,10 @@ extension OnboardingRebranding.OnboardingView {
                 )))
                 .resizable()
                 .clipped()
-                .frame(width: Metrics.illustrationWidth, height: Metrics.illustrationHeight)
+                .frame(
+                    width: Metrics.illustrationWidth * illustrationScale,
+                    height: Metrics.illustrationHeight * illustrationScale
+                )
                 .allowsHitTesting(false)
         }
 

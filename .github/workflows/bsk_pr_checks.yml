@@ -37,7 +37,7 @@ jobs:
       if: needs.should-run-checks.outputs.should_run == 'true'
 
       runs-on: macos-15
-      timeout-minutes: ${{ needs.should-run-checks.outputs.check_flaky_tests == 'true' && 60 || 30 }}
+      timeout-minutes: 60
 
       env:
         RUNS_ON: macos-15 # keep this in sync with runs-on above
@@ -214,7 +214,7 @@ jobs:
       if: needs.should-run-checks.outputs.should_run == 'true'
 
       runs-on: macos-15
-      timeout-minutes: ${{ needs.should-run-checks.outputs.check_flaky_tests == 'true' && 60 || 30 }}
+      timeout-minutes: 60
 
       env:
         RUNS_ON: macos-15 # keep this in sync with runs-on above

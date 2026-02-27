@@ -36,6 +36,7 @@ final class StartupMetricsReporter: StartupProfilerDelegate {
         self.windowContextProvider = windowContext
     }
 
+    @MainActor
     func startupProfiler(_ profiler: StartupProfiler, didCompleteWithMetrics metrics: StartupMetrics) {
         guard featureFlagger.isFeatureOn(.startupMetrics), let pixelFiring else {
             return

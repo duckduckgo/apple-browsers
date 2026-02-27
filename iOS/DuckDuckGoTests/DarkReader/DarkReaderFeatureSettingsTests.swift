@@ -22,22 +22,29 @@ import XCTest
 import BrowserServicesKit
 import Persistence
 import PersistenceTestingUtils
+import Combine
 
 class DarkReaderFeatureSettingsTests: XCTestCase {
 
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockStore: MockKeyValueStore!
+    private var mockPrivacyConfigManager: MockPrivacyConfigurationManager!
+    private var mockAppSettings: AppSettingsMock!
     private var sut: AppDarkReaderFeatureSettings!
 
     override func setUp() {
         super.setUp()
         mockFeatureFlagger = MockFeatureFlagger()
         mockStore = MockKeyValueStore()
+        mockPrivacyConfigManager = MockPrivacyConfigurationManager()
+        mockAppSettings = AppSettingsMock()
     }
 
     override func tearDown() {
         mockFeatureFlagger = nil
         mockStore = nil
+        mockPrivacyConfigManager = nil
+        mockAppSettings = nil
         sut = nil
         super.tearDown()
     }
@@ -45,12 +52,15 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
     private func makeSUT() -> AppDarkReaderFeatureSettings {
         AppDarkReaderFeatureSettings(
             featureFlagger: mockFeatureFlagger,
+            privacyConfigurationManager: mockPrivacyConfigManager,
+            appSettings: mockAppSettings,
             storage: mockStore.keyedStoring()
         )
     }
 
     // MARK: - isFeatureEnabled
 
+    @available(iOS 18.4, *)
     func testIsFeatureEnabled_WhenFlagIsOn_ReturnsTrue() {
         mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
@@ -63,6 +73,47 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
         sut = makeSUT()
 
         XCTAssertFalse(sut.isFeatureEnabled)
+    }
+
+    @available(iOS 18.4, *)
+    func testIsFeatureEnabled_WhenFlagIsOnButThemeIsLight_ReturnsFalse() {
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
+        mockAppSettings.currentThemeStyle = .light
+        sut = makeSUT()
+
+        XCTAssertFalse(sut.isFeatureEnabled)
+    }
+
+    @available(iOS 18.4, *)
+    func testIsForceDarkModeEnabled_WhenThemeIsLight_ReturnsFalse() {
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
+        mockAppSettings.currentThemeStyle = .light
+        sut = makeSUT()
+        sut.setForceDarkModeEnabled(true)
+
+        XCTAssertFalse(sut.isForceDarkModeEnabled)
+    }
+
+    // MARK: - themeDidChange
+
+    @available(iOS 18.4, *)
+    func testThemeDidChange_EmitsOnForceDarkModeChangedPublisher() {
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
+        sut = makeSUT()
+        sut.setForceDarkModeEnabled(true)
+
+        var receivedValues: [Bool] = []
+        let cancellable = sut.forceDarkModeChangedPublisher
+            .sink { receivedValues.append($0) }
+
+        mockAppSettings.currentThemeStyle = .light
+        sut.themeDidChange()
+
+        mockAppSettings.currentThemeStyle = .dark
+        sut.themeDidChange()
+
+        XCTAssertEqual(receivedValues, [false, true])
+        cancellable.cancel()
     }
 
     // MARK: - isForceDarkModeEnabled
@@ -100,7 +151,17 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     // MARK: - setForceDarkModeEnabled
 
+    func testSetForceDarkModeEnabled_WhenFeatureDisabled_DoesNotPersistValue() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        sut = makeSUT()
+
+        sut.setForceDarkModeEnabled(true)
+        XCTAssertNil(mockStore.object(forKey: DarkReaderStorageKeys.forceDarkModeOnWebsitesEnabled.rawValue))
+    }
+
+    @available(iOS 18.4, *)
     func testSetForceDarkModeEnabled_PersistsValue() {
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
 
         sut.setForceDarkModeEnabled(true)
@@ -108,5 +169,74 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
         sut.setForceDarkModeEnabled(false)
         XCTAssertFalse(mockStore.object(forKey: DarkReaderStorageKeys.forceDarkModeOnWebsitesEnabled.rawValue) as? Bool ?? true)
+    }
+
+    // MARK: - forceDarkModeChangedPublisher
+
+    @available(iOS 18.4, *)
+    func testForceDarkModeChangedPublisher_EmitsValueOnChange() {
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
+        sut = makeSUT()
+        var receivedValues: [Bool] = []
+        let cancellable = sut.forceDarkModeChangedPublisher
+            .sink { receivedValues.append($0) }
+
+        sut.setForceDarkModeEnabled(true)
+        sut.setForceDarkModeEnabled(false)
+        sut.setForceDarkModeEnabled(true)
+
+        XCTAssertEqual(receivedValues, [true, false, true])
+        cancellable.cancel()
+    }
+
+    func testForceDarkModeChangedPublisher_WhenFeatureDisabled_DoesNotEmit() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        sut = makeSUT()
+        var receivedValues: [Bool] = []
+        let cancellable = sut.forceDarkModeChangedPublisher
+            .sink { receivedValues.append($0) }
+
+        sut.setForceDarkModeEnabled(true)
+
+        XCTAssertTrue(receivedValues.isEmpty)
+        cancellable.cancel()
+    }
+
+    // MARK: - excludedDomains
+
+    // MARK: - excludedDomainsChangedPublisher
+
+    func testExcludedDomainsChangedPublisher_EmitsWhenPrivacyConfigChanges() {
+        sut = makeSUT()
+        var receivedCount = 0
+        let cancellable = sut.excludedDomainsChangedPublisher
+            .sink { receivedCount += 1 }
+
+        mockPrivacyConfigManager.updatesSubject.send()
+        mockPrivacyConfigManager.updatesSubject.send()
+
+        XCTAssertEqual(receivedCount, 2)
+        cancellable.cancel()
+    }
+
+    // MARK: - excludedDomains
+
+    func testExcludedDomains_ReturnsExceptionsListFromPrivacyConfig() throws {
+        let mockConfig = try XCTUnwrap(mockPrivacyConfigManager.privacyConfig as? MockPrivacyConfiguration)
+        mockConfig.exceptionsList = { feature in
+            if feature == .forceDarkModeOnWebsites {
+                return ["example.com", "test.org"]
+            }
+            return []
+        }
+        sut = makeSUT()
+
+        XCTAssertEqual(sut.excludedDomains, ["example.com", "test.org"])
+    }
+
+    func testExcludedDomains_WhenNoExceptions_ReturnsEmptyArray() {
+        sut = makeSUT()
+
+        XCTAssertEqual(sut.excludedDomains, [])
     }
 }

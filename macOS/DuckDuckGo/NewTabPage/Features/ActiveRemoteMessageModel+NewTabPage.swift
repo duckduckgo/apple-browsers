@@ -59,6 +59,8 @@ extension ActiveRemoteMessageModel: NewTabPageActiveRemoteMessageProviding {
                 await navigateToFeedbackHandler()
             case .personalInformationRemoval:
                 await navigateToPIRHandler()
+            case .softwareUpdate:
+                await navigateToSoftwareUpdateHandler()
             default: break
             }
         default:

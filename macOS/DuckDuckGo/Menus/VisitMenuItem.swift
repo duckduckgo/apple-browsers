@@ -26,6 +26,8 @@ final class VisitMenuItem: NSMenuItem {
         self.init(title: visitViewModel.titleTruncated,
                   action: #selector(MainViewController.openHistoryEntryVisit(_:)),
                   keyEquivalent: "")
+        // validate AppDelegate method used when no windows are open has the same signature
+        assert(#selector(MainViewController.openHistoryEntryVisit(_:)) == #selector(AppDelegate.openHistoryEntryVisit(_:)))
         image = visitViewModel.smallFaviconImage?.resizedToFaviconSize()
         // Keep the reference to visit in order to use it for burning
         representedObject = visitViewModel.visit

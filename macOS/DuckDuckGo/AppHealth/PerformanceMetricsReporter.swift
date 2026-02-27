@@ -26,10 +26,10 @@ final class PerformanceMetricsReporter: StartupProfilerDelegate {
     private let pixelFiring: PixelFiring?
     private let previousSessionRestored: Bool
     private let windowContextProvider: () -> WindowContext
-    private let environment: SystemEnvironment
+    private let environmentProvider: () -> SystemEnvironment
 
-    init(environment: SystemEnvironment = .current, featureFlagger: FeatureFlagger, pixelFiring: PixelFiring?, previousSessionRestored: Bool, windowContext: @autoclosure @escaping () -> WindowContext) {
-        self.environment = environment
+    init(environment: @autoclosure @escaping () -> SystemEnvironment = .current, featureFlagger: FeatureFlagger, pixelFiring: PixelFiring?, previousSessionRestored: Bool, windowContext: @autoclosure @escaping () -> WindowContext) {
+        self.environmentProvider = environment
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.previousSessionRestored = previousSessionRestored
@@ -42,7 +42,7 @@ final class PerformanceMetricsReporter: StartupProfilerDelegate {
             return
         }
 
-        let pixel = buildStartupMetricsPixel(metrics: metrics, windowContext: windowContextProvider(), environment: environment, previousSessionRestored: previousSessionRestored)
+        let pixel = buildStartupMetricsPixel(metrics: metrics, windowContext: windowContextProvider(), environment: environmentProvider(), previousSessionRestored: previousSessionRestored)
         pixelFiring.fire(pixel, frequency: .standard)
     }
 }

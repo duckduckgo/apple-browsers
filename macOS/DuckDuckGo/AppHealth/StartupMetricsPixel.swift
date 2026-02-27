@@ -31,7 +31,7 @@ struct StartupMetricsPixel: PixelKitEvent {
     /// Number of active logical processors at launch time, or `nil` if unavailable.
     let activeProcessorCount: Int?
 
-    /// Whether the Mac is running on battery power at launch time.
+    /// Whether the Mac is running on battery power at launch time, or `nil` if power source information is unavailable.
     let isOnBattery: Bool?
 
     /// Indicates if Session Restoration was enabled

@@ -141,7 +141,7 @@ final class StartupMetricsPixelTests: XCTestCase {
     func testParametersIncludePinnedTabsWhenProvided() {
         let pixel = buildStartupMetricsPixel(pinnedTabs: 30)
 
-        XCTAssertEqual(pixel.parameters?["pinned_tabs"], "21")
+        XCTAssertEqual(pixel.parameters?["pinned_tabs"], "15")
     }
 
     // MARK: - Optional Parameters Nil

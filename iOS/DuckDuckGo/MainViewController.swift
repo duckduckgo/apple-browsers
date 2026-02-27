@@ -268,9 +268,12 @@ class MainViewController: UIViewController {
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
 
     // MARK: - iPad Tab Mode Chat History
-    private var iPadTabChatHistoryManager: AIChatHistoryManager?
-    private weak var iPadTabChatHistoryWrapper: UIView?
-    private let aiChatTextSubject = PassthroughSubject<String, Never>()
+    private lazy var iPadTabChatHistoryCoordinator = IPadTabChatHistoryCoordinator(
+        featureFlagger: featureFlagger,
+        privacyConfigurationManager: privacyConfigurationManager,
+        aiChatSettings: aiChatSettings,
+        iPadTabFeature: aichatIPadTabFeature
+    )
 
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     func setWebExtensionEventsCoordinator(_ coordinator: WebExtensionEventsCoordinator?) {
@@ -2861,7 +2864,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onAIChatQueryUpdated(_ query: String) {
-        aiChatTextSubject.send(query)
+        iPadTabChatHistoryCoordinator.updateQuery(query)
     }
 
     func didRequestCurrentURL() -> URL? {
@@ -3359,7 +3362,13 @@ extension MainViewController: OmniBarDelegate {
         if isExpanded {
             hideSuggestionTray()
 
-            installIPadTabChatHistory()
+            iPadTabChatHistoryCoordinator.delegate = self
+            iPadTabChatHistoryCoordinator.install(
+                in: view,
+                parentViewController: self,
+                searchContainer: viewCoordinator.omniBar.barView.searchContainer,
+                keyboardLayoutGuide: view.keyboardLayoutGuide
+            )
 
             guard expandedOmniBarDismissTapGesture == nil else { return }
             let tap = UITapGestureRecognizer(target: self, action: #selector(dismissExpandedOmniBar))
@@ -3367,7 +3376,7 @@ extension MainViewController: OmniBarDelegate {
             viewCoordinator.contentContainer.addGestureRecognizer(tap)
             expandedOmniBarDismissTapGesture = tap
         } else {
-            hideIPadTabChatHistory()
+            iPadTabChatHistoryCoordinator.tearDown()
 
             if let tap = expandedOmniBarDismissTapGesture {
                 viewCoordinator.contentContainer.removeGestureRecognizer(tap)
@@ -3378,59 +3387,6 @@ extension MainViewController: OmniBarDelegate {
 
     @objc private func dismissExpandedOmniBar() {
         performCancel()
-    }
-
-    // MARK: - iPad Tab Mode Chat History
-
-    /// Creates and installs the AI chat history list in a floating panel below the expanded omnibar.
-    private func installIPadTabChatHistory() {
-        guard iPadTabChatHistoryManager == nil else { return }
-        guard aichatIPadTabFeature.isAvailable else { return }
-        guard featureFlagger.isFeatureOn(.aiChatSuggestions),
-              aiChatSettings.isChatSuggestionsEnabled else { return }
-
-        let reader = SuggestionsReader(featureFlagger: featureFlagger, privacyConfig: privacyConfigurationManager)
-        let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-        let suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-
-        let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
-        let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
-                                           aiChatSettings: aiChatSettings,
-                                           viewModel: viewModel)
-        manager.delegate = self
-
-        let floatingWrapper = UIView()
-        floatingWrapper.translatesAutoresizingMaskIntoConstraints = false
-        floatingWrapper.backgroundColor = UIColor(designSystemColor: .background)
-        floatingWrapper.layer.cornerRadius = 24
-        floatingWrapper.layer.masksToBounds = true
-        view.addSubview(floatingWrapper)
-
-        let barView = viewCoordinator.omniBar.barView
-        let searchWidth = barView.searchContainerWidth + 32
-        NSLayoutConstraint.activate([
-            floatingWrapper.topAnchor.constraint(equalTo: barView.searchContainer.bottomAnchor, constant: 4),
-            floatingWrapper.centerXAnchor.constraint(equalTo: barView.searchContainer.centerXAnchor),
-            floatingWrapper.widthAnchor.constraint(equalToConstant: searchWidth),
-            floatingWrapper.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
-        ])
-        iPadTabChatHistoryWrapper = floatingWrapper
-
-        manager.installInContainerView(floatingWrapper, parentViewController: self)
-        manager.subscribeToTextChanges(aiChatTextSubject.eraseToAnyPublisher())
-
-        iPadTabChatHistoryManager = manager
-    }
-
-    /// Hides and tears down the chat history list.
-    private func hideIPadTabChatHistory() {
-        guard iPadTabChatHistoryManager != nil else { return }
-
-        iPadTabChatHistoryManager?.tearDown()
-        iPadTabChatHistoryManager = nil
-
-        iPadTabChatHistoryWrapper?.removeFromSuperview()
-        iPadTabChatHistoryWrapper = nil
     }
 
     // MARK: - Experimental Address Bar (pixels only)

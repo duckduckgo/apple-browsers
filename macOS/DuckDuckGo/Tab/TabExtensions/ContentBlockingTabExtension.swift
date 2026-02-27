@@ -163,7 +163,7 @@ extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
 
         trackersSubject.send(DetectedTracker(request: detectedRequest, type: .tracker))
 
-        if tracker.ownerName == fbBlockingEnabledProvider.fbEntity {
+        if tracker.ownerName == fbBlockingEnabledProvider.fbEntity && fbBlockingEnabledProvider.fbBlockingEnabled {
             fbBlockingEnabledProvider.trackerDetected()
         }
     }

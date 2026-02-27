@@ -94,13 +94,13 @@ struct StartupMetricsPixel: PixelKitEvent {
             params["active_processor_count"] = StartupMetricsBuckets.bucketProcessorCount(count)
         }
         if let count = standardTabs {
-            params["standard_tabs"] = StartupMetricsBuckets.bucketTabCount(count)
+            params["standard_tabs"] = MemoryReportingBuckets.bucketStandardTabCount(count).description
         }
         if let count = pinnedTabs {
-            params["pinned_tabs"] = StartupMetricsBuckets.bucketTabCount(count)
+            params["pinned_tabs"] = MemoryReportingBuckets.bucketPinnedTabCount(count).description
         }
         if let count = windows {
-            params["windows"] = StartupMetricsBuckets.bucketWindowCount(count)
+            params["windows"] = MemoryReportingBuckets.bucketWindowCount(count).description
         }
 
         // Timing

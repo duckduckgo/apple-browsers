@@ -31,13 +31,9 @@ protocol AutoconsentManagementProviding {
 @MainActor
 final class AutoconsentManagementProvider: AutoconsentManagementProviding {
 
-    private let lock = NSLock()
     private var managements: [AutoconsentContext: AutoconsentManaging] = [:]
 
     func management(for context: AutoconsentContext) -> AutoconsentManaging {
-        lock.lock()
-        defer { lock.unlock() }
-
         if let existing = managements[context] {
             return existing
         }

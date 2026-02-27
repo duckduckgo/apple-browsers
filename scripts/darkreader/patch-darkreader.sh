@@ -113,6 +113,46 @@ replace_literal "Disable onInstalled tab + setUninstallURL" \
         // });
         // chrome.runtime.setUninstallURL(UNINSTALL_URL);'
 
+# 5. Hook getConnectionMessage to check excluded domains via native messaging
+replace_literal "Hook getConnectionMessage for domain exclusion" \
+    'static async getConnectionMessage(
+            tabURL,
+            url,
+            isTopFrame,
+            topFrameHasDarkTheme
+        ) {
+            await Extension.loadData();
+            return Extension.getTabMessage(
+                tabURL,
+                url,
+                isTopFrame,
+                topFrameHasDarkTheme
+            );
+        }' \
+    'static async getConnectionMessage(
+            tabURL,
+            url,
+            isTopFrame,
+            topFrameHasDarkTheme
+        ) {
+            await Extension.loadData();
+            try {
+                const response = await chrome.runtime.sendNativeMessage(
+                    "org.duckduckgo.web-extension.darkreader",
+                    {featureName: "darkReader", method: "isDomainExcluded", params: {url: tabURL}}
+                );
+                if (response && response.result && response.result.isExcluded) {
+                    return {type: MessageTypeBGtoCS.CLEAN_UP};
+                }
+            } catch (e) {}
+            return Extension.getTabMessage(
+                tabURL,
+                url,
+                isTopFrame,
+                topFrameHasDarkTheme
+            );
+        }'
+
 if [ "$FAIL" -ne 0 ]; then
     echo ""
     echo "Warning: Some patches could not be applied. Review the output above." >&2
@@ -139,6 +179,14 @@ manifest['browser_specific_settings'] = {
     }
 }
 print('  ✓ browser_specific_settings → duckduckgo')
+
+perms = manifest.get('permissions', [])
+if 'nativeMessaging' not in perms:
+    perms.append('nativeMessaging')
+    manifest['permissions'] = perms
+    print('  ✓ Added nativeMessaging permission')
+else:
+    print('  – nativeMessaging permission (already present)')
 
 with open(path, 'w') as f:
     json.dump(manifest, f, indent=4)

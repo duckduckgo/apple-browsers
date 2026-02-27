@@ -144,9 +144,9 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double, parent: String)
 
     // KPIs - engagement
-    case dailyActiveUser(isAuthenticated: Bool, needBackgroundAppRefresh: Bool?)
-    case weeklyActiveUser(isAuthenticated: Bool)
-    case monthlyActiveUser(isAuthenticated: Bool)
+    case dailyActiveUser(isAuthenticated: Bool, needBackgroundAppRefresh: Bool?, isFreeScan: Bool?)
+    case weeklyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
+    case monthlyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
 
     // KPIs - events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
@@ -482,15 +482,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutJobAt42DaysConfirmed(let dataBroker),
                 .optOutJobAt42DaysUnconfirmed(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
-        case .dailyActiveUser(let isAuthenticated, let needBackgroundAppRefresh):
+        case .dailyActiveUser(let isAuthenticated, let needBackgroundAppRefresh, let isFreeScan):
             var params = [Consts.isAuthenticated: isAuthenticated.description]
             if let needBackgroundAppRefresh {
                 params[Consts.needBackgroundAppRefresh] = needBackgroundAppRefresh.description
             }
-            return params
-        case .weeklyActiveUser(let isAuthenticated),
-                .monthlyActiveUser(let isAuthenticated):
-            return [Consts.isAuthenticated: isAuthenticated.description]
+            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .weeklyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .monthlyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
+            return addFreeScanParamIfNeeded(to: [Consts.isAuthenticated: isAuthenticated.description], isFreeScan: isFreeScan)
         case .scanningEventNewMatch(let dataBrokerURL),
                 .scanningEventReAppearance(let dataBrokerURL):
             return [Consts.dataBrokerParamKey: dataBrokerURL]

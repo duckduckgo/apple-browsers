@@ -385,13 +385,13 @@ class FireExecutor: FireExecuting {
     
     private func forgetTextZoom() {
         let allowedDomains = fireproofing.allowedDomains
-        let coordinator = textZoomCoordinatorProvider.coordinator(fireMode: false) // TODO: - Pass fire mode correctly. Also Fire mode ignores fireproofing.
+        let coordinator = textZoomCoordinatorProvider.coordinator(for: .normal) // TODO: - Pass fire mode correctly. Also Fire mode ignores fireproofing.
         coordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
     }
     
     private func forgetTextZoom(forDomains domains: [String]) {
         let allowedDomains = fireproofing.allowedDomains
-        let coordinator = textZoomCoordinatorProvider.coordinator(fireMode: false) // TODO: - Pass fire mode correctly. Also Fire mode ignores fireproofing.
+        let coordinator = textZoomCoordinatorProvider.coordinator(for: .normal) // TODO: - Pass fire mode correctly. Also Fire mode ignores fireproofing.
         coordinator.resetTextZoomLevels(forVisitedDomains: domains, excludingDomains: allowedDomains)
     }
     

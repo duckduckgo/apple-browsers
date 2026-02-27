@@ -4861,7 +4861,7 @@ extension MainViewController {
             return
         }
         Task { @MainActor in
-            let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(fireMode: currentTab.tabModel.fireTab)
+            let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: currentTab.tabModel.textZoomContext)
             await textZoomCoordinator.showTextZoomEditor(inController: self, forWebView: webView)
         }
     }

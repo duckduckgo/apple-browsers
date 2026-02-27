@@ -204,7 +204,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             )
         )
 
-        let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(fireMode: tab.fireTab)
+        let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: tab.textZoomContext)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
@@ -328,7 +328,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             )
         )
 
-        let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(fireMode: tab.fireTab)
+        let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: tab.textZoomContext)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,

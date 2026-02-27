@@ -180,9 +180,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477623612
     case dataImportNewExperience
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721275379
-    case scheduledDefaultBrowserAndDockPromptsInactiveUser
-
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
 
@@ -288,6 +285,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Startup Metrics Feature Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
     case startupMetrics
+
+    /// Private Process Name Flag
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
+    case privateProcessName
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -413,13 +414,13 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
                 .aiChatSidebarResizable,
-                .startupMetrics:
+                .startupMetrics,
+                .privateProcessName:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .scheduledDefaultBrowserAndDockPromptsInactiveUser,
                 .terminationDeciderSequence,
                 .crashCollectionDisableKeysSorting,
                 .crashCollectionLimitCallStackTreeDepth:
@@ -450,7 +451,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .webExtensions:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .syncSeamlessAccountSwitching:
@@ -533,8 +534,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .dataImportNewExperience:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience))
-        case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .showHideAIGeneratedImagesSection:
@@ -595,6 +594,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .startupMetrics:
             return .internalOnly()
+        case .privateProcessName:
+            return .disabled
         }
     }
 }

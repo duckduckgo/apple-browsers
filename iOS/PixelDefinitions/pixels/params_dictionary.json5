@@ -198,6 +198,12 @@
         "description": "Whether the user is authenticated",
         "enum": ["true", "false"]
     },
+    "dbpIsFreeScan": {
+        "key": "free_scan",
+        "type": "string",
+        "description": "Whether this is a free (unauthenticated) scan",
+        "enum": ["true", "false"]
+    },
     "dbpStageDuration": {
         "key": "duration",
         "type": "integer",

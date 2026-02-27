@@ -691,7 +691,8 @@ class OmniBarViewController: UIViewController, OmniBar {
             expandable.externalRefreshButtonView.isEnabled = state.isBrowsing
             expandable.selectedModeToggleState = selectedTextEntryMode
 
-            let shouldShowModeToggle = state.showAIChatModeToggle
+            let isAddressBarSelected = textField.isEditing || expandable.isSearchAreaExpanded
+            let shouldShowModeToggle = state.showAIChatModeToggle && isAddressBarSelected
             expandable.isModeToggleHidden = !shouldShowModeToggle
             if shouldShowModeToggle {
                 barView.isAIChatButtonHidden = true
@@ -699,6 +700,8 @@ class OmniBarViewController: UIViewController, OmniBar {
 
             let shouldExpand = shouldShowModeToggle && selectedTextEntryMode == .aiChat
             expandable.setSearchAreaExpanded(shouldExpand, animated: false)
+
+            expandable.updateLeftIconForMode(shouldShowModeToggle ? selectedTextEntryMode : .search)
         }
 
         if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled == false {
@@ -913,6 +916,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
         if state.showAIChatModeToggle {
             expandableBarView?.setSearchAreaExpanded(mode == .aiChat, animated: true)
+            expandableBarView?.updateLeftIconForMode(mode)
         }
     }
 

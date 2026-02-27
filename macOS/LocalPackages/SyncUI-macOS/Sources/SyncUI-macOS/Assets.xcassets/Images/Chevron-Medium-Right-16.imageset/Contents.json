@@ -2,7 +2,8 @@
   "images" : [
     {
       "filename" : "Chevron-Medium-Right-16.svg",
-      "idiom" : "universal"
+      "idiom" : "universal",
+      "language-direction" : "left-to-right"
     }
   ],
   "info" : {

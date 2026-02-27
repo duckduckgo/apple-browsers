@@ -1,5 +1,5 @@
 //
-//  StartupMetricsReporterTests.swift
+//  PerformanceMetricsReporterTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
-final class StartupMetricsReporterTests: XCTestCase {
+final class PerformanceMetricsReporterTests: XCTestCase {
 
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPixelFiring: PixelKitMock!
@@ -153,7 +153,7 @@ final class StartupMetricsReporterTests: XCTestCase {
 
 // MARK: - Helpers
 
-private extension StartupMetricsReporterTests {
+private extension PerformanceMetricsReporterTests {
 
     func buildMetricsReporter(restorePreviousSession: Bool = false) -> (SystemEnvironment, WindowContext, PerformanceMetricsReporter) {
         let environment = SystemEnvironment(architecture: "ARM", activeProcessorCount: 8, isOnBattery: false)

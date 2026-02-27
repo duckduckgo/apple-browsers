@@ -147,12 +147,12 @@ extension AppDelegate {
 
     @objc func openHistoryEntryVisit(_ sender: NSMenuItem) {
         guard let visit = sender.representedObject as? Visit,
-              let url = visit.historyEntry?.url else {
+              let historyEntry = visit.historyEntry else {
             assertionFailure("Wrong represented object")
             return
         }
-        DispatchQueue.main.async {
-            WindowsManager.openNewWindow(with: Tab(content: .contentFromURL(url, source: .historyEntry), shouldLoadInBackground: true))
+        DispatchQueue.main.async { [event=NSApp.currentEvent] in
+            self.windowControllersManager.open(historyEntry, with: event)
         }
     }
 
@@ -389,20 +389,19 @@ extension AppDelegate {
         NSPasteboard.general.copy(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort)
     }
 
-    @objc func navigateToBookmark(_ sender: Any?) {
+    @objc func openBookmark(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem else {
             Logger.general.error("AppDelegate: Casting to menu item failed")
             return
         }
-
-        guard let bookmark = menuItem.representedObject as? Bookmark,
-              let url = bookmark.urlObject else {
+        guard let bookmark = menuItem.representedObject as? Bookmark else {
             assertionFailure("Unexpected type of menuItem.representedObject: \(type(of: menuItem.representedObject))")
             return
         }
-        DispatchQueue.main.async {
-            let tab = Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)), shouldLoadInBackground: true)
-            WindowsManager.openNewWindow(with: tab)
+
+        DispatchQueue.main.async { [event=NSApp.currentEvent] in
+            PixelKit.fire(NavigationEngagementPixel.navigateToBookmark(source: .menu, isFavorite: bookmark.isFavorite))
+            self.windowControllersManager.open(bookmark, with: event)
         }
     }
 
@@ -1243,7 +1242,7 @@ extension MainViewController {
 
         makeKeyIfNeeded()
 
-        Application.appDelegate.windowControllersManager.open(historyEntry, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(historyEntry, target: view.window, with: NSApp.currentEvent)
     }
 
     @objc func fireButtonAction(_ sender: NSButton) {
@@ -1292,14 +1291,16 @@ extension MainViewController {
             Logger.general.error("MainViewController: Casting to menu item failed")
             return
         }
-
-        guard let bookmark = menuItem.representedObject as? Bookmark else { return }
+        guard let bookmark = menuItem.representedObject as? Bookmark else {
+            assertionFailure("Unexpected type of menuItem.representedObject: \(type(of: menuItem.representedObject))")
+            return
+        }
 
         PixelKit.fire(NavigationEngagementPixel.navigateToBookmark(source: .menu, isFavorite: bookmark.isFavorite))
 
         makeKeyIfNeeded()
 
-        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(bookmark, target: view.window, with: NSApp.currentEvent)
     }
 
     @objc func openAllInTabs(_ sender: Any?) {

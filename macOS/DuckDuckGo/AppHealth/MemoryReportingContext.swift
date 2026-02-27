@@ -64,6 +64,10 @@ struct MemoryReportingContext {
     /// Bucketed total used allocation in MB (0, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384), or `nil` if unavailable.
     let usedAllocationMB: Int?
 
+    /// Bucketed total WebContent process memory in MB (0, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536),
+    /// or `nil` if WebContent process memory could not be measured.
+    let wcTotalMemoryMB: Int?
+
     /// Minutes elapsed since app launch (raw value, not bucketed).
     let uptimeMinutes: Int
 
@@ -78,6 +82,7 @@ struct MemoryReportingContext {
             "architecture": architecture,
             "sync_enabled": syncEnabled.map(String.init) ?? "unknown",
             "used_allocation": usedAllocationMB.map(String.init) ?? "unknown",
+            "wc_total_memory": wcTotalMemoryMB.map(String.init) ?? "unknown",
             "uptime": String(uptimeMinutes)
         ]
     }
@@ -108,6 +113,7 @@ struct MemoryReportingContext {
         let usedAllocationMB = usedAllocationBytes.map { bytes in
             MemoryReportingBuckets.bucketUsedAllocationMB(Double(bytes) / 1_048_576.0)
         }
+        let wcTotalMemoryMB = report.webContentMB.map(MemoryReportingBuckets.bucketWebContentMemoryMB)
         let uptimeMinutes = Int(Date().timeIntervalSince(launchDate) / 60.0)
 
         return MemoryReportingContext(
@@ -118,6 +124,7 @@ struct MemoryReportingContext {
             architecture: MemoryReportingBuckets.currentArchitecture,
             syncEnabled: isSyncEnabled,
             usedAllocationMB: usedAllocationMB,
+            wcTotalMemoryMB: wcTotalMemoryMB,
             uptimeMinutes: uptimeMinutes
         )
     }

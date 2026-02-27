@@ -160,6 +160,14 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         XCTAssertTrue(testProvider.cards.isEmpty)
     }
 
+    func testWhenNextStepsPreviouslyClosedThenCardsAreEmpty() {
+        appearancePreferences.continueSetUpCardsClosed = true
+        appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        let testProvider = createProvider(defaultBrowserIsDefault: false)
+
+        XCTAssertTrue(testProvider.cards.isEmpty)
+    }
+
     // MARK: - Cards Publisher Tests
 
     @MainActor
@@ -195,6 +203,29 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         // Trigger card list refresh by dismissing card
         testProvider.dismiss(.defaultApp)
 
+        cancellable.cancel()
+
+        XCTAssertEqual(cardsEvents.last, [])
+    }
+
+    @MainActor
+    func testWhenNextStepsPreviouslyClosedThenPublisherEmitsEmptyArray() {
+        appearancePreferences.continueSetUpCardsClosed = true
+        appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        let testProvider = createProvider()
+
+        var cardsEvents = [[NewTabPageDataModel.CardID]]()
+        let expectation = XCTestExpectation(description: "Cards publisher emits card list")
+        let cancellable = testProvider.cardsPublisher
+            .sink { cards in
+                cardsEvents.append(cards)
+                expectation.fulfill()
+            }
+
+        // Trigger card list refresh
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+
+        wait(for: [expectation], timeout: 1.0)
         cancellable.cancel()
 
         XCTAssertEqual(cardsEvents.last, [])

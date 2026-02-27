@@ -92,6 +92,7 @@ struct StartupMetricsPixel: PixelKitEvent {
         if let count = activeProcessorCount {
             params["active_processor_count"] = StartupMetricsBuckets.bucketProcessorCount(count)
         }
+
         if let isOnBattery {
             params["battery_power"] = isOnBattery.description
         }

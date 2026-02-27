@@ -3124,8 +3124,8 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
                            didDetectTracker tracker: TrackerProtectionSubfeature.TrackerDetection) {
         guard let url = url else { return }
 
-        let state: BlockingState = tracker.blocked ? .blocked : .allowed(reason: .otherThirdPartyRequest)
-        let eTLDplus1 = URL(string: tracker.url)?.host
+        let state: BlockingState = tracker.blocked ? .blocked : .allowed(reason: Self.allowReason(from: tracker.reason))
+        let eTLDplus1 = Self.tld.eTLDplus1(forStringURL: tracker.url)
         let entity = tracker.entityName.map { Entity(displayName: $0, domains: nil, prevalence: tracker.prevalence) }
         let detectedRequest = DetectedRequest(url: tracker.url,
                                               eTLDplus1: eTLDplus1,
@@ -3158,15 +3158,29 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
                            didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
         guard let url = url, let surrogateHost = URL(string: surrogate.url)?.host else { return }
 
+        let eTLDplus1 = Self.tld.eTLDplus1(forStringURL: surrogate.url)
         let entity = Entity(displayName: surrogateHost, domains: nil, prevalence: nil)
         let detectedRequest = DetectedRequest(url: surrogate.url,
-                                              eTLDplus1: surrogateHost,
+                                              eTLDplus1: eTLDplus1,
                                               knownTracker: nil,
                                               entity: entity,
                                               state: .blocked,
                                               pageUrl: surrogate.pageUrl)
 
         privacyInfo?.trackerInfo.addInstalledSurrogateHost(surrogateHost, for: detectedRequest, onPageWithURL: url)
+    }
+
+    private static func allowReason(from reason: String?) -> AllowReason {
+        switch reason {
+        case "first party":
+            return .ownedByFirstParty
+        case "matched rule - exception":
+            return .ruleException
+        case "unprotectedDomain":
+            return .protectionDisabled
+        default:
+            return .otherThirdPartyRequest
+        }
     }
 }
 

@@ -54,6 +54,7 @@ final class ContentBlockingTabExtension: NSObject {
     private let cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let fbBlockingEnabledProvider: FbBlockingEnabledProvider
+    private let tld: TLD
     private var trackersSubject = PassthroughSubject<DetectedTracker, Never>()
 
     private var cancellables = Set<AnyCancellable>()
@@ -73,11 +74,13 @@ final class ContentBlockingTabExtension: NSObject {
          userContentControllerFuture: some Publisher<some ContentBlockingAssetsInstalling, Never>,
          cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?,
          privacyConfigurationManager: PrivacyConfigurationManaging,
+         tld: TLD,
          trackerProtectionSubfeaturePublisher: some Publisher<TrackerProtectionSubfeature?, Never>) {
 
         self.cbaTimeReporter = cbaTimeReporter
         self.fbBlockingEnabledProvider = fbBlockingEnabledProvider
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.tld = tld
         super.init()
 
         userContentControllerFuture.sink { [weak self] userContentController in
@@ -143,8 +146,8 @@ extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
 
     func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
                            didDetectTracker tracker: TrackerProtectionSubfeature.TrackerDetection) {
-        let state: BlockingState = tracker.blocked ? .blocked : .allowed(reason: .otherThirdPartyRequest)
-        let eTLDplus1 = URL(string: tracker.url)?.host
+        let state: BlockingState = tracker.blocked ? .blocked : .allowed(reason: Self.allowReason(from: tracker.reason))
+        let eTLDplus1 = tld.eTLDplus1(forStringURL: tracker.url)
         let entity = tracker.entityName.map { Entity(displayName: $0, domains: nil, prevalence: tracker.prevalence) }
         let detectedRequest = DetectedRequest(url: tracker.url,
                                               eTLDplus1: eTLDplus1,
@@ -161,15 +164,29 @@ extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
 
     func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
                            didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
+        let eTLDplus1 = tld.eTLDplus1(forStringURL: surrogate.url)
         let surrogateHost = URL(string: surrogate.url)?.host ?? ""
         let entity = Entity(displayName: surrogateHost, domains: nil, prevalence: nil)
         let detectedRequest = DetectedRequest(url: surrogate.url,
-                                              eTLDplus1: surrogateHost,
+                                              eTLDplus1: eTLDplus1,
                                               knownTracker: nil,
                                               entity: entity,
                                               state: .blocked,
                                               pageUrl: surrogate.pageUrl)
         trackersSubject.send(DetectedTracker(request: detectedRequest, type: .trackerWithSurrogate(host: surrogateHost)))
+    }
+
+    private static func allowReason(from reason: String?) -> AllowReason {
+        switch reason {
+        case "first party":
+            return .ownedByFirstParty
+        case "matched rule - exception":
+            return .ruleException
+        case "unprotectedDomain":
+            return .protectionDisabled
+        default:
+            return .otherThirdPartyRequest
+        }
     }
 }
 

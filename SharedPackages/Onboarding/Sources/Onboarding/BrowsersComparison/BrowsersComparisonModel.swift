@@ -21,17 +21,21 @@ import DesignResourcesKitIcons
 
 public struct BrowsersComparisonModel {
 
-    public static let privacyFeatures: [PrivacyFeature] = {
-        orderedFeatureTypes.map { featureType in
+    public static var privacyFeatures: [PrivacyFeature] {
+        privacyFeatures(locale: .current)
+    }
+
+    public static func privacyFeatures(locale: Locale) -> [PrivacyFeature] {
+        orderedFeatureTypes(locale: locale).map { featureType in
             PrivacyFeature(type: featureType, browsersSupport: browsersSupport(for: featureType))
         }
-    }()
+    }
 
     // For this iOS copy rollout, English users see an AI chat row in position 2 and the erase-data row removed.
     // All other locales/platforms keep the original feature order.
-    private static var orderedFeatureTypes: [PrivacyFeature.FeatureType] {
+    private static func orderedFeatureTypes(locale: Locale) -> [PrivacyFeature.FeatureType] {
 #if os(iOS)
-        if isEnglishLanguage {
+        if isEnglishLanguage(locale: locale) {
             var featureTypes: [PrivacyFeature.FeatureType] = [
                 .privateSearch,
                 .privateAIChat,
@@ -56,8 +60,8 @@ public struct BrowsersComparisonModel {
         return featureTypes
     }
 
-    private static var isEnglishLanguage: Bool {
-        Locale.preferredLanguages.first?.lowercased().hasPrefix("en") ?? false
+    private static func isEnglishLanguage(locale: Locale) -> Bool {
+        locale.languageCode?.lowercased() == "en"
     }
 
     private static func browsersSupport(for feature: PrivacyFeature.FeatureType) -> [PrivacyFeature.BrowserSupport] {
@@ -162,7 +166,7 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 public static let cookiePopups = NSLocalizedString("onboarding.highlights.browsers.features.cookiePopups.title", bundle: Bundle.module, value: "Block cookie pop-ups", comment: "Message to highlight how the browser allows you to block cookie pop-ups")
                 public static let creepyAds = NSLocalizedString("onboarding.highlights.browsers.features.creepyAds.title", bundle: Bundle.module, value: "Block targeted ads", comment: "Message to highlight browser capability of blocking creepy ads")
                 public static let eraseBrowsingData = NSLocalizedString("onboarding.highlights.browsers.features.eraseBrowsingData.title", bundle: Bundle.module, value: "Delete browsing data with one button", comment: "Message to highlight browser capability of swiftly erase browsing data")
-                public static let privateAIChatEnglish = "Use AI privately or opt out entirely"
+                public static let privateAIChatEnglish = "Use ChatGPT privately with Duck.ai built in"
                 public static let duckplayer = NSLocalizedString("onboarding.highlights.browsers.features.duckplayer.title", bundle: Bundle.module, value: "Play YouTube without targeted ads", comment: "Message to highlight browser capability of watching YouTube videos without targeted ads")
             }
         }

@@ -251,6 +251,14 @@ jobs:
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
         export OS_ACTIVITY_MODE=debug
 
+        flaky_mode="${{ needs.should-run-checks.outputs.check_flaky_tests }}"
+        if [[ "$flaky_mode" == "true" ]]; then
+          iteration_flags="-test-iterations 50 -run-tests-until-failure"
+          echo "Flaky test detection mode: running tests 50x, failing on first failure"
+        else
+          iteration_flags=""
+        fi
+
         set -o pipefail && xcodebuild test \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
@@ -259,6 +267,7 @@ jobs:
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
+          $iteration_flags \
           | tee ${{ matrix.flavor }}-unittests-xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml \
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-unittests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-unittests.xcresult && exit 1; }
@@ -266,6 +275,14 @@ jobs:
     - name: Run integration tests
       id: run-integration-tests
       run: |
+        flaky_mode="${{ needs.should-run-checks.outputs.check_flaky_tests }}"
+        if [[ "$flaky_mode" == "true" ]]; then
+          iteration_flags="-test-iterations 50 -run-tests-until-failure"
+          echo "Flaky test detection mode: running tests 50x, failing on first failure"
+        else
+          iteration_flags="-retry-tests-on-failure"
+        fi
+
         set -o pipefail && xcodebuild test \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
@@ -274,7 +291,7 @@ jobs:
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           "-only-testing:${{ matrix.integration-tests-target }}" \
-          -retry-tests-on-failure \
+          $iteration_flags \
           | tee ${{ matrix.flavor }}-integrationtests-xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-integrationtests.xml \
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-integrationtests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-integrationtests.xcresult && exit 1; }
@@ -322,7 +339,7 @@ jobs:
         check_retries: true
 
     - name: Update Asana with failed unit tests
-      if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
+      if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure') && needs.should-run-checks.outputs.check_flaky_tests != 'true'
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |
@@ -614,9 +631,9 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [bats, tests, release-build, verify-npm-bundles, private-api]
+    needs: [should-run-checks, bats, tests, release-build, verify-npm-bundles, private-api]
 
-    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
+    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true && needs.should-run-checks.outputs.check_flaky_tests != 'true'
 
     runs-on: ubuntu-latest
 
@@ -635,9 +652,9 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [bats, tests, release-build, verify-npm-bundles, private-api]
+    needs: [should-run-checks, bats, tests, release-build, verify-npm-bundles, private-api]
 
-    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
+    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true && needs.should-run-checks.outputs.check_flaky_tests != 'true'
 
     runs-on: ubuntu-latest
 

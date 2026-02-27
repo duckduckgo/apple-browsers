@@ -101,7 +101,17 @@ jobs:
 
       - name: Run tests
         id: run-unit-tests
-        run: set -o pipefail && swift test --enable-swift-testing | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+        run: |
+          flaky_mode="${{ needs.should-run-checks.outputs.check_flaky_tests }}"
+          if [[ "$flaky_mode" == "true" ]]; then
+            echo "Flaky test detection mode: running tests 50x, failing on first failure"
+            for i in $(seq 1 50); do
+              echo "--- Iteration $i/50 ---"
+              set -o pipefail && swift test --enable-swift-testing | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml || exit 1
+            done
+          else
+            set -o pipefail && swift test --enable-swift-testing | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+          fi
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
@@ -155,7 +165,7 @@ jobs:
           check_retries: true
 
       - name: Update Asana with failed unit tests
-        if: always() && steps.run-unit-tests.outcome == 'failure'
+        if: always() && steps.run-unit-tests.outcome == 'failure' && needs.should-run-checks.outputs.check_flaky_tests != 'true'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
@@ -269,14 +279,21 @@ jobs:
       - name: Run tests
         id: run-unit-tests-ios
         run: |
+          flaky_mode="${{ needs.should-run-checks.outputs.check_flaky_tests }}"
+          if [[ "$flaky_mode" == "true" ]]; then
+            iteration_flags="-test-iterations 50 -run-tests-until-failure"
+            echo "Flaky test detection mode: running tests 50x, failing on first failure"
+          else
+            iteration_flags="-test-iterations 3 -retry-tests-on-failure"
+          fi
+
           set -o pipefail && xcodebuild test \
             -scheme BrowserServicesKit \
             -destination '${{ steps.select-simulator.outputs.destination }}' \
             -derivedDataPath DerivedData \
             -skipPackagePluginValidation \
             -skipMacroValidation \
-            -test-iterations 3 \
-            -retry-tests-on-failure \
+            $iteration_flags \
             CODE_SIGNING_ALLOWED=NO \
             | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
@@ -317,7 +334,7 @@ jobs:
           check_retries: true
 
       - name: Update Asana with failed unit tests
-        if: always() && steps.run-unit-tests-ios.outcome == 'failure'
+        if: always() && steps.run-unit-tests-ios.outcome == 'failure' && needs.should-run-checks.outputs.check_flaky_tests != 'true'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
@@ -353,9 +370,9 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [unit-tests, unit-tests-ios]
+    needs: [should-run-checks, unit-tests, unit-tests-ios]
 
-    if: failure() && github.ref_name == 'main' && github.run_attempt == 1
+    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && needs.should-run-checks.outputs.check_flaky_tests != 'true'
 
     runs-on: ubuntu-latest
 
@@ -374,9 +391,9 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [unit-tests, unit-tests-ios]
+    needs: [should-run-checks, unit-tests, unit-tests-ios]
 
-    if: success() && github.ref_name == 'main' && github.run_attempt > 1
+    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && needs.should-run-checks.outputs.check_flaky_tests != 'true'
 
     runs-on: ubuntu-latest
 

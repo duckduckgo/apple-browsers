@@ -96,7 +96,7 @@ jobs:
     if: needs.should-run-checks.outputs.should_run == 'true'
 
     runs-on: macos-15
-    timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
+    timeout-minutes: 60
 
     env:
       RUNS_ON: macos-15 # keep this in sync with runs-on above
@@ -161,12 +161,21 @@ jobs:
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
+        flaky_mode="${{ needs.should-run-checks.outputs.check_flaky_tests }}"
+        if [[ "$flaky_mode" == "true" ]]; then
+          iteration_flags="-test-iterations 50 -run-tests-until-failure"
+          echo "Flaky test detection mode: running tests 50x, failing on first failure"
+        else
+          iteration_flags=""
+        fi
+
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          $iteration_flags \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
@@ -196,7 +205,7 @@ jobs:
         report_paths: iOS/unittests.xml
 
     - name: Update Asana with failed unit tests
-      if: always() && steps.run-unit-tests.outcome == 'failure'
+      if: always() && steps.run-unit-tests.outcome == 'failure' && needs.should-run-checks.outputs.check_flaky_tests != 'true'
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |
@@ -399,9 +408,9 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [unit-tests, shellcheck, release-build]
+    needs: [should-run-checks, unit-tests, shellcheck, release-build]
 
-    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
+    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true && needs.should-run-checks.outputs.check_flaky_tests != 'true'
 
     runs-on: ubuntu-latest
 
@@ -420,9 +429,9 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [unit-tests, shellcheck, release-build]
+    needs: [should-run-checks, unit-tests, shellcheck, release-build]
 
-    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
+    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true && needs.should-run-checks.outputs.check_flaky_tests != 'true'
 
     runs-on: ubuntu-latest
 

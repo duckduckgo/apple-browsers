@@ -25,16 +25,25 @@ on:
         required: false
         type: string
         default: 'Run PR Checks'
+      check_flaky_label:
+        description: 'Label name that triggers flaky test detection mode (runs tests 50x, fails on first failure)'
+        required: false
+        type: string
+        default: 'Check Flaky Tests'
     outputs:
       should_run:
         description: 'Whether CI checks should run (true/false)'
         value: ${{ jobs.check.outputs.should_run }}
+      check_flaky_tests:
+        description: 'Whether flaky test detection mode is enabled (true/false)'
+        value: ${{ jobs.check.outputs.check_flaky_tests }}
 
 jobs:
   check:
     runs-on: ubuntu-latest
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
+      check_flaky_tests: ${{ steps.check-flaky.outputs.check_flaky_tests }}
     steps:
       - name: Evaluate run conditions
         id: check
@@ -57,5 +66,20 @@ jobs:
             else
               echo "should_run=false" >> $GITHUB_OUTPUT
               echo "Draft PR without '${{ inputs.run_checks_label }}' label, skipping checks"
+            fi
+          fi
+
+      - name: Check for flaky test label
+        id: check-flaky
+        run: |
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "check_flaky_tests=false" >> $GITHUB_OUTPUT
+          else
+            labels='${{ toJson(github.event.pull_request.labels) }}'
+            if echo "$labels" | jq -e --arg label "${{ inputs.check_flaky_label }}" '.[] | select(.name == $label)' > /dev/null 2>&1; then
+              echo "check_flaky_tests=true" >> $GITHUB_OUTPUT
+              echo "PR has '${{ inputs.check_flaky_label }}' label, enabling flaky test detection mode"
+            else
+              echo "check_flaky_tests=false" >> $GITHUB_OUTPUT
             fi
           fi

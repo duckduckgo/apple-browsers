@@ -78,14 +78,14 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         XCTAssertTrue(testee.shouldShowDuckAIAddressBarButton)
     }
 
-    func testWhenIPadAndIPadAIToggleEnabledThenDuckAIAddressBarButtonIsHidden() {
+    func testWhenIPadAndIPadAIToggleEnabledThenDuckAIAddressBarButtonIsShown() {
         MockUIDevice.mockUserInterfaceIdiom = .pad
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadAIToggle])
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true)
         let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
                                                 aiChatSettings: aiChatSettings)
 
-        XCTAssertFalse(testee.shouldShowDuckAIAddressBarButton)
+        XCTAssertTrue(testee.shouldShowDuckAIAddressBarButton)
     }
 
     func testWhenIPadAndIPadAIToggleDisabledThenDuckAIAddressBarButtonIsShown() {

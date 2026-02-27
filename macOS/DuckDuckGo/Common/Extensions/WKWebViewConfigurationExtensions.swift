@@ -27,7 +27,7 @@ extension WKWebViewConfiguration {
     static var sharedVisitedLinkStore: WKVisitedLinkStoreWrapper?
 
     @MainActor
-    func applyStandardConfiguration(contentBlocking: some ContentBlockingProtocol, burnerMode: BurnerMode, earlyAccessHandlers: [UserScript] = []) {
+    func applyStandardConfiguration(contentBlocking: some ContentBlockingProtocol, burnerMode: BurnerMode, privateProcessName: Bool = false, earlyAccessHandlers: [UserScript] = []) {
         if case .burner(let websiteDataStore) = burnerMode {
             self.websiteDataStore = websiteDataStore
             // Fire Window: disable audio/video item info reporting to macOS Control Center / Lock Screen
@@ -42,6 +42,11 @@ extension WKWebViewConfiguration {
         }
 
         allowsAirPlayForMediaPlayback = true
+
+        if privateProcessName {
+            systemProcessName = "DuckDuckGo Web Content"
+        }
+
         if #available(macOS 12.3, *) {
             preferences.isElementFullscreenEnabled = true
         } else {
@@ -77,6 +82,31 @@ extension WKWebViewConfiguration {
         self.processPool.geolocationProvider = GeolocationProvider(processPool: self.processPool)
     }
 
+}
+
+extension WKWebViewConfiguration {
+
+    enum ProcessNameSelector {
+        static let processName = NSSelectorFromString("_processDisplayName")
+        static let setProcessName = NSSelectorFromString("_setProcessDisplayName:")
+    }
+
+    var systemProcessName: String? {
+        get {
+            guard responds(to: ProcessNameSelector.processName) else {
+                return nil
+            }
+
+            return value(forKey: NSStringFromSelector(ProcessNameSelector.processName)) as? String
+        }
+        set {
+            guard responds(to: ProcessNameSelector.setProcessName) else {
+                return
+            }
+
+            perform(ProcessNameSelector.setProcessName, with: newValue)
+        }
+    }
 }
 
 extension WKPreferences {

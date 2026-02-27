@@ -18,110 +18,140 @@
 
 import AppUpdaterShared
 import Cocoa
+import Combine
+import Navigation
+import Persistence
+import PixelKit
+import UserScript
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
 
-    private var mockUpdate: Update!
+    private var mockController: MockSparkleUpdateController!
 
     override func setUp() {
         super.setUp()
-        autoreleasepool {
-            mockUpdate = Update(
-                isInstalled: false,
-                type: .regular,
-                version: "1.0.1",
-                build: "101",
-                date: Date(),
-                releaseNotes: ["Bug fixes"],
-                releaseNotesSubscription: [],
-                needsLatestReleaseNote: false
-            )
-        }
+        mockController = MockSparkleUpdateController()
     }
 
     override func tearDown() {
-        mockUpdate = nil
+        mockController = nil
         super.tearDown()
     }
 
-    // MARK: - Menu Item Creation Tests
+    // MARK: - Title Tests
 
-    func testMenuItemForPendingUpdate_SetsCorrectTitle() {
-        // When
-        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockUpdate)
+    func testMenuItemTitle_WhenNotAtRestartCheckpoint_ShowsNewVersionAvailable() {
+        mockController.isAtRestartCheckpoint = false
 
-        // Then
-        XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItem)
+        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockController)
+
+        XCTAssertEqual(menuItem.title, UserText.updateNewVersionAvailableMenuItem)
     }
 
-    func testMenuItemForPendingUpdate_SetsCorrectTarget() {
-        // When
-        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockUpdate)
+    func testMenuItemTitle_WhenAtRestartCheckpoint_ShowsUpdateReady() {
+        mockController.isAtRestartCheckpoint = true
 
-        // Then
-        XCTAssertTrue(menuItem.target === Application.appDelegate.updateController)
+        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockController)
+
+        XCTAssertEqual(menuItem.title, UserText.updateReadyMenuItem)
     }
 
-    func testMenuItemForPendingUpdate_SetsCorrectAction() {
-        // When
-        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockUpdate)
+    // MARK: - Target & Action Tests
 
-        // Then
+    func testMenuItemTarget_IsThePassedInController() {
+        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockController)
+
+        XCTAssertTrue(menuItem.target === mockController)
+    }
+
+    func testMenuItemAction_IsRunUpdateFromMenuItem() {
+        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockController)
+
         XCTAssertEqual(menuItem.action, #selector(SparkleUpdateController.runUpdateFromMenuItem))
     }
 
-    func testMenuItemForPendingUpdate_SetsCorrectImage() throws {
-        // When
-        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockUpdate)
+    // MARK: - Image Test
 
-        // Then
+    func testMenuItemImage_IsUpdateMenuItemIcon() {
+        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockController)
+
         XCTAssertEqual(menuItem.image?.pngData(), NSImage.updateMenuItemIcon.pngData())
     }
+}
 
-    func testMenuItemForInstalledUpdate_SetsCorrectAction() {
-        // Given
-        let installedUpdate = Update(
-            isInstalled: true,
-            type: .regular,
-            version: "1.0.1",
-            build: "101",
-            date: Date(),
-            releaseNotes: ["Bug fixes"],
-            releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
-        )
+// MARK: - Mock
 
-        // When
-        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: installedUpdate)
+private final class MockSparkleUpdateController: NSObject, SparkleUpdateController {
 
-        // Then
-        XCTAssertEqual(menuItem.action, #selector(SparkleUpdateController.runUpdateFromMenuItem))
+    var isAtRestartCheckpoint = false
+
+    // MARK: - SparkleUpdateController
+
+    var willRelaunchAppPublisher: AnyPublisher<Void, Never> {
+        Empty().eraseToAnyPublisher()
     }
 
-    // MARK: - Critical Update Tests
+    func checkForUpdateRespectingRollout() { fatalError("Not expected") }
+    func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress) { fatalError("Not expected") }
+    func log() {}
 
-    func testMenuItemForCriticalUpdate_SetsCorrectProperties() throws {
-        // Given
-        let criticalUpdate = Update(
-            isInstalled: false,
-            type: .critical,
-            version: "1.0.1",
-            build: "101",
-            date: Date(),
-            releaseNotes: ["Critical security fix"],
-            releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
-        )
-
-        // When
-        let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: criticalUpdate)
-
-        // Then
-        XCTAssertEqual(menuItem.title, UserText.updateAvailableMenuItem)
-        XCTAssertEqual(menuItem.action, #selector(SparkleUpdateController.runUpdateFromMenuItem))
-        XCTAssertEqual(menuItem.image?.pngData(), NSImage.updateMenuItemIcon.pngData())
+    func makeReleaseNotesNavigationResponder(
+        releaseNotesURL: URL,
+        scriptsPublisher: some Publisher<any ReleaseNotesUserScriptProvider, Never>,
+        webViewPublisher: some Publisher<WKWebView, Never>
+    ) -> any NavigationResponder & AnyObject {
+        fatalError("Not expected")
     }
+
+    func makeReleaseNotesUserScript(
+        pixelFiring: PixelFiring?,
+        keyValueStore: ThrowingKeyValueStoring,
+        releaseNotesURL: URL
+    ) -> Subfeature {
+        fatalError("Not expected")
+    }
+
+    // MARK: - SparkleUpdateControllerObjC
+
+    func runUpdateFromMenuItem() { fatalError("Not expected") }
+
+    // MARK: - UpdateController
+
+    @Published var latestUpdate: Update?
+    var latestUpdatePublisher: Published<Update?>.Publisher { $latestUpdate }
+
+    @Published var hasPendingUpdate = false
+    var hasPendingUpdatePublisher: Published<Bool>.Publisher { $hasPendingUpdate }
+
+    var mustShowUpdateIndicators = false
+    var needsNotificationDot = false
+    var notificationDotPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var clearsNotificationDotOnMenuOpen = true
+    var lastUpdateCheckDate: Date?
+    var lastUpdateNotificationShownDate = Date.distantPast
+
+    @Published var updateProgress: UpdateCycleProgress = .updateCycleNotStarted
+    var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }
+
+    var areAutomaticUpdatesEnabled = false
+    var notificationPresenter: any UpdateNotificationPresenting = MockUpdateNotificationPresenter()
+
+    func runUpdate() { fatalError("Not expected") }
+    func checkForUpdateSkippingRollout() { fatalError("Not expected") }
+
+    // MARK: - UpdateControllerObjC
+
+    func openUpdatesPage() { fatalError("Not expected") }
+    func handleAppTermination() {}
+}
+
+private final class MockUpdateNotificationPresenter: UpdateNotificationPresenting {
+    func showUpdateNotification(for status: AppUpdateStatus) {}
+    func showUpdateNotification(for type: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {}
+    func dismissIfPresented() {}
+    func openUpdatesPage() {}
 }

@@ -22,11 +22,14 @@ import os.log
 import PixelKit
 import PrivacyConfig
 
-/// Reports memory usage at startup and scheduled intervals (1h, 2h, 4h, 8h, 24h).
+/// Reports memory usage at scheduled intervals (startup after 2min, 1h, 2h, 4h, 8h, 24h).
 ///
 /// Each trigger fires at most once per monitoring session. A session starts when the
 /// `.memoryUsageReporting` feature flag is enabled and ends when the flag is disabled.
 /// Disabling and re-enabling the flag starts a fresh session.
+///
+/// The startup trigger fires after a 2-minute delay to allow session restore to complete
+/// and produce a meaningful memory snapshot.
 ///
 /// Context parameters (memory, windows, standard/pinned tabs, architecture, sync,
 /// allocation, uptime) are collected at the moment of firing each pixel, on the `MainActor`.
@@ -127,8 +130,6 @@ final class MemoryUsageIntervalReporter {
     // MARK: - Monitoring
 
     /// Starts monitoring: records the session start time and launches the background check loop.
-    ///
-    /// The first check fires immediately (which captures the startup trigger).
     private func startMonitoring() {
         let alreadyStarted = lock.withLock { startTime != nil }
         guard !alreadyStarted, featureFlagger.isFeatureOn(.memoryUsageReporting) else { return }
@@ -143,7 +144,6 @@ final class MemoryUsageIntervalReporter {
     private func startIntervalChecking() {
         let interval = checkInterval
         monitoringTask = Task.detached(priority: .utility) { [weak self] in
-            // Fire startup + any already-elapsed triggers immediately
             await self?.checkAndFireIntervals()
 
             while !Task.isCancelled {
@@ -171,8 +171,7 @@ final class MemoryUsageIntervalReporter {
         for trigger in MemoryUsageIntervalPixel.Trigger.allCases {
             guard !Task.isCancelled else { return }
 
-            // For non-startup triggers, check if enough time has elapsed
-            if let threshold = trigger.elapsedSeconds, elapsed < threshold {
+            if elapsed < trigger.elapsedSeconds {
                 continue
             }
 

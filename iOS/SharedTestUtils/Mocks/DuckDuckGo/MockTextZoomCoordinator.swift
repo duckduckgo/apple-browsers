@@ -71,22 +71,31 @@ class MockTextZoomCoordinator: TextZoomCoordinating {
 
 final class MockTextZoomCoordinatorProvider: TextZoomCoordinatorProviding {
 
-    let normalCoordinator: MockTextZoomCoordinator
-    let fireCoordinator: MockTextZoomCoordinator
-    private(set) var clearFireModeDataCallCount = 0
+    private var coordinators: [TextZoomContext: MockTextZoomCoordinator]
+
+    var normalCoordinator: MockTextZoomCoordinator {
+        coordinators[.normal]!
+    }
+
+    var fireCoordinator: MockTextZoomCoordinator {
+        coordinators[.fireMode]!
+    }
 
     init(normalCoordinator: MockTextZoomCoordinator = MockTextZoomCoordinator(),
          fireCoordinator: MockTextZoomCoordinator = MockTextZoomCoordinator()) {
-        self.normalCoordinator = normalCoordinator
-        self.fireCoordinator = fireCoordinator
+        self.coordinators = [
+            .normal: normalCoordinator,
+            .fireMode: fireCoordinator
+        ]
     }
 
-    func coordinator(fireMode: Bool) -> TextZoomCoordinating {
-        fireMode ? fireCoordinator : normalCoordinator
-    }
-
-    func clearFireModeData() {
-        clearFireModeDataCallCount += 1
+    func coordinator(for context: TextZoomContext) -> TextZoomCoordinating {
+        if let existing = coordinators[context] {
+            return existing
+        }
+        let mock = MockTextZoomCoordinator()
+        coordinators[context] = mock
+        return mock
     }
 
 }

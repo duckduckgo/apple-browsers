@@ -1292,10 +1292,10 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.isHidden = !shouldShowAIChatButton()
         updateAIChatDividerVisibility()
 
-        // Check if the current tab is in the onboarding state and hide the AI chat button if it is
-        guard let tabViewModel else { return }
-        let isOnboarding = [.onboarding].contains(tabViewModel.tab.content)
-        aiChatButton.isHidden = isOnboarding
+        // Hide the AI chat button during onboarding
+        if let tabViewModel, tabViewModel.tab.content == .onboarding {
+            aiChatButton.isHidden = true
+        }
     }
 
     private var isAskAIChatButtonExpanded: Bool = false
@@ -2137,6 +2137,9 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         toggleControl.menu = createSearchModeToggleContextMenu()
+        toggleControl.setAccessibilityElement(true)
+        toggleControl.setAccessibilityRole(.radioGroup)
+        toggleControl.setAccessibilityIdentifier("AddressBarButtonsViewController.searchModeToggleControl")
 
         trailingButtonsContainer.addArrangedSubview(toggleControl)
         toggleControl.isHidden = true

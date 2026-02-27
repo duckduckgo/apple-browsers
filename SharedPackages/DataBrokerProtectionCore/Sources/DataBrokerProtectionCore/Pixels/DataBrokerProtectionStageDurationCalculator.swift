@@ -43,6 +43,7 @@ public enum Stage: String {
 public protocol StageDurationCalculator {
     var attemptId: UUID { get }
     var isImmediateOperation: Bool { get }
+    var isFreeScan: Bool? { get }
     var tries: Int { get }
 
     func durationSinceLastStage() -> Double
@@ -89,6 +90,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let startTime: Date
     let parentURL: String?
     let isAuthenticated: Bool
+    let isFreeScan: Bool?
     var lastStateTime: Date
     private(set) var actionID: String?
     private(set) var actionType: String?
@@ -107,6 +109,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          isImmediateOperation: Bool = false,
          parentURL: String? = nil,
          isAuthenticated: Bool = true,
+         isFreeScan: Bool?,
          vpnConnectionState: String,
          vpnBypassStatus: String,
          featureFlagger: DBPFeatureFlagging) {
@@ -119,6 +122,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.isImmediateOperation = isImmediateOperation
         self.parentURL = parentURL
         self.isAuthenticated = isAuthenticated
+        self.isFreeScan = isFreeScan
         self.vpnConnectionState = vpnConnectionState
         self.vpnBypassStatus = vpnBypassStatus
         self.featureFlagger = featureFlagger
@@ -318,7 +322,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                   vpnConnectionState: vpnConnectionState,
                                   vpnBypassStatus: vpnBypassStatus,
                                   parent: parentURL ?? "",
-                                  isAuthenticated: isAuthenticated))
+                                  isAuthenticated: isAuthenticated,
+                                  isFreeScan: isFreeScan))
     }
 
     func fireScanNoResults() {
@@ -332,7 +337,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     parent: parentURL ?? "",
                                     actionID: actionID ?? "unknown",
                                     actionType: actionType ?? "unknown",
-                                    isAuthenticated: isAuthenticated))
+                                    isAuthenticated: isAuthenticated,
+                                    isFreeScan: isFreeScan))
     }
 
     func fireScanError(error: Error) {
@@ -355,7 +361,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 parent: parentURL ?? "",
                 actionId: actionID ?? "unknown",
                 actionType: actionType ?? "unknown",
-                isAuthenticated: isAuthenticated
+                isAuthenticated: isAuthenticated,
+                isFreeScan: isFreeScan
             )
         )
     }

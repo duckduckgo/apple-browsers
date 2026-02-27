@@ -48,7 +48,8 @@ public enum EmbeddedWebExtensionRegistry {
 
     /// All embedded extensions that should be installed/updated on app launch.
     public static let all: [EmbeddedWebExtensionDescriptor] = [
-        EmbeddedWebExtensionDescriptor(type: .embedded, resourceFilename: "duckduckgo-embedded-web-extension.zip")
+        EmbeddedWebExtensionDescriptor(type: .embedded, resourceFilename: "duckduckgo-embedded-web-extension.zip"),
+        EmbeddedWebExtensionDescriptor(type: .darkReader, resourceFilename: "darkreader.zip"),
     ]
 
     /// Find descriptor for a given extension type.

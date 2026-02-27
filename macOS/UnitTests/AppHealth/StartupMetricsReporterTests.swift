@@ -42,7 +42,7 @@ final class StartupMetricsReporterTests: XCTestCase {
 
     // MARK: - Feature Flag
 
-    func testWhenFeatureFlagDisabled_ThenDoesNotFirePixel() async {
+    func testWhenFeatureFlagDisabled_ThenDoesNotFirePixel() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
         let (_, _, reporter) = buildMetricsReporter()
@@ -50,13 +50,12 @@ final class StartupMetricsReporterTests: XCTestCase {
 
         // When
         reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
-        await Task.yield()
 
         // Then
         XCTAssertTrue(mockPixelFiring.actualFireCalls.isEmpty)
     }
 
-    func testWhenFeatureFlagEnabled_ThenFiresPixel() async {
+    func testWhenFeatureFlagEnabled_ThenFiresPixel() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
@@ -64,7 +63,6 @@ final class StartupMetricsReporterTests: XCTestCase {
 
         // When
         reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
-        await Task.yield()
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.count, 1)
@@ -72,7 +70,7 @@ final class StartupMetricsReporterTests: XCTestCase {
 
     // MARK: - Pixel Name
 
-    func testFiredPixelHasCorrectName() async {
+    func testFiredPixelHasCorrectName() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
@@ -80,7 +78,6 @@ final class StartupMetricsReporterTests: XCTestCase {
 
         // When
         reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
-        await Task.yield()
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.name, "m_mac_startup_performance_metrics")
@@ -88,7 +85,7 @@ final class StartupMetricsReporterTests: XCTestCase {
 
     // MARK: - Environment Parameters
 
-    func testPixelIncludesSystemEnvironmentProperties() async {
+    func testPixelIncludesSystemEnvironmentProperties() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (environment, _, reporter) = buildMetricsReporter()
@@ -96,7 +93,6 @@ final class StartupMetricsReporterTests: XCTestCase {
 
         // When
         reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
-        await Task.yield()
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["architecture"], environment.architecture)
@@ -106,7 +102,7 @@ final class StartupMetricsReporterTests: XCTestCase {
 
     // MARK: - Session Restoration
 
-    func testPixelIncludesSessionRestorationState() async {
+    func testPixelIncludesSessionRestorationState() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter(restorePreviousSession: true)
@@ -114,7 +110,6 @@ final class StartupMetricsReporterTests: XCTestCase {
 
         // When
         reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
-        await Task.yield()
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["session_restoration"], "true")
@@ -122,7 +117,7 @@ final class StartupMetricsReporterTests: XCTestCase {
 
     // MARK: - Window Context
 
-    func testPixelIncludesWindowAndTabCount() async {
+    func testPixelIncludesWindowAndTabCount() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
@@ -130,7 +125,6 @@ final class StartupMetricsReporterTests: XCTestCase {
 
         // When
         reporter.startupProfiler(profiler, didCompleteWithMetrics: buildStartupMetrics())
-        await Task.yield()
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["windows"], "1")
@@ -140,7 +134,7 @@ final class StartupMetricsReporterTests: XCTestCase {
 
     // MARK: - Timing Metrics
 
-    func testPixelIncludesTimingMetrics() async {
+    func testPixelIncludesTimingMetrics() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.startupMetrics]
         let (_, _, reporter) = buildMetricsReporter()
@@ -149,7 +143,6 @@ final class StartupMetricsReporterTests: XCTestCase {
 
         // When
         reporter.startupProfiler(profiler, didCompleteWithMetrics: metrics)
-        await Task.yield()
 
         // Then
         XCTAssertEqual(mockPixelFiring.actualFireCalls.first?.pixel.parameters?["app_delegate_init"], "100")

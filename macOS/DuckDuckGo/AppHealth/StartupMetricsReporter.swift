@@ -41,10 +41,8 @@ final class StartupMetricsReporter: StartupProfilerDelegate {
             return
         }
 
-        Task { @MainActor in
-            let pixel = buildMetricsPixel(metrics: metrics, windowContext: windowContextProvider(), environment: environment, previousSessionRestored: previousSessionRestored)
-            pixelFiring.fire(pixel, frequency: .standard)
-        }
+        let pixel = buildMetricsPixel(metrics: metrics, windowContext: windowContextProvider(), environment: environment, previousSessionRestored: previousSessionRestored)
+        pixelFiring.fire(pixel, frequency: .standard)
     }
 }
 

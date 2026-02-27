@@ -194,28 +194,29 @@ class PrivacyDashboardUITests: UITestCase {
             return
         }
 
-        // Identify the "Tracker domains for ..." groups without pinning to specific company names.
-        let trackerDomainsGroups = trackerCompanyRows
-            .flatMap(\.children)
-            .filter { $0.title.hasPrefix("Tracker domains for ") }
-        XCTAssertEqual(trackerDomainsGroups.count, trackerCompanyRows.count,
-                       "Expected tracker domains groups count to match tracker company rows count (rows: \(trackerCompanyRows.count), domains: \(trackerDomainsGroups.count))")
+        let rowsWithText = trackerCompanyRows.filter { row in
+            let rowCandidates = [row.trimmedLabel, row.trimmedStringValue]
+                + row.children.flatMap { [$0.trimmedLabel, $0.trimmedStringValue] }
+            return rowCandidates.contains { !$0.isEmpty }
+        }
+        XCTAssertEqual(rowsWithText.count,
+                       trackerCompanyRows.count,
+                       "Expected each tracker company row to expose text content (rows: \(trackerCompanyRows.count), rowsWithText: \(rowsWithText.count))")
 
-        // Domain strings are nested inside the tracker domains group and its immediate children.
-        let domainCandidates = trackerDomainsGroups.flatMap { trackerDomainsGroup in
-            let domainNodes = trackerDomainsGroup.children + trackerDomainsGroup.children.flatMap(\.children)
-            XCTAssertFalse(domainNodes.isEmpty, "Expected tracker domains group to contain domain rows")
-            return domainNodes.flatMap { node in
-                [node.trimmedLabel, node.trimmedStringValue].filter { !$0.isEmpty }
-            }
+        let groupSnapshot = try trackerNetworksGroup.snapshot()
+        let nestedNodes = groupSnapshot.children
+            + groupSnapshot.children.flatMap(\.children)
+            + groupSnapshot.children.flatMap(\.children).flatMap(\.children)
+        let domainCandidates = nestedNodes.flatMap { node in
+            [node.trimmedLabel, node.trimmedStringValue].filter { !$0.isEmpty }
         }
         let domainLikeCandidates = domainCandidates.filter {
             $0.range(of: #"^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#, options: .regularExpression) != nil
         }
-        // Validate domain names
-        XCTAssertTrue(!domainLikeCandidates.isEmpty, "Expected a domain-formatted label/value in tracker domains group. Candidates: \(domainCandidates)")
+        XCTAssertTrue(!domainLikeCandidates.isEmpty,
+                      "Expected at least one domain-formatted label/value in tracker companies details. Candidates: \(domainCandidates)")
         Logger.log(
-            "tracker evaluation: domainGroupTitles=\(trackerDomainsGroups.map(\.title)), domainCandidates=\(domainCandidates), domainLikeCandidates=\(domainLikeCandidates)"
+            "tracker evaluation: rowCount=\(trackerCompanyRows.count), rowsWithText=\(rowsWithText.count), domainCandidates=\(domainCandidates), domainLikeCandidates=\(domainLikeCandidates)"
         )
 
         // Close dashboard

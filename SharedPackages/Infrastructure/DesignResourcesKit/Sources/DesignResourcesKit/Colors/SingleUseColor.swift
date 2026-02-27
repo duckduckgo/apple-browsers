@@ -70,6 +70,7 @@ public extension SingleUseColor {
         case buttonsSecondaryDefault
         case buttonsSecondaryPressed
         case buttonsSecondaryText
+        case backgroundAccent
 
         case controlsFillPrimary
 

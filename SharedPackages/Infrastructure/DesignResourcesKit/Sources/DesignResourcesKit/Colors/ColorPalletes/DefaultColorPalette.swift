@@ -309,7 +309,8 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: Color(0x242323).opacity(0.09), darkColor: Color(0xFFFFFF).opacity(0.06))
         case .decorationSecondary:
             return DynamicColor(lightColor: Color(0x242323).opacity(0.16), darkColor: Color(0xFFFFFF).opacity(0.09))
-
+        case .backgroundAccent:
+            return DynamicColor(lightColor: Color(0x7295F6).opacity(0.20), darkColor: Color(0x8FABF9).opacity(0.20))
         }
     }
 

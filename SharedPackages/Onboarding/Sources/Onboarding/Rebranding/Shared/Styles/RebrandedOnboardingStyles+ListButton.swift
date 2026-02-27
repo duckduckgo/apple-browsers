@@ -89,17 +89,15 @@ public extension OnboardingRebranding.OnboardingStyles {
 #if os(iOS)
             switch (colorScheme, isPressed, isHovered) {
             case (.light, false, false):
-                return .shade(0.01)
+                return .clear
             case (.dark, false, false):
-                return .tint(0.03)
+                return .clear
             case (.light, false, true):
-                return .shade(0.03)
+                return .clear
             case (.dark, false, true):
-                return .tint(0.06)
-            case (.light, true, _):
-                return .shade(0.06)
-            case (.dark, true, _):
-                return .tint(0.06)
+                return .clear
+            case (_, true, _):
+                return colorPalette.backgroundAccent
             case (_, _, _):
                 return .clear
             }

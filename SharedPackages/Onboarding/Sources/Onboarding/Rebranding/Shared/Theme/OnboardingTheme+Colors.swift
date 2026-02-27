@@ -55,6 +55,8 @@ public extension OnboardingTheme {
         public let secondaryButtonPressedColor: Color
         /// Secondary button foreground/text color.
         public let secondaryButtonTextColor: Color
+        ///
+        public let backgroundAccent: Color
 
         /// Creates a color palette for onboarding surfaces, text, and controls.
         public init(
@@ -72,7 +74,8 @@ public extension OnboardingTheme {
             primaryButtonTextColor: Color,
             secondaryButtonBackgroundColor: Color,
             secondaryButtonPressedColor: Color,
-            secondaryButtonTextColor: Color
+            secondaryButtonTextColor: Color,
+            backgroundAccent: Color
         ) {
             self.background = background
             self.bubbleBorder = bubbleBorder
@@ -89,6 +92,7 @@ public extension OnboardingTheme {
             self.secondaryButtonBackgroundColor = secondaryButtonBackgroundColor
             self.secondaryButtonPressedColor = secondaryButtonPressedColor
             self.secondaryButtonTextColor = secondaryButtonTextColor
+            self.backgroundAccent = backgroundAccent
         }
 
         /// Backward-compatible initializer for themes that do not define dedicated secondary button colors.
@@ -103,7 +107,8 @@ public extension OnboardingTheme {
             optionsListIconColor: Color,
             optionsListTextColor: Color,
             primaryButtonBackgroundColor: Color,
-            primaryButtonTextColor: Color
+            primaryButtonTextColor: Color,
+            backgroundAccent: Color
         ) {
             self.init(
                 background: background,
@@ -120,7 +125,8 @@ public extension OnboardingTheme {
                 primaryButtonTextColor: primaryButtonTextColor,
                 secondaryButtonBackgroundColor: primaryButtonBackgroundColor,
                 secondaryButtonPressedColor: primaryButtonBackgroundColor,
-                secondaryButtonTextColor: primaryButtonTextColor
+                secondaryButtonTextColor: primaryButtonTextColor,
+                backgroundAccent: backgroundAccent
             )
         }
     }

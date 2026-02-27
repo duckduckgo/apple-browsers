@@ -48,6 +48,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
     }
 
+    var isWebViewUserAgentOn: Bool {
+        featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
+    }
+
     var isWideEventPOSTEndpointOn: Bool {
         featureFlagger.isFeatureOn(.wideEventPostEndpoint)
     }

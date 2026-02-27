@@ -81,6 +81,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397941080401
     case dbpClickActionDelayReductionOptimization
 
+    /// https://app.asana.com/1/137249556945/project/1206873150423133/task/1213344522599586
+    case dbpWebViewUserAgent
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
@@ -356,6 +359,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
                 .dbpClickActionDelayReductionOptimization,
+                .dbpWebViewUserAgent,
                 .syncFeatureLevel3,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
@@ -448,6 +452,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
         case .dbpClickActionDelayReductionOptimization:
             return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
+        case .dbpWebViewUserAgent:
+            return .remoteReleasable(.subfeature(DBPSubfeature.webViewUserAgent))
         case .syncSetupBarcodeIsUrlBased:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .exchangeKeysToSyncWithAnotherDevice:

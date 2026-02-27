@@ -2085,10 +2085,10 @@ class TabNavigationTests: UITestCase {
         app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
-        func panelBookmarkTargetItem() -> XCUIElement {
-            let bookmarksPanelPopover = app.popovers.firstMatch
+        func panelBookmarkTargetItem(in window: XCUIElement) -> XCUIElement {
+            let bookmarksPanelPopover = window.popovers.firstMatch
             if !bookmarksPanelPopover.exists {
-                app.openBookmarksPanel()
+                window.openBookmarksPanel()
             }
 
             XCTAssertTrue(bookmarksPanelPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -2106,9 +2106,10 @@ class TabNavigationTests: UITestCase {
         // Navigate to another page.
         app.activateAddressBar()
         openTestPage("Panel Bookmark Source")
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Panel Bookmark Source")).firstMatch
 
         // Regular click from bookmarks panel should open current tab.
-        var panelBookmarkItem = panelBookmarkTargetItem()
+        var panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
         panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         // Target page should be active in the current tab.
         XCTAssertTrue(app.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -2122,7 +2123,7 @@ class TabNavigationTests: UITestCase {
         // Cmd click from panel should open background tab.
         app.activateAddressBar()
         openTestPage("Panel Bookmark Source")
-        panelBookmarkItem = panelBookmarkTargetItem()
+        panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
         let commandPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         XCUIElement.perform(withKeyModifiers: [.command]) {
             commandPanelBookmarkClick.click()
@@ -2140,7 +2141,7 @@ class TabNavigationTests: UITestCase {
         try app.tabs.element(boundBy: 1).closeTab()
 
         // Cmd+Shift click from panel should open selected tab.
-        panelBookmarkItem = panelBookmarkTargetItem()
+        panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
         let commandShiftPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         XCUIElement.perform(withKeyModifiers: [.command, .shift]) {
             commandShiftPanelBookmarkClick.click()
@@ -2160,7 +2161,7 @@ class TabNavigationTests: UITestCase {
         app.closeCurrentTab()
 
         // Cmd+Option click from panel should open background window.
-        panelBookmarkItem = panelBookmarkTargetItem()
+        panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
         let commandOptionPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         XCUIElement.perform(withKeyModifiers: [.command, .option]) {
             commandOptionPanelBookmarkClick.click()
@@ -2174,7 +2175,7 @@ class TabNavigationTests: UITestCase {
         XCTAssertEqual(app.windows.count, 2)
 
         // Cmd+Option+Shift click from panel should open selected window.
-        panelBookmarkItem = panelBookmarkTargetItem()
+        panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
         let commandOptionShiftPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         XCUIElement.perform(withKeyModifiers: [.command, .option, .shift]) {
             commandOptionShiftPanelBookmarkClick.click()

@@ -27,7 +27,7 @@ if [[ $# -ge 1 ]]; then
     TAG="$1"
 else
     echo "Fetching latest DarkReader release tag..."
-    TAG="$(git ls-remote --tags --sort=-v:refname https://github.com/darkreader/darkreader.git 'v*' \
+    TAG="$(git ls-remote --tags --refs --sort=-v:refname https://github.com/darkreader/darkreader.git 'v*' \
         | head -1 \
         | sed 's|.*refs/tags/||')"
     if [[ -z "$TAG" ]]; then

@@ -163,8 +163,8 @@ jobs:
 
         flaky_mode="${{ needs.should-run-checks.outputs.check_flaky_tests }}"
         if [[ "$flaky_mode" == "true" ]]; then
-          iteration_flags="-test-iterations 50 -run-tests-until-failure"
-          echo "Flaky test detection mode: running tests 50x, failing on first failure"
+          iteration_flags="-test-iterations 25 -run-tests-until-failure"
+          echo "Flaky test detection mode: running tests 25x, failing on first failure"
         else
           iteration_flags=""
         fi

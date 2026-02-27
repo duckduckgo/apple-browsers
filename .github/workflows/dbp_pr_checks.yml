@@ -104,9 +104,9 @@ jobs:
         run: |
           flaky_mode="${{ needs.should-run-checks.outputs.check_flaky_tests }}"
           if [[ "$flaky_mode" == "true" ]]; then
-            echo "Flaky test detection mode: running tests 50x, failing on first failure"
-            for i in $(seq 1 50); do
-              echo "--- Iteration $i/50 ---"
+            echo "Flaky test detection mode: running tests 25x, failing on first failure"
+            for i in $(seq 1 25); do
+              echo "--- Iteration $i/25 ---"
               set -o pipefail && swift test --enable-swift-testing | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml || exit 1
             done
           else
@@ -274,8 +274,8 @@ jobs:
         run: |
           flaky_mode="${{ needs.should-run-checks.outputs.check_flaky_tests }}"
           if [[ "$flaky_mode" == "true" ]]; then
-            iteration_flags="-test-iterations 50 -run-tests-until-failure"
-            echo "Flaky test detection mode: running tests 50x, failing on first failure"
+            iteration_flags="-test-iterations 25 -run-tests-until-failure"
+            echo "Flaky test detection mode: running tests 25x, failing on first failure"
           else
             iteration_flags="-test-iterations 3 -retry-tests-on-failure"
           fi

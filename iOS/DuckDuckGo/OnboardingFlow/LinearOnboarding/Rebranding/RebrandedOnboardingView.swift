@@ -21,10 +21,6 @@ import DuckUI
 import Onboarding
 import SwiftUI
 
-private enum OnboardingViewMetrics {
-    static let landingScreenDuration = 2.0
-}
-
 private enum BubbleBackedDialogMetrics {
     static let introAdditionalTopMargin: CGFloat = 40
     static let browsersComparisonAdditionalTopMargin: CGFloat = 0
@@ -252,14 +248,14 @@ extension OnboardingRebranding {
         }
 
         private var landingView: some View {
-            LandingView(animationNamespace: animationNamespace)
-                .ignoresSafeArea(edges: .bottom)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingViewMetrics.landingScreenDuration) {
-                        model.onAppear()
-                    }
+            LandingView(animationNamespace: animationNamespace) {
+                // Dismiss the landing screen 2s after all entrance animations finish
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    model.onAppear()
                 }
+            }
+            .ignoresSafeArea(edges: .bottom)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
 
         private func introView(shouldShowSkipOnboardingButton: Bool) -> some View {

@@ -56,7 +56,8 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// - Returns: A TestFixture containing all initialized test components
     private func createTestFixture(
         pixelHandler: @escaping PixelKit.FireRequest,
-        subscriptionStateProvider: SubscriptionStateProviding? = nil
+        subscriptionStateProvider: SubscriptionStateProviding? = nil,
+        returningUserProvider: AttributedMetricReturningUserProviding? = nil
     ) -> TestFixture {
         let suiteName = "testing_\(UUID().uuidString)"
         let userDefaults = UserDefaults(suiteName: suiteName)!
@@ -83,6 +84,8 @@ final class AttributedMetricManagerTests: XCTestCase {
         let subscriptionProvider = subscriptionStateProvider ?? SubscriptionStateProviderMock()
         let settingsProvider = AttributedMetricSettingsProviderMock()
 
+        let returningUser = returningUserProvider ?? AttributedMetricReturningUserProvidingMock()
+
         let attributionManager = AttributedMetricManager(
             pixelKit: pixelKit,
             dataStoring: dataStorage,
@@ -90,6 +93,7 @@ final class AttributedMetricManagerTests: XCTestCase {
             originProvider: originProvider,
             defaultBrowserProviding: defaultBrowserProvider,
             subscriptionStateProvider: subscriptionProvider,
+            returningUserProvider: returningUser,
             dateProvider: timeMachine,
             settingsProvider: settingsProvider
         )
@@ -1278,5 +1282,41 @@ final class AttributedMetricManagerTests: XCTestCase {
         XCTAssertFalse(fixture.dataStorage.subscriptionFreeTrialFired, "Subscription free trial flag should be cleared")
         XCTAssertFalse(fixture.dataStorage.subscriptionMonth1Fired, "Subscription month 1 flag should be cleared")
         XCTAssertEqual(fixture.dataStorage.syncDevicesCount, 0, "Sync devices count should be cleared")
+    }
+
+    // MARK: - Returning User Tests
+
+    /// Tests that no pixels fire when the user is detected as a returning user
+    ///
+    /// ## Test Validation
+    /// - No pixels fire for any trigger when isReturningUser is true
+    /// - Covers all trigger types: appDidStart, userDidSearch, userDidSelectAD, userDidDuckAIChat, userDidSubscribe, userDidSync
+    func testNoPixelsFireForReturningUser() {
+        var pixelFired = false
+
+        let fixture = createTestFixture(
+            pixelHandler: { pixelName, _, _, _, _, _ in
+                if pixelName != "attributed_metric_data_store_error" {
+                    pixelFired = true
+                }
+            },
+            returningUserProvider: AttributedMetricReturningUserProvidingMock(isReturningUser: true)
+        )
+        defer { fixture.cleanup() }
+
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Travel past install day so triggers would normally fire
+        fixture.timeMachine.travel(by: .day, value: 2)
+
+        // Try all trigger types
+        fixture.attributionManager.process(trigger: .appDidStart)
+        fixture.attributionManager.process(trigger: .userDidSearch)
+        fixture.attributionManager.process(trigger: .userDidSelectAD)
+        fixture.attributionManager.process(trigger: .userDidDuckAIChat)
+        fixture.attributionManager.process(trigger: .userDidSubscribe)
+        fixture.attributionManager.process(trigger: .userDidSync(devicesCount: 1))
+
+        XCTAssertFalse(pixelFired, "No pixels should fire for a returning user")
     }
 }

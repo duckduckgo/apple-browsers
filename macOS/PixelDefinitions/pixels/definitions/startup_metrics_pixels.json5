@@ -95,7 +95,7 @@
                 "key": "pinned_tabs",
                 "type": "string",
                 "description": "Optional. Number of pinned tabs restored during state restoration, bucketed.",
-                "enum": ["0", "1", "2", "4", "7", "11", "21", "51"]
+                "enum": ["0", "1", "2", "4", "7", "11", "15"]
             },
             {
                 "key": "session_restoration",

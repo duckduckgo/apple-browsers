@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
+#if os(macOS)
 import XCTest
 @testable import WebExtensions
 
 /// Verifies that the bundled darkreader.zip has the expected DuckDuckGo patches applied.
 /// If these tests fail, run `scripts/darkreader/patch-darkreader.sh` to rebuild the patched bundle.
-@available(macOS 15.4, iOS 18.4, *)
+@available(macOS 15.4, *)
 final class DarkReaderBundlePatchTests: XCTestCase {
 
     private var extractedDir: URL!
@@ -164,3 +165,4 @@ final class DarkReaderBundlePatchTests: XCTestCase {
         return try String(contentsOf: backgroundURL, encoding: .utf8)
     }
 }
+#endif

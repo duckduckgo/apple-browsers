@@ -19,23 +19,38 @@
 
 import Foundation
 
+enum AutoconsentContext: Hashable {
+    case normal
+    case fireMode
+}
+
 protocol AutoconsentManagementProviding {
-    @MainActor func management(fireMode: Bool) -> AutoconsentManaging
+    @MainActor func management(for context: AutoconsentContext) -> AutoconsentManaging
 }
 
 @MainActor
 final class AutoconsentManagementProvider: AutoconsentManagementProviding {
 
-    private let normalManagement: AutoconsentManaging
-    private let fireModeManagement: AutoconsentManaging
+    private let lock = NSLock()
+    private var managements: [AutoconsentContext: AutoconsentManaging] = [:]
 
-    init() {
-        self.normalManagement = AutoconsentManagement()
-        self.fireModeManagement = AutoconsentManagement()
+    func management(for context: AutoconsentContext) -> AutoconsentManaging {
+        lock.lock()
+        defer { lock.unlock() }
+
+        if let existing = managements[context] {
+            return existing
+        }
+
+        let management = AutoconsentManagement()
+        managements[context] = management
+        return management
     }
 
-    func management(fireMode: Bool) -> AutoconsentManaging {
-        fireMode ? fireModeManagement : normalManagement
-    }
+}
 
+extension Tab {
+    var autoconsentContext: AutoconsentContext {
+        self.fireTab ? .fireMode : .normal
+    }
 }

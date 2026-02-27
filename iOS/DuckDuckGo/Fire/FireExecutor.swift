@@ -341,7 +341,7 @@ class FireExecutor: FireExecuting {
         await websiteDataManager.clear(dataStore: storeToUse)
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.count)"])
 
-        autoconsentManagementProvider.management(fireMode: false).clearCache()
+        autoconsentManagementProvider.management(for: .normal).clearCache()
         daxDialogsManager.clearHeldURLData()
 
         if self.syncService.authState == .inactive {
@@ -372,7 +372,7 @@ class FireExecutor: FireExecuting {
         async let contextualChatTask: Void = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
         
         // Sync tasks
-        autoconsentManagementProvider.management(fireMode: tabViewModel.tab.fireTab).clearCache(forDomains: domains)
+        autoconsentManagementProvider.management(for: tabViewModel.tab.autoconsentContext).clearCache(forDomains: domains)
         forgetTextZoom(forDomains: domains)
         
         // Await async tasks

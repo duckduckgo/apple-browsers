@@ -208,7 +208,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         )
 
         let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: tab.textZoomContext)
-        let autoconsentManagement = autoconsentManagementProvider.management(fireMode: tab.fireTab)
+        let autoconsentManagement = autoconsentManagementProvider.management(for: tab.autoconsentContext)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
@@ -334,7 +334,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         )
 
         let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: tab.textZoomContext)
-        let autoconsentManagement = autoconsentManagementProvider.management(fireMode: tab.fireTab)
+        let autoconsentManagement = autoconsentManagementProvider.management(for: tab.autoconsentContext)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,

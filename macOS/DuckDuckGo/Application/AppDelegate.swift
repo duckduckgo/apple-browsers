@@ -1516,10 +1516,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var terminationHandler: TerminationDeciderHandler?
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard featureFlagger.isFeatureOn(.terminationDeciderSequence) else {
-            return applicationShouldTerminateFallback()
-        }
-
         // Already running — the in-flight handler will reply() when done
         if terminationHandler != nil {
             return .terminateLater
@@ -1637,70 +1633,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Subscribe to state stream (the Task keeps presenter alive)
         presenter.subscribe(to: manager.stateStream)
         return manager
-    }
-
-    // Original Termination Handler (Fallback - To be removed)
-    @MainActor
-    private func applicationShouldTerminateFallback() -> NSApplication.TerminateReply {
-        // Show quit survey for first-time quitters (new users within 14 days)
-        let decider = QuitSurveyDecider(
-            featureFlagger: featureFlagger,
-            dataClearingPreferences: dataClearingPreferences,
-            downloadManager: downloadManager,
-            installDate: AppDelegate.firstLaunchDate,
-            persistor: QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore),
-            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore)
-        )
-
-        if decider.shouldShowQuitSurvey {
-            decider.markQuitSurveyShown()
-            let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
-            let presenter = QuitSurveyPresenter(windowControllersManager: windowControllersManager, persistor: persistor)
-            presenter.showSurveySyncFallback()
-            return .terminateLater
-        }
-
-        if !downloadManager.downloads.isEmpty {
-            // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
-            let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
-            if !activeDownloads.isEmpty {
-                let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
-                let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
-                    // close alert and quit when all downloads finished
-                    NSApp.stopModal(withCode: .OK)
-                }
-                let response = alert.runModal()
-                downloadsFinishedCancellable.cancel()
-                if response == .cancel {
-                    return .terminateCancel
-                }
-            }
-            downloadManager.cancelAll(waitUntilDone: true)
-            downloadListCoordinator.sync()
-        }
-
-        // Cancel any active update tracking flow
-        updateController?.handleAppTermination()
-
-        stateRestorationManager?.applicationWillTerminate()
-
-        // Handling of "Burn on quit"
-        if let terminationReply = autoClearHandler.handleAppTerminationFallback() {
-            return terminationReply
-        }
-
-        tearDownPrivacyStats()
-
-        return .terminateNow
-    }
-
-    func tearDownPrivacyStats() {
-        let condition = RunLoop.ResumeCondition()
-        Task {
-            await privacyStats.handleAppTermination()
-            condition.resolve()
-        }
-        RunLoop.current.run(until: condition)
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

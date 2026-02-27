@@ -308,6 +308,344 @@ class TabNavigationTests: UITestCase {
         XCTAssertNotEqual(app.windows.firstMatch.title, popupWindow.title, "Main window should be frontmost after popup navigation")
     }
 
+    func testPopupRegularBookmarkClickOpensNewTabInMainWindow() {
+        app.setSwitchToNewTab(enabled: false)
+        app.resetBookmarks()
+
+        // Open test page and bookmark it.
+        openTestPage("Popup Bookmark Target")
+        app.mainMenuAddBookmarkMenuItem.click()
+        app.addBookmarkAlertAddButton.click()
+        app.dismissBookmarksBarPopover()
+
+        // Navigate to another page that can open a popup.
+        let popupWindowURL = UITests.simpleServedPage(titled: "Popup Menu Page", body: "<p>Popup menu actions</p>")
+            .absoluteString.escapedJavaScriptString()
+        app.activateAddressBar()
+        openTestPage("Popup Bookmark Source") {
+            """
+            <script>
+            var popupUrl = "\(popupWindowURL)";
+            </script>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            """
+        }
+
+        // Open pop-up window.
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Bookmark Source")).firstMatch
+        let popupLink = mainWindow.webViews["Popup Bookmark Source"].links["Open popup"]
+        popupLink.click()
+
+        let popupWindow = app.windows.containing(.staticText, identifier: "Popup menu actions").firstMatch
+        // Popup window should be open.
+        XCTAssertTrue(popupWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Open bookmarked page from app main menu when the popup window is active.
+        app.bookmarksMenu.click()
+        let bookmarkItem = app.bookmarksMenu.menuItems["Popup Bookmark Target"]
+        // Bookmark item should be visible in the menu.
+        XCTAssertTrue(bookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        bookmarkItem.click()
+
+        // Target tab should be created in the main window.
+        XCTAssertTrue(mainWindow.tabs["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Window count should stay main + popup.
+        XCTAssertEqual(app.windows.count, 2)
+        // Target page should be active in the main window.
+        XCTAssertTrue(mainWindow.webViews["Popup Bookmark Target"].exists)
+        // Source page should no longer be active.
+        XCTAssertFalse(mainWindow.webViews["Popup Bookmark Source"].exists)
+        // Source tab should still exist.
+        XCTAssertTrue(mainWindow.tabs["Popup Bookmark Source"].exists)
+        // Main window should have source + target tabs.
+        XCTAssertEqual(mainWindow.tabs.count, 2)
+        // Popup window should still be open.
+        XCTAssertTrue(popupWindow.webViews["Popup Menu Page"].exists)
+    }
+
+    func testPopupRegularHistoryClickOpensNewTabInMainWindow() {
+        app.setSwitchToNewTab(enabled: false)
+
+        // Open test page to create a history item.
+        openTestPage("Popup History Target")
+
+        // Navigate to another page that can open a popup.
+        let popupWindowURL = UITests.simpleServedPage(titled: "Popup Menu Page", body: "<p>Popup menu actions</p>")
+            .absoluteString.escapedJavaScriptString()
+        app.activateAddressBar()
+        openTestPage("Popup History Source") {
+            """
+            <script>
+            var popupUrl = "\(popupWindowURL)";
+            </script>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            """
+        }
+
+        // Open pop-up window.
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup History Source")).firstMatch
+        let popupLink = mainWindow.webViews["Popup History Source"].links["Open popup"]
+        popupLink.click()
+
+        let popupWindow = app.windows.containing(.staticText, identifier: "Popup menu actions").firstMatch
+        // Popup window should be open.
+        XCTAssertTrue(popupWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Open history page from app main menu when the popup window is active.
+        app.historyMenu.click()
+        let historyItem = app.menuItems["Popup History Target"]
+        // History item should be visible in the menu.
+        XCTAssertTrue(historyItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        historyItem.click()
+
+        // Target tab should be created in the main window.
+        XCTAssertTrue(mainWindow.tabs["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Window count should stay main + popup.
+        XCTAssertEqual(app.windows.count, 2)
+        // Target page should be active in the main window.
+        XCTAssertTrue(mainWindow.webViews["Popup History Target"].exists)
+        // Source page should no longer be active.
+        XCTAssertFalse(mainWindow.webViews["Popup History Source"].exists)
+        // Source tab should still exist.
+        XCTAssertTrue(mainWindow.tabs["Popup History Source"].exists)
+        // Main window should have source + target tabs.
+        XCTAssertEqual(mainWindow.tabs.count, 2)
+        // Popup window should still be open.
+        XCTAssertTrue(popupWindow.webViews["Popup Menu Page"].exists)
+    }
+
+    func testPopupBookmarkMainMenuCommandClickOpensBackgroundTabInMainWindow() {
+        app.setSwitchToNewTab(enabled: false)
+        // Setup: bookmark target + source page + popup window.
+        let (mainWindow, popupWindow) = setupPopupWindowForBookmarkMainMenu(targetTitle: "Popup Bookmark Target", sourceTitle: "Popup Bookmark Source")
+
+        // Open bookmarked page from app main menu with Cmd when the popup window is active.
+        app.bookmarksMenu.click()
+        let bookmarkItem = app.bookmarksMenu.menuItems["Popup Bookmark Target"]
+        // Bookmark item should be visible in the menu.
+        XCTAssertTrue(bookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command]) {
+            bookmarkItem.click()
+        }
+
+        // Target tab should be created in the main window.
+        XCTAssertTrue(mainWindow.tabs["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Window count should stay main + popup.
+        XCTAssertEqual(app.windows.count, 2)
+        // Source page should remain active in the main window.
+        XCTAssertTrue(mainWindow.webViews["Popup Bookmark Source"].exists)
+        // Target page should not be active (background tab check).
+        XCTAssertFalse(mainWindow.webViews["Popup Bookmark Target"].exists)
+        // Source tab should still exist.
+        XCTAssertTrue(mainWindow.tabs["Popup Bookmark Source"].exists)
+        // Main window should have source + target tabs.
+        XCTAssertEqual(mainWindow.tabs.count, 2)
+        // Popup window should still be open.
+        XCTAssertTrue(popupWindow.webViews["Popup Menu Page"].exists)
+    }
+
+    func testPopupBookmarkMainMenuCommandShiftClickOpensForegroundTabInMainWindow() {
+        app.setSwitchToNewTab(enabled: false)
+        // Setup: bookmark target + source page + popup window.
+        let (mainWindow, popupWindow) = setupPopupWindowForBookmarkMainMenu(targetTitle: "Popup Bookmark Target", sourceTitle: "Popup Bookmark Source")
+
+        // Open bookmarked page from app main menu with Cmd+Shift when the popup window is active.
+        app.bookmarksMenu.click()
+        let bookmarkItem = app.bookmarksMenu.menuItems["Popup Bookmark Target"]
+        // Bookmark item should be visible in the menu.
+        XCTAssertTrue(bookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command, .shift]) {
+            bookmarkItem.click()
+        }
+
+        // Target page should be active in the main window.
+        XCTAssertTrue(mainWindow.webViews["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Window count should stay main + popup.
+        XCTAssertEqual(app.windows.count, 2)
+        // Source page should not remain active.
+        XCTAssertFalse(mainWindow.webViews["Popup Bookmark Source"].exists)
+        // Source tab should still exist.
+        XCTAssertTrue(mainWindow.tabs["Popup Bookmark Source"].exists)
+        // Target tab should exist.
+        XCTAssertTrue(mainWindow.tabs["Popup Bookmark Target"].exists)
+        // Main window should have source + target tabs.
+        XCTAssertEqual(mainWindow.tabs.count, 2)
+        // Popup window should still be open.
+        XCTAssertTrue(popupWindow.webViews["Popup Menu Page"].exists)
+    }
+
+    func testPopupBookmarkMainMenuCommandOptionClickOpensBackgroundWindow() {
+        app.setSwitchToNewTab(enabled: false)
+        // Setup: bookmark target + source page + popup window.
+        let (mainWindow, popupWindow) = setupPopupWindowForBookmarkMainMenu(targetTitle: "Popup Bookmark Target", sourceTitle: "Popup Bookmark Source")
+
+        // Open bookmarked page from app main menu with Cmd+Option when the popup window is active.
+        app.bookmarksMenu.click()
+        let bookmarkItem = app.bookmarksMenu.menuItems["Popup Bookmark Target"]
+        // Bookmark item should be visible in the menu.
+        XCTAssertTrue(bookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command, .option]) {
+            bookmarkItem.click()
+        }
+
+        // Ensure it opens in background window and popup stays active.
+        let backgroundWindow = app.windows.element(boundBy: 2)
+        // Background window should appear.
+        XCTAssertTrue(backgroundWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Target page should load in that background window.
+        XCTAssertTrue(backgroundWindow.webViews["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Window count should be main + popup + background window.
+        XCTAssertEqual(app.windows.count, 3)
+        // Main window should stay on source page.
+        XCTAssertTrue(mainWindow.webViews["Popup Bookmark Source"].exists)
+        // Main window should keep a single tab.
+        XCTAssertEqual(mainWindow.tabs.count, 1)
+        // Popup window should still be open.
+        XCTAssertTrue(popupWindow.webViews["Popup Menu Page"].exists)
+        // Popup window should remain frontmost.
+        XCTAssertEqual(app.windows.firstMatch.title, popupWindow.title)
+    }
+
+    func testPopupBookmarkMainMenuCommandOptionShiftClickOpensForegroundWindow() {
+        app.setSwitchToNewTab(enabled: false)
+        // Setup: bookmark target + source page + popup window.
+        let (_, popupWindow) = setupPopupWindowForBookmarkMainMenu(targetTitle: "Popup Bookmark Target", sourceTitle: "Popup Bookmark Source")
+
+        // Open bookmarked page from app main menu with Cmd+Option+Shift when the popup window is active.
+        app.bookmarksMenu.click()
+        let bookmarkItem = app.bookmarksMenu.menuItems["Popup Bookmark Target"]
+        // Bookmark item should be visible in the menu.
+        XCTAssertTrue(bookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command, .option, .shift]) {
+            bookmarkItem.click()
+        }
+
+        // Ensure it opens in selected new window, never in popup.
+        let activeWindow = app.windows.firstMatch
+        // Target page should load in the active new window.
+        XCTAssertTrue(activeWindow.webViews["Popup Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Window count should be main + popup + foreground window.
+        XCTAssertEqual(app.windows.count, 3)
+        // Popup window should still be open.
+        XCTAssertTrue(popupWindow.webViews["Popup Menu Page"].exists)
+    }
+
+    func testPopupHistoryMainMenuCommandClickOpensBackgroundTabInMainWindow() {
+        app.setSwitchToNewTab(enabled: false)
+        // Setup: history target + source page + popup window.
+        let (mainWindow, popupWindow) = setupPopupWindowForHistoryMainMenu(targetTitle: "Popup History Target", sourceTitle: "Popup History Source")
+
+        // Open history item from app main menu with Cmd when the popup window is active.
+        app.historyMenu.click()
+        let historyItem = app.menuItems["Popup History Target"]
+        // History item should be visible in the menu.
+        XCTAssertTrue(historyItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command]) {
+            historyItem.click()
+        }
+
+        // Target tab should be created in the main window.
+        XCTAssertTrue(mainWindow.tabs["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Window count should stay main + popup.
+        XCTAssertEqual(app.windows.count, 2)
+        // Source page should remain active in the main window.
+        XCTAssertTrue(mainWindow.webViews["Popup History Source"].exists)
+        // Target page should not be active (background tab check).
+        XCTAssertFalse(mainWindow.webViews["Popup History Target"].exists)
+        // Source tab should still exist.
+        XCTAssertTrue(mainWindow.tabs["Popup History Source"].exists)
+        // Main window should have source + target tabs.
+        XCTAssertEqual(mainWindow.tabs.count, 2)
+        // Popup window should still be open.
+        XCTAssertTrue(popupWindow.webViews["Popup Menu Page"].exists)
+    }
+
+    func testPopupHistoryMainMenuCommandShiftClickOpensForegroundTabInMainWindow() {
+        app.setSwitchToNewTab(enabled: false)
+        // Setup: history target + source page + popup window.
+        let (mainWindow, popupWindow) = setupPopupWindowForHistoryMainMenu(targetTitle: "Popup History Target", sourceTitle: "Popup History Source")
+
+        // Open history item from app main menu with Cmd+Shift when the popup window is active.
+        app.historyMenu.click()
+        let historyItem = app.menuItems["Popup History Target"]
+        // History item should be visible in the menu.
+        XCTAssertTrue(historyItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command, .shift]) {
+            historyItem.click()
+        }
+
+        // Target page should be active in the main window.
+        XCTAssertTrue(mainWindow.webViews["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Window count should stay main + popup.
+        XCTAssertEqual(app.windows.count, 2)
+        // Source page should not remain active.
+        XCTAssertFalse(mainWindow.webViews["Popup History Source"].exists)
+        // Source tab should still exist.
+        XCTAssertTrue(mainWindow.tabs["Popup History Source"].exists)
+        // Target tab should exist.
+        XCTAssertTrue(mainWindow.tabs["Popup History Target"].exists)
+        // Main window should have source + target tabs.
+        XCTAssertEqual(mainWindow.tabs.count, 2)
+        // Popup window should still be open.
+        XCTAssertTrue(popupWindow.webViews["Popup Menu Page"].exists)
+    }
+
+    func testPopupHistoryMainMenuCommandOptionClickOpensBackgroundWindow() {
+        app.setSwitchToNewTab(enabled: false)
+        // Setup: history target + source page + popup window.
+        let (mainWindow, popupWindow) = setupPopupWindowForHistoryMainMenu(targetTitle: "Popup History Target", sourceTitle: "Popup History Source")
+
+        // Open history item from app main menu with Cmd+Option when the popup window is active.
+        app.historyMenu.click()
+        let historyItem = app.menuItems["Popup History Target"]
+        // History item should be visible in the menu.
+        XCTAssertTrue(historyItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command, .option]) {
+            historyItem.click()
+        }
+
+        // Ensure it opens in background window and popup stays active.
+        let backgroundWindow = app.windows.element(boundBy: 2)
+        // Background window should appear.
+        XCTAssertTrue(backgroundWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Target page should load in that background window.
+        XCTAssertTrue(backgroundWindow.webViews["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Window count should be main + popup + background window.
+        XCTAssertEqual(app.windows.count, 3)
+        // Main window should stay on source page.
+        XCTAssertTrue(mainWindow.webViews["Popup History Source"].exists)
+        // Main window should keep a single tab.
+        XCTAssertEqual(mainWindow.tabs.count, 1)
+        // Popup window should still be open.
+        XCTAssertTrue(popupWindow.webViews["Popup Menu Page"].exists)
+        // Popup window should remain frontmost.
+        XCTAssertEqual(app.windows.firstMatch.title, popupWindow.title)
+    }
+
+    func testPopupHistoryMainMenuCommandOptionShiftClickOpensForegroundWindow() {
+        app.setSwitchToNewTab(enabled: false)
+        // Setup: history target + source page + popup window.
+        let (_, popupWindow) = setupPopupWindowForHistoryMainMenu(targetTitle: "Popup History Target", sourceTitle: "Popup History Source")
+
+        // Open history item from app main menu with Cmd+Option+Shift when the popup window is active.
+        app.historyMenu.click()
+        let historyItem = app.menuItems["Popup History Target"]
+        // History item should be visible in the menu.
+        XCTAssertTrue(historyItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command, .option, .shift]) {
+            historyItem.click()
+        }
+
+        // Ensure it opens in selected new window, never in popup.
+        let activeWindow = app.windows.firstMatch
+        // Target page should load in the active new window.
+        XCTAssertTrue(activeWindow.webViews["Popup History Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Window count should be main + popup + foreground window.
+        XCTAssertEqual(app.windows.count, 3)
+        // Popup window should still be open.
+        XCTAssertTrue(popupWindow.webViews["Popup Menu Page"].exists)
+    }
+
     func testPopupCommandClickOpensBackgroundTab() {
         app.setSwitchToNewTab(enabled: false)
 
@@ -906,6 +1244,38 @@ class TabNavigationTests: UITestCase {
 
     // MARK: - Bookmark Navigation Tests
 
+    func testBookmarkRegularClickOpensInCurrentTab() {
+        app.setSwitchToNewTab(enabled: false)
+        app.resetBookmarks()
+
+        // Add a bookmark target page.
+        openTestPage("Bookmark Current Tab Target")
+        app.mainMenuAddBookmarkMenuItem.click()
+        app.addBookmarkAlertAddButton.click()
+        app.dismissBookmarksBarPopover()
+
+        // Move away so menu navigation has a visible source page.
+        app.activateAddressBar()
+        openTestPage("Bookmark Source Page")
+
+        app.bookmarksMenu.click()
+        let bookmarkItem = app.bookmarksMenu.menuItems["Bookmark Current Tab Target"]
+        // Bookmark item should be visible in the menu.
+        XCTAssertTrue(bookmarkItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        bookmarkItem.click()
+
+        // Target page should be active in the current tab.
+        XCTAssertTrue(app.webViews["Bookmark Current Tab Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // No new window should be created.
+        XCTAssertEqual(app.windows.count, 1)
+        // Source page should no longer be active.
+        XCTAssertFalse(app.webViews["Bookmark Source Page"].exists)
+        // Target tab should exist.
+        XCTAssertTrue(app.tabs["Bookmark Current Tab Target"].exists)
+        // Tab count should stay one (current-tab navigation).
+        XCTAssertEqual(app.tabs.count, 1)
+    }
+
     func testBookmarkCommandClickOpensBackgroundTab() {
         app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
@@ -1167,6 +1537,34 @@ class TabNavigationTests: UITestCase {
     }
 
     // MARK: - History Navigation Tests
+
+    func testHistoryRegularClickOpensInCurrentTab() {
+        app.setSwitchToNewTab(enabled: false)
+
+        // Visit target page so it appears in history.
+        openTestPage("History Current Tab Target")
+
+        // Move away so opening from history is observable.
+        app.activateAddressBar()
+        openTestPage("History Source Page")
+
+        app.historyMenu.click()
+        let historyItem = app.menuItems["History Current Tab Target"]
+        // History item should be visible in the menu.
+        XCTAssertTrue(historyItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        historyItem.click()
+
+        // Target page should be active in the current tab.
+        XCTAssertTrue(app.webViews["History Current Tab Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // No new window should be created.
+        XCTAssertEqual(app.windows.count, 1)
+        // Source page should no longer be active.
+        XCTAssertFalse(app.webViews["History Source Page"].exists)
+        // Target tab should exist.
+        XCTAssertTrue(app.tabs["History Current Tab Target"].exists)
+        // Tab count should stay one (current-tab navigation).
+        XCTAssertEqual(app.tabs.count, 1)
+    }
 
     func testHistoryCommandClickOpensBackgroundTab() {
         app.setSwitchToNewTab(enabled: false)
@@ -1683,6 +2081,112 @@ class TabNavigationTests: UITestCase {
 
     // MARK: - Other Navigation Tests
 
+    func testBookmarksPanelNavigation() throws {
+        app.setSwitchToNewTab(enabled: false)
+        app.resetBookmarks()
+
+        func panelBookmarkTargetItem(in window: XCUIElement) -> XCUIElement {
+            let bookmarksPanelPopover = window.popovers.firstMatch
+            if !bookmarksPanelPopover.exists {
+                window.openBookmarksPanel()
+            }
+
+            XCTAssertTrue(bookmarksPanelPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+            let item = bookmarksPanelPopover.outlines.firstMatch.staticTexts["Panel Bookmark Target"].firstMatch
+            XCTAssertTrue(item.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+            return item
+        }
+
+        // Open test page and bookmark it.
+        openTestPage("Panel Bookmark Target")
+        app.mainMenuAddBookmarkMenuItem.click()
+        app.addBookmarkAlertAddButton.click()
+        app.dismissBookmarksBarPopover()
+
+        // Navigate to another page.
+        app.activateAddressBar()
+        openTestPage("Panel Bookmark Source")
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Panel Bookmark Source")).firstMatch
+
+        // Regular click from bookmarks panel should open current tab.
+        var panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
+        panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        // Target page should be active in the current tab.
+        XCTAssertTrue(app.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // No new window should be created.
+        XCTAssertEqual(app.windows.count, 1)
+        // Source page should no longer be active.
+        XCTAssertFalse(app.webViews["Panel Bookmark Source"].exists)
+        // Tab count should stay one (current-tab navigation).
+        XCTAssertEqual(app.tabs.count, 1)
+
+        // Cmd click from panel should open background tab.
+        app.activateAddressBar()
+        openTestPage("Panel Bookmark Source")
+        panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
+        let commandPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        XCUIElement.perform(withKeyModifiers: [.command]) {
+            commandPanelBookmarkClick.click()
+        }
+        // Target tab should be created.
+        XCTAssertTrue(app.tabs["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // No new window should be created.
+        XCTAssertEqual(app.windows.count, 1)
+        // Source page should remain active (target opens in background).
+        XCTAssertTrue(app.webViews["Panel Bookmark Source"].exists)
+        // Target page should not be active (background tab check).
+        XCTAssertFalse(app.webViews["Panel Bookmark Target"].exists)
+        // There should be source + target tabs.
+        XCTAssertEqual(app.tabs.count, 2)
+        try app.tabs.element(boundBy: 1).closeTab()
+
+        // Cmd+Shift click from panel should open selected tab.
+        panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
+        let commandShiftPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        XCUIElement.perform(withKeyModifiers: [.command, .shift]) {
+            commandShiftPanelBookmarkClick.click()
+        }
+        // Target page should be active.
+        XCTAssertTrue(app.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // No new window should be created.
+        XCTAssertEqual(app.windows.count, 1)
+        // Source page should no longer be active.
+        XCTAssertFalse(app.webViews["Panel Bookmark Source"].exists)
+        // Source tab should still exist.
+        XCTAssertTrue(app.tabs["Panel Bookmark Source"].exists)
+        // Target tab should exist.
+        XCTAssertTrue(app.tabs["Panel Bookmark Target"].exists)
+        // There should be source + target tabs.
+        XCTAssertEqual(app.tabs.count, 2)
+        app.closeCurrentTab()
+
+        // Cmd+Option click from panel should open background window.
+        panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
+        let commandOptionPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        XCUIElement.perform(withKeyModifiers: [.command, .option]) {
+            commandOptionPanelBookmarkClick.click()
+        }
+        let backgroundWindow = app.windows.element(boundBy: 1)
+        // Background window should appear.
+        XCTAssertTrue(backgroundWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Target page should load in that background window.
+        XCTAssertTrue(backgroundWindow.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Total windows should be main + background window.
+        XCTAssertEqual(app.windows.count, 2)
+
+        // Cmd+Option+Shift click from panel should open selected window.
+        panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
+        let commandOptionShiftPanelBookmarkClick = panelBookmarkItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        XCUIElement.perform(withKeyModifiers: [.command, .option, .shift]) {
+            commandOptionShiftPanelBookmarkClick.click()
+        }
+        let activeWindow = app.windows.firstMatch
+        // Target page should load in the active new window.
+        XCTAssertTrue(activeWindow.webViews["Panel Bookmark Target"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // Total windows should be main + background + foreground window.
+        XCTAssertEqual(app.windows.count, 3)
+    }
+
     func testBookmarksBarNavigation() throws {
         app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
@@ -1691,6 +2195,7 @@ class TabNavigationTests: UITestCase {
         openTestPage("Page #16")
         app.mainMenuAddBookmarkMenuItem.click()
         app.addBookmarkAlertAddButton.click()
+        app.dismissBookmarksBarPopover(shouldDisplayBar: true, requirePopover: false)
         if !app.bookmarksBar.exists {
             app.mainMenuToggleBookmarksBarMenuItem.click()
         }
@@ -2104,6 +2609,56 @@ class TabNavigationTests: UITestCase {
             app.windows.firstMatch.webViews[title].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
+    }
+
+    private func setupPopupWindowForBookmarkMainMenu(targetTitle: String, sourceTitle: String) -> (XCUIElement, XCUIElement) {
+        // Open test page and bookmark it.
+        app.resetBookmarks()
+        openTestPage(targetTitle)
+        app.mainMenuAddBookmarkMenuItem.click()
+        app.addBookmarkAlertAddButton.click()
+        app.dismissBookmarksBarPopover()
+
+        // Navigate to source page and open popup.
+        app.activateAddressBar()
+        openPopupSourcePage(sourceTitle: sourceTitle)
+
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: sourceTitle)).firstMatch
+        let popupLink = mainWindow.webViews[sourceTitle].links["Open popup"]
+        popupLink.click()
+
+        let popupWindow = app.windows.containing(.staticText, identifier: "Popup menu actions").firstMatch
+        XCTAssertTrue(popupWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        return (mainWindow, popupWindow)
+    }
+
+    private func setupPopupWindowForHistoryMainMenu(targetTitle: String, sourceTitle: String) -> (XCUIElement, XCUIElement) {
+        // Create history entry and navigate to source page.
+        openTestPage(targetTitle)
+        app.activateAddressBar()
+        openPopupSourcePage(sourceTitle: sourceTitle)
+
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: sourceTitle)).firstMatch
+        let popupLink = mainWindow.webViews[sourceTitle].links["Open popup"]
+        popupLink.click()
+
+        let popupWindow = app.windows.containing(.staticText, identifier: "Popup menu actions").firstMatch
+        XCTAssertTrue(popupWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        return (mainWindow, popupWindow)
+    }
+
+    private func openPopupSourcePage(sourceTitle: String) {
+        // Open a page that can launch a popup window.
+        let popupWindowURL = UITests.simpleServedPage(titled: "Popup Menu Page", body: "<p>Popup menu actions</p>")
+            .absoluteString.escapedJavaScriptString()
+        openTestPage(sourceTitle) {
+            """
+            <script>
+            var popupUrl = "\(popupWindowURL)";
+            </script>
+            <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
+            """
+        }
     }
 }
 private extension XCUIApplication {

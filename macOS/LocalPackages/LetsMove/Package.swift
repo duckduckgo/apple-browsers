@@ -26,18 +26,35 @@ let package = Package(
         .macOS("11.4")
     ],
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
+        // Header-only module that both App Store and DMG builds can import
         .library(name: "LetsMove", targets: ["LetsMove"]),
+        // Real implementation for Sparkle/DMG builds
+        .library(name: "LetsMoveImpl", targets: ["LetsMoveImpl"]),
+        // Dummy/stub implementation for App Store builds
+        .library(name: "LetsMoveDummy", targets: ["LetsMoveDummy"]),
     ],
     dependencies: [
     ],
     targets: [
+        // Header-only target with just the interface
         .target(
             name: "LetsMove",
+            publicHeadersPath: "include"
+        ),
+        // Real implementation target (for Sparkle/DMG builds)
+        .target(
+            name: "LetsMoveImpl",
+            dependencies: ["LetsMove"],
             publicHeadersPath: "include",
             cSettings: [
                 .unsafeFlags(["-fno-objc-arc"])
             ]
+        ),
+        // Dummy implementation target (for App Store builds)
+        .target(
+            name: "LetsMoveDummy",
+            dependencies: ["LetsMove"],
+            publicHeadersPath: "include"
         )
     ]
 )

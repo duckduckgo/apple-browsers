@@ -1,7 +1,7 @@
 //
-//  AppMain.swift
+//  LetsMoveDummy.c
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,21 +16,8 @@
 //  limitations under the License.
 //
 
-import AppKit
-import LetsMove
-
-@main
-struct AppMain {
-
-    static func main() {
-        _=Application.shared
-
-#if !DEBUG
-        // this should be run after NSApplication.shared is set
-        // AppStore target is linked against LetsMoveDummy which is a stub implementation
-        PFMoveToApplicationsFolderIfNecessary(true)
-#endif
-
-        Application.shared.run()
-    }
+//  Dummy C file to ensure the header-only LetsMove target generates an object file.
+//  Without this, the linker complains about missing .o files.
+void __LetsMove_dummy_function(void) {
+    // This function should never be called
 }

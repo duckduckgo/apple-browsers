@@ -1,0 +1,4 @@
+module LetsMoveImpl {
+    // Empty module map - this target just contains the implementation
+    // The actual header is in the LetsMove target
+}

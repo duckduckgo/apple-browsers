@@ -2437,6 +2437,8 @@
 		8477AF2E2EBB440D00849EA5 /* DownloadsWebViewMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8477AF2C2EBB440D00849EA5 /* DownloadsWebViewMock.swift */; };
 		84796D752E67000C007E6F9F /* FireDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84796D742E67000C007E6F9F /* FireDialogView.swift */; };
 		84796D762E67000C007E6F9F /* FireDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84796D742E67000C007E6F9F /* FireDialogView.swift */; };
+		847F65542F51703600CE53F0 /* LetsMoveImpl in Frameworks */ = {isa = PBXBuildFile; productRef = 847F65532F51703600CE53F0 /* LetsMoveImpl */; };
+		847F65582F51704400CE53F0 /* LetsMoveDummy in Frameworks */ = {isa = PBXBuildFile; productRef = 847F65572F51704400CE53F0 /* LetsMoveDummy */; };
 		84832D992E71C32100D01735 /* PassiveAddressBarTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84832D982E71C31A00D01735 /* PassiveAddressBarTextField.swift */; };
 		84832D9A2E71C32100D01735 /* PassiveAddressBarTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84832D982E71C31A00D01735 /* PassiveAddressBarTextField.swift */; };
 		848648A12C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
@@ -2476,7 +2478,6 @@
 		84C1007F2ECC75350083AB11 /* MockWKNavigationAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C1007D2ECC75350083AB11 /* MockWKNavigationAction.swift */; };
 		84C176392DF02556001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C176382DF02556001DEEC7 /* CommonObjCExtensions */; };
 		84C1763B2DF02567001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */; };
-		84C176502DF0462F001DEEC7 /* LetsMove in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1764F2DF0462F001DEEC7 /* LetsMove */; };
 		84C63D882DF178AF001E5EE3 /* NetworkProtectionInfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 84C63D872DF178AF001E5EE3 /* NetworkProtectionInfoPlist.xcstrings */; };
 		84C96E462CF9BB6400A80A01 /* malwareFilterSet.json in Resources */ = {isa = PBXBuildFile; fileRef = 84C96E442CF9BB6400A80A01 /* malwareFilterSet.json */; };
 		84C96E472CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */ = {isa = PBXBuildFile; fileRef = 84C96E452CF9BB6400A80A01 /* malwareHashPrefixes.json */; };
@@ -6530,6 +6531,7 @@
 				37EACB062EF4C3BD002C06F9 /* PrivacyConfig in Frameworks */,
 				4B9EE3522D76C9EB00DDC75C /* Navigation in Frameworks */,
 				4B9EE34E2D76C9B900DDC75C /* History in Frameworks */,
+				847F65582F51704400CE53F0 /* LetsMoveDummy in Frameworks */,
 				374EFDED2D01A1DE00B30939 /* Utilities in Frameworks */,
 				9DC70B1A2AA1FA5B005A844B /* LoginItems in Frameworks */,
 				4B9EE3642D76CA9700DDC75C /* Suggestions in Frameworks */,
@@ -6886,7 +6888,6 @@
 				1E7D3C302F2232620099611C /* WebExtensions in Frameworks */,
 				7B8FDD242CDD88D300720907 /* FeatureFlags in Frameworks */,
 				4B9EE3382D76C8B200DDC75C /* Suggestions in Frameworks */,
-				84C176502DF0462F001DEEC7 /* LetsMove in Frameworks */,
 				4B9EE31E2D76C81E00DDC75C /* ContentBlocking in Frameworks */,
 				378F44E429B4BDE900899924 /* SwiftUIExtensions in Frameworks */,
 				4B9EE3262D76C85100DDC75C /* MaliciousSiteProtection in Frameworks */,
@@ -6932,6 +6933,7 @@
 				371BBC572D00C891008FA0C7 /* NewTabPage in Frameworks */,
 				9DB9800A2D96AD2B00B174B3 /* DataBrokerProtectionCore in Frameworks */,
 				4B94B7992D4731E80014AAB8 /* SyncUI-macOS in Frameworks */,
+				847F65542F51703600CE53F0 /* LetsMoveImpl in Frameworks */,
 				D65D0F9F2E7239680075A784 /* NetworkQualityMonitor in Frameworks */,
 				D65D0FA32E7239750075A784 /* PerformanceTest in Frameworks */,
 			);
@@ -12503,6 +12505,7 @@
 				CCF78AD72F34997400263097 /* CombineSchedulers */,
 				842211772F2C5B240051A0E8 /* AppStoreAppUpdater */,
 				842211792F2C5B240051A0E8 /* AppUpdaterShared */,
+				847F65572F51704400CE53F0 /* LetsMoveDummy */,
 			);
 			productName = DuckDuckGo;
 			productReference = 3706FD05293F65D500E42796 /* DuckDuckGo App Store.app */;
@@ -13079,6 +13082,7 @@
 				CCF78AD52F34996900263097 /* CombineSchedulers */,
 				842211642F2B85080051A0E8 /* AppUpdaterShared */,
 				842211662F2B85080051A0E8 /* SparkleAppUpdater */,
+				847F65532F51703600CE53F0 /* LetsMoveImpl */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -20127,6 +20131,14 @@
 		846F4CDE2E048A0500266DB7 /* BWIntegration */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = BWIntegration;
+		};
+		847F65532F51703600CE53F0 /* LetsMoveImpl */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LetsMoveImpl;
+		};
+		847F65572F51704400CE53F0 /* LetsMoveDummy */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LetsMoveDummy;
 		};
 		84AA55192E3256BA009FCC70 /* Common */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -17,6 +17,8 @@
 //  limitations under the License.
 //
 
+import Combine
+import Core
 import Foundation
 import Persistence
 import PrivacyConfig
@@ -25,7 +27,11 @@ protocol DarkReaderFeatureSettings {
 
     var isFeatureEnabled: Bool { get }
     var isForceDarkModeEnabled: Bool { get }
+    var excludedDomains: [String] { get }
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> { get }
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> { get }
     func setForceDarkModeEnabled(_ enabled: Bool)
+    func themeDidChange()
 }
 
 enum DarkReaderStorageKeys: String, StorageKeyDescribing {
@@ -39,23 +45,73 @@ struct DarkReaderKeys: StoringKeys {
 final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let appSettings: AppSettings
     private let storage: any KeyedStoring<DarkReaderKeys>
+    private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
+    private let excludedDomainsChangedSubject = PassthroughSubject<Void, Never>()
+    private var cancellables = Set<AnyCancellable>()
 
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> {
+        forceDarkModeChangedSubject.eraseToAnyPublisher()
+    }
+
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> {
+        excludedDomainsChangedSubject.eraseToAnyPublisher()
+    }
+
+    init(featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          storage: (any KeyedStoring<DarkReaderKeys>)? = nil) {
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.appSettings = appSettings
         self.storage = if let storage { storage } else { UserDefaults.app.keyedStoring() }
+
+        privacyConfigurationManager.updatesPublisher
+            .sink { [weak self] in
+                self?.excludedDomainsChangedSubject.send()
+            }
+            .store(in: &cancellables)
+
+        (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+            .flagDidChangePublisher
+            .filter { $0.0 == .forceDarkModeOnWebsites }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.forceDarkModeChangedSubject.send(self.isForceDarkModeEnabled)
+            }
+            .store(in: &cancellables)
+    }
+
+    private var isLightTheme: Bool {
+        appSettings.currentThemeStyle == .light
     }
 
     var isFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
+        guard #available(iOS 18.4, *) else { return false }
+        guard !isLightTheme else { return false }
+        return featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
     }
 
     var isForceDarkModeEnabled: Bool {
         isFeatureEnabled && (storage.forceDarkModeOnWebsitesEnabled ?? false)
     }
 
+    var excludedDomains: [String] {
+        privacyConfigurationManager.privacyConfig.exceptionsList(forFeature: .forceDarkModeOnWebsites)
+    }
+
     func setForceDarkModeEnabled(_ enabled: Bool) {
+        guard isFeatureEnabled else { return }
+        let previousValue = storage.forceDarkModeOnWebsitesEnabled ?? false
+        guard previousValue != enabled else { return }
         storage.forceDarkModeOnWebsitesEnabled = enabled
+        forceDarkModeChangedSubject.send(enabled)
+    }
+
+    func themeDidChange() {
+        forceDarkModeChangedSubject.send(isForceDarkModeEnabled)
     }
 }

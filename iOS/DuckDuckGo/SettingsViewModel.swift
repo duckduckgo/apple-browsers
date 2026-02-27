@@ -250,6 +250,12 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: .settingsThemeSelectorPressed)
                 self.state.appThemeStyle = $0
                 ThemeManager.shared.setThemeStyle($0)
+                self.state.forceWebsiteDarkMode = self.darkReaderFeatureSettings.isForceDarkModeEnabled
+                // Delay to allow web views to re-render with the new interface style
+                // before the dark reader extension is enabled or disabled.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.darkReaderFeatureSettings.themeDidChange()
+                }
             }
         )
     }
@@ -689,7 +695,7 @@ final class SettingsViewModel: ObservableObject {
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
-         darkReaderFeatureSettings: DarkReaderFeatureSettings = AppDarkReaderFeatureSettings()
+         darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
 
         self.darkReaderFeatureSettings = darkReaderFeatureSettings

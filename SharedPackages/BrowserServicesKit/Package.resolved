@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "6f987af8900400107f133c9ce9ed050b96523910",
-        "version" : "13.2.0"
+        "revision" : "7b33d8fc6cc05ac083988bcab4a7da618e40e423",
+        "version" : "13.19.0"
       }
     },
     {
@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "196b8ccc659eb077cde0652007ecfe54216c7b7c",
-        "version" : "9.9.0"
+        "revision" : "a3adc679f86a3276dfb12ddf4a379b17c80dfc60",
+        "version" : "9.10.0"
       }
     },
     {
@@ -52,15 +52,6 @@
       "state" : {
         "revision" : "30a462bdb4398ea835a3585472229e0d74b36ba5",
         "version" : "3.0.0"
-      }
-    },
-    {
-      "identity" : "swift-asn1",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-asn1.git",
-      "state" : {
-        "revision" : "810496cf121e525d660cd0ea89a758740476b85f",
-        "version" : "1.5.1"
       }
     },
     {
@@ -86,8 +77,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
-        "version" : "3.15.1"
+        "revision" : "ffca28be3c9c6a86a579949d23f68818a4b9b5d8",
+        "version" : "3.8.0"
       }
     },
     {

@@ -253,6 +253,7 @@ public extension DesignSystemImages {
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize16) }
             public static var permissionCamera: DesignSystemImage { .init(resource: .video16) }
             public static var permissionCameraSolid: DesignSystemImage { .init(resource: .videoSolid16) }
+            public static var undo: DesignSystemImage { .init(resource: .undo16)}
             public static var update: DesignSystemImage { .init(resource: .update16) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid16) }
             public static var viewGridSolid: DesignSystemImage { .init(resource: .viewGridSolid16) }
@@ -369,6 +370,7 @@ public extension DesignSystemImages {
             public static var chevronCircleDown: DesignSystemImage { .init(resource: .chevronCircleDown24) }
             public static var chevronDown: DesignSystemImage { .init(resource: .chevronDown24) }
             public static var chevronDownSmall: DesignSystemImage { .init(resource: .chevronDown24Small) }
+            public static var chevronLeft: DesignSystemImage { .init(resource: .chevronLeft24) }
             public static var chevronLeftSmall: DesignSystemImage { .init(resource: .chevronLeft24Small) }
             public static var chevronRightSmall: DesignSystemImage { .init(resource: .chevronRight24Small) }
             public static var chevronUpSmall: DesignSystemImage { .init(resource: .chevronUp24Small) }
@@ -490,6 +492,7 @@ public extension DesignSystemImages {
             public static var video: DesignSystemImage { .init(resource: .video24) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayer24) }
             public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid24) }
+            public static var viewList: DesignSystemImage { .init(resource: .viewList24) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid24) }
             public static var window: DesignSystemImage { .init(resource: .window24) }
             public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs24) }

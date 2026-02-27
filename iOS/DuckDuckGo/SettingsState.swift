@@ -70,6 +70,7 @@ struct SettingsState {
     var refreshButtonPosition: RefreshButtonPosition
     var mobileCustomization: MobileCustomization.State
     var showMenuInSheet: Bool
+    var forceWebsiteDarkMode: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -133,6 +134,7 @@ struct SettingsState {
             refreshButtonPosition: .addressBar,
             mobileCustomization: .default,
             showMenuInSheet: false,
+            forceWebsiteDarkMode: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoClearAIChatHistory: false,

@@ -59,15 +59,10 @@ struct ScopedFireConfirmationView: View {
     }
     
     private var closeButton: some View {
-        Button(action: {
-            viewModel.cancel()
-        }) {
-            Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
-                .foregroundColor(Color(designSystemColor: .icons))
-                .padding(Constants.closeButtonPadding)
-                .background(Color(designSystemColor: .controlsFillPrimary))
-                .clipShape(Circle())
+        Button(action: viewModel.cancel) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
         }
+        .buttonStyle(CloseButtonStyle())
         .accessibilityIdentifier("Fire.Confirmation.Button.Close")
     }
     

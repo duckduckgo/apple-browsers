@@ -63,6 +63,7 @@ class TabViewController: UIViewController {
     @IBOutlet private(set) weak var errorHeader: UILabel!
     @IBOutlet private(set) weak var errorMessage: UILabel!
     @IBOutlet weak var containerStackView: UIStackView!
+    @IBOutlet weak var outerContainer: UIView!
     @IBOutlet weak var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
@@ -821,7 +822,7 @@ class TabViewController: UIViewController {
         webView.allowsLinkPreview = true
         webView.allowsBackForwardNavigationGestures = true
 
-        webView.preventFlashOnLoad(featureFlagger: featureFlagger)
+        webView.preventFlashOnLoad()
 
         addObservers()
 
@@ -841,7 +842,7 @@ class TabViewController: UIViewController {
         updateContentInsetAdjustment()
 
         pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
-                                                            pullableView: webViewContainerView,
+                                                            pullableView: webViewContainer,
                                                             onRefresh: { [weak self] in
             self?.handlePullToRefresh()
         })
@@ -1459,7 +1460,8 @@ class TabViewController: UIViewController {
                                                                      openerContext: inferredOpenerContext,
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
-                                                                     breakageReportingSubfeature: breakageReportingSubfeature)
+                                                                     breakageReportingSubfeature: breakageReportingSubfeature,
+                                                                     isForceDarkModeEnabled: nil)
     }
 
     public func print() {

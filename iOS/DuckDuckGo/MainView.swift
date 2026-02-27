@@ -34,7 +34,18 @@ class MainViewFactory {
     var superview: UIView {
         coordinator.superview
     }
-    
+
+    var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    var isiOS26: Bool {
+        if #available(iOS 26, *) {
+            return true
+        }
+        return false
+    }
+
     private init(parentController: UIViewController,
                  omnibarDependencies: OmnibarDependencyProvider,
                  featureFlagger: FeatureFlagger) {
@@ -140,7 +151,48 @@ extension MainViewFactory {
         coordinator.navigationBarContainer.addSubview(coordinator.navigationBarCollectionView)
     }
     
-    final class NavigationBarContainer: UIView { }
+    final class NavigationBarContainer: UIView {
+
+        /// Enables overflow hit testing for iPad expanded search area.
+        /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
+        var allowsOverflowHitTesting = false
+
+        override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            if let result = super.hitTest(point, with: event) {
+                return result
+            }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
+            return Self.deepHitTest(in: self, point: point, event: event)
+        }
+
+        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+            if super.point(inside: point, with: event) {
+                return true
+            }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return false }
+            return Self.deepHitTest(in: self, point: point, event: event) != nil
+        }
+
+        /// Recursively searches descendants for a view that claims the point,
+        /// bypassing intermediate views' bounds checks to support overflow content.
+        private static func deepHitTest(in view: UIView, point: CGPoint, event: UIEvent?) -> UIView? {
+            for subview in view.subviews.reversed() {
+                guard !subview.isHidden, subview.alpha > 0.01, subview.isUserInteractionEnabled else {
+                    continue
+                }
+                let convertedPoint = subview.convert(point, from: view)
+
+                if subview.point(inside: convertedPoint, with: event) {
+                    return subview.hitTest(convertedPoint, with: event)
+                }
+
+                if let result = deepHitTest(in: subview, point: convertedPoint, event: event) {
+                    return result
+                }
+            }
+            return nil
+        }
+    }
     private func createNavigationBarContainer() {
         coordinator.navigationBarContainer = NavigationBarContainer()
         superview.addSubview(coordinator.navigationBarContainer)
@@ -222,7 +274,16 @@ extension MainViewFactory {
         let toolbar = coordinator.toolbar!
         let navigationBarCollectionView = coordinator.navigationBarCollectionView!
 
+        #if compiler(>=6.2)
+        if #available(iOS 26, *), isPad {
+            let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+            coordinator.constraints.navigationBarContainerTop = container.topAnchor.constraint(equalTo: guide.topAnchor)
+        } else {
+            coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        }
+        #else
         coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        #endif
         coordinator.constraints.navigationBarContainerBottom = container.constrainView(toolbar, by: .bottom, to: .top)
         coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight, relatedBy: .equal)
 
@@ -240,8 +301,17 @@ extension MainViewFactory {
 
     private func constrainTabBarContainer() {
         let tabBarContainer = coordinator.tabBarContainer!
-        
+
+        #if compiler(>=6.2)
+        if #available(iOS 26, *), isPad {
+            let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+            coordinator.constraints.tabBarContainerTop = tabBarContainer.topAnchor.constraint(equalTo: guide.topAnchor)
+        } else {
+            coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        }
+        #else
         coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        #endif
 
         NSLayoutConstraint.activate([
             tabBarContainer.constrainView(superview, by: .leading),
@@ -287,10 +357,14 @@ extension MainViewFactory {
     }
 
     private func constrainToolbar() {
+
+        // Changing this?  Best change TabSwitcherViewController too
+        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
+
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
         NSLayoutConstraint.activate([
-            toolbar.constrainView(superview, by: .width),
+            toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),
             toolbar.constrainAttribute(.height, to: 49),
             coordinator.constraints.toolbarBottom,

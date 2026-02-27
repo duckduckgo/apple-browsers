@@ -4043,6 +4043,30 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device.step1" : {
+      "comment" : "First instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around 'DuckDuckGo'.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On another device, open **DuckDuckGo**"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step2" : {
+      "comment" : "Second instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around the Settings path.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Go to **Settings › Sync & Backup › Sync With Another Device**"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.use-qr-code-link" : {
       "comment" : "Sync with another device dialog use qr code link",
       "extractionState" : "extracted_with_value",

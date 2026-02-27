@@ -1005,7 +1005,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             emailManager: testEmailManager,
             duckPlayerPreferences: testDuckPlayerPreferences,
             subscriptionCardVisibilityManager: testSubscriptionCardVisibilityManager,
-            syncService: testSyncService
+            syncService: testSyncService,
+            scheduler: .immediate
         )
     }
 

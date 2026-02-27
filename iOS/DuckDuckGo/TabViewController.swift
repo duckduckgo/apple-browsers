@@ -3134,6 +3134,11 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
                                               state: state,
                                               pageUrl: tracker.pageUrl)
 
+        if tracker.reason == "thirdPartyRequest" {
+            privacyInfo?.trackerInfo.add(detectedThirdPartyRequest: detectedRequest)
+            return
+        }
+
         adClickAttributionLogic.onRequestDetected(request: detectedRequest)
 
         if detectedRequest.isBlocked && fireWoFollowUp {

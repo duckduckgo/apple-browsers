@@ -155,6 +155,12 @@ extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
                                               entity: entity,
                                               state: state,
                                               pageUrl: tracker.pageUrl)
+
+        if tracker.reason == "thirdPartyRequest" {
+            trackersSubject.send(DetectedTracker(request: detectedRequest, type: .thirdPartyRequest))
+            return
+        }
+
         trackersSubject.send(DetectedTracker(request: detectedRequest, type: .tracker))
 
         if detectedRequest.isBlocked && detectedRequest.ownerName == fbBlockingEnabledProvider.fbEntity {

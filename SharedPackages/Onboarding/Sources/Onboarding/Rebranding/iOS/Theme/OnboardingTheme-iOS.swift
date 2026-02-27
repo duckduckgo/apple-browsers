@@ -54,7 +54,7 @@ public extension OnboardingTheme {
             primaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsPrimaryDefault)),
             primaryButtonPressedColor: Color(singleUseColor: .rebranding(.buttonsPrimaryPressed)),
             primaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsPrimaryText)),
-            secondaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.controlsFillPrimary)),
+            secondaryButtonBackgroundColor: Color(singleUseColor: .rebranding(.buttonsSecondaryDefault)),
             secondaryButtonPressedColor: Color(singleUseColor: .rebranding(.buttonsSecondaryPressed)),
             secondaryButtonTextColor: Color(singleUseColor: .rebranding(.buttonsSecondaryText))
         )

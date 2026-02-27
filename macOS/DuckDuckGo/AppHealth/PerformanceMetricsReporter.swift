@@ -1,5 +1,5 @@
 //
-//  StartupMetricsReporter.swift
+//  PerformanceMetricsReporter.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import FeatureFlags
 import PixelKit
 import PrivacyConfig
 
-final class StartupMetricsReporter: StartupProfilerDelegate {
+final class PerformanceMetricsReporter: StartupProfilerDelegate {
 
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
@@ -42,16 +42,16 @@ final class StartupMetricsReporter: StartupProfilerDelegate {
             return
         }
 
-        let pixel = buildMetricsPixel(metrics: metrics, windowContext: windowContextProvider(), environment: environment, previousSessionRestored: previousSessionRestored)
+        let pixel = buildStartupMetricsPixel(metrics: metrics, windowContext: windowContextProvider(), environment: environment, previousSessionRestored: previousSessionRestored)
         pixelFiring.fire(pixel, frequency: .standard)
     }
 }
 
 // MARK: - Private Helpers
 
-private extension StartupMetricsReporter {
+private extension PerformanceMetricsReporter {
 
-    func buildMetricsPixel(metrics: StartupMetrics, windowContext: WindowContext, environment: SystemEnvironment, previousSessionRestored: Bool) -> StartupMetricsPixel {
+    func buildStartupMetricsPixel(metrics: StartupMetrics, windowContext: WindowContext, environment: SystemEnvironment, previousSessionRestored: Bool) -> StartupMetricsPixel {
         StartupMetricsPixel(
             architecture: environment.architecture,
             activeProcessorCount: environment.activeProcessorCount,

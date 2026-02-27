@@ -406,7 +406,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var memoryUsageIntervalReporter: MemoryUsageIntervalReporter?
 
     let startupProfiler: StartupProfiler
-    private var startupMetricsReporter: StartupMetricsReporter?
+    private var startupMetricsReporter: PerformanceMetricsReporter?
 
     /// The date this app instance was launched, used for computing uptime in memory pixels.
     private let appLaunchDate = Date()
@@ -1144,7 +1144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             logger: .memory
         )
 
-        let metricsReporter = StartupMetricsReporter(
+        let metricsReporter = PerformanceMetricsReporter(
             featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             previousSessionRestored: startupPreferences.restorePreviousSession,

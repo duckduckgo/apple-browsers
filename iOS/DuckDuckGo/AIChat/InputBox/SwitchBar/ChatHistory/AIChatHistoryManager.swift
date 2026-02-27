@@ -108,6 +108,10 @@ final class AIChatHistoryManager {
         fetchSuggestionsIfNeeded(query: "")
     }
 
+    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
+        historyViewController?.setEscapeHatch(model, onTapped: onTapped)
+    }
+
     /// Subscribes to text changes from a publisher with debounce and fetches filtered suggestions
     /// - Parameter textPublisher: A publisher that emits text changes
     func subscribeToTextChanges<P: Publisher>(_ textPublisher: P) where P.Output == String, P.Failure == Never {

@@ -511,7 +511,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         leadingButtonsContainer.isHidden = true
 
-        backButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall)
+        backButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
         DefaultOmniBarView.setUpCommonProperties(for: backButtonView)
 
         forwardButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowRight)
@@ -733,6 +733,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     @objc private func searchAreaPressed() {
+        if isSearchAreaExpanded {
+            aiChatTextView.becomeFirstResponder()
+            return
+        }
         onTrackersViewPressed?()
     }
 
@@ -838,6 +842,8 @@ extension DefaultOmniBarView {
         aiChatLeftButton.alpha = 0.0
         NSLayoutConstraint.deactivate(aiChatModeConstraints)
 
+        searchAreaView.textField.isHidden = false
+
         if !isSearchAreaExpanded {
             searchAreaView.textField.alpha = 1.0
             searchAreaView.revealButtons()
@@ -921,8 +927,10 @@ extension DefaultOmniBarView {
         aiChatTextView.font = UIFont.daxBodyRegular()
         aiChatTextView.textColor = UIColor(designSystemColor: .textPrimary)
         aiChatTextView.tintColor = UIColor(designSystemColor: .accent)
-        aiChatTextView.autocapitalizationType = .sentences
-        aiChatTextView.autocorrectionType = .default
+        aiChatTextView.autocapitalizationType = .none
+        aiChatTextView.autocorrectionType = .no
+        aiChatTextView.spellCheckingType = .no
+        aiChatTextView.keyboardType = .webSearch
         aiChatTextView.isScrollEnabled = true
     }
 
@@ -931,6 +939,7 @@ extension DefaultOmniBarView {
         onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
 
         guard animated else {
+            searchAreaContainerView.applyShadowOpacityMultiplier(1)
             applyExpansionConstraints()
             applyExpansionClipping()
             layoutIfNeeded()
@@ -940,18 +949,27 @@ extension DefaultOmniBarView {
         layoutIfNeeded()
 
         if isSearchAreaExpanded {
+            searchAreaContainerView.applyShadowOpacityMultiplier(0)
             applyExpansionClipping()
         }
 
         applyExpansionConstraints()
 
-        UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: .curveEaseInOut) {
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+            if self.isSearchAreaExpanded {
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+            } else {
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
+            }
             self.layoutIfNeeded()
         } completion: { _ in
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
+            } else {
+                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
             }
             if self.isSearchAreaExpanded {
                 self.aiChatTextView.becomeFirstResponder()
@@ -983,6 +1001,15 @@ extension DefaultOmniBarView {
     func updateTextFieldPlaceholderVisibility(hasText: Bool) {
         guard isSearchAreaExpanded else { return }
         textField.alpha = hasText ? 0 : 1
+    }
+
+    func updateLeftIconForMode(_ mode: TextEntryMode) {
+        switch mode {
+        case .aiChat:
+            searchAreaView.loupeIconView.image = DesignSystemImages.Glyphs.Size24.aiChat
+        case .search:
+            searchAreaView.loupeIconView.image = DesignSystemImages.Glyphs.Size24.findSearchSmall
+        }
     }
 
     private func applyExpansionConstraints() {

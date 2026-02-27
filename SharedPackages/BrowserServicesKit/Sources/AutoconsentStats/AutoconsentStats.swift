@@ -92,11 +92,6 @@ public protocol AutoconsentStatsCollecting {
      * This function clears all autoconsent stats from the storage.
      */
     func clearAutoconsentStats() async
-
-    /**
-     * Is stats collecting enabled.
-     */
-    func isEnabled() async -> Bool
 }
 
 public actor AutoconsentStats: AutoconsentStatsCollecting {
@@ -112,14 +107,11 @@ public actor AutoconsentStats: AutoconsentStatsCollecting {
 
     private let keyValueStore: ThrowingKeyValueStoring
     private let errorEvents: EventMapping<AutoconsentStatsError>?
-    private let isFeatureEnabled: () -> Bool
 
     public init(keyValueStore: ThrowingKeyValueStoring,
-                errorEvents: EventMapping<AutoconsentStatsError>? = nil,
-                isFeatureEnabled: @escaping @Sendable () -> Bool) {
+                errorEvents: EventMapping<AutoconsentStatsError>? = nil) {
         self.keyValueStore = keyValueStore
         self.errorEvents = errorEvents
-        self.isFeatureEnabled = isFeatureEnabled
         statsUpdatePublisher = statsUpdateSubject.eraseToAnyPublisher()
     }
 
@@ -202,7 +194,4 @@ public actor AutoconsentStats: AutoconsentStatsCollecting {
         statsUpdateSubject.send()
     }
 
-    public func isEnabled() async -> Bool {
-        isFeatureEnabled()
-    }
 }

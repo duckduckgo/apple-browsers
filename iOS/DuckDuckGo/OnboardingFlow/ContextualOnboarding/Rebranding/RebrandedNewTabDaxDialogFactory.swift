@@ -183,7 +183,7 @@ private extension RebrandedNewTabDaxDialogFactory {
 
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
         let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
-        let dismissText = "No Thanks"
+        let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.skip
 
         return FadeInView {
             OnboardingRebranding.OnboardingSubscriptionPromoDialog(

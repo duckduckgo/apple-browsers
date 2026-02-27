@@ -91,7 +91,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let decorationQuaternary = DynamicColor(lightColor: x1F1F1F.opacity(0.03), darkColor: xF9F9F9.opacity(0.03))
 
     // Fire Tabs
-    private static let fireMode = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen30) // TODO: - Checking with design if we can use rebranding colors
+    private static let fireMode = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
 
     // Highlight
     private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))

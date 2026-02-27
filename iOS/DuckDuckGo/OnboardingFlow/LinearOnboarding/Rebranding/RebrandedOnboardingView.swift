@@ -190,15 +190,19 @@ extension OnboardingRebranding {
 
         var body: some View {
             ZStack(alignment: .topTrailing) {
-                onboardingTheme.colorPalette.background
-                    .ignoresSafeArea()
-
-                ScrollableOnboardingBackground(viewState: model.state)
-
                 switch model.state {
                 case .landing:
+                    onboardingTheme.colorPalette.background
+                        .ignoresSafeArea()
+
                     landingView
+                        .transition(AnyTransition.slideLeftAndFade.animation(.easeOut(duration: 1.0)))
                 case let .onboarding(viewState):
+                    onboardingTheme.colorPalette.background
+                        .ignoresSafeArea()
+
+                    ScrollableOnboardingBackground(viewState: viewState)
+
                     onboardingDialogView(state: viewState)
                         .transition( // Scale content from 0.1 to 1.0 and fade in when appearing for the first time
                             .scale.combined(with: .opacity)
@@ -534,5 +538,44 @@ private struct OnboardingDialogHeightPreferenceKey: PreferenceKey {
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+// MARK: - Custom Transitions
+
+extension AnyTransition {
+    /// Slides content to the left while fading out, matching the scrollable background exit animation.
+    ///
+    /// This transition mimics the behavior of `ExitingBackgroundView` in `ScrollableOnboardingBackground`,
+    /// sliding the view until its trailing edge aligns with the screen's leading edge while fading out
+    /// at twice the rate of the slide animation.
+    static var slideLeftAndFade: AnyTransition {
+        .asymmetric(
+            insertion: .identity,
+            removal: .modifier(
+                active: SlideLeftAndFadeModifier(progress: 1.0),
+                identity: SlideLeftAndFadeModifier(progress: 0.0)
+            )
+        )
+    }
+}
+
+private struct SlideLeftAndFadeModifier: ViewModifier, Animatable {
+    var progress: CGFloat
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        GeometryReader { geometry in
+            content
+                // Slide left: at progress=1.0, trailing edge reaches screen's leading edge
+                // Image is centered in frame, so: offset = -(screenWidth/2 + imageWidth/2)
+                .offset(x: -(geometry.size.width / 2 + geometry.size.width / 2) * progress)
+                // Fade out twice as fast as the slide
+                .opacity(1.0 - progress * 2)
+        }
     }
 }

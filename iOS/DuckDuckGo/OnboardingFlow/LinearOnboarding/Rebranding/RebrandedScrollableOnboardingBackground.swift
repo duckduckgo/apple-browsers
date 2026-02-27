@@ -28,9 +28,9 @@ struct ScrollableOnboardingBackground: View {
         static let backgroundImageWidth: CGFloat = 1366
     }
 
-    let viewState: OnboardingView.ViewState
+    let viewState: OnboardingView.ViewState.Intro
 
-    @State private var previousViewState: OnboardingView.ViewState?
+    @State private var previousViewState: OnboardingView.ViewState.Intro?
     @State private var exitingTransitionProgress: CGFloat = 1.0  // 0.0 = start, 1.0 = end
     @State private var enteringTransitionProgress: CGFloat = 1.0  // 0.0 = start, 1.0 = end
 
@@ -39,7 +39,7 @@ struct ScrollableOnboardingBackground: View {
             ZStack {
                 // Previous background (exiting)
                 if let previousState = previousViewState,
-                   previousState.backgroundImage != viewState.backgroundImage {
+                   previousState.type.backgroundImage != viewState.type.backgroundImage {
                     ExitingBackgroundView(
                         progress: exitingTransitionProgress,
                         screenWidth: proxy.size.width,
@@ -56,7 +56,7 @@ struct ScrollableOnboardingBackground: View {
                     // Subtracting leadingOffset shifts image left to cater for empty space between illustration and leading edge.
                     // At progress=0.0: image starts with leadingOffset visible from right edge
                     // At progress=1.0: image is centered (offset=0)
-                    .offset(x: ((proxy.size.width + Metrics.backgroundImageWidth / 2) - viewState.leadingOffset) * (1 - enteringTransitionProgress))
+                    .offset(x: ((proxy.size.width + Metrics.backgroundImageWidth / 2) - viewState.type.leadingOffset) * (1 - enteringTransitionProgress))
                     .zIndex(1)
             }
             .frame(width: proxy.size.width, alignment: .bottomLeading)
@@ -64,7 +64,7 @@ struct ScrollableOnboardingBackground: View {
         .onChange(of: viewState) { newState in
             // Only animate if the background actually changes
             guard let previous = previousViewState,
-                  previous.backgroundImage != newState.backgroundImage else { return }
+                  previous.type.backgroundImage != newState.type.backgroundImage else { return }
 
             // Reset progress for new transition
             exitingTransitionProgress = 0.0
@@ -99,18 +99,23 @@ struct ScrollableOnboardingBackground: View {
         }
         .onAppear {
             previousViewState = viewState
-            enteringTransitionProgress = 1.0  // Initial state should be centered
+            enteringTransitionProgress = 0.0  // Start off-screen to the right
+
+            // Animate sliding in from right
+            withAnimation(.easeInOut(duration: Metrics.enterDuration)) {
+                enteringTransitionProgress = 1.0
+            }
         }
     }
 
-    private func backgroundView(for state: OnboardingView.ViewState, width: CGFloat) -> some View {
+    private func backgroundView(for state: OnboardingView.ViewState.Intro, width: CGFloat) -> some View {
         VStack {
             Spacer()
-            state.backgroundImage
+            state.type.backgroundImage
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: width, alignment: .center)
-                .frame(maxHeight: state.backgroundMaxHeight)
+                .frame(maxHeight: state.type.backgroundMaxHeight)
         }
         .ignoresSafeArea()
     }
@@ -158,50 +163,8 @@ private struct ExitingBackgroundView<Content: View>: View, Animatable {
     }
 }
 
-private extension OnboardingView.ViewState {
-
-    var backgroundImage: Image {
-        switch self {
-        case .landing:
-            return OnboardingRebrandingImages.Linear.landingBackground
-        case .onboarding(let intro):
-            return intro.type.backgroundImage
-        }
-    }
-
-    /// Maximum height for the background image.
-    ///
-    /// Design-specified measurements that ensure each background illustration is displayed at the correct scale.
-    /// [Figma Assets](https://www.figma.com/design/wMxBpe0mKrRS0nVhtwMGO7/%F0%9F%9A%80-Onboarding-Components--2026-?node-id=3444-40549)
-    var backgroundMaxHeight: CGFloat {
-        switch self {
-        case .landing:
-            return 527
-        case .onboarding(let intro):
-            return intro.type.backgroundMaxHeight
-        }
-    }
-
-    /// Horizontal offset in points determining how much of the entering background is initially visible.
-    ///
-    /// This value accounts for negative space in each illustration's.
-    /// A value of 0 means the image's leading edge starts exactly at the screen's trailing edge (fully off-screen).
-    /// The reason for this is that each illustration has a gap between the left side of the image and the illustration
-    ///
-    /// Design-specified values that vary per onboarding step to match each illustration.
-    /// [Figma Assets](https://www.figma.com/design/wMxBpe0mKrRS0nVhtwMGO7/%F0%9F%9A%80-Onboarding-Components--2026-?node-id=3444-40549)
-    var leadingOffset: CGFloat {
-        switch self {
-        case .landing:
-            return 0
-        case .onboarding(let intro):
-            return intro.type.leadingOffset
-        }
-    }
-}
-
 private extension OnboardingView.ViewState.Intro.IntroType {
-
+    
     var backgroundImage: Image {
         switch self {
         case .startOnboardingDialog:
@@ -219,6 +182,10 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         }
     }
 
+    /// Maximum height for the background image.
+    ///
+    /// Design-specified measurements that ensure each background illustration is displayed at the correct scale.
+    /// [Figma Assets](https://www.figma.com/design/wMxBpe0mKrRS0nVhtwMGO7/%F0%9F%9A%80-Onboarding-Components--2026-?node-id=3444-40549)
     var backgroundMaxHeight: CGFloat {
         switch self {
         case .startOnboardingDialog:
@@ -236,6 +203,14 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         }
     }
 
+    /// Horizontal offset in points determining how much of the entering background is initially visible.
+    ///
+    /// This value accounts for negative space in each illustration's.
+    /// A value of 0 means the image's leading edge starts exactly at the screen's trailing edge (fully off-screen).
+    /// The reason for this is that each illustration has a gap between the left side of the image and the illustration
+    ///
+    /// Design-specified values that vary per onboarding step to match each illustration.
+    /// [Figma Assets](https://www.figma.com/design/wMxBpe0mKrRS0nVhtwMGO7/%F0%9F%9A%80-Onboarding-Components--2026-?node-id=3444-40549)
     var leadingOffset: CGFloat {
         switch self {
         case .startOnboardingDialog:

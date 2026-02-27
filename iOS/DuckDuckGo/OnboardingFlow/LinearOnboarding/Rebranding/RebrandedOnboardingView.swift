@@ -260,11 +260,8 @@ extension OnboardingRebranding {
 
         private var landingView: some View {
             LandingView(animationNamespace: animationNamespace) {
-                // Dismiss the landing screen 2s after all entrance animations finish
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    withAnimation {
-                        model.onAppear()
-                    }
+                withAnimation {
+                    model.onAppear()
                 }
             }
             .ignoresSafeArea(edges: .bottom)

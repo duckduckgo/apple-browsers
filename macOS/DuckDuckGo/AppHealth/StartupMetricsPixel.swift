@@ -23,8 +23,7 @@ import PixelKit
 
 struct StartupMetricsPixel: PixelKitEvent {
 
-    /// Whether the Mac is running on battery power at launch time.
-    let isOnBattery: Bool
+    // MARK: - System
 
     /// Architecture of the current build (`"ARM"` or `"Intel"`).
     let architecture: String
@@ -32,35 +31,51 @@ struct StartupMetricsPixel: PixelKitEvent {
     /// Number of active logical processors at launch time, or `nil` if unavailable.
     let activeProcessorCount: Int?
 
-    /// Time spent in the app's `init` method (seconds), or `nil` if unavailable.
-    let durationOfAppInit: TimeInterval?
+    /// Whether the Mac is running on battery power at launch time.
+    let isOnBattery: Bool
 
-    /// Time spent in `applicationWillFinishLaunching(_:)` (seconds), or `nil` if unavailable.
-    let durationOfAppWillFinishLaunching: TimeInterval?
-
-    /// Time spent in `applicationDidFinishLaunching(_:)` before state restoration begins (seconds), or `nil` if unavailable.
-    let durationOfAppDidFinishLaunchingBeforeStateRestoration: TimeInterval?
-
-    /// Time spent in `applicationDidFinishLaunching(_:)` after state restoration completes (seconds), or `nil` if unavailable.
-    let durationOfAppDidFinishLaunchingAfterStateRestoration: TimeInterval?
-
-    /// Time spent restoring window and tab state (seconds), or `nil` if unavailable. Only sent when greater than zero.
-    let durationOfAppStateRestoration: TimeInterval?
-
-    /// Elapsed time between the end of `init` and the start of `applicationWillFinishLaunching(_:)` (seconds), or `nil` if unavailable.
-    let deltaBetweenAppInitAndWillFinishLaunching: TimeInterval?
-
-    /// Elapsed time between `applicationWillFinishLaunching(_:)` and `applicationDidFinishLaunching(_:)` (seconds), or `nil` if unavailable.
-    let deltaBetweenAppWillFinishAndDidFinishLaunching: TimeInterval?
-
-    /// Elapsed time from app launch to the first interface display (seconds), or `nil` if unavailable.
-    let deltaBetweenLaunchAndDidDisplayInterface: TimeInterval?
+    /// Indicates if Session Restoration was enabled
+    let sessionRestoration: Bool
 
     /// Number of windows restored during state restoration, or `nil` if unavailable.
-    let numberOfWindowsRestored: Int?
+    let windows: Int?
 
-    /// Number of tabs restored during state restoration, or `nil` if unavailable.
-    let numberOfTabsRestored: Int?
+    /// Number of standard tabs restored during state restoration, or `nil` if unavailable.
+    let standardTabs: Int?
+
+    /// Number of pinned tabs restored during state restoration, or `nil` if unavailable.
+    let pinnedTabs: Int?
+
+    // MARK: - Timing
+
+    /// Time spent in the App Delegate `init` method (seconds), or `nil` if unavailable.
+    let appDelegateInit: TimeInterval?
+
+    /// Time spent in the Main Menu `init` method (seconds), or `nil` if unavailable.
+    let mainMenuInit: TimeInterval?
+
+    /// Time spent in `applicationWillFinishLaunching(_:)` (seconds), or `nil` if unavailable.
+    let appWillFinishLaunching: TimeInterval?
+
+    /// Time spent in `applicationDidFinishLaunching(_:)` before state restoration begins (seconds), or `nil` if unavailable.
+    let appDidFinishLaunchingBeforeStateRestoration: TimeInterval?
+
+    /// Time spent in `applicationDidFinishLaunching(_:)` after state restoration completes (seconds), or `nil` if unavailable.
+    let appDidFinishLaunchingAfterStateRestoration: TimeInterval?
+
+    /// Time spent restoring window and tab state (seconds), or `nil` if unavailable. Only sent when greater than zero.
+    let appStateRestoration: TimeInterval?
+
+    // MARK: - Delta
+
+    /// Elapsed time between the end of `init` and the start of `applicationWillFinishLaunching(_:)` (seconds), or `nil` if unavailable.
+    let initToWillFinishLaunching: TimeInterval?
+
+    /// Elapsed time between `applicationWillFinishLaunching(_:)` and `applicationDidFinishLaunching(_:)` (seconds), or `nil` if unavailable.
+    let appWillFinishToDidFinishLaunching: TimeInterval?
+
+    /// Elapsed time from app launch to the first interface display (seconds), or `nil` if unavailable.
+    let timeToInteractive: TimeInterval?
 
     /// Pixel Name
     var name: String {
@@ -71,41 +86,52 @@ struct StartupMetricsPixel: PixelKitEvent {
     var parameters: [String: String]? {
         var params = [String: String]()
 
-        params["battery_power"] = isOnBattery.description
         params["architecture"] = architecture
+        params["battery_power"] = isOnBattery.description
+        params["session_restoration"] = sessionRestoration.description
 
         if let count = activeProcessorCount {
             params["active_processor_count"] = StartupMetricsBuckets.bucketProcessorCount(count)
         }
-        if let duration = durationOfAppInit {
-            params["duration_of_app_init"] = StartupMetricsBuckets.bucketMilliseconds(duration)
+        if let count = standardTabs {
+            params["standard_tabs"] = MemoryReportingBuckets.bucketStandardTabCount(count).description
         }
-        if let duration = durationOfAppWillFinishLaunching {
-            params["duration_of_app_will_finish_launching"] = StartupMetricsBuckets.bucketMilliseconds(duration)
+        if let count = pinnedTabs {
+            params["pinned_tabs"] = MemoryReportingBuckets.bucketPinnedTabCount(count).description
         }
-        if let duration = durationOfAppDidFinishLaunchingBeforeStateRestoration {
-            params["duration_of_app_did_finish_launching_before_state_restoration"] = StartupMetricsBuckets.bucketMilliseconds(duration)
+        if let count = windows {
+            params["windows"] = MemoryReportingBuckets.bucketWindowCount(count).description
         }
-        if let duration = durationOfAppDidFinishLaunchingAfterStateRestoration {
-            params["duration_of_app_did_finish_launching_after_state_restoration"] = StartupMetricsBuckets.bucketMilliseconds(duration)
+
+        // Timing
+        if let duration = appDelegateInit {
+            params["app_delegate_init"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
-        if let duration = durationOfAppStateRestoration, duration > 0 {
-            params["duration_of_app_state_restoration"] = StartupMetricsBuckets.bucketMilliseconds(duration)
+        if let duration = mainMenuInit {
+            params["main_menu_init"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
-        if let delta = deltaBetweenAppInitAndWillFinishLaunching {
-            params["delta_between_app_init_and_app_will_finish_launching"] = StartupMetricsBuckets.bucketMilliseconds(delta)
+        if let duration = appWillFinishLaunching {
+            params["app_will_finish_launching"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
-        if let delta = deltaBetweenAppWillFinishAndDidFinishLaunching {
-            params["delta_between_app_will_finish_and_app_did_finish"] = StartupMetricsBuckets.bucketMilliseconds(delta)
+        if let duration = appDidFinishLaunchingBeforeStateRestoration {
+            params["app_did_finish_launching_before_state_restoration"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
-        if let delta = deltaBetweenLaunchAndDidDisplayInterface {
-            params["delta_between_launch_and_did_display_interface"] = StartupMetricsBuckets.bucketMilliseconds(delta)
+        if let duration = appDidFinishLaunchingAfterStateRestoration {
+            params["app_did_finish_launching_after_state_restoration"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
-        if let count = numberOfWindowsRestored {
-            params["number_of_windows_restored"] = StartupMetricsBuckets.bucketWindowCount(count)
+        if let duration = appStateRestoration, duration > 0 {
+            params["app_state_restoration"] = StartupMetricsBuckets.bucketMilliseconds(duration)
         }
-        if let count = numberOfTabsRestored {
-            params["number_of_tabs_restored"] = StartupMetricsBuckets.bucketTabCount(count)
+
+        // Deltas
+        if let delta = initToWillFinishLaunching {
+            params["init_to_will_finish_launching"] = StartupMetricsBuckets.bucketMilliseconds(delta)
+        }
+        if let delta = appWillFinishToDidFinishLaunching {
+            params["app_will_finish_to_app_did_finish_launching"] = StartupMetricsBuckets.bucketMilliseconds(delta)
+        }
+        if let delta = timeToInteractive {
+            params["time_to_interactive"] = StartupMetricsBuckets.bucketMilliseconds(delta)
         }
 
         return params

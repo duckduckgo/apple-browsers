@@ -86,11 +86,7 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .blackFridayCampaign,
                 .allowProTierPurchase:
             return .subscription
-        case .popupBlocking,
-                .extendedUserInitiatedPopupTimeout,
-                .suppressEmptyPopUpsOnApproval,
-                .allowPopupsForCurrentPage,
-                .popupPermissionButtonPersistence:
+        case .popupBlocking:
             return .popupBlocking
         case .webNotifications:
             return .webNotifications

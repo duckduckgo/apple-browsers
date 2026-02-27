@@ -39,7 +39,8 @@ final class FreeTrialConversionInstrumentationServiceTests: XCTestCase {
         sut = DefaultFreeTrialConversionInstrumentationService(
             wideEvent: mockWideEvent,
             notificationCenter: notificationCenter,
-            pixelHandler: mockPixelHandler
+            pixelHandler: mockPixelHandler,
+            subscriptionFetcher: { nil }
         )
         sut.startObservingSubscriptionChanges()
     }
@@ -92,6 +93,130 @@ final class FreeTrialConversionInstrumentationServiceTests: XCTestCase {
 
         // Then - should still be only one flow
         XCTAssertEqual(mockWideEvent.started.count, 1)
+    }
+
+    func testWhenSubscriptionPayloadIsMissingAndFallbackReturnsTrial_ItStartsFlow() {
+        // Given
+        let customWideEvent = WideEventMock()
+        let customPixelHandler = MockFreeTrialPixelHandler()
+        let customNotificationCenter = NotificationCenter()
+        let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        let customSut = DefaultFreeTrialConversionInstrumentationService(
+            wideEvent: customWideEvent,
+            notificationCenter: customNotificationCenter,
+            pixelHandler: customPixelHandler,
+            subscriptionFetcher: { trialSubscription }
+        )
+        customSut.startObservingSubscriptionChanges()
+        let startExpectation = expectation(description: "Flow started from fallback")
+        customWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        // When
+        customNotificationCenter.post(name: .subscriptionDidChange, object: nil)
+
+        // Then
+        wait(for: [startExpectation], timeout: 1.0)
+        XCTAssertEqual(customWideEvent.started.count, 1)
+        XCTAssertEqual(customPixelHandler.freeTrialStartCount, 1)
+    }
+
+    func testWhenSubscriptionPayloadExists_FallbackFetcherIsNotCalled() {
+        // Given
+        let customWideEvent = WideEventMock()
+        let customPixelHandler = MockFreeTrialPixelHandler()
+        let customNotificationCenter = NotificationCenter()
+        let payloadSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        var fallbackCallCount = 0
+        let customSut = DefaultFreeTrialConversionInstrumentationService(
+            wideEvent: customWideEvent,
+            notificationCenter: customNotificationCenter,
+            pixelHandler: customPixelHandler,
+            subscriptionFetcher: {
+                fallbackCallCount += 1
+                return self.makeSubscription(status: .expired, hasTrialOffer: false)
+            }
+        )
+        customSut.startObservingSubscriptionChanges()
+        let startExpectation = expectation(description: "Flow started from payload")
+        customWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        // When
+        customNotificationCenter.post(
+            name: .subscriptionDidChange,
+            object: nil,
+            userInfo: [UserDefaultsCacheKey.subscription: payloadSubscription]
+        )
+
+        // Then
+        wait(for: [startExpectation], timeout: 1.0)
+        XCTAssertEqual(fallbackCallCount, 0)
+        XCTAssertEqual(customWideEvent.started.count, 1)
+    }
+
+    func testWhenSubscriptionPayloadIsMissingAndFallbackReturnsNil_ItDoesNothing() {
+        // Given
+        let customWideEvent = WideEventMock()
+        let customPixelHandler = MockFreeTrialPixelHandler()
+        let customNotificationCenter = NotificationCenter()
+        let customSut = DefaultFreeTrialConversionInstrumentationService(
+            wideEvent: customWideEvent,
+            notificationCenter: customNotificationCenter,
+            pixelHandler: customPixelHandler,
+            subscriptionFetcher: { nil }
+        )
+        customSut.startObservingSubscriptionChanges()
+        let startExpectation = expectation(description: "Flow should not start")
+        startExpectation.isInverted = true
+        customWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        // When
+        customNotificationCenter.post(name: .subscriptionDidChange, object: nil)
+
+        // Then
+        wait(for: [startExpectation], timeout: 0.2)
+        XCTAssertEqual(customWideEvent.started.count, 0)
+        XCTAssertEqual(customWideEvent.completions.count, 0)
+        XCTAssertEqual(customPixelHandler.freeTrialStartCount, 0)
+    }
+
+    func testWhenSubscriptionPayloadIsMissingAndFallbackReturnsPaid_ItCompletesExistingFlowWithSuccess() {
+        // Given
+        let customWideEvent = WideEventMock()
+        let customPixelHandler = MockFreeTrialPixelHandler()
+        let customNotificationCenter = NotificationCenter()
+        let trialSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: true)
+        let paidSubscription = makeSubscription(status: .autoRenewable, hasTrialOffer: false)
+        var useTrialFallback = true
+        let customSut = DefaultFreeTrialConversionInstrumentationService(
+            wideEvent: customWideEvent,
+            notificationCenter: customNotificationCenter,
+            pixelHandler: customPixelHandler,
+            subscriptionFetcher: {
+                if useTrialFallback {
+                    return trialSubscription
+                }
+                return paidSubscription
+            }
+        )
+        customSut.startObservingSubscriptionChanges()
+        let startExpectation = expectation(description: "Flow started from fallback trial")
+        customWideEvent.onStart = { _ in startExpectation.fulfill() }
+
+        customNotificationCenter.post(name: .subscriptionDidChange, object: nil)
+        wait(for: [startExpectation], timeout: 1.0)
+        XCTAssertEqual(customWideEvent.started.count, 1)
+
+        let completeExpectation = expectation(description: "Flow completed with success from fallback paid")
+        customWideEvent.onComplete = { _, _ in completeExpectation.fulfill() }
+        useTrialFallback = false
+
+        // When
+        customNotificationCenter.post(name: .subscriptionDidChange, object: nil)
+
+        // Then
+        wait(for: [completeExpectation], timeout: 1.0)
+        XCTAssertEqual(customWideEvent.completions.count, 1)
+        XCTAssertEqual(customWideEvent.completions.first?.1, .success)
     }
 
     // MARK: - Complete Flow Tests
@@ -255,6 +380,7 @@ final class FreeTrialConversionInstrumentationServiceTests: XCTestCase {
             wideEvent: disabledMockWideEvent,
             notificationCenter: disabledNotificationCenter,
             pixelHandler: disabledPixelHandler,
+            subscriptionFetcher: { nil },
             isFeatureEnabled: { false }
         )
         disabledSut.startObservingSubscriptionChanges()

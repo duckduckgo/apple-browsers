@@ -316,7 +316,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     @Test("Check Different Action Types Map Correctly",
           arguments: [
             (("url_in_context", "https://example.com"), RemoteAction.urlInContext(value: "https://example.com")),
-            (("navigation", "import.passwords"), RemoteAction.navigation(value: .importPasswords))
+            (("navigation", "import.passwords"), RemoteAction.navigation(value: .importPasswords)),
+            (("navigation", "softwareUpdate"), RemoteAction.navigation(value: .softwareUpdate))
           ]
     )
     func actionTypesMapCorrectly(jsonAction: (key: String, value: String), expectedAction: RemoteAction) {

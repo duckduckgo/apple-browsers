@@ -29,7 +29,7 @@ on:
         description: 'Label name that triggers flaky test detection mode (runs tests 50x, fails on first failure)'
         required: false
         type: string
-        default: 'Check Flaky Tests'
+        default: 'check flaky tests'
     outputs:
       should_run:
         description: 'Whether CI checks should run (true/false)'

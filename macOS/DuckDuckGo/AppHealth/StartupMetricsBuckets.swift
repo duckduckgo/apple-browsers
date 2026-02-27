@@ -41,48 +41,48 @@ enum StartupMetricsBuckets {
     }
 
     /// Buckets a window count into predefined ranges.
-    /// - Returns: Lower bound of the matching range: `0`, `1`, `2`, `4`, `7`, `11`, or `21`.
+    /// - Returns: Lower bound of the matching range: `"0"`, `"1"`, `"2"`, `"4"`, `"7"`, `"11"`, or `"21"`.
     ///
-    static func bucketWindowCount(_ count: Int) -> Int {
+    static func bucketWindowCount(_ count: Int) -> String {
         switch count {
         case ..<1:
-            return 0
+            return "0"
         case 1:
-            return 1
+            return "1"
         case 2..<4:
-            return 2
+            return "2"
         case 4..<7:
-            return 4
+            return "4"
         case 7..<11:
-            return 7
+            return "7"
         case 11..<21:
-            return 11
+            return "11"
         default:
-            return 21
+            return "21"
         }
     }
 
     /// Buckets a tab count into predefined ranges.
-    /// - Returns: Lower bound of the matching range: `0`, `1`, `2`, `4`, `7`, `11`, `21`, or `51`.
+    /// - Returns: Lower bound of the matching range: `"0"`, `"1"`, `"2"`, `"4"`, `"7"`, `"11"`, `"21"`, or `"51"`.
     ///
-    static func bucketTabCount(_ count: Int) -> Int {
+    static func bucketTabCount(_ count: Int) -> String {
         switch count {
         case ..<1:
-            return 0
+            return "0"
         case 1:
-            return 1
+            return "1"
         case 2..<4:
-            return 2
+            return "2"
         case 4..<7:
-            return 4
+            return "4"
         case 7..<11:
-            return 7
+            return "7"
         case 11..<21:
-            return 11
+            return "11"
         case 21..<51:
-            return 21
+            return "21"
         default:
-            return 51
+            return "51"
         }
     }
 
@@ -95,7 +95,7 @@ enum StartupMetricsBuckets {
     /// Returns the `TimeInterval` (in seconds) expressed in milliseconds and returns the lower bound of the matching bucket.
     /// - Returns: `0, 100, 200, 300, 400, 500, 1000, 2000, 3000, 5000, 10000`
     ///
-    static func bucketMillisecondsAsInt(_ seconds: TimeInterval) -> Int {
+    private static func bucketMillisecondsAsInt(_ seconds: TimeInterval) -> Int {
         let ms = Int(seconds * 1000)
 
         switch ms {

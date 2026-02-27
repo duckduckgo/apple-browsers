@@ -122,6 +122,11 @@
                 "type": "string"
             },
             {
+                "key": "day_average",
+                "description": "Number of days with data used to compute the average",
+                "type": "string"
+            },
+            {
                 "key": "version",
                 "description": "Bucket version identifier for the metric calculation",
                 "type": "string"
@@ -147,6 +152,11 @@
             {
                 "key": "count",
                 "description": "Average number of searches in the past week",
+                "type": "string"
+            },
+            {
+                "key": "day_average",
+                "description": "Number of days with data used to compute the average",
                 "type": "string"
             },
             {
@@ -178,6 +188,11 @@
                 "type": "string"
             },
             {
+                "key": "day_average",
+                "description": "Number of days with data used to compute the average",
+                "type": "string"
+            },
+            {
                 "key": "version",
                 "description": "Bucket version identifier for the metric calculation",
                 "type": "string"
@@ -203,6 +218,11 @@
             {
                 "key": "count",
                 "description": "Average number of Duck AI interactions in the past week",
+                "type": "string"
+            },
+            {
+                "key": "day_average",
+                "description": "Number of days with data used to compute the average",
                 "type": "string"
             },
             {

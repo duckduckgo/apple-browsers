@@ -50,6 +50,8 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
         self.delegate = delegate
         Application.appDelegate = delegate
 
+        let menuProfilerToken = delegate.startupProfiler.startMeasuring(.mainMenuInit)
+
         let mainMenu = MainMenu(
             featureFlagger: delegate.featureFlagger,
             bookmarkManager: delegate.bookmarkManager,
@@ -69,6 +71,8 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
             subscriptionManager: delegate.subscriptionManager
         )
         self.mainMenu = mainMenu
+
+        menuProfilerToken.stop()
 
         // Subscribe to Fire Window preference changes to update menu dynamically
         fireWindowPreferenceCancellable = delegate.dataClearingPreferences.$shouldOpenFireWindowByDefault

@@ -93,12 +93,21 @@ final class EmbeddedWebExtensionTests: XCTestCase {
 
         XCTAssertNotNil(descriptor)
         XCTAssertEqual(descriptor?.type, .embedded)
-        XCTAssertEqual(descriptor?.resourceFilename, "com.duckduckgo.web-extension.embedded.zip")
+        XCTAssertEqual(descriptor?.resourceFilename, "duckduckgo-embedded-web-extension.zip")
+    }
+
+    func testRegistryContainsDarkReaderExtension() {
+        let descriptor = EmbeddedWebExtensionRegistry.descriptor(for: .darkReader)
+
+        XCTAssertNotNil(descriptor)
+        XCTAssertEqual(descriptor?.type, .darkReader)
+        XCTAssertEqual(descriptor?.resourceFilename, "darkreader.zip")
     }
 
     func testRegistryAllContainsExpectedExtensions() {
         XCTAssertFalse(EmbeddedWebExtensionRegistry.all.isEmpty)
         XCTAssertTrue(EmbeddedWebExtensionRegistry.all.contains { $0.type == .embedded })
+        XCTAssertTrue(EmbeddedWebExtensionRegistry.all.contains { $0.type == .darkReader })
     }
 
     // MARK: - DuckDuckGoWebExtensionType Tests
@@ -286,7 +295,7 @@ final class SemanticVersionComparatorTests: XCTestCase {
         XCTAssertFalse(comparator.shouldUpgrade(installedVersion: "2.0.0", bundledVersion: "1.0.0"))
     }
 
-    func testWhenVersionsAreEqual_ThenReturnsFalse() {
+    func testWhenVersionsAreEqual_ThenShouldUpgradeReturnsFalse() {
         XCTAssertFalse(comparator.shouldUpgrade(installedVersion: "1.0.0", bundledVersion: "1.0.0"))
     }
 

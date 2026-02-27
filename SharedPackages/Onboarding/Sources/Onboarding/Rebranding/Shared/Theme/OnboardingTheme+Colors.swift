@@ -45,14 +45,14 @@ public extension OnboardingTheme {
 
         /// Primary button background color.
         public let primaryButtonBackgroundColor: Color
-        /// Primary button background color when selected.
-        public let primaryButtonSelectedColor: Color
+        /// Primary button background color when pressed.
+        public let primaryButtonPressedColor: Color
         /// Primary button foreground/text color.
         public let primaryButtonTextColor: Color
         /// Secondary button background color.
         public let secondaryButtonBackgroundColor: Color
-        /// Secondary button background color when selected.
-        public let secondaryButtonSelectedColor: Color
+        /// Secondary button background color when pressed.
+        public let secondaryButtonPressedColor: Color
         /// Secondary button foreground/text color.
         public let secondaryButtonTextColor: Color
 
@@ -68,10 +68,10 @@ public extension OnboardingTheme {
             optionsListIconColor: Color,
             optionsListTextColor: Color,
             primaryButtonBackgroundColor: Color,
-            primaryButtonSelectedColor: Color,
+            primaryButtonPressedColor: Color,
             primaryButtonTextColor: Color,
             secondaryButtonBackgroundColor: Color,
-            secondaryButtonSelectedColor: Color,
+            secondaryButtonPressedColor: Color,
             secondaryButtonTextColor: Color
         ) {
             self.background = background
@@ -84,10 +84,10 @@ public extension OnboardingTheme {
             self.optionsListIconColor = optionsListIconColor
             self.optionsListTextColor = optionsListTextColor
             self.primaryButtonBackgroundColor = primaryButtonBackgroundColor
-            self.primaryButtonSelectedColor = primaryButtonSelectedColor
+            self.primaryButtonPressedColor = primaryButtonPressedColor
             self.primaryButtonTextColor = primaryButtonTextColor
             self.secondaryButtonBackgroundColor = secondaryButtonBackgroundColor
-            self.secondaryButtonSelectedColor = secondaryButtonSelectedColor
+            self.secondaryButtonPressedColor = secondaryButtonPressedColor
             self.secondaryButtonTextColor = secondaryButtonTextColor
         }
 
@@ -116,10 +116,10 @@ public extension OnboardingTheme {
                 optionsListIconColor: optionsListIconColor,
                 optionsListTextColor: optionsListTextColor,
                 primaryButtonBackgroundColor: primaryButtonBackgroundColor,
-                primaryButtonSelectedColor: primaryButtonBackgroundColor,
+                primaryButtonPressedColor: primaryButtonBackgroundColor,
                 primaryButtonTextColor: primaryButtonTextColor,
                 secondaryButtonBackgroundColor: primaryButtonBackgroundColor,
-                secondaryButtonSelectedColor: primaryButtonBackgroundColor,
+                secondaryButtonPressedColor: primaryButtonBackgroundColor,
                 secondaryButtonTextColor: primaryButtonTextColor
             )
         }

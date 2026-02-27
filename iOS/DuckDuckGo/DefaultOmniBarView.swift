@@ -927,8 +927,10 @@ extension DefaultOmniBarView {
         aiChatTextView.font = UIFont.daxBodyRegular()
         aiChatTextView.textColor = UIColor(designSystemColor: .textPrimary)
         aiChatTextView.tintColor = UIColor(designSystemColor: .accent)
-        aiChatTextView.autocapitalizationType = .sentences
-        aiChatTextView.autocorrectionType = .default
+        aiChatTextView.autocapitalizationType = .none
+        aiChatTextView.autocorrectionType = .no
+        aiChatTextView.spellCheckingType = .no
+        aiChatTextView.keyboardType = .webSearch
         aiChatTextView.isScrollEnabled = true
     }
 
@@ -999,6 +1001,15 @@ extension DefaultOmniBarView {
     func updateTextFieldPlaceholderVisibility(hasText: Bool) {
         guard isSearchAreaExpanded else { return }
         textField.alpha = hasText ? 0 : 1
+    }
+
+    func updateLeftIconForMode(_ mode: TextEntryMode) {
+        switch mode {
+        case .aiChat:
+            searchAreaView.loupeIconView.image = DesignSystemImages.Glyphs.Size24.aiChat
+        case .search:
+            searchAreaView.loupeIconView.image = DesignSystemImages.Glyphs.Size24.findSearchSmall
+        }
     }
 
     private func applyExpansionConstraints() {

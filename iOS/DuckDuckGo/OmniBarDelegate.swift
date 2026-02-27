@@ -105,11 +105,21 @@ protocol OmniBarDelegate: AnyObject {
     // MARK: - iPad Expanded Omnibar
     func onOmniBarExpandedStateChanged(isExpanded: Bool)
 
+    /// Returns whether search query text on a SERP should be auto-selected in the experimental address bar.
+    func shouldAutoSelectTextForSERPQuery() -> Bool
+
     // MARK: - Experimental Address Bar
     func onExperimentalAddressBarTapped()
     func onExperimentalAddressBarClearPressed()
     func onExperimentalAddressBarCancelPressed()
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void)
+
+    // MARK: - Escape Hatch
+    func escapeHatchForEditingState() -> EscapeHatchModel?
+    func onSwitchTabToIndex(_ index: Int)
+
+    /// When true, the omnibar editing-state transition uses the new behaviour (opaque from frame 0, single logo). Gated by showNTPAfterIdleReturn.
+    func useNewOmnibarTransitionBehaviour() -> Bool
 }
 
 extension OmniBarDelegate {
@@ -177,6 +187,8 @@ extension OmniBarDelegate {
 
     func onOmniBarExpandedStateChanged(isExpanded: Bool) {}
 
+    func shouldAutoSelectTextForSERPQuery() -> Bool { false }
+
     // Default no-op implementations for experimental address bar pixel hooks
     func onExperimentalAddressBarTapped() {}
     func onExperimentalAddressBarClearPressed() {}
@@ -184,5 +196,15 @@ extension OmniBarDelegate {
 
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
         completion()
+    }
+
+    func onSwitchTabToIndex(_ index: Int) {}
+
+    func escapeHatchForEditingState() -> EscapeHatchModel? {
+        nil
+    }
+
+    func useNewOmnibarTransitionBehaviour() -> Bool {
+        false
     }
 }

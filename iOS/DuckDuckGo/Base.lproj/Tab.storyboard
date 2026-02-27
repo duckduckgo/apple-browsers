@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="ipad9_7" orientation="portrait" layout="fullscreen" appearance="dark"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -23,9 +23,20 @@
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="Wfg-yB-zj4">
                                 <rect key="frame" x="0.0" y="20" width="768" height="1004"/>
                                 <subviews>
-                                    <view contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3yc-Gh-Vqe">
+                                    <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="oCt-R5-2Bm" userLabel="outerContainer">
                                         <rect key="frame" x="0.0" y="0.0" width="768" height="1004"/>
-                                        <edgeInsets key="layoutMargins" top="-50" left="0.0" bottom="0.0" right="0.0"/>
+                                        <subviews>
+                                            <view contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3yc-Gh-Vqe">
+                                                <rect key="frame" x="0.0" y="0.0" width="768" height="1004"/>
+                                                <edgeInsets key="layoutMargins" top="-50" left="0.0" bottom="0.0" right="0.0"/>
+                                            </view>
+                                        </subviews>
+                                        <constraints>
+                                            <constraint firstItem="3yc-Gh-Vqe" firstAttribute="top" secondItem="oCt-R5-2Bm" secondAttribute="top" id="wT9-kP-aZq"/>
+                                            <constraint firstItem="3yc-Gh-Vqe" firstAttribute="leading" secondItem="oCt-R5-2Bm" secondAttribute="leading" id="xA4-pB-rJ7"/>
+                                            <constraint firstAttribute="trailing" secondItem="3yc-Gh-Vqe" secondAttribute="trailing" id="yK3-mL-9cD"/>
+                                            <constraint firstAttribute="bottom" secondItem="3yc-Gh-Vqe" secondAttribute="bottom" id="zN5-qF-8vR"/>
+                                        </constraints>
                                     </view>
                                 </subviews>
                             </stackView>
@@ -138,6 +149,7 @@
                         <outlet property="errorHeader" destination="6P7-7R-riV" id="IkB-Tc-Eat"/>
                         <outlet property="errorInfoImage" destination="TUO-E3-s7Q" id="ngN-8S-PwR"/>
                         <outlet property="errorMessage" destination="Cjw-mk-QL3" id="b1N-1W-IGs"/>
+                        <outlet property="outerContainer" destination="oCt-R5-2Bm" id="pQ2-wS-6eT"/>
                         <outlet property="showBarsTapGestureRecogniser" destination="Y72-bH-DMy" id="SAY-KX-OEJ"/>
                         <outlet property="webViewContainer" destination="3yc-Gh-Vqe" id="kNL-fm-49U"/>
                         <segue destination="5Os-y0-IaV" kind="popoverPresentation" identifier="PrivacyDashboard" destinationCreationSelector="makePrivacyDashboardViewControllerWithCoder:" popoverAnchorView="ypz-s2-KJB" id="nKl-8K-k03">

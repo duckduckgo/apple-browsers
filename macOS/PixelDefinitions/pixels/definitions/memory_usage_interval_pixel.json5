@@ -56,11 +56,6 @@
                 "type": "string",
                 "enum": ["0", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "unknown"],
                 "description": "Total used allocation from malloc zones in MB, bucketed. 'unknown' if unavailable."
-            },
-            {
-                "key": "uptime",
-                "type": "integer",
-                "description": "Minutes elapsed since app launch (raw value, not bucketed)"
             }
         ]
     }

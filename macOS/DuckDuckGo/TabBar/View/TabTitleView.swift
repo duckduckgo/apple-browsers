@@ -50,19 +50,19 @@ final class TabTitleView: NSView {
 extension TabTitleView {
 
     /// Displays the specified Title **Unless** the following conditions are met
-    ///     1. We're already displaying a Title for the same URL
-    ///     2. The new Title is the "Suggested Placeholder" (Host minus the `www` prefix, and no schema)
+    /// 
+    ///     1. Same host navigation with placeholder title while loading
+    ///     2. Same URL and title
+    ///     3. Different hosts with same title.
     ///
     /// This exit mechanism is meant to handle Page Reload scenarios, in which we're already rendering a Title, and we'd wanna
     /// avoid animating the Placeholder.
     ///
     func displayTitleIfNeeded(title: String, url: URL?, isLoading: Bool, animated: Bool = true) {
-        if displayPolicy.mustSkipDisplayingTitle(title: title, url: url, previousURL: sourceURL, isLoading: isLoading) {
+        let previousTitle = titleTextField.stringValue
+        if displayPolicy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: sourceURL, isLoading: isLoading) {
             return
         }
-
-        let previousTitle = titleTextField.stringValue
-        let mustFadeInLatestTitle = displayPolicy.mustAnimateNewTitleFadeIn(targetURL: url, previousURL: sourceURL)
 
         titleTextField.stringValue = title
         previousTextField.stringValue = previousTitle
@@ -72,7 +72,7 @@ extension TabTitleView {
             return
         }
 
-        transitionToLatestTitle(fadeInTitle: mustFadeInLatestTitle)
+        transitionToLatestTitle(fadeInTitle: true)
     }
 
     func reset() {

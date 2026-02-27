@@ -740,7 +740,7 @@ final class NewPermissionViewPopupTests: UITestCase {
             ],
             featureFlags: [
                 "newPermissionView": true,
-                "popupBlocking": true
+                "popupBlocking": true,
             ]
         )
 

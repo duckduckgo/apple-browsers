@@ -134,52 +134,6 @@ final class AutoClearHandler: ApplicationTerminationDecider {
         appTerminationHandledCorrectly = true
     }
 
-   // MARK: - Fallback (Old Synchronous Pattern - To be removed)
-
-    @MainActor
-    func handleAppTerminationFallback() -> NSApplication.TerminateReply? {
-        guard dataClearingPreferences.isAutoClearEnabled else { return nil }
-
-        // Skip auto-clear if app is relaunching for an update
-        if stateRestorationManager.isRelaunchingAutomatically {
-            appTerminationHandledCorrectly = true
-            return .terminateNow
-        }
-
-        if dataClearingPreferences.isWarnBeforeClearingEnabled {
-            switch confirmAutoClear() {
-            case .alertFirstButtonReturn:
-                // Clear and Quit
-                performAutoClearSyncFallback()
-                return .terminateLater
-            case .alertSecondButtonReturn:
-                // Quit without Clearing Data
-                appTerminationHandledCorrectly = true
-                return .terminateNow
-            default:
-                // Cancel
-                return .terminateCancel
-            }
-        }
-
-        // Autoclear without warning
-        performAutoClearSyncFallback()
-        return .terminateLater
-    }
-
-    @MainActor
-    private func performAutoClearSyncFallback() {
-        if dataClearingPreferences.isAutoClearAIChatHistoryEnabled {
-            Task {
-                await aiChatSyncCleaner?.recordLocalClear(date: Date())
-            }
-        }
-        fireViewModel.fire.burnAll(isBurnOnExit: true, includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled) { [weak self] in
-            self?.appTerminationHandledCorrectly = true
-            NSApp.reply(toApplicationShouldTerminate: true)
-        }
-    }
-
     // MARK: - Burn On Start
     // Burning on quit wasn't successful
 

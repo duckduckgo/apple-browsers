@@ -1143,7 +1143,7 @@ final class MainMenu: NSMenu {
             url,
             source: .userEntered(url.absoluteString, downloadRequested: true),
             target: nil,
-            event: NSApp.currentEvent
+            with: NSApp.currentEvent
         )
     }
 

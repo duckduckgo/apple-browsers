@@ -450,7 +450,8 @@ extension MainViewController {
                                                       using: featureFlagger,
                                                       keyValueStore: keyValueStore
                                                   ),
-                                                  whatsNewCoordinator: whatsNewCoordinator)
+                                                  whatsNewCoordinator: whatsNewCoordinator,
+                                                  darkReaderFeatureSettings: darkReaderFeatureSettings)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)

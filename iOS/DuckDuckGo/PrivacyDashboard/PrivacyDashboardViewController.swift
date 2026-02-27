@@ -286,6 +286,7 @@ extension PrivacyDashboardViewController {
         let vpnOn: Bool
         let userRefreshCount: Int
         let breakageReportingSubfeature: BreakageReportingSubfeature?
+        let isForceDarkModeEnabled: Bool?
     }
     
     enum BrokenSiteReportError: Error {
@@ -360,6 +361,7 @@ extension PrivacyDashboardViewController {
                                 debugFlags: privacyInfo.debugFlags,
                                 privacyExperiments: privacyInfo.privacyExperimentCohorts,
                                 isPirEnabled: nil,
+                                isForceDarkModeEnabled: breakageAdditionalInfo.isForceDarkModeEnabled,
                                 detectorMetrics: detectorMetrics)
     }
 

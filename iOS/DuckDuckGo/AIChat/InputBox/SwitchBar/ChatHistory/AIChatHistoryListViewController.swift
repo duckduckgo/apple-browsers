@@ -36,7 +36,7 @@ final class AIChatHistoryListViewController: UIViewController {
         static let iconTextSpacing: CGFloat = 12
         static let cellHeight: CGFloat = 44
         static let horizontalInset: CGFloat = 16
-        static let topContentInset: CGFloat = -20
+        static let topContentInset: CGFloat = 0
         static let escapeHatchTopPadding: CGFloat = 16
         static let escapeHatchHeaderHeight: CGFloat = 72
         static let escapeHatchBottomPadding: CGFloat = 16
@@ -51,7 +51,7 @@ final class AIChatHistoryListViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: .insetGrouped)
+        let tableView = UITableView(frame: .zero, style: .plain)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self

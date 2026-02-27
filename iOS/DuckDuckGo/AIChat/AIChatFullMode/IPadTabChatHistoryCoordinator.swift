@@ -31,14 +31,13 @@ final class IPadTabChatHistoryCoordinator {
     // MARK: - Constants
 
     private enum Layout {
-        static let cornerRadius: CGFloat = 24
-        static let topSpacing: CGFloat = 4
-        static let widthPadding: CGFloat = 32
+        static let cornerRadius: CGFloat = 16
+        static let topSpacing: CGFloat = 15
+        static let widthPadding: CGFloat = 0
         /// Matches `AIChatHistoryListViewController.Constants.cellHeight`.
         static let cellHeight: CGFloat = 44
-        /// Approximate vertical padding added by the `.insetGrouped` table view style
-        /// (top section margin minus the −20 content inset, plus bottom margin).
-        static let sectionPadding: CGFloat = 50
+        /// Vertical padding for the plain table view style.
+        static let sectionPadding: CGFloat = 0
     }
 
     // MARK: - Properties
@@ -98,11 +97,10 @@ final class IPadTabChatHistoryCoordinator {
         let heightConstraint = wrapper.heightAnchor.constraint(equalToConstant: 0)
         self.heightConstraint = heightConstraint
 
-        let searchWidth = searchContainer.frame.width + Layout.widthPadding
         NSLayoutConstraint.activate([
             wrapper.topAnchor.constraint(equalTo: searchContainer.bottomAnchor, constant: Layout.topSpacing),
             wrapper.centerXAnchor.constraint(equalTo: searchContainer.centerXAnchor),
-            wrapper.widthAnchor.constraint(equalToConstant: searchWidth),
+            wrapper.widthAnchor.constraint(equalTo: searchContainer.widthAnchor),
             wrapper.bottomAnchor.constraint(lessThanOrEqualTo: keyboardLayoutGuide.topAnchor),
             heightConstraint
         ])
@@ -165,7 +163,7 @@ final class IPadTabChatHistoryCoordinator {
         wrapper.backgroundColor = UIColor(designSystemColor: .background)
         wrapper.layer.cornerRadius = Layout.cornerRadius
         wrapper.layer.cornerCurve = .continuous
-        wrapper.applyActiveShadow()
+        wrapper.applyDefaultShadow()
 
         let clipView = UIView()
         clipView.translatesAutoresizingMaskIntoConstraints = false

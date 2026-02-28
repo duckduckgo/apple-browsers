@@ -271,7 +271,7 @@ final class AutomationServer {
     }
 
     func getWindowHandles(url: URLComponents) -> ConnectionResult {
-        let handles = self.main.tabManager.model.tabs.map({ tab in
+        let handles = self.main.tabManager.currentTabsModel.tabs.map({ tab in
             let tabView = self.main.tabManager.controller(for: tab)!
             return tabView.tabModel.uid
         })
@@ -294,7 +294,7 @@ final class AutomationServer {
             return .failure(.invalidWindowHandle)
         }
         Logger.automationServer.info("Switch to window \(handleString)")
-        if let tabIndex = self.main.tabManager.model.tabs.firstIndex(where: { tab in
+        if let tabIndex = self.main.tabManager.currentTabsModel.tabs.firstIndex(where: { tab in
             guard let tabView = self.main.tabManager.controller(for: tab) else {
                 return false
             }

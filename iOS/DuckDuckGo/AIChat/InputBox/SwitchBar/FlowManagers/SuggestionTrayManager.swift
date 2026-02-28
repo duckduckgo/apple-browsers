@@ -112,7 +112,7 @@ final class SuggestionTrayManager: NSObject {
                 favoritesViewModel: self.dependencies.favoritesViewModel,
                 bookmarksDatabase: self.dependencies.bookmarksDatabase,
                 historyManager: self.dependencies.historyManager,
-                tabsModel: self.dependencies.tabsModelProvider(),
+                tabsModelProvider: self.dependencies.tabsModelProvider,
                 featureFlagger: self.dependencies.featureFlagger,
                 appSettings: self.dependencies.appSettings,
                 aiChatSettings: self.dependencies.aiChatSettings,

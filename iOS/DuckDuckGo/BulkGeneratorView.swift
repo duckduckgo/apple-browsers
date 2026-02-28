@@ -130,7 +130,7 @@ struct BulkTabFactory: BulkGeneratorView.Factory {
         for index in 0 ..< count {
             let url = await urlFactory.generate(optionValues: ["index": "\(index)"])
             let tab = Tab(uid: UUID().uuidString, link: .init(title: "Generated Tab \(index)", url: url))
-            tabManager.model.add(tab: tab)
+            tabManager.currentTabsModel.add(tab: tab)
         }
         return
     }

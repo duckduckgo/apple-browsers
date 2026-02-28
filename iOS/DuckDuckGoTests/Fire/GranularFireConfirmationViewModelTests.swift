@@ -45,6 +45,7 @@ final class GranularFireConfirmationViewModelTests: XCTestCase {
     
     private struct MockTabsModel: ReadableTabCollection {
         let count: Int
+        let tabs: [Tab] = []
     }
     
     private class TestHistoryCoordinator: NullHistoryCoordinator {

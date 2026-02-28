@@ -93,9 +93,9 @@ import AIChatTestingUtilities
                                                                               syncErrorHandler: CapturingAdapterErrorHandler(),
                                                                               webExtensionAvailability: nil)
 
-        let tabManager = TabManager(model: tabsModel,
-                                    fireModel: TabsModel(tabs: [], desktop: false, mode: .fire),
-                                    persistence: tabsPersistence,
+        let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
+        let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence)
+        let tabManager = TabManager(tabsModelProvider: modelProvider,
                                     previewsSource: MockTabPreviewsSource(),
                                     interactionStateSource: nil,
                                     privacyConfigurationManager: mockConfigManager,

@@ -238,10 +238,10 @@ final class TabManagerExternalLaunchTests {
             store: MockKeyValueFileStore(),
             legacyStore: MockKeyValueStore()
         )
+        let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
+        let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence)
         return TabManager(
-            model: model,
-            fireModel: TabsModel(tabs: [], desktop: false, mode: .fire),
-            persistence: tabsPersistence,
+            tabsModelProvider: modelProvider,
             previewsSource: previewsSource,
             interactionStateSource: TabInteractionStateDiskSource(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),

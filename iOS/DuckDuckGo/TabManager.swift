@@ -72,9 +72,11 @@ protocol TrackerAnimationSuppressing {
 
 class TabManager: TabManaging, TrackerAnimationSuppressing {
 
-    private(set) var model: TabsModel
-    private(set) var fireModel: TabsModel
-    private(set) var persistence: TabsModelPersisting
+    // TODO: - Remove this
+    var model: TabsModel {
+        currentTabsModel as! TabsModel
+    }
+    private let tabsModelProvider: TabsModelProviding
     private var fireModeCapability: FireModeCapable {
         FireModeCapability.create(using: featureFlagger)
     }
@@ -85,7 +87,20 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         return _currentBrowsingMode
     }
-
+    
+    var currentTabsModel: MutableTabCollection {
+        switch _currentBrowsingMode {
+        case .fire:
+            return tabsModelProvider.fireModeTabsModel
+        case .normal:
+            return tabsModelProvider.normalTabsModel
+        }
+    }
+    
+    var allTabsModel: ReadableTabCollection {
+        tabsModelProvider.aggregateTabsModel
+    }
+    
     private var tabControllerCache = [TabViewController]()
 
     weak var cacheDelegate: (any TabControllerCacheDelegate)?
@@ -129,9 +144,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     var tabsCacheNeedsCleanup: Bool
 
     @MainActor
-    init(model: TabsModel,
-         fireModel: TabsModel,
-         persistence: TabsModelPersisting,
+    init(tabsModelProvider: TabsModelProviding,
          previewsSource: TabPreviewsSource,
          interactionStateSource: TabInteractionStateSource?,
          privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -163,9 +176,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          voiceSearchHelper: VoiceSearchHelperProtocol,
          launchSourceManager: LaunchSourceManaging
     ) {
-        self.model = model
-        self.fireModel = fireModel
-        self.persistence = persistence
+        self.tabsModelProvider = tabsModelProvider
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -532,8 +543,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func save() {
-        persistence.save(model: model, for: .normal)
-        persistence.save(model: fireModel, for: .fire)
+        tabsModelProvider.save()
     }
 
     @MainActor

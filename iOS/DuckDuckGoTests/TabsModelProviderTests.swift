@@ -32,7 +32,7 @@ final class TabsModelProviderTests: XCTestCase {
         let normalModel = TabsModel(desktop: false)
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
 
-        let sut = TabsModelProvider(normalTabsModel: normalModel, fireModeTabsModel: fireModel)
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
 
         XCTAssertEqual(sut.aggregateTabsModel.count, 1)
     }
@@ -48,7 +48,7 @@ final class TabsModelProviderTests: XCTestCase {
             Tab(link: exampleLink)
         ], desktop: false, mode: .fire)
 
-        let sut = TabsModelProvider(normalTabsModel: normalModel, fireModeTabsModel: fireModel)
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
 
         XCTAssertEqual(sut.aggregateTabsModel.count, 5)
     }
@@ -59,7 +59,7 @@ final class TabsModelProviderTests: XCTestCase {
         let normalModel = TabsModel(desktop: false)
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
 
-        let sut = TabsModelProvider(normalTabsModel: normalModel, fireModeTabsModel: fireModel)
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
         let initialCount = sut.aggregateTabsModel.count
 
         normalModel.add(tab: Tab(link: exampleLink))
@@ -74,10 +74,58 @@ final class TabsModelProviderTests: XCTestCase {
         ], desktop: false, mode: .fire)
         let normalModel = TabsModel(desktop: false)
 
-        let sut = TabsModelProvider(normalTabsModel: normalModel, fireModeTabsModel: fireModel)
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
 
         fireModel.remove(at: 0)
 
         XCTAssertEqual(sut.aggregateTabsModel.count, normalModel.count + fireModel.count)
     }
+
+    // MARK: - Save
+
+    func testWhenSaveCalledThenPersistenceReceivesBothModels() {
+        let normalModel = TabsModel(desktop: false)
+        let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
+        let persistence = MockTabsModelPersistence()
+
+        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel, persistence: persistence)
+
+        sut.save()
+
+        XCTAssertEqual(persistence.savedModels.count, 2)
+        XCTAssertTrue(persistence.savedModels.contains { $0.key == .normal && $0.model === normalModel })
+        XCTAssertTrue(persistence.savedModels.contains { $0.key == .fire && $0.model === fireModel })
+    }
+
+    // MARK: - Helpers
+
+    private func makeSUT(normalModel: TabsModel = TabsModel(desktop: false),
+                         fireModel: TabsModel = TabsModel(tabs: [], desktop: false, mode: .fire),
+                         persistence: TabsModelPersisting = MockTabsModelPersistence()) -> TabsModelProvider {
+        TabsModelProvider(normalTabsModel: normalModel, fireModeTabsModel: fireModel, persistence: persistence)
+    }
+}
+
+// MARK: - Mocks
+
+private final class MockTabsModelPersistence: TabsModelPersisting {
+
+    struct SavedModel {
+        let model: TabsModel
+        let key: TabsModelStorageKey
+    }
+
+    private(set) var savedModels: [SavedModel] = []
+
+    func getTabsModel(for key: TabsModelStorageKey) throws -> TabsModel? {
+        nil
+    }
+
+    func save(model: TabsModel, for key: TabsModelStorageKey) {
+        savedModels.append(SavedModel(model: model, key: key))
+    }
+
+    func clear(for key: TabsModelStorageKey) {}
+
+    func clearAll() {}
 }

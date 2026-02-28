@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Combine
 
 protocol ReadableTabCollection {
     var count: Int { get }
@@ -31,6 +32,7 @@ extension ReadableTabCollection {
 }
 
 protocol MutableTabCollection: AnyObject, ReadableTabCollection {
+    var tabsPublisher: AnyPublisher<[Tab], Never> { get }
     var currentTab: Tab? { get }
     var currentIndex: Int { get }
     var hasUnread: Bool { get }

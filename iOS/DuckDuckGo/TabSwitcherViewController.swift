@@ -128,8 +128,8 @@ class TabSwitcherViewController: UIViewController {
     let privacyStats: PrivacyStatsProviding
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
-    var tabsModel: TabsModel {
-        tabManager.model
+    var tabsModel: MutableTabCollection {
+        tabManager.currentTabsModel
     }
 
     let barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
@@ -237,9 +237,18 @@ class TabSwitcherViewController: UIViewController {
 
     private func modeToggleSelectionChanged(_ selectedItem: ImageSegmentedPickerItem) {
         let newMode: BrowsingMode = pickerItems.first == selectedItem ? .fire : .normal
+        guard newMode != tabManager.currentBrowsingMode else {
+            return
+        }
+        tabsModel.tabs.forEach { $0.removeObserver(self) }
         let progress: CGFloat = newMode == .fire ? 0 : 1
         pickerViewModel.updateScrollProgress(progress)
         tabManager.setBrowsingMode(newMode)
+        subscribeToTabChanges()
+        currentSelection = tabManager.currentTabsModel.currentIndex
+        collectionView.reloadData()
+        markCurrentAsViewed(shouldDismiss: false)
+        delegate.tabSwitcherDidUpdateBrowsingMode(tabSwitcher: self)
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition() {
@@ -321,9 +330,7 @@ class TabSwitcherViewController: UIViewController {
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
             withReuseIdentifier: TabSwitcherTrackerInfoHeaderView.reuseIdentifier
         )
-        tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
-            self?.collectionView.reloadData()
-        }
+        subscribeToTabChanges()
 
         // These can be done more than once but don't need to
         decorate()
@@ -357,6 +364,14 @@ class TabSwitcherViewController: UIViewController {
 
     func refreshDisplayModeButton() {
         tabsStyle = tabSwitcherSettings.isGridViewEnabled ? .grid : .list
+    }
+
+    private func subscribeToTabChanges() {
+        tabObserverCancellable = tabsModel.tabsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.collectionView.reloadData()
+            }
     }
 
     private func bindTrackerCount() {
@@ -549,11 +564,12 @@ class TabSwitcherViewController: UIViewController {
         }
     }
     
-    func markCurrentAsViewedAndDismiss() {
+    func markCurrentAsViewed(shouldDismiss: Bool) {
         // Will be dismissed, so no need to process incoming updates
         canUpdateCollection = false
-
-        dismiss()
+        if shouldDismiss {
+            dismiss()
+        }
         if let current = currentSelection {
             let tab = tabsModel.get(tabAt: current)
             tab.viewed = true
@@ -577,7 +593,7 @@ class TabSwitcherViewController: UIViewController {
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
         canUpdateCollection = false
-        tabsModel.tabs.forEach { $0.removeObserver(self) }
+        tabManager.allTabsModel.tabs.forEach { $0.removeObserver(self) }
         super.dismiss(animated: animated) {
             completion?()
             self.delegate?.tabSwitcherDidDismiss(tabSwitcher: self)
@@ -588,7 +604,7 @@ class TabSwitcherViewController: UIViewController {
 extension TabSwitcherViewController: TabViewCellDelegate {
 
     func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
-        let shouldDismiss = tabsModel.count == indexPaths.count
+        let shouldDismiss = tabsModel.count == indexPaths.count // TODO: - Handle fire mode
         let tabsToClose = indexPaths.map { tabsModel.get(tabAt: $0.row) }
         delegate?.tabSwitcher(self, willCloseTabs: tabsToClose)
 
@@ -694,7 +710,7 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         } else {
             currentSelection = indexPath.row
             Pixel.fire(pixel: .tabSwitcherSwitchTabs)
-            markCurrentAsViewedAndDismiss()
+            markCurrentAsViewed(shouldDismiss: true)
         }
     }
 

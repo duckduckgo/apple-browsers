@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import Combine
 
 public class TabsModel: NSObject, NSCoding, MutableTabCollection {
 
@@ -33,6 +34,10 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
     let mode: BrowsingMode
     private(set) var currentIndex: Int
     @Published private(set) var tabs: [Tab]
+
+    var tabsPublisher: AnyPublisher<[Tab], Never> {
+        $tabs.eraseToAnyPublisher()
+    }
 
     var hasUnread: Bool {
         return tabs.contains(where: { !$0.viewed })

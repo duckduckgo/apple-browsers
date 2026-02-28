@@ -46,4 +46,5 @@ protocol TabSwitcherDelegate: AnyObject {
 
     func tabSwitcherDidDismiss(tabSwitcher: TabSwitcherViewController)
     
+    func tabSwitcherDidUpdateBrowsingMode(tabSwitcher: TabSwitcherViewController)
 }

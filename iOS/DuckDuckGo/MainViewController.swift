@@ -3963,6 +3963,11 @@ extension MainViewController: TabSwitcherDelegate {
         newTab(allowingKeyboard: false)
         openAIChat()
     }
+    
+    func tabSwitcherDidUpdateBrowsingMode(tabSwitcher: TabSwitcherViewController) {
+        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+    }
 }
 
 extension MainViewController: BookmarksDelegate {

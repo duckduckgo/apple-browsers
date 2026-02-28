@@ -448,7 +448,7 @@ class MainViewController: UIViewController {
             favoritesViewModel: favoritesViewModel,
             bookmarksDatabase: bookmarksDatabase,
             historyManager: historyManager,
-            tabsModel: tabManager.model,
+            tabsModelProvider: { self.tabManager.currentTabsModel },
             featureFlagger: featureFlagger,
             appSettings: appSettings,
             aiChatSettings: aiChatSettings,

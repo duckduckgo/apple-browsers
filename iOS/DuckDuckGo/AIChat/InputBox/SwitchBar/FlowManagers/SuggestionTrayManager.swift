@@ -34,7 +34,7 @@ struct SuggestionTrayDependencies {
     let favoritesViewModel: FavoritesListInteracting
     let bookmarksDatabase: CoreDataDatabase
     let historyManager: HistoryManaging
-    let tabsModel: TabsModel
+    let tabsModelProvider: () -> MutableTabCollection
     let featureFlagger: FeatureFlagger
     let appSettings: AppSettings
     let aiChatSettings: AIChatSettingsProvider
@@ -112,7 +112,7 @@ final class SuggestionTrayManager: NSObject {
                 favoritesViewModel: self.dependencies.favoritesViewModel,
                 bookmarksDatabase: self.dependencies.bookmarksDatabase,
                 historyManager: self.dependencies.historyManager,
-                tabsModel: self.dependencies.tabsModel,
+                tabsModel: self.dependencies.tabsModelProvider(),
                 featureFlagger: self.dependencies.featureFlagger,
                 appSettings: self.dependencies.appSettings,
                 aiChatSettings: self.dependencies.aiChatSettings,

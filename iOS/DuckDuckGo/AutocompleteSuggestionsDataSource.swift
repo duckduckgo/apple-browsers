@@ -32,7 +32,7 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
     private let historyManager: HistoryManaging
     private let bookmarksDatabase: CoreDataDatabase
     private let featureFlagger: FeatureFlagger
-    private let tabsModel: TabsModel
+    private let tabsModel: MutableTabCollection
 
     private var performSuggestionsRequest: SuggestionsRequest
 
@@ -55,7 +55,7 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
         .mobile
     }
 
-    init(historyManager: HistoryManaging, bookmarksDatabase: CoreDataDatabase, featureFlagger: FeatureFlagger, tabsModel: TabsModel, performSuggestionsRequest: @escaping SuggestionsRequest) {
+    init(historyManager: HistoryManaging, bookmarksDatabase: CoreDataDatabase, featureFlagger: FeatureFlagger, tabsModel: MutableTabCollection, performSuggestionsRequest: @escaping SuggestionsRequest) {
         self.historyManager = historyManager
         self.bookmarksDatabase = bookmarksDatabase
         self.featureFlagger = featureFlagger

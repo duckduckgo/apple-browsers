@@ -413,7 +413,7 @@ class OmniBarCell: UICollectionViewCell {
     }
 }
 
-extension TabsModel {
+extension MutableTabCollection {
     
     func safeGetTabAt(_ index: Int) -> Tab? {
         guard tabs.indices.contains(index) else { return nil }

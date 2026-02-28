@@ -180,8 +180,8 @@ extension MainViewController {
         guard tabSwitcherController == nil else { return }
         
         guard let tab = currentTab else { return }
-        guard let index = tabManager.model.indexOf(tab: tab.tabModel) else { return }
-        let targetTabIndex = index + 1 >= tabManager.model.count ? 0 : index + 1
+        guard let index = tabManager.currentTabsModel.indexOf(tab: tab.tabModel) else { return }
+        let targetTabIndex = index + 1 >= tabManager.currentTabsModel.count ? 0 : index + 1
         performCancel()
         select(tabAt: targetTabIndex)
     }
@@ -190,8 +190,8 @@ extension MainViewController {
         guard tabSwitcherController == nil else { return }
         
         guard let tab = currentTab else { return }
-        guard let index = tabManager.model.indexOf(tab: tab.tabModel) else { return }
-        let targetTabIndex = index - 1 < 0 ? tabManager.model.count - 1 : index - 1
+        guard let index = tabManager.currentTabsModel.indexOf(tab: tab.tabModel) else { return }
+        let targetTabIndex = index - 1 < 0 ? tabManager.currentTabsModel.count - 1 : index - 1
         performCancel()
         select(tabAt: targetTabIndex)
     }

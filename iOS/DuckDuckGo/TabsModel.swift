@@ -40,11 +40,10 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
         
     public init(tabs: [Tab] = [], currentIndex: Int = 0, desktop: Bool, mode: BrowsingMode = .normal) {
         self.mode = mode
-        switch mode {
-        case .normal:
-            self.tabs = tabs.isEmpty ? [Tab(desktop: desktop)] : tabs
-        case .fire:
+        if mode.allowsEmpty {
             self.tabs = tabs
+        } else {
+            self.tabs = tabs.isEmpty ? [Tab(desktop: desktop)] : tabs
         }
         self.currentIndex = currentIndex
     }
@@ -136,7 +135,7 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
     func remove(at index: Int) {
         let selectedTab = safeGetTabAt(currentIndex)
         tabs.remove(at: index)
-        if tabs.isEmpty && mode == .normal {
+        if tabs.isEmpty && !mode.allowsEmpty {
             tabs.append(Tab())
         }
         setCurrentTab(selectedTab)
@@ -173,7 +172,7 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
 
     func clearAll() {
         tabs.removeAll()
-        if mode == .normal {
+        if !mode.allowsEmpty {
             tabs.append(Tab())
         }
         currentIndex = 0
@@ -181,5 +180,12 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
     
     func tabExists(withHost host: String) -> Bool {
         return tabs.contains { $0.link?.url.host == host }
+    }
+}
+
+private extension BrowsingMode {
+    var allowsEmpty: Bool {
+        // TODO: - Enable this for fire mode, after updating tab manager and MVC to handle this state
+        return false
     }
 }

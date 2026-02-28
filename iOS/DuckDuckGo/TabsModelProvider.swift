@@ -24,6 +24,12 @@ protocol ReadableTabCollection {
     var tabs: [Tab] { get }
 }
 
+extension ReadableTabCollection {
+    func indexOf(tab: Tab) -> Int? {
+        return tabs.firstIndex { $0 === tab }
+    }
+}
+
 protocol MutableTabCollection: AnyObject, ReadableTabCollection {
     var currentTab: Tab? { get }
     var currentIndex: Int { get }
@@ -38,7 +44,6 @@ protocol MutableTabCollection: AnyObject, ReadableTabCollection {
     /// This *does not* add a new empty tab after removing the items.
     func remove(_ indexPaths: [IndexPath])
     func remove(tab: Tab)
-    func indexOf(tab: Tab) -> Int?
     func clearAll()
     func tabExists(withHost host: String) -> Bool
 }

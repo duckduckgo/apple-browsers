@@ -32,6 +32,14 @@ extension TabViewController: WKWebExtensionTab {
     func window(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
         return delegate as? MainViewController
     }
+    
+    private func indexInWindow(for context: WKWebExtensionContext) -> UInt {
+        guard let mainVC = delegate as? MainViewController,
+              let index = mainVC.tabManager.allTabsModel.indexOf(tab: tabModel) else {
+            return 0
+        }
+        return UInt(index)
+    }
 
     func parentTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
         return nil

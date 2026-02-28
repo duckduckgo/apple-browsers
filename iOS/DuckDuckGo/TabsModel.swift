@@ -166,10 +166,6 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
         }
     }
 
-    func indexOf(tab: Tab) -> Int? {
-        return tabs.firstIndex { $0 === tab }
-    }
-
     func clearAll() {
         tabs.removeAll()
         if !mode.allowsEmpty {

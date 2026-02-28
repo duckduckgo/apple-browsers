@@ -24,7 +24,7 @@ protocol ReadableTabCollection {
     var tabs: [Tab] { get }
 }
 
-protocol MutableTabCollection: ReadableTabCollection {
+protocol MutableTabCollection: AnyObject, ReadableTabCollection {
     var currentTab: Tab? { get }
     var currentIndex: Int { get }
     var hasUnread: Bool { get }

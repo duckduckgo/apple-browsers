@@ -26,7 +26,7 @@ class SwipeTabsCoordinator: NSObject {
     static let tabGap: CGFloat = 10
     
     // Set by refresh function
-    weak var tabsModel: TabsModel!
+    weak var tabsModel: MutableTabCollection!
     
     weak var coordinator: MainViewCoordinator!
     weak var tabPreviewsSource: TabPreviewsSource!
@@ -302,7 +302,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 // MARK: Public Interface
 extension SwipeTabsCoordinator {
 
-    func refresh(tabsModel: TabsModel, scrollToSelected: Bool = false) {
+    func refresh(tabsModel: MutableTabCollection, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
         coordinator.navigationBarCollectionView.reloadData()
         

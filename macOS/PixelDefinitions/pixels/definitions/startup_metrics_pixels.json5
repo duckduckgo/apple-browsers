@@ -9,57 +9,63 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "duration_of_app_init",
+                "key": "app_delegate_init",
                 "type": "string",
-                "description": "Optional. Duration of app init in milliseconds, bucketed.",
+                "description": "Optional. Duration of AppDelegate init in milliseconds, bucketed.",
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
-                "key": "duration_of_app_will_finish_launching",
+                "key": "main_menu_init",
+                "type": "string",
+                "description": "Optional. Duration of Main Menu init in milliseconds, bucketed.",
+                "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
+            },
+            {
+                "key": "app_will_finish_launching",
                 "type": "string",
                 "description": "Optional. Duration of applicationWillFinishLaunching in milliseconds, bucketed.",
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
-                "key": "duration_of_app_did_finish_launching_before_state_restoration",
+                "key": "app_did_finish_launching_before_state_restoration",
                 "type": "string",
                 "description": "Optional. Duration of applicationDidFinishLaunching before state restoration in milliseconds, bucketed.",
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
-                "key": "duration_of_app_did_finish_launching_after_state_restoration",
+                "key": "app_did_finish_launching_after_state_restoration",
                 "type": "string",
                 "description": "Optional. Duration of applicationDidFinishLaunching after state restoration in milliseconds, bucketed.",
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
-                "key": "duration_of_app_state_restoration",
+                "key": "app_state_restoration",
                 "type": "string",
                 "description": "Optional. Duration of app state restoration in milliseconds, bucketed. Only sent when greater than zero.",
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
-                "key": "delta_between_app_init_and_app_will_finish_launching",
+                "key": "init_to_will_finish_launching",
                 "type": "string",
                 "description": "Optional. Time delta between app init and applicationWillFinishLaunching in milliseconds, bucketed.",
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
-                "key": "delta_between_app_will_finish_and_app_did_finish",
+                "key": "app_will_finish_to_app_did_finish_launching",
                 "type": "string",
                 "description": "Optional. Time delta between applicationWillFinishLaunching and applicationDidFinishLaunching in milliseconds, bucketed.",
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
-                "key": "delta_between_launch_and_did_display_interface",
+                "key": "time_to_interactive",
                 "type": "string",
-                "description": "Optional. Time delta between app launch and first interface display in milliseconds, bucketed.",
+                "description": "Optional. Elapsed time from app launch to the first interface display in milliseconds, bucketed.",
                 "enum": ["0", "100", "200", "300", "400", "500", "1000", "2000", "3000", "5000", "10000"]
             },
             {
                 "key": "battery_power",
                 "type": "boolean",
-                "description": "Optional. Whether the Mac is running on battery power at the time of launch."
+                "description": "Whether the Mac is running on battery power at the time of launch."
             },
             {
                 "key": "architecture",
@@ -74,16 +80,27 @@
                 "enum": ["1", "2", "4", "8", "12"]
             },
             {
-                "key": "number_of_windows_restored",
+                "key": "windows",
                 "type": "string",
                 "description": "Optional. Number of windows restored during state restoration, bucketed.",
                 "enum": ["0", "1", "2", "4", "7", "11", "21"]
             },
             {
-                "key": "number_of_tabs_restored",
+                "key": "standard_tabs",
                 "type": "string",
-                "description": "Optional. Number of tabs restored during state restoration, bucketed.",
+                "description": "Optional. Number of standard tabs restored during state restoration, bucketed.",
                 "enum": ["0", "1", "2", "4", "7", "11", "21", "51"]
+            },
+            {
+                "key": "pinned_tabs",
+                "type": "string",
+                "description": "Optional. Number of pinned tabs restored during state restoration, bucketed.",
+                "enum": ["0", "1", "2", "4", "7", "11", "15"]
+            },
+            {
+                "key": "session_restoration",
+                "type": "boolean",
+                "description": "Whether session restoration was enabled at launch time."
             }
         ]
     }

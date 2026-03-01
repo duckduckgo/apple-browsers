@@ -17,12 +17,14 @@
 //
 
 @testable import AIChat
+import BrowserServicesKitTestsUtils
 import Combine
 import Common
 @testable import DDGSync
 import PixelKitTestingUtilities
 import PrivacyConfig
 import SharedTestUtilities
+import Subscription
 import Testing
 import UserScript
 import WebKit
@@ -41,10 +43,17 @@ final class MockAIChatMessageHandler: AIChatMessageHandling {
         }
     }
     var getDataForMessageTypeCalls: [AIChatMessageType] = []
+    var getNativeConfigValuesCalls: [Bool] = []
     var setDataCalls: [SetData] = []
 
     var getDataForMessageTypeImpl: (AIChatMessageType) -> Encodable? = { _ in nil }
+    var getNativeConfigValuesImpl: (Bool) -> AIChatNativeConfigValues = { _ in .defaultValues }
     var setData: (Any?, AIChatMessageType) -> Void = { _, _ in }
+
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues {
+        getNativeConfigValuesCalls.append(isFireWindow)
+        return getNativeConfigValuesImpl(isFireWindow)
+    }
 
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable? {
         getDataForMessageTypeCalls.append(type)
@@ -64,8 +73,10 @@ struct AIChatUserScriptHandlerTests {
     private var windowControllersManager: WindowControllersManagerMock
     private var notificationCenter = NotificationCenter()
     private var pixelFiring = PixelKitMock()
+    private var syncErrorHandler = SyncErrorHandler()
     private var handler: AIChatUserScriptHandler
     private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
+    private var mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
 
     @MainActor
     init() {
@@ -78,7 +89,9 @@ struct AIChatUserScriptHandlerTests {
             pixelFiring: pixelFiring,
             statisticsLoader: statisticsLoader,
             syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
+            freeTrialConversionService: mockFreeTrialConversionService,
             notificationCenter: notificationCenter
         )
     }
@@ -86,19 +99,19 @@ struct AIChatUserScriptHandlerTests {
     @Test("openAIChatSettings calls windowControllersManager")
     @MainActor
     func testThatOpenAIChatSettingsCallsWindowControllersManager() async {
-        _ = await handler.openAIChatSettings(params: [], message: MockWKScriptMessage())
+        _ = await handler.openAIChatSettings(params: [], message: WKScriptMessage.mock())
         #expect(windowControllersManager.showTabCalls == [.settings(pane: .aiChat)])
     }
 
     @Test("getAIChatNativeConfigValues calls messageHandler")
     func testThatGetAIChatNativeConfigValuesCallsMessageHandler() async {
-        _ = await handler.getAIChatNativeConfigValues(params: [], message: MockWKScriptMessage())
-        #expect(messageHandler.getDataForMessageTypeCalls == [.nativeConfigValues])
+        _ = await handler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
+        #expect(messageHandler.getNativeConfigValuesCalls == [false])
     }
 
     @Test("getAIChatNativePrompt calls messageHandler")
     func testThatGetAIChatNativePromptCallsMessageHandler() async {
-        _ = await handler.getAIChatNativePrompt(params: [], message: MockWKScriptMessage())
+        _ = await handler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock())
         #expect(messageHandler.getDataForMessageTypeCalls == [.nativePrompt])
     }
 
@@ -118,7 +131,7 @@ struct AIChatUserScriptHandlerTests {
         }
 
         let payload: [String: String] = ["foo": "bar"]
-        _ = await handler.openAIChat(params: [AIChatUserScriptHandler.AIChatKeys.aiChatPayload: payload], message: MockWKScriptMessage())
+        _ = await handler.openAIChat(params: [AIChatUserScriptHandler.AIChatKeys.aiChatPayload: payload], message: WKScriptMessage.mock())
 
         guard let notificationObject = await notificationsStream.map(\.object).first(where: { _ in true }) else {
             throw NotificationNotReceivedError()
@@ -129,7 +142,7 @@ struct AIChatUserScriptHandlerTests {
 
     @Test("getAIChatNativeHandoffData calls messageHandler")
     func testThatGetAIChatNativeHandoffDataCallsMessageHandler() async throws {
-        _ = await handler.getAIChatNativeHandoffData(params: [], message: MockWKScriptMessage())
+        _ = await handler.getAIChatNativeHandoffData(params: [], message: WKScriptMessage.mock())
         #expect(messageHandler.getDataForMessageTypeCalls == [.nativeHandoffData])
     }
 
@@ -137,7 +150,7 @@ struct AIChatUserScriptHandlerTests {
     func testThatRecordChatCallsMessageHandler() async throws {
         _ = await handler.recordChat(
             params: [AIChatUserScriptHandler.AIChatKeys.serializedChatData: "test"],
-            message: MockWKScriptMessage()
+            message: WKScriptMessage.mock()
         )
         #expect(messageHandler.setDataCalls.count == 1)
         let setDataCall = try #require(messageHandler.setDataCalls.first?.data as? String)
@@ -148,7 +161,7 @@ struct AIChatUserScriptHandlerTests {
     func testThatRestoreChatReturnsSerializedChatData() async throws {
         messageHandler.getDataForMessageTypeImpl = { _ in return "test" }
 
-        let result = await handler.restoreChat(params: [], message: MockWKScriptMessage())
+        let result = await handler.restoreChat(params: [], message: WKScriptMessage.mock())
         #expect(messageHandler.getDataForMessageTypeCalls == [.chatRestorationData])
         let resultDictionary = try #require(result as? [String: String])
         #expect(resultDictionary[AIChatUserScriptHandler.AIChatKeys.serializedChatData] == "test")
@@ -158,7 +171,7 @@ struct AIChatUserScriptHandlerTests {
     func testThatRestoreChatReturnsNilWhenChatDataIsNotString() async throws {
         messageHandler.getDataForMessageTypeImpl = { _ in return 123 }
 
-        let result = await handler.restoreChat(params: [], message: MockWKScriptMessage())
+        let result = await handler.restoreChat(params: [], message: WKScriptMessage.mock())
         #expect(messageHandler.getDataForMessageTypeCalls == [.chatRestorationData])
         #expect(result == nil)
     }
@@ -167,14 +180,14 @@ struct AIChatUserScriptHandlerTests {
     func testThatRestoreChatReturnsNilWhenChatDataIsNil() async throws {
         messageHandler.getDataForMessageTypeImpl = { _ in return nil }
 
-        let result = await handler.restoreChat(params: [], message: MockWKScriptMessage())
+        let result = await handler.restoreChat(params: [], message: WKScriptMessage.mock())
         #expect(messageHandler.getDataForMessageTypeCalls == [.chatRestorationData])
         #expect(result == nil)
     }
 
     @Test("removeChat calls messageHandler")
     func testThatRemoveChatCallsMessageHandler() async throws {
-        _ = await handler.removeChat(params: [], message: MockWKScriptMessage())
+        _ = await handler.removeChat(params: [], message: WKScriptMessage.mock())
         #expect(messageHandler.setDataCalls.count == 1)
         #expect(messageHandler.setDataCalls.first?.data == nil)
     }
@@ -187,7 +200,7 @@ struct AIChatUserScriptHandlerTests {
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)]
 
-        _ = await handler.openSummarizationSourceLink(params: params, message: MockWKScriptMessage())
+        _ = await handler.openSummarizationSourceLink(params: params, message: WKScriptMessage.mock())
 
         let showCall = try #require(windowControllersManager.showCalled)
         #expect(showCall.url?.absoluteString == urlString)
@@ -206,7 +219,7 @@ struct AIChatUserScriptHandlerTests {
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)]
 
-        _ = await handler.openSummarizationSourceLink(params: params, message: MockWKScriptMessage())
+        _ = await handler.openSummarizationSourceLink(params: params, message: WKScriptMessage.mock())
 
         #expect(windowControllersManager.openCalls.count == 1)
         let openCall = try #require(windowControllersManager.openCalls.first)
@@ -222,7 +235,7 @@ struct AIChatUserScriptHandlerTests {
         let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
 
-        _ = await handler.openSummarizationSourceLink(params: params, message: MockWKScriptMessage())
+        _ = await handler.openSummarizationSourceLink(params: params, message: WKScriptMessage.mock())
 
         #expect(windowControllersManager.openCalls.count == 0)
     }
@@ -235,7 +248,7 @@ struct AIChatUserScriptHandlerTests {
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)]
 
-        _ = await handler.openTranslationSourceLink(params: params, message: MockWKScriptMessage())
+        _ = await handler.openTranslationSourceLink(params: params, message: WKScriptMessage.mock())
 
         let showCall = try #require(windowControllersManager.showCalled)
         #expect(showCall.url?.absoluteString == urlString)
@@ -253,7 +266,7 @@ struct AIChatUserScriptHandlerTests {
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)]
 
-        _ = await handler.openTranslationSourceLink(params: params, message: MockWKScriptMessage())
+        _ = await handler.openTranslationSourceLink(params: params, message: WKScriptMessage.mock())
 
         #expect(windowControllersManager.openCalls.count == 1)
         let openCall = try #require(windowControllersManager.openCalls.first)
@@ -269,7 +282,7 @@ struct AIChatUserScriptHandlerTests {
         let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
 
-        _ = await handler.openTranslationSourceLink(params: params, message: MockWKScriptMessage())
+        _ = await handler.openTranslationSourceLink(params: params, message: WKScriptMessage.mock())
 
         #expect(windowControllersManager.openCalls.count == 0)
     }
@@ -314,6 +327,7 @@ struct AIChatUserScriptHandlerTests {
                 pixelFiring: pixelFiring,
                 statisticsLoader: loader,
                 syncServiceProvider: { nil },
+                syncErrorHandler: syncErrorHandler,
                 featureFlagger: MockFeatureFlagger(),
                 notificationCenter: notificationCenter
             )
@@ -344,6 +358,7 @@ struct AIChatUserScriptHandlerTests {
                 pixelFiring: pixelFiring,
                 statisticsLoader: loader,
                 syncServiceProvider: { nil },
+                syncErrorHandler: syncErrorHandler,
                 featureFlagger: MockFeatureFlagger(),
                 notificationCenter: notificationCenter
             )
@@ -371,6 +386,7 @@ struct AIChatUserScriptHandlerTests {
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
             syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -397,6 +413,7 @@ struct AIChatUserScriptHandlerTests {
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
             syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -422,6 +439,7 @@ struct AIChatUserScriptHandlerTests {
             pixelFiring: testPixelFiring,
             statisticsLoader: statisticsLoader,
             syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter
         )
@@ -452,7 +470,7 @@ struct AIChatUserScriptHandlerTests {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
 
-        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage.mock())
         let errorResponse = try #require(response as? AIChatErrorResponse)
         #expect(errorResponse.reason == "internal error")
     }
@@ -463,7 +481,7 @@ struct AIChatUserScriptHandlerTests {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
 
-        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage.mock())
         let errorResponse = try #require(response as? AIChatErrorResponse)
         #expect(errorResponse.reason == "internal error")
     }
@@ -475,7 +493,7 @@ struct AIChatUserScriptHandlerTests {
         let syncService = makeSyncService(authState: .active, account: nil)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
 
-        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage.mock())
         let payloadResponse = try #require(response as? AIChatPayloadResponse)
         let status = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncStatus)
         #expect(status.syncAvailable == false)
@@ -492,7 +510,7 @@ struct AIChatUserScriptHandlerTests {
         let syncService = makeSyncService(authState: .active, account: nil)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
 
-        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage.mock())
         let payloadResponse = try #require(response as? AIChatPayloadResponse)
         let status = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncStatus)
         #expect(status.syncAvailable == true)
@@ -517,7 +535,7 @@ struct AIChatUserScriptHandlerTests {
         let syncService = makeSyncService(authState: .active, account: account)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
 
-        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage())
+        let response = testHandler.getSyncStatus(params: [String: Any](), message: WKScriptMessage.mock())
         let payloadResponse = try #require(response as? AIChatPayloadResponse)
         let status = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncStatus)
         #expect(status.syncAvailable == true)
@@ -534,7 +552,7 @@ struct AIChatUserScriptHandlerTests {
             makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
         }
 
-        let response = await testHandler.getScopedSyncAuthToken(params: [String: Any](), message: WKScriptMessage())
+        let response = await testHandler.getScopedSyncAuthToken(params: [String: Any](), message: WKScriptMessage.mock())
         let errorResponse = try #require(response as? AIChatErrorResponse)
         #expect(errorResponse.reason == "sync unavailable")
     }
@@ -556,7 +574,7 @@ struct AIChatUserScriptHandlerTests {
             makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
         }
 
-        let response = await testHandler.getScopedSyncAuthToken(params: [String: Any](), message: WKScriptMessage())
+        let response = await testHandler.getScopedSyncAuthToken(params: [String: Any](), message: WKScriptMessage.mock())
         let payloadResponse = try #require(response as? AIChatPayloadResponse)
         let tokenPayload = try #require(payloadResponse.payload as? AIChatSyncHandler.SyncToken)
         #expect(tokenPayload.token == "scoped-token")
@@ -579,7 +597,7 @@ struct AIChatUserScriptHandlerTests {
 
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
 
-        let response = testHandler.encryptWithSyncMasterKey(params: ["data": "plain"], message: WKScriptMessage())
+        let response = testHandler.encryptWithSyncMasterKey(params: ["data": "plain"], message: WKScriptMessage.mock())
         let payloadResponse = try #require(response as? AIChatPayloadResponse)
         let encryptedPayload = try #require(payloadResponse.payload as? AIChatSyncHandler.EncryptedData)
         #expect(encryptedPayload.encryptedData == "encrypted-data")
@@ -602,7 +620,7 @@ struct AIChatUserScriptHandlerTests {
 
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
 
-        let response = testHandler.decryptWithSyncMasterKey(params: ["data": "cipher"], message: WKScriptMessage())
+        let response = testHandler.decryptWithSyncMasterKey(params: ["data": "cipher"], message: WKScriptMessage.mock())
         let payloadResponse = try #require(response as? AIChatPayloadResponse)
         let decryptedPayload = try #require(payloadResponse.payload as? AIChatSyncHandler.DecryptedData)
         #expect(decryptedPayload.decryptedData == "decrypted-data")
@@ -612,7 +630,7 @@ struct AIChatUserScriptHandlerTests {
     @Test("sendToSyncSettings returns ok and opens sync settings pane")
     @MainActor
     func testThatSendToSyncSettingsShowsSyncSettingsPane() async throws {
-        let response = handler.sendToSyncSettings(params: [String: Any](), message: WKScriptMessage())
+        let response = handler.sendToSyncSettings(params: [String: Any](), message: WKScriptMessage.mock())
         let okResponse = try #require(response as? AIChatOKResponse)
         #expect(okResponse.ok)
 
@@ -627,7 +645,7 @@ struct AIChatUserScriptHandlerTests {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
 
-        let response = testHandler.sendToSetupSync(params: [String: Any](), message: WKScriptMessage())
+        let response = testHandler.sendToSetupSync(params: [String: Any](), message: WKScriptMessage.mock())
         let errorResponse = try #require(response as? AIChatErrorResponse)
         #expect(errorResponse.reason == "setup disabled")
     }
@@ -638,7 +656,7 @@ struct AIChatUserScriptHandlerTests {
         let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { nil })
 
-        let response = testHandler.sendToSetupSync(params: [String: Any](), message: WKScriptMessage())
+        let response = testHandler.sendToSetupSync(params: [String: Any](), message: WKScriptMessage.mock())
         let errorResponse = try #require(response as? AIChatErrorResponse)
         #expect(errorResponse.reason == "setup disabled")
     }
@@ -650,7 +668,7 @@ struct AIChatUserScriptHandlerTests {
         let syncService = makeSyncService(authState: .active, account: nil)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
 
-        let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage())
+        let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage.mock())
         #expect(response == nil)
         #expect(syncService.setAIChatHistoryEnabledCalls == [true])
     }
@@ -669,7 +687,7 @@ struct AIChatUserScriptHandlerTests {
                                                                                    state: .active))
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
 
-        let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage())
+        let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage.mock())
         #expect(response == nil)
         #expect(syncService.setAIChatHistoryEnabledCalls == [true])
         #expect(syncService.isAIChatHistoryEnabled)
@@ -682,7 +700,7 @@ struct AIChatUserScriptHandlerTests {
         let syncService = makeSyncService(authState: .active, account: nil)
         let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
 
-        let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage())
+        let response = testHandler.setAIChatHistoryEnabled(params: ["enabled": true], message: WKScriptMessage.mock())
         #expect(response == nil)
         #expect(syncService.setAIChatHistoryEnabledCalls == [true])
     }
@@ -710,9 +728,79 @@ struct AIChatUserScriptHandlerTests {
             pixelFiring: pixelFiring,
             statisticsLoader: statisticsLoader,
             syncServiceProvider: syncServiceProvider,
+            syncErrorHandler: syncErrorHandler,
             featureFlagger: featureFlagger,
+            freeTrialConversionService: mockFreeTrialConversionService,
             notificationCenter: notificationCenter
         )
+    }
+
+    // MARK: - Free Trial Conversion Tracking
+
+    @Test("When plus model tier prompt submitted, markDuckAIActivated is called")
+    @MainActor
+    func testWhenPlusModelTierPromptSubmittedThenMarkDuckAIActivatedIsCalled() async {
+        await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt", "modelTier": "plus"], message: WKScriptMessage.mock())
+
+        #expect(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    @Test("When plus model tier first prompt submitted, markDuckAIActivated is called")
+    @MainActor
+    func testWhenPlusModelTierFirstPromptSubmittedThenMarkDuckAIActivatedIsCalled() async {
+        await handler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt", "modelTier": "plus"], message: WKScriptMessage.mock())
+
+        #expect(mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    @Test("When free model tier prompt submitted, markDuckAIActivated is not called")
+    @MainActor
+    func testWhenFreeModelTierPromptSubmittedThenMarkDuckAIActivatedIsNotCalled() async {
+        await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt", "modelTier": "free"], message: WKScriptMessage.mock())
+
+        #expect(!mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    @Test("When no model tier prompt submitted, markDuckAIActivated is not called")
+    @MainActor
+    func testWhenNoModelTierPromptSubmittedThenMarkDuckAIActivatedIsNotCalled() async {
+        await handler.reportMetric(params: ["metricName": "userDidSubmitPrompt"], message: WKScriptMessage.mock())
+
+        #expect(!mockFreeTrialConversionService.markDuckAIActivatedCalled)
+    }
+
+    // MARK: - AIChatMessageHandler config values
+
+    @Test("When aiChatSync is enabled and not a fire window, supportsAIChatSync is true")
+    func testWhenAIChatSyncEnabledAndNotFireWindowThenSupportsAIChatSyncIsTrue() {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared)
+
+        let config = handler.getNativeConfigValues(isFireWindow: false)
+
+        #expect(config.supportsAIChatSync == true)
+    }
+
+    @Test("When aiChatSync is enabled and is a fire window, supportsAIChatSync is false")
+    func testWhenAIChatSyncEnabledAndFireWindowThenSupportsAIChatSyncIsFalse() {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared)
+
+        let config = handler.getNativeConfigValues(isFireWindow: true)
+
+        #expect(config.supportsAIChatSync == false)
+    }
+
+    @Test("When aiChatSync is disabled, supportsAIChatSync is false regardless of fire window")
+    func testWhenAIChatSyncDisabledThenSupportsAIChatSyncIsFalse() {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared)
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsAIChatSync == false)
+        #expect(handler.getNativeConfigValues(isFireWindow: true).supportsAIChatSync == false)
     }
 }
 // swiftlint:enable inclusive_language

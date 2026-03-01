@@ -75,6 +75,7 @@ final class BookmarkListViewController: NSViewController {
 
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
+    private let pinningManager: PinningManager
     private let treeControllerDataSource: BookmarkListTreeControllerDataSource
     private let treeControllerSearchDataSource: BookmarkListTreeControllerSearchDataSource
     private let sortBookmarksViewModel: SortBookmarksViewModel
@@ -155,11 +156,13 @@ final class BookmarkListViewController: NSViewController {
 
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
+         pinningManager: PinningManager,
          metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
          navigationEngagementMetrics: BookmarksNavigationEngagementMetrics = .init(),
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
+        self.pinningManager = pinningManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
         self.treeControllerSearchDataSource = BookmarkListTreeControllerSearchDataSource(bookmarkManager: bookmarkManager)
         self.bookmarkMetrics = metrics
@@ -702,7 +705,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     private func onImportClicked() {
-        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
     }
 
     private func showManageBookmarks() {
@@ -1037,14 +1040,14 @@ func _mockPreviewBookmarkManager(previewEmptyState: Bool) -> BookmarkManager {
 #Preview("Test Bookmark data",
          traits: BookmarkListViewController.Constants.preferredContentSize.fixedLayout) {
     let bkman = _mockPreviewBookmarkManager(previewEmptyState: false)
-    return BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
+    BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman), pinningManager: Application.appDelegate.pinningManager)
         ._preview_hidingWindowControlsOnAppear()
 }
 
 @available(macOS 14.0, *)
 #Preview("Empty Scope", traits: BookmarkListViewController.Constants.preferredContentSize.fixedLayout) {
     let bkman = _mockPreviewBookmarkManager(previewEmptyState: true)
-    return BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
+    BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman), pinningManager: Application.appDelegate.pinningManager)
         ._preview_hidingWindowControlsOnAppear()
 }
 #endif

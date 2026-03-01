@@ -31,6 +31,7 @@ import PrivacyConfig
 import Subscription
 import SubscriptionUI
 import Utilities
+import PixelKit
 
 final class MainMenu: NSMenu {
 
@@ -132,13 +133,10 @@ final class MainMenu: NSMenu {
     private let configurationURLProvider: CustomConfigurationURLProviding
     private let contentScopePreferences: ContentScopePreferences
     private let quitSurveyPersistor: QuitSurveyPersistor
+    private let pinningManager: PinningManager
+    private let subscriptionManager: any SubscriptionManager
 
-    private lazy var webExtensionsMenuItem: NSMenuItem? = {
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            return NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
-        }
-        return nil
-    }()
+    private var webExtensionsMenuItem: NSMenuItem?
 
     // MARK: - Initialization
 
@@ -158,7 +156,9 @@ final class MainMenu: NSMenu {
          isFireWindowDefault: Bool,
          configurationURLProvider: CustomConfigurationURLProviding,
          contentScopePreferences: ContentScopePreferences,
-         quitSurveyPersistor: QuitSurveyPersistor) {
+         quitSurveyPersistor: QuitSurveyPersistor,
+         pinningManager: PinningManager,
+         subscriptionManager: any SubscriptionManager) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -172,6 +172,8 @@ final class MainMenu: NSMenu {
         self.configurationURLProvider = configurationURLProvider
         self.contentScopePreferences = contentScopePreferences
         self.quitSurveyPersistor = quitSurveyPersistor
+        self.pinningManager = pinningManager
+        self.subscriptionManager = subscriptionManager
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -527,11 +529,26 @@ final class MainMenu: NSMenu {
     }
 
     private func updateWebExtensionsMenuItem() {
-        if let webExtensionsMenuItem,
-           webExtensionsMenuItem.parent == nil,
-           let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
-           let debugSubmenu = debugMenuItem.submenu {
-            debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
+        guard let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
+              let debugSubmenu = debugMenuItem.submenu else {
+            return
+        }
+
+        if #available(macOS 15.4, *) {
+            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+                if webExtensionsMenuItem == nil {
+                    webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
+                        .submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
+                }
+                if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
+                    debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
+                }
+            } else {
+                if let webExtensionsMenuItem {
+                    debugSubmenu.removeItem(webExtensionsMenuItem)
+                    self.webExtensionsMenuItem = nil
+                }
+            }
         }
     }
 
@@ -666,15 +683,15 @@ final class MainMenu: NSMenu {
             return
         }
         self.toggleBookmarksBarMenuItem = toggleBookmarksBarMenuItem
-        toggleBookmarksBarMenuItem.target = self
-        toggleBookmarksBarMenuItem.action = #selector(toggleBookmarksBarFromMenu(_:))
+        toggleBookmarksBarMenuItem.action = #selector(MainViewController.toggleBookmarksBarFromMenu)
         toggleBookmarksBarMenuItem.setAccessibilityIdentifier("MainMenu.toggleBookmarksBar")
 
         self.bookmarksMenuToggleBookmarksBarMenuItem = bookmarksMenuToggleBookmarksBarMenuItem
+        bookmarksMenuToggleBookmarksBarMenuItem.action = #selector(MainViewController.toggleBookmarksBarFromMenu)
     }
 
     private func updateHomeButtonMenuItem() {
-        guard let homeButtonMenuItem = HomeButtonMenuFactory.replace(homeButtonMenuItem, prefs: appearancePreferences) else {
+        guard let homeButtonMenuItem = HomeButtonMenuFactory.replace(homeButtonMenuItem, prefs: appearancePreferences, pinningManager: pinningManager) else {
             assertionFailure("Could not replace HomeButtonMenuItem")
             return
         }
@@ -689,23 +706,16 @@ final class MainMenu: NSMenu {
         self.showTabsAndBookmarksBarOnFullScreenMenuItem = showTabsAndBookmarksBarOnFullScreenMenuItem
     }
 
-    @MainActor
-    @objc
-    private func toggleBookmarksBarFromMenu(_ sender: Any) {
-        guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
-        mainVC.toggleBookmarksBarFromMenu(sender)
-    }
-
     private func updateShortcutMenuItems() {
         Task { @MainActor in
-            toggleAutofillShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .autofill)
-            toggleBookmarksShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .bookmarks)
-            toggleDownloadsShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .downloads)
-            toggleShareShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .share)
+            toggleAutofillShortcutMenuItem.title = pinningManager.shortcutTitle(for: .autofill)
+            toggleBookmarksShortcutMenuItem.title = pinningManager.shortcutTitle(for: .bookmarks)
+            toggleDownloadsShortcutMenuItem.title = pinningManager.shortcutTitle(for: .downloads)
+            toggleShareShortcutMenuItem.title = pinningManager.shortcutTitle(for: .share)
 
-            if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager).isVPNVisible() {
+            if DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager).isVPNVisible() {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = false
-                toggleNetworkProtectionShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .networkProtection)
+                toggleNetworkProtectionShortcutMenuItem.title = pinningManager.shortcutTitle(for: .networkProtection)
             } else {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = true
             }
@@ -735,10 +745,12 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.resetNextStepsMenuItem)
                 NSMenuItem(title: "Shift top card by 10 impressions", action: #selector(MainViewController.debugShiftCardImpression))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
-            }
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
+            }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
                 NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
                 NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
@@ -785,7 +797,6 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
                 NSMenuItem(title: "Set Launch Date A Month In the Past", action: #selector(AppDelegate.setLaunchDayAMonthInThePast))
                 NSMenuItem(title: "Reset Quit Survey Was Shown", action: #selector(AppDelegate.resetQuitSurveyWasShown))
-                NSMenuItem(title: "Reset Themes Popover Was Shown", action: #selector(AppDelegate.resetThemesPopoverWasShown))
 
             }.withAccessibilityIdentifier("MainMenu.resetData")
             NSMenuItem(title: "UI Triggers") {
@@ -824,7 +835,7 @@ final class MainMenu: NSMenu {
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")
-                    .submenu(NetworkProtectionDebugMenu())
+                    .submenu(NetworkProtectionDebugMenu(pinningManager: pinningManager))
             }
 
             NSMenuItem(title: "Attributed Metrics")
@@ -851,9 +862,14 @@ final class MainMenu: NSMenu {
                 }
             }
 
-            NSMenuItem(title: "Simulate memory pressure event") {
-                NSMenuItem(title: "Warning", action: #selector(AppDelegate.simulateMemoryPressureWarning))
-                NSMenuItem(title: "Critical", action: #selector(AppDelegate.simulateMemoryPressureCritical))
+            NSMenuItem(title: "Memory Usage Reporting") {
+                NSMenuItem(title: "Simulate Memory Report...", action: #selector(AppDelegate.simulateMemoryUsageReport))
+                NSMenuItem(title: "Clear Simulated Memory", action: #selector(AppDelegate.clearSimulatedMemory))
+                NSMenuItem(title: "Start Reporter Immediately (Skip 5min Delay)", action: #selector(AppDelegate.startMemoryReporterImmediately))
+                NSMenuItem.separator()
+                NSMenuItem(title: "Fire Interval Pixel Now...", action: #selector(AppDelegate.fireIntervalPixelNow))
+                NSMenuItem.separator()
+                NSMenuItem(title: "Simulate Memory Pressure (Critical)", action: #selector(AppDelegate.simulateMemoryPressureCritical))
             }
 
             NSMenuItem(title: "Hang Debugging") {
@@ -895,15 +911,24 @@ final class MainMenu: NSMenu {
                         let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
                         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
                         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-                        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
-                                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+                        let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: nil)
+                        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults, pixelHandler: pixelHandler)
+
+                        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+                            subscriptionManager: subscriptionManager,
+                            uiHandler: Application.appDelegate.subscriptionUIHandler,
+                            wideEvent: Application.appDelegate.wideEvent,
+                            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+                            pendingTransactionHandler: pendingTransactionHandler
+                        )
+
                         let feature = SubscriptionPagesUseSubscriptionFeature(
                             subscriptionManager: subscriptionManager,
                             stripePurchaseFlow: stripePurchaseFlow,
                             uiHandler: Application.appDelegate.subscriptionUIHandler,
                             aiChatURL: AIChatRemoteSettings().aiChatURL,
                             wideEvent: Application.appDelegate.wideEvent,
-                            pendingTransactionHandler: pendingTransactionHandler
+                            pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
                         )
 
                         // Create params matching what the web would send
@@ -943,7 +968,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
 #if SPARKLE
-            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
+            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard))
 #endif
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)")
@@ -1116,7 +1141,7 @@ final class MainMenu: NSMenu {
             url,
             source: .userEntered(url.absoluteString, downloadRequested: true),
             target: nil,
-            event: NSApp.currentEvent
+            with: NSApp.currentEvent
         )
     }
 

@@ -21,14 +21,14 @@ import AIChat
 import BrowserServicesKit
 import Core
 import Foundation
+import Persistence
+import PrivacyConfig
+import SERPSettings
 import SpecialErrorPages
 import Subscription
 import TrackerRadarKit
 import UserScript
 import WebKit
-import SERPSettings
-import Persistence
-import PrivacyConfig
 
 final class UserScripts: UserScriptsProvider {
 
@@ -43,7 +43,7 @@ final class UserScripts: UserScriptsProvider {
     let subscriptionUserScript: SubscriptionUserScript
     let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
     let serpSettingsUserScript: SERPSettingsUserScript
-    let pageContextUserScript: PageContextUserScript?
+    let pageContextUserScript: PageContextUserScript
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -58,13 +58,17 @@ final class UserScripts: UserScriptsProvider {
     private(set) var faviconScript = FaviconUserScript()
     private(set) var findInPageScript = FindInPageUserScript()
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
-    private(set) var printingUserScript = PrintingUserScript()
+    private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var debugScript = DebugUserScript()
+
+    private let isAutoconsentExtensionAvailable: Bool
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+
+        isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
         contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
@@ -76,7 +80,7 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
                                                                 scriptContext: .contentScope,
-                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName],
+                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue],
                                                                 privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,
@@ -88,22 +92,22 @@ final class UserScripts: UserScriptsProvider {
             }
             fatalError("Failed to initialize ContentScopeUserScript: \(error)")
         }
-        autoconsentUserScript = AutoconsentUserScript(config: sourceProvider.privacyConfigurationManager.privacyConfig)
+        autoconsentUserScript = AutoconsentUserScript(
+            config: sourceProvider.privacyConfigurationManager.privacyConfig,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability
+        )
 
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
         let aiChatSettings = AIChatSettings()
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
-                                                          syncHandler: AIChatSyncHandler(sync: sourceProvider.sync),
+                                                          syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
+                                                                                         httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
                                                           featureFlagger: featureFlagger)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
 
-        if featureFlagger.isFeatureOn(.contextualDuckAIMode) {
-            pageContextUserScript = PageContextUserScript()
-        } else {
-            pageContextUserScript = nil
-        }
+        pageContextUserScript = PageContextUserScript()
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)
@@ -113,12 +117,12 @@ final class UserScripts: UserScriptsProvider {
             featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: subscriptionNavigationHandler,
             debugHost: aiChatDebugSettings.messagePolicyHostname)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
-        if let pageContextUserScript {
-            contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
-        }
+        contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
+        contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()
@@ -130,20 +134,25 @@ final class UserScripts: UserScriptsProvider {
         specialErrorPageUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
     }
 
-    lazy var userScripts: [UserScript] = [
-        debugScript,
-        autoconsentUserScript,
-        findInPageScript,
-        surrogatesScript,
-        contentBlockerUserScript,
-        faviconScript,
-        fullScreenVideoScript,
-        autofillUserScript,
-        printingUserScript,
-        loginFormDetectionScript,
-        contentScopeUserScript,
-        contentScopeUserScriptIsolated
-    ].compactMap({ $0 })
+    lazy var userScripts: [UserScript] = {
+        var scripts: [UserScript?] = [
+            debugScript,
+            findInPageScript,
+            surrogatesScript,
+            contentBlockerUserScript,
+            fullScreenVideoScript,
+            autofillUserScript,
+            loginFormDetectionScript,
+            contentScopeUserScript,
+            contentScopeUserScriptIsolated
+        ]
+
+        if !isAutoconsentExtensionAvailable {
+            scripts.insert(autoconsentUserScript, at: 1)
+        }
+
+        return scripts.compactMap { $0 }
+    }()
     
     // Initialize DuckPlayer scripts
     private func initializeDuckPlayer() {

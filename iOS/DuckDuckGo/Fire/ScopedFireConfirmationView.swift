@@ -28,16 +28,21 @@ struct ScopedFireConfirmationView: View {
     
     @ObservedObject var viewModel: ScopedFireConfirmationViewModel
     @State private var isAnimating = false
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
     init(viewModel: ScopedFireConfirmationViewModel) {
         self.viewModel = viewModel
+    }
+    
+    private var contentPadding: EdgeInsets {
+        horizontalSizeClass == .compact ? Constants.sheetViewPadding : Constants.popoverViewPadding
     }
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ScrollView {
                 contentView
-                    .padding(Constants.viewPadding)
+                    .padding(contentPadding)
             }
             .modifier(ScrollBounceBehaviorModifier())
             closeButton
@@ -54,15 +59,10 @@ struct ScopedFireConfirmationView: View {
     }
     
     private var closeButton: some View {
-        Button(action: {
-            viewModel.cancel()
-        }) {
-            Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
-                .foregroundColor(Color(designSystemColor: .icons))
-                .padding(Constants.closeButtonPadding)
-                .background(Color(designSystemColor: .controlsFillPrimary))
-                .clipShape(Circle())
+        Button(action: viewModel.cancel) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
         }
+        .buttonStyle(CloseButtonStyle())
         .accessibilityIdentifier("Fire.Confirmation.Button.Close")
     }
     
@@ -70,11 +70,20 @@ struct ScopedFireConfirmationView: View {
         VStack(spacing: Constants.headerSectionSpacing) {
             animation
             
-            Text(UserText.scopedFireConfirmationAlertTitle)
-                .daxTitle3()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: Constants.headlineTextSpacing) {
+                Text(viewModel.headerTitle)
+                    .daxTitle3()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let subtitle = viewModel.subtitle {
+                    Text(subtitle)
+                        .daxSubheadRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
         .padding(Constants.headerSectionPadding)
     }
@@ -89,14 +98,14 @@ struct ScopedFireConfirmationView: View {
                 Text(UserText.scopedFireConfirmationDeleteAllButton)
             }
             .buttonStyle(PrimaryDestructiveButtonStyle())
-            .accessibilityIdentifier("Fire.Confirmation.Button.AllTabs")
+            .accessibilityIdentifier("alert.forget-data.confirm")
             
             // This Tab button - Secondary Destructive (outline)
             if viewModel.canBurnSingleTab {
                 Button(action: {
                     viewModel.burnThisTab()
                 }) {
-                    Text(UserText.scopedFireConfirmationDeleteThisTabButton)
+                    Text(viewModel.tabScopeButtonTitle)
                 }
                 .buttonStyle(SecondaryDestructiveButtonStyle())
                 .accessibilityIdentifier("Fire.Confirmation.Button.ThisTab")
@@ -107,7 +116,7 @@ struct ScopedFireConfirmationView: View {
     @ViewBuilder
     private var animation: some View {
         Lottie.LottieView(animation: .named("fire-icon"))
-            .playbackMode(isAnimating ? .playing(.fromProgress(0, toProgress: 1, loopMode: .repeat(2))) : .paused(at: .progress(0)))
+            .playbackMode(isAnimating ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)) : .paused(at: .progress(0)))
             .resizable()
             .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
             .onAppear {
@@ -121,11 +130,13 @@ struct ScopedFireConfirmationView: View {
 
 private extension ScopedFireConfirmationView {
     enum Constants {
-        static let viewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
+        static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
+        static let popoverViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         static let mainSectionSpacing: CGFloat = 16
         static let headerSectionSpacing: CGFloat = 8
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96
+        static let headlineTextSpacing: CGFloat = 4
         static let buttonSpacing: CGFloat = 16
         static let closeButtonPadding: CGFloat = 8
         static let animationDelay: Double = 0.5

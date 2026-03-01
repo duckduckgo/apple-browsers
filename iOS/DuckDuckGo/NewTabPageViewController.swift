@@ -22,11 +22,12 @@ import DDGSync
 import Bookmarks
 import BrowserServicesKit
 import Core
+import RemoteMessaging
 
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
-        favoritesModel.isEmpty
+        favoritesModel.isEmpty && newTabPageViewModel.escapeHatch == nil
     }
 
     private lazy var borderView = StyledTopBottomBorderView()
@@ -56,6 +57,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
+         remoteMessagingImageLoader: RemoteMessagingImageLoading,
+         remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
          appSettings: AppSettings,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
@@ -74,7 +77,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             faviconLoader: faviconLoader)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
-                                                messageActionHandler: remoteMessagingActionHandler)
+                                                messageActionHandler: remoteMessagingActionHandler,
+                                                imageLoader: remoteMessagingImageLoader,
+                                                pixelReporter: remoteMessagingPixelReporter)
 
         super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
@@ -83,6 +88,19 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        newTabPageViewModel.escapeHatch = model
+        if let model {
+            let index = model.targetTabIndex
+            newTabPageViewModel.onEscapeHatchTap = { [weak self] in
+                guard let self else { return }
+                self.delegate?.newTabPageDidRequestSwitchToTab(self, index: index)
+            }
+        } else {
+            newTabPageViewModel.onEscapeHatchTap = nil
+        }
     }
 
     override func viewDidLoad() {
@@ -266,6 +284,17 @@ extension NewTabPageViewController {
 
         let onManualDismiss: () -> Void = { [weak self] in
             self?.dismissHostingController(didFinishNTPOnboarding: true)
+
+            if spec == .final {
+                let nextSpec = dialogProvider.nextHomeScreenMessageNew()
+                if nextSpec == .subscriptionPromotion {
+                    self?.chromeDelegate?.omniBar.endEditing()
+                    self?.showNextDaxDialog()
+                    return
+                }
+                dialogProvider.dismiss()
+            }
+
             // Show keyboard when manually dismiss the Dax tips.
             self?.chromeDelegate?.omniBar.beginEditing(animated: true)
         }

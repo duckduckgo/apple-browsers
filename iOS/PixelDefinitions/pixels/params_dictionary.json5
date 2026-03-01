@@ -33,6 +33,12 @@
         "description": "NSError code",
         "examples": [-1009, 42]
     },
+    "fromExtension": {
+        "key": "fromExtension",
+        "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
+        "type": "integer",
+        "enum": [0, 1]
+    },
     "isInternalUser": {
         "key": "is_internal_user",
         "description": "Whether the user is flagged as internal.  Should ONLY be sent with \"true\" value",
@@ -84,6 +90,17 @@
         "key": "global.sample_rate",
         "type": "number",
         "description": "Sample rate for this pixel, between 0 and 1"
+    },
+    "wideEventMetaVersion": {
+        "key": "meta.version",
+        "type": "string",
+        "description": "Schema version of the wide event (MAJOR.MINOR.PATCH format)",
+        "pattern": "^[1-9]\\d*\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+    },
+    "wideEventIsFirstDailyOccurrence": {
+        "key": "global.is_first_daily_occurrence",
+        "type": "boolean",
+        "description": "Whether this is the first occurrence of this wide event today. Only included when true."
     },
     "wideEventFeatureStatus": {
         "key": "feature.status",
@@ -181,6 +198,12 @@
         "description": "Whether the user is authenticated",
         "enum": ["true", "false"]
     },
+    "dbpIsFreeScan": {
+        "key": "free_scan",
+        "type": "string",
+        "description": "Whether this is a free (unauthenticated) scan",
+        "enum": ["true", "false"]
+    },
     "dbpStageDuration": {
         "key": "duration",
         "type": "integer",
@@ -260,5 +283,23 @@
         "type": "string",
         "description": "Location selection for the VPN latency test",
         "enum": ["nearest", "custom"]
+    },
+    "burnSource": {
+        "key": "source",
+        "type": "string",
+        "description": "Source of the burn action",
+        "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear"]
+    },
+    "tabType": {
+        "key": "tabType",
+        "type": "string",
+        "description": "Type of tab when burn was initiated",
+        "enum": ["web", "ai", "unknown"]
+    },
+    "is_enabled": {
+        "key": "is_enabled",
+        "type": "string",
+        "description": "Whether the feature or setting is enabled",
+        "enum": ["true", "false"]
     }
 }

@@ -55,15 +55,15 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.0.0"),
-        .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
+        .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.1.0"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.9.0"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.10.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "12.38.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "13.19.0"),
         .package(path: "../URLPredictor"),
     ],
     targets: [
@@ -91,7 +91,8 @@ let package = Package(
                 "ContentBlocking",
                 "SecureStorage",
                 "Subscription",
-                "PixelKit"
+                "PixelKit",
+                "Navigation"
             ],
             resources: [
                 .process("ContentBlocking/UserScripts/contentblockerrules.js"),
@@ -107,10 +108,12 @@ let package = Package(
             name: "BrowserServicesKitTestsUtils",
             dependencies: [
                 "BrowserServicesKit",
+                "Navigation",
                 "WKAbstractions",
             ],
             swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
+                .define("DEBUG", .when(configuration: .debug)),
+                .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
             ]
         ),
         .target(
@@ -419,6 +422,7 @@ let package = Package(
         .target(
             name: "SubscriptionTestingUtilities",
             dependencies: [
+                "BrowserServicesKitTestsUtils",
                 "Subscription",
                 "Common",
                 "NetworkingTestingUtils",
@@ -682,6 +686,7 @@ let package = Package(
         .testTarget(
             name: "UserScriptTests",
             dependencies: [
+                "BrowserServicesKitTestsUtils",
                 "SharedObjCTestsUtils",
                 "UserScript",
             ],
@@ -829,6 +834,7 @@ let package = Package(
         .testTarget(
             name: "SpecialErrorPagesTests",
             dependencies: [
+                "BrowserServicesKitTestsUtils",
                 "SharedObjCTestsUtils",
                 "SpecialErrorPages"
             ]

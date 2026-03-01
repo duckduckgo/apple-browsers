@@ -38,5 +38,6 @@ enum DBPWideEventParameter {
         static let attemptType = "feature.data.ext.scan.attempt_type"
         static let attemptNumber = "feature.data.ext.scan.attempt_number"
         static let scanLatency = "feature.data.ext.scan.latency_ms"
+        static let isFreeScan = "feature.data.ext.scan.free_scan"
     }
 }

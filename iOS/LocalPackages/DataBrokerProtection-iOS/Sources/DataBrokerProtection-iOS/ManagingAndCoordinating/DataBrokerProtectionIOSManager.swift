@@ -77,6 +77,8 @@ public class DBPIOSInterface {
                               completionHandler: (() -> Void)?)
         func runEmailConfirmationJobs() async throws
         func fireWeeklyPixels() async
+
+        func resetAllNotificationStatesForDebug()
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -86,6 +88,7 @@ public class DBPIOSInterface {
     public protocol RunPrerequisitesDelegate: AnyObject, AuthenticationDelegate {
         var meetsProfileRunPrequisite: Bool { get throws }
         var meetsEntitlementRunPrequisite: Bool { get async throws }
+        var meetsLocaleRequirement: Bool { get }
         func validateRunPrerequisites() async -> Bool
     }
 
@@ -123,6 +126,10 @@ public class DBPIOSInterface {
         func sweepWideEvents()
     }
 
+    protocol NotificationDelegate: AnyObject {
+        func sendGoToMarketFirstScanNotificationIfEligible() async
+    }
+
     protocol OptOutEmailConfirmationHandlingDelegate: AnyObject {
         func checkForEmailConfirmationData() async
     }
@@ -145,6 +152,7 @@ public final class DataBrokerProtectionIOSManager {
     private let jobDependencies: BrokerProfileJobDependencyProviding
     public var emailConfirmationDataService: EmailConfirmationDataServiceProvider?
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
+    private let userNotificationService: DataBrokerProtectionUserNotificationService
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository
@@ -159,6 +167,17 @@ public final class DataBrokerProtectionIOSManager {
     private let wideEventSweeper: DBPWideEventSweeper?
     private let eventsHandler: EventMapping<JobEvent>
     private let isWebViewInspectable: Bool
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService?
+    private var currentRunIsFreeScan: Bool?
+
+    /// Snapshots the current authentication state and caches whether this is a free scan run.
+    /// Returns the current `isAuthenticated` value for callers that need it.
+    @discardableResult
+    private func refreshFreeScanState() async -> Bool {
+        let isAuthenticated = await authenticationManager.isUserAuthenticated
+        currentRunIsFreeScan = !isAuthenticated
+        return isAuthenticated
+    }
 
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
@@ -200,6 +219,7 @@ public final class DataBrokerProtectionIOSManager {
          jobDependencies: BrokerProfileJobDependencyProviding,
          emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
+         userNotificationService: DataBrokerProtectionUserNotificationService,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          iOSPixelsHandler: EventMapping<IOSPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
@@ -214,12 +234,14 @@ public final class DataBrokerProtectionIOSManager {
          wideEvent: WideEventManaging?,
          eventsHandler: EventMapping<JobEvent>,
          engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp),
-         isWebViewInspectable: Bool = false
+         isWebViewInspectable: Bool = false,
+         freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
         self.emailConfirmationDataService = emailConfirmationDataService
         self.authenticationManager = authenticationManager
+        self.userNotificationService = userNotificationService
         self.sharedPixelsHandler = sharedPixelsHandler
         self.iOSPixelsHandler = iOSPixelsHandler
         self.engagementPixelsRepository = engagementPixelsRepository
@@ -235,6 +257,7 @@ public final class DataBrokerProtectionIOSManager {
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
         self.eventsHandler = eventsHandler
         self.isWebViewInspectable = isWebViewInspectable
+        self.freeTrialConversionService = freeTrialConversionService
 
         self.queueManager.delegate = self
 
@@ -254,8 +277,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     public func appDidBecomeActive() async {
         await fireMonitoringPixels()
+        await sendGoToMarketFirstScanNotificationIfEligible()
 
-        guard await authenticationManager.isUserAuthenticated else { return }
+        let isAuthenticated = await refreshFreeScanState()
+        guard isAuthenticated else { return }
 
         guard (try? meetsProfileRunPrequisite) == true else {
             Logger.dataBrokerProtection.log("No profile, skipping foreground operations")
@@ -343,7 +368,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
         }
         eventPixels.markInitialScansStarted()
         eventsHandler.fire(.profileSaved)
+        freeTrialConversionService?.markPIRActivated()
 
+        await refreshFreeScanState()
         await startImmediateScanOperations()
     }
 
@@ -378,7 +405,7 @@ extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
             let hasCompletedInitialScans = try database.haveAllScansRunAtLeastOnce()
             if hasCompletedInitialScans {
                 let profile = try database.fetchProfile()
-                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0)
+                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0, isFreeScan: currentRunIsFreeScan)
             }
         } catch {
             Logger.dataBrokerProtection.error("Error when calculating if we should send the initial scans duration pixel, error: \(error.localizedDescription, privacy: .public)")
@@ -455,6 +482,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         )
         eventPixels.fireWeeklyReportPixels(isAuthenticated: isAuthenticated)
     }
+
+    public func resetAllNotificationStatesForDebug() {
+        userNotificationService.resetAllNotificationStatesForDebug()
+    }
 }
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelegate {
@@ -474,6 +505,14 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
         get async throws {
             return try await authenticationManager.hasValidEntitlement()
         }
+    }
+
+    public var meetsLocaleRequirement: Bool {
+        #if DEBUG || ALPHA || REVIEW
+        return true
+        #else
+        return (Locale.current.regionCode == "US") || privacyConfigManager.internalUserDecider.isInternalUser
+        #endif
     }
 
     public func validateRunPrerequisites() async -> Bool {
@@ -549,6 +588,20 @@ private extension DataBrokerProtectionIOSManager {
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.DBPWideEventsDelegate {
     func sweepWideEvents() {
         wideEventSweeper?.sweep()
+    }
+}
+
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.NotificationDelegate, ReleaseWindowChecking {
+    func sendGoToMarketFirstScanNotificationIfEligible() async {
+        guard privacyConfigManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.goToMarket),
+              meetsLocaleRequirement,
+              isWithinGoToMarketReleaseWindow(currentAppVersion: AppVersion.shared.versionNumber),
+              (try? await meetsEntitlementRunPrequisite) == true,
+              hasNotRunPIRScan() else {
+            return
+        }
+
+        await userNotificationService.sendGoToMarketFirstScanNotificationIfPossible()
     }
 }
 
@@ -648,6 +701,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 return
             }
 
+            _ = await self.refreshFreeScanState()
             await checkForEmailConfirmationData()
 
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
@@ -694,6 +748,40 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
 
         // Otherwise → clamp to [minBackgroundTaskWaitTime, maxBackgroundTaskWaitTime]
         return min(max(jobDate, minBackgroundTaskWaitDate), maxBackgroundTaskWaitDate)
+    }
+}
+
+private extension DataBrokerProtectionIOSManager {
+    enum GoToMarketConstants {
+        static let maxMinorReleaseOffset = 3
+    }
+
+    func isWithinGoToMarketReleaseWindow(currentAppVersion: String) -> Bool {
+        guard let configurationData = try? PrivacyConfigurationData(data: privacyConfigManager.currentConfig) else {
+            return false
+        }
+
+        let minimumVersion = configurationData.features[DBPSubfeature.goToMarket.parent.rawValue]?
+            .features[DBPSubfeature.goToMarket.rawValue]?
+            .minSupportedVersion
+
+        guard let minimumVersion else { return false }
+
+        return isWithinReleaseWindow(minimumVersion: minimumVersion,
+                                     currentAppVersion: currentAppVersion,
+                                     maxMinorReleaseOffset: GoToMarketConstants.maxMinorReleaseOffset)
+    }
+
+    func hasNotRunPIRScan() -> Bool {
+        do {
+            let hasProfile = try database.fetchProfile() != nil
+            let brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+            let hasScansWithLastRunDate = brokerProfileQueryData.contains { $0.scanJobData.lastRunDate != nil }
+            return !hasProfile && !hasScansWithLastRunDate
+        } catch {
+            Logger.dataBrokerProtection.error("Unable to determine scan status for go-to-market notification: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
     }
 }
 

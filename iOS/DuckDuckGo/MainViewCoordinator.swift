@@ -29,7 +29,7 @@ class MainViewCoordinator {
     var logoContainer: UIView!
     var topSlideContainer: UIView!
     var logoText: UIImageView!
-    var navigationBarContainer: UIView!
+    var navigationBarContainer: MainViewFactory.NavigationBarContainer!
     var navigationBarCollectionView: MainViewFactory.NavigationBarCollectionView!
     var notificationBarContainer: UIView!
     var omniBar: OmniBar!
@@ -142,6 +142,7 @@ class MainViewCoordinator {
         }
 
         navigationBarContainer.isHidden = false
+        constraints.navigationBarContainerBottom.constant = 0
 
         constraints.contentContainerBottomToToolbarTop.isActive = true
         constraints.contentContainerBottomToSafeArea.isActive = false

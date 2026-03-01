@@ -86,11 +86,6 @@ struct InfoPanelView: View {
 
 extension InfoPanelView.Model {
 
-    private enum TrackerInfoColors {
-        static let darkModeBackground = Color(0x2C3A2A)
-        static let lightModeBackground = Color.green0
-    }
-
     /// Creates a model configured for displaying tracker count information in the tab switcher.
     /// - Parameters:
     ///   - state: The current state from the tracker count view model
@@ -102,17 +97,11 @@ extension InfoPanelView.Model {
         onTap: @escaping () -> Void,
         onInfo: @escaping () -> Void
     ) -> InfoPanelView.Model {
-        let dynamicBackgroundColor = Color(UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark
-                ? UIColor(TrackerInfoColors.darkModeBackground)
-                : UIColor(TrackerInfoColors.lightModeBackground)
-        })
-
         return InfoPanelView.Model(
             title: state.title,
             subtitle: state.subtitle,
             icon: UIImage(resource: .trackerShield),
-            backgroundColor: dynamicBackgroundColor,
+            backgroundColor: Color(singleUseColor: .tabSwitcherTrackerCountBackground),
             onTap: onTap,
             onInfo: onInfo
         )
@@ -126,7 +115,7 @@ struct InfoPanelView_Previews: PreviewProvider {
             model: .init(title: "396 trackers blocked",
                          subtitle: "in the last 7 days",
                          icon: UIImage(resource: .trackerShield),
-                         backgroundColor: .green0,
+                         backgroundColor: Color(singleUseColor: .tabSwitcherTrackerCountBackground),
                          onTap: {},
                          onInfo: {})
         )

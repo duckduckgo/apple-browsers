@@ -37,5 +37,9 @@ final class MockHistoryStore: HistoryStoring {
     func removeVisits(_ visits: some Sequence<Visit>) async throws {
         // No-op for mock
     }
+
+    func pageVisitIDs(in tabID: String) async throws -> [Visit.ID] {
+        []
+    }
 }
 #endif

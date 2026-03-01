@@ -43,6 +43,17 @@ final class AIChatHistoryManager {
 
     weak var delegate: AIChatHistoryManagerDelegate?
 
+    var hasSuggestions: Bool {
+        viewModel.hasSuggestions
+    }
+
+    var hasSuggestionsPublisher: AnyPublisher<Bool, Never> {
+        viewModel.$filteredSuggestions
+            .map { !$0.isEmpty }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     private var historyViewController: AIChatHistoryListViewController?
     private let suggestionsReader: AIChatSuggestionsReading
     private let aiChatSettings: AIChatSettingsProvider
@@ -95,6 +106,10 @@ final class AIChatHistoryManager {
 
         // Initial fetch with empty query (shows recent chats from last week)
         fetchSuggestionsIfNeeded(query: "")
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
+        historyViewController?.setEscapeHatch(model, onTapped: onTapped)
     }
 
     /// Subscribes to text changes from a publisher with debounce and fetches filtered suggestions

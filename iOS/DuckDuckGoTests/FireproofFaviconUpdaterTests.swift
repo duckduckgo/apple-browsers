@@ -21,6 +21,7 @@ import Bookmarks
 import Core
 import Foundation
 import Persistence
+import UserScript
 import XCTest
 
 @testable import DuckDuckGo
@@ -59,7 +60,8 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconProviding {
     @MainActor
     func testWhenBookmarkDoesNotExist_ThenImageNotReplacement() {
         let updater = FireproofFaviconUpdater(bookmarksDatabase: db, tab: self, favicons: self)
-        updater.faviconUserScript(FaviconUserScript(), didRequestUpdateFaviconForHost: "example.com", withUrl: nil)
+        let documentUrl = URL(string: "https://example.com")!
+        updater.faviconUserScript(FaviconUserScript(), didFindFaviconLinks: [], for: documentUrl, in: nil)
 
         XCTAssertEqual(loadFaviconDomain, "example.com")
         XCTAssertEqual(loadFaviconURL, nil)
@@ -74,7 +76,8 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconProviding {
         try createBookmark()
 
         let updater = FireproofFaviconUpdater(bookmarksDatabase: db, tab: self, favicons: self)
-        updater.faviconUserScript(FaviconUserScript(), didRequestUpdateFaviconForHost: "example.com", withUrl: nil)
+        let documentUrl = URL(string: "https://example.com")!
+        updater.faviconUserScript(FaviconUserScript(), didFindFaviconLinks: [], for: documentUrl, in: nil)
 
         XCTAssertEqual(loadFaviconDomain, "example.com")
         XCTAssertEqual(loadFaviconURL, nil)
@@ -89,13 +92,15 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconProviding {
         try createBookmark()
 
         image = UIImage()
-        let url = URL(string: "https://example.com/favicon.ico")!
+        let faviconUrl = URL(string: "https://example.com/favicon.ico")!
+        let documentUrl = URL(string: "https://example.com")!
+        let faviconLinks = [FaviconUserScript.FaviconLink(href: faviconUrl, rel: "icon")]
 
         let updater = FireproofFaviconUpdater(bookmarksDatabase: db, tab: self, favicons: self)
-        updater.faviconUserScript(FaviconUserScript(), didRequestUpdateFaviconForHost: "example.com", withUrl: url)
+        updater.faviconUserScript(FaviconUserScript(), didFindFaviconLinks: faviconLinks, for: documentUrl, in: nil)
 
         XCTAssertEqual(loadFaviconDomain, "example.com")
-        XCTAssertEqual(loadFaviconURL, url)
+        XCTAssertEqual(loadFaviconURL, faviconUrl)
         XCTAssertEqual(loadFaviconCache, .tabs)
 
         XCTAssertTrue(didUpdateFaviconCalled)
@@ -107,17 +112,104 @@ class FireproofFaviconUpdaterTests: XCTestCase, TabNotifying, FaviconProviding {
         try createBookmark()
 
         image = UIImage()
-        let url = URL(string: "https://example.com/favicon.ico")!
+        let faviconUrl = URL(string: "https://example.com/favicon.ico")!
+        let documentUrl = URL(string: "https://www.example.com")!
+        let faviconLinks = [FaviconUserScript.FaviconLink(href: faviconUrl, rel: "icon")]
 
         let updater = FireproofFaviconUpdater(bookmarksDatabase: db, tab: self, favicons: self)
-        updater.faviconUserScript(FaviconUserScript(), didRequestUpdateFaviconForHost: "www.example.com", withUrl: url)
+        updater.faviconUserScript(FaviconUserScript(), didFindFaviconLinks: faviconLinks, for: documentUrl, in: nil)
 
         XCTAssertEqual(loadFaviconDomain, "www.example.com")
-        XCTAssertEqual(loadFaviconURL, url)
+        XCTAssertEqual(loadFaviconURL, faviconUrl)
         XCTAssertEqual(loadFaviconCache, .tabs)
 
         XCTAssertTrue(didUpdateFaviconCalled)
         XCTAssertTrue(replaceFaviconCalled)
+    }
+
+    // MARK: - Favicon Selection Tests
+
+    @MainActor
+    func testFaviconSelectionPrefersIconOverAppleTouchIcon() throws {
+        try createBookmark()
+        image = UIImage()
+
+        let iconUrl = URL(string: "https://example.com/favicon.ico")!
+        let appleTouchUrl = URL(string: "https://example.com/apple-touch-icon.png")!
+        let documentUrl = URL(string: "https://example.com")!
+        let faviconLinks = [
+            FaviconUserScript.FaviconLink(href: appleTouchUrl, rel: "apple-touch-icon"),
+            FaviconUserScript.FaviconLink(href: iconUrl, rel: "icon")
+        ]
+
+        let updater = FireproofFaviconUpdater(bookmarksDatabase: db, tab: self, favicons: self)
+        updater.faviconUserScript(FaviconUserScript(), didFindFaviconLinks: faviconLinks, for: documentUrl, in: nil)
+
+        XCTAssertEqual(loadFaviconURL, iconUrl, "Should prefer 'icon' over 'apple-touch-icon'")
+    }
+
+    @MainActor
+    func testFaviconSelectionFallsBackToAppleTouchIcon() throws {
+        try createBookmark()
+        image = UIImage()
+
+        let appleTouchUrl = URL(string: "https://example.com/apple-touch-icon.png")!
+        let documentUrl = URL(string: "https://example.com")!
+        let faviconLinks = [
+            FaviconUserScript.FaviconLink(href: appleTouchUrl, rel: "apple-touch-icon")
+        ]
+
+        let updater = FireproofFaviconUpdater(bookmarksDatabase: db, tab: self, favicons: self)
+        updater.faviconUserScript(FaviconUserScript(), didFindFaviconLinks: faviconLinks, for: documentUrl, in: nil)
+
+        XCTAssertEqual(loadFaviconURL, appleTouchUrl, "Should use apple-touch-icon when no standard icon available")
+    }
+
+    @MainActor
+    func testFaviconSelectionWithShortcutIcon() throws {
+        try createBookmark()
+        image = UIImage()
+
+        let shortcutIconUrl = URL(string: "https://example.com/favicon.ico")!
+        let documentUrl = URL(string: "https://example.com")!
+        let faviconLinks = [
+            FaviconUserScript.FaviconLink(href: shortcutIconUrl, rel: "shortcut icon")
+        ]
+
+        let updater = FireproofFaviconUpdater(bookmarksDatabase: db, tab: self, favicons: self)
+        updater.faviconUserScript(FaviconUserScript(), didFindFaviconLinks: faviconLinks, for: documentUrl, in: nil)
+
+        XCTAssertEqual(loadFaviconURL, shortcutIconUrl, "Should handle 'shortcut icon' rel attribute")
+    }
+
+    @MainActor
+    func testFaviconSelectionPrefersShortcutIconOverAppleTouchIcon() throws {
+        try createBookmark()
+        image = UIImage()
+
+        let shortcutIconUrl = URL(string: "https://example.com/favicon.ico")!
+        let appleTouchUrl = URL(string: "https://example.com/apple-touch-icon.png")!
+        let documentUrl = URL(string: "https://example.com")!
+        let faviconLinks = [
+            FaviconUserScript.FaviconLink(href: appleTouchUrl, rel: "apple-touch-icon"),
+            FaviconUserScript.FaviconLink(href: shortcutIconUrl, rel: "shortcut icon")
+        ]
+
+        let updater = FireproofFaviconUpdater(bookmarksDatabase: db, tab: self, favicons: self)
+        updater.faviconUserScript(FaviconUserScript(), didFindFaviconLinks: faviconLinks, for: documentUrl, in: nil)
+
+        XCTAssertEqual(loadFaviconURL, shortcutIconUrl, "Should prefer 'shortcut icon' over 'apple-touch-icon'")
+    }
+
+    @MainActor
+    func testFaviconSelectionWithEmptyLinks() {
+        let documentUrl = URL(string: "https://example.com")!
+
+        let updater = FireproofFaviconUpdater(bookmarksDatabase: db, tab: self, favicons: self)
+        updater.faviconUserScript(FaviconUserScript(), didFindFaviconLinks: [], for: documentUrl, in: nil)
+
+        XCTAssertNil(loadFaviconURL, "Should pass nil URL when no favicon links available")
+        XCTAssertTrue(didUpdateFaviconCalled, "Should still call didUpdateFavicon even with empty links")
     }
 
     func didUpdateFavicon() {

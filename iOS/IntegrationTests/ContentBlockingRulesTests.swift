@@ -33,7 +33,7 @@ class ContentBlockingRulesTests: XCTestCase {
         andTemporaryUnprotectedDomains: [])
          
         // Test tracker is set up to be blocked
-        if let rule = rules.findExactFilter(filter: "^(https?)?(wss?)?://([a-z0-9-]+\\.)*bad\\.third-party\\.site(:?[0-9]+)?/.*") {
+        if let rule = rules.findExactFilter(filter: "^[^:]+://+([^:/]+\\.)?bad\\.third-party\\.site[:/]") {
             XCTAssert(rule.action == .block())
         } else {
             XCTFail("Missing tracking rule")

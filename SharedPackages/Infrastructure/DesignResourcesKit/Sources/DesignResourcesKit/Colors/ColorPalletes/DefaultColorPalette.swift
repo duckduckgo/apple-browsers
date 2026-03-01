@@ -258,8 +258,57 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: background.darkColor)
         case .duckAIContextualSheetBackground:
             return DynamicColor(lightColor: .white, darkColor: .x161616)
+        case .tabSwitcherTrackerCountBackground:
+            return DynamicColor(lightColor: .green0, darkColor: .x2C3A2A)
+        case let .rebranding(rebrandingColor):
+            return dynamicColor(for: rebrandingColor)
+        case .toolbarButton:
+            return DynamicColor(lightColor: x1F1F1F.opacity(0.918), darkColor: .tint(0.905))
         }
     }
+}
+
+// MARK: - Rebranding 2026
+
+// Temporary. To be removed after Rebranding Color Palette is rolled out across the whole app.
+private extension DefaultColorPalette {
+
+    private static func dynamicColor(for rebrandingColor: SingleUseColor.Rebranding) -> DynamicColor {
+        switch rebrandingColor {
+        case .textPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
+        case .textSecondary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell70, darkColor: RebrandingColor.Eggshell.eggshell30)
+        case .textLink:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
+        case .accentPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater50, darkColor: RebrandingColor.Pondwater.pondwater40)
+        case .accentAltPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: Color(0x133E7C))
+        case .accentAltGlowPrimary:
+            return DynamicColor(lightColor: Color(0xA1CFF7).opacity(0.16), darkColor: Color(0xA1CFF7).opacity(0.16))
+        case .backdrop:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: .blue80)
+        case .surfaceTertiary:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: Color(0x011D34))
+        case .buttonsPrimaryDefault:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen30)
+        case .buttonsPrimaryText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+        case .buttonsSecondaryDefault:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.gray10, darkColor: RebrandingColor.GrayScale.gray80)
+        case .buttonsSecondaryText:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.Eggshell.eggshell10)
+        case .controlsFillPrimary:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))
+        case .decorationPrimary:
+            return DynamicColor(lightColor: Color(0x242323).opacity(0.09), darkColor: Color(0xFFFFFF).opacity(0.06))
+        case .decorationSecondary:
+            return DynamicColor(lightColor: Color(0x242323).opacity(0.16), darkColor: Color(0xFFFFFF).opacity(0.09))
+
+        }
+    }
+
 }
 
 #endif

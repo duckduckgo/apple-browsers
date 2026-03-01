@@ -19,8 +19,11 @@
 import Foundation
 
 /// Provides platform-specific configuration for the web extension controller.
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionConfigurationProviding {
     /// The user agent suffix to use for the extension controller's web view configuration.
     var applicationNameForUserAgent: String { get }
+
+    /// Whether extension contexts should be inspectable via Safari's Web Inspector.
+    var isInspectable: Bool { get }
 }

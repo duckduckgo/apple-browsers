@@ -18,7 +18,8 @@
 
 @testable import WebExtensions
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionConfigurationProvidingMock: WebExtensionConfigurationProviding {
     var applicationNameForUserAgent: String = "TestUserAgent"
+    var isInspectable: Bool = false
 }

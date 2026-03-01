@@ -43,12 +43,27 @@ final class AIChatSidebar: NSObject {
     /// The date when the sidebar was last hidden, if applicable.
     private(set) var hiddenAt: Date?
 
+    /// The user-chosen sidebar width for this tab, or `nil` to use the default.
+    var sidebarWidth: CGFloat?
+
     /// The view controller that displays the sidebar contents.
     /// This property is set by the AIChatSidebarProvider when the view controller is created.
     var sidebarViewController: AIChatSidebarViewController? {
         didSet {
             subscribeToRestorationDataUpdates()
+            sidebarViewControllerSubject.send(sidebarViewController)
         }
+    }
+
+    private let sidebarViewControllerSubject = CurrentValueSubject<AIChatSidebarViewController?, Never>(nil)
+
+    /// Publisher that emits the current view controller's `pageContextRequestedPublisher` and automatically
+    /// switches to new view controller's publisher when the view controller changes.
+    var pageContextRequestedPublisher: AnyPublisher<Void, Never> {
+        sidebarViewControllerSubject
+            .compactMap { $0?.pageContextRequestedPublisher }
+            .switchToLatest()
+            .eraseToAnyPublisher()
     }
 
     /// Cancellables for Combine subscriptions
@@ -148,6 +163,7 @@ extension AIChatSidebar: NSSecureCoding {
         static let initialAIChatURL = "initialAIChatURL"
         static let isPresented = "isPresented"
         static let hiddenAt = "hiddenAt"
+        static let sidebarWidth = "sidebarWidth"
     }
 
     convenience init?(coder: NSCoder) {
@@ -155,12 +171,16 @@ extension AIChatSidebar: NSSecureCoding {
         self.init(initialAIChatURL: initialAIChatURL, burnerMode: .regular)
         self.isPresented = coder.decodeIfPresent(at: CodingKeys.isPresented) ?? true
         self.hiddenAt = coder.decodeObject(of: NSDate.self, forKey: CodingKeys.hiddenAt) as Date?
+        self.sidebarWidth = coder.decodeObject(of: NSNumber.self, forKey: CodingKeys.sidebarWidth).map { CGFloat($0.doubleValue) }
     }
 
     func encode(with coder: NSCoder) {
         coder.encode(currentAIChatURL as NSURL, forKey: CodingKeys.initialAIChatURL)
         coder.encode(isPresented, forKey: CodingKeys.isPresented)
         coder.encode(hiddenAt as NSDate?, forKey: CodingKeys.hiddenAt)
+        if let sidebarWidth {
+            coder.encode(NSNumber(value: sidebarWidth), forKey: CodingKeys.sidebarWidth)
+        }
     }
 
     static var supportsSecureCoding: Bool {

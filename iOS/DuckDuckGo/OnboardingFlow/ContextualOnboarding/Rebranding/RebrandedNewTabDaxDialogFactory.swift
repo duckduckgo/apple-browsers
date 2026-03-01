@@ -41,34 +41,181 @@ final class RebrandedNewTabDaxDialogFactory: NewTabDaxDialogProviding {
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
     }
 
+    @ViewBuilder
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        let button: Button<Text>
         switch homeDialog {
         case .initial:
-            button = Button(action: { self.delegate?.searchFromOnboarding(for: "Baby Ducklings") }) {
-                Text(verbatim: "Try A Search!!!")
-            }
+            createInitialDialog(onManualDismiss: onManualDismiss)
         case .addFavorite:
-            button = Button(action: onManualDismiss) {
-                Text(verbatim: "Add Favourite!!!")
-            }
+            createAddFavoriteDialog(message: UserText.Onboarding.ContextualOnboarding.daxDialogHomeAddFavorite)
         case .subsequent:
-            button = Button(action: onManualDismiss) {
-                Text(verbatim: "Try Visiting A Site!!!")
-            }
+            createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
-            button = Button(action: { onCompletion(true) }) {
-                Text(verbatim: "End Of Joruney Dialog!!!")
-            }
+            createFinalDialog(onCompletion: onCompletion, onManualDismiss: onManualDismiss)
         case .subscriptionPromotion:
-            button = Button(action: { onCompletion(true) }) {
-                Text(verbatim: "Add Favourite!!!")
-            }
+            // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
+            createSubscriptionPromoDialog(proceedButtonText: onboardingSubscriptionPromotionHelper.proceedButtonText, onDismiss: onCompletion)
+        }
+    }
+}
+
+// MARK: - Initial Dialog (Try A Search!)
+
+private extension RebrandedNewTabDaxDialogFactory {
+
+    func createInitialDialog(onManualDismiss: @escaping () -> Void) -> some View {
+        let viewModel = OnboardingSearchSuggestionsViewModel(
+            suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(),
+            delegate: delegate
+        )
+
+        let manualDismissAction = { [weak self] in
+            self?.onboardingPixelReporter.measureTrySearchDialogNewTabDismissButtonTapped()
+            onManualDismiss()
         }
 
-        return VStack {
-            button
+        return FadeInView {
+            OnboardingRebranding.OnboardingTrySearchDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
         }
-        .padding(50)
+        .applyContextualOnboardingBackground(backgroundType: .tryASearch)
+        .onFirstAppear { [weak self] in
+            self?.daxDialogsFlowCoordinator.setTryAnonymousSearchMessageSeen()
+            self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTrySearchUnique)
+        }
     }
+
+}
+
+// MARK: - Subsequent Dialog (Try Visiting A Site!)
+
+private extension RebrandedNewTabDaxDialogFactory {
+
+    private func createSubsequentDialog(onManualDismiss: @escaping () -> Void) -> some View {
+        let viewModel = OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
+            suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
+            delegate: delegate
+        )
+
+        let manualDismissAction = { [weak self] in
+            self?.onboardingPixelReporter.measureTryVisitSiteDialogNewTabDismissButtonTapped()
+            onManualDismiss()
+        }
+
+        return FadeInView {
+            OnboardingRebranding.OnboardingTrySiteDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
+        }
+        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
+        .onFirstAppear { [weak self] in
+            self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
+            self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+        }
+    }
+
+}
+
+// MARK: - Add Favourite
+
+private extension RebrandedNewTabDaxDialogFactory {
+
+    func createAddFavoriteDialog(message: String) -> some View {
+        FadeInView {
+            OnboardingRebranding.OnboardingAddFavorite(message: message)
+        }
+        .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
+    }
+
+}
+
+// MARK: - Final Dialog (You've Got This!)
+
+private extension RebrandedNewTabDaxDialogFactory {
+    
+    func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
+        return FadeInView {
+            OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+                cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+                dismissAction: { [weak self] in
+                    self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
+                    onCompletion(true)
+                },
+                onManualDismiss: { [weak self] in
+                    self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
+                    onManualDismiss()
+                }
+            )
+        }
+        .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
+        .onFirstAppear { [weak self] in
+            self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
+            self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+        }
+    }
+    
+}
+
+// MARK: - Subscription Promotion (Oh before I forget...)
+
+private extension RebrandedNewTabDaxDialogFactory {
+
+    func createSubscriptionPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+        func createSubscriptionPromoMessage() -> AttributedString {
+            let fullText = String(
+                format: UserText.SubscriptionPromotionOnboarding.Promo.messageFormat,
+                UserText.SubscriptionPromotionOnboarding.Promo.optionalSubscriptionBold,
+                UserText.SubscriptionPromotionOnboarding.Promo.vpnBold,
+                UserText.SubscriptionPromotionOnboarding.Promo.privateAIBold
+            )
+
+            return AttributedString(fullText)
+        }
+
+        func createSubscriptionPromoMessageDeprecated() -> AttributedString {
+            let fullText = String(
+                format: UserText.SubscriptionPromotionOnboarding.Promo.messageFormatDeprecated,
+                UserText.SubscriptionPromotionOnboarding.Promo.vpnAndTwoMoreBold,
+                UserText.SubscriptionPromotionOnboarding.Promo.optionalSubscriptionBoldDeprecated
+            )
+
+            return AttributedString(fullText)
+        }
+
+        let title = UserText.SubscriptionPromotionOnboarding.Promo.title
+        let message = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ? createSubscriptionPromoMessage() : createSubscriptionPromoMessageDeprecated()
+        let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.skip
+
+        return FadeInView {
+            OnboardingRebranding.OnboardingSubscriptionPromoDialog(
+                title: title,
+                message: message,
+                proceedText: proceedButtonText,
+                dismissText: dismissText,
+                proceedAction: { [weak self] in
+                    self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
+                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
+                    NotificationCenter.default.post(
+                        name: .settingsDeepLinkNotification,
+                        object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
+                        userInfo: nil
+                    )
+                    onDismiss(false)
+                },
+                dismissAction: {
+                    onDismiss(true)
+                },
+                onManualDismiss: { [weak self] in
+                    self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
+                    self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
+                    onDismiss(true)
+                }
+            )
+        }
+        .applyContextualOnboardingBackground(backgroundType: .privacyProTrial)
+        .onFirstAppear { [weak self] in
+            self?.onboardingSubscriptionPromotionHelper.fireImpressionPixel()
+            self?.daxDialogsFlowCoordinator.subscriptionPromotionDialogSeen = true
+        }
+    }
+
 }

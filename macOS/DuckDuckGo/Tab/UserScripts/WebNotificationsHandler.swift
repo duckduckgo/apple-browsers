@@ -192,8 +192,10 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             content.threadIdentifier = tag
         }
 
-        if let iconURLString = payload.icon, let iconURL = URL(string: iconURLString) {
-            if let attachment = await iconFetcher.fetchIcon(from: iconURL) {
+        if let iconURLString = payload.icon,
+           let iconURL = URL(string: iconURLString),
+           let originURLObject = URL(string: originURL) {
+            if let attachment = await iconFetcher.fetchIcon(from: iconURL, originURL: originURLObject) {
                 content.attachments = [attachment]
             }
         }
@@ -322,7 +324,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
         // Request permission through PermissionModel (shows UI, handles storage)
         // Fire Windows: permissions cleared on burn via burnPermissions()
-        let grantedInUI: Bool = await withCheckedContinuation { continuation in
+        let grantedInUI: Bool = await withCheckedContinuation(isolation: MainActor.shared) { continuation in
             permissionModel.request([.notification], forDomain: domain, url: url)
                 .sink { isGranted in
                     continuation.resume(returning: isGranted)

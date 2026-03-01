@@ -56,10 +56,11 @@ public struct UserText {
     public static let scopedFireConfirmationAlertTitleWithAIChat = NSLocalizedString("scoped.fire.confirmation.alert.title.with.aichat", value: "Delete tabs, site data, and chats?", comment: "Title for scoped fire confirmation dialog when AI chat clearing is enabled")
     public static let scopedFireConfirmationDeleteAllButton = NSLocalizedString("scoped.fire.confirmation.delete.all.button", value: "Delete All", comment: "Button to delete all tabs and data in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteThisTabButton = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.button", value: "Delete This Tab", comment: "Button to delete only the current tab in scoped fire confirmation dialog")
+    public static let scopedFireConfirmationDeleteThisChatButton = NSLocalizedString("scoped.fire.confirmation.delete.this.chat.button", value: "Delete This Chat", comment: "Button to delete only the current chat in scoped fire confirmation dialog")
     public static let scopedFireConfirmationSignOutWarning = NSLocalizedString("scoped.fire.confirmation.sign.out.warning", value: "Deleting site data can sign you out of accounts.", comment: "Warning message explaining that deleting site data may sign users out of accounts")
-    public static let scopedFireConfirmationDeleteThisTabDescription = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.description", value: "\"Delete This Tab\" clears this Duck.ai chat, and any site data from the sites visited in this tab.", comment: "Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data")
+    public static let scopedFireConfirmationDeleteThisChatDescription = NSLocalizedString("scoped.fire.confirmation.delete.this.chat.description", value: "\"Delete All\" will not delete your Duck.ai chat history.", comment: "Description explaining what that Delete All action does not delete chats.")
     public static let scopedFireConfirmationDownloadsWarning = NSLocalizedString("scoped.fire.confirmation.downloads.warning", value: "This will cancel downloads in progress.", comment: "Warning message that deleting will cancel any active downloads")
-    public static let scopedFireConfirmationNewTabsInfo = NSLocalizedString("scoped.fire.confirmation.new.tabs.info", value: "New tabs you create also can be deleted individually.", comment: "Informational message explaining that new tabs can also be deleted individually")
+    public static let scopedFireConfirmationNewTabsInfo = NSLocalizedString("scoped.fire.confirmation.new.tabs.info", value: "New tabs you created can also be deleted individually.", comment: "Informational message explaining that new tabs can also be deleted individually")
 
     public static func scopedFireConfirmationTabsDeletedToast(tabCount: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "scoped.fire.confirmation.tabs.deleted.toast", value: nil, table: nil)
@@ -1337,6 +1338,7 @@ public struct UserText {
     public static let emailProtectionSigningOutAlert = NSLocalizedString("settings.email.protection.signing.out.alert", value: "Signing out of your Email Protection account will disable Duck Address autofill in this browser. You can still use these addresses and receive forwarded email as usual.", comment: "Alert presented to user after clicking on 'Sign out' in Email Protection Settings")
     public static let defaultBrowser = NSLocalizedString("settings.default.browser", value: "Default Browser", comment: "The name of Settings category in Privacy Features related to configuration of the default browser")
     public static let privateSearch = NSLocalizedString("settings.private.search", value: "Private Search", comment: "The name of Settings category in Privacy Features related to configuration of the search")
+    public static let privateSearchAndChat = NotLocalizedString("settings.private.search.and.chat", value: "Private Search & Chat", comment: "The name of Settings category when both search suggestions and Duck.ai chat suggestions are available")
     public static let searchSettings = NSLocalizedString("settings.search.settings", value: "Search Settings", comment: "Header of settings related to search")
     public static let moreSearchSettings = NSLocalizedString("settings.more.search.settings", value: "More Search Settings", comment: "Button navigating to other settings related to search")
     public static let moreSearchSettingsExplanation = NSLocalizedString("settings.more.search.settings.explanation", value: "Customize your language, region, and more", comment: "Subtitle of the 'More Search Settings' button")
@@ -1431,8 +1433,10 @@ public struct UserText {
     public static let settingsSync = NSLocalizedString("settings.sync", value: "Sync & Backup", comment: "Settings screen cell text for sync and backup")
     public static let settingsLogins = NSLocalizedString("settings.logins", value: "Passwords & Autofill", comment: "Settings screen cell text for passwords")
 
-    // Appeareance Section
+    // Appearance Section
     public static let settingsTheme = NSLocalizedString("settings.theme", value: "Theme", comment: "Settings screen cell text for theme")
+    public static let settingsForceWebsiteDarkMode = NSLocalizedString("settings.force.website.dark.mode", value: "Force Dark Mode for Websites", comment: "Settings screen toggle for forcing dark mode on websites")
+    public static let settingsThemeSectionFooter = NSLocalizedString("settings.theme.section.footer", value: "Gives websites a dark appearance if you’re using dark theme.", comment: "Footer shown right below the first section, which has the force dark mode item at the last position")
     public static let settingsIcon = NSLocalizedString("settings.icon", value: "App Icon", comment: "Settings screen cell text for app icon selection")
     public static let settingsFirebutton = NSLocalizedString("settings.firebutton", value: "Fire Button Animation", comment: "Settings screen cell text for fire button animation")
     public static let settingsCustomizableButtonDeleteTabsAndData = NSLocalizedString("settings.customizable.button.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Label for customizable toolbar button that deletes tabs and data")
@@ -1504,7 +1508,7 @@ public struct UserText {
     public static let settingsDeleteDuckAIChats = NSLocalizedString("settings.delete.duckai.chats", value: "Delete Duck.ai Chats", comment: "Settings screen cell text for option to delete Duck.ai chats when using scoped fire")
     public static let settingsAutomaticallyDeleteData = NSLocalizedString("settings.automatically.delete.data", value: "Automatically Delete Data", comment: "Settings screen cell text for automatic data deletion option")
     public static let settingsDeleteTabsAndData = NSLocalizedString("settings.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Settings screen cell text for option to delete tabs and data")
-    public static let settingsAutomaticDataClearingDeleteSectionTitle = NSLocalizedString("settings.automatic.data.clearing.delete.section.title", value: "DELETE", comment: "Section title in automatic data clearing settings")
+    public static let settingsAutomaticDataClearingDeleteSectionTitle = NSLocalizedString("settings.automatic.data.clearing.delete.section.title", value: "Delete", comment: "Section title in automatic data clearing settings")
     public static let settingsAutoClearTimingSectionHeader = NSLocalizedString("settings.autoclear.timing.section.header", value: "Desired Timing", comment: "Section header for the timing options in auto clear settings")
     public static let settingsAutoClearTimingAppExitOnly = NSLocalizedString("settings.autoclear.timing.app.exit.only", value: "App Exit Only", comment: "Timing option to clear data only on app exit")
     public static let settingsAutoClearTimingAppExitInactive5Min = NSLocalizedString("settings.autoclear.timing.app.exit.inactive.5min", value: "App Exit, Inactive for 5 Minutes", comment: "Timing option to clear data on app exit or after 5 minutes of inactivity")
@@ -1565,6 +1569,7 @@ public struct UserText {
     public static let settingsPreviews = NSLocalizedString("settings.previews", value: "Long-Press Previews", comment: "Settings screen cell for long press previews")
     public static let settingsAutocompleteLabel = NSLocalizedString("settings.autocomplete", value: "Search Suggestions", comment: "Settings screen cell for autocomplete")
     public static let settingsAutocompleteSubtitle = NSLocalizedString("settings.autocomplete.subtitle", value: "Show search suggestions as you type, including your bookmarks. All searches are private.", comment: "Subtitle for Search Suggestions setting")
+    public static let settingsAutocompleteWithChatSubtitle = NSLocalizedString("settings.autocomplete.with.chat.subtitle", value: "Show suggestions from your history, bookmarks, and (optionally) Duck.ai chat history as you type in the search bar. All searches are private.", comment: "Subtitle for Search Suggestions setting when chat suggestions are available")
 
     public static let settingsAutocompleteRecentlyVisitedLabel = NSLocalizedString("settings.autocomplete.recentlyvisited", value: "Recently Visited Sites", comment: "Settings label for enabling or disabling recently visited sites")
 
@@ -1598,6 +1603,8 @@ public struct UserText {
     static let subscriptionPurchasingTitle = NSLocalizedString("subscription.progress.view.purchasing.subscription", value: "Purchase in progress...", comment: "Progress view title when starting the purchase")
     static let subscriptionRestoringTitle = NSLocalizedString("subscription.progress.view.restoring.subscription", value: "Restoring subscription...", comment: "Progress view title when restoring past subscription purchase")
     static let subscriptionCompletingPurchaseTitle = NSLocalizedString("subscription.progress.view.completing.purchase", value: "Completing purchase...", comment: "Progress view title when completing the purchase")
+    static let subscriptionPlanChangeInProgressTitle = NSLocalizedString("subscription.progress.view.plan.change.in.progress", value: "Plan change in progress…", comment: "Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade)")
+    static let subscriptionCompletePlanChangeTitle = NSLocalizedString("subscription.progress.view.complete.plan.change", value: "Completing plan change…", comment: "Progress view title when completing a plan change with the backend")
 
     // Subscription Settings
     public static var subscriptionTitle = NSLocalizedString("subscription.settings.title", value: "DuckDuckGo Subscription", comment: "Navigation bar Title for subscriptions")
@@ -1708,6 +1715,18 @@ public struct UserText {
 
         return String(format: localized, tierName, effectiveDate)
     }
+
+    static func cancelPendingDowngradeBannerInfo(tierName: String, effectiveDate: String) -> String {
+        let localized = NSLocalizedString("subscription.cancel.pending.downgrade.banner.caption",
+                                         value: "Your plan will downgrade to %@ on %@.",
+                                         comment: "Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).'")
+        let nonBreakingDate = effectiveDate.replacingOccurrences(of: " ", with: "\u{00A0}")
+        return String(format: localized, tierName, nonBreakingDate)
+    }
+
+    static let cancelDowngradeButton = NSLocalizedString("subscription.cancel.downgrade.button",
+                                                         value: "Cancel Downgrade",
+                                                         comment: "Button to cancel a pending downgrade of the subscription")
 
     public static let subscriptionDevicesSectionHeader = NSLocalizedString("duckduckgo.subscription.add.to.devices.header", value: "Add your subscription to other devices", comment: "Header for section for activating subscription on other devices")
     public static let subscriptionDevicesSectionNoEmailFooter = NSLocalizedString("duckduckgo.subscription.add.to.devices.no.email.footer", value: "Add your subscription to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
@@ -1932,9 +1951,11 @@ public struct UserText {
 
     public static let settingsEnableAiChatSubtitle = NSLocalizedString("settings.enable.aichat.subtitle", value: "Chat privately with popular 3rd-party AI models", comment: "A description of what the AI Chat toggle does")
 
-    public static let settingsAutomaticPageContextTitle = NSLocalizedString("settings.aifeatures.automatic.context.title", value: "Automatically Send Context", comment: "Settings screen cell title for enabling automatic page context")
+    public static let settingsAutomaticPageContextTitle = NSLocalizedString("settings.aifeatures.automatic.context.title", value: "Automatically Send Content", comment: "Settings screen cell title for enabling automatic page content attachment")
 
-    public static let settingsAutomaticPageContextSubtitle = NSLocalizedString("settings.aifeatures.automatic.context.subtitle", value: "Automatically send page context to Duck.ai", comment: "Settings screen cell subtitle for enabling automatic page context")
+    public static let settingsAutomaticPageContextSubtitle = NSLocalizedString("settings.aifeatures.automatic.context.subtitle", value: "Automatically send page content to Duck.ai", comment: "Settings screen cell subtitle for enabling automatic page content attachment")
+
+    public static let settingsChatSuggestionsTitle = NSLocalizedString("settings.aifeatures.chat.suggestions.title", value: "Chat Suggestions", comment: "Settings screen cell title for enabling chat suggestions")
 
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 
@@ -1990,18 +2011,12 @@ public struct UserText {
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("input.field.placeholder.duckai", value: "Ask privately", comment: "Placeholder text for the duck.ai input field")
 
     // MARK: - AI Chat Quick Actions
-    public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize this Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
+    public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize This Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
     public static let aiChatQuickActionAttach = NSLocalizedString("duckai.quick.action.attach", value: "Attach Page Content", comment: "Title for the attach page content quick action chip in Duck.ai contextual sheet")
 
     // MARK: - AI Chat Context Chip
     public static let aiChatAttachPageContent = NSLocalizedString("duckai.attach.page.content", value: "Attach Page Content", comment: "Menu option to attach current page content to Duck.ai chat")
     public static let aiChatContextChipInfoFooter = NSLocalizedString("duckai.context.chip.info", value: "Sent with your message to Duck.ai", comment: "Info text shown below the context chip explaining that content will be sent with the message")
-
-    // MARK: - AI Chat Contextual Onboarding
-    public static let aiChatContextualOnboardingTitle = NSLocalizedString("duckai.contextual.onboarding.title", value: "Ask about this page", comment: "Title for the Duck.ai contextual onboarding screen")
-    public static let aiChatContextualOnboardingBody = NSLocalizedString("duckai.contextual.onboarding.body", value: "Duck.ai can now help answer questions about the page you're viewing.\n\nPage content is only included when you attach it. You can change this anytime in Settings.", comment: "Body text for the Duck.ai contextual onboarding screen explaining the feature")
-    public static let aiChatContextualOnboardingGotIt = NSLocalizedString("duckai.contextual.onboarding.gotIt", value: "Got It", comment: "Primary button text to dismiss the Duck.ai contextual onboarding screen")
-    public static let aiChatContextualOnboardingViewSettings = NSLocalizedString("duckai.contextual.onboarding.viewSettings", value: "View Settings", comment: "Secondary button text to open settings from the Duck.ai contextual onboarding screen")
 
     // MARK: - AI Features Picker Footer
     public static let settingsAIPickerFooterDescription = NSLocalizedString(
@@ -2209,31 +2224,56 @@ public struct UserText {
     public enum SubscriptionPromotionOnboarding {
         public enum Promo {
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")
+
+            // MARK: - Message Components
+
+            static let vpnBold = NSLocalizedString(
+                "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold",
+                value: "VPN",
+                comment: "Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
+            )
+
+            static let optionalSubscriptionBold = NSLocalizedString(
+                "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold",
+                value: "optional paid subscription",
+                comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
+            )
+
+            static let privateAIBold = NSLocalizedString(
+                "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold",
+                value: "advanced, private AI",
+                comment: "Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message."
+            )
+
+            static let vpnAndTwoMoreBold = NSLocalizedString(
+                "onboarding.subscription.promo.message.vpn-two-more-bold",
+                value: "VPN + 2 more premium protections",
+                comment: "Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
+            )
+
+            static let optionalSubscriptionBoldDeprecated = NSLocalizedString(
+                "onboarding.subscription.promo.message.optional-subscription-bold",
+                value: "optional paid subscription",
+                comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
+            )
+
+            static let messageFormat = NSLocalizedString(
+                "onboarding.duckduckgo.subscription.promo.message",
+                value: "DuckDuckGo also has an %1$@, available with a %2$@ and %3$@.",
+                comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold)."
+            )
+
+            static let messageFormatDeprecated = NSLocalizedString(
+                "onboarding.subscription.promo.message",
+                value: "DuckDuckGo also has a secure %1$@, available with an %2$@.",
+                comment: "Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold)."
+            )
+
+            // MARK: - Legacy Methods
+
             static func message() -> NSAttributedString {
-
-                let vpnBold = NSLocalizedString(
-                    "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold",
-                    value: "VPN",
-                    comment: "Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
-                )
-
-                let optionalSubscriptionBold = NSLocalizedString(
-                    "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold",
-                    value: "optional paid subscription",
-                    comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
-                )
-
-                let privateAIBold = NSLocalizedString(
-                    "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold",
-                    value: "advanced, private AI",
-                    comment: "Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message."
-                )
-
                 // Localized full message with numbered placeholders
-                let fullText = String(format: NSLocalizedString(
-                    "onboarding.duckduckgo.subscription.promo.message",
-                    value: "DuckDuckGo also has an %1$@, available with a %2$@ and %3$@.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold)."), optionalSubscriptionBold, vpnBold, privateAIBold)
+                let fullText = String(format: messageFormat, optionalSubscriptionBold, vpnBold, privateAIBold)
 
                 let attributedString = NSMutableAttributedString(string: fullText)
 
@@ -2259,23 +2299,8 @@ public struct UserText {
                 return attributedString
             }
             static func messageDeprecated() -> NSAttributedString {
-                let vpnAndTwoMoreBold = NSLocalizedString(
-                    "onboarding.subscription.promo.message.vpn-two-more-bold",
-                    value: "VPN + 2 more premium protections",
-                    comment: "Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
-                )
-
-                let optionalSubscriptionBold = NSLocalizedString(
-                    "onboarding.subscription.promo.message.optional-subscription-bold",
-                    value: "optional paid subscription",
-                    comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
-                )
-
                 // Localized full message with numbered placeholders
-                let fullText = String(format: NSLocalizedString(
-                    "onboarding.subscription.promo.message",
-                    value: "DuckDuckGo also has a secure %1$@, available with an %2$@.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold)."), vpnAndTwoMoreBold, optionalSubscriptionBold)
+                let fullText = String(format: messageFormatDeprecated, vpnAndTwoMoreBold, optionalSubscriptionBoldDeprecated)
 
                 let attributedString = NSMutableAttributedString(string: fullText)
 
@@ -2289,7 +2314,7 @@ public struct UserText {
                 }
 
                 // Apply bold formatting
-                if let optionalSubscriptionRange = fullText.range(of: optionalSubscriptionBold) {
+                if let optionalSubscriptionRange = fullText.range(of: optionalSubscriptionBoldDeprecated) {
                     attributedString.addAttributes(boldAttributes, range: NSRange(optionalSubscriptionRange, in: fullText))
                 }
 

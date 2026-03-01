@@ -35,7 +35,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(titleText, placeholder, items, primaryActionText, primaryAction) = result else {
+        guard case let .cardsList(titleText, placeholder, _, items, primaryActionText, primaryAction) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -80,7 +80,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -149,7 +149,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -168,7 +168,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -217,7 +217,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -241,7 +241,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -265,7 +265,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -277,6 +277,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     @Test("Placeholder Maps Correctly",
         arguments: [
             ("Announce", RemotePlaceholder.announce),
+            ("NewTabOptions", RemotePlaceholder.newTabOptions),
+            ("SplitBarMobile", RemotePlaceholder.splitBarMobile),
             // Maps to Default
             ("", RemotePlaceholder.announce),
             // Maps to Default
@@ -291,7 +293,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -314,7 +316,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     @Test("Check Different Action Types Map Correctly",
           arguments: [
             (("url_in_context", "https://example.com"), RemoteAction.urlInContext(value: "https://example.com")),
-            (("navigation", "import.passwords"), RemoteAction.navigation(value: .importPasswords))
+            (("navigation", "import.passwords"), RemoteAction.navigation(value: .importPasswords)),
+            (("navigation", "softwareUpdate"), RemoteAction.navigation(value: .softwareUpdate))
           ]
     )
     func actionTypesMapCorrectly(jsonAction: (key: String, value: String), expectedAction: RemoteAction) {
@@ -326,7 +329,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -350,6 +353,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
             ("RadarCheckGreen", .radarCheckGreen),
             ("RadarCheckPurple", .radarCheckPurple),
             ("KeyImport", .keyImport),
+            ("NewTabOptions", .newTabOptions),
+            ("SplitBarMobile", .splitBarMobile),
             ("PIR", .pir),
             ("Subscription", .subscription),
             (nil, nil)
@@ -363,7 +368,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        guard case let .cardsList(_, placeholder, _, _, _) = result else {
+        guard case let .cardsList(_, placeholder, _, _, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -396,7 +401,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -435,7 +440,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -469,7 +474,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -502,7 +507,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -531,7 +536,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -565,7 +570,7 @@ struct JsonToRemoteMessageModelMapperCardsListRulesTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -599,7 +604,7 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -624,7 +629,7 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -648,7 +653,7 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN - Section without itemIDs should be discarded
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -672,7 +677,7 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
         let result = JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper)
 
         // THEN - Section with empty itemIDs should be discarded
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -703,7 +708,7 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -734,7 +739,7 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -778,7 +783,7 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -801,7 +806,7 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -829,7 +834,7 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN - Section should be mapped with itemIDs
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -865,7 +870,7 @@ struct JsonToRemoteMessageModelMapperFeaturedItemTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -900,7 +905,7 @@ struct JsonToRemoteMessageModelMapperFeaturedItemTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -926,7 +931,7 @@ struct JsonToRemoteMessageModelMapperFeaturedItemTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -952,7 +957,7 @@ struct JsonToRemoteMessageModelMapperFeaturedItemTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -977,7 +982,7 @@ struct JsonToRemoteMessageModelMapperFeaturedItemTests {
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
 
         // THEN
-        guard case let .cardsList(_, _, items, _, _) = result else {
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
             Issue.record("Expected cardsList message type")
             return
         }
@@ -1010,6 +1015,7 @@ private extension RemoteMessageResponse.JsonContent {
             descriptionText: "",
             listItems: listItems,
             placeholder: placeholder,
+            imageUrl: nil,
             actionText: nil,
             action: nil,
             primaryActionText: primaryActionText,

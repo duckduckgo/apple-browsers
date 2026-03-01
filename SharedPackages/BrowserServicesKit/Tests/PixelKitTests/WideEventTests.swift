@@ -78,7 +78,8 @@ final class MockWideEventData: WideEventData {
         pixelName: "mock-wide-event",
         featureName: "mock-wide-event",
         mobileMetaType: "ios-test-mock-wide-event",
-        desktopMetaType: "macos-test-mock-wide-event"
+        desktopMetaType: "macos-test-mock-wide-event",
+        version: "1.0.0"
     )
 
     enum FailingStep: String, Codable {
@@ -300,7 +301,8 @@ final class WideEventTests: XCTestCase {
                 pixelName: "non_serializable",
                 featureName: "non_serializable",
                 mobileMetaType: "ios-test-non-serializable",
-                desktopMetaType: "macos-test-non-serializable"
+                desktopMetaType: "macos-test-non-serializable",
+                version: "1.0.0"
             )
             let closure: () -> Void = { }
             var contextData: WideEventContextData = WideEventContextData()

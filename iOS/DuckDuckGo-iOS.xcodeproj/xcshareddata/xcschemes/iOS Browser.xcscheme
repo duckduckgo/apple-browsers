@@ -213,6 +213,26 @@
                ReferencedContainer = "container:../SharedPackages/Infrastructure/SystemFrameworksExtensions">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MetricBuilderTests"
+               BuildableName = "MetricBuilderTests"
+               BlueprintName = "MetricBuilderTests"
+               ReferencedContainer = "container:../SharedPackages/Infrastructure/MetricBuilder">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "WebExtensionsTests"
+               BuildableName = "WebExtensionsTests"
+               BlueprintName = "WebExtensionsTests"
+               ReferencedContainer = "container:../SharedPackages/WebExtensions">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
@@ -246,6 +266,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-com.apple.CoreData.Logging.stderr 1"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-isOnboardingCompleted false"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-ff.onboardingRebranding true"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

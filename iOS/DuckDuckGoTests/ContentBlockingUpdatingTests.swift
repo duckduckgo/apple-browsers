@@ -55,7 +55,9 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           contentBlockingManager: rulesManager,
                                                                           fireproofing: FireproofingMock(),
                                                                           contentScopeExperimentsManager: MockContentScopeExperimentManager(),
-                                                                          internalUserDecider: MockInternalUserDecider()))
+                                                                          internalUserDecider: MockInternalUserDecider(),
+                                                                          syncErrorHandler: CapturingAdapterErrorHandler(),
+                                                                          webExtensionAvailability: nil))
     }
 
     override static func setUp() {

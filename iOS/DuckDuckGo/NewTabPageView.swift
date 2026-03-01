@@ -83,7 +83,8 @@ private extension NewTabPageView {
         GeometryReader { proxy in
             ScrollView {
                 LazyVStack(spacing: Metrics.sectionSpacing) {
-                    
+                    escapeHatchSectionView
+
                     messagesSectionView
                         .padding(.top, Metrics.nonGridSectionTopPadding)
                         .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
@@ -113,6 +114,8 @@ private extension NewTabPageView {
             }
 
             VStack(spacing: Metrics.sectionSpacing) {
+                escapeHatchSectionView
+
                 messagesSectionView
                     .padding(.top, Metrics.nonGridSectionTopPadding)
                     .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
@@ -121,6 +124,18 @@ private extension NewTabPageView {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .padding(Metrics.regularPadding)
+    }
+
+    @ViewBuilder
+    private var escapeHatchSectionView: some View {
+        if let escapeHatch = viewModel.escapeHatch {
+            ReturnToTabCard(model: escapeHatch) {
+                viewModel.onEscapeHatchTap?()
+            }
+            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
+            .padding(.top, Metrics.nonGridSectionTopPadding)
+            .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+        }
     }
 
     private var messagesSectionView: some View {
@@ -179,7 +194,8 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -203,7 +219,8 @@ private struct Metrics {
                     )
                 ]
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -216,7 +233,8 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -229,7 +247,8 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            messageActionHandler: RemoteMessagingActionHandler()
+            messageActionHandler: RemoteMessagingActionHandler(),
+            imageLoader: PreviewImageLoader()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -252,5 +271,13 @@ private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration 
 
     func dismissHomeMessage(_ homeMessage: HomeMessage) {
         homeMessages = homeMessages.dropLast()
+    }
+}
+
+private final class PreviewImageLoader: RemoteMessagingImageLoading {
+    func prefetch(_ urls: [URL]) {}
+    func cachedImage(for url: URL) -> RemoteMessagingImage? { nil }
+    func loadImage(from url: URL) async throws -> RemoteMessagingImage {
+        throw RemoteMessagingImageLoadingError.invalidImageData
     }
 }

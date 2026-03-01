@@ -498,6 +498,36 @@
                ReferencedContainer = "container:../SharedPackages/AttributedMetric">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppUpdaterSharedTests"
+               BuildableName = "AppUpdaterSharedTests"
+               BlueprintName = "AppUpdaterSharedTests"
+               ReferencedContainer = "container:LocalPackages/AppUpdater">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SparkleAppUpdaterTests"
+               BuildableName = "SparkleAppUpdaterTests"
+               BlueprintName = "SparkleAppUpdaterTests"
+               ReferencedContainer = "container:LocalPackages/AppUpdater">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "WebExtensionsTests"
+               BuildableName = "WebExtensionsTests"
+               BlueprintName = "WebExtensionsTests"
+               ReferencedContainer = "container:../SharedPackages/WebExtensions">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

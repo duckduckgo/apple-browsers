@@ -212,8 +212,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039
-    case fadeOutOnToggle
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213227027157584
+    case iPadDuckaiOnTab
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213313932650457
+    case iPadAIToggle
 
     /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
@@ -233,9 +236,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203542?focus=true
     case allowProTierPurchase
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211992061067315?focus=true
-    case browsingMenuSheetPresentation
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260?focus=true
     case browsingMenuSheetEnabledByDefault
@@ -269,9 +269,12 @@ public enum FeatureFlag: String {
     case contextualDuckAIMode
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
+    case pageContextFeature
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
     case aiChatAutoAttachContextByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
@@ -286,18 +289,22 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
 
-    // https://app.asana.com/1/137249556945/project/392891325557410/task/1211597475706631?focus=true
-    case webViewFlashPrevention
-
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
 
+    /// Failsafe flag for whether the free trial conversion wide event is enabled
+    case freeTrialConversionWideEvent
+
     /// Shows tracker count banner in Tab Switcher and related settings item
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
     case tabSwitcherTrackerCount
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
     case burnSingleTab
+
+   /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213076120133808?focus=true
+    case showNTPAfterIdleReturn
 
     /// Test-only feature flag for verifying UI test override mechanism.
     /// Used in Debug > UI Test Overrides screen.
@@ -306,20 +313,39 @@ public enum FeatureFlag: String {
     /// Test-only experiment for verifying UI test experiment override mechanism.
     /// Used in Debug > UI Test Overrides screen.
     case uiTestExperiment
-    
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
 
-    /// Failsafe flag to bring back keys sorting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
     case crashCollectionDisableKeysSorting
 
-    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
 
     /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
     case onboardingRebranding
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true
+    case webExtensions
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275565?focus=true
+    case embeddedExtension
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213278892205657?focus=true
+    case forceDarkModeOnWebsites
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208707884599795?focus=true
+    case autofillOnboardingExperiment
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692854?focus=true
+    case supportsSyncChatsDeletion
+
+    /// https://app.asana.com/1/137249556945/task/1213314048601761
+    case fireMode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
+    case suppressTrackerAnimationOnColdStart
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -338,16 +364,17 @@ extension FeatureFlag: FeatureFlagDescribing {
              .unifiedURLPredictor,
              .migrateKeychainAccessibility,
              .dataImportWideEventMeasurement,
-             .browsingMenuSheetPresentation,
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
              .showWhatsNewPromptOnDemand,
-             .webViewFlashPrevention,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
              .crashCollectionDisableKeysSorting,
+             .freeTrialConversionWideEvent,
              .crashCollectionLimitCallStackTreeDepth,
-             .tabSwitcherTrackerCount:
+             .tabSwitcherTrackerCount,
+             .iPadDuckaiOnTab,
+             .suppressTrackerAnimationOnColdStart:
             true
         default:
             false
@@ -358,6 +385,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .uiTestExperiment:
             UITestExperimentCohort.self
+        case .autofillOnboardingExperiment:
+            AutofillOnboardingExperimentCohort.self
         default:
             nil
         }
@@ -367,6 +396,13 @@ extension FeatureFlag: FeatureFlagDescribing {
     public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
+    }
+
+    public enum AutofillOnboardingExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case variant1
+        case variant2
+        case variant3
     }
 
     public static var localOverrideStoreName: String = "com.duckduckgo.app.featureFlag.localOverrides"
@@ -388,6 +424,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .personalInformationRemoval,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .inactivityNotification,
+             .showNTPAfterIdleReturn,
              .daxEasterEggLogos,
              .daxEasterEggPermanentLogo,
              .dbpEmailConfirmationDecoupling,
@@ -403,14 +440,14 @@ extension FeatureFlag: FeatureFlagDescribing {
              .forgetAllInSettings,
              .onboardingSearchExperience,
              .fullDuckAIMode,
-             .fadeOutOnToggle,
+             .iPadDuckaiOnTab,
+             .iPadAIToggle,
              .attributedMetrics,
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
              .standaloneMigration,
              .blackFridayCampaign,
              .allowProTierPurchase,
-             .browsingMenuSheetPresentation,
              .browsingMenuSheetEnabledByDefault,
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
@@ -419,6 +456,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dataImportWideEventMeasurement,
              .appRatingPrompt,
              .contextualDuckAIMode,
+             .pageContextFeature,
              .aiChatAutoAttachContextByDefault,
              .aiChatSync,
              .aiChatSuggestions,
@@ -428,12 +466,19 @@ extension FeatureFlag: FeatureFlagDescribing {
              .aiChatAtb,
              .enhancedDataClearingSettings,
              .genericBackgroundTask,
-             .webViewFlashPrevention,
              .tabSwitcherTrackerCount,
              .burnSingleTab,
              .uiTestFeatureFlag,
+             .freeTrialConversionWideEvent,
              .uiTestExperiment,
-             .onboardingRebranding:
+             .onboardingRebranding,
+             .webExtensions,
+             .embeddedExtension,
+             .forceDarkModeOnWebsites,
+             .autofillOnboardingExperiment,
+             .supportsSyncChatsDeletion,
+             .fireMode,
+             .suppressTrackerAnimationOnColdStart:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -581,6 +626,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
+        case .showNTPAfterIdleReturn:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
         case .daxEasterEggLogos:
             return .remoteReleasable(.feature(.daxEasterEggLogos))
         case .daxEasterEggPermanentLogo:
@@ -603,8 +650,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
-        case .fadeOutOnToggle:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
+        case .iPadDuckaiOnTab:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.iPadDuckaiOnTab))
+        case .iPadAIToggle:
+            return .internalOnly()
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .onboardingSearchExperience:
@@ -617,10 +666,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         case .allowProTierPurchase:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
-        case .browsingMenuSheetPresentation:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.experimentalBrowsingMenu))
         case .browsingMenuSheetEnabledByDefault:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.browsingMenuSheetEnabledByDefault))
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -641,10 +688,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt))
         case .contextualDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.contextualDuckAIMode))
+        case .pageContextFeature:
+            return .remoteReleasable(.feature(.pageContext))
         case .aiChatAutoAttachContextByDefault:
             return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
         case .aiChatSync:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
             return .remoteReleasable(.feature(.duckAiChatHistory))
         case .showWhatsNewPromptOnDemand:
@@ -652,19 +701,19 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatAtb:
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
-            return .disabled
-        case .webViewFlashPrevention:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.enhancedDataClearingSettings))
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint))
         case .uiTestFeatureFlag:
             return .disabled
+        case .freeTrialConversionWideEvent:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .uiTestExperiment:
             return .disabled
         case .tabSwitcherTrackerCount:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.tabSwitcherTrackerCount))
         case .burnSingleTab:
-            return .disabled
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.burnSingleTab))
         case .genericBackgroundTask:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionDisableKeysSorting:
@@ -673,12 +722,26 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
         case .onboardingRebranding:
             return .disabled
+        case .webExtensions:
+            return .internalOnly()
+        case .embeddedExtension:
+            return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
+        case .forceDarkModeOnWebsites:
+            return .remoteReleasable(.feature(.forceDarkModeOnWebsites))
+        case .autofillOnboardingExperiment:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.onboardingExperiment))
+        case .supportsSyncChatsDeletion:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
+        case .fireMode:
+            return .disabled
+        case .suppressTrackerAnimationOnColdStart:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.suppressTrackerAnimationOnColdStart))
         }
     }
 }
 
 extension FeatureFlagger {
     public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {
-        return isFeatureOn(for: featureFlag)
+        isFeatureOn(for: featureFlag)
     }
 }

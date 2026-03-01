@@ -178,24 +178,6 @@ class AIChatSettingsTests: XCTestCase {
         XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
     }
 
-    func testContextualOnboardingSeenState() {
-        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                      debugSettings: mockAIChatDebugSettings,
-                                      keyValueStore: mockKeyValueStore,
-                                      notificationCenter: mockNotificationCenter)
-
-        // Default value is false
-        XCTAssertFalse(settings.hasSeenContextualOnboarding)
-
-        // Marking as seen sets it to true
-        settings.markContextualOnboardingSeen()
-        XCTAssertTrue(settings.hasSeenContextualOnboarding)
-
-        // Reset sets it back to false
-        settings.resetContextualOnboarding()
-        XCTAssertFalse(settings.hasSeenContextualOnboarding)
-    }
-
 }
 
 final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
@@ -203,4 +185,5 @@ final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
     var customURL: String?
     var contextualSessionTimerSeconds: Int?
     func reset() {}
+    func matchesCustomURL(_ url: URL) -> Bool { false }
 }

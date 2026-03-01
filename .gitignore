@@ -64,13 +64,13 @@ default.profraw
 
 # Claude
 .claude/settings.local.json
-CLAUDE.md
 
 # Cursor
-.cursor/
+.cursor/*
+!.cursor/BUGBOT.md
+!.cursor/rules/
 
 # AI assistants
-AGENTS.md
 .github/copilot-instructions.md
 
 /build-ui-tests

@@ -729,12 +729,14 @@
             "wideEventType",
             "wideEventFormFactor",
             "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
             "wideEventFeatureStatus",
             "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -773,12 +775,14 @@
             "wideEventType",
             "wideEventFormFactor",
             "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
             "wideEventFeatureStatus",
             "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -809,6 +813,12 @@
                 "description": "Ordinal number for attempts within the current scan cycle"
             },
             {
+                "key": "feature.data.ext.scan.free_scan",
+                "type": "string",
+                "description": "Whether this scan attempt belongs to a free (unauthenticated) user",
+                "enum": ["true", "false"]
+            },
+            {
                 "key": "feature.data.ext.scan.latency_ms",
                 "type": "string",
                 "description": "Duration in milliseconds between the scan attempt start and completion"
@@ -828,12 +838,14 @@
             "wideEventType",
             "wideEventFormFactor",
             "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
             "wideEventFeatureStatus",
             "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
             {
                 "key": "meta.type",
                 "type": "string",
@@ -897,7 +909,8 @@
                 "enum": ["on", "off", "unsupported", "unknown"]
             },
             "dbpParentBroker",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_ios_dbp_search_stage_main_status_no_results": {
@@ -936,7 +949,8 @@
             "dbpParentBroker",
             "dbpActionId",
             "dbpActionType",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_ios_dbp_search_stage_main_status_error": {
@@ -989,7 +1003,8 @@
                 "type": "string"
             },
             "dbpActionType",
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "dbpIsFreeScan"
         ]
     },
     "m_ios_dbp_data_broker_action-failed_error": {
@@ -1051,6 +1066,13 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_ios_dbp_notification_sent_go_to_market_first_scan": {
+        "description": "Fires when the go-to-market first scan notification is sent.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_ios_dbp_notification_scheduled_1_week_check_in": {
         "description": "Fires when the one-week check-in notification is scheduled.",
         "owners": ["quanganhdo"],
@@ -1058,39 +1080,46 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "m_ios_dbp_notification_opened_first_scan_complete": {
+    "m_dbp_notification_opened_first_scan_complete": {
         "description": "Fires when the user opens the initial scan completion notification.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "m_ios_dbp_freemium_notification_opened_first_scan_complete": {
+    "m_dbp_freemium_notification_opened_first_scan_complete": {
         "description": "Fires when the user opens the initial freemium scan completion notification.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "m_ios_dbp_notification_opened_first_removal": {
+    "m_dbp_notification_opened_first_removal": {
         "description": "Fires when the user opens the first profile removal notification.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "m_ios_dbp_notification_opened_all_records_removed": {
+    "m_dbp_notification_opened_all_records_removed": {
         "description": "Fires when the user opens the all record removal notification.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "m_ios_dbp_notification_opened_1_week_check_in": {
+    "m_dbp_notification_opened_1_week_check_in": {
         "description": "Fires when the user opens the one-week check-in notification.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_dbp_notification_opened_go_to_market_first_scan": {
+        "description": "Fires when the user opens the go-to-market first scan notification.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
     },
     "m_ios_dbp_event_scanning-events_new-match": {

@@ -52,7 +52,8 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         isIPad: Bool,
         pixelReporter: RemoteMessagingPixelReporting?,
         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-        displayModelMapper: WhatsNewDisplayModelMapping = WhatsNewDisplayModelMapper(),
+        imageLoader: RemoteMessagingImageLoading,
+        displayModelMapper: WhatsNewDisplayModelMapping? = nil,
         featureFlagger: FeatureFlagger
     ) {
         self.displayContext = displayContext
@@ -61,7 +62,7 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         self.isIPad = isIPad
         self.pixelReporter = pixelReporter
         self.userScriptsDependencies = userScriptsDependencies
-        self.displayModelMapper = displayModelMapper
+        self.displayModelMapper = displayModelMapper ?? WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
         self.featureFlagger = featureFlagger
     }
 
@@ -169,7 +170,16 @@ private extension WhatsNewCoordinator {
                 },
                 onItemAction: { [weak self] action, cardId in
                     self?.measureCardTapped(cardId: cardId)
-                    await self?.handleAction(action)
+                    if case .url = action {
+                        self?.dismiss(source: .itemAction, onComplete: { [weak self] in
+                            guard let self else { return }
+                            Task { @MainActor in
+                                await self.handleAction(action)
+                            }
+                        })
+                    } else {
+                        await self?.handleAction(action)
+                    }
                 },
                 onPrimaryAction: { [weak self] action in
                     self?.measurePrimaryActionTapped()
@@ -207,10 +217,17 @@ private extension WhatsNewCoordinator {
         Logger.modalPrompt.info("\(self.logPrefix) - What's New - Marked message as shown: \(message.id, privacy: .public)")
     }
 
-    func dismiss(source: DismissSource) {
+    func dismiss(source: DismissSource, onComplete: (() -> Void)? = nil) {
         Logger.modalPrompt.info("\(self.logPrefix) - What's New - Dismissed From source: \(source.debugDescription, privacy: .public)")
-        navigationController?.dismiss(animated: true)
         measureMessageDismissed(source: source)
+
+        if let navigationController, navigationController.presentingViewController != nil {
+            navigationController.dismiss(animated: true) {
+                onComplete?()
+            }
+        } else {
+            onComplete?()
+        }
     }
 }
 
@@ -251,6 +268,8 @@ private extension WhatsNewCoordinator {
             pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .pullDown)
         case .mainAction:
             pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .primaryAction)
+        case .itemAction:
+            pixelReporter?.measureRemoteMessageDismissed(message, dismissType: .itemAction)
         }
     }
 
@@ -310,12 +329,14 @@ private extension WhatsNewCoordinator {
 
     enum DismissSource: String, CustomDebugStringConvertible {
         case closeButton
+        case itemAction
         case mainAction
         case pullDown
 
         var debugDescription: String {
             switch self {
             case .closeButton: "Close Button"
+            case .itemAction: "Item CTA"
             case .mainAction: "Main CTA"
             case .pullDown: "Pull Down"
             }

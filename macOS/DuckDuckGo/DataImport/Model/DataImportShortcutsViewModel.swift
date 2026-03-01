@@ -25,7 +25,7 @@ final class DataImportShortcutsViewModel: ObservableObject {
 
     let dataTypes: Set<DataType>?
     private let prefs: AppearancePreferences
-    private let pinningManager: LocalPinningManager
+    private let pinningManager: PinningManager
 
     @Published var showBookmarksBarStatus: Bool {
         didSet {
@@ -44,7 +44,7 @@ final class DataImportShortcutsViewModel: ObservableObject {
         }
     }
 
-    init(dataTypes: Set<DataType>? = nil, prefs: AppearancePreferences = NSApp.delegateTyped.appearancePreferences, pinningManager: LocalPinningManager = LocalPinningManager.shared) {
+    init(dataTypes: Set<DataType>? = nil, prefs: AppearancePreferences = NSApp.delegateTyped.appearancePreferences, pinningManager: PinningManager) {
         self.dataTypes = dataTypes
         self.prefs = prefs
         self.pinningManager = pinningManager

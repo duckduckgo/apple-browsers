@@ -54,18 +54,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// Controls automatic update downloads in REVIEW builds (off by default)
     case autoUpdateInREVIEW
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615802881
-    case updatesWontAutomaticallyRestartApp
-
-    /// Simplified update flow without expiration logic
-    /// Requires: .updatesWontAutomaticallyRestartApp (via subfeature)
-    case updatesSimplifiedFlow
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
+    case embeddedExtension
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616130440
     case syncSeamlessAccountSwitching
@@ -112,6 +108,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211654922002904
+    case aiChatOmnibarTools
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212710873113687
     case aiChatOmnibarOnboarding
 
@@ -151,9 +150,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720018164
     case syncFeatureLevel3
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
-    case themes
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619633097
     case appStoreUpdateFlow
 
@@ -184,12 +180,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477623612
     case dataImportNewExperience
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721275379
-    case scheduledDefaultBrowserAndDockPromptsInactiveUser
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
-    case tabProgressIndicator
-
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
 
@@ -199,31 +189,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212014826835069?focus=true
-    case newTabPageAutoconsentStats
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203544?focus=true
     case allowProTierPurchase
 
     /// New popup blocking heuristics based on user interaction timing (internal only)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017698257925?focus=true
     case popupBlocking
-
-    /// Use extended user-initiated popup timeout (extends from 1s to 6s)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212001891093823?focus=true
-    case extendedUserInitiatedPopupTimeout
-
-    /// Suppress empty or about: URL popups after permission approval
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300907?focus=true
-    case suppressEmptyPopUpsOnApproval
-
-    /// Allow all popups for current page after permission approval (until next navigation)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300913?focus=true
-    case allowPopupsForCurrentPage
-
-    /// Show popup permission button in inactive state when temporary allowance is active
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300919?focus=true
-    case popupPermissionButtonPersistence
 
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
@@ -233,20 +204,15 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
     case newPermissionView
 
-    /// Tab closing event recreation (failsafe for removing private API)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
-    case tabClosingEventRecreation
-
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
     case firstTimeQuitSurvey
 
-    /// Modular termination decider pattern for app quit flow
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212684817782056?focus=true
-    case terminationDeciderSequence
-
     /// Prioritize results where the domain matches the search query when searching passwords & autofill
     case autofillPasswordSearchPrioritizeDomain
+
+    /// Controls visibility of the Passwords menu bar feature
+    case autofillPasswordsStatusBar
 
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
@@ -261,7 +227,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212783502979551?focus=true
     case memoryPressureReporting
 
-    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
+    /// Memory Usage Reporting
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
+    case memoryUsageReporting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case aiChatSync
 
     /// Autoconsent heuristic action experiment
@@ -272,9 +242,37 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212634388261605?focus=true
     case nextStepsListWidget
 
+    /// Enables advanced card ordering for the Next Steps List widget
+    /// This flag is disabled by default to allow testing the new widget design with current ordering logic
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
+    case nextStepsListAdvancedCardOrdering
+
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037849588149
+    case crashCollectionDisableKeysSorting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
+    case crashCollectionLimitCallStackTreeDepth
+
+    /// Failsafe flag for whether the free trial conversion wide event is enabled
+    case freeTrialConversionWideEvent
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
+    case supportsSyncChatsDeletion
+
+    /// https://app.asana.com/1/137249556945/task/1213316822018797
+    case aiChatSidebarResizable
+
+    /// Startup Metrics Feature Flag
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
+    case startupMetrics
+
+    /// Private Process Name Flag
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
+    case privateProcessName
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -293,21 +291,18 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
                 .blurryAddressBarTahoeFix,
-                .allowPopupsForCurrentPage,
-                .extendedUserInitiatedPopupTimeout,
-                .suppressEmptyPopUpsOnApproval,
-                .popupPermissionButtonPersistence,
-                .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
-                .tabProgressIndicator,
                 .firstTimeQuitSurvey,
                 .aiChatOmnibarOnboarding,
-                .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
                 .warnBeforeQuit,
                 .wideEventPostEndpoint,
                 .memoryPressureReporting,
-                .themes:
+                .crashCollectionDisableKeysSorting,
+                .crashCollectionLimitCallStackTreeDepth,
+                .memoryUsageReporting,
+                .aiChatSidebarResizable,
+                .nextStepsListWidget:
             true
         default:
             false
@@ -330,10 +325,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
                 .webExtensions,
+                .embeddedExtension,
                 .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
-                .updatesWontAutomaticallyRestartApp,
-                .updatesSimplifiedFlow,
                 .scamSiteProtection,
                 .tabCrashDebugging,
                 .maliciousSiteProtection,
@@ -351,6 +345,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
                 .aiChatSuggestions,
+                .aiChatOmnibarTools,
                 .aiChatOmnibarOnboarding,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
@@ -362,7 +357,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dbpRemoteBrokerDelivery,
                 .dbpClickActionDelayReductionOptimization,
                 .syncFeatureLevel3,
-                .themes,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
                 .webKitPerformanceReporting,
@@ -373,38 +367,39 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
-                .tabProgressIndicator,
                 .attributedMetrics,
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
                 .blackFridayCampaign,
-                .newTabPageAutoconsentStats,
                 .allowProTierPurchase,
                 .popupBlocking,
-                .extendedUserInitiatedPopupTimeout,
-                .suppressEmptyPopUpsOnApproval,
-                .allowPopupsForCurrentPage,
-                .popupPermissionButtonPersistence,
                 .webNotifications,
                 .newPermissionView,
                 .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain,
+                .autofillPasswordsStatusBar,
                 .warnBeforeQuit,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
                 .memoryPressureReporting,
+                .memoryUsageReporting,
                 .aiChatSync,
                 .heuristicAction,
                 .nextStepsListWidget,
-                .wideEventPostEndpoint:
+                .nextStepsListAdvancedCardOrdering,
+                .wideEventPostEndpoint,
+                .freeTrialConversionWideEvent,
+                .supportsSyncChatsDeletion,
+                .aiChatSidebarResizable,
+                .startupMetrics,
+                .privateProcessName:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .scheduledDefaultBrowserAndDockPromptsInactiveUser,
-                .tabClosingEventRecreation,
-                .terminationDeciderSequence:
+                .crashCollectionDisableKeysSorting,
+                .crashCollectionLimitCallStackTreeDepth:
             return false
         }
     }
@@ -429,14 +424,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .autoUpdateInREVIEW:
             return .disabled
-        case .updatesWontAutomaticallyRestartApp:
-            return .remoteReleasable(.feature(.updatesWontAutomaticallyRestartApp))
-        case .updatesSimplifiedFlow:
-            return .remoteReleasable(.subfeature(UpdatesSubfeature.simplifiedFlow))
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .webExtensions:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.webExtensions))
+        case .embeddedExtension:
+            return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .syncCreditCards:
@@ -473,6 +466,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
         case .aiChatSuggestions:
             return .remoteReleasable(.feature(.duckAiChatHistory))
+        case .aiChatOmnibarTools:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarTools))
         case .aiChatOmnibarOnboarding:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarOnboarding))
         case .osSupportForceUnsupportedMessage:
@@ -497,8 +492,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
         case .syncFeatureLevel3:
             return .remoteReleasable(.subfeature(SyncSubfeature.level3AllowCreateAccount))
-        case .themes:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.themes))
         case .appStoreUpdateFlow:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
@@ -517,42 +510,26 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .dataImportNewExperience:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience))
-        case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
-        case .tabProgressIndicator:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabProgressIndicator))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .showHideAIGeneratedImagesSection:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
-        case .newTabPageAutoconsentStats:
-            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.autoconsentStats))
         case .allowProTierPurchase:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .popupBlocking:
             return .remoteReleasable(.feature(.popupBlocking))
-        case .extendedUserInitiatedPopupTimeout:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.extendedUserInitiatedPopupTimeout))
-        case .suppressEmptyPopUpsOnApproval:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.suppressEmptyPopUpsOnApproval))
-        case .allowPopupsForCurrentPage:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
-        case .popupPermissionButtonPersistence:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
         case .webNotifications:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications))
         case .newPermissionView:
             return .remoteReleasable(.feature(.combinedPermissionView))
-        case .tabClosingEventRecreation:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         case .firstTimeQuitSurvey:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
-        case .terminationDeciderSequence:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.terminationDeciderSequence))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
+        case .autofillPasswordsStatusBar:
+            return .internalOnly()
         case .warnBeforeQuit:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
         case .dataImportWideEventMeasurement:
@@ -561,14 +538,32 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .memoryPressureReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryPressureReporting))
+        case .memoryUsageReporting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryUsageReporting))
         case .aiChatSync:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .heuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         case .nextStepsListWidget:
+            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.nextStepsListWidget))
+        case .nextStepsListAdvancedCardOrdering:
             return .disabled
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
+        case .crashCollectionDisableKeysSorting:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionDisableKeysSorting))
+        case .crashCollectionLimitCallStackTreeDepth:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth))
+        case .freeTrialConversionWideEvent:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.freeTrialConversionWideEvent))
+        case .supportsSyncChatsDeletion:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
+        case .aiChatSidebarResizable:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
+        case .startupMetrics:
+            return .internalOnly()
+        case .privateProcessName:
+            return .disabled
         }
     }
 }

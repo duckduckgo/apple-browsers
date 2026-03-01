@@ -53,6 +53,7 @@ struct SettingsCellView: View, Identifiable {
     var action: () -> Void = {}
     var enabled: Bool = true
     var accessory: Accessory
+    var accessoryAccessibilityIdentifier: String
     var statusIndicator: StatusIndicatorView?
     var disclosureIndicator: Bool
     var webLinkIndicator: Bool
@@ -76,13 +77,14 @@ struct SettingsCellView: View, Identifiable {
     ///   - webLinkIndicator: Adds a link indicator on the right
     ///   - isButton: Disables the tap actions on the cell if true
     ///   - optionalBadgeText: If non nil displays badges next to the item for feature discovery with the specified text
-    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, optionalBadgeText: String? = nil, shouldShowWinBackOffer: Bool = false) {
+    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, accessoryAccessibilityIdentifier: String = "", enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, optionalBadgeText: String? = nil, shouldShowWinBackOffer: Bool = false) {
         self.label = label
         self.subtitle = subtitle
         self.image = image
         self.action = action
         self.enabled = enabled
         self.accessory = accessory
+        self.accessoryAccessibilityIdentifier = accessoryAccessibilityIdentifier
         self.statusIndicator = statusIndicator
         self.disclosureIndicator = disclosureIndicator
         self.webLinkIndicator = webLinkIndicator
@@ -110,6 +112,7 @@ struct SettingsCellView: View, Identifiable {
         self.isButton = isButton
         self.isGreyedOut = false
         self.shouldShowWinBackOffer = false
+        self.accessoryAccessibilityIdentifier = ""
     }
 
     var body: some View {
@@ -155,7 +158,7 @@ struct SettingsCellView: View, Identifiable {
                             }
                         }
                         VStack(alignment: .leading) {
-                            HStack {
+                            HStack(alignment: .top) {
                                 // Title
                                 Text(label)
                                     .daxBodyRegular()
@@ -215,6 +218,7 @@ struct SettingsCellView: View, Identifiable {
             Toggle("", isOn: isOn)
                 .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accent)))
                 .fixedSize()
+                .accessibilityIdentifier(accessoryAccessibilityIdentifier)
         case .image(let image):
             if isGreyedOut {
                 image
@@ -260,7 +264,6 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
             Text(label)
                 .daxBodyRegular()
                 .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary): Color(designSystemColor: .textSecondary))
-            Spacer()
             Menu {
                 ForEach(options, id: \.self) { option in
 
@@ -285,7 +288,9 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
                         .foregroundColor(Color(UIColor.tertiaryLabel))
                         .padding(.trailing, -2)
                 }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
+            .frame(maxWidth: .infinity)
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }

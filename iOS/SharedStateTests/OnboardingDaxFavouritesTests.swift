@@ -71,6 +71,7 @@ import AIChatTestingUtilities
         let historyManager = MockHistoryManager()
         let syncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
         let featureFlagger = MockFeatureFlagger()
+        let aiChatSettings = MockAIChatSettingsProvider()
         let fireproofing = MockFireproofing()
         let textZoomCoordinator = MockTextZoomCoordinator()
         let subscriptionDataReporter = MockSubscriptionDataReporter()
@@ -88,7 +89,9 @@ import AIChatTestingUtilities
                                                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
                                                                               fireproofing: fireproofing,
                                                                               contentScopeExperimentsManager: MockContentScopeExperimentManager(),
-                                                                              internalUserDecider: MockInternalUserDecider())
+                                                                              internalUserDecider: MockInternalUserDecider(),
+                                                                              syncErrorHandler: CapturingAdapterErrorHandler(),
+                                                                              webExtensionAvailability: nil)
 
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
@@ -113,12 +116,13 @@ import AIChatTestingUtilities
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-                                    keyValueStore: try! MockKeyValueFileStore(),
+                                    keyValueStore: MockKeyValueFileStore(),
                                     daxDialogsManager: DummyDaxDialogsManager(),
-                                    aiChatSettings: MockAIChatSettingsProvider(),
+                                    aiChatSettings: aiChatSettings,
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     privacyStats: MockPrivacyStats(),
-                                    voiceSearchHelper: MockVoiceSearchHelper()
+                                    voiceSearchHelper: MockVoiceSearchHelper(),
+                                    launchSourceManager: MockLaunchSourceManager()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
@@ -130,7 +134,8 @@ import AIChatTestingUtilities
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: mockConfigManager,
-                                        appSettings: AppSettingsMock())
+                                        appSettings: AppSettingsMock(),
+                                        aiChatSyncCleaner: MockAIChatSyncCleaning())
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,
             bookmarksDatabase: db,
@@ -157,7 +162,9 @@ import AIChatTestingUtilities
             websiteDataManager: mockWebsiteDataManager,
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-            aiChatSettings: MockAIChatSettingsProvider(),
+            aiChatSettings: aiChatSettings,
+            aiChatAddressBarExperience: AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                                   aiChatSettings: aiChatSettings),
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider(),
@@ -168,12 +175,14 @@ import AIChatTestingUtilities
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            remoteMessagingPixelReporter: MockRemoteMessagingPixelReporter(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
             privacyStats: MockPrivacyStats(),
-            aiChatSyncCleaner: MockAIChatSyncCleaning(),
-            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
+            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -231,6 +240,16 @@ import AIChatTestingUtilities
         XCTAssertTrue(contextualOnboardingLogicMock.didCallEnableAddFavoriteFlow)
     }
 
+}
+
+private struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
+    var isFeatureEnabled: Bool = false
+    var isForceDarkModeEnabled: Bool = false
+    var excludedDomains: [String] = []
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+    func setForceDarkModeEnabled(_ enabled: Bool) {}
+    func themeDidChange() {}
 }
 
 // swiftlint:enable force_try

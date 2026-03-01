@@ -20,14 +20,16 @@ import WebKit
 import Foundation
 @testable import WebExtensions
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionLoadingMock: WebExtensionLoading {
+
+    weak var delegate: WebExtensionLoadingDelegate?
 
     var loadWebExtensionCalled = false
     var loadWebExtensionsCalled = false
     var unloadExtensionCalled = false
-    var loadedPaths: [String] = []
-    var unloadedPath: String?
+    var loadedIdentifiers: [String] = []
+    var unloadedIdentifier: String?
     var mockLoadResult: WebExtensionLoadResult?
     var mockLoadResults: [Result<WebExtensionLoadResult, Error>] = []
     var mockError: Error?
@@ -36,33 +38,49 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     private var createdTestExtensions: [URL] = []
 
     @discardableResult
-    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+    func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
         loadWebExtensionCalled = true
-        loadedPaths.append(path)
+        loadedIdentifiers.append(identifier)
 
         if let mockError = mockError {
             throw mockError
         }
 
-        guard let mockLoadResult = mockLoadResult else {
+        let result: WebExtensionLoadResult
+        let context: WKWebExtensionContext
+
+        if let mockLoadResult = mockLoadResult {
+            result = mockLoadResult
             let testExtensionURL = try createTestWebExtension()
             let mockExtension = try await WKWebExtension(resourceBaseURL: testExtensionURL)
-            let mockContext = await WKWebExtensionContext(for: mockExtension)
-            return WebExtensionLoadResult(context: mockContext, path: path)
+            context = await WKWebExtensionContext(for: mockExtension)
+        } else {
+            let testExtensionURL = try createTestWebExtension()
+            let mockExtension = try await WKWebExtension(resourceBaseURL: testExtensionURL)
+            context = await WKWebExtensionContext(for: mockExtension)
+            result = WebExtensionLoadResult(
+                identifier: identifier,
+                filename: testExtensionURL.lastPathComponent,
+                displayName: mockExtension.displayName,
+                version: mockExtension.version
+            )
         }
 
-        return mockLoadResult
+        // Notify delegate before returning (simulating the real loader's behavior)
+        delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
+
+        return result
     }
 
-    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
+    func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
         loadWebExtensionsCalled = true
-        loadedPaths = paths
+        loadedIdentifiers = identifiers
         return mockLoadResults
     }
 
-    func unloadExtension(at path: String, from controller: WKWebExtensionController) throws {
+    func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {
         unloadExtensionCalled = true
-        unloadedPath = path
+        unloadedIdentifier = identifier
 
         if let mockUnloadError = mockUnloadError {
             throw mockUnloadError

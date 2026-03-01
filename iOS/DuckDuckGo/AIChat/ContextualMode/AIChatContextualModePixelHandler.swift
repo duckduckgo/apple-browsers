@@ -44,6 +44,10 @@ protocol AIChatContextualModePixelFiring {
     func firePageContextRemovedNative()
     func firePageContextRemovedFrontend()
 
+    // MARK: - Page Context Collection
+    func firePageContextCollectionEmpty()
+    func firePageContextCollectionUnavailable()
+
     // MARK: - Prompt Submission
     func firePromptSubmittedWithContext()
     func firePromptSubmittedWithoutContext()
@@ -52,9 +56,6 @@ protocol AIChatContextualModePixelFiring {
     func beginManualAttach()
     func endManualAttach()
     var isManualAttachInProgress: Bool { get }
-
-    // MARK: - URL Priming
-    func primeNavigationURL(_ url: String)
 
     // MARK: - Reset
     func reset()
@@ -70,9 +71,6 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     /// Serial queue for synchronizing access to mutable state
     private let stateQueue = DispatchQueue(label: "com.duckduckgo.aichat.contextual.pixelhandler", qos: .userInitiated)
-
-    /// Tracks the last URL for which navigation pixel was fired, to prevent duplicates.
-    private var _lastNavigationPixelURL: String?
 
     /// Tracks whether a manual attach operation is in progress.
     private var _isManualAttachInProgress = false
@@ -136,12 +134,7 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     }
 
     func firePageContextUpdatedOnNavigation(url: String) {
-        stateQueue.sync {
-            guard !_isManualAttachInProgress else { return }
-            guard url != _lastNavigationPixelURL else { return }
-            _lastNavigationPixelURL = url
-            firePixel(.aiChatContextualPageContextUpdatedOnNavigation)
-        }
+        firePixel(.aiChatContextualPageContextUpdatedOnNavigation)
     }
 
     func firePageContextManuallyAttachedNative() {
@@ -160,6 +153,16 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func firePageContextRemovedFrontend() {
         firePixel(.aiChatContextualPageContextRemovedFrontend)
+    }
+
+    // MARK: - Page Context Collection
+
+    func firePageContextCollectionEmpty() {
+        firePixel(.aiChatContextualPageContextCollectionEmpty)
+    }
+
+    func firePageContextCollectionUnavailable() {
+        firePixel(.aiChatContextualPageContextCollectionUnavailable)
     }
 
     // MARK: - Prompt Submission
@@ -186,20 +189,11 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         }
     }
 
-    // MARK: - URL Priming
-
-    func primeNavigationURL(_ url: String) {
-        stateQueue.sync {
-            _lastNavigationPixelURL = url
-        }
-    }
-
     // MARK: - Reset
 
     /// Resets state. Call when the contextual session ends.
     func reset() {
         stateQueue.sync {
-            _lastNavigationPixelURL = nil
             _isManualAttachInProgress = false
         }
     }

@@ -33,18 +33,9 @@ extension TabViewController {
         Task { @MainActor in
             var restoreURL: URL?
 
-            let hasExistingWebVC = aiChatContextualSheetCoordinator.hasActiveChat
-            let needsColdRestore = !hasExistingWebVC && tabModel.contextualChatURL != nil
-
-            if needsColdRestore, let urlString = tabModel.contextualChatURL {
+            if !aiChatContextualSheetCoordinator.hasActiveSheet,
+               let urlString = tabModel.contextualChatURL {
                 restoreURL = URL(string: urlString)
-            }
-
-            // Prime navigation URL to prevent immediate "updated on navigation" pixel
-            if let pageContext = aiChatContextualSheetCoordinator.pageContextHandler.latestContext {
-                aiChatContextualSheetCoordinator.pixelHandler.primeNavigationURL(pageContext.url)
-            } else if let restoreURL = restoreURL {
-                aiChatContextualSheetCoordinator.pixelHandler.primeNavigationURL(restoreURL.absoluteString)
             }
 
             await aiChatContextualSheetCoordinator.presentSheet(

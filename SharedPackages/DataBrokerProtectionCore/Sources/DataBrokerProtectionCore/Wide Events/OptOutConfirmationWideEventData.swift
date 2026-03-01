@@ -24,7 +24,8 @@ public final class OptOutConfirmationWideEventData: WideEventData {
         pixelName: "pir_opt_out_confirmation",
         featureName: "pir-opt-out-confirmation",
         mobileMetaType: "ios-pir-opt-out-confirmation",
-        desktopMetaType: "macos-pir-opt-out-confirmation"
+        desktopMetaType: "macos-pir-opt-out-confirmation",
+        version: "1.0.0"
     )
 
     public var globalData: WideEventGlobalData

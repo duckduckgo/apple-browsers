@@ -19,7 +19,7 @@
 import WebKit
 @testable import WebExtensions
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionEventsListenerMock: WebExtensionEventsListening {
 
     var controller: WKWebExtensionController?

@@ -1,0 +1,95 @@
+//
+//  RebrandedOnboardingView+IntroDialogContent.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import SwiftUI
+import DuckUI
+import Onboarding
+
+extension OnboardingRebranding.OnboardingView {
+
+    struct IntroDialogContent: View {
+        @Environment(\.onboardingTheme) private var onboardingTheme
+
+        private let title: String
+        private let skipOnboardingView: AnyView?
+        private let continueAction: () -> Void
+        private let skipAction: () -> Void
+
+        @State private var showSkipOnboarding = false
+
+        init(
+            title: String,
+            skipOnboardingView: AnyView?,
+            continueAction: @escaping () -> Void,
+            skipAction: @escaping () -> Void
+        ) {
+            self.title = title
+            self.skipOnboardingView = skipOnboardingView
+            self.continueAction = continueAction
+            self.skipAction = skipAction
+        }
+
+        var body: some View {
+            if showSkipOnboarding {
+                skipOnboardingView
+                    .onboardingViewVisibleAfterDelay(OnboardingBubbleAnimationMetrics.contentFadeInDelay) // OnboardingViewState does not change in this case so we need to manually fade in the content after bubble resizes.
+            } else {
+                content
+            }
+        }
+
+        private var content: some View {
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                title: {
+                    Text(title)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.title)
+                        .multilineTextAlignment(.center)
+                },
+                actions: {
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                        Button(action: continueAction) {
+                            Text(UserText.Onboarding.Intro.continueCTA)
+                        }
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+
+                        if skipOnboardingView != nil {
+                            Button(action: {
+                                withAnimation {
+                                    showSkipOnboarding = true
+                                }
+                                skipAction()
+                            }) {
+                                Text(UserText.Onboarding.Intro.skipCTA)
+                            }
+                            .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                        }
+                    }
+                }
+            )
+        }
+
+    }
+}

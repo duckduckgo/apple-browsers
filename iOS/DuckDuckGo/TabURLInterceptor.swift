@@ -43,22 +43,26 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     private let canPurchase: CanPurchaseUpdater
     private let featureFlagger: FeatureFlagger
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
 
     init(featureFlagger: FeatureFlagger,
          canPurchase: @escaping CanPurchaseUpdater,
-         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+         aichatIPadTabFeature: AIChatIPadTabFeatureProviding? = nil
     ) {
         self.canPurchase = canPurchase
         self.featureFlagger = featureFlagger
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.aichatIPadTabFeature = aichatIPadTabFeature ?? AIChatIPadTabFeature(featureFlagger: featureFlagger)
     }
 
     static let interceptedURLs: [InterceptedURLInfo] = [
-        InterceptedURLInfo(id: .subscription, path: "/pro")
+        InterceptedURLInfo(id: .subscription, path: "/subscriptions"),
+        InterceptedURLInfo(id: .subscription, path: "/subscriptions/plans")
     ]
     
     func allowsNavigatingTo(url: URL) -> Bool {
-        if url.isDuckAIURL && !aichatFullModeFeature.isAvailable {
+        if url.isDuckAIURL && !aichatFullModeFeature.isAvailable && !aichatIPadTabFeature.isAvailable {
             return handleURLInterception(interceptedURLType: .aiChat, interceptedURL: url)
         }
 
@@ -101,7 +105,7 @@ extension TabURLInterceptorDefault {
                 var userInfo: [AnyHashable: Any]?
 
                 if let components = interceptedURLComponents {
-                    userInfo = [TabURLInterceptorParameter.interceptedURLComponents: interceptedURLComponents as Any]
+                    userInfo = [TabURLInterceptorParameter.interceptedURLComponents: components as Any]
                 }
 
                 NotificationCenter.default.post(

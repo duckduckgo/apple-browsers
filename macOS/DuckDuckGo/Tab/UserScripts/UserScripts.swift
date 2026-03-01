@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppUpdaterShared
 import BrowserServicesKit
 import Foundation
 import HistoryView
@@ -30,11 +31,10 @@ import UserScript
 import WebKit
 
 @MainActor
-final class UserScripts: UserScriptsProvider {
+final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
-    let contextMenuScript = ContextMenuUserScript()
-    let printingUserScript = PrintingUserScript()
+    let contextMenuSubfeature = ContextMenuSubfeature()
     let hoverUserScript = HoverUserScript()
     let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
@@ -52,9 +52,7 @@ final class UserScripts: UserScriptsProvider {
     let youtubePlayerUserScript: YoutubePlayerUserScript?
     let specialErrorPageUserScript: SpecialErrorPageUserScript?
     let onboardingUserScript: OnboardingUserScript?
-#if SPARKLE
-    let releaseNotesUserScript: ReleaseNotesUserScript?
-#endif
+    let releaseNotesUserScript: Subfeature? /*ReleaseNotesUserScript*/
     let aiChatUserScript: AIChatUserScript?
     let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
@@ -80,6 +78,7 @@ final class UserScripts: UserScriptsProvider {
             pixelFiring: PixelKit.shared,
             statisticsLoader: StatisticsLoader.shared,
             syncServiceProvider: sourceProvider.syncServiceProvider,
+            syncErrorHandler: sourceProvider.syncErrorHandler,
             featureFlagger: sourceProvider.featureFlagger
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
@@ -124,7 +123,8 @@ final class UserScripts: UserScriptsProvider {
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             management: sourceProvider.autoconsentManagement,
             preferences: sourceProvider.cookiePopupProtectionPreferences,
-            featureFlagger: sourceProvider.featureFlagger
+            featureFlagger: sourceProvider.featureFlagger,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
@@ -168,13 +168,25 @@ final class UserScripts: UserScriptsProvider {
             youtubePlayerUserScript = nil
         }
 
-#if SPARKLE
-        releaseNotesUserScript = ReleaseNotesUserScript()
-#endif
+        // Release notes user script - only available for Sparkle builds
+        if let updateController = Application.appDelegate.updateController as? any SparkleUpdateController {
+            releaseNotesUserScript = updateController.makeReleaseNotesUserScript(
+                pixelFiring: PixelKit.shared,
+                keyValueStore: UserDefaults.standard,
+                releaseNotesURL: .releaseNotes
+            )
+        } else {
+            releaseNotesUserScript = nil
+        }
 
-        userScripts.append(autoconsentUserScript)
+        if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
+            userScripts.append(autoconsentUserScript)
+        }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
 
         if let aiChatUserScript {
@@ -205,11 +217,9 @@ final class UserScripts: UserScriptsProvider {
             if let youtubePlayerUserScript {
                 specialPages.registerSubfeature(delegate: youtubePlayerUserScript)
             }
-#if SPARKLE
             if let releaseNotesUserScript {
                 specialPages.registerSubfeature(delegate: releaseNotesUserScript)
             }
-#endif
             if let onboardingUserScript {
                 specialPages.registerSubfeature(delegate: onboardingUserScript)
             }
@@ -228,13 +238,21 @@ final class UserScripts: UserScriptsProvider {
         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
-                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp))
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: subscriptionManager,
+            uiHandler: Application.appDelegate.subscriptionUIHandler,
+            wideEvent: Application.appDelegate.wideEvent,
+            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+            pendingTransactionHandler: pendingTransactionHandler
+        )
+
         delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                            stripePurchaseFlow: stripePurchaseFlow,
                                                            uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                            aiChatURL: AIChatRemoteSettings().aiChatURL,
                                                            wideEvent: Application.appDelegate.wideEvent,
-                                                           pendingTransactionHandler: pendingTransactionHandler)
+                                                           pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
@@ -246,12 +264,8 @@ final class UserScripts: UserScriptsProvider {
 
     lazy var userScripts: [UserScript] = [
         debugScript,
-        contextMenuScript,
         surrogatesScript,
         contentBlockerRulesScript,
-        pageObserverScript,
-        printingUserScript,
-        hoverUserScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
         autofillScript

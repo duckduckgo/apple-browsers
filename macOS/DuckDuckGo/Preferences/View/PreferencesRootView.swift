@@ -65,6 +65,7 @@ enum Preferences {
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         let blackFridayCampaignProvider: BlackFridayCampaignProviding
         let pixelHandler: (SubscriptionPixel, PixelKit.Frequency) -> Void
+        let pinningManager: PinningManager
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
         }
@@ -76,6 +77,7 @@ enum Preferences {
             featureFlagger: FeatureFlagger,
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             wideEvent: WideEventManaging,
+            pinningManager: PinningManager,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
@@ -93,6 +95,7 @@ enum Preferences {
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
+            self.pinningManager = pinningManager
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -154,14 +157,13 @@ enum Preferences {
                 case .appearance:
                     AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
                                    aiChatModel: model.aiChatPreferences,
-                                   themeManager: themeManager,
-                                   isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
+                                   themeManager: themeManager)
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .subscription:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
-                    VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
+                    VPNView(model: VPNPreferencesModel(pinningManager: pinningManager), status: model.vpnProtectionStatus())
                 case .personalInformationRemoval:
                     SubscriptionUI.PreferencesPersonalInformationRemovalView(model: personalInformationRemovalModel!)
                 case .paidAIChat:
@@ -310,6 +312,18 @@ enum Preferences {
         }
 
         private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModel {
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+            let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+            let flowPerformer = DefaultSubscriptionFlowsExecuter(
+                subscriptionManager: subscriptionManager,
+                uiHandler: subscriptionUIHandler,
+                wideEvent: wideEvent,
+                subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+                pendingTransactionHandler: pendingTransactionHandler
+            )
+
             let userEventHandler: (PreferencesSubscriptionSettingsModel.UserEvent) -> Void = { event in
                 DispatchQueue.main.async {
                     switch event {
@@ -339,17 +353,22 @@ enum Preferences {
                         pixelHandler(.subscriptionViewAllPlansClick, .standard)
                     case .didClickUpgradeToPro:
                         pixelHandler(.subscriptionUpgradeClick, .standard)
+                    case .didClickCancelPendingDowngrade:
+                        pixelHandler(.subscriptionCancelPendingDowngradeClick, .standard)
                     }
                 }
             }
 
             return PreferencesSubscriptionSettingsModel(userEventHandler: userEventHandler,
-                                                          subscriptionManager: subscriptionManager,
-                                                          subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
-                                                          keyValueStore: NSApp.delegateTyped.keyValueStore,
-                                                          winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                                                          blackFridayCampaignProvider: blackFridayCampaignProvider,
-                                                          isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) })
+                                                        subscriptionManager: subscriptionManager,
+                                                        subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
+                                                        keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                                                        blackFridayCampaignProvider: blackFridayCampaignProvider,
+                                                        isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) },
+                                                        cancelPendingDowngradeHandler: { [flowPerformer] productId in
+                _ = await flowPerformer.performTierChange(to: productId, changeType: nil, contextName: "CancelDowngradeButton")
+            })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

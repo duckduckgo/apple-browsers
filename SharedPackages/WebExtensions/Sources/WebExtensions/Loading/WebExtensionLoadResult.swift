@@ -17,17 +17,18 @@
 //
 
 import Foundation
-import WebKit
 
-@available(macOS 15.4, *)
-public  struct WebExtensionLoadResult {
-    let context: WKWebExtensionContext
-    let extensionIdentifier: WebExtensionIdentifier?
-    let path: String
+@available(macOS 15.4, iOS 18.4, *)
+public struct WebExtensionLoadResult {
+    public let identifier: String
+    public let filename: String
+    public let displayName: String?
+    public let version: String?
 
-    init(context: WKWebExtensionContext, path: String, extensionIdentifier: WebExtensionIdentifier? = nil) {
-        self.context = context
-        self.path = path
-        self.extensionIdentifier = extensionIdentifier
+    public init(identifier: String, filename: String, displayName: String?, version: String?) {
+        self.identifier = identifier
+        self.filename = filename
+        self.displayName = displayName
+        self.version = version
     }
 }

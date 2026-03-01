@@ -1357,18 +1357,6 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Sent with your message to Duck.ai";
 
-/* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-"duckai.contextual.onboarding.body" = "Duck.ai can now help answer questions about the page you're viewing.\n\nPage content is only included when you attach it. You can change this anytime in Settings.";
-
-/* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.gotIt" = "Got It";
-
-/* Title for the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.title" = "Ask about this page";
-
-/* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.viewSettings" = "View Settings";
-
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
 
@@ -1376,7 +1364,7 @@
 "duckai.quick.action.attach" = "Attach Page Content";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.summarize" = "Summarize this Page";
+"duckai.quick.action.summarize" = "Summarize This Page";
 
 /* Description text explaining what the 'Ask Follow-up Questions' toggle does */
 "duckai.settings.allowFollowUpQuestions.section.description" = "Show Duck.ai buttons and links in DuckDuckGo search results.";
@@ -2773,17 +2761,20 @@ https://duckduckgo.com/mac";
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Delete All";
 
+/* Button to delete only the current chat in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.this.chat.button" = "Delete This Chat";
+
+/* Description explaining what that Delete All action does not delete chats. */
+"scoped.fire.confirmation.delete.this.chat.description" = "\"Delete All\" will not delete your Duck.ai chat history.";
+
 /* Button to delete only the current tab in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.tab.button" = "Delete This Tab";
-
-/* Description explaining what Delete This Tab action does, including clearing Duck.ai chat and site data */
-"scoped.fire.confirmation.delete.this.tab.description" = "\"Delete This Tab\" clears this Duck.ai chat, and any site data from the sites visited in this tab.";
 
 /* Warning message that deleting will cancel any active downloads */
 "scoped.fire.confirmation.downloads.warning" = "This will cancel downloads in progress.";
 
 /* Informational message explaining that new tabs can also be deleted individually */
-"scoped.fire.confirmation.new.tabs.info" = "New tabs you create also can be deleted individually.";
+"scoped.fire.confirmation.new.tabs.info" = "New tabs you created can also be deleted individually.";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Deleting site data can sign you out of accounts.";
@@ -2881,11 +2872,14 @@ Take back control of your personal information with the browser designed for dat
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 
-/* Settings screen cell subtitle for enabling automatic page context */
-"settings.aifeatures.automatic.context.subtitle" = "Automatically send page context to Duck.ai";
+/* Settings screen cell subtitle for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.subtitle" = "Automatically send page content to Duck.ai";
 
-/* Settings screen cell title for enabling automatic page context */
-"settings.aifeatures.automatic.context.title" = "Automatically Send Context";
+/* Settings screen cell title for enabling automatic page content attachment */
+"settings.aifeatures.automatic.context.title" = "Automatically Send Content";
+
+/* Settings screen cell title for enabling chat suggestions */
+"settings.aifeatures.chat.suggestions.title" = "Chat Suggestions";
 
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
@@ -2974,6 +2968,9 @@ Take back control of your personal information with the browser designed for dat
 /* Subtitle for Search Suggestions setting */
 "settings.autocomplete.subtitle" = "Show search suggestions as you type, including your bookmarks. All searches are private.";
 
+/* Subtitle for Search Suggestions setting when chat suggestions are available */
+"settings.autocomplete.with.chat.subtitle" = "Show suggestions from your history, bookmarks, and (optionally) Duck.ai chat history as you type in the search bar. All searches are private.";
+
 /* Settings screen cell text for Application Lock */
 "settings.autolock" = "Application Lock";
 
@@ -2981,7 +2978,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.autolock.description" = "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.";
 
 /* Section title in automatic data clearing settings */
-"settings.automatic.data.clearing.delete.section.title" = "DELETE";
+"settings.automatic.data.clearing.delete.section.title" = "Delete";
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatic Data Clearing";
@@ -3087,6 +3084,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproofed Sites";
+
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Force Dark Mode for Websites";
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "General";
@@ -3259,6 +3259,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for theme */
 "settings.theme" = "Theme";
 
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Gives websites a dark appearance if you’re using dark theme.";
+
 /* Title for the Settings View */
 "settings.title" = "Settings";
 
@@ -3430,8 +3433,14 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the manage billing page */
 "subscription.billing.google.title" = "Subscription Plans";
 
+/* Button to cancel a pending downgrade of the subscription */
+"subscription.cancel.downgrade.button" = "Cancel Downgrade";
+
 /* Subscription Removal confirmation message */
 "subscription.cancel.message" = "Your subscription has been removed from this device.";
+
+/* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
+"subscription.cancel.pending.downgrade.banner.caption" = "Your plan will downgrade to %1$@ on %2$@.";
 
 /* Change plan or cancel title */
 "subscription.change.plan" = "Update Plan or Cancel";
@@ -3526,8 +3535,14 @@ Take back control of your personal information with the browser designed for dat
 /* Navigation title for the subscription plans page */
 "subscription.plans.title" = "Subscription Plans";
 
+/* Progress view title when completing a plan change with the backend */
+"subscription.progress.view.complete.plan.change" = "Completing plan change…";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Completing purchase...";
+
+/* Progress view title when starting a plan change (upgrade, downgrade, or cancel downgrade) */
+"subscription.progress.view.plan.change.in.progress" = "Plan change in progress…";
 
 /* Progress view title when starting the purchase */
 "subscription.progress.view.purchasing.subscription" = "Purchase in progress...";

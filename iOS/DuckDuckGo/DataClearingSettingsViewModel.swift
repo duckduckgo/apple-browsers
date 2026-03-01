@@ -39,7 +39,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     
     // MARK: - Dependencies
 
-    private let featureFlagger: FeatureFlagger
+    private let dataClearingCapability: DataClearingCapable
     private let appSettings: AppSettings
     private let aiChatSettings: AIChatSettingsProvider
     private let animator: FireButtonAnimator
@@ -58,7 +58,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     // MARK: - Elements Visibility
     
     var newUIEnabled: Bool {
-        featureFlagger.isFeatureOn(.enhancedDataClearingSettings)
+        dataClearingCapability.isEnhancedDataClearingEnabled
     }
     
     var showAIChatsToggle: Bool {
@@ -69,10 +69,14 @@ final class DataClearingSettingsViewModel: ObservableObject {
 
     var clearDataButtonTitle: String {
         if newUIEnabled {
-            return UserText.settingsClearBrowsingData
+            return UserText.settingsDeleteTabsAndData
         }
         let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
         return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
+    }
+    
+    var aiChatsToggleTitle: String {
+        newUIEnabled ? UserText.settingsDeleteDuckAIChats : UserText.settingsClearAIChatHistory
     }
     
     var fireproofedSitesTitle: String {
@@ -87,7 +91,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     }
     
     var autoClearTitle: String {
-        newUIEnabled ? UserText.settingsAutomaticDataClearing : UserText.settingsClearData
+        newUIEnabled ? UserText.settingsAutomaticallyDeleteData : UserText.settingsClearData
     }
     
     var footnoteText: String {
@@ -126,12 +130,12 @@ final class DataClearingSettingsViewModel: ObservableObject {
     // MARK: - Initialization
     
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: AppDependencyProvider.shared.featureFlagger),
          aiChatSettings: AIChatSettingsProvider,
          fireproofing: Fireproofing,
          delegate: DataClearingSettingsViewModelDelegate) {
         self.appSettings = appSettings
-        self.featureFlagger = featureFlagger
+        self.dataClearingCapability = dataClearingCapability
         self.aiChatSettings = aiChatSettings
         self.animator = FireButtonAnimator(appSettings: appSettings)
         self.fireButtonAnimation = appSettings.currentFireButtonAnimation

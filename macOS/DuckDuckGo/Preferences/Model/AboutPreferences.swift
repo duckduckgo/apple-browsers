@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import Common
+import AppUpdaterShared
 import Combine
+import Common
 import FeatureFlags
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
+import SwiftUI
 
 final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
@@ -32,14 +34,17 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     let windowControllersManager: WindowControllersManagerProtocol
     let supportedOSChecker: SupportedOSChecking
     private var cancellables = Set<AnyCancellable>()
+    private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger,
          windowControllersManager: WindowControllersManagerProtocol,
+         keyValueStore: ThrowingKeyValueStoring,
          supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
+        self.settings = keyValueStore.throwingKeyedStoring()
         self.appVersionModel = .init(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
         self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
         internalUserDecider.isInternalUserPublisher
@@ -62,14 +67,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             .store(in: &cancellables)
     }
 
-    var useLegacyAutoRestartLogic: Bool {
-        #if SPARKLE
-        (updateController as? any SparkleUpdateControllerProtocol)?.useLegacyAutoRestartLogic ?? false
-        #else
-        false
-        #endif
-    }
-
     var shouldShowUpdateStatus: Bool {
         #if SPARKLE
         // For Sparkle builds: always show update status regardless of feature flag
@@ -78,10 +75,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         // For App Store builds: only show update status if feature flag is enabled
         return featureFlagger.isFeatureOn(.appStoreUpdateFlow)
         #endif
-    }
-
-    var mustCheckForUpdatesBeforeUserCanTakeAction: Bool {
-        !useLegacyAutoRestartLogic
     }
 
     @Published var updateState = UpdateState.upToDate
@@ -132,14 +125,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
                 },
                 enabled: true)
         case .updateCycle(let progress):
-            #if SPARKLE
             if isAtRestartCheckpoint {
                 return UpdateButtonConfiguration(
                     title: UserText.restartToUpdate,
                     action: runUpdate,
                     enabled: true)
             }
-            #endif
             if hasPendingUpdate {
                 return UpdateButtonConfiguration(
                     title: UserText.runUpdate,
@@ -187,16 +178,13 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         Logger.updates.log("🔍 AboutPreferences.refreshUpdateState: updateState=\(String(describing: self.updateState), privacy: .public)")
     }
 
-#if SPARKLE
     private var isAtRestartCheckpoint: Bool {
-        guard let updateController = updateController as? any SparkleUpdateControllerProtocol else { return false }
-        return updateController.isAtRestartCheckpoint
+        (updateController as? any SparkleUpdateController)?.isAtRestartCheckpoint ?? false
     }
-#endif
 
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES
     var customFeedURL: String? {
-        UserDefaults.standard.string(forKey: UserDefaultsWrapper<String>.Key.debugSparkleCustomFeedURL.rawValue)
+        return try? settings.debugSparkleCustomFeedURL
     }
 #endif
 
@@ -226,11 +214,8 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     func checkForUpdate(userInitiated: Bool) {
         if userInitiated {
             updateController?.checkForUpdateSkippingRollout()
-        } else {
-            #if SPARKLE
-            guard let updateController = updateController as? any SparkleUpdateControllerProtocol else { return }
-            updateController.checkForUpdateRespectingRollout()
-            #endif
+        } else if let sparkleUpdateController = updateController as? any SparkleUpdateController {
+            sparkleUpdateController.checkForUpdateRespectingRollout()
         }
     }
 }

@@ -168,6 +168,51 @@ final class TabHistoryStoreTests: XCTestCase {
         XCTAssertEqual(fetchAllTabHistory().count, 2)
     }
 
+    // MARK: - Page Visit IDs Tests
+
+    func testPageVisitIDsReturnsVisitIDsForTab() async throws {
+        let tabID = "test-tab-with-visits"
+        let url = URL(string: "https://example.com")!
+
+        // Create TabHistory records with linked visits
+        context.performAndWait {
+            for i in 1...3 {
+                guard let visitMO = NSEntityDescription.insertNewObject(
+                    forEntityName: PageVisitManagedObject.entityName,
+                    into: context
+                ) as? PageVisitManagedObject else {
+                    XCTFail("Failed to create PageVisitManagedObject")
+                    return
+                }
+                visitMO.date = Date().addingTimeInterval(TimeInterval(i))
+
+                _ = tabHistoryStore.createTabHistoryRecord(
+                    tabID: tabID,
+                    url: url.appendingPathComponent("\(i)"),
+                    linkedVisit: visitMO,
+                    in: context
+                )
+            }
+            try? context.save()
+        }
+
+        let visitIDs = try await tabHistoryStore.pageVisitIDs(in: tabID)
+
+        XCTAssertEqual(visitIDs.count, 3)
+        // All IDs should be valid Core Data URI representations
+        for id in visitIDs {
+            XCTAssertTrue(id.absoluteString.contains("PageVisitManagedObject"))
+        }
+    }
+
+    func testPageVisitIDsReturnsEmptyForNonExistentTab() async throws {
+        let nonExistentTabID = "non-existent-tab"
+
+        let visitIDs = try await tabHistoryStore.pageVisitIDs(in: nonExistentTabID)
+
+        XCTAssertTrue(visitIDs.isEmpty)
+    }
+
     // MARK: - Create Tab History Record with Linked Visit Tests
 
     func testWhenCreateTabHistoryRecordWithLinkedVisit_ThenRelationshipIsSet() {

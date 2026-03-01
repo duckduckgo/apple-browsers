@@ -172,6 +172,26 @@ final class AIChatNativeInputViewTests: XCTestCase {
         XCTAssertEqual(mockDelegate.didRemoveContextChipCount, 1)
     }
 
+    // MARK: - Append Text Tests
+
+    func testAppendTextToEmptyField() {
+        sut.appendText("Summarize this page")
+
+        XCTAssertEqual(sut.text, "Summarize this page")
+        XCTAssertEqual(mockDelegate.didChangeTextCalls.last, "Summarize this page")
+    }
+
+    func testAppendTextToExistingText() {
+        sut.text = "Hello"
+
+        sut.appendText("Summarize this page")
+
+        XCTAssertEqual(sut.text, "Hello Summarize this page")
+        XCTAssertEqual(mockDelegate.didChangeTextCalls.last, "Hello Summarize this page")
+    }
+
+    // MARK: - Context Chip Duplicate Tests
+
     func testShowContextChipTwiceDoesNotDuplicate() {
         // Given
         let chipView1 = UIView()

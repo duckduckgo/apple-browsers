@@ -30,10 +30,9 @@ final class DataBrokerUserContentController: WKUserContentController {
 
     @MainActor
     init(with privacyConfigurationManager: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig, shouldContinueActionHandler: @escaping () -> Bool) throws {
-        dataBrokerUserScripts = try DataBrokerUserScript(privacyConfig: privacyConfigurationManager, prefs: prefs, delegate: delegate, executionConfig: executionConfig, shouldContinueActionHandler: shouldContinueActionHandler)
-
         super.init()
 
+        dataBrokerUserScripts = try DataBrokerUserScript(privacyConfig: privacyConfigurationManager, prefs: prefs, delegate: delegate, executionConfig: executionConfig, shouldContinueActionHandler: shouldContinueActionHandler)
         dataBrokerUserScripts?.userScripts.forEach {
             let userScript = $0.makeWKUserScriptSync()
             self.installUserScripts([userScript], handlers: [$0])

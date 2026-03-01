@@ -21,6 +21,7 @@ import XCTest
 import WebKit
 import Combine
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import UserScript
 
 @testable import DuckDuckGo
@@ -31,7 +32,7 @@ final class DuckPlayerUserScriptPlayerTests: XCTestCase {
     private var mockWebView: MockWebView!
     private var viewModel: DuckPlayerViewModel!
     private var userScriptPlayer: DuckPlayerUserScriptPlayer!
-    private var mockScriptMessage: MockScriptMessage!
+    private var mockScriptMessage: WKScriptMessage!
     
     @MainActor
     override func setUp() {
@@ -40,7 +41,7 @@ final class DuckPlayerUserScriptPlayerTests: XCTestCase {
         viewModel = DuckPlayerViewModel(videoID: "testVideo")
         userScriptPlayer = DuckPlayerUserScriptPlayer(viewModel: viewModel)
         userScriptPlayer.webView = mockWebView
-        mockScriptMessage = MockScriptMessage()
+        mockScriptMessage = WKScriptMessage.mock()
     }
     
     override func tearDown() {

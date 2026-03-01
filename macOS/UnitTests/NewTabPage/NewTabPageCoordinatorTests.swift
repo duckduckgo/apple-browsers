@@ -62,7 +62,6 @@ final class MockAutoconsentStats: AutoconsentStatsCollecting {
         )
     }
     func clearAutoconsentStats() async {}
-    func isEnabled() async -> Bool { true }
 }
 
 final class NewTabPageCoordinatorTests: XCTestCase {
@@ -144,7 +143,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
                 openURLHandler: { _ in },
                 navigateToFeedbackHandler: { },
-                navigateToPIRHandler: { }
+                navigateToPIRHandler: { },
+                navigateToSoftwareUpdateHandler: { }
             ),
             historyCoordinator: HistoryCoordinatingMock(),
             contentBlocking: ContentBlockingMock(),
@@ -177,6 +177,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             subscriptionCardPersistor: MockHomePageSubscriptionCardPersisting(),
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            pinningManager: MockPinningManager(),
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }

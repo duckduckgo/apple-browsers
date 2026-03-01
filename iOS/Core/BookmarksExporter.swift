@@ -59,13 +59,18 @@ public struct BookmarksExporter {
         var content = [String]()
         for entity in entities {
             if entity.isFolder {
-                content.append(Template.openFolder(level: level, named: entity.title!))
+                let name = (entity.title ?? "").escapedForHTML
+                content.append(Template.openFolder(level: level, named: name))
                 content.append(contentsOf: export(entity.childrenArray, level: level + 1))
                 content.append(Template.closeFolder(level: level))
             } else {
+                guard let url = entity.url?.trimmingCharacters(in: .whitespacesAndNewlines), !url.isEmpty else {
+                    continue
+                }
+                let title = (entity.title ?? "").escapedForHTML
                 content.append(Template.bookmark(level: level,
-                                                 title: entity.title!.escapedForHTML,
-                                                 url: entity.url!,
+                                                 title: title,
+                                                 url: url,
                                                  isFavorite: entity.isFavorite(on: favoritesDisplayMode.displayedFolder)))
             }
         }

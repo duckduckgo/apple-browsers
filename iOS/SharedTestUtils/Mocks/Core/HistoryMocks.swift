@@ -31,6 +31,7 @@ class MockHistoryManager: HistoryManaging {
     var tabHistoryCalls: [String] = []
     var removeTabHistoryCalls: [[String]] = []
     var tabHistoryResult: [URL] = []
+    var removeBrowsingHistoryCalls: [String] = []
     
     /// Expectation that is fulfilled when `removeTabHistory` is called
     var removeTabHistoryExpectation: XCTestExpectation?
@@ -86,6 +87,10 @@ class MockHistoryManager: HistoryManaging {
         removeTabHistoryCalls.append(tabIDs)
         removeTabHistoryExpectation?.fulfill()
     }
+    
+    func removeBrowsingHistory(tabID: String) async {
+        removeBrowsingHistoryCalls.append(tabID)
+    }
 
 }
 
@@ -120,5 +125,13 @@ class SpyHistoryCoordinator: NullHistoryCoordinator {
     override func addVisit(of url: URL, at date: Date, tabID: String?) -> Visit? {
         addVisitCalls.append((url, tabID))
         return nil
+    }
+}
+
+class SpyBurnVisitsHistoryCoordinator: NullHistoryCoordinator {
+    var burnVisitsForTabIDCalls: [String] = []
+
+    override func burnVisits(for tabID: String) async throws {
+        burnVisitsForTabIDCalls.append(tabID)
     }
 }

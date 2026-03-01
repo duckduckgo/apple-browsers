@@ -1,0 +1,61 @@
+{
+    "m_mac_wide_free_trial_conversion": {
+        "description": "Wide pixel sent at the end of a free trial conversion flow, tracking whether the user activated VPN/PIR and converted to a paid subscription",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventSampleRate",
+            "wideEventFeatureStatus",
+            "wideEventFeatureStatusReason",
+            "wideEventMetaVersion",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["macos-free-trial-conversion"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["free-trial-conversion"]
+            },
+            {
+                "key": "feature.data.ext.step.vpn_activated_d1",
+                "type": "boolean",
+                "description": "Whether VPN was activated on Day 1 of the free trial"
+            },
+            {
+                "key": "feature.data.ext.step.vpn_activated_d2_to_d7",
+                "type": "boolean",
+                "description": "Whether VPN was activated between Day 2 and Day 7 of the free trial"
+            },
+            {
+                "key": "feature.data.ext.step.pir_activated_d1",
+                "type": "boolean",
+                "description": "Whether PIR was activated on Day 1 of the free trial"
+            },
+            {
+                "key": "feature.data.ext.step.pir_activated_d2_to_d7",
+                "type": "boolean",
+                "description": "Whether PIR was activated between Day 2 and Day 7 of the free trial"
+            },
+            {
+                "key": "feature.data.ext.step.duck_ai_activated_d1",
+                "type": "boolean",
+                "description": "Whether Duck.ai was activated on Day 1 of the free trial"
+            },
+            {
+                "key": "feature.data.ext.step.duck_ai_activated_d2_to_d7",
+                "type": "boolean",
+                "description": "Whether Duck.ai was activated between Day 2 and Day 7 of the free trial"
+            }
+        ]
+    }
+}

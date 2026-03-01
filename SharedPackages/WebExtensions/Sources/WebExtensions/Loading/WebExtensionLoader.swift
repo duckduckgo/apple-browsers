@@ -16,68 +16,95 @@
 //  limitations under the License.
 //
 
-import CryptoKit
+import os.log
 import WebKit
 
-@available(macOS 15.4, *)
-public protocol WebExtensionLoading: AnyObject {
-    @discardableResult
-    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
-    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
-    func unloadExtension(at path: String, from controller: WKWebExtensionController) throws
+/// Delegate protocol for receiving notifications about extension loading lifecycle.
+@available(macOS 15.4, iOS 18.4, *)
+public protocol WebExtensionLoadingDelegate: AnyObject {
+    /// Called immediately before an extension context is loaded into the controller.
+    /// This is the appropriate time to register message handlers or perform other setup.
+    /// - Parameters:
+    ///   - loader: The loader about to load the extension
+    ///   - context: The extension context that will be loaded
+    ///   - identifier: The unique identifier for the extension
+    func webExtensionLoader(_ loader: WebExtensionLoading,
+                            willLoad context: WKWebExtensionContext,
+                            identifier: String)
 }
 
-@available(macOS 15.4, *)
+@available(macOS 15.4, iOS 18.4, *)
+public protocol WebExtensionLoading: AnyObject {
+    var delegate: WebExtensionLoadingDelegate? { get set }
+
+    @discardableResult
+    func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
+    func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
+    func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws
+}
+
+@available(macOS 15.4, iOS 18.4, *)
 public final class WebExtensionLoader: WebExtensionLoading {
 
     enum WebExtensionLoaderError: Error {
-        case failedToCreateURLFromPath(path: String)
-        case failedToFindContextForPath(path: String)
+        case extensionNotFound(identifier: String)
+        case failedToFindContextForIdentifier(identifier: String)
     }
 
-    public init() {}
+    private let storageProvider: WebExtensionStorageProviding
+    private let isInspectable: Bool
+    public weak var delegate: WebExtensionLoadingDelegate?
 
-    func bundle(from path: String) -> Bundle? {
-        let url = URL(fileURLWithPath: path, isDirectory: true)
-        return Bundle(url: url)
+    public init(storageProvider: WebExtensionStorageProviding, isInspectable: Bool = false) {
+        self.storageProvider = storageProvider
+        self.isInspectable = isInspectable
     }
 
     @MainActor
-    public func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
-        guard let extensionURL = URL(string: path) else {
-            assertionFailure("Failed to create URL from path: \(path)")
-            throw WebExtensionLoaderError.failedToCreateURLFromPath(path: path)
+    @discardableResult
+    public func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+        // Check if extension is already loaded (idempotent operation)
+        if let existingContext = controller.extensionContexts.first(where: { $0.uniqueIdentifier == identifier }) {
+            Logger.webExtensions.debug("✓ Extension '\(identifier)' already loaded, skipping")
+
+            guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: identifier) else {
+                throw WebExtensionLoaderError.extensionNotFound(identifier: identifier)
+            }
+
+            return WebExtensionLoadResult(
+                identifier: identifier,
+                filename: extensionURL.lastPathComponent,
+                displayName: existingContext.webExtension.displayName,
+                version: existingContext.webExtension.version
+            )
         }
 
-        let webExtension: WKWebExtension
-        var extensionIdentifier: WebExtensionIdentifier?
-
-        if extensionURL.pathExtension == "appex",
-           let bundle = Bundle(url: extensionURL) {
-
-            // Detect known extension based on bundle
-            extensionIdentifier = WebExtensionIdentifier.identify(bundle: bundle)
-
-            // Loading from the bundle is best to support native messaging automagically
-            webExtension = try await WKWebExtension(appExtensionBundle: bundle)
-        } else {
-            // Detect known extension based on bundle
-            extensionIdentifier = WebExtensionIdentifier.bitwarden
-            webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
+        guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: identifier) else {
+            throw WebExtensionLoaderError.extensionNotFound(identifier: identifier)
         }
 
-        // Single point for context creation and loading
-        let context = makeContext(for: webExtension, at: path)
+        let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
+
+        let context = makeContext(for: webExtension, identifier: identifier)
+
+        // Notify delegate before loading to allow handler registration
+        delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
+
         try controller.load(context)
 
-        return WebExtensionLoadResult(context: context, path: path, extensionIdentifier: extensionIdentifier)
+        return WebExtensionLoadResult(
+            identifier: identifier,
+            filename: extensionURL.lastPathComponent,
+            displayName: webExtension.displayName,
+            version: webExtension.version
+        )
     }
 
-    public func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
+    public func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
         var result = [Result<WebExtensionLoadResult, Error>]()
-        for path in paths {
+        for identifier in identifiers {
             do {
-                let loadResult = try await loadWebExtension(path: path, into: controller)
+                let loadResult = try await loadWebExtension(identifier: identifier, into: controller)
                 result.append(.success(loadResult))
             } catch {
                 result.append(.failure(error))
@@ -87,45 +114,33 @@ public final class WebExtensionLoader: WebExtensionLoading {
         return result
     }
 
-    public func unloadExtension(at path: String, from controller: WKWebExtensionController) throws {
+    public func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {
         let context = controller.extensionContexts.first {
-            $0.uniqueIdentifier == identifierHash(forPath: path)
+            $0.uniqueIdentifier == identifier
         }
 
         guard let context else {
-            throw WebExtensionLoaderError.failedToFindContextForPath(path: path)
+            throw WebExtensionLoaderError.failedToFindContextForIdentifier(identifier: identifier)
         }
 
         try controller.unload(context)
     }
 
-    private func identifierHash(forPath path: String) -> String {
-        let identifier = Data(path.utf8)
-        let hash = SHA256.hash(data: identifier)
-        let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
-
-        return hashString
-    }
-
-    private func makeContext(for webExtension: WKWebExtension, at path: String) -> WKWebExtensionContext {
+    private func makeContext(for webExtension: WKWebExtension, identifier: String) -> WKWebExtensionContext {
         let context = WKWebExtensionContext(for: webExtension)
 
-        context.uniqueIdentifier = identifierHash(forPath: path)
+        context.uniqueIdentifier = identifier
 
-        // In future, we should grant only what the extension requests.
-        let matchPatterns = context.webExtension.allRequestedMatchPatterns
+        let matchPatterns = webExtension.allRequestedMatchPatterns
         for pattern in matchPatterns {
             context.setPermissionStatus(.grantedExplicitly, for: pattern, expirationDate: nil)
         }
-        let permissions: [WKWebExtension.Permission] = (["activeTab", "alarms", "clipboardWrite", "contextMenus", "cookies", "declarativeNetRequest", "declarativeNetRequestFeedback", "declarativeNetRequestWithHostAccess", "menus", "nativeMessaging", "notifications", "scripting", "sidePanel", "storage", "tabs", "unlimitedStorage", "webNavigation", "webRequest"]).map {
-            WKWebExtension.Permission($0)
-        }
-        for permission in permissions {
+
+        for permission in webExtension.requestedPermissions {
             context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
         }
 
-        // For debugging purposes
-        context.isInspectable = true
+        context.isInspectable = isInspectable
         return context
     }
 }

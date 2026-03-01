@@ -25,6 +25,7 @@ enum RemoteMessagePixelDismissType: String {
     case closeButton = "close_button"
     case pullDown = "pull_down"
     case primaryAction = "primary_action"
+    case itemAction = "item_action"
 }
 
 protocol RemoteMessagingPixelReporting {
@@ -36,6 +37,8 @@ protocol RemoteMessagingPixelReporting {
     func measureRemoteMessageSheetShown(_ remoteMessage: RemoteMessageModel, sheetResult: Bool)
     func measureRemoteMessageCardShown(_ remoteMessage: RemoteMessageModel, cardId: String)
     func measureRemoteMessageCardClicked(_ remoteMessage: RemoteMessageModel, cardId: String)
+    func measureRemoteMessageImageLoadSuccess(_ remoteMessage: RemoteMessageModel)
+    func measureRemoteMessageImageLoadFailed(_ remoteMessage: RemoteMessageModel)
 }
 
 extension RemoteMessagingPixelReporting {
@@ -93,6 +96,14 @@ final class RemoteMessagePixelReporter: RemoteMessagingPixelReporting {
 
     func measureRemoteMessageCardClicked(_ remoteMessage: RemoteMessageModel, cardId: String) {
         firePixelIfMetricsEnabled(.remoteMessageCardClicked, for: remoteMessage, additionalParameters: [PixelParameters.card: cardId])
+    }
+
+    func measureRemoteMessageImageLoadSuccess(_ remoteMessage: RemoteMessageModel) {
+        firePixelIfMetricsEnabled(.remoteMessageImageLoadSuccess, for: remoteMessage)
+    }
+
+    func measureRemoteMessageImageLoadFailed(_ remoteMessage: RemoteMessageModel) {
+        firePixelIfMetricsEnabled(.remoteMessageImageLoadFailed, for: remoteMessage)
     }
 
     private func firePixelIfMetricsEnabled(_ pixel: Pixel.Event, for remoteMessage: RemoteMessageModel, additionalParameters: [String: String] = [:]) {

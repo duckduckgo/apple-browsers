@@ -45,7 +45,7 @@
                 "key": "dismiss_type",
                 "description": "The type of dismissal. This value is optional",
                 "type": "string",
-                "enum": ["close_button", "pull_down", "primary_action"]
+                "enum": ["close_button", "pull_down", "primary_action", "item_action"]
             }
         ]
     },
@@ -144,6 +144,34 @@
             {
                 "key": "card",
                 "description": "The identifier for the card, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ]
+    },
+    "m_remote_message_image_load_success": {
+        "description": "Triggered when a remote message image is successfully loaded and displayed",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
+                "type": "string"
+            }
+        ]
+    },
+    "m_remote_message_image_load_failed": {
+        "description": "Triggered when a remote message image fails to load",
+        "owners": ["edulpn"],
+        "triggers": ["other"],
+        "suffixes": ["form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "message",
+                "description": "The identifier for the message, sourced from the remote message configuration",
                 "type": "string"
             }
         ]

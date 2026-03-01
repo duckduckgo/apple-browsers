@@ -31,6 +31,7 @@ import DesignResourcesKit
 import BrowserServicesKit
 import PrivacyConfig
 import AIChat
+import DesignResourcesKitIcons
 
 class TabSwitcherViewController: UIViewController {
 
@@ -39,10 +40,6 @@ class TabSwitcherViewController: UIViewController {
 
         static let cellMinHeight: CGFloat = 140.0
         static let cellMaxHeight: CGFloat = 209.0
-
-        static let trackerInfoTopSpacing: CGFloat = 8
-        static let trackerInfoHorizontalPadding: CGFloat = 16
-        static let trackerInfoBottomSpacing: CGFloat = 0
     }
 
     struct BookmarkAllResult {
@@ -83,9 +80,9 @@ class TabSwitcherViewController: UIViewController {
         var image: UIImage {
             switch self {
             case .list:
-                return UIImage(resource: .tabsToggleList)
+                return DesignSystemImages.Glyphs.Size24.viewList
             case .grid:
-                return UIImage(resource: .tabsToggleGrid)
+                return DesignSystemImages.Glyphs.Size24.viewGrid
             }
         }
 
@@ -99,15 +96,13 @@ class TabSwitcherViewController: UIViewController {
 
     weak var delegate: TabSwitcherDelegate!
     weak var previewsSource: TabPreviewsSource!
-    
+
     var selectedTabs: [IndexPath] {
         collectionView.indexPathsForSelectedItems ?? []
     }
 
     private(set) var bookmarksDatabase: CoreDataDatabase
     let syncService: DDGSyncing
-
-    override var canBecomeFirstResponder: Bool { return true }
 
     var currentSelection: Int?
 
@@ -128,11 +123,12 @@ class TabSwitcherViewController: UIViewController {
     let aiChatSettings: AIChatSettingsProvider
     let privacyStats: PrivacyStatsProviding
     let keyValueStore: ThrowingKeyValueStoring
+    let daxDialogsManager: DaxDialogsManaging
     var tabsModel: TabsModel {
         tabManager.model
     }
 
-    let barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
+    var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
 
     private var tabObserverCancellable: AnyCancellable?
     private let appSettings: AppSettings
@@ -140,8 +136,11 @@ class TabSwitcherViewController: UIViewController {
     private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
     private var trackerInfoModel: InfoPanelView.Model?
+
+    private let initialTrackerCountState: TabSwitcherTrackerCountViewModel.State
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private(set) var aichatIPadTabFeature: AIChatIPadTabFeatureProviding
 
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
@@ -154,12 +153,15 @@ class TabSwitcherViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
                    aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature(),
                    privacyStats: PrivacyStatsProviding,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    historyManager: HistoryManaging,
                    fireproofing: Fireproofing,
                    keyValueStore: ThrowingKeyValueStoring,
-                   tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()) {
+                   tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
+                   daxDialogsManager: DaxDialogsManaging,
+                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -169,11 +171,14 @@ class TabSwitcherViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.privacyStats = privacyStats
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.historyManager = historyManager
         self.fireproofing = fireproofing
         self.tabSwitcherSettings = tabSwitcherSettings
+        self.daxDialogsManager = daxDialogsManager
+        self.initialTrackerCountState = initialTrackerCountState
         super.init(coder: coder)
     }
 
@@ -189,12 +194,24 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition() {
+        guard let view = self.view else {
+            assertionFailure()
+            return
+        }
         let isBottomBar = appSettings.currentAddressBarPosition.isBottom
 
-        // Potentially for these 3 we could do thing better for 'normal' on iPad
-        let topOffset = -6.0
+        let isiOS26: Bool
+        if #available(iOS 26, *) {
+            isiOS26 = true
+        } else {
+            isiOS26 = false
+        }
+
+        // Changing this?  Best change MainView too
+        let topOffset = isiOS26 ? 4.0 : -6.0
         let bottomOffset = 8.0
-        let navHPadding = 10.0
+        let navHPadding = isiOS26 ? -6.0 : -2.0
+        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
 
         // The constants here are to force the ai button to align between the tab switcher and this view
         NSLayoutConstraint.activate([
@@ -203,7 +220,7 @@ class TabSwitcherViewController: UIViewController {
             isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: topOffset) : nil,
             !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: bottomOffset) : nil,
 
-            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor, constant: Constants.trackerInfoTopSpacing),
+            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 
@@ -219,8 +236,8 @@ class TabSwitcherViewController: UIViewController {
                 borderView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
 
             // Always at the bottom
-            toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            toolbar.constrainView(view, by: .width, constant: toolbarWidthMod),
+            toolbar.constrainView(view, by: .centerX),
             toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ].compactMap { $0 })
     }
@@ -280,12 +297,66 @@ class TabSwitcherViewController: UIViewController {
         collectionView.allowsMultipleSelectionDuringEditing = true
         bindTrackerCount()
         trackerCountViewModel?.refresh()
+        setupBarButtonActions()
 
+    }
+
+    private func setupBarButtonActions() {
+        barsHandler.onPlusButtonTapped = { [weak self] in
+            self?.addNewTab()
+        }
+
+        barsHandler.onFireButtonTapped = { [weak self] in
+            self?.burn(sender: self!.barsHandler.fireButton)
+        }
+
+        barsHandler.onDoneButtonTapped = { [weak self] in
+            self?.onDonePressed(self!.barsHandler.doneButton)
+        }
+
+        barsHandler.onEditButtonTapped = { [weak self] in
+            return self?.createEditMenu()
+        }
+
+        barsHandler.onTabStyleButtonTapped = { [weak self] in
+            self?.onTabStyleChange()
+        }
+
+        barsHandler.onSelectAllTapped = { [weak self] in
+            self?.selectAllTabs()
+        }
+
+        barsHandler.onDeselectAllTapped = { [weak self] in
+            self?.deselectAllTabs()
+        }
+
+        barsHandler.onMenuButtonTapped = { [weak self] in
+            return self?.createMultiSelectionMenu()
+        }
+
+        barsHandler.onCloseTabsTapped = { [weak self] in
+            self?.closeSelectedTabs()
+        }
+
+        barsHandler.onDuckChatTapped = { [weak self] in
+            guard let self else { return }
+            if self.aichatFullModeFeature.isAvailable || self.aichatIPadTabFeature.isAvailable {
+                self.addNewAIChatTab()
+            } else {
+                self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)
+            }
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         productSurfaceTelemetry.tabManagerUsed()
+        showFireButtonPulseIfNeeded()
+    }
+
+    private func showFireButtonPulseIfNeeded() {
+        guard daxDialogsManager.isShowingFireDialog, let window = view.window else { return }
+        ViewHighlighter.showIn(window, focussedOnButton: barsHandler.fireButton)
     }
 
     private func setupBackgroundView() {
@@ -302,7 +373,8 @@ class TabSwitcherViewController: UIViewController {
         let viewModel = TabSwitcherTrackerCountViewModel(
             settings: tabSwitcherSettings,
             privacyStats: privacyStats,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            initialState: initialTrackerCountState
         )
         trackerCountViewModel = viewModel
         trackerCountCancellable = viewModel.$state
@@ -508,13 +580,17 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func dismiss() {
+        ViewHighlighter.hideAll()
         dismiss(animated: true, completion: nil)
     }
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
         canUpdateCollection = false
         tabsModel.tabs.forEach { $0.removeObserver(self) }
-        super.dismiss(animated: animated, completion: completion)
+        super.dismiss(animated: animated) {
+            completion?()
+            self.delegate?.tabSwitcherDidDismiss(tabSwitcher: self)
+        }
     }
 }
 
@@ -522,6 +598,8 @@ extension TabSwitcherViewController: TabViewCellDelegate {
 
     func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
         let shouldDismiss = tabsModel.count == indexPaths.count
+        let tabsToClose = indexPaths.map { tabsModel.get(tabAt: $0.row) }
+        delegate?.tabSwitcher(self, willCloseTabs: tabsToClose)
 
         collectionView.performBatchUpdates {
             isProcessingUpdates = true
@@ -745,10 +823,15 @@ extension TabSwitcherViewController {
         refreshDisplayModeButton()
         
         titleBarView.tintColor = theme.barTintColor
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            titleBarView.backItem?.rightBarButtonItem?.hidesSharedBackground = true
+        }
+        #endif
 
         toolbar.barTintColor = theme.barBackgroundColor
-        toolbar.tintColor = theme.barTintColor
-                
+        toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
+
         collectionView.reloadData()
     }
 
@@ -796,7 +879,7 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
             if self.isEditing {
                 collectionView.reloadData() // Clears the selection
                 collectionView.selectItem(at: destination, animated: true, scrollPosition: [])
-                self.refreshBarButtons()
+                self.barsHandler.configureButtonActions(tabsStyle: self.tabsStyle, canShowSelectionMenu: self.canShowSelectionMenu)
             } else {
                 collectionView.reloadItems(at: [IndexPath(row: self.currentSelection ?? 0, section: 0)])
             }

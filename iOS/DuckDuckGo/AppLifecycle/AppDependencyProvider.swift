@@ -58,6 +58,7 @@ protocol DependencyProvider {
     var vpnSettings: VPNSettings { get }
     var persistentPixel: PersistentPixelFiring { get }
     var wideEvent: WideEventManaging { get }
+    var freeTrialConversionService: FreeTrialConversionInstrumentationService { get }
     var subscriptionManager: any SubscriptionManager { get }
     var tokenHandlerProvider: any SubscriptionTokenHandling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
@@ -101,8 +102,36 @@ final class AppDependencyProvider: DependencyProvider {
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
     let wideEvent: WideEventManaging
+    let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     private init() {
+
+        // Configuring PixelKit
+        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
+        let source = isPhone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS
+        PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
+                       appVersion: AppVersion.shared.versionNumber,
+                       source: source.rawValue,
+                       defaultHeaders: [:],
+                       defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
+
+            let url = URL.pixelUrl(forPixelNamed: pixelName)
+            let apiHeaders = APIRequestV2.HeadersV2(userAgent: Pixel.defaultPixelUserAgent, additionalHeaders: headers)
+            guard let request = APIRequestV2(url: url, method: .get, queryItems: parameters.toQueryItems(), headers: apiHeaders) else {
+                assertionFailure("Invalid Pixel request")
+                onComplete(false, nil)
+                return
+            }
+            Task {
+                do {
+                    _ = try await DefaultAPIService().fetch(request: request)
+                    onComplete(true, nil)
+                } catch {
+                    onComplete(false, error)
+                }
+            }
+        }
+
         let featureFlagOverrideStore = UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!
 
         // Apply UI test overrides
@@ -117,6 +146,7 @@ final class AppDependencyProvider: DependencyProvider {
         let experimentManager = ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:))
 
         var featureFlagger: FeatureFlagger
+
         if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
             let mockFeatureFlagger = MockFeatureFlagger()
             self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
@@ -133,12 +163,16 @@ final class AppDependencyProvider: DependencyProvider {
             featureFlagger = defaultFeatureFlagger
         }
 
+        // Configure PixelKit Experiments
+        PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
+                                        eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
+
         self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
 
         // Configure Subscription
-        let pixelHandler = SubscriptionPixelHandler(source: .mainApp)
+        let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var tokenHandler: any SubscriptionTokenHandling
@@ -227,13 +261,21 @@ final class AppDependencyProvider: DependencyProvider {
         self.subscriptionManager = subscriptionManager
         tokenHandler = subscriptionManager
         authenticationStateProvider = subscriptionManager
+        self.freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
+            wideEvent: wideEvent,
+            pixelHandler: FreeTrialPixelHandler(),
+            subscriptionFetcher: { try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) },
+            isFeatureEnabled: { featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
+        )
+        self.freeTrialConversionService.startObservingSubscriptionChanges()
 
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
                                                                               featureFlagger: featureFlagger,
                                                                               persistentPixel: persistentPixel,
                                                                               settings: vpnSettings,
-                                                                              wideEvent: wideEvent
+                                                                              wideEvent: wideEvent,
+                                                                              freeTrialConversionService: freeTrialConversionService
         )
     }
 

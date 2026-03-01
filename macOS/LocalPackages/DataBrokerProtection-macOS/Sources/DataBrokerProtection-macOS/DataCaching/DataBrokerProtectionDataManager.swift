@@ -69,20 +69,31 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
 
     public weak var delegate: DataBrokerProtectionDataManagerDelegate?
 
+    /// Called when a profile is saved. Used for free trial conversion tracking.
+    public var onProfileSaved: (() -> Void)?
+
     internal let database: DataBrokerProtectionRepository
 
     required public init(database: DataBrokerProtectionRepository,
                          profileSavedNotifier: DBPProfileSavedNotifier? = nil) {
         self.database = database
-
         self.profileSavedNotifier = profileSavedNotifier
+        self.onProfileSaved = nil
         communicator.delegate = self
+    }
+
+    public convenience init(database: DataBrokerProtectionRepository,
+                            profileSavedNotifier: DBPProfileSavedNotifier? = nil,
+                            onProfileSaved: (() -> Void)?) {
+        self.init(database: database, profileSavedNotifier: profileSavedNotifier)
+        self.onProfileSaved = onProfileSaved
     }
 
     public func saveProfile(_ profile: DataBrokerProtectionProfile) async throws {
         do {
             try await database.save(profile)
             profileSavedNotifier?.postProfileSavedNotificationIfPermitted()
+            onProfileSaved?()
         } catch {
             // We should still invalidate the cache if the save fails
             communicator.invalidateCache()

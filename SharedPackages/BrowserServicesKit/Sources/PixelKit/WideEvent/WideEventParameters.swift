@@ -36,12 +36,14 @@ public enum WideEventParameter {
 
     public enum Meta {
         static let type = "meta.type"
+        static let version = "meta.version"
     }
 
     public enum Global {
         static let platform = "global.platform"
         static let type = "global.type"
         static let sampleRate = "global.sample_rate"
+        static let isFirstDailyOccurrence = "global.is_first_daily_occurrence"
     }
 
     public enum App {

@@ -65,7 +65,6 @@ protocol DownloadManaging {
     func cancelDownload(_ download: Download)
     func cancelAllDownloads()
     func markAllDownloadsSeen()
-    func deleteDownloadsDirectoryIfEmpty()
     func startMonitoringDownloadsDirectoryChanges()
     func stopMonitoringDownloadsDirectoryChanges()
 }
@@ -89,7 +88,6 @@ class DownloadManager: DownloadManaging {
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler()) {
         self.notificationCenter = notificationCenter
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
-        deleteDownloadsDirectoryIfEmpty()
     }
 
     func makeDownload(response: URLResponse,
@@ -161,10 +159,6 @@ class DownloadManager: DownloadManaging {
 
     func markAllDownloadsSeen() {
         unseenDownloadsAvailable = false
-    }
-
-    func deleteDownloadsDirectoryIfEmpty() {
-        downloadsDirectoryHandler.deleteDownloadsDirectoryIfEmpty()
     }
     
     private func move(_ download: Download, toPath path: URL) {

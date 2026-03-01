@@ -25,7 +25,13 @@ import Persistence
 import BrowserServicesKit
 
 @MainActor
-final class AppStateRestorationManager: NSObject {
+protocol AppStateRestorationManaging {
+    var isRelaunchingAutomatically: Bool { get }
+    func resetRelaunchFlag()
+}
+
+@MainActor
+final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     private enum Constants {
         static let fileName = "persistentState"
         static let appDidTerminateAsExpectedKey = "appDidTerminateAsExpected"
@@ -43,7 +49,11 @@ final class AppStateRestorationManager: NSObject {
     private let pixelFiring: PixelFiring?
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
-    private var appIsRelaunchingAutomatically: Bool
+    internal private(set) var isRelaunchingAutomatically: Bool
+
+    func resetRelaunchFlag() {
+        isRelaunchingAutomatically = false
+    }
 
     private var appDidTerminateAsExpected: Bool {
         get {
@@ -106,7 +116,7 @@ final class AppStateRestorationManager: NSObject {
     func subscribeToAutomaticAppRelaunching(using relaunchPublisher: AnyPublisher<Void, Never>) {
         appWillRelaunchCancellable = relaunchPublisher
             .map { true }
-            .assign(to: \.appIsRelaunchingAutomatically, onWeaklyHeld: self)
+            .assign(to: \.isRelaunchingAutomatically, onWeaklyHeld: self)
     }
 
     var canRestoreLastSessionState: Bool {
@@ -150,12 +160,14 @@ final class AppStateRestorationManager: NSObject {
     }
 
     func applicationDidFinishLaunching() {
-        let isRelaunchingAutomatically = self.appIsRelaunchingAutomatically
-        self.appIsRelaunchingAutomatically = false
-        // don‘t automatically restore windows if relaunched 2nd time with no recently updated app session state
-        readLastSessionState(restoreWindows: !service.isAppStateFileStale || isRelaunchingAutomatically, restoreRegularTabs: shouldRestoreRegularTabs)
+        let isRelaunchingAutomatically = self.isRelaunchingAutomatically
+        self.isRelaunchingAutomatically = false
+        let restoreWindows = !service.isAppStateFileStale || isRelaunchingAutomatically
+        let restoreRegularTabs = shouldRestoreRegularTabs || isRelaunchingAutomatically
+        // don't automatically restore windows if relaunched 2nd time with no recently updated app session state
+        readLastSessionState(restoreWindows: restoreWindows, restoreRegularTabs: restoreRegularTabs)
 
-        detectUnexpectedAppTermination()
+        detectUnexpectedAppTermination(didRestoreRegularTabs: restoreRegularTabs)
 
         stateChangedCancellable = Publishers.Merge(
                 Application.appDelegate.windowControllersManager.stateChanged,
@@ -170,10 +182,11 @@ final class AppStateRestorationManager: NSObject {
     }
 
     func applicationWillTerminate() {
+        let isInInitialState = Application.appDelegate.windowControllersManager.isInInitialState
         stateChangedCancellable?.cancel()
         appDidTerminateAsExpected = true
         sessionRestorePromptCoordinator.applicationWillTerminate()
-        if Application.appDelegate.windowControllersManager.isInInitialState {
+        if isInInitialState {
             service.clearState(sync: true)
         } else {
             persistAppState(sync: true)
@@ -216,7 +229,7 @@ final class AppStateRestorationManager: NSObject {
         tabsPreferences.migratePinnedTabsSettingIfNecessary(nil)
     }
 
-    private func detectUnexpectedAppTermination() {
+    private func detectUnexpectedAppTermination(didRestoreRegularTabs: Bool) {
 #if DEBUG
         guard AppVersion.runType != .normal else {
             return
@@ -235,8 +248,9 @@ final class AppStateRestorationManager: NSObject {
         pixelFiring?.fire(SessionRestorePromptPixel.unexpectedAppTerminationDetected)
 
         // Display a prompt to restore the last session when the user has disabled "restore previous session".
+        // Don't show the prompt if tabs were already restored (e.g. during automatic relaunch).
         // Don't show the prompt if relaunched 2nd time with no recently updated app session state (crash loop).
-        if !shouldRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
+        if !didRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
             sessionRestorePromptCoordinator.showRestoreSessionPrompt { [weak self] restoreSession in
                 guard let self, restoreSession else { return }
                 restoreLastSessionState(interactive: true, includeRegularTabs: true)

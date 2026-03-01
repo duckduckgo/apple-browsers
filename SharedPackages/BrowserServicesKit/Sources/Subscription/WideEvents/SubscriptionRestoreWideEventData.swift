@@ -24,7 +24,8 @@ public class SubscriptionRestoreWideEventData: WideEventData {
         pixelName: "subscription_restore",
         featureName: "subscription-restore",
         mobileMetaType: "ios-subscription-restore",
-        desktopMetaType: "macos-subscription-restore"
+        desktopMetaType: "macos-subscription-restore",
+        version: "1.0.0"
     )
 
     public static let restoreTimeout: TimeInterval = .minutes(15)

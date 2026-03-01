@@ -26,15 +26,13 @@ final class UnifiedToggleInputFeatureTests: XCTestCase {
     // MARK: - Mocks
 
     private final class MockDevicePlatform: DevicePlatformProviding {
-        var mockIsIphone: Bool = false
-        static var isIphone: Bool { shared.mockIsIphone }
-        static let shared = MockDevicePlatform()
+        static var isIphone: Bool = false
     }
 
     // MARK: - Helpers
 
     private func makeFeature(flagEnabled: Bool, isIphone: Bool) -> UnifiedToggleInputFeature {
-        MockDevicePlatform.shared.mockIsIphone = isIphone
+        MockDevicePlatform.isIphone = isIphone
         let flags: [FeatureFlag] = flagEnabled ? [.unifiedToggleInput] : []
         return UnifiedToggleInputFeature(
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: flags),

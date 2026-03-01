@@ -1701,10 +1701,12 @@ class MainViewController: UIViewController {
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             updateBrowsingMenuHeaderDataSource()
-            // Ensure the unified toggle input bar is hidden and chrome is restored
-            // when switching to NTP or an empty tab (link == nil).
             if let tab = currentTab {
                 refreshUnifiedToggleInput(for: tab)
+            } else if let coordinator = unifiedToggleInputCoordinator, coordinator.displayState != .hidden {
+                coordinator.hide()
+                coordinator.unbind()
+                viewCoordinator.setNavigationChromeHidden(false)
             }
             return
         }

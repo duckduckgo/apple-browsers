@@ -159,7 +159,7 @@ private extension DataImportWideEventData {
 
     func addTypeImporterLatency(_ interval: WideEvent.MeasuredInterval?, type: DataType, to params: inout [String: String]) {
         guard let duration = interval?.durationMilliseconds else { return }
-        params[WideEventParameter.DataImportFeature.latency(for: type)] = String(Int(duration))
+        params[WideEventParameter.DataImportFeature.latency(for: type)] = String(duration)
     }
 
     func addTypeError(_ error: WideEventErrorData?, type: DataType, to params: inout [String: String]) {

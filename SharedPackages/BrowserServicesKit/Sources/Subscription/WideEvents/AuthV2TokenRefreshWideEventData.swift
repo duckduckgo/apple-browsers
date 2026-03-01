@@ -72,6 +72,16 @@ extension AuthV2TokenRefreshWideEventData {
         case partialData = "partial_data"
     }
 
+    public func jsonParameters() -> [String: Encodable] {
+        let bucket: DurationBucket = .bucketed(Self.bucket)
+
+        return Dictionary(compacting: [
+            (WideEventParameter.AuthV2RefreshFeature.failingStep, failingStep?.rawValue),
+            (WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, refreshTokenDuration?.intValue(bucket)),
+            (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.intValue(bucket)),
+        ])
+    }
+
     public func pixelParameters() -> [String: String] {
         let bucket: DurationBucket = .bucketed(Self.bucket)
 
@@ -82,7 +92,7 @@ extension AuthV2TokenRefreshWideEventData {
         ])
     }
 
-    private static func bucket(_ ms: Double) -> Int {
+    private static func bucket(_ ms: Int) -> Int {
         switch ms {
         case 0..<1000: return 1000
         case 1000..<5000: return 5000

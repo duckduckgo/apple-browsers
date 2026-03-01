@@ -157,7 +157,7 @@ public final class DefaultWideEventSender: WideEventSending {
                 if success {
                     Self.logger.info("Daily wide event pixel sent successfully: \(pixelName, privacy: .public)")
                 } else {
-                    Self.logger.error("Daily wide event failed to send: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
+                    Self.logger.error("Daily wide event pixel failed to send: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
                 }
             }
         )
@@ -171,9 +171,9 @@ public final class DefaultWideEventSender: WideEventSending {
             includeAppVersionParameter: true,
             onComplete: { success, error in
                 if success {
-                    Self.logger.info("Wide event sent successfully: \(pixelName, privacy: .public)")
+                    Self.logger.info("Wide event pixel sent successfully: \(pixelName, privacy: .public)")
                 } else {
-                    Self.logger.error("Wide event failed to fire: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
+                    Self.logger.error("Wide event pixel failed to fire: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
                 }
                 onComplete(success, error)
             }

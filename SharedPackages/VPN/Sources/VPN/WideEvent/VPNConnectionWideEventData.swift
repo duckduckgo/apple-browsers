@@ -203,7 +203,7 @@ private extension VPNConnectionWideEventData {
 
     func addStepLatency(_ interval: WideEvent.MeasuredInterval?, step: Step, to params: inout [String: String]) {
         guard let duration = interval?.durationMilliseconds else { return }
-        params[WideEventParameter.VPNConnectionFeature.latency(at: step)] = String(Int(duration))
+        params[WideEventParameter.VPNConnectionFeature.latency(at: step)] = String(duration)
     }
 
     func addStepError(_ error: WideEventErrorData?, step: Step, to params: inout [String: String]) {

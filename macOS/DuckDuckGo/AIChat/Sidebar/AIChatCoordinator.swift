@@ -182,6 +182,11 @@ final class AIChatCoordinator: AIChatCoordinating {
                 self?.refreshFloatingTitleStateForAllSessions()
             }
             .store(in: &cancellables)
+
+        // Normalize restored sessions against current flag state on startup.
+        // Without this, a restored `.floating` session can stay stuck when the
+        // floating feature is currently disabled.
+        refreshFloatingFeatureAvailability()
     }
 
     // MARK: - Public API

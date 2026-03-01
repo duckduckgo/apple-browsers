@@ -39,6 +39,8 @@ public enum WebExtensionMessageHandlerError: LocalizedError {
     case unknownMethod(String)
     case missingParameter(String)
     case invalidParameterType(String, expected: String)
+    case unsupportedResourceType(String)
+    case configurationError(String)
 
     public var errorDescription: String? {
         switch self {
@@ -48,6 +50,10 @@ public enum WebExtensionMessageHandlerError: LocalizedError {
             return "Missing required parameter: \(parameter)"
         case .invalidParameterType(let parameter, let expected):
             return "Invalid type for parameter '\(parameter)': expected \(expected)"
+        case .unsupportedResourceType(let resourceType):
+            return "Unsupported resource type: \(resourceType)"
+        case .configurationError(let message):
+            return "Configuration error: \(message)"
         }
     }
 }

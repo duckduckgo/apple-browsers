@@ -77,6 +77,8 @@ final class MainViewController: NSViewController {
         return bookmarksBarViewController.parent != nil
     }
 
+    private let startupProfiler: StartupProfiler
+
     private let themeManager: ThemeManaging
     private var theme: ThemeStyleProviding {
         themeManager.theme
@@ -136,7 +138,8 @@ final class MainViewController: NSViewController {
          sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator,
          winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter,
          pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
-         memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor
+         memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor,
+         startupProfiler: StartupProfiler = NSApp.delegateTyped.startupProfiler
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -230,7 +233,8 @@ final class MainViewController: NSViewController {
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatTabOpener: aiChatTabOpener,
             windowControllersManager: windowControllersManager,
-            pixelFiring: pixelFiring
+            pixelFiring: pixelFiring,
+            featureFlagger: featureFlagger
         )
         aiChatSummarizer = AIChatSummarizer(
             aiChatMenuConfig: aiChatMenuConfig,
@@ -301,6 +305,7 @@ final class MainViewController: NSViewController {
             themeManager: themeManager
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
+        self.startupProfiler = startupProfiler
 
         super.init(nibName: nil, bundle: nil)
 
@@ -372,6 +377,8 @@ final class MainViewController: NSViewController {
         registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
+
+        startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
     }
 
     var bookmarkBarPromptObserver: Any?

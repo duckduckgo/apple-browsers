@@ -54,5 +54,39 @@
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_embedded_installed": {
+        "description": "Fires when the embedded (bundled) web extension is successfully installed for the first time.",
+        "owners": ["tomasstrba", "miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_embedded_upgraded": {
+        "description": "Fires when the embedded (bundled) web extension is upgraded to a newer version.",
+        "owners": ["tomasstrba", "miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "from_version",
+                "type": "string",
+                "description": "The previous version of the embedded extension before upgrade"
+            },
+            {
+                "key": "to_version",
+                "type": "string",
+                "description": "The new version of the embedded extension after upgrade"
+            }
+        ]
+    },
+    "m_mac_web_extension_embedded_install_error": {
+        "description": "Fires when installing or upgrading the embedded (bundled) web extension fails.",
+        "owners": ["tomasstrba", "miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

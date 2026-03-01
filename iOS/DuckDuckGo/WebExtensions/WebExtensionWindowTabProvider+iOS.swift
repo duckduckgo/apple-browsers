@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import UIKit
 import WebExtensions
 import WebKit
@@ -55,13 +56,15 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
     ) async throws -> (any WKWebExtensionTab)? {
         guard let mainViewController else { return nil }
 
+        let newTab: TabViewController?
         if let url = configuration.url {
-            let controller = mainViewController.tabManager.add(url: url, inBackground: false, inheritedAttribution: nil)
-            return controller
+            newTab = mainViewController.tabManager.add(url: url, inBackground: false, inheritedAttribution: nil)
+        } else {
+            mainViewController.tabManager.addHomeTab()
+            newTab = mainViewController.tabManager.current(createIfNeeded: true)
         }
 
-        mainViewController.tabManager.addHomeTab()
-        return mainViewController.tabManager.current(createIfNeeded: true)
+        return newTab
     }
 
     func presentPopup(
@@ -73,6 +76,12 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
               let mainViewController else {
             return
         }
+
+#if DEBUG
+        popupWebView.isInspectable = true
+#else
+        popupWebView.isInspectable = AppUserDefaults().inspectableWebViewEnabled
+#endif
 
         let hostingController = UIViewController()
         hostingController.view = popupWebView

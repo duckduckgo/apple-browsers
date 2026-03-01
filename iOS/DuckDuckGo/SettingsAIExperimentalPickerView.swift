@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
+import Core
 
 struct SettingsAIExperimentalPickerView: View {
     @Binding var isDuckAISelected: Bool
@@ -33,8 +34,8 @@ struct SettingsAIExperimentalPickerView: View {
         HStack(alignment: .top, spacing: SettingsAIExperimentalPickerViewLayout.optionsHorizontalSpacing) {
             PickerOptionView(
                 isSelected: !isDuckAISelected,
-                selectedImage: .searchExperimentalOn,
-                unselectedImage: .searchExperimentalOff,
+                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAIActive : .searchExperimentalOn,
+                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAI : .searchExperimentalOff,
                 title: UserText.settingsAIPickerSearchOnly,
                 showNewBadge: false
             ) {
@@ -43,8 +44,8 @@ struct SettingsAIExperimentalPickerView: View {
 
             PickerOptionView(
                 isSelected: isDuckAISelected,
-                selectedImage: .aiExperimentalOn,
-                unselectedImage: .aiExperimentalOff,
+                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAIActive : .aiExperimentalOn,
+                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAI : .aiExperimentalOff,
                 title: UserText.settingsAIPickerSearchAndDuckAI,
                 showNewBadge: false
             ) {
@@ -53,6 +54,14 @@ struct SettingsAIExperimentalPickerView: View {
         }
         .frame(height: SettingsAIExperimentalPickerViewLayout.viewHeight)
         .frame(maxWidth: SettingsAIExperimentalPickerViewLayout.maxViewWidth)
+    }
+
+    private var shouldUseIPadAssets: Bool {
+        isIPadAIToggleOn && UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    private var isIPadAIToggleOn: Bool {
+        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.iPadAIToggle)
     }
 }
 

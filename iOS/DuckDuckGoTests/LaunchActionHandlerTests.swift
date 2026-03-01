@@ -63,6 +63,25 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
 }
 
+final class MockIdleReturnEvaluator: IdleReturnEvaluating {
+    var shouldShowNTPAfterIdleResult = false
+    var lastLastBackgroundDate: Date?
+
+    func shouldShowNTPAfterIdle(lastBackgroundDate: Date?) -> Bool {
+        lastLastBackgroundDate = lastBackgroundDate
+        return shouldShowNTPAfterIdleResult
+    }
+}
+
+@MainActor
+final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
+    var showNewTabPageAfterIdleReturnCalled = false
+
+    func showNewTabPageAfterIdleReturn() {
+        showNewTabPageAfterIdleReturnCalled = true
+    }
+}
+
 @MainActor
 final class LaunchActionHandlerTests {
 
@@ -70,12 +89,16 @@ final class LaunchActionHandlerTests {
     let shortcutItemHandler = MockShortcutItemHandler()
     let keyboardPresenter = MockKeyboardPresenter()
     let launchSourceManager = MockLaunchSourceManager()
+    let idleReturnEvaluator = MockIdleReturnEvaluator()
+    let idleReturnDelegate = MockIdleReturnLaunchDelegate()
     let pixelFiringMock = PixelFiringMock.self
     lazy var launchActionHandler = LaunchActionHandler(
         urlHandler: urlHandler,
         shortcutItemHandler: shortcutItemHandler,
         keyboardPresenter: keyboardPresenter,
         launchSourceService: launchSourceManager,
+        idleReturnEvaluator: idleReturnEvaluator,
+        idleReturnDelegate: idleReturnDelegate,
         pixelFiring: pixelFiringMock
     )
 
@@ -117,10 +140,10 @@ final class LaunchActionHandlerTests {
         #expect(shortcutItemHandler.lastHandledShortcutItem == shortcutItem)
     }
 
-    @Test("Show keyboard when LaunchAction is .showKeyboard")
+    @Test("Show keyboard when LaunchAction is .standardLaunch")
     func showKeyboard() {
         let date = Date()
-        let action = LaunchAction.showKeyboard(date)
+        let action = LaunchAction.standardLaunch(date)
 
         launchActionHandler.handleLaunchAction(action)
 
@@ -202,10 +225,10 @@ final class LaunchActionHandlerTests {
         #expect(launchSourceManager.setSourceCallCount == 1)
     }
     
-    @Test("LaunchSourceManager is set to standard when showing keyboard")
+    @Test("LaunchSourceManager is set to standard when standard launch")
     func launchSourceManagerSetToStandardWhenShowingKeyboard() {
         let date = Date()
-        let action = LaunchAction.showKeyboard(date)
+        let action = LaunchAction.standardLaunch(date)
         
         launchSourceManager.setSource(.URL)
         #expect(launchSourceManager.source == .URL)
@@ -247,7 +270,7 @@ final class LaunchActionHandlerTests {
         #expect(launchSourceManager.source == .shortcut)
         #expect(launchSourceManager.setSourceCallCount == 2)
         
-        let keyboardAction = LaunchAction.showKeyboard(Date())
+        let keyboardAction = LaunchAction.standardLaunch(Date())
         launchActionHandler.handleLaunchAction(keyboardAction)
         #expect(launchSourceManager.source == .standard)
         #expect(launchSourceManager.setSourceCallCount == 3)
@@ -259,16 +282,45 @@ final class LaunchActionHandlerTests {
         let testCases: [(LaunchAction, LaunchSource)] = [
             (.openURL(URL(string: "https://example.com")!), .URL),
             (.handleShortcutItem(UIApplicationShortcutItem(type: "TestType", localizedTitle: "Test")), .shortcut),
-            (.showKeyboard(Date()), .standard)
+            (.standardLaunch(Date()), .standard)
         ]
         
         for (index, (action, expectedSource)) in testCases.enumerated() {
             launchActionHandler.handleLaunchAction(action)
-            
+
             #expect(launchSourceManager.source == expectedSource, "Failed at index \(index) for action \(action)")
             #expect(launchSourceManager.lastSetSource == expectedSource, "Failed at index \(index) for action \(action)")
             #expect(launchSourceManager.setSourceCallCount == index + 1, "Failed at index \(index) for action \(action)")
         }
+    }
+
+    // MARK: - Idle return NTP
+
+    @Test("When idle evaluator returns true then showNewTabPageAfterIdleReturn is called and keyboard is not")
+    func whenIdleEvaluatorReturnsTrueThenIdleReturnHandlerIsCalled() {
+        let date = Date()
+        idleReturnEvaluator.shouldShowNTPAfterIdleResult = true
+        idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
+        keyboardPresenter.showKeyboardOnLaunchCalled = false
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(date))
+
+        #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
+    }
+
+    @Test("When idle evaluator returns false then showKeyboardOnLaunch is called and idle return handler is not")
+    func whenIdleEvaluatorReturnsFalseThenKeyboardIsCalled() {
+        let date = Date()
+        idleReturnEvaluator.shouldShowNTPAfterIdleResult = false
+        idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
+        keyboardPresenter.showKeyboardOnLaunchCalled = false
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(date))
+
+        #expect(!idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.lastBackgroundDate == date)
     }
 
 }

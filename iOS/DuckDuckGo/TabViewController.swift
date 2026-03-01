@@ -63,6 +63,7 @@ class TabViewController: UIViewController {
     @IBOutlet private(set) weak var errorHeader: UILabel!
     @IBOutlet private(set) weak var errorMessage: UILabel!
     @IBOutlet weak var containerStackView: UIStackView!
+    @IBOutlet weak var outerContainer: UIView!
     @IBOutlet weak var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
@@ -179,6 +180,7 @@ class TabViewController: UIViewController {
     private var trackersInfoWorkItem: DispatchWorkItem?
     private var lastVisitedTrackerAnimationDomain: String?
     private var lastNotifiedTrackerAnimationDomain: String?
+    var shouldSuppressTrackerAnimationOnFirstLoad: Bool = false
     
     private var tabURLInterceptor: TabURLInterceptor
     private var currentlyLoadedURL: URL?
@@ -623,7 +625,7 @@ class TabViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing)
         initAttributionLogic()
         decorate()
@@ -642,6 +644,12 @@ class TabViewController: UIViewController {
 
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
+
+        // Read tracker animation suppression flag from Tab model on first load
+        // This ensures background tabs get the flag when they're loaded for the first time
+        if tabModel.shouldSuppressTrackerAnimationOnFirstLoad {
+            shouldSuppressTrackerAnimationOnFirstLoad = true
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -814,7 +822,7 @@ class TabViewController: UIViewController {
         webView.allowsLinkPreview = true
         webView.allowsBackForwardNavigationGestures = true
 
-        webView.preventFlashOnLoad(featureFlagger: featureFlagger)
+        webView.preventFlashOnLoad()
 
         addObservers()
 
@@ -834,7 +842,7 @@ class TabViewController: UIViewController {
         updateContentInsetAdjustment()
 
         pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
-                                                            pullableView: webViewContainerView,
+                                                            pullableView: webViewContainer,
                                                             onRefresh: { [weak self] in
             self?.handlePullToRefresh()
         })
@@ -1018,10 +1026,13 @@ class TabViewController: UIViewController {
             if webView.isLoading {
                 delegate?.showBars()
             }
+            if #available(iOS 18.4, *) {
+                notifyWebExtensionOfPropertyChange([.loading])
+            }
 
         case #keyPath(WKWebView.estimatedProgress):
             progressWorker.progressDidChange(webView.estimatedProgress)
-            
+
         case #keyPath(WKWebView.url):
             // A short delay is required here, because the URL takes some time
             // to propagate to the webView.url property accessor and might not
@@ -1030,6 +1041,9 @@ class TabViewController: UIViewController {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                 guard let self else { return }
                 self.webViewUrlHasChanged(previousURL: previousURL, newURL: self.webView.url)
+                if #available(iOS 18.4, *) {
+                    self.notifyWebExtensionOfPropertyChange([.URL])
+                }
             }
 
         case #keyPath(WKWebView.canGoBack):
@@ -1040,7 +1054,9 @@ class TabViewController: UIViewController {
 
         case #keyPath(WKWebView.title):
             title = webView.title
-
+            if #available(iOS 18.4, *) {
+                notifyWebExtensionOfPropertyChange([.title])
+            }
         default:
             Logger.general.debug("Unhandled keyPath \(keyPath)")
         }
@@ -1058,7 +1074,12 @@ class TabViewController: UIViewController {
             url = newURL
         }
     }
-    
+
+    @available(iOS 18.4, *)
+    private func notifyWebExtensionOfPropertyChange(_ properties: WKWebExtension.TabChangedProperties) {
+        (delegate as? MainViewController)?.webExtensionEventsCoordinator?.didChangeTabProperties(properties, for: self)
+    }
+
     func enableFireproofingForDomain(_ domain: String) {
         FireproofingAlert.showConfirmFireproofWebsite(usingController: self, forDomain: domain) { [weak self] in
             Pixel.fire(pixel: .browsingMenuFireproof)
@@ -1439,7 +1460,8 @@ class TabViewController: UIViewController {
                                                                      openerContext: inferredOpenerContext,
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
-                                                                     breakageReportingSubfeature: breakageReportingSubfeature)
+                                                                     breakageReportingSubfeature: breakageReportingSubfeature,
+                                                                     isForceDarkModeEnabled: nil)
     }
 
     public func print() {
@@ -1975,7 +1997,18 @@ extension TabViewController: WKNavigationDelegate {
 
     private func updateTrackerAnimationDomainState(for url: URL?) {
         let currentDomain = trackerAnimationDomain(for: url)
-        guard currentDomain != lastVisitedTrackerAnimationDomain else { return }
+
+        // Pre-set domain on first load to suppress tracker animation on cold start
+        if shouldSuppressTrackerAnimationOnFirstLoad && url != nil {
+            lastNotifiedTrackerAnimationDomain = currentDomain
+            lastVisitedTrackerAnimationDomain = currentDomain
+            shouldSuppressTrackerAnimationOnFirstLoad = false
+            return
+        }
+
+        guard currentDomain != lastVisitedTrackerAnimationDomain else {
+            return
+        }
         lastVisitedTrackerAnimationDomain = currentDomain
         lastNotifiedTrackerAnimationDomain = nil
     }
@@ -3805,6 +3838,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
             syncService.scheduler.notifyDataChanged()
 
             NotificationCenter.default.post(name: .autofillSaveEvent, object: nil)
+            AutofillOnboardingExperimentPixelReporter().firePasswordsSaved()
         } catch {
             Logger.general.error("failed to store credentials: \(error.localizedDescription, privacy: .public)")
         }

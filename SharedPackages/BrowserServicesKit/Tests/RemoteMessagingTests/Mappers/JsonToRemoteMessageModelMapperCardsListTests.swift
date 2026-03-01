@@ -277,6 +277,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     @Test("Placeholder Maps Correctly",
         arguments: [
             ("Announce", RemotePlaceholder.announce),
+            ("NewTabOptions", RemotePlaceholder.newTabOptions),
+            ("SplitBarMobile", RemotePlaceholder.splitBarMobile),
             // Maps to Default
             ("", RemotePlaceholder.announce),
             // Maps to Default
@@ -314,7 +316,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
     @Test("Check Different Action Types Map Correctly",
           arguments: [
             (("url_in_context", "https://example.com"), RemoteAction.urlInContext(value: "https://example.com")),
-            (("navigation", "import.passwords"), RemoteAction.navigation(value: .importPasswords))
+            (("navigation", "import.passwords"), RemoteAction.navigation(value: .importPasswords)),
+            (("navigation", "softwareUpdate"), RemoteAction.navigation(value: .softwareUpdate))
           ]
     )
     func actionTypesMapCorrectly(jsonAction: (key: String, value: String), expectedAction: RemoteAction) {
@@ -350,6 +353,8 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
             ("RadarCheckGreen", .radarCheckGreen),
             ("RadarCheckPurple", .radarCheckPurple),
             ("KeyImport", .keyImport),
+            ("NewTabOptions", .newTabOptions),
+            ("SplitBarMobile", .splitBarMobile),
             ("PIR", .pir),
             ("Subscription", .subscription),
             (nil, nil)

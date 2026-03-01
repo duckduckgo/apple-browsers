@@ -28,21 +28,31 @@ public struct WebExtensionMessage {
     /// The method/command within the feature
     public let method: String
 
+    /// The unique identifier for this message
+    public let id: String?
+
     /// Optional parameters data
     public let params: [String: Any]?
 
-    /// The extension identifier that sent the message
-    public let context: String
+    /// Context of the sent message
+    public let context: String?
+
+    /// Extension identifier that sent the message
+    public let extensionIdentifier: String
 
     public init(
         featureName: String,
         method: String,
+        id: String?,
         params: [String: Any]? = nil,
-        context: String
+        context: String?,
+        extensionIdentifier: String
     ) {
         self.featureName = featureName
         self.method = method
+        self.id = id
         self.params = params
         self.context = context
+        self.extensionIdentifier = extensionIdentifier
     }
 }

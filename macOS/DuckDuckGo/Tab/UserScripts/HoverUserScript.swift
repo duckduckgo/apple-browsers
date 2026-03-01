@@ -21,35 +21,40 @@ import UserScript
 
 protocol HoverUserScriptDelegate: AnyObject {
 
+    @MainActor
     func hoverUserScript(_ script: HoverUserScript, didChange url: URL?)
 
 }
 
-final class HoverUserScript: NSObject, UserScript {
+/// Receives `hoverChanged` notifications from the C-S-S `hover` feature
+/// running in the isolated content world, keeping the WebKit message handler
+/// out of the page's JavaScript context.
+final class HoverUserScript: NSObject, Subfeature {
 
-    public weak var delegate: HoverUserScriptDelegate?
+    let messageOriginPolicy: MessageOriginPolicy = .all
+    let featureName: String = "hover"
 
-    public var source: String = """
-(function() {
-
-    document.addEventListener("mouseover", function(event) {
-        var anchor = event.target.closest('a')
-        let href = anchor ? anchor.href : null
-        webkit.messageHandlers.hoverHandler.postMessage({ href: href });
-    }, true);
-
-}) ();
-"""
-
-    public var injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-    public var forMainFrameOnly: Bool = false
-    public var messageNames: [String] = ["hoverHandler"]
+    weak var broker: UserScriptMessageBroker?
+    weak var delegate: HoverUserScriptDelegate?
 
     private(set) var lastURL: URL?
 
-    public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    enum MessageNames: String, CaseIterable {
+        case hoverChanged
+    }
 
-        guard let dict = message.body as? [String: Any] else { return }
+    func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        switch MessageNames(rawValue: methodName) {
+        case .hoverChanged:
+            return { [weak self] in try await self?.hoverChanged(params: $0, original: $1) }
+        default:
+            return nil
+        }
+    }
+
+    @MainActor
+    private func hoverChanged(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let dict = params as? [String: Any] else { return nil }
 
         let url: URL?
         if let href = dict["href"] as? String {
@@ -62,6 +67,7 @@ final class HoverUserScript: NSObject, UserScript {
             lastURL = url
             delegate?.hoverUserScript(self, didChange: url)
         }
-    }
 
+        return nil
+    }
 }

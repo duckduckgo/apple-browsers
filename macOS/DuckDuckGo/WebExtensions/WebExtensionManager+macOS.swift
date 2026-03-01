@@ -18,7 +18,7 @@
 
 import AppKit
 import WebExtensions
-import WebKit
+import PrivacyConfig
 
 // MARK: - macOS-specific WebExtensionManager Extensions
 
@@ -29,57 +29,11 @@ extension WebExtensionManager {
     static var areExtensionsEnabled: Bool {
         NSApp.delegateTyped.webExtensionManager != nil
     }
-
-    // MARK: - UI
-
-    static let buttonSize: CGFloat = 28
-
-    func toolbarButton(for context: WKWebExtensionContext) -> MouseOverButton {
-        let image = context.webExtension.icon(for: CGSize(width: Self.buttonSize, height: Self.buttonSize)) ?? NSImage(named: "Web")!
-        let button = MouseOverButton(image: image, target: self, action: #selector(toolbarButtonClicked))
-
-        button.identifier = NSUserInterfaceItemIdentifier(context.uniqueIdentifier)
-        button.bezelStyle = .shadowlessSquare
-        button.cornerRadius = 4
-        button.normalTintColor = .button
-        button.translatesAutoresizingMaskIntoConstraints = false
-
-        button.widthAnchor.constraint(equalToConstant: Self.buttonSize).isActive = true
-        button.heightAnchor.constraint(equalToConstant: Self.buttonSize).isActive = true
-
-        return button
-    }
-
-    @MainActor
-    @objc func toolbarButtonClicked(sender: NSButton) {
-        guard let identifier = sender.identifier?.rawValue else {
-            assertionFailure("Web Extension toolbar button has no identifier")
-            return
-        }
-
-        let context = contexts.first { context in
-            context.uniqueIdentifier == identifier
-        }
-
-        guard let context else {
-            assertionFailure("Navigation bar button for extension has no matching extension context")
-            return
-        }
-
-        if let popover = context.action(for: nil)?.popupPopover, popover.isShown {
-            popover.close()
-
-            if sender.window != popover.mainWindow {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2/3) {
-                    context.performAction(for: nil)
-                }
-            }
-            return
-        }
-
-        context.performAction(for: nil)
-    }
 }
+
+// MARK: - AutoconsentPreferencesProviding
+
+extension CookiePopupProtectionPreferences: AutoconsentPreferencesProviding {}
 
 // MARK: - Factory
 
@@ -88,7 +42,10 @@ enum WebExtensionManagerFactory {
 
     /// Creates a fully configured WebExtensionManager with all macOS-specific providers.
     @MainActor
-    static func makeManager() -> WebExtensionManager {
+    static func makeManager(
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        autoconsentPreferences: AutoconsentPreferencesProviding
+    ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
 
         let manager = WebExtensionManager(
@@ -97,7 +54,10 @@ enum WebExtensionManagerFactory {
             storageProvider: WebExtensionStorageProvider(),
             internalSiteHandler: internalSiteHandler,
             pixelFiring: MacOSWebExtensionPixelFiring(),
-            handlerProvider: WebExtensionHandlerProvider()
+            handlerProvider: WebExtensionHandlerProvider(
+                privacyConfigurationManager: privacyConfigurationManager,
+                autoconsentPreferences: autoconsentPreferences
+            )
         )
 
         internalSiteHandler.dataSource = manager

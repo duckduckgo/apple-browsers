@@ -52,14 +52,33 @@ public final class WebExtensionLoader: WebExtensionLoading {
     }
 
     private let storageProvider: WebExtensionStorageProviding
+    private let isInspectable: Bool
     public weak var delegate: WebExtensionLoadingDelegate?
 
-    public init(storageProvider: WebExtensionStorageProviding) {
+    public init(storageProvider: WebExtensionStorageProviding, isInspectable: Bool = false) {
         self.storageProvider = storageProvider
+        self.isInspectable = isInspectable
     }
 
     @MainActor
+    @discardableResult
     public func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+        // Check if extension is already loaded (idempotent operation)
+        if let existingContext = controller.extensionContexts.first(where: { $0.uniqueIdentifier == identifier }) {
+            Logger.webExtensions.debug("✓ Extension '\(identifier)' already loaded, skipping")
+
+            guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: identifier) else {
+                throw WebExtensionLoaderError.extensionNotFound(identifier: identifier)
+            }
+
+            return WebExtensionLoadResult(
+                identifier: identifier,
+                filename: extensionURL.lastPathComponent,
+                displayName: existingContext.webExtension.displayName,
+                version: existingContext.webExtension.version
+            )
+        }
+
         guard let extensionURL = storageProvider.resolveInstalledExtension(identifier: identifier) else {
             throw WebExtensionLoaderError.extensionNotFound(identifier: identifier)
         }
@@ -112,20 +131,16 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
         context.uniqueIdentifier = identifier
 
-        // In future, we should grant only what the extension requests.
-        let matchPatterns = context.webExtension.allRequestedMatchPatterns
+        let matchPatterns = webExtension.allRequestedMatchPatterns
         for pattern in matchPatterns {
             context.setPermissionStatus(.grantedExplicitly, for: pattern, expirationDate: nil)
         }
-        let permissions: [WKWebExtension.Permission] = (["activeTab", "alarms", "clipboardWrite", "contextMenus", "cookies", "declarativeNetRequest", "declarativeNetRequestFeedback", "declarativeNetRequestWithHostAccess", "menus", "nativeMessaging", "notifications", "scripting", "sidePanel", "storage", "tabs", "unlimitedStorage", "webNavigation", "webRequest"]).map {
-            WKWebExtension.Permission($0)
-        }
-        for permission in permissions {
+
+        for permission in webExtension.requestedPermissions {
             context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
         }
 
-        // For debugging purposes
-        context.isInspectable = true
+        context.isInspectable = isInspectable
         return context
     }
 }

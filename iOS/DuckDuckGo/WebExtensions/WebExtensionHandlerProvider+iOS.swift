@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import UIKit
 import WebExtensions
 import WebKit
@@ -24,14 +25,35 @@ import WebKit
 @available(iOS 18.4, *)
 final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
 
-    init() {}
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let autoconsentPreferences: AutoconsentPreferencesProviding
+    private let darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding?
+    private let autoconsentDelegate: IOSAutoconsentMessageHandlerDelegate
+
+    init(
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        autoconsentPreferences: AutoconsentPreferencesProviding,
+        darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil
+    ) {
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.autoconsentPreferences = autoconsentPreferences
+        self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
+        self.autoconsentDelegate = IOSAutoconsentMessageHandlerDelegate()
+    }
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
-        switch context.duckDuckGoExtensionType {
-        case .ddgInternalExtension:
-            return [ExampleMessageHandler()]
+        switch context.duckDuckGoWebExtensionType {
+        case .embedded:
+            return [AutoconsentWebExtensionMessageHandler(
+                privacyConfigurationManager: privacyConfigurationManager,
+                autoconsentPreferences: autoconsentPreferences,
+                delegate: autoconsentDelegate
+            )]
+        case .darkReader:
+            guard let provider = darkReaderExcludedDomainsProvider else { return [] }
+            return [DarkReaderWebExtensionMessageHandler(excludedDomainsProvider: provider)]
         default:
-            return [ExampleMessageHandler()]
+            return []
         }
     }
 }

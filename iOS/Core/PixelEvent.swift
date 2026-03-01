@@ -919,6 +919,7 @@ extension Pixel {
         case syncDuckAddressOverride
         case syncSuccessRateDaily
         case syncLocalTimestampResolutionTriggered(Feature)
+        case syncAiChatActiveDaily
         case syncMigratedToFileStore
         case syncFailedToMigrateToFileStore
         case syncFailedToInitFileStore
@@ -1140,7 +1141,6 @@ extension Pixel {
         case historyCleanOrphanedTabHistoryFailed
 
         // MARK: Subscription
-        case subscriptionActive
         case subscriptionOfferScreenImpression
         case subscriptionPurchaseAttempt
         case subscriptionPurchaseFailureOther
@@ -1172,18 +1172,8 @@ extension Pixel {
         case ddgSubscriptionManagementRemoval
         case subscriptionSuccessfulSubscriptionAttribution
         case subscriptionKeychainAccessError
-        // Subscription KeychainManager
-        case subscriptionKeychainManagerDataAddedToTheBacklog
-        case subscriptionKeychainManagerDeallocatedWithBacklog
-        case subscriptionKeychainManagerDataWroteFromBacklog
-        case subscriptionKeychainManagerFailedToWriteDataFromBacklog
         // Auth
-        case subscriptionInvalidRefreshTokenDetected
-        case subscriptionInvalidRefreshTokenSignedOut
-        case subscriptionInvalidRefreshTokenRecovered
         case subscriptionAuthV2GetTokensError2
-        case subscriptionPurchaseSuccessAfterPendingTransaction
-        case subscriptionPendingTransactionApproved
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
 
@@ -1305,6 +1295,7 @@ extension Pixel {
         // Plan Change
         case subscriptionViewAllPlansClick
         case subscriptionUpgradeClick
+        case subscriptionCancelPendingDowngradeClick
 
         // MARK: Apple Ad Attribution
         case appleAdAttribution
@@ -1494,11 +1485,6 @@ extension Pixel {
         case aiChatSingleDeleteSuccessful
         case aiChatSingleDeleteFailed
 
-        // MARK: AI Chat Contextual Onboarding
-        case aiChatContextualOnboardingDisplayed
-        case aiChatContextualOnboardingConfirmPressed
-        case aiChatContextualOnboardingSettingsPressed
-
         // MARK: AI Chat Recent Chats
         case aiChatRecentChatSelectedPinned
         case aiChatRecentChatSelected
@@ -1643,6 +1629,9 @@ extension Pixel {
         case webExtensionUninstallAllError
         case webExtensionLoaded
         case webExtensionLoadError
+        case webExtensionEmbeddedInstalled
+        case webExtensionEmbeddedUpgraded
+        case webExtensionEmbeddedInstallError
     }
 
 }
@@ -2524,6 +2513,7 @@ extension Pixel.Event {
         case .syncDuckAddressOverride: return "m_sync_duck_address_override"
         case .syncSuccessRateDaily: return "m_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature): return "m_sync_\(feature.name)_local_timestamp_resolution_triggered"
+        case .syncAiChatActiveDaily: return "m_sync_ai_chat_active_daily"
         case .syncMigratedToFileStore: return "m_debug_sync_migrated_to_file_store"
         case .syncFailedToInitFileStore: return "m_debug_sync_failed_to_init_file_store"
         case .syncFailedToMigrateToFileStore: return "m_debug_sync_failed_to_migrate_to_file_store"
@@ -2680,7 +2670,6 @@ extension Pixel.Event {
 
 
         // MARK: Subscription
-        case .subscriptionActive: return "m_privacy-pro_app_subscription_active"
         case .subscriptionOfferScreenImpression: return "m_privacy-pro_offer_screen_impression"
         case .subscriptionPurchaseAttempt: return "m_privacy-pro_terms-conditions_subscribe_click"
         case .subscriptionPurchaseFailureOther: return "m_privacy-pro_app_subscription-purchase_failure_other"
@@ -2712,18 +2701,8 @@ extension Pixel.Event {
         case .ddgSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
         case .subscriptionSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .subscriptionKeychainAccessError: return "m_privacy-pro_keychain_access_error"
-            // Subscription KeychainManager
-        case .subscriptionKeychainManagerDataAddedToTheBacklog: return "m_privacy-pro_keychain_manager_data_added_to_backlog"
-        case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
-        case .subscriptionKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
-        case .subscriptionKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
             // Auth
-        case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
-        case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
-        case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
         case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
-        case .subscriptionPurchaseSuccessAfterPendingTransaction: return "m_privacy-pro_purchase_success_after_pending_transaction"
-        case .subscriptionPendingTransactionApproved: return "m_privacy-pro_app_subscription-purchase_pending_transaction_approved"
 
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
@@ -2795,6 +2774,7 @@ extension Pixel.Event {
         // Plan Change
         case .subscriptionViewAllPlansClick: return "m_subscription_settings_view-all-plans_click"
         case .subscriptionUpgradeClick: return "m_subscription_settings_upgrade_click"
+        case .subscriptionCancelPendingDowngradeClick: return "m_subscription_settings_cancel-pending-downgrade_click"
 
         case .networkProtectionFailureRecoveryStarted: return "m_netp_ev_failure_recovery_started"
         case .networkProtectionFailureRecoveryFailed: return "m_netp_ev_failure_recovery_failed"
@@ -3010,11 +2990,6 @@ extension Pixel.Event {
         case .aiChatSingleDeleteSuccessful: return "m_aichat_single_delete_successful"
         case .aiChatSingleDeleteFailed: return "m_aichat_single_delete_failed"
 
-        // MARK: AI Chat Contextual Onboarding
-        case .aiChatContextualOnboardingDisplayed: return "m_aichat_contextual_onboarding_displayed"
-        case .aiChatContextualOnboardingConfirmPressed: return "m_aichat_contextual_onboarding_confirm_pressed"
-        case .aiChatContextualOnboardingSettingsPressed: return "m_aichat_contextual_onboarding_settings_pressed"
-
         // MARK: AI Chat Recent Chats
         case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"
         case .aiChatRecentChatSelected: return "m_aichat_recent_chat_selected"
@@ -3218,6 +3193,9 @@ extension Pixel.Event {
         case .webExtensionUninstallAllError: return "m_web_extension_uninstall_all_error"
         case .webExtensionLoaded: return "m_web_extension_loaded"
         case .webExtensionLoadError: return "m_web_extension_load_error"
+        case .webExtensionEmbeddedInstalled: return "m_web_extension_embedded_installed"
+        case .webExtensionEmbeddedUpgraded: return "m_web_extension_embedded_upgraded"
+        case .webExtensionEmbeddedInstallError: return "m_web_extension_embedded_install_error"
         }
     }
 }

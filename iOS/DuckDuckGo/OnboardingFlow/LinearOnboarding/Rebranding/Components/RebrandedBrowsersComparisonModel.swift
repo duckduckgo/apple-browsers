@@ -37,15 +37,15 @@ struct RebrandedBrowsersComparisonModel {
             var title: String {
                 switch self {
                 case .privateSearch:
-                    return "Search privately by default"
+                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch
                 case .blockTrackers:
-                    return "Block 3rd-party trackers"
+                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.trackerBlockers
                 case .blockCookies:
-                    return "Block cookie requests & pop-ups"
+                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopups
                 case .blockAds:
-                    return "Block targeted ads"
+                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.creepyAds
                 case .eraseData:
-                    return "Erase browsing data swiftly"
+                    return BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.eraseBrowsingData
                 }
             }
 

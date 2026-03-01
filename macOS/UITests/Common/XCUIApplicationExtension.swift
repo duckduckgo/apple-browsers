@@ -39,6 +39,11 @@ extension XCUIApplication {
         static let addressBarTextField = "AddressBarViewController.addressBarTextField"
         static let addressBarPassiveTextField = "AddressBarViewController.passiveTextField"
         static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"
+        static let searchModeToggleControl = "AddressBarButtonsViewController.searchModeToggleControl"
+        static let preferencesAIChatButton = "PreferencesSidebar.aichatButton"
+        static let aiFeaturesToggle = "Preferences.AIChat.aiFeaturesToggle"
+        static let showInAddressBarToggle = "Preferences.AIChat.showInAddressBarToggle"
+        static let showSearchAndDuckAIToggleToggle = "Preferences.AIChat.showSearchAndDuckAIToggleToggle"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
         static let bookmarksBarPopoverShow = "BookmarksBarPopover.show"
         static let bookmarksBarPopoverHide = "BookmarksBarPopover.hide"
@@ -130,22 +135,6 @@ extension XCUIApplication {
 
     var bundleID: String? {
         value(forKey: "bundleID") as? String
-    }
-
-    /// Dismiss popover with the passed button identifier if exists. If it does not exist it continues the execution without failing.
-    /// - Parameter buttonIdentifier: The button identifier we want to tap from the popover
-    func dismissPopover(buttonIdentifier: String) {
-        let popover = popovers.firstMatch
-        guard popover.exists else {
-            return
-        }
-
-        let button = popover.buttons[buttonIdentifier]
-        guard button.exists else {
-            return
-        }
-
-        button.tap()
     }
 
     /// Enforces single a single window by:
@@ -423,23 +412,16 @@ extension XCUIApplication {
         }
     }
 
-    /// Shows the bookmarks panel shortcut and taps it. If the bookmarks shortcut is visible, it only taps it.
-    func openBookmarksPanel() {
-        let bookmarksPanelShortcutButton = buttons[AccessibilityIdentifiers.bookmarksPanelShortcutButton]
-        if !bookmarksPanelShortcutButton.exists {
-            typeKey("k", modifierFlags: [.command, .shift])
-        }
-
-        bookmarksPanelShortcutButton.tap()
-    }
-
-    func dismissBookmarksBarPopover(shouldDisplayBar: Bool = false) {
+    func dismissBookmarksBarPopover(shouldDisplayBar: Bool = false, requirePopover: Bool = false) {
         let targetIdentifier = shouldDisplayBar ? AccessibilityIdentifiers.bookmarksBarPopoverShow : AccessibilityIdentifiers.bookmarksBarPopoverHide
         let targetButton = buttons[targetIdentifier]
-        XCTAssertTrue(
-            targetButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Bookmarks Bar Popover didn't show within a reasonable timeframe"
-        )
+        let timeout = requirePopover ? UITests.Timeouts.elementExistence : 0.5
+        guard targetButton.waitForExistence(timeout: timeout) else {
+            if requirePopover {
+                XCTFail("Bookmarks Bar Popover didn't show within a reasonable timeframe")
+            }
+            return
+        }
 
         targetButton.tap()
     }

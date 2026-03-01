@@ -25,6 +25,7 @@ final class ScanWideEventRecorder {
         let intervalStart: Date
         let attemptNumber: Int
         let attemptType: ScanWideEventData.AttemptType
+        let isFreeScan: Bool
     }
 
     static let sampleRate: Float = 1.0
@@ -63,6 +64,7 @@ final class ScanWideEventRecorder {
                                      dataBrokerVersion: dataBrokerVersion,
                                      attemptType: metadata.attemptType,
                                      attemptNumber: metadata.attemptNumber,
+                                     isFreeScan: metadata.isFreeScan,
                                      scanInterval: interval)
 
         return ScanWideEventRecorder(wideEvent: wideEvent,
@@ -106,6 +108,7 @@ final class ScanWideEventRecorder {
         queue.async {
             self.data.attemptNumber = metadata.attemptNumber
             self.data.attemptType = metadata.attemptType
+            self.data.isFreeScan = metadata.isFreeScan
             self.data.scanInterval?.start = metadata.intervalStart
             self.wideEvent.updateFlow(self.data)
         }
@@ -142,7 +145,7 @@ extension ScanWideEventRecorder.Metadata {
     ///   - set to confirmationOptOutScan if the most recent event is optOutRequested
     ///   - set to maintenanceScan if the most recent event is either optOutConfirmed, noMatchFound, matchesFound, or reAppearence (sic)
     ///   - set to newScan if there has been no scan success event, maintenanceScan otherwise
-    init(from scanJobData: ScanJobData, referenceDate: Date) {
+    init(from scanJobData: ScanJobData, referenceDate: Date, isFreeScan: Bool) {
         let sortedEvents = scanJobData.historyEvents.sorted { $0.date < $1.date }
 
         let lastSuccessDate = sortedEvents.last(where: { $0.isScanSuccessEvent() })?.date
@@ -179,5 +182,6 @@ extension ScanWideEventRecorder.Metadata {
         self.intervalStart = intervalStart
         self.attemptNumber = attemptNumber
         self.attemptType = attemptType
+        self.isFreeScan = isFreeScan
     }
 }

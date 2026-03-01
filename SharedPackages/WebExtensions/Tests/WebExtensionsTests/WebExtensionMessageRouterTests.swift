@@ -25,19 +25,16 @@ final class WebExtensionMessageRouterTests: XCTestCase {
 
     var router: WebExtensionMessageRouter!
     var mockHandler: MockMessageHandler!
-    var mockContext: MockWebExtensionContext!
 
     override func setUp() {
         super.setUp()
         router = WebExtensionMessageRouter()
         mockHandler = MockMessageHandler(featureName: "testFeatureName")
-        mockContext = MockWebExtensionContext(identifier: "test-extension-id")
     }
 
     override func tearDown() {
         router = nil
         mockHandler = nil
-        mockContext = nil
         super.tearDown()
     }
 
@@ -47,8 +44,10 @@ final class WebExtensionMessageRouterTests: XCTestCase {
         let message = WebExtensionMessage(
             featureName: "testFeatureName",
             method: "testMethod",
+            id: nil,
             params: ["key": "value"],
-            context: "test-extension-id"
+            context: "test-extension-id",
+            extensionIdentifier: "test-extension-id"
         )
 
         let result = await router.routeMessage(message)
@@ -67,7 +66,9 @@ final class WebExtensionMessageRouterTests: XCTestCase {
         let message = WebExtensionMessage(
             featureName: "unknownFeatureName",
             method: "testMethod",
-            context: "test-extension-id"
+            id: nil,
+            context: "test-extension-id",
+            extensionIdentifier: "test-extension-id"
         )
 
         let result = await router.routeMessage(message)
@@ -86,7 +87,9 @@ final class WebExtensionMessageRouterTests: XCTestCase {
         let message = WebExtensionMessage(
             featureName: "testFeatureName",
             method: "testMethod",
-            context: "test-extension-id"
+            id: nil,
+            context: "test-extension-id",
+            extensionIdentifier: "test-extension-id"
         )
 
         let result = await router.routeMessage(message)
@@ -108,13 +111,17 @@ final class WebExtensionMessageRouterTests: XCTestCase {
         let message1 = WebExtensionMessage(
             featureName: "featureName1",
             method: "method1",
-            context: "test-extension-id"
+            id: nil,
+            context: "test-extension-id",
+            extensionIdentifier: "test-extension-id"
         )
 
         let message2 = WebExtensionMessage(
             featureName: "featureName2",
             method: "method2",
-            context: "test-extension-id"
+            id: nil,
+            context: "test-extension-id",
+            extensionIdentifier: "test-extension-id"
         )
 
         _ = await router.routeMessage(message1)
@@ -137,13 +144,17 @@ final class WebExtensionMessageRouterTests: XCTestCase {
         let message1 = WebExtensionMessage(
             featureName: "sharedFeatureName",
             method: "method1",
-            context: "extension-1"
+            id: nil,
+            context: "extension-1",
+            extensionIdentifier: "extension-1"
         )
 
         let message2 = WebExtensionMessage(
             featureName: "sharedFeatureName",
             method: "method2",
-            context: "extension-2"
+            id: nil,
+            context: "extension-2",
+            extensionIdentifier: "extension-2"
         )
 
         _ = await router.routeMessage(message1)
@@ -172,19 +183,5 @@ final class MockMessageHandler: WebExtensionMessageHandler {
     func handleMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {
         receivedMessages.append(message)
         return responseToReturn
-    }
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-final class MockWebExtensionContext: WKWebExtensionContext {
-    private let _uniqueIdentifier: String
-
-    init(identifier: String) {
-        self._uniqueIdentifier = identifier
-        super.init(for: WKWebExtension())
-    }
-
-    override var uniqueIdentifier: String {
-        _uniqueIdentifier
     }
 }

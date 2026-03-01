@@ -40,6 +40,9 @@ let package = Package(
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit")
+            ],
+            resources: [
+                .copy("BundledWebExtensions")
             ]
         ),
         .testTarget(
@@ -47,7 +50,8 @@ let package = Package(
             dependencies: [
                 "WebExtensions",
                 .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit")
+                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
             ]
         ),
     ]

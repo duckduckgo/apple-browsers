@@ -739,12 +739,21 @@ extension AIChatCoordinator: AIChatSidebarResizeDelegate {
                 return unpinnedTabIDs + pinnedTabIDs
             }
         )
+        let currentTabIDsFromViewModels = Set(
+            windowControllersManager.allTabCollectionViewModels.flatMap { tabCollectionViewModel in
+                let unpinnedTabIDs = tabCollectionViewModel.tabViewModels.keys.map(\.uuid)
+                let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabViewModels.keys.map(\.uuid) ?? []
+                return unpinnedTabIDs + pinnedTabIDs
+            }
+        )
         let currentTabIDs = currentTabIDsFromCollections
 
         let initiallyRemovedTabIDs = Set(sessionStore.sessions.keys).subtracting(currentTabIDs)
         let protectedFloatingTabIDs = Set(initiallyRemovedTabIDs.filter { tabID in
             guard let session = sessionStore.sessions[tabID] else { return false }
-            return session.state.presentationMode == .floating && session.floatingWindowController?.isShowing == true
+            let isFloatingAndVisible = session.state.presentationMode == .floating && session.floatingWindowController?.isShowing == true
+            // Protect only transient tab-list churn (S11): if tab is still represented by live view models.
+            return isFloatingAndVisible && currentTabIDsFromViewModels.contains(tabID)
         })
         let effectiveCurrentTabIDs = currentTabIDs.union(protectedFloatingTabIDs)
         let removedTabIDs = Set(sessionStore.sessions.keys).subtracting(effectiveCurrentTabIDs)

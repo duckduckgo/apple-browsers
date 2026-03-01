@@ -19,11 +19,12 @@
 import PixelKit
 import Foundation
 
-/// Interval memory usage pixel that fires at startup and scheduled intervals with context parameters.
+/// Interval memory usage pixel that fires at scheduled intervals with context parameters.
 ///
 /// Each trigger (startup, 1h, 2h, 4h, 8h, 24h) fires at most once per app session.
+/// The startup trigger fires after a 2-minute delay to allow session restore to complete.
 /// Context parameters include bucketed memory usage, window count, standard/pinned tab counts,
-/// architecture, allocation usage, and uptime.
+/// architecture, and allocation usage.
 ///
 enum MemoryUsageIntervalPixel: PixelKitEvent {
 
@@ -38,10 +39,11 @@ enum MemoryUsageIntervalPixel: PixelKitEvent {
         case h8 = "8h"
         case h24 = "24h"
 
-        /// The elapsed time threshold in seconds for this trigger. `nil` for startup.
-        var elapsedSeconds: TimeInterval? {
+        /// The elapsed time threshold in seconds for this trigger.
+        /// Startup uses a 2-minute delay to allow session restore to complete before measuring.
+        var elapsedSeconds: TimeInterval {
             switch self {
-            case .startup: return nil
+            case .startup: return 120
             case .h1: return 3600
             case .h2: return 7200
             case .h4: return 14400
@@ -60,6 +62,7 @@ enum MemoryUsageIntervalPixel: PixelKitEvent {
         case .memoryUsage(let trigger, let context):
             var params = context.parameters
             params["trigger"] = trigger.rawValue
+            params.removeValue(forKey: "uptime")
             return params
         }
     }

@@ -1454,16 +1454,12 @@
 "duckai.context.chip.info" = "Отправляется вместе с сообщением для Duck.ai";
 
 /* Body text for the Duck.ai contextual onboarding screen explaining the feature */
-"duckai.contextual.onboarding.body" = "Duck.ai теперь отвечает на вопросы о просматриваемых страницах.\n\nСодержимое страницы добавляется только после ее прикрепления. Этот параметр всегда можно изменить в «Настройках».";
 
 /* Primary button text to dismiss the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.gotIt" = "Понятно";
 
 /* Title for the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.title" = "Задайте вопрос о странице";
 
 /* Secondary button text to open settings from the Duck.ai contextual onboarding screen */
-"duckai.contextual.onboarding.viewSettings" = "Открыть настройки";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI — дополнительный конфиденциальный сервис. Ваши данные не применяются для обучения ИИ.";
@@ -3337,6 +3333,9 @@
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Огнеупорные сайты";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Переводить сайты на темный режим";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Основные";
 
@@ -3507,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Тема";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Если у вас включена темная тема, она применится к сайтам.";
 
 /* Title for the Settings View */
 "settings.title" = "Настройки";

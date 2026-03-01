@@ -1433,8 +1433,10 @@ public struct UserText {
     public static let settingsSync = NSLocalizedString("settings.sync", value: "Sync & Backup", comment: "Settings screen cell text for sync and backup")
     public static let settingsLogins = NSLocalizedString("settings.logins", value: "Passwords & Autofill", comment: "Settings screen cell text for passwords")
 
-    // Appeareance Section
+    // Appearance Section
     public static let settingsTheme = NSLocalizedString("settings.theme", value: "Theme", comment: "Settings screen cell text for theme")
+    public static let settingsForceWebsiteDarkMode = NSLocalizedString("settings.force.website.dark.mode", value: "Force Dark Mode for Websites", comment: "Settings screen toggle for forcing dark mode on websites")
+    public static let settingsThemeSectionFooter = NSLocalizedString("settings.theme.section.footer", value: "Gives websites a dark appearance if you’re using dark theme.", comment: "Footer shown right below the first section, which has the force dark mode item at the last position")
     public static let settingsIcon = NSLocalizedString("settings.icon", value: "App Icon", comment: "Settings screen cell text for app icon selection")
     public static let settingsFirebutton = NSLocalizedString("settings.firebutton", value: "Fire Button Animation", comment: "Settings screen cell text for fire button animation")
     public static let settingsCustomizableButtonDeleteTabsAndData = NSLocalizedString("settings.customizable.button.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Label for customizable toolbar button that deletes tabs and data")

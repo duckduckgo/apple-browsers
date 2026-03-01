@@ -34,7 +34,18 @@ class MainViewFactory {
     var superview: UIView {
         coordinator.superview
     }
-    
+
+    var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    var isiOS26: Bool {
+        if #available(iOS 26, *) {
+            return true
+        }
+        return false
+    }
+
     private init(parentController: UIViewController,
                  omnibarDependencies: OmnibarDependencyProvider,
                  featureFlagger: FeatureFlagger) {
@@ -273,7 +284,16 @@ extension MainViewFactory {
         let toolbar = coordinator.toolbar!
         let navigationBarCollectionView = coordinator.navigationBarCollectionView!
 
+        #if compiler(>=6.2)
+        if #available(iOS 26, *), isPad {
+            let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+            coordinator.constraints.navigationBarContainerTop = container.topAnchor.constraint(equalTo: guide.topAnchor)
+        } else {
+            coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        }
+        #else
         coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        #endif
         coordinator.constraints.navigationBarContainerBottom = container.constrainView(toolbar, by: .bottom, to: .top)
         coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight, relatedBy: .equal)
 
@@ -291,8 +311,17 @@ extension MainViewFactory {
 
     private func constrainTabBarContainer() {
         let tabBarContainer = coordinator.tabBarContainer!
-        
+
+        #if compiler(>=6.2)
+        if #available(iOS 26, *), isPad {
+            let guide = superview.layoutGuide(for: .margins(cornerAdaptation: .vertical))
+            coordinator.constraints.tabBarContainerTop = tabBarContainer.topAnchor.constraint(equalTo: guide.topAnchor)
+        } else {
+            coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        }
+        #else
         coordinator.constraints.tabBarContainerTop = tabBarContainer.constrainView(superview.safeAreaLayoutGuide, by: .top)
+        #endif
 
         NSLayoutConstraint.activate([
             tabBarContainer.constrainView(superview, by: .leading),
@@ -340,10 +369,14 @@ extension MainViewFactory {
     }
 
     private func constrainToolbar() {
+
+        // Changing this?  Best change TabSwitcherViewController too
+        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
+
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
         NSLayoutConstraint.activate([
-            toolbar.constrainView(superview, by: .width),
+            toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),
             toolbar.constrainAttribute(.height, to: 49),
             coordinator.constraints.toolbarBottom,

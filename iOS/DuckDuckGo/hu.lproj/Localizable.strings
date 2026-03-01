@@ -3333,6 +3333,9 @@
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Tűzálló webhelyek";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Sötét mód kényszerítése a webhelyeken";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Általános";
 
@@ -3503,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Kinézet";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Sötét téma használata esetén sötét megjelenést kölcsönöz a webhelyeknek.";
 
 /* Title for the Settings View */
 "settings.title" = "Beállítások";

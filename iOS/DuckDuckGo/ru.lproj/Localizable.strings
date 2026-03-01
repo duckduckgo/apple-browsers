@@ -3333,6 +3333,9 @@
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Огнеупорные сайты";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Переводить сайты на темный режим";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Основные";
 
@@ -3503,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Тема";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Если у вас включена темная тема, она применится к сайтам.";
 
 /* Title for the Settings View */
 "settings.title" = "Настройки";

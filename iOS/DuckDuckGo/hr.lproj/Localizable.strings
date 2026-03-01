@@ -3333,6 +3333,9 @@
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Zaštićene mrežne lokacije (Fireproof)";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Prisilno aktiviranje tamnog načina rada za mrežne lokacije";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Općenito";
 
@@ -3503,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Tema";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Daje web stranicama tamni izgled ako koristiš tamnu temu.";
 
 /* Title for the Settings View */
 "settings.title" = "Postavke";

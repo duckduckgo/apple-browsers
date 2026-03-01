@@ -3333,6 +3333,9 @@
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Stránky s ochranou Fireproof";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Vynútiť tmavý režim pre webové stránky";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Všeobecné";
 
@@ -3503,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Motív";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Ak používaš tmavú tému, webové stránky budú mať tmavý vzhľad.";
 
 /* Title for the Settings View */
 "settings.title" = "Nastavenia";

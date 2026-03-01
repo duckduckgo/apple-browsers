@@ -3333,6 +3333,9 @@
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof Uygulanan Siteler";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Web Siteleri için Koyu Modu Zorla";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Genel";
 
@@ -3503,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Tema";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Koyu tema kullanıyorsanız web sitelerine koyu bir görünüm kazandırır.";
 
 /* Title for the Settings View */
 "settings.title" = "Ayarlar";

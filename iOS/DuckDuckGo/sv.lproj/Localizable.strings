@@ -3333,6 +3333,9 @@
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof-webbplatser";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Tvinga mörkt läge för webbplatser";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Allmänt";
 
@@ -3503,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Tema";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Ger webbplatser ett mörkt utseende om du använder ett mörkt tema.";
 
 /* Title for the Settings View */
 "settings.title" = "Inställningar";

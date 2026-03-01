@@ -3333,6 +3333,9 @@
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Site-uri protejate cu Fireproof";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Forțează modul întunecat pentru site-uri";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Generale";
 
@@ -3503,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Temă";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Oferă site-urilor un aspect întunecat dacă folosești tema întunecată.";
 
 /* Title for the Settings View */
 "settings.title" = "Setări";

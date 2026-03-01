@@ -3333,6 +3333,9 @@
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Fireproof-Websites";
 
+/* Settings screen toggle for forcing dark mode on websites */
+"settings.force.website.dark.mode" = "Erzwinge den Dunkelmodus für Webseiten";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Allgemein";
 
@@ -3503,6 +3506,9 @@
 
 /* Settings screen cell text for theme */
 "settings.theme" = "Design";
+
+/* Footer shown right below the first section, which has the force dark mode item at the last position */
+"settings.theme.section.footer" = "Verleiht Webseiten ein dunkles Aussehen, wenn du ein dunkles Design verwendest.";
 
 /* Title for the Settings View */
 "settings.title" = "Einstellungen";

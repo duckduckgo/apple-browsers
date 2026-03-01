@@ -24,10 +24,17 @@ public class ActionsHandler {
     var captchaTransactionId: CaptchaTransactionId?
 
     public let stepType: StepType
+
+    /// Temporary flag for short-lived payload telemetry validation.
+    /// Excludes the synthetic navigate action created for email-confirmation continuation
+    /// from the typed-fallback injection pixel while we verify the new raw-JSON path.
+    public let isEmailConfirmationContinuation: Bool
+
     private var actions: [Action]
 
-    public init(stepType: StepType, actions: [Action]) {
+    public init(stepType: StepType, actions: [Action], isEmailConfirmationContinuation: Bool = false) {
         self.stepType = stepType
+        self.isEmailConfirmationContinuation = isEmailConfirmationContinuation
         self.actions = actions
     }
 
@@ -92,7 +99,7 @@ public class ActionsHandler {
             actions = step.actions
         }
 
-        return ActionsHandler(stepType: .optOut, actions: actions)
+        return ActionsHandler(stepType: .optOut, actions: actions, isEmailConfirmationContinuation: true)
     }
 
     /// Creates an ActionsHandler for email confirmation continuation - starts at email confirmation action,

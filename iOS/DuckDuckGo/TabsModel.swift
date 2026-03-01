@@ -34,6 +34,10 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
     let mode: BrowsingMode
     private(set) var currentIndex: Int
     @Published private(set) var tabs: [Tab]
+    
+    var shouldCreateFireTabs: Bool {
+        mode == .fire
+    }
 
     var tabsPublisher: AnyPublisher<[Tab], Never> {
         $tabs.eraseToAnyPublisher()
@@ -48,7 +52,8 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
         if mode.allowsEmpty {
             self.tabs = tabs
         } else {
-            self.tabs = tabs.isEmpty ? [Tab(desktop: desktop)] : tabs
+            let shouldCreateFireTabs = mode == .fire
+            self.tabs = tabs.isEmpty ? [Tab(desktop: desktop, fireTab: shouldCreateFireTabs)] : tabs
         }
         self.currentIndex = currentIndex
     }
@@ -114,6 +119,10 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
     }
 
     func add(tab: Tab) {
+        guard shouldCreateFireTabs == tab.fireTab else {
+            assertionFailure("Wrong tab type for this tabs model")
+            return
+        }
         tabs.append(tab)
         currentIndex = tabs.count - 1
     }
@@ -141,7 +150,7 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
         let selectedTab = safeGetTabAt(currentIndex)
         tabs.remove(at: index)
         if tabs.isEmpty && !mode.allowsEmpty {
-            tabs.append(Tab())
+            tabs.append(Tab(fireTab: shouldCreateFireTabs))
         }
         setCurrentTab(selectedTab)
     }
@@ -174,7 +183,7 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
     func clearAll() {
         tabs.removeAll()
         if !mode.allowsEmpty {
-            tabs.append(Tab())
+            tabs.append(Tab(fireTab: shouldCreateFireTabs))
         }
         currentIndex = 0
     }
@@ -187,6 +196,7 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
 private extension BrowsingMode {
     var allowsEmpty: Bool {
         // TODO: - Enable this for fire mode, after updating tab manager and MVC to handle this state
+        // TODO: - Also enable the following tests: testWhenNormalModelHasDefaultTabAndFireModelIsEmptyThenAggregateCountIsOne, testWhenFireModeModelCreatedWithEmptyTabsThenTabsAreEmpty, testWhenFireModeLastTabRemovedThenNoHomeTabInserted, testWhenFireModeClearAllThenTabsAreCompletelyEmpty
         return false
     }
 }

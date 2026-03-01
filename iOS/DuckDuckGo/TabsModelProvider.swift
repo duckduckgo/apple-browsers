@@ -32,6 +32,7 @@ extension ReadableTabCollection {
 }
 
 protocol MutableTabCollection: AnyObject, ReadableTabCollection {
+    var shouldCreateFireTabs: Bool { get }
     var tabsPublisher: AnyPublisher<[Tab], Never> { get }
     var currentTab: Tab? { get }
     var currentIndex: Int { get }

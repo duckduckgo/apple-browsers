@@ -85,7 +85,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
     
     var currentTabsModel: MutableTabCollection {
-        switch _currentBrowsingMode {
+        switch currentBrowsingMode {
         case .fire:
             return tabsModelProvider.fireModeTabsModel
         case .normal:
@@ -337,11 +337,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             fatalError("Failed to copy configuration")
         }
 
+        let shouldCreateFireTab = currentTabsModel.shouldCreateFireTabs
         let tab: Tab
         if let request {
-            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!))
+            tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!), fireTab: shouldCreateFireTab)
         } else {
-            tab = Tab()
+            tab = Tab(fireTab: shouldCreateFireTab)
         }
         currentTabsModel.insert(tab: tab, at: currentTabsModel.currentIndex + 1)
         currentTabsModel.select(tabAt: currentTabsModel.currentIndex + 1)
@@ -395,9 +396,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return controller
     }
 
-    // TODO: - Make fire tab required to force correct usage when applied app wide
-    func addHomeTab(fireTab: Bool = false) {
-        let tab = Tab(fireTab: fireTab)
+    func addHomeTab() {
+        let tab = Tab(fireTab: currentTabsModel.shouldCreateFireTabs)
         currentTabsModel.add(tab: tab)
         currentTabsModel.select(tabAt: currentTabsModel.count - 1)
         save()
@@ -443,7 +443,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
 
         let link = url == nil ? nil : Link(title: nil, url: url!)
-        let tab = Tab(link: link)
+        let tab = Tab(link: link, fireTab: currentTabsModel.shouldCreateFireTabs)
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
 

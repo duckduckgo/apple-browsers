@@ -135,7 +135,7 @@ public class Tab: NSObject, NSCoding {
                 daxEasterEggLogoURL: String? = nil,
                 contextualChatURL: String? = nil,
                 supportsTabHistory: Bool = true,
-                fireTab: Bool = false,
+                fireTab: Bool,
                 isExternalLaunch: Bool = false,
                 shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {

@@ -2098,7 +2098,7 @@ class MainViewController: UIViewController {
     }
 
     // TODO: - Make fire tab required to force correct usage when applied app wide
-    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, fireTab: Bool = false) {
+    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -2112,7 +2112,7 @@ class MainViewController: UIViewController {
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.selectTab(existing)
         } else {
-            tabManager.addHomeTab(fireTab: fireTab)
+            tabManager.addHomeTab()
         }
         attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex)
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
@@ -3565,9 +3565,9 @@ extension MainViewController: TabDelegate {
         keyModifierFlags
     }
 
-    func tabDidRequestNewTab(_ tab: TabViewController, fireTab: Bool) {
+    func tabDidRequestNewTab(_ tab: TabViewController) {
         _ = findInPageView.resignFirstResponder()
-        newTab(fireTab: fireTab)
+        newTab()
     }
     
     func newTab(reuseExisting: Bool) {
@@ -3915,7 +3915,7 @@ extension MainViewController: TabSwitcherDelegate {
 
         switch behavior {
         case .createEmptyTabAtSamePosition:
-            let newTab = Tab()
+            let newTab = Tab(fireTab: tabManager.currentTabsModel.shouldCreateFireTabs)
             tabManager.replaceTab(at: index, withNewTab: newTab, clearTabHistory: clearTabHistory)
             tabManager.selectTab(newTab)
             showBars() // In case the browser chrome bars are hidden when calling this method

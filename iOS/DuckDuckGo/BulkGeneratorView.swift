@@ -127,9 +127,10 @@ struct BulkTabFactory: BulkGeneratorView.Factory {
     
     func generate(optionValues: [String: String]) async {
         let count = Int(optionValues["Tab Count"] ?? "0") ?? 0
+        let shouldCreateFireTabs = tabManager.currentTabsModel.shouldCreateFireTabs
         for index in 0 ..< count {
             let url = await urlFactory.generate(optionValues: ["index": "\(index)"])
-            let tab = Tab(uid: UUID().uuidString, link: .init(title: "Generated Tab \(index)", url: url))
+            let tab = Tab(uid: UUID().uuidString, link: .init(title: "Generated Tab \(index)", url: url), fireTab: shouldCreateFireTabs)
             tabManager.currentTabsModel.add(tab: tab)
         }
         return

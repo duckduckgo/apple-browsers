@@ -616,7 +616,7 @@ extension TabSwitcherViewController: TabViewCellDelegate {
             self.currentSelection = self.tabsModel.currentIndex
             self.isProcessingUpdates = false
             if self.tabsModel.tabs.isEmpty {
-                self.tabsModel.add(tab: Tab()) // TODO: - Only in normal mode
+                self.tabsModel.add(tab: Tab(fireTab: self.tabsModel.shouldCreateFireTabs)) // TODO: - Only in normal mode
             }
             self.delegate?.tabSwitcherDidBulkCloseTabs(tabSwitcher: self)
             self.refreshTitleViews()

@@ -669,14 +669,21 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
 
             switch result {
             case .succeeded, .shouldStop:
-                self.temporaryShutdownRecoveryTask?.cancel()
+                self.workQueue.async {
+                    self.cancelTemporaryShutdownRecoveryAttempts()
+                }
             case .shouldRetry:
                 if attempts >= maxAttempts {
-                    self.temporaryShutdownRecoveryTask?.cancel()
+                    self.workQueue.async {
+                        self.cancelTemporaryShutdownRecoveryAttempts()
+                    }
                 }
             }
         }, cancellationHandler: { [weak self] in
-            self?.temporaryShutdownRecoveryTask = nil
+            guard let self else { return }
+            self.workQueue.async {
+                self.temporaryShutdownRecoveryTask = nil
+            }
         })
     }
 
@@ -686,61 +693,67 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
         case shouldStop
     }
 
+    private enum RecoveryEligibility {
+        case eligible(PacketTunnelSettingsGenerating)
+        case pathNotSatisfiable
+        case stateChanged
+    }
+
     private func performTemporaryShutdownRecoveryAttempt(settingsGenerator: PacketTunnelSettingsGenerating) async -> RecoveryAttemptResult {
         await withCheckedContinuation { continuation in
             workQueue.async {
-                guard let activeGenerator = self.canRecover(with: settingsGenerator) else {
-                    // canRecover checks lastKnownPathStatus.isSatisfiable - if not satisfiable, stop retrying
-                    if let lastKnownPathStatus = self.lastKnownPathStatus, !lastKnownPathStatus.isSatisfiable {
-                        continuation.resume(returning: .shouldStop)
-                    } else {
+                switch self.recoveryEligibility(for: settingsGenerator) {
+                case .stateChanged:
+                    continuation.resume(returning: .shouldStop)
+                case .pathNotSatisfiable:
+                    continuation.resume(returning: .shouldStop)
+                case .eligible(let activeGenerator):
+                    do {
+                        try self.setNetworkSettings(activeGenerator.generateNetworkSettings())
+
+                        let (wgConfig, resolutionResults) = activeGenerator.uapiConfiguration()
+                        self.logEndpointResolutionResults(resolutionResults)
+
+                        self.state = .started(
+                            try self.startWireGuardBackend(wgConfig: wgConfig),
+                            activeGenerator
+                        )
+
+                        if self.temporaryShutdownRecoveryFailed {
+                            self.eventHandler.handle(.endTemporaryShutdownStateRecoverySuccess)
+                        }
+
+                        self.temporaryShutdownRecoveryFailed = false
+                        continuation.resume(returning: .succeeded)
+                    } catch {
+                        self.logHandler(.error, "Failed to restart backend: \(error.localizedDescription)")
+
+                        if self.temporaryShutdownRecoveryFailed {
+                            self.eventHandler.handle(.endTemporaryShutdownStateRecoveryFailure(error))
+                        } else {
+                            self.eventHandler.handle(.endTemporaryShutdownStateAttemptFailure(error))
+                            self.temporaryShutdownRecoveryFailed = true
+                        }
+
                         continuation.resume(returning: .shouldRetry)
                     }
-                    return
-                }
-
-                do {
-                    try self.setNetworkSettings(activeGenerator.generateNetworkSettings())
-
-                    let (wgConfig, resolutionResults) = activeGenerator.uapiConfiguration()
-                    self.logEndpointResolutionResults(resolutionResults)
-
-                    self.state = .started(
-                        try self.startWireGuardBackend(wgConfig: wgConfig),
-                        activeGenerator
-                    )
-
-                    if self.temporaryShutdownRecoveryFailed {
-                        self.eventHandler.handle(.endTemporaryShutdownStateRecoverySuccess)
-                    }
-
-                    self.temporaryShutdownRecoveryFailed = false
-                    continuation.resume(returning: .succeeded)
-                } catch {
-                    self.logHandler(.error, "Failed to restart backend: \(error.localizedDescription)")
-
-                    if self.temporaryShutdownRecoveryFailed {
-                        self.eventHandler.handle(.endTemporaryShutdownStateRecoveryFailure(error))
-                    } else {
-                        self.eventHandler.handle(.endTemporaryShutdownStateAttemptFailure(error))
-                        self.temporaryShutdownRecoveryFailed = true
-                    }
-
-                    continuation.resume(returning: .shouldRetry)
                 }
             }
         }
     }
 
-    private func canRecover(with settingsGenerator: PacketTunnelSettingsGenerating) -> PacketTunnelSettingsGenerating? {
+    private func recoveryEligibility(for settingsGenerator: PacketTunnelSettingsGenerating) -> RecoveryEligibility {
         guard case .temporaryShutdown(let activeGenerator) = state,
-              settingsGenerator === activeGenerator,
-              let lastKnownPathStatus = lastKnownPathStatus,
-              lastKnownPathStatus.isSatisfiable else {
-            return nil
+              settingsGenerator === activeGenerator else {
+            return .stateChanged
         }
 
-        return activeGenerator
+        guard let lastKnownPathStatus = lastKnownPathStatus,
+              lastKnownPathStatus.isSatisfiable else {
+            return .pathNotSatisfiable
+        }
+
+        return .eligible(activeGenerator)
     }
 
     private func cancelTemporaryShutdownRecoveryAttempts() {

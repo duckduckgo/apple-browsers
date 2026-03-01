@@ -2763,7 +2763,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Move to Sidebar"
+            "value" : "Move to sidebar"
           }
         }
       }
@@ -2835,7 +2835,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Move to Window"
+            "value" : "Move to window"
           }
         }
       }
@@ -2967,7 +2967,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Show Tab"
+            "value" : "Show tab"
           }
         }
       }

@@ -51,6 +51,13 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem(title: "Reset Toggle Animation", action: #selector(resetToggleAnimation))
                 .targetting(self)
+
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Test Page Context") {
+                NSMenuItem(title: "Send Test Prompt with PageContext", action: #selector(sendTestPromptWithPageContext))
+                    .targetting(self)
+            }
         }
     }
 
@@ -97,6 +104,39 @@ final class AIChatDebugMenu: NSMenu {
     @MainActor @objc func resetTogglePopoverSeenFlag() {
         AIChatTogglePopoverCoordinator(windowControllersManager: NSApp.delegateTyped.windowControllersManager).clearPopoverSeenFlag()
         storage.userDidSeeToggleOnboarding = false
+    }
+
+    @MainActor @objc func sendTestPromptWithPageContext() {
+        let testPageContext = AIChatPageContextData(
+            title: "Test Page Title",
+            favicon: [.init(href: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", rel: "icon")],
+            url: "https://example.com/test-page",
+            content: "This is the extracted DOM text content from the test page. It contains information about various topics that the AI can use to provide context-aware responses. The page discusses Swift programming, macOS development, and browser architecture.",
+            truncated: false,
+            fullContentLength: 250
+        )
+
+        let prompt = AIChatNativePrompt.queryPrompt(
+            "Summarize this page",
+            autoSubmit: true,
+            pageContext: testPageContext
+        )
+
+        // Get the sidebar presenter and present the prompt
+        guard let mainWindowController = NSApp.delegateTyped.windowControllersManager.lastKeyMainWindowController else {
+            showAlert(message: "No main window available")
+            return
+        }
+
+        let sidebarPresenter = mainWindowController.mainViewController.aiChatSidebarPresenter
+        sidebarPresenter.presentSidebar(for: prompt)
+    }
+
+    private func showAlert(message: String) {
+        let alert = NSAlert()
+        alert.messageText = message
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     private func updateWebUIMenuItemsState() {

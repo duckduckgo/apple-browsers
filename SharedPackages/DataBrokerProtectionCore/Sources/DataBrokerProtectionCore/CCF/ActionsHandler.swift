@@ -29,12 +29,14 @@ public class ActionsHandler {
     /// Excludes the synthetic navigate action created for email-confirmation continuation
     /// from the typed-fallback injection pixel while we verify the new raw-JSON path.
     public let isEmailConfirmationContinuation: Bool
+    public let syntheticContinuationActionId: String?
 
     private var actions: [Action]
 
-    public init(stepType: StepType, actions: [Action], isEmailConfirmationContinuation: Bool = false) {
+    public init(stepType: StepType, actions: [Action], isEmailConfirmationContinuation: Bool = false, syntheticContinuationActionId: String? = nil) {
         self.stepType = stepType
         self.isEmailConfirmationContinuation = isEmailConfirmationContinuation
+        self.syntheticContinuationActionId = syntheticContinuationActionId
         self.actions = actions
     }
 
@@ -99,7 +101,7 @@ public class ActionsHandler {
             actions = step.actions
         }
 
-        return ActionsHandler(stepType: .optOut, actions: actions, isEmailConfirmationContinuation: true)
+        return ActionsHandler(stepType: .optOut, actions: actions)
     }
 
     /// Creates an ActionsHandler for email confirmation continuation - starts at email confirmation action,
@@ -120,7 +122,10 @@ public class ActionsHandler {
         var actions: [Action] = [NavigateAction(id: emailConfirmationAction.id, actionType: .navigate, url: confirmationURL.absoluteString)]
         actions.append(contentsOf: Array(step.actions.suffix(from: afterIndex)))
 
-        return ActionsHandler(stepType: .optOut, actions: actions)
+        return ActionsHandler(stepType: .optOut,
+                              actions: actions,
+                              isEmailConfirmationContinuation: true,
+                              syntheticContinuationActionId: emailConfirmationAction.id)
     }
 
 }

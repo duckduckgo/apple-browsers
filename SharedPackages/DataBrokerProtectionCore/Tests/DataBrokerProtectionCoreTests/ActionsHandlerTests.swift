@@ -266,6 +266,7 @@ final class ActionsHandlerTests: XCTestCase {
         let sut = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
 
         XCTAssertFalse(sut.isEmailConfirmationContinuation)
+        XCTAssertNil(sut.syntheticContinuationActionId)
         XCTAssertEqual(sut.nextAction()?.id, "navigate1")
         XCTAssertEqual(sut.nextAction()?.id, "navigate2")
         XCTAssertEqual(sut.nextAction()?.id, "email")
@@ -286,6 +287,7 @@ final class ActionsHandlerTests: XCTestCase {
         let sut = ActionsHandler.forEmailConfirmationContinuation(step, confirmationURL: confirmationURL)
 
         XCTAssertTrue(sut.isEmailConfirmationContinuation)
+        XCTAssertEqual(sut.syntheticContinuationActionId, "email")
         let firstAction = sut.nextAction()
         XCTAssertEqual(firstAction?.id, "email")
         XCTAssertTrue(firstAction is NavigateAction)

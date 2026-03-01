@@ -318,7 +318,9 @@ public extension SubJobWebRunning {
 
     private func shouldFireTypedFallbackPixel(for action: Action) -> Bool {
         guard action.json == nil else { return false }
-        let isSyntheticEmailContinuationNavigate = actionsHandler?.isEmailConfirmationContinuation == true && action is NavigateAction
+        let isSyntheticEmailContinuationNavigate = actionsHandler?.isEmailConfirmationContinuation == true &&
+            actionsHandler?.syntheticContinuationActionId == action.id &&
+            action is NavigateAction
         return !isSyntheticEmailContinuationNavigate
     }
 

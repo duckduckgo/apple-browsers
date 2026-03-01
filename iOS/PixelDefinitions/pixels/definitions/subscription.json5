@@ -388,7 +388,7 @@
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
                 "description": "The funnel that led to the subscription flow",
-                "pattern": "^funnel_.*"
+                "pattern": "^funnel_"
             }
         ]
     },
@@ -465,7 +465,7 @@
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
                 "description": "The funnel that led to the restore flow",
-                "pattern": "^funnel_.*"
+                "pattern": "^funnel_"
             }
         ]
     },
@@ -556,7 +556,7 @@
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
                 "description": "The funnel that led to the plan change flow",
-                "pattern": "^funnel_.*"
+                "pattern": "^funnel_"
             }
         ]
     },

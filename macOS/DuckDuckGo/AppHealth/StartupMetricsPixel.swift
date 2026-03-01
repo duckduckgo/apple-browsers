@@ -31,8 +31,8 @@ struct StartupMetricsPixel: PixelKitEvent {
     /// Number of active logical processors at launch time, or `nil` if unavailable.
     let activeProcessorCount: Int?
 
-    /// Whether the Mac is running on battery power at launch time.
-    let isOnBattery: Bool
+    /// Whether the Mac is running on battery power at launch time, or `nil` if power source information is unavailable.
+    let isOnBattery: Bool?
 
     /// Indicates if Session Restoration was enabled
     let sessionRestoration: Bool
@@ -87,11 +87,14 @@ struct StartupMetricsPixel: PixelKitEvent {
         var params = [String: String]()
 
         params["architecture"] = architecture
-        params["battery_power"] = isOnBattery.description
         params["session_restoration"] = sessionRestoration.description
 
         if let count = activeProcessorCount {
             params["active_processor_count"] = StartupMetricsBuckets.bucketProcessorCount(count)
+        }
+
+        if let isOnBattery {
+            params["battery_power"] = isOnBattery.description
         }
         if let count = standardTabs {
             params["standard_tabs"] = MemoryReportingBuckets.bucketStandardTabCount(count).description

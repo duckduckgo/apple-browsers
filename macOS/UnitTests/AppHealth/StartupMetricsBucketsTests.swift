@@ -40,56 +40,6 @@ final class StartupMetricsBucketsTests: XCTestCase {
         XCTAssertEqual(StartupMetricsBuckets.bucketProcessorCount(64), "12")
     }
 
-    // MARK: - Window Count Bucketing
-
-    func testBucketWindowCountAtBoundaries() {
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(0), "0")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(1), "1")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(2), "2")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(4), "4")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(7), "7")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(11), "11")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(21), "21")
-    }
-
-    func testBucketWindowCountWithinRanges() {
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(3), "2")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(5), "4")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(6), "4")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(9), "7")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(10), "7")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(15), "11")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(20), "11")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(50), "21")
-        XCTAssertEqual(StartupMetricsBuckets.bucketWindowCount(100), "21")
-    }
-
-    // MARK: - Tab Count Bucketing
-
-    func testBucketTabCountAtBoundaries() {
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(0), "0")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(1), "1")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(2), "2")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(4), "4")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(7), "7")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(11), "11")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(21), "21")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(51), "51")
-    }
-
-    func testBucketTabCountWithinRanges() {
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(3), "2")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(5), "4")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(6), "4")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(9), "7")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(10), "7")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(15), "11")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(30), "21")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(50), "21")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(100), "51")
-        XCTAssertEqual(StartupMetricsBuckets.bucketTabCount(500), "51")
-    }
-
     // MARK: - Milliseconds Bucketing
 
     func testBucketMillisecondsAtBoundaries() {

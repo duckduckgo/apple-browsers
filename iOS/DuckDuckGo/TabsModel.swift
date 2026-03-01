@@ -49,12 +49,8 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
         
     public init(tabs: [Tab] = [], currentIndex: Int = 0, desktop: Bool, mode: BrowsingMode = .normal) {
         self.mode = mode
-        if mode.allowsEmpty {
-            self.tabs = tabs
-        } else {
-            let shouldCreateFireTabs = mode == .fire
-            self.tabs = tabs.isEmpty ? [Tab(desktop: desktop, fireTab: shouldCreateFireTabs)] : tabs
-        }
+        let shouldCreateFireTabs = mode == .fire
+        self.tabs = tabs.isEmpty ? [Tab(desktop: desktop, fireTab: shouldCreateFireTabs)] : tabs
         self.currentIndex = currentIndex
     }
 
@@ -149,7 +145,7 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
     func remove(at index: Int) {
         let selectedTab = safeGetTabAt(currentIndex)
         tabs.remove(at: index)
-        if tabs.isEmpty && !mode.allowsEmpty {
+        if tabs.isEmpty {
             tabs.append(Tab(fireTab: shouldCreateFireTabs))
         }
         setCurrentTab(selectedTab)
@@ -182,21 +178,11 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
 
     func clearAll() {
         tabs.removeAll()
-        if !mode.allowsEmpty {
-            tabs.append(Tab(fireTab: shouldCreateFireTabs))
-        }
+        tabs.append(Tab(fireTab: shouldCreateFireTabs))
         currentIndex = 0
     }
     
     func tabExists(withHost host: String) -> Bool {
         return tabs.contains { $0.link?.url.host == host }
-    }
-}
-
-private extension BrowsingMode {
-    var allowsEmpty: Bool {
-        // TODO: - Enable this for fire mode, after updating tab manager and MVC to handle this state
-        // TODO: - Also enable the following tests: testWhenNormalModelHasDefaultTabAndFireModelIsEmptyThenAggregateCountIsOne, testWhenFireModeModelCreatedWithEmptyTabsThenTabsAreEmpty, testWhenFireModeLastTabRemovedThenNoHomeTabInserted, testWhenFireModeClearAllThenTabsAreCompletelyEmpty
-        return false
     }
 }

@@ -28,16 +28,6 @@ final class TabsModelProviderTests: XCTestCase {
 
     // MARK: - Aggregate Count
 
-    func testWhenNormalModelHasDefaultTabAndFireModelIsEmptyThenAggregateCountIsOne() throws {
-        throw XCTSkip("Temporary disabled until fire mode can support being empty")
-        let normalModel = TabsModel(desktop: false)
-        let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
-
-        let sut = makeSUT(normalModel: normalModel, fireModel: fireModel)
-
-        XCTAssertEqual(sut.aggregateTabsModel.count, 1)
-    }
-
     func testWhenBothModelsHaveTabsThenAggregateCountIsSumOfBoth() {
         let normalModel = TabsModel(tabs: [
             Tab(link: exampleLink),

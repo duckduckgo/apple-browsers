@@ -55,6 +55,8 @@ public enum DesignSystemColor {
     case controlsFillPrimary
     case controlsFillSecondary
     case controlsFillTertiary
+    case controlsRaisedBackdrop
+    case controlsRaisedFillPrimary
 
     // Brand
     case accent

@@ -69,6 +69,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let controlsFillPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
     private static let controlsFillSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.12), darkColor: xF9F9F9.opacity(0.18))
     private static let controlsFillTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.18), darkColor: xF9F9F9.opacity(0.24))
+    private static let controlsRaisedBackdrop = DynamicColor(lightColor: x000000.opacity(0.09), darkColor: xFFFFFF.opacity(0.12))
+    private static let controlsRaisedFillPrimary = DynamicColor(lightColor: .white, darkColor: xFFFFFF.opacity(0.18))
 
     // Icons
     private static let icons = DynamicColor(lightColor: x1F1F1F.opacity(0.84), darkColor: .tint(0.78))
@@ -176,6 +178,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .controlsFillPrimary: return controlsFillPrimary
         case .controlsFillSecondary: return controlsFillSecondary
         case .controlsFillTertiary: return controlsFillTertiary
+        case .controlsRaisedBackdrop: return controlsRaisedBackdrop
+        case .controlsRaisedFillPrimary: return controlsRaisedFillPrimary
         case .decorationPrimary: return decorationPrimary
         case .decorationSecondary: return decorationSecondary
         case .decorationTertiary: return decorationTertiary

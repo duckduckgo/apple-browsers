@@ -416,7 +416,6 @@ final class AIChatCoordinator: AIChatCoordinating {
     private func tearDownUI(for tabID: TabIdentifier) {
         guard let session = sessionStore.sessions[tabID] else { return }
         session.floatingWindowController?.close(reason: .teardown)
-        session.chatViewController?.stopLoading()
         session.chatViewController?.removeCompletely()
     }
 

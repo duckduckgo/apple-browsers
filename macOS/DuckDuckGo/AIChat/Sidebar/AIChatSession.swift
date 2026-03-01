@@ -87,6 +87,9 @@ final class AIChatSession {
             snapshotCurrentURL()
         }
 
+        // Stop loading only after URL snapshot so restoration does not capture
+        // a transient blank-page URL from teardown.
+        chatViewController?.stopLoading()
         floatingWindowController = nil
         chatViewController = nil
         cancellables.removeAll()

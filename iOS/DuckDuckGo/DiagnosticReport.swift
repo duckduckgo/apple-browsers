@@ -132,7 +132,7 @@ class DiagnosticReportDataSource: UIActivityItemProvider {
     func tabsReport() -> String {
         """
         ### Tabs Report
-        Tabs: \(tabManager?.count ?? -1)
+        Tabs: \(tabManager?.allTabsModel.count ?? -1)
         """
     }
 

@@ -32,7 +32,7 @@ import PrivacyConfig
 import WebExtensions
 
 protocol TabManaging {
-    var count: Int { get }
+    var currentTabsModel: MutableTabCollection { get }
     @MainActor func prepareAllTabsExceptCurrentForDataClearing()
     @MainActor func prepareCurrentTabForDataClearing()
     func removeAll()
@@ -72,10 +72,6 @@ protocol TrackerAnimationSuppressing {
 
 class TabManager: TabManaging, TrackerAnimationSuppressing {
 
-    // TODO: - Remove this
-    var model: TabsModel {
-        currentTabsModel as! TabsModel
-    }
     private let tabsModelProvider: TabsModelProviding
     private var fireModeCapability: FireModeCapable {
         FireModeCapability.create(using: featureFlagger)
@@ -279,7 +275,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
                                  andLoadRequest: url == nil ? nil : URLRequest.userInitiated(url!),
-                                 consumeCookies: !model.hasActiveTabs)
+                                 consumeCookies: !currentTabsModel.hasActiveTabs)
         controller.delegate = delegate
         controller.aiChatContentHandlingDelegate = aiChatContentDelegate
         controller.loadViewIfNeeded()
@@ -288,7 +284,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     func current(createIfNeeded: Bool = false) -> TabViewController? {
-        guard let tab = model.currentTab else { return nil }
+        guard let tab = currentTabsModel.currentTab else { return nil }
 
         if let controller = controller(for: tab) {
             return controller
@@ -319,26 +315,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     func viewModelForCurrentTab() -> TabViewModel? {
-        guard let tab = model.currentTab else { return nil }
+        guard let tab = currentTabsModel.currentTab else { return nil }
         return viewModel(for: tab)
-    }
-
-    var isEmpty: Bool {
-        return tabControllerCache.isEmpty
-    }
-    
-    var hasUnread: Bool {
-        return model.hasUnread
-    }
-
-    var count: Int {
-        return model.count
     }
 
     @MainActor
     func select(tabAt index: Int) -> TabViewController {
         current()?.dismiss()
-        model.select(tabAt: index)
+        currentTabsModel.select(tabAt: index)
 
         save()
         return current(createIfNeeded: true)!
@@ -359,8 +343,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         } else {
             tab = Tab()
         }
-        model.insert(tab: tab, at: model.currentIndex + 1)
-        model.select(tabAt: model.currentIndex + 1)
+        currentTabsModel.insert(tab: tab, at: currentTabsModel.currentIndex + 1)
+        currentTabsModel.select(tabAt: currentTabsModel.currentIndex + 1)
 
         let specialErrorPageNavigationHandler = SpecialErrorPageNavigationHandler(
             maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
@@ -399,7 +383,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               voiceSearchHelper: voiceSearchHelper)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
-                                 consumeCookies: !model.hasActiveTabs,
+                                 consumeCookies: !currentTabsModel.hasActiveTabs,
                                  loadingInitiatedByParentTab: true)
         controller.delegate = delegate
         controller.loadViewIfNeeded()
@@ -414,21 +398,21 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     // TODO: - Make fire tab required to force correct usage when applied app wide
     func addHomeTab(fireTab: Bool = false) {
         let tab = Tab(fireTab: fireTab)
-        model.add(tab: tab)
-        model.select(tabAt: model.count - 1)
+        currentTabsModel.add(tab: tab)
+        currentTabsModel.select(tabAt: currentTabsModel.count - 1)
         save()
     }
 
     func firstHomeTab() -> Tab? {
-        return model.tabs.first(where: { $0.link == nil })
+        return currentTabsModel.tabs.first(where: { $0.link == nil })
     }
 
     func first(withId id: String) -> Tab? {
-        return model.tabs.first { $0.uid == id }
+        return currentTabsModel.tabs.first { $0.uid == id }
     }
 
     func first(withUrl url: URL) -> Tab? {
-        return model.tabs.first(where: {
+        return currentTabsModel.tabs.first(where: {
             guard let linkUrl = $0.link?.url else { return false }
 
             if linkUrl == url {
@@ -446,8 +430,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func selectTab(_ tab: Tab) {
-        guard let index = model.indexOf(tab: tab) else { return }
-        model.select(tabAt: index)
+        guard let index = currentTabsModel.indexOf(tab: tab) else { return }
+        currentTabsModel.select(tabAt: index)
         save()
     }
 
@@ -463,11 +447,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
 
-        let index = model.currentIndex
-        model.insert(tab: tab, at: index + 1)
+        let index = currentTabsModel.currentIndex
+        currentTabsModel.insert(tab: tab, at: index + 1)
 
         if !inBackground {
-            model.select(tabAt: index + 1)
+            currentTabsModel.select(tabAt: index + 1)
         }
 
         cacheDelegate?.tabManager(self, didCreateController: controller)
@@ -480,30 +464,30 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     ///  Tab Switcher's UICollectionView 'delete items' function doesn't complain about mis-matching
     ///   number of items.
     func bulkRemoveTabs(_ indexPaths: [IndexPath]) {
-        let tabs = indexPaths.map { model.get(tabAt: $0.row) }
-        model.remove(indexPaths)
+        let tabs = indexPaths.map { currentTabsModel.get(tabAt: $0.row) }
+        currentTabsModel.remove(indexPaths)
         clean(tabs: tabs, clearTabHistory: true)
         save()
     }
 
     func remove(at index: Int, clearTabHistory: Bool = true) {
-        let tab = model.get(tabAt: index)
-        model.remove(tab: tab)
+        let tab = currentTabsModel.get(tabAt: index)
+        currentTabsModel.remove(tab: tab)
         clean(tabs: [tab], clearTabHistory: clearTabHistory)
         save()
     }
 
     func replaceTab(at index: Int, withNewTab newTab: Tab, clearTabHistory: Bool = true) {
         // Removing a Tab automatically inserts a new one if tabs are empty. Hence add a new one only if needed
-        if model.tabs.count == 1 {
+        if currentTabsModel.tabs.count == 1 {
             // Since we're not re-inserting we should use the proper removal to ensure
             //  things are cleaned up properly.
             remove(at: index, clearTabHistory: clearTabHistory)
         } else {
-            let oldTab = model.get(tabAt: index)
-            model.remove(at: index)
+            let oldTab = currentTabsModel.get(tabAt: index)
+            currentTabsModel.remove(at: index)
             clean(tabs: [oldTab], clearTabHistory: clearTabHistory)
-            model.insert(tab: newTab, at: index)
+            currentTabsModel.insert(tab: newTab, at: index)
         }
         save()
     }
@@ -516,9 +500,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func removeAll() {
-        let tabIDs = model.tabs.map { $0.uid }
+        // TODO: - Handle fire mode burns
+        let tabIDs = currentTabsModel.tabs.map { $0.uid }
         previewsSource.removeAllPreviews()
-        model.clearAll()
+        currentTabsModel.clearAll()
         for controller in tabControllerCache {
             removeFromCache(controller)
         }
@@ -528,7 +513,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func removeLeftoverInteractionStates() {
-        interactionStateSource?.removeAll(excluding: model.tabs)
+        interactionStateSource?.removeAll(excluding: allTabsModel.tabs)
     }
 
     @MainActor
@@ -563,7 +548,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     
     @MainActor
     func isCurrentTab(_ tab: Tab) -> Bool {
-        model.currentTab === tab
+        currentTabsModel.currentTab === tab
     }
     
     @MainActor
@@ -594,7 +579,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             let imageDomainURLs = contents.compactMap({ $0.filename })
 
             // create a Set of all unique hosts in case there are hundreds of tabs with many duplicate hosts
-            let tabLink = Set(self.model.tabs.compactMap { tab in
+            let tabLink = Set(self.allTabsModel.tabs.compactMap { tab in
                 if let host = tab.link?.url.host {
                     return host
                 }
@@ -658,14 +643,14 @@ extension TabManager {
 
     private func assertTabPreviewCount() {
         let totalStoredPreviews = previewsSource.totalStoredPreviews()
-        let totalTabs = model.tabs.count
+        let totalTabs = allTabsModel.tabs.count
 
         if let storedPreviews = totalStoredPreviews, storedPreviews > totalTabs {
             Pixel.fire(pixel: .cachedTabPreviewsExceedsTabCount, withAdditionalParameters: [
                 PixelParameters.tabPreviewCountDelta: "\(storedPreviews - totalTabs)"
             ])
             Task(priority: .utility) {
-                await previewsSource.removePreviewsWithIdNotIn(Set(model.tabs.map { $0.uid }))
+                await previewsSource.removePreviewsWithIdNotIn(Set(allTabsModel.tabs.map { $0.uid }))
             }
         }
     }
@@ -681,7 +666,7 @@ extension TabManager {
         }
 
         Logger.general.debug("Clearing external launch flags for all tabs")
-        for tab in model.tabs {
+        for tab in allTabsModel.tabs {
             tab.isExternalLaunch = false
         }
     }
@@ -727,7 +712,7 @@ extension TabManager {
         switch source {
         case .standard:
             // On cold start with standard launch, suppress tracker animations for existing tabs with content
-            for tab in model.tabs {
+            for tab in allTabsModel.tabs {
                 // Only suppress for tabs with non-DDG URLs (not NTP, not DDG search)
                 guard let url = tab.link?.url, !url.isDuckDuckGoSearch else {
                     continue

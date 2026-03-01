@@ -108,7 +108,7 @@ struct BulkTabFactory: BulkGeneratorView.Factory {
 
    let description: String = "Bulk Tab Generation"
     var footer: String? {
-        "%d tabs. Restart app after generation".format(arguments: tabManager.count)
+        "%d tabs. Restart app after generation".format(arguments: tabManager.currentTabsModel.count)
     }
     let options = ["Tab Count": [ "100", "500", "1000", "5000", "10000"]]
 

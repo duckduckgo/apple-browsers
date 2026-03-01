@@ -513,7 +513,7 @@ class MainViewController: UIViewController {
 
         decorate()
 
-        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true) // TODO: - Needs to be called when mode changes
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
         applyWidth()
@@ -553,8 +553,8 @@ class MainViewController: UIViewController {
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
         startOnboardingFlowIfNotSeenBefore()
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true) // TODO: - Needs to be called when mode changes
-        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true) // TODO: - Needs to be called when mode changes
+        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
         applyWidth()
@@ -1677,10 +1677,10 @@ class MainViewController: UIViewController {
     }
 
     private func refreshTabIcon() {
-        viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
+        viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.currentTabsModel.count)
         assert(tabSwitcherButton != nil)
-        tabSwitcherButton?.tabCount = tabManager.count
-        tabSwitcherButton?.hasUnread = tabManager.hasUnread
+        tabSwitcherButton?.tabCount = tabManager.currentTabsModel.count
+        tabSwitcherButton?.hasUnread = tabManager.currentTabsModel.hasUnread
     }
 
     private func refreshOmniBar() {
@@ -3881,7 +3881,7 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {
-        if tabManager.count == 1 {
+        if tabManager.currentTabsModel.count == 1 { // TODO: - Customize based on browsing mode
             // Make sure UI updates finish before dimissing the view.
             // However, as a result, viewDidAppear on the home controller thinks the tab 
             //  switcher is still presented.
@@ -4044,7 +4044,7 @@ extension MainViewController {
                                 transitionCompletion: (() -> Void)? = nil,
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
-        let tabsCount = tabManager.count
+        let tabsCount = tabManager.currentTabsModel.count // TODO: - Customize based on browsing mode
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
         

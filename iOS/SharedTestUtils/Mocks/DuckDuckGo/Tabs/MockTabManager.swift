@@ -22,7 +22,8 @@ import Foundation
 
 @MainActor
 class MockTabManager: TabManaging {
-    nonisolated(unsafe) var count: Int = 0
+    var currentTabsModel: MutableTabCollection = TabsModel(desktop: false)
+    
     private(set) var prepareAllTabsExceptCurrentCalled = false
     private(set) var prepareCurrentTabCalled = false
     nonisolated(unsafe) private(set) var removeAllCalled = false

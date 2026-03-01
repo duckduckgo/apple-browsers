@@ -66,11 +66,12 @@ final class TabManagerTests: XCTestCase {
     }
 
     func testWhenAppBecomesActiveAndExcessPreviewsThenCleanUpHappens() async throws {
-        let mock = MockTabPreviewsSource(totalStoredPreviews: 4)
+        let mock = MockTabPreviewsSource(totalStoredPreviews: 5)
         let tabsModel = TabsModel(desktop: false)
+        let fireModel = TabsModel(desktop: false)
         tabsModel.add(tab: Tab())
-        tabsModel.add(tab: Tab())
-        let manager = try makeManager(tabsModel, previewsSource: mock)
+        fireModel.add(tab: Tab())
+        let manager = try makeManager(tabsModel, fireModel: fireModel, previewsSource: mock)
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         try await Task.sleep(interval: 0.5)
         XCTAssertEqual(1, mock.removePreviewsWithIdNotInCalls.count)
@@ -155,13 +156,14 @@ final class TabManagerTests: XCTestCase {
     }
 
     func makeManager(_ model: TabsModel,
+                     fireModel: TabsModel? = nil,
                      previewsSource: TabPreviewsSource = MockTabPreviewsSource(),
                      historyManager: MockHistoryManager = MockHistoryManager(),
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager()) throws -> TabManager {
         let tabsPersistence = TabsModelPersistence(store: MockKeyValueFileStore(),
                                                    legacyStore: MockKeyValueStore())
-        let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
+        let fireModel = fireModel ?? TabsModel(tabs: [], desktop: false, mode: .fire)
         let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence)
         return TabManager(tabsModelProvider: modelProvider,
                           previewsSource: previewsSource,

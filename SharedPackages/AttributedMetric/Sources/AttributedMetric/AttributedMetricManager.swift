@@ -58,6 +58,14 @@ public protocol AttributedMetricSettingsProviding {
     var originSendList: [String] { get }
 }
 
+/// Indicates whether the current user is a returning (reinstalling) user.
+///
+/// iOS: checks the variant stored in `StatisticsStore` for the `"ru"` value.
+/// macOS: checks `DefaultReinstallUserDetection.isReinstallingUser` (Sparkle builds only).
+public protocol AttributedMetricReturningUserProviding {
+    var isReturningUser: Bool { get }
+}
+
 /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053?focus=true
 public final class AttributedMetricManager {
 
@@ -72,6 +80,7 @@ public final class AttributedMetricManager {
     private let featureFlagger: any FeatureFlagger
     private let defaultBrowserProvider: any AttributedMetricDefaultBrowserProviding
     private let subscriptionStateProvider: any SubscriptionStateProviding
+    private let returningUserProvider: any AttributedMetricReturningUserProviding
     private var dateProvider: any DateProviding
     private let featureSettings: any AttributedMetricSettingsProviding
     private var bucketModifier: any BucketModifier = DefaultBucketModifier()
@@ -84,6 +93,7 @@ public final class AttributedMetricManager {
                 originProvider: (any AttributedMetricOriginProvider)?,
                 defaultBrowserProviding: any AttributedMetricDefaultBrowserProviding,
                 subscriptionStateProvider: any SubscriptionStateProviding,
+                returningUserProvider: any AttributedMetricReturningUserProviding,
                 dateProvider: any DateProviding = DefaultDateProvider(),
                 settingsProvider: any AttributedMetricSettingsProviding) {
         self.pixelKit = pixelKit
@@ -92,6 +102,7 @@ public final class AttributedMetricManager {
         self.featureFlagger = featureFlagger
         self.defaultBrowserProvider = defaultBrowserProviding
         self.subscriptionStateProvider = subscriptionStateProvider
+        self.returningUserProvider = returningUserProvider
         self.dateProvider = dateProvider
 
         // Buckets
@@ -246,6 +257,11 @@ public final class AttributedMetricManager {
         Logger.attributedMetric.log("Processing \(trigger.debugDescription, privacy: .public)")
         guard isEnabled else {
             Logger.attributedMetric.log("Feature disabled")
+            return
+        }
+
+        guard !returningUserProvider.isReturningUser else {
+            Logger.attributedMetric.log("Returning user, skipping")
             return
         }
 

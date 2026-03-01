@@ -289,9 +289,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
 
-    // https://app.asana.com/1/137249556945/project/392891325557410/task/1211597475706631?focus=true
-    case webViewFlashPrevention
-
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
@@ -370,7 +367,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
              .showWhatsNewPromptOnDemand,
-             .webViewFlashPrevention,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
              .crashCollectionDisableKeysSorting,
@@ -470,7 +466,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .aiChatAtb,
              .enhancedDataClearingSettings,
              .genericBackgroundTask,
-             .webViewFlashPrevention,
              .tabSwitcherTrackerCount,
              .burnSingleTab,
              .uiTestFeatureFlag,
@@ -707,8 +702,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.enhancedDataClearingSettings))
-        case .webViewFlashPrevention:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint))
         case .uiTestFeatureFlag:

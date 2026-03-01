@@ -378,7 +378,9 @@ private class MockMemoryUsageMonitor: MemoryUsageMonitoring {
         let physFootprintBytes = UInt64(currentPhysFootprintMB * 1_048_576)
         return MemoryUsageMonitor.MemoryReport(
             residentBytes: residentBytes,
-            physFootprintBytes: physFootprintBytes
+            physFootprintBytes: physFootprintBytes,
+            webContentBytes: nil,
+            webContentProcessCount: nil
         )
     }
 }

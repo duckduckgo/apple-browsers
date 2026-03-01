@@ -239,5 +239,3 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertFalse(sut.isTopBarPosition)
     }
 }
-
-

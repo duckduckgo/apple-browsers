@@ -289,7 +289,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
 
-    /// Native input for AI Chat — replaces web-based chat input with native iOS input
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
 
     /// Whether the wide event POST endpoint is enabled

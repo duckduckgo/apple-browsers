@@ -221,6 +221,8 @@ final class AIChatViewController: NSViewController {
             // Center: static title (docked) or clickable title button (floating)
             titleLabel.centerXAnchor.constraint(equalTo: topBar.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
+            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: openInNewTabButton.trailingAnchor, constant: Constants.titleLabelSideMargin),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: detachButton.leadingAnchor, constant: -Constants.titleLabelSideMargin),
 
             titleButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
             titleButton.heightAnchor.constraint(equalToConstant: Constants.titleButtonHeight),

@@ -65,11 +65,13 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     private lazy var globeButton: UIButton = makeToolButton(
         image: DesignSystemImages.Glyphs.Size16.globe,
+        accessibilityLabel: UserText.aiChatToolbarSearchButtonAccessibilityLabel,
         action: #selector(searchTapped)
     )
 
     private lazy var imageButton: UIButton = makeToolButton(
         image: DesignSystemImages.Glyphs.Size16.image,
+        accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
         action: #selector(attachTapped)
     )
 
@@ -128,6 +130,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.layer.cornerRadius = Constants.toolButtonSize / 2
         button.clipsToBounds = true
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityLabel = UserText.aiChatToolbarSubmitButtonAccessibilityLabel
         button.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
@@ -190,11 +193,12 @@ final class UnifiedToggleInputToolbarView: UIView {
         updateSubmitButtonState()
     }
 
-    private func makeToolButton(image: DesignSystemImage, action: Selector) -> UIButton {
+    private func makeToolButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector) -> UIButton {
         let button = UIButton(type: .system)
         button.setImage(image, for: .normal)
         button.tintColor = UIColor(designSystemColor: .iconsSecondary)
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityLabel = accessibilityLabel
         button.addTarget(self, action: action, for: .touchUpInside)
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),

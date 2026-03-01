@@ -26,7 +26,7 @@ import UIKit
 /// Delegate protocol for handling interactions with the unified toggle input composite view.
 protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidTapWhileCollapsed(_ view: UnifiedToggleInputView)
-    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String)
+    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
     func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView)
@@ -291,7 +291,7 @@ final class UnifiedToggleInputView: UIView {
 
         let changes = {
             self.cardView.layer.cornerRadius = expanded ? Constants.cardCornerRadiusExpanded : Constants.cardCornerRadiusCollapsed
-            self.panelBackgroundView.alpha = 0
+            self.panelBackgroundView.alpha = expanded ? 1 : 0
             self.cardTopConstraint.constant = vMargin
             self.cardLeadingConstraint.constant = hMargin
             self.cardTrailingConstraint.constant = -hMargin
@@ -362,6 +362,7 @@ private extension UnifiedToggleInputView {
 
         panelBackgroundView.translatesAutoresizingMaskIntoConstraints = false
         panelBackgroundView.isUserInteractionEnabled = false
+        panelBackgroundView.alpha = 0
         addSubview(panelBackgroundView)
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
@@ -405,6 +406,7 @@ private extension UnifiedToggleInputView {
         addSubview(toolsToolbar)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleCollapsedTap))
+        tap.cancelsTouchesInView = false
         addGestureRecognizer(tap)
 
         setupConstraints()
@@ -460,7 +462,7 @@ private extension UnifiedToggleInputView {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in
                 guard let self else { return }
-                delegate?.unifiedToggleInputViewDidSubmitText(self, text: submission.text)
+                delegate?.unifiedToggleInputViewDidSubmitText(self, text: submission.text, mode: submission.mode)
             }
             .store(in: &cancellables)
 

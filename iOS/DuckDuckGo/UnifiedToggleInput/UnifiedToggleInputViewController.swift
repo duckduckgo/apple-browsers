@@ -113,8 +113,8 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
         delegate?.unifiedToggleInputVCDidTapWhileCollapsed(self)
     }
 
-    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String) {
-        delegate?.unifiedToggleInputVC(self, didSubmitText: text, mode: view.inputMode)
+    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode) {
+        delegate?.unifiedToggleInputVC(self, didSubmitText: text, mode: mode)
     }
 
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String) {

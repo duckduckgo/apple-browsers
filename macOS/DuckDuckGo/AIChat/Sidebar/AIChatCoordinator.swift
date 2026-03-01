@@ -388,10 +388,14 @@ final class AIChatCoordinator: AIChatCoordinating {
         for (tabID, session) in sessionStore.sessions {
             session.chatViewController?.isChatFloatingEnabled = isChatFloatingEnabled
             if !isChatFloatingEnabled, session.state.presentationMode == .floating {
-                session.state.setHidden()
-                tearDownUI(for: tabID)
-                sessionStore.endSession(for: tabID)
-                chatFloatingStateDidChangeSubject.send(tabID)
+                // Session store is shared app-wide, but coordinator/UI lifecycle is per-window.
+                // Only the owning coordinator should tear down and emit per-coordinator updates.
+                if (owningCoordinator(for: tabID) ?? self) === self {
+                    session.state.setHidden()
+                    tearDownUI(for: tabID)
+                    sessionStore.endSession(for: tabID)
+                    chatFloatingStateDidChangeSubject.send(tabID)
+                }
             }
         }
     }

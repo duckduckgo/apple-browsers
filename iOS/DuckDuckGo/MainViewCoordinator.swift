@@ -37,6 +37,7 @@ class MainViewCoordinator {
     var statusBackground: UIView!
     var suggestionTrayContainer: UIView!
     var tabBarContainer: UIView!
+    var unifiedToggleInputContainer: UIView!
     var toolbar: UIToolbar!
     var toolbarSpacer: UIView!
     var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
@@ -84,6 +85,9 @@ class MainViewCoordinator {
         var topSlideContainerTopToStatusBackground: NSLayoutConstraint!
         var topSlideContainerHeight: NSLayoutConstraint!
         var toolbarSpacerHeight: NSLayoutConstraint!
+        var unifiedToggleInputBottom: NSLayoutConstraint!
+        var contentContainerBottomToUnifiedToggleInputTop: NSLayoutConstraint!
+        var contentContainerTopToSafeArea: NSLayoutConstraint!
 
     }
 
@@ -164,6 +168,63 @@ class MainViewCoordinator {
 
     func updateToolbarWithState(_ state: ToolbarContentState) {
         toolbarHandler.updateToolbarWithState(state)
+    }
+
+    // MARK: - Native Input Layout
+
+    func showUnifiedToggleInput(aboveKeyboard: Bool) {
+        constraints.unifiedToggleInputBottom.isActive = false
+
+        if aboveKeyboard {
+            constraints.unifiedToggleInputBottom = unifiedToggleInputContainer.bottomAnchor
+                .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
+        } else {
+            constraints.unifiedToggleInputBottom = unifiedToggleInputContainer.bottomAnchor
+                .constraint(equalTo: toolbar.topAnchor)
+        }
+
+        constraints.unifiedToggleInputBottom.isActive = true
+        unifiedToggleInputContainer.isHidden = false
+    }
+
+    func hideUnifiedToggleInput() {
+        unifiedToggleInputContainer.isHidden = true
+    }
+
+    /// Uses alpha + interaction instead of isHidden so the collection view stays laid out
+    /// and its pan gesture can be relocated to drive tab swiping.
+    func setNavigationChromeHidden(_ hidden: Bool) {
+        if hidden {
+            navigationBarContainer.alpha = 0
+            navigationBarContainer.isUserInteractionEnabled = false
+            if !addressBarPosition.isBottom {
+                constraints.contentContainerTop.isActive = false
+                constraints.contentContainerTopToSafeArea.isActive = true
+                // Shrink statusBackground to the status bar height so it doesn't paint over web content.
+                constraints.statusBackgroundToNavigationBarContainerBottom.isActive = false
+                constraints.statusBackgroundBottomToSafeAreaTop.isActive = true
+            }
+            constraints.contentContainerBottomToToolbarTop.isActive = false
+            constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = true
+            // Background fills the container so nothing shows through to the main view background.
+            unifiedToggleInputContainer.backgroundColor = UIColor(designSystemColor: .panel)
+        } else {
+            navigationBarContainer.alpha = 1
+            navigationBarContainer.isUserInteractionEnabled = true
+            // Always restore — this constraint may have been modified in top-bar mode even if
+            // the address bar has since moved to bottom.
+            constraints.contentContainerTopToSafeArea.isActive = false
+            constraints.contentContainerTop.isActive = true
+            if !addressBarPosition.isBottom {
+                constraints.statusBackgroundBottomToSafeAreaTop.isActive = false
+                constraints.statusBackgroundToNavigationBarContainerBottom.isActive = true
+            } else {
+                constraints.navigationBarContainerBottom.constant = 0
+            }
+            constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = false
+            constraints.contentContainerBottomToToolbarTop.isActive = true
+            unifiedToggleInputContainer.backgroundColor = nil
+        }
     }
 
 }

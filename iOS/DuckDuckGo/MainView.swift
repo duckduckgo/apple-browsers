@@ -96,6 +96,7 @@ extension MainViewFactory {
         createToolbar()
         createNavigationBarContainer()
         createNavigationBarCollectionView()
+        createUnifiedToggleInputContainer()
         createProgressView()
     }
     
@@ -242,6 +243,14 @@ extension MainViewFactory {
         superview.addSubview(coordinator.topSlideContainer)
     }
 
+    final class UnifiedToggleInputContainer: UIView {}
+    private func createUnifiedToggleInputContainer() {
+        coordinator.unifiedToggleInputContainer = UnifiedToggleInputContainer()
+        coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
+        coordinator.unifiedToggleInputContainer.isHidden = true
+        superview.addSubview(coordinator.unifiedToggleInputContainer)
+    }
+
 }
 
 /// Add constraint functions
@@ -256,6 +265,7 @@ extension MainViewFactory {
         constrainTabBarContainer()
         constrainNavigationBarContainer()
         constrainToolbar()
+        constrainUnifiedToggleInputContainer()
     }
     
     private func constrainNavigationBarContainer() {
@@ -316,8 +326,10 @@ extension MainViewFactory {
         let navigationBarContainer = coordinator.navigationBarContainer!
 
         coordinator.constraints.contentContainerTop = contentContainer.constrainView(coordinator.topSlideContainer!, by: .top, to: .bottom)
+        coordinator.constraints.contentContainerTopToSafeArea = contentContainer.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
         coordinator.constraints.contentContainerBottomToToolbarTop = contentContainer.constrainView(toolbar, by: .bottom, to: .top)
         coordinator.constraints.contentContainerBottomToSafeArea = contentContainer.constrainView(superview, by: .bottom)
+        coordinator.constraints.contentContainerBottomToUnifiedToggleInputTop = contentContainer.bottomAnchor.constraint(equalTo: coordinator.unifiedToggleInputContainer.topAnchor)
 
         NSLayoutConstraint.activate([
             contentContainer.constrainView(superview, by: .leading),
@@ -335,6 +347,24 @@ extension MainViewFactory {
             toolbar.constrainView(superview, by: .centerX),
             toolbar.constrainAttribute(.height, to: 49),
             coordinator.constraints.toolbarBottom,
+        ])
+    }
+
+    private func constrainUnifiedToggleInputContainer() {
+        let container = coordinator.unifiedToggleInputContainer!
+        let toolbar = coordinator.toolbar!
+
+        coordinator.constraints.unifiedToggleInputBottom = container.bottomAnchor.constraint(equalTo: toolbar.topAnchor)
+
+        // Ceiling constraint: input bar must never fall below the toolbar,
+        // even when UIKeyboardLayoutGuide contracts (keyboard hides temporarily).
+        let ceilingConstraint = container.bottomAnchor.constraint(lessThanOrEqualTo: toolbar.topAnchor)
+
+        NSLayoutConstraint.activate([
+            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
+            coordinator.constraints.unifiedToggleInputBottom,
+            ceilingConstraint,
         ])
     }
 

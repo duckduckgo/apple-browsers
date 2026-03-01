@@ -518,6 +518,16 @@
                ReferencedContainer = "container:LocalPackages/AppUpdater">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "WebExtensionsTests"
+               BuildableName = "WebExtensionsTests"
+               BlueprintName = "WebExtensionsTests"
+               ReferencedContainer = "container:../SharedPackages/WebExtensions">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

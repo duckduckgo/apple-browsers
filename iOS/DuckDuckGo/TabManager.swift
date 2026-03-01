@@ -308,6 +308,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             fatalError("Failed to copy configuration")
         }
 
+        if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
+            configCopy.webExtensionController = webExtensionManager.controller
+        }
+
         let tab: Tab
         if let request {
             tab = Tab(link: request.url == nil ? nil : Link(title: nil, url: request.url!))

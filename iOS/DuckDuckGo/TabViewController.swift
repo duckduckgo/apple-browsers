@@ -705,8 +705,10 @@ class TabViewController: UIViewController {
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
         let isLargeWidth = AppWidthObserver.shared.isLargeWidth
 
-        if appSettings.currentAddressBarPosition == .bottom && !isLargeWidth {
-            /// When address bar is at bottom on iPhone, offset webview to make room for the bars
+        if appSettings.currentAddressBarPosition == .bottom && !isLargeWidth && !(isAITab && featureFlagger.isFeatureOn(.unifiedToggleInput)) {
+            /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
+            /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
+            /// manages its own native bottom layout via the UnifiedToggleInput container.
             let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
             webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
         } else {

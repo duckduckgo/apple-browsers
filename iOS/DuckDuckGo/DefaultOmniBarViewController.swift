@@ -320,8 +320,12 @@ extension DefaultOmniBarViewController {
         guard !query.isEmpty else { return }
 
         if selectedTextEntryMode == .aiChat {
-            dismissIPadDuckAIMode()
+            omniBarView.aiChatTextView.text = ""
+            omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
+            omniBarView.updateAIChatSendButton(hasText: false)
+
             if URL.isValidAddressBarURLInput(query) {
+                dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 omniDelegate?.onPromptSubmitted(query, tools: nil)
@@ -335,6 +339,8 @@ extension DefaultOmniBarViewController {
     /// Used after prompt submission where we want the bar fully unfocused.
     fileprivate func dismissIPadDuckAIMode() {
         isSuppressingKeyboardTransfer = true
+        // Collapse instantly to avoid a visual flash when navigation starts.
+        omniBarView.setSearchAreaExpanded(false, animated: false)
         setSelectedTextEntryMode(.search)
         endEditing()
         isSuppressingKeyboardTransfer = false

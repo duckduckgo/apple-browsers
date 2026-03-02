@@ -39,6 +39,10 @@ public enum SingleUseColor {
     /// Color used for 2026 Rebranding. Currently used only in Onboarding, hence they're isolated to avoid bleeding in other parts of the App.
     /// DefaultColorPalette should be updated with new colors when the time comes.
     case rebranding(Rebranding)
+
+    /// On iOS 26 toolbar buttons get some effect applied to them which affects the lightness of the color.  This is temporary
+    /// until we move to a more Liquid Glass based look and feel there.
+    case toolbarButton
 }
 
 // MARK: - Onboarding Rebranding 2026
@@ -60,10 +64,13 @@ public extension SingleUseColor {
         case surfaceTertiary
 
         case buttonsPrimaryDefault
+        case buttonsPrimaryPressed
         case buttonsPrimaryText
 
         case buttonsSecondaryDefault
+        case buttonsSecondaryPressed
         case buttonsSecondaryText
+        case backgroundAccent // This in Figma is accentAltGlowPrimary but in the components screen default value is different than onboarding value
 
         case controlsFillPrimary
 

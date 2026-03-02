@@ -1,5 +1,5 @@
 //
-//  AIChatSidebarViewController.swift
+//  AIChatViewController.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -23,11 +23,17 @@ import Combine
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
-protocol AIChatSidebarViewControllerDelegate: AnyObject {
+protocol AIChatViewControllerDelegate: AnyObject {
     /// Called when the user clicks the "Expand" button
     func didClickOpenInNewTabButton()
     /// Called when the user clicks the "Close" button
     func didClickCloseButton()
+    /// Called when the user clicks the "Detach" button to pop the sidebar into a floating window.
+    func didClickDetachButton()
+    /// Called when the user clicks the "Attach" button to dock the floating sidebar back.
+    func didClickAttachButton(for tabID: TabIdentifier)
+    /// Called when the user clicks the title button to bring the associated tab to front.
+    func didClickTitleButton(for tabID: TabIdentifier)
 }
 
 /// A view controller that manages the AI Chat sidebar interface.
@@ -35,22 +41,33 @@ protocol AIChatSidebarViewControllerDelegate: AnyObject {
 /// - A native top navigation bar with buttons and title label
 /// - A web view container for displaying AI chat
 /// - Additional visual styling including corner radius and separators
-final class AIChatSidebarViewController: NSViewController {
+final class AIChatViewController: NSViewController {
 
     private enum Constants {
         static let separatorWidth: CGFloat = 1
-        static let topBarHeight: CGFloat = 48
-        static let barButtonHeight: CGFloat = 32
-        static let barButtonWidth: CGFloat = 32
+        static let topBarHeight: CGFloat = 38
+        static let barButtonHeight: CGFloat = 28
+        static let barButtonWidth: CGFloat = 28
         static let barButtonMargin: CGFloat = 12
         static let titleLabelSideMargin: CGFloat = 8
+        static let titleButtonHeight: CGFloat = 28
+        static let titleButtonHorizontalPadding: CGFloat = 8
+        static let titleFaviconSize: CGFloat = 16
+        static let titleButtonGutter: CGFloat = 32
         static let webViewContainerPadding: CGFloat = 4
         static let webViewTopCornerRadius: CGFloat = 16
         static let webViewBottomCornerRadius: CGFloat = 6
     }
 
-    weak var delegate: AIChatSidebarViewControllerDelegate?
+    weak var delegate: AIChatViewControllerDelegate?
+    var tabID: TabIdentifier?
     public var aiChatPayload: AIChatPayload?
+    var isChatFloatingEnabled = false {
+        didSet {
+            guard isViewLoaded else { return }
+            updateTopBarForHostingContext()
+        }
+    }
     private(set) var currentAIChatURL: URL
 
     let themeManager: ThemeManaging
@@ -59,7 +76,14 @@ final class AIChatSidebarViewController: NSViewController {
     private let burnerMode: BurnerMode
 
     private var openInNewTabButton: MouseOverButton!
+    private var detachButton: MouseOverButton!
+    private var attachButton: MouseOverButton!
     private var closeButton: MouseOverButton!
+    private var titleButton: MouseOverButton!
+    private var titleFaviconView: NSImageView!
+    private var titleTextLabel: NSTextField!
+    private var titleArrowView: NSImageView!
+    private var titleLabel: NSTextField!
     private var webViewContainer: WebViewContainerView!
     private var separator: NSView!
     private var topBar: NSView!
@@ -154,51 +178,164 @@ final class AIChatSidebarViewController: NSViewController {
         topBar.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(topBar)
 
-        openInNewTabButton = MouseOverButton(image: .expand, target: self, action: #selector(openInNewTabButtonClicked))
-        openInNewTabButton.toolTip = UserText.aiChatSidebarExpandButtonTooltip
-        openInNewTabButton.translatesAutoresizingMaskIntoConstraints = false
-        openInNewTabButton.bezelStyle = .shadowlessSquare
-        openInNewTabButton.cornerRadius = 9
-        openInNewTabButton.normalTintColor = .button
-        openInNewTabButton.mouseDownColor = .buttonMouseDown
-        openInNewTabButton.mouseOverColor = .buttonMouseOver
-        openInNewTabButton.isBordered = false
+        openInNewTabButton = makeBarButton(image: .expand, action: #selector(openInNewTabButtonClicked),
+                                           toolTip: UserText.aiChatSidebarExpandButtonTooltip)
         topBar.addSubview(openInNewTabButton)
 
-        let titleLabel = NSTextField(labelWithString: UserText.aiChatSidebarTitle)
+        attachButton = makeBarButton(image: .aiChatAttach, action: #selector(attachButtonClicked),
+                                     toolTip: UserText.aiChatSidebarAttachButtonTooltip)
+        attachButton.isHidden = true
+        topBar.addSubview(attachButton)
+
+        titleLabel = NSTextField(labelWithString: UserText.aiChatSidebarTitle)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.alignment = .center
         titleLabel.font = .systemFont(ofSize: 13, weight: .medium)
         titleLabel.textColor = .labelColor
         topBar.addSubview(titleLabel)
 
-        closeButton = MouseOverButton(image: .closeLarge, target: self, action: #selector(closeButtonClicked))
-        closeButton.toolTip = UserText.aiChatSidebarCloseButtonTooltip
-        closeButton.translatesAutoresizingMaskIntoConstraints = false
-        closeButton.bezelStyle = .shadowlessSquare
-        closeButton.cornerRadius = 9
-        closeButton.normalTintColor = .button
-        closeButton.mouseDownColor = .buttonMouseDown
-        closeButton.mouseOverColor = .buttonMouseOver
-        closeButton.isBordered = false
+        titleButton = makeTitleButton()
+        titleButton.isHidden = true
+        topBar.addSubview(titleButton)
+
+        detachButton = makeBarButton(image: .aiChatDetach, action: #selector(detachButtonClicked),
+                                     toolTip: UserText.aiChatSidebarDetachButtonTooltip)
+        topBar.addSubview(detachButton)
+
+        closeButton = makeBarButton(image: .closeLarge, action: #selector(closeButtonClicked),
+                                    toolTip: UserText.aiChatSidebarCloseButtonTooltip)
         topBar.addSubview(closeButton)
 
         NSLayoutConstraint.activate([
+            // Left side: openInNewTab (docked) or attach (floating) -- share the same position
             openInNewTabButton.leadingAnchor.constraint(equalTo: topBar.leadingAnchor, constant: Constants.barButtonMargin),
             openInNewTabButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
             openInNewTabButton.heightAnchor.constraint(equalToConstant: Constants.barButtonHeight),
             openInNewTabButton.widthAnchor.constraint(equalToConstant: Constants.barButtonWidth),
 
+            attachButton.trailingAnchor.constraint(equalTo: topBar.trailingAnchor, constant: -Constants.barButtonMargin),
+            attachButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
+            attachButton.heightAnchor.constraint(equalToConstant: Constants.barButtonHeight),
+            attachButton.widthAnchor.constraint(equalToConstant: Constants.barButtonWidth),
+
+            // Center: static title (docked) or clickable title button (floating)
             titleLabel.centerXAnchor.constraint(equalTo: topBar.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: openInNewTabButton.trailingAnchor, constant: Constants.titleLabelSideMargin),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: closeButton.leadingAnchor, constant: -Constants.titleLabelSideMargin),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: detachButton.leadingAnchor, constant: -Constants.titleLabelSideMargin),
 
+            titleButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
+            titleButton.heightAnchor.constraint(equalToConstant: Constants.titleButtonHeight),
+            titleButton.leadingAnchor.constraint(greaterThanOrEqualTo: openInNewTabButton.trailingAnchor, constant: Constants.titleButtonGutter),
+            titleButton.trailingAnchor.constraint(lessThanOrEqualTo: attachButton.leadingAnchor, constant: -Constants.titleButtonGutter),
+            titleButton.centerXAnchor.constraint(equalTo: topBar.centerXAnchor),
+
+            // Right side: detach (docked) + close
             closeButton.trailingAnchor.constraint(equalTo: topBar.trailingAnchor, constant: -Constants.barButtonMargin),
             closeButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
             closeButton.heightAnchor.constraint(equalToConstant: Constants.barButtonHeight),
             closeButton.widthAnchor.constraint(equalToConstant: Constants.barButtonWidth),
+
+            detachButton.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -4),
+            detachButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
+            detachButton.heightAnchor.constraint(equalToConstant: Constants.barButtonHeight),
+            detachButton.widthAnchor.constraint(equalToConstant: Constants.barButtonWidth),
         ])
+    }
+
+    private func makeTitleButton() -> MouseOverButton {
+        let button = FloatingWindowTitleDragButton(frame: .zero)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.bezelStyle = .shadowlessSquare
+        button.isBordered = false
+        button.title = ""
+        button.imagePosition = .noImage
+        button.cornerRadius = 9
+        button.mouseOverColor = .buttonMouseOver
+        button.mouseDownColor = .buttonMouseDown
+        button.clipsToBounds = false
+        button.target = self
+        button.action = #selector(titleButtonClicked)
+        button.refusesFirstResponder = true
+        button.toolTip = UserText.aiChatSidebarTitleButtonTooltip
+        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        button.backgroundInset = .zero
+        titleFaviconView = NSImageView()
+        titleFaviconView.translatesAutoresizingMaskIntoConstraints = false
+        titleFaviconView.imageScaling = .scaleProportionallyUpOrDown
+        titleFaviconView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        titleFaviconView.setContentHuggingPriority(.required, for: .horizontal)
+
+        titleTextLabel = NSTextField(labelWithString: "")
+        titleTextLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleTextLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        titleTextLabel.textColor = .labelColor
+        titleTextLabel.lineBreakMode = .byTruncatingTail
+        titleTextLabel.setContentCompressionResistancePriority(.init(rawValue: 500), for: .horizontal)
+
+        titleArrowView = NSImageView(image: .arrowUpRight12)
+        titleArrowView.translatesAutoresizingMaskIntoConstraints = false
+        titleArrowView.contentTintColor = themeManager.theme.colorsProvider.iconsColor
+        titleArrowView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        titleArrowView.setContentHuggingPriority(.required, for: .horizontal)
+
+        let stackView = NSStackView(views: [titleFaviconView, titleTextLabel, titleArrowView])
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.orientation = .horizontal
+        stackView.alignment = .centerY
+        stackView.distribution = .fill
+        stackView.spacing = 0
+        stackView.setCustomSpacing(4, after: titleFaviconView)
+        stackView.setCustomSpacing(6, after: titleTextLabel)
+        stackView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+
+        button.addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            titleFaviconView.widthAnchor.constraint(equalToConstant: Constants.titleFaviconSize),
+            titleFaviconView.heightAnchor.constraint(equalToConstant: Constants.titleFaviconSize),
+
+            stackView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: Constants.titleButtonHorizontalPadding),
+            stackView.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -Constants.titleButtonHorizontalPadding),
+            stackView.centerYAnchor.constraint(equalTo: button.centerYAnchor)
+        ])
+
+        return button
+    }
+
+    func updateFloatingTitle(_ title: String, favicon: NSImage?) {
+        titleFaviconView.image = favicon ?? .homeFavicon
+        titleTextLabel.stringValue = title
+    }
+
+    private func makeBarButton(image: NSImage, action: Selector, toolTip: String) -> MouseOverButton {
+        let button = MouseOverButton(image: image, target: self, action: action)
+        button.toolTip = toolTip
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.bezelStyle = .shadowlessSquare
+        button.cornerRadius = 9
+        button.normalTintColor = themeManager.theme.colorsProvider.iconsColor
+        button.mouseDownColor = .buttonMouseDown
+        button.mouseOverColor = .buttonMouseOver
+        button.isBordered = false
+        button.refusesFirstResponder = true
+        return button
+    }
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        updateTopBarForHostingContext()
+    }
+
+    private func updateTopBarForHostingContext() {
+        let isFloating = view.window is AIChatFloatingWindow
+        openInNewTabButton.isHidden = isFloating
+        detachButton.isHidden = isFloating || !isChatFloatingEnabled
+        attachButton.isHidden = !isFloating
+        closeButton.isHidden = isFloating
+        titleLabel.isHidden = isFloating
+        titleButton.isHidden = !isFloating
+        titleArrowView?.isHidden = !isFloating
     }
 
     private func createAndSetupWebViewContainer(in container: NSView) {
@@ -208,6 +345,9 @@ final class AIChatSidebarViewController: NSViewController {
         webViewContainer.layer?.masksToBounds = true
         webViewContainer.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
         container.addSubview(webViewContainer)
+
+        // Pinch zoom does not make sense in the AI Chat sidebar.
+        aiTab.webView.allowsMagnification = false
 
         aiTab.setDelegate(self)
 
@@ -295,7 +435,25 @@ final class AIChatSidebarViewController: NSViewController {
         delegate?.didClickOpenInNewTabButton()
     }
 
+    @objc private func detachButtonClicked() {
+        delegate?.didClickDetachButton()
+    }
+
+    @objc private func attachButtonClicked() {
+        guard let tabID else { return }
+        delegate?.didClickAttachButton(for: tabID)
+    }
+
+    @objc private func titleButtonClicked() {
+        guard let tabID else { return }
+        delegate?.didClickTitleButton(for: tabID)
+    }
+
     @objc private func closeButtonClicked() {
+        if let window = view.window, window is AIChatFloatingWindow {
+            window.close()
+            return
+        }
         delegate?.didClickCloseButton()
     }
 
@@ -309,7 +467,7 @@ final class AIChatSidebarViewController: NSViewController {
 }
 
 // MARK: - ThemeUpdateListening
-extension AIChatSidebarViewController: ThemeUpdateListening {
+extension AIChatViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
@@ -318,10 +476,17 @@ extension AIChatSidebarViewController: ThemeUpdateListening {
         }
 
         contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+
+        let iconsPrimary = theme.colorsProvider.iconsColor
+        openInNewTabButton?.normalTintColor = iconsPrimary
+        detachButton?.normalTintColor = iconsPrimary
+        attachButton?.normalTintColor = iconsPrimary
+        closeButton?.normalTintColor = iconsPrimary
+        titleArrowView?.contentTintColor = iconsPrimary
     }
 }
 
-extension AIChatSidebarViewController: TabDelegate {
+extension AIChatViewController: TabDelegate {
 
     var isInPopUpWindow: Bool { false }
 
@@ -353,5 +518,49 @@ extension NSNotification.Name {
 
     enum UserInfoKeys {
         static let userInteractionDialog = "userInteractionDialog"
+    }
+}
+
+/// Allows the floating-window title button to both click (focus tab) and drag window.
+private final class FloatingWindowTitleDragButton: MouseOverButton {
+
+    private enum Constants {
+        static let dragThreshold: CGFloat = 3
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard let window, window is AIChatFloatingWindow, !event.isContextClick else {
+            super.mouseDown(with: event)
+            return
+        }
+
+        var shouldStartDrag = false
+
+        while let nextEvent = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            if nextEvent.type == .leftMouseDragged {
+                let deltaX = nextEvent.locationInWindow.x - event.locationInWindow.x
+                let deltaY = nextEvent.locationInWindow.y - event.locationInWindow.y
+                let distance = hypot(deltaX, deltaY)
+
+                if distance >= Constants.dragThreshold {
+                    shouldStartDrag = true
+                    break
+                }
+            } else if nextEvent.type == .leftMouseUp {
+                break
+            }
+        }
+
+        if shouldStartDrag {
+            window.performDrag(with: event)
+            return
+        }
+
+        // No drag was detected, so this is a regular click.
+        isMouseDown = true
+        if let action {
+            NSApp.sendAction(action, to: target, from: self)
+        }
+        isMouseDown = false
     }
 }

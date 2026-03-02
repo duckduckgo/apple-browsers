@@ -58,7 +58,8 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatOmnibarTools,
                 .aiChatOmnibarOnboarding,
                 .standaloneMigration,
-                .aiChatSidebarResizable:
+                .aiChatSidebarResizable,
+                .aiChatSidebarFloating:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
@@ -86,11 +87,7 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .blackFridayCampaign,
                 .allowProTierPurchase:
             return .subscription
-        case .popupBlocking,
-                .extendedUserInitiatedPopupTimeout,
-                .suppressEmptyPopUpsOnApproval,
-                .allowPopupsForCurrentPage,
-                .popupPermissionButtonPersistence:
+        case .popupBlocking:
             return .popupBlocking
         case .webNotifications:
             return .webNotifications

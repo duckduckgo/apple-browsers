@@ -69,4 +69,14 @@ public extension NSMenu {
         popUp(positioning: nil, at: convertedLocation, in: view)
     }
 
+    /// This API removes / re-adds all items, effectively forcing a relayout cycle
+    ///
+    func forceRelayout() {
+        let currentItems = items
+        removeAllItems()
+
+        for item in currentItems {
+            addItem(item)
+        }
+    }
 }

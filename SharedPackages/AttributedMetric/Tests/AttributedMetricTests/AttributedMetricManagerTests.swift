@@ -56,7 +56,8 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// - Returns: A TestFixture containing all initialized test components
     private func createTestFixture(
         pixelHandler: @escaping PixelKit.FireRequest,
-        subscriptionStateProvider: SubscriptionStateProviding? = nil
+        subscriptionStateProvider: SubscriptionStateProviding? = nil,
+        returningUserProvider: AttributedMetricReturningUserProviding? = nil
     ) -> TestFixture {
         let suiteName = "testing_\(UUID().uuidString)"
         let userDefaults = UserDefaults(suiteName: suiteName)!
@@ -83,6 +84,8 @@ final class AttributedMetricManagerTests: XCTestCase {
         let subscriptionProvider = subscriptionStateProvider ?? SubscriptionStateProviderMock()
         let settingsProvider = AttributedMetricSettingsProviderMock()
 
+        let returningUser = returningUserProvider ?? AttributedMetricReturningUserProvidingMock()
+
         let attributionManager = AttributedMetricManager(
             pixelKit: pixelKit,
             dataStoring: dataStorage,
@@ -90,6 +93,7 @@ final class AttributedMetricManagerTests: XCTestCase {
             originProvider: originProvider,
             defaultBrowserProviding: defaultBrowserProvider,
             subscriptionStateProvider: subscriptionProvider,
+            returningUserProvider: returningUser,
             dateProvider: timeMachine,
             settingsProvider: settingsProvider
         )
@@ -503,32 +507,38 @@ final class AttributedMetricManagerTests: XCTestCase {
 
     // MARK: - Average AD Click Tests
 
-    /// Tests average ad click pixel (does not fire on install day)
+    /// Tests average ad click pixel (does not fire on install day, includes day_average)
     ///
     /// ## Input → Output Mapping
     ///
     /// | Days Since Install | Ad Clicks | Bucketed Count | Parameters |
     /// |-------------------|-----------|----------------|------------|
     /// | 0 (install day)   | any       | -              | No pixel fired (isSameDayOfInstallDate check) |
-    /// | 1+ (any other day)| varies    | varies         | count=bucketed, origin/installDate |
+    /// | 1+ (any other day)| varies    | varies         | count=bucketed, day_average=days_counted, origin/installDate |
     ///
     /// ## Bucket Configuration
     /// - user_average_ad_clicks_past_week: [2, 5] → ≤2 maps to 0, ≤5 maps to 1, >5 maps to 2
     ///
     /// ## Test Validation
     /// - Pixel does NOT fire on install day (day 0)
-    /// - Pixel fires on subsequent days with bucketed count
+    /// - Pixel fires on subsequent days with bucketed count and day_average
     /// - Trigger: .userDidSelectAD calls processAverageAdClick()
     func testProcessAverageAdClick() {
         let pixelExpectation = XCTestExpectation(description: "Average ad click pixel fired")
         var capturedCount: Int?
+        var capturedDayAverage: Int?
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
             case "attributed_metric_average_ad_clicks_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
+                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
+                    return
+                }
+                if capturedDayAverage == nil {
+                    XCTFail("Missing or invalid day_average parameter")
                     return
                 }
                 pixelExpectation.fulfill()
@@ -553,36 +563,43 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
+        XCTAssertEqual(capturedDayAverage, 1, "Should report 1 day counted (ad click recorded on day 0)")
     }
 
     // MARK: - Average Duck.AI Chat Tests
 
-    /// Tests average Duck.AI chat pixel (does not fire on install day)
+    /// Tests average Duck.AI chat pixel (does not fire on install day, includes day_average)
     ///
     /// ## Input → Output Mapping
     ///
     /// | Days Since Install | AI Chats | Bucketed Count | Parameters |
     /// |-------------------|----------|----------------|------------|
     /// | 0 (install day)   | any      | -              | No pixel fired (isSameDayOfInstallDate check) |
-    /// | 1+ (any other day)| varies   | varies         | count=bucketed, origin/installDate |
+    /// | 1+ (any other day)| varies   | varies         | count=bucketed, day_average=days_counted, origin/installDate |
     ///
     /// ## Bucket Configuration
     /// - user_average_duck_ai_usage_past_week: [5, 9] → ≤5 maps to 0, ≤9 maps to 1, >9 maps to 2
     ///
     /// ## Test Validation
     /// - Pixel does NOT fire on install day (day 0)
-    /// - Pixel fires on subsequent days with bucketed count
+    /// - Pixel fires on subsequent days with bucketed count and day_average
     /// - Trigger: .userDidDuckAIChat calls processAverageDuckAIChat()
     func testProcessAverageDuckAIChat() {
         let pixelExpectation = XCTestExpectation(description: "Average Duck.AI chat pixel fired")
         var capturedCount: Int?
+        var capturedDayAverage: Int?
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
             case "attributed_metric_average_duck_ai_usage_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
+                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
+                    return
+                }
+                if capturedDayAverage == nil {
+                    XCTFail("Missing or invalid day_average parameter")
                     return
                 }
                 pixelExpectation.fulfill()
@@ -607,6 +624,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 5.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
+        XCTAssertEqual(capturedDayAverage, 1, "Should report 1 day counted (Duck.AI chat recorded on day 0)")
     }
 
     // MARK: - Subscription Tests
@@ -1264,5 +1282,41 @@ final class AttributedMetricManagerTests: XCTestCase {
         XCTAssertFalse(fixture.dataStorage.subscriptionFreeTrialFired, "Subscription free trial flag should be cleared")
         XCTAssertFalse(fixture.dataStorage.subscriptionMonth1Fired, "Subscription month 1 flag should be cleared")
         XCTAssertEqual(fixture.dataStorage.syncDevicesCount, 0, "Sync devices count should be cleared")
+    }
+
+    // MARK: - Returning User Tests
+
+    /// Tests that no pixels fire when the user is detected as a returning user
+    ///
+    /// ## Test Validation
+    /// - No pixels fire for any trigger when isReturningUser is true
+    /// - Covers all trigger types: appDidStart, userDidSearch, userDidSelectAD, userDidDuckAIChat, userDidSubscribe, userDidSync
+    func testNoPixelsFireForReturningUser() {
+        var pixelFired = false
+
+        let fixture = createTestFixture(
+            pixelHandler: { pixelName, _, _, _, _, _ in
+                if pixelName != "attributed_metric_data_store_error" {
+                    pixelFired = true
+                }
+            },
+            returningUserProvider: AttributedMetricReturningUserProvidingMock(isReturningUser: true)
+        )
+        defer { fixture.cleanup() }
+
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Travel past install day so triggers would normally fire
+        fixture.timeMachine.travel(by: .day, value: 2)
+
+        // Try all trigger types
+        fixture.attributionManager.process(trigger: .appDidStart)
+        fixture.attributionManager.process(trigger: .userDidSearch)
+        fixture.attributionManager.process(trigger: .userDidSelectAD)
+        fixture.attributionManager.process(trigger: .userDidDuckAIChat)
+        fixture.attributionManager.process(trigger: .userDidSubscribe)
+        fixture.attributionManager.process(trigger: .userDidSync(devicesCount: 1))
+
+        XCTAssertFalse(pixelFired, "No pixels should fire for a returning user")
     }
 }

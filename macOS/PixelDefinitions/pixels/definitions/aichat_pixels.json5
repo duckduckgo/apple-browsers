@@ -92,7 +92,7 @@
         "description": "Fired when user finishes dragging the sidebar resize grip (after 500 ms debounce)",
         "owners": ["jaceklyp"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
+        "suffixes": ["daily_standard"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -102,5 +102,33 @@
                 "type": "integer"
             }
         ]
+    },
+    "m_mac_aichat_sidebar_detached": {
+        "description": "Fired when user detaches the AI Chat sidebar into a floating window",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_sidebar_attached": {
+        "description": "Fired when user re-docks the floating AI Chat window via the attach button",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_sidebar_floating_closed": {
+        "description": "Fired when user closes the floating AI Chat window via the close button",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_sidebar_floating_tab_activated": {
+        "description": "Fired when user clicks the floating title button to activate the associated tab",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

@@ -7809,7 +7809,7 @@
 			path = View;
 			sourceTree = "<group>";
 		};
-		37C3210D2F1E80FC008F4604 /* MemoryUsageTests */ = {
+		37C3210D2F1E80FC008F4604 /* PerformanceTests */ = {
 			isa = PBXGroup;
 			children = (
 				B5C980FB2F229ECF00655B21 /* Extensions */,
@@ -7817,7 +7817,7 @@
 				B59845C52F22774C00A25DA4 /* MemoryUsageTests.swift */,
 				37C321132F1E81CA008F4604 /* macOS Performance Tests.xctestplan */,
 			);
-			path = MemoryUsageTests;
+			path = PerformanceTests;
 			sourceTree = "<group>";
 		};
 		37C9F78E2CF1C855004D73A1 /* PrivacyStats */ = {
@@ -10101,7 +10101,7 @@
 				565E46DE2B2725DD0013AC2A /* SyncE2EUITests */,
 				B6EC37E929B5DA2A001ACE79 /* tests-server */,
 				9D84E3F52CD4E6660046CD8B /* DBPE2ETests */,
-				37C3210D2F1E80FC008F4604 /* MemoryUsageTests */,
+				37C3210D2F1E80FC008F4604 /* PerformanceTests */,
 				7B4CE8DB26F02108009134B1 /* UITests */,
 				AA585D93248FD31400E9A3E2 /* UnitTests */,
 				7BDA36E72B7E037200AD5388 /* VPNProxyExtension */,

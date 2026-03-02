@@ -656,6 +656,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         aiChatTextView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).AIChatTextView"
         aiChatTextView.accessibilityLabel = UserText.duckAiFeatureName
 
+        aiChatSendButton.accessibilityLabel = "Send message"
+        aiChatSendButton.accessibilityHint = "Sends your message to DuckDuckGo AI"
         aiChatSendButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChatSend"
         aiChatSendButton.accessibilityTraits = .button
     }

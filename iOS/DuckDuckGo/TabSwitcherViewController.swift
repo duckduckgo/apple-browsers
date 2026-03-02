@@ -998,8 +998,8 @@ extension BrowsingMode {
         case .fire:
             return ImageSegmentedPickerItem(
                 text: nil,
-                selectedImage: Image(uiImage: DesignSystemImages.Color.Size16.fire),
-                unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.fire))
+                selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size24.fireTabs),
+                unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size24.fireTabs))
         }
     }
 }

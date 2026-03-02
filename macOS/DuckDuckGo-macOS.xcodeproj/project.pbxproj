@@ -4870,7 +4870,7 @@
 		37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageNextStepsCardsProvider.swift; sourceTree = "<group>"; };
 		37BF3F13286D8A6500BD9014 /* PinnedTabsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsManager.swift; sourceTree = "<group>"; };
 		37C3210B2F1E80A1008F4604 /* Memory Usage Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Memory Usage Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		37C321132F1E81CA008F4604 /* macOS Memory Usage Tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "macOS Memory Usage Tests.xctestplan"; sourceTree = "<group>"; };
+		37C321132F1E81CA008F4604 /* macOS Performance Tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "macOS Performance Tests.xctestplan"; sourceTree = "<group>"; };
 		37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = MemoryUsageTests.xcconfig; sourceTree = "<group>"; };
 		37C749392D55FE690065B48B /* HistoryViewActionsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewActionsHandler.swift; sourceTree = "<group>"; };
 		37C9F78B2CF1C770004D73A1 /* PrivacyStatsTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsTabExtension.swift; sourceTree = "<group>"; };
@@ -7815,7 +7815,7 @@
 				B5C980FB2F229ECF00655B21 /* Extensions */,
 				B5C980F82F2298D900655B21 /* Tools */,
 				B59845C52F22774C00A25DA4 /* MemoryUsageTests.swift */,
-				37C321132F1E81CA008F4604 /* macOS Memory Usage Tests.xctestplan */,
+				37C321132F1E81CA008F4604 /* macOS Performance Tests.xctestplan */,
 			);
 			path = MemoryUsageTests;
 			sourceTree = "<group>";

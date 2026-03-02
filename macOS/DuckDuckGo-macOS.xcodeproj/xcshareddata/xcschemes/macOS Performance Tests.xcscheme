@@ -44,7 +44,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:MemoryUsageTests/macOS Memory Usage Tests.xctestplan"
+            reference = "container:MemoryUsageTests/macOS Performance Tests.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>

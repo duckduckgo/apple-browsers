@@ -120,6 +120,7 @@ public struct Step: Codable, Sendable {
 }
 
 extension Array where Element == Action {
+    // swiftlint:disable:next cyclomatic_complexity
     func encode(to container: inout any UnkeyedEncodingContainer) throws {
         for action in self {
             if let json = action.json {

@@ -24,8 +24,15 @@ import SwiftUI
 /// On iPad (regular horizontal size class), content is centered vertically using spacers and expands
 /// to fill the available height. On iPhone (compact horizontal size class), content is positioned at
 /// the top without centering.
+///
+/// Scrolling is automatically disabled when the content fits within the available viewport.
+/// This ensures that buttons inside the content receive immediate touch events (avoiding
+/// the `UIScrollView.delaysContentTouches` delay that prevents pressed states from showing).
 public struct OnboardingConditionalCenteredScrollableContainerView<Content: View>: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
+
+    @State private var contentHeight: CGFloat = 0
+    @State private var scrollViewHeight: CGFloat = 0
 
     private let content: Content
 
@@ -40,6 +47,13 @@ public struct OnboardingConditionalCenteredScrollableContainerView<Content: View
         hSizeClass == .regular
     }
 
+    /// Scroll is disabled when the content fits inside the scroll view's viewport.
+    /// This removes `UIScrollView`'s gesture-recognition delay so that button pressed
+    /// states are visible immediately.
+    private var isScrollDisabled: Bool {
+        contentHeight > 0 && contentHeight <= scrollViewHeight
+    }
+
     public var body: some View {
         // Keep content in the same structural position by using conditional spacers
         // instead of conditional container structure
@@ -50,13 +64,59 @@ public struct OnboardingConditionalCenteredScrollableContainerView<Content: View
 
             ScrollView(.vertical, showsIndicators: false) {
                 content
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(key: ScrollContentHeightKey.self, value: proxy.size.height)
+                        }
+                    )
             }
+            .background(
+                GeometryReader { proxy in
+                    Color.clear.preference(key: ScrollViewHeightKey.self, value: proxy.size.height)
+                }
+            )
             // Only apply fixedSize when centering to make ScrollView size to content
             .fixedSize(horizontal: false, vertical: shouldCenterContent)
+            .scrollDisabledIfAvailable(isScrollDisabled)
 
             if shouldCenterContent {
                 Spacer(minLength: 0)
             }
+        }
+        .onPreferenceChange(ScrollContentHeightKey.self) { height in
+            contentHeight = height
+        }
+        .onPreferenceChange(ScrollViewHeightKey.self) { height in
+            scrollViewHeight = height
+        }
+    }
+}
+
+// MARK: - Preference Keys
+
+private struct ScrollContentHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct ScrollViewHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+// MARK: - Scroll Disable Helper
+
+private extension View {
+    @ViewBuilder
+    func scrollDisabledIfAvailable(_ disabled: Bool) -> some View {
+        if #available(iOS 16.0, *) {
+            self.scrollDisabled(disabled)
+        } else {
+            self
         }
     }
 }

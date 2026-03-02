@@ -37,38 +37,36 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            ScrollView(.vertical, showsIndicators: false) {
-                OnboardingBubbleView.withDismissButton(
-                    tailPosition: nil,
-                    onDismiss: onManualDismiss
-                ) {
-                    VStack {
-                        OnboardingRebrandingImages.Contextual.promoShield
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 96, height: 96)
-                        OnboardingRebranding.ContextualDaxDialogContent(
-                            title: AttributedString(title),
-                            titleTextAlignment: .center,
-                            message: message,
-                            messageTextAlignment: .center
-                        ) {
-                            VStack(spacing: 8) {
-                                Button(action: proceedAction) {
-                                    Text(proceedText)
-                                }
-                                .buttonStyle(theme.primaryButtonStyle.style)
-
-                                Button(action: dismissAction) {
-                                    Text(dismissText)
-                                }
-                                .buttonStyle(theme.secondaryButtonStyle.style)
+            OnboardingBubbleView.withDismissButton(
+                tailPosition: nil,
+                onDismiss: onManualDismiss
+            ) {
+                VStack {
+                    OnboardingRebrandingImages.Contextual.promoShield
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 96, height: 96)
+                    OnboardingRebranding.ContextualDaxDialogContent(
+                        title: AttributedString(title),
+                        titleTextAlignment: .center,
+                        message: message,
+                        messageTextAlignment: .center
+                    ) {
+                        VStack(spacing: 8) {
+                            Button(action: proceedAction) {
+                                Text(proceedText)
                             }
+                            .buttonStyle(theme.primaryButtonStyle.style)
+
+                            Button(action: dismissAction) {
+                                Text(dismissText)
+                            }
+                            .buttonStyle(theme.secondaryButtonStyle.style)
                         }
                     }
                 }
-                .padding(theme.contextualOnboardingMetrics.containerPadding)
             }
+            .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
         }
     }

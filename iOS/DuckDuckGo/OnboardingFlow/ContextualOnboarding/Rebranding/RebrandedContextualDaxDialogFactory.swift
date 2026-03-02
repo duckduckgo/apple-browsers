@@ -164,10 +164,12 @@ private extension RebrandedContextualDaxDialogFactory {
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
-        return OnboardingRebranding.OnboardingTrySiteDialog(
-            viewModel: viewModel,
-            onManualDismiss: onManualDismiss
-        )
+        return OnboardingConditionalCenteredScrollableContainerView {
+            OnboardingRebranding.OnboardingTrySiteDialog(
+                viewModel: viewModel,
+                onManualDismiss: onManualDismiss
+            )
+        }
         .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP, animationContext: .default)
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()

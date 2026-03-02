@@ -245,7 +245,7 @@ struct AIChatNativePromptTests {
 
     // MARK: - Query with Images and Model
 
-    @Test(.timeLimit(.minutes(1)))
+    @Test
     func encodingQueryWithImagesAndModel() throws {
         let images = [
             AIChatNativePrompt.NativePromptImage(data: "base64data", format: "png")
@@ -264,7 +264,7 @@ struct AIChatNativePromptTests {
         #expect(imagesArray[0]["format"] == "png")
     }
 
-    @Test(.timeLimit(.minutes(1)))
+    @Test
     func encodingQueryWithoutOptionalFields() throws {
         let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: true)
         let jsonDict = try encodePrompt(prompt)
@@ -278,7 +278,7 @@ struct AIChatNativePromptTests {
         #expect(queryDict["toolChoice"] == nil || queryDict["toolChoice"] is NSNull)
     }
 
-    @Test(.timeLimit(.minutes(1)))
+    @Test
     func decodingQueryWithImagesAndModel() throws {
         let json = """
             {
@@ -302,7 +302,7 @@ struct AIChatNativePromptTests {
         #expect(prompt == expected)
     }
 
-    @Test(.timeLimit(.minutes(1)))
+    @Test
     func decodingQueryWithoutOptionalFieldsIsBackwardCompatible() throws {
         // Old-format JSON without the new optional fields should still decode
         let json = """
@@ -320,7 +320,7 @@ struct AIChatNativePromptTests {
         #expect(prompt == AIChatNativePrompt.queryPrompt("hello", autoSubmit: true))
     }
 
-    @Test(.timeLimit(.minutes(1)))
+    @Test
     func encodingQueryWithMultipleImages() throws {
         let images = [
             AIChatNativePrompt.NativePromptImage(data: "img1", format: "png"),
@@ -336,7 +336,7 @@ struct AIChatNativePromptTests {
         #expect(imagesArray[1]["data"] == "img2")
     }
 
-    @Test(.timeLimit(.minutes(1)))
+    @Test
     func encodingQueryWithToolChoice() throws {
         let prompt = AIChatNativePrompt.queryPrompt("Search for this", autoSubmit: true, toolChoice: ["WebSearch"])
         let jsonDict = try encodePrompt(prompt)

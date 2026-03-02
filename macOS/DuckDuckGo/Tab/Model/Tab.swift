@@ -313,6 +313,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                           configuration: configuration,
                           featureFlagger: featureFlagger,
                           privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig)
+        // The feature flag enables private API based control over quick actions to allow all actions (e.g. lookup)
+        // other than link preview. To be on a safe side, disable quick actions here entirely if the feature flag is disabled.
+        webView.allowsLinkPreview = featureFlagger.isFeatureOn(.webViewLookUpAction)
         webView.addsVisitedLinks = true
         webView.setAccessibilityIdentifier("WebView")
 

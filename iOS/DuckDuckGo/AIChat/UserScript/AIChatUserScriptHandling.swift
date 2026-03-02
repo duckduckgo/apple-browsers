@@ -218,7 +218,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativePrompt: defaults.supportsNativePrompt,
             supportsStandaloneMigration: experimentalAIChatManager.isStandaloneMigrationSupported,
             supportsNativeChatInput: defaults.supportsNativeChatInput,
-            supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
+            supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
             supportsPageContext: supportsContextualMode,
             supportsAIChatFullMode: supportsFullMode,

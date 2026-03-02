@@ -108,6 +108,8 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_mac_aichat_sidebar_detached": {
         "description": "Fired when user detaches the AI Chat sidebar into a floating window",
         "owners": ["jaceklyp"],

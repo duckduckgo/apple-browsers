@@ -1117,7 +1117,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         webExtensionManagerHolder.appDelegate = self
 
         memoryPressureReporter = MemoryPressureReporter(
-            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             memoryUsageMonitor: memoryUsageMonitor,
             windowContext: WindowContext(windowControllersManager: windowControllersManager),

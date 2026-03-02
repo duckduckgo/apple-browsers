@@ -26,7 +26,7 @@ import History
 
 class MockHistoryManager: HistoryManaging {
     
-    var addVisitCalls = [URL]()
+    var addVisitCalls: [(url: URL, tabID: String?, fireTab: Bool)] = []
     var updateTitleIfNeededCalls = [(title: String, url: URL)]()
     var tabHistoryCalls: [String] = []
     var removeTabHistoryCalls: [[String]] = []
@@ -67,8 +67,8 @@ class MockHistoryManager: HistoryManaging {
         historyCoordinator.history
     }
     
-    func addVisit(of url: URL, tabID: String?) {
-        addVisitCalls.append(url)
+    func addVisit(of url: URL, tabID: String?, fireTab: Bool = false) {
+        addVisitCalls.append((url, tabID, fireTab))
     }
     
     func updateTitleIfNeeded(title: String, url: URL) {

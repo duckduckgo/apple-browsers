@@ -2097,7 +2097,6 @@ class MainViewController: UIViewController {
         tabsBarController?.backgroundTabAdded()
     }
 
-    // TODO: - Make fire tab required to force correct usage when applied app wide
     func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()

@@ -100,7 +100,6 @@ private extension TabsModelProvider {
         }
         
         var tabs: [Tab] {
-            // TODO: - Consider removing duplicates, even though there shouldn't be any
             normalTabsModel.tabs + fireModeTabsModel.tabs
         }
     }

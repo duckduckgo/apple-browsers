@@ -196,9 +196,8 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
             didProceed = true
         }
         await fulfillment(of: Array(expectations.prefix(2)), timeout: Constants.expectationTimeout)
-        let completionExpectation = setupExpectationsForStateChanges(1, manager: manager)
         timerCallback?()
-        await fulfillment(of: completionExpectation, timeout: Constants.expectationTimeout)
+        await fulfillment(of: [expectations[2]], timeout: Constants.expectationTimeout)
 
         // Then
         XCTAssertEqual(capturedDuration, WarnBeforeQuitManager.Constants.hideawayDuration)

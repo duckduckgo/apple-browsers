@@ -257,7 +257,8 @@ final class AIChatCoordinator: AIChatCoordinating {
     }
 
     private func presentSidebar(for prompt: AIChatNativePrompt) {
-        guard let currentTabID = sidebarHost.currentTabID else { return }
+        guard let currentTabID = sidebarHost.currentTabID,
+              !isChatFloating(for: currentTabID) else { return }
 
         if let chatViewController = sessionStore.sessions[currentTabID]?.chatViewController {
             chatViewController.setAIChatPrompt(prompt)

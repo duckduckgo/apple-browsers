@@ -79,21 +79,7 @@ public extension OnboardingRebranding.OnboardingStyles {
 
             private func foregroundColor(isPressed: Bool, isHovered: Bool) -> Color {
 #if os(iOS)
-                switch (colorScheme, isPressed, isHovered) {
-                case (.light, false, false),
-                    (.dark, false, false):
-                    return colorPalette.optionsListIconColor
-                case (.light, false, true):
-                    return .lightHoverBlue
-                case (.dark, false, true):
-                    return .darkHoverBlue
-                case (.light, true, _):
-                    return .lightPressedBlue
-                case (.dark, true, _):
-                    return .darkPressedBlue
-                case (_, _, _):
-                    return .lightRestBlue
-                }
+                return colorPalette.optionsListIconColor
 #else
                 return Color(designSystemColor: .accentTextPrimary)
 #endif

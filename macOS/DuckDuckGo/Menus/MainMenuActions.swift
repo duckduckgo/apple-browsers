@@ -540,6 +540,16 @@ extension AppDelegate {
         }
     }
 
+    @MainActor
+    @objc func exportStartupStats(_ sender: Any?) {
+        do {
+            let exporter = StartupMetricsExporter(profiler: Application.appDelegate.startupProfiler)
+            try exporter.exportMetricsToTemporaryURL()
+        } catch {
+            Logger.general.error("Failed to export Startup Metrics: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @objc func resetRemoteMessages(_ sender: Any?) {
         Task {
             await remoteMessagingClient.store?.resetRemoteMessages()

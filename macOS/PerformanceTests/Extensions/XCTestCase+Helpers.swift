@@ -78,4 +78,30 @@ extension XCTestCase {
 
         return (metric, options, block)
     }
+
+    /// Builds the Memory `Startup Metric + Options + Block` to track the Startup Performance.
+    ///
+    /// - Parameters:
+    ///     - iterations: Number of times the work closure will be invoked
+    ///     - applicationProvider: Closure expected to return a (new) XCUIApplication instance
+    ///     - completion: Closure to be invoked after Measurement is complete
+    ///
+    func buildStartupMeasurement(iterations: Int, applicationProvider: @escaping () -> XCUIApplication, completion: ((XCUIApplication) -> Void)? = nil) -> (metric: StartupStatsMetric, options: XCTMeasureOptions, block: () -> Void) {
+        let statsURLProvider = StartupMetricsURLProvider()
+        let metric = StartupStatsMetric(metricsURLProvider: statsURLProvider)
+        let options = XCTMeasureOptions.buildOptions(iterations: iterations, manualEvents: true)
+
+        let block: () -> Void = {
+            self.startMeasuring()
+
+            let application = applicationProvider()
+            statsURLProvider.statsURL = application.startupMetricsURL
+            application.cleanExportStartupStats()
+
+            self.stopMeasuring()
+            completion?(application)
+        }
+
+        return (metric, options, block)
+    }
 }

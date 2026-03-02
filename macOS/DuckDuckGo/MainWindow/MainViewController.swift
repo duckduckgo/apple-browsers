@@ -39,7 +39,7 @@ final class MainViewController: NSViewController {
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
     let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
-    let aiChatSidebarPresenter: AIChatSidebarPresenting
+    let aiChatCoordinator: AIChatCoordinating
     let aiChatSummarizer: AIChatSummarizer
     let aiChatTranslator: AIChatTranslator
     let findInPageViewController: FindInPageViewController
@@ -77,6 +77,8 @@ final class MainViewController: NSViewController {
         return bookmarksBarViewController.parent != nil
     }
 
+    private let startupProfiler: StartupProfiler
+
     private let themeManager: ThemeManaging
     private var theme: ThemeStyleProviding {
         themeManager.theme
@@ -110,7 +112,7 @@ final class MainViewController: NSViewController {
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
-         aiChatSidebarProvider: AIChatSidebarProviding,
+         aiChatSessionStore: AIChatSessionStoring,
          aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
@@ -136,7 +138,8 @@ final class MainViewController: NSViewController {
          sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator,
          winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter,
          pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
-         memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor
+         memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor,
+         startupProfiler: StartupProfiler = NSApp.delegateTyped.startupProfiler
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -224,25 +227,26 @@ final class MainViewController: NSViewController {
             duckPlayer: duckPlayer,
             pinningManager: pinningManager
         )
-        aiChatSidebarPresenter = AIChatSidebarPresenter(
+        aiChatCoordinator = AIChatCoordinator(
             sidebarHost: browserTabViewController,
-            sidebarProvider: aiChatSidebarProvider,
+            sessionStore: aiChatSessionStore,
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatTabOpener: aiChatTabOpener,
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring,
             featureFlagger: featureFlagger
         )
+        tabBarViewController.aiChatCoordinator = aiChatCoordinator
         aiChatSummarizer = AIChatSummarizer(
             aiChatMenuConfig: aiChatMenuConfig,
-            aiChatSidebarPresenter: aiChatSidebarPresenter,
+            aiChatCoordinator: aiChatCoordinator,
             aiChatTabOpener: aiChatTabOpener,
             pixelFiring: pixelFiring
         )
 
         aiChatTranslator = AIChatTranslator(
             aiChatMenuConfig: aiChatMenuConfig,
-            aiChatSidebarPresenter: aiChatSidebarPresenter,
+            aiChatCoordinator: aiChatCoordinator,
             aiChatTabOpener: aiChatTabOpener,
             pixelFiring: pixelFiring
         )
@@ -263,7 +267,7 @@ final class MainViewController: NSViewController {
                                                                          searchPreferences: searchPreferences,
                                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                                          aiChatMenuConfig: aiChatMenuConfig,
-                                                                         aiChatSidebarPresenter: aiChatSidebarPresenter,
+                                                                         aiChatCoordinator: aiChatCoordinator,
                                                                          vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                                                                          sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                                                                          defaultBrowserPreferences: defaultBrowserPreferences,
@@ -302,6 +306,7 @@ final class MainViewController: NSViewController {
             themeManager: themeManager
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
+        self.startupProfiler = startupProfiler
 
         super.init(nibName: nil, bundle: nil)
 
@@ -373,6 +378,8 @@ final class MainViewController: NSViewController {
         registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
+
+        startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
     }
 
     var bookmarkBarPromptObserver: Any?
@@ -448,8 +455,18 @@ final class MainViewController: NSViewController {
     }
 
     func windowWillClose() {
+        closeFloatingAIChatsForCurrentWindow()
         viewEventsCancellables.removeAll()
         aiChatOmnibarContainerViewController.cleanup()
+    }
+
+    private func closeFloatingAIChatsForCurrentWindow() {
+        let regularTabIDs = tabCollectionViewModel.tabViewModels.keys.map(\.uuid)
+        let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabViewModels.keys.map(\.uuid) ?? []
+
+        for tabID in Set(regularTabIDs + pinnedTabIDs) {
+            aiChatCoordinator.closeFloatingWindow(for: tabID)
+        }
     }
 
     deinit {
@@ -1340,7 +1357,7 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
     )
     bkman.loadBookmarks()
 
-    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: Application.appDelegate.pinningManager), aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()))
+    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: Application.appDelegate.pinningManager), aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()))
     var c: AnyCancellable!
     c = vc.publisher(for: \.view.window).sink { window in
         window?.titlebarAppearsTransparent = true

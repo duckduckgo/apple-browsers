@@ -1805,6 +1805,16 @@ extension BrowserTabViewController {
     )
 }
 
+// MARK: - Tab Selection for AI Chat Sidebar
+
+extension BrowserTabViewController {
+
+    func selectTab(with tabID: TabIdentifier) {
+        guard let tabIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
+        tabCollectionViewModel.select(at: tabIndex)
+    }
+}
+
 private extension NSViewController {
 
     func insertChild(_ childController: NSViewController, in stackView: NSStackView, at index: Int) {

@@ -342,9 +342,17 @@ final class TabViewCell: UICollectionViewCell {
     }
 
     func updateCurrentTabBorder() {
-        let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
-        border.layer.borderColor = UIColor(designSystemColor: isSelectionModeEnabled ? .accent : .decorationTertiary).cgColor
-        border.layer.borderWidth = showBorder ? Constants.selectedBorderWidth : Constants.unselectedBorderWidth
+        let isFireTab = tab?.fireTab ?? false
+
+        if isFireTab {
+            // TODO: - Update this to not always show orange border.
+            border.layer.borderColor = UIColor(designSystemColor: .fireMode).cgColor
+            border.layer.borderWidth = Constants.selectedBorderWidth
+        } else {
+            let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
+            border.layer.borderColor = UIColor(designSystemColor: isSelectionModeEnabled ? .accent : .decorationTertiary).cgColor
+            border.layer.borderWidth = showBorder ? Constants.selectedBorderWidth : Constants.unselectedBorderWidth
+        }
     }
 
     func updateUIForSelectionMode(_ removeButton: UIButton, _ selectionIndicator: UIImageView) {

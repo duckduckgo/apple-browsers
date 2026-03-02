@@ -29,12 +29,10 @@ struct SettingsAIChatShortcutsView: View {
             Section(UserText.aiChatSettingsBrowserShortcutsSectionTitle) {
                 SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                  accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
-
-                if shouldShowAddressBarShortcut {
-                    SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
-                }
-
+                
+                SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
+                                 accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+                
                 if viewModel.state.voiceSearchEnabled {
                     SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
                                      accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))

@@ -161,7 +161,7 @@ final class NavigationBarViewController: NSViewController {
     private let featureFlagger: FeatureFlagger
     private let searchPreferences: SearchPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
-    private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let aiChatCoordinator: AIChatCoordinating
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let downloadsPreferences: DownloadsPreferences
     private let tabsPreferences: TabsPreferences
@@ -231,7 +231,7 @@ final class NavigationBarViewController: NSViewController {
                        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
                        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-                       aiChatSidebarPresenter: AIChatSidebarPresenting,
+                       aiChatCoordinator: AIChatCoordinating,
                        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
                        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
                        sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
@@ -268,7 +268,7 @@ final class NavigationBarViewController: NSViewController {
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 themeManager: themeManager,
                 aiChatMenuConfig: aiChatMenuConfig,
-                aiChatSidebarPresenter: aiChatSidebarPresenter,
+                aiChatCoordinator: aiChatCoordinator,
                 vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
                 vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                 sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
@@ -303,7 +303,7 @@ final class NavigationBarViewController: NSViewController {
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         themeManager: ThemeManaging,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-        aiChatSidebarPresenter: AIChatSidebarPresenting,
+        aiChatCoordinator: AIChatCoordinating,
         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
@@ -357,7 +357,7 @@ final class NavigationBarViewController: NSViewController {
         self.searchPreferences = searchPreferences
         self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.aiChatCoordinator = aiChatCoordinator
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.downloadsPreferences = downloadsPreferences
         self.tabsPreferences = tabsPreferences
@@ -434,7 +434,7 @@ final class NavigationBarViewController: NSViewController {
                                                                       accessibilityPreferences: accessibilityPreferences,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
                                                                       aiChatMenuConfig: aiChatMenuConfig,
-                                                                      aiChatSidebarPresenter: aiChatSidebarPresenter) else {
+                                                                      aiChatCoordinator: aiChatCoordinator) else {
             fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
         }
 

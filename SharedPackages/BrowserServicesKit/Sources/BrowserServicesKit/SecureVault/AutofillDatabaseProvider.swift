@@ -232,12 +232,24 @@ public final class DefaultAutofillDatabaseProvider: GRDBSecureStorageDatabasePro
             assertionFailure("Nil credentials passed to \(#function)")
             return
         }
+
+        // Check if the account already exists and whether its content has actually changed.
+        var accountContentChanged = true
+        if let stringId = credentials.account.id, let accountId = Int64(stringId),
+            let existingAccount = try SecureVaultModels.WebsiteAccount.fetchOne(database, key: accountId) {
+            accountContentChanged = !existingAccount.hasContentEqualTo(credentials.account)
+        }
+
         do {
             var updatedSyncableCredentials = syncableCredentials
-            if let account = try credentials.account.saveAndFetch(database) {
+
+            // If the content has changed then we'll save the account, which updates lastUpdated via encode(to:)
+            if accountContentChanged,
+               let account = try credentials.account.saveAndFetch(database) {
                 credentials.account = account
                 updatedSyncableCredentials.account = account
             }
+
             try SecureVaultModels.WebsiteCredentialsRecord(credentials: credentials).save(database)
             try updatedSyncableCredentials.metadata.save(database)
         } catch let error as DatabaseError {

@@ -22,21 +22,22 @@ import Foundation
 
 enum ConfirmationAction {
     case quit
-    case close
+    case closePinnedTab
+    case closeTabWithFloatingAIChat
 
     var shortcutText: String {
         switch self {
         case .quit: return "⌘Q"
-        case .close: return "⌘W"
+        case .closePinnedTab: return "⌘W"
+        case .closeTabWithFloatingAIChat: return "⌘W"
         }
     }
+}
 
-    var actionText: String {
-        switch self {
-        case .quit: return UserText.confirmQuitAction
-        case .close: return UserText.confirmCloseAction
-        }
-    }
+enum WarnBeforeButtonRole: Hashable {
+    case dontShowAgain
+    case closeTab
+    case dismiss
 }
 
 enum ProgressState: Equatable {
@@ -62,28 +63,55 @@ final class WarnBeforeQuitViewModel: ObservableObject {
     @Published var shouldHide: Bool = false
     let action: ConfirmationAction
     private let startupPreferences: StartupPreferences?
+    private let buttonHandlers: [WarnBeforeButtonRole: () -> Void]
 
-    var onDontAskAgain: (() -> Void)?
     var onHoverChange: ((Bool) -> Void)?
 
+    private var usesFloatingCloseLayout: Bool {
+        action == .closeTabWithFloatingAIChat && (buttonHandlers[.closeTab] != nil || buttonHandlers[.dismiss] != nil)
+    }
+
+    var shouldShowShortcutIndicator: Bool {
+        !usesFloatingCloseLayout
+    }
+
+    var actionText: String {
+        switch action {
+        case .quit:
+            return UserText.confirmQuitAction
+        case .closePinnedTab:
+            return UserText.confirmCloseAction
+        case .closeTabWithFloatingAIChat:
+            return usesFloatingCloseLayout ? UserText.aiChatFloatingCloseWarningTitle : UserText.aiChatFloatingCloseConfirmationAction
+        }
+    }
+
+    var shortcutText: String {
+        action.shortcutText
+    }
+
     var subtitleText: String? {
-        // For quit action, only show "Tabs will be restored" subtitle if restore tabs is enabled
-        // For close action, no subtitle
         switch action {
         case .quit:
             return startupPreferences?.restorePreviousSession == true ? UserText.confirmQuitSubtitle : nil
-        case .close:
+        case .closePinnedTab:
             return nil
+        case .closeTabWithFloatingAIChat:
+            return UserText.aiChatFloatingCloseWarningSubtitle
         }
+    }
+
+    var isFloatingChatCloseAction: Bool {
+        usesFloatingCloseLayout
     }
 
     init(action: ConfirmationAction = .quit,
          startupPreferences: StartupPreferences? = nil,
-         onDontAskAgain: (() -> Void)? = nil,
+         buttonHandlers: [WarnBeforeButtonRole: () -> Void] = [:],
          onHoverChange: ((Bool) -> Void)? = nil) {
         self.action = action
         self.startupPreferences = startupPreferences
-        self.onDontAskAgain = onDontAskAgain
+        self.buttonHandlers = buttonHandlers
         self.onHoverChange = onHoverChange
     }
 
@@ -100,7 +128,15 @@ final class WarnBeforeQuitViewModel: ObservableObject {
     }
 
     func dontAskAgainTapped() {
-        onDontAskAgain?()
+        buttonHandlers[.dontShowAgain]?()
+    }
+
+    func triggerButton(_ role: WarnBeforeButtonRole) {
+        buttonHandlers[role]?()
+    }
+
+    func shouldShowButton(_ role: WarnBeforeButtonRole) -> Bool {
+        buttonHandlers[role] != nil
     }
 
     func hoverChanged(_ isHovering: Bool) {

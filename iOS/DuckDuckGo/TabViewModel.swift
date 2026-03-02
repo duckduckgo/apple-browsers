@@ -36,7 +36,7 @@ struct TabViewModel {
         self.tab = tab
         self.historyManager = historyManager
         let tabID = tab.supportsTabHistory ? tab.uid : nil // Only record tab history if the tab supports it
-        self.historyCapture = .init(historyManager: historyManager, tabID: tabID)
+        self.historyCapture = .init(historyManager: historyManager, tabID: tabID, fireTab: tab.fireTab)
     }
 
     // MARK: - History Capturing Methods

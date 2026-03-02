@@ -73,7 +73,7 @@ import AIChatTestingUtilities
         let featureFlagger = MockFeatureFlagger()
         let aiChatSettings = MockAIChatSettingsProvider()
         let fireproofing = MockFireproofing()
-        let textZoomCoordinator = MockTextZoomCoordinator()
+        let textZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()
         let subscriptionDataReporter = MockSubscriptionDataReporter()
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
@@ -110,7 +110,7 @@ import AIChatTestingUtilities
                                     featureFlagger: featureFlagger,
                                     contentScopeExperimentManager: MockContentScopeExperimentManager(),
                                     appSettings: AppDependencyProvider.shared.appSettings,
-                                    textZoomCoordinator: textZoomCoordinator,
+                                    textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                     websiteDataManager: mockWebsiteDataManager,
                                     fireproofing: fireproofing,
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
@@ -130,7 +130,7 @@ import AIChatTestingUtilities
                                         syncService: syncService,
                                         bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
                                         fireproofing: fireproofing,
-                                        textZoomCoordinator: textZoomCoordinator,
+                                        textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: mockConfigManager,
@@ -158,7 +158,7 @@ import AIChatTestingUtilities
             featureFlagger: featureFlagger,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,
-            textZoomCoordinator: textZoomCoordinator,
+            textZoomCoordinatorProvider: textZoomCoordinatorProvider,
             websiteDataManager: mockWebsiteDataManager,
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
@@ -181,7 +181,8 @@ import AIChatTestingUtilities
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
             privacyStats: MockPrivacyStats(),
-            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
+            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -239,6 +240,16 @@ import AIChatTestingUtilities
         XCTAssertTrue(contextualOnboardingLogicMock.didCallEnableAddFavoriteFlow)
     }
 
+}
+
+private struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
+    var isFeatureEnabled: Bool = false
+    var isForceDarkModeEnabled: Bool = false
+    var excludedDomains: [String] = []
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+    func setForceDarkModeEnabled(_ enabled: Bool) {}
+    func themeDidChange() {}
 }
 
 // swiftlint:enable force_try

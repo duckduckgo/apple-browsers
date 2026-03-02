@@ -33,7 +33,7 @@ final class ScriptRequestValidatorTests: XCTestCase {
     override func setUp() {
         super.setUp()
         subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.resultURL = validBaseURL
+        subscriptionManager.currentEnvironment = .init(serviceEnvironment: .production, purchasePlatform: .appStore)
         validator = DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
     }
 

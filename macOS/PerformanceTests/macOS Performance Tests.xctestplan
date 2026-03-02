@@ -16,7 +16,7 @@
       "target" : {
         "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",
         "identifier" : "37C320B62F1E80A1008F4604",
-        "name" : "Memory Usage Tests"
+        "name" : "Performance Tests"
       }
     }
   ],

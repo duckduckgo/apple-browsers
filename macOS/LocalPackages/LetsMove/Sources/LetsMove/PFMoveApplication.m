@@ -6,7 +6,7 @@
 //
 //  The contents of this file are dedicated to the public domain.
 
-#import "../../LetsMove/include/PFMoveApplication.h"
+#import "PFMoveApplication.h"
 
 #import <AppKit/AppKit.h>
 #import <Security/Security.h>

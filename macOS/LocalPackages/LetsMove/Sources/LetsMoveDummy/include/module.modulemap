@@ -1,4 +1,0 @@
-module LetsMoveDummy {
-    // Empty module map - this target just contains the dummy implementation
-    // The actual header is in the LetsMove target
-}

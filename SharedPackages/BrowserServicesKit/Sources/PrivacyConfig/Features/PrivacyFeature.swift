@@ -207,9 +207,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
 
-    // https://app.asana.com/1/137249556945/project/392891325557410/task/1211597475706631?focus=true
-    case webViewFlashPrevention
-
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
@@ -606,16 +603,6 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
     }
 
     case createWebViewGatingFailsafe
-
-    /// Use extended user-initiated popup timeout (extends from 1s to 6s)
-    case extendedUserInitiatedPopupTimeout
-
-    /// Suppress empty or about: URL popups after permission approval
-    case suppressEmptyPopUpsOnApproval
-
-    /// Allow popups for current page after permission approval (until next navigation)
-    case allowPopupsForCurrentPage
-
 }
 
 public enum WebExtensionsSubfeature: String, PrivacySubfeature {

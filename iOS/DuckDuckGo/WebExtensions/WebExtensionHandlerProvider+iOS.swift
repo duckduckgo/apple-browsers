@@ -27,14 +27,17 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let autoconsentPreferences: AutoconsentPreferencesProviding
+    private let darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding?
     private let autoconsentDelegate: IOSAutoconsentMessageHandlerDelegate
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
-        autoconsentPreferences: AutoconsentPreferencesProviding
+        autoconsentPreferences: AutoconsentPreferencesProviding,
+        darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
+        self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
         self.autoconsentDelegate = IOSAutoconsentMessageHandlerDelegate()
     }
 
@@ -46,6 +49,9 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
                 autoconsentPreferences: autoconsentPreferences,
                 delegate: autoconsentDelegate
             )]
+        case .darkReader:
+            guard let provider = darkReaderExcludedDomainsProvider else { return [] }
+            return [DarkReaderWebExtensionMessageHandler(excludedDomainsProvider: provider)]
         default:
             return []
         }

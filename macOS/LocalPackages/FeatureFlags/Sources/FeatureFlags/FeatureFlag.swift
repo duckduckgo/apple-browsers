@@ -196,18 +196,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017698257925?focus=true
     case popupBlocking
 
-    /// Use extended user-initiated popup timeout (extends from 1s to 6s)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212001891093823?focus=true
-    case extendedUserInitiatedPopupTimeout
-
-    /// Suppress empty or about: URL popups after permission approval
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300907?focus=true
-    case suppressEmptyPopUpsOnApproval
-
-    /// Allow all popups for current page after permission approval (until next navigation)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300913?focus=true
-    case allowPopupsForCurrentPage
-
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
@@ -303,9 +291,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
                 .blurryAddressBarTahoeFix,
-                .allowPopupsForCurrentPage,
-                .extendedUserInitiatedPopupTimeout,
-                .suppressEmptyPopUpsOnApproval,
                 .dataImportWideEventMeasurement,
                 .firstTimeQuitSurvey,
                 .aiChatOmnibarOnboarding,
@@ -388,9 +373,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .blackFridayCampaign,
                 .allowProTierPurchase,
                 .popupBlocking,
-                .extendedUserInitiatedPopupTimeout,
-                .suppressEmptyPopUpsOnApproval,
-                .allowPopupsForCurrentPage,
                 .webNotifications,
                 .newPermissionView,
                 .firstTimeQuitSurvey,
@@ -538,12 +520,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .popupBlocking:
             return .remoteReleasable(.feature(.popupBlocking))
-        case .extendedUserInitiatedPopupTimeout:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.extendedUserInitiatedPopupTimeout))
-        case .suppressEmptyPopUpsOnApproval:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.suppressEmptyPopUpsOnApproval))
-        case .allowPopupsForCurrentPage:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
         case .webNotifications:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications))
         case .newPermissionView:

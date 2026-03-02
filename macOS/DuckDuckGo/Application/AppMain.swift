@@ -25,12 +25,13 @@ struct AppMain {
     static func main() {
         _=Application.shared
 
-#if !DEBUG
-        // this should be run after NSApplication.shared is set
-        // AppStore target is linked against LetsMoveDummy which is a stub implementation
-        PFMoveToApplicationsFolderIfNecessary(true)
-#endif
+        let buildType = StandardApplicationBuildType()
+        if !buildType.isAppStoreBuild && !buildType.isDebugBuild {
+            // this should be run after NSApplication.shared is set
+            PFMoveToApplicationsFolderIfNecessary(/*allowAlertSilencing:*/ true)
+        }
 
         Application.shared.run()
     }
+
 }

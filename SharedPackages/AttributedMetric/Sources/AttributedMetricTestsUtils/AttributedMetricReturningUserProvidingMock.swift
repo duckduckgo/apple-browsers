@@ -1,5 +1,5 @@
 //
-//  PFMoveApplicationDummy.m
+//  AttributedMetricReturningUserProvidingMock.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -15,20 +15,15 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-//  Dummy/stub implementation for App Store builds where moving to Applications folder is not needed
-//  (App Store apps are already installed in /Applications).
 
-#import "../../LetsMove/include/PFMoveApplication.h"
+import Foundation
+import AttributedMetric
 
-#import <Foundation/Foundation.h>
+public final class AttributedMetricReturningUserProvidingMock: AttributedMetricReturningUserProviding {
 
-// Dummy implementation that does nothing for App Store builds
-void PFMoveToApplicationsFolderIfNecessary(BOOL allowAlertSilencing) {
-    // No-op for App Store builds - apps from the App Store are already in /Applications
-    (void)allowAlertSilencing;
-}
+    public init(isReturningUser: Bool = false) {
+        self.isReturningUser = isReturningUser
+    }
 
-// Dummy implementation that always returns NO
-BOOL PFMoveIsInProgress(void) {
-    return NO;
+    public var isReturningUser: Bool = false
 }

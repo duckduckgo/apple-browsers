@@ -19,7 +19,15 @@
 import Foundation
 import PixelKit
 
+/// Pixels for web notification events.
+///
+/// Two groups:
+/// - **Engagement** (`shown`, `clicked`, `error`): track what happens after a notification is posted.
+/// - **System authorization** (`systemAuthorizationRequested`, `systemAuthorizationGranted`): track the
+///   macOS system prompt. The difference `requested − granted` gives the deny/dismiss rate.
 enum WebNotificationPixel: PixelKitEvent {
+
+    // MARK: Engagement
 
     /// Fired when a web notification is successfully posted to UNUserNotificationCenter.
     case shown
@@ -30,6 +38,14 @@ enum WebNotificationPixel: PixelKitEvent {
     /// Fired when a web notification fails to post to UNUserNotificationCenter.
     case error(Error)
 
+    // MARK: System Authorization
+
+    /// Fired right before showing the macOS system notification authorization prompt.
+    case systemAuthorizationRequested
+
+    /// Fired when the user grants notification permission in the macOS system prompt.
+    case systemAuthorizationGranted
+
     var name: String {
         switch self {
         case .shown:
@@ -38,6 +54,10 @@ enum WebNotificationPixel: PixelKitEvent {
             return "m_mac_web_notification_clicked"
         case .error:
             return "m_mac_web_notification_error"
+        case .systemAuthorizationRequested:
+            return "m_mac_web_notification_system_authorization_requested"
+        case .systemAuthorizationGranted:
+            return "m_mac_web_notification_system_authorization_granted"
         }
     }
 

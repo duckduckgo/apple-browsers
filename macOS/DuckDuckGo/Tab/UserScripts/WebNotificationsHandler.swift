@@ -156,7 +156,12 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return true
         case .notDetermined:
             do {
-                return try await notificationService.requestAuthorization(options: [.alert, .sound])
+                PixelKit.fire(WebNotificationPixel.systemAuthorizationRequested, frequency: .dailyAndCount)
+                let granted = try await notificationService.requestAuthorization(options: [.alert, .sound])
+                if granted {
+                    PixelKit.fire(WebNotificationPixel.systemAuthorizationGranted, frequency: .dailyAndCount)
+                }
+                return granted
             } catch {
                 Logger.general.error("WebNotificationsHandler: Authorization failed - \(error.localizedDescription)")
                 return false

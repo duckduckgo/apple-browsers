@@ -297,7 +297,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private let aiChatTabOpener: AIChatTabOpening
     private let aiChatAddressBarPromptExtractor: AIChatAddressBarPromptExtractor
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
-    private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let aiChatCoordinator: AIChatCoordinating
     private let aiChatSettings: AIChatPreferencesStorage
     private lazy var aiChatToggleConditions: AIChatOmnibarToggleConditions = {
         AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
@@ -320,7 +320,7 @@ final class AddressBarButtonsViewController: NSViewController {
           aiChatTabOpener: AIChatTabOpening,
           aiChatAddressBarPromptExtractor: AIChatAddressBarPromptExtractor = AIChatAddressBarPromptExtractor(),
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-          aiChatSidebarPresenter: AIChatSidebarPresenting,
+          aiChatCoordinator: AIChatCoordinating,
           aiChatSettings: AIChatPreferencesStorage,
           themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
           featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
@@ -333,7 +333,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.aiChatTabOpener = aiChatTabOpener
         self.aiChatAddressBarPromptExtractor = aiChatAddressBarPromptExtractor
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.aiChatCoordinator = aiChatCoordinator
         self.aiChatSettings = aiChatSettings
         self.themeManager = themeManager
         self.featureFlagger = featureFlagger
@@ -371,7 +371,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToPrivacyEntryPointIsMouseOver()
         subscribeToButtonsVisibility()
         subscribeToAIChatPreferences()
-        subscribeToAIChatSidebarPresenter()
+        subscribeToAIChatCoordinator()
         subscribeToThemeChanges()
         subscribeToTabRemovals()
 
@@ -704,14 +704,21 @@ final class AddressBarButtonsViewController: NSViewController {
             }).store(in: &cancellables)
     }
 
-    private func subscribeToAIChatSidebarPresenter() {
-        aiChatSidebarPresenter.sidebarPresenceWillChangePublisher
+    private func subscribeToAIChatCoordinator() {
+        aiChatCoordinator.sidebarPresenceDidChangePublisher
             .sink { [weak self] change in
                 guard let self, change.tabID == tabViewModel?.tab.uuid else {
                     return
                 }
                 updateAIChatButtonStateForSidebar(change.isShown)
                 updateAskAIChatButtonVisibility(isSidebarOpen: change.isShown)
+            }
+            .store(in: &cancellables)
+
+        aiChatCoordinator.chatFloatingStateDidChangePublisher
+            .sink { [weak self] tabID in
+                guard let self, tabID == tabViewModel?.tab.uuid else { return }
+                updateAIChatButtonDetachIndicator(for: tabID)
             }
             .store(in: &cancellables)
     }
@@ -1067,10 +1074,15 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBAction func aiChatButtonAction(_ sender: Any) {
         guard let tab = tabViewModel?.tab else { return }
 
+        if aiChatCoordinator.isChatFloating(for: tab.uuid) {
+            aiChatCoordinator.focusFloatingWindow(for: tab.uuid)
+            return
+        }
+
         // Close the sidebar if it's currently open and the user preference is set to open AI chat in new tabs
         // This ensures consistent behavior when the sidebar is unexpectedly open but shouldn't be the default action
-        if !aiChatMenuConfig.shouldOpenAIChatInSidebar && aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) {
-            aiChatSidebarPresenter.toggleSidebar()
+        if !aiChatMenuConfig.shouldOpenAIChatInSidebar && aiChatCoordinator.isSidebarOpen(for: tab.uuid) {
+            aiChatCoordinator.toggleSidebar()
 
             if aiChatButton == sender as? AddressBarMenuButton {
                 return
@@ -1109,25 +1121,25 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func toggleAIChatSidebar(for tab: Tab) {
-        let isSidebarCurrentlyOpen = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
+        let isSidebarCurrentlyOpen = aiChatCoordinator.isSidebarOpen(for: tab.uuid)
         let pixel: AIChatPixel = isSidebarCurrentlyOpen ?
             .aiChatSidebarClosed(source: .addressBarButton) :
             .aiChatSidebarOpened(source: .addressBarButton,
                                  shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
-                                 minutesSinceSidebarHidden: aiChatSidebarPresenter.sidebarHiddenAt(for: tab.uuid)?.minutesSinceNow())
+                                 minutesSinceSidebarHidden: aiChatCoordinator.sidebarHiddenAt(for: tab.uuid)?.minutesSinceNow())
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
         if !isSidebarCurrentlyOpen {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .sidebar), frequency: .dailyAndStandard)
         }
 
-        aiChatSidebarPresenter.toggleSidebar()
+        aiChatCoordinator.toggleSidebar()
     }
 
     private func openAIChatTab(for tab: Tab, with behavior: LinkOpenBehavior) {
         // If the AI Chat sidebar is open and the intended behavior is to open in the current tab,
         // close the sidebar before opening Duck.ai in the current tab.
-        if aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) && behavior == .currentTab {
-            aiChatSidebarPresenter.collapseSidebar(withAnimation: false)
+        if aiChatCoordinator.isSidebarOpen(for: tab.uuid) && behavior == .currentTab {
+            aiChatCoordinator.collapseSidebar(withAnimation: false)
         }
 
         if let value = textFieldValue, !value.isEmpty {
@@ -1268,8 +1280,14 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func updateAIChatButtonState() {
         guard let tab = tabViewModel?.tab else { return }
-        let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
+        let isShowingSidebar = aiChatCoordinator.isSidebarOpen(for: tab.uuid)
         updateAIChatButtonStateForSidebar(isShowingSidebar)
+        updateAIChatButtonDetachIndicator(for: tab.uuid)
+    }
+
+    private func updateAIChatButtonDetachIndicator(for tabID: TabIdentifier) {
+        aiChatButton.isNotificationVisible = aiChatCoordinator.isChatFloating(for: tabID)
+        configureAIChatButtonTooltip()
     }
 
     private func updateAIChatButtonStateForSidebar(_ isShowingSidebar: Bool) {
@@ -1319,7 +1337,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isSidebarOpen: Bool = isSidebarOpen ?? {
             guard let tabID = tabViewModel?.tab.uuid else { return false }
-            return aiChatSidebarPresenter.isSidebarOpen(for: tabID)
+            return aiChatCoordinator.isSidebarOpen(for: tabID)
         }()
 
         if shouldExpandAskAIChatButton(isSidebarOpen: isSidebarOpen) {
@@ -1451,17 +1469,17 @@ final class AddressBarButtonsViewController: NSViewController {
             }
         } else {
             if let tab = tabViewModel?.tab {
-                let isSidebarCurrentlyOpen = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
+                let isSidebarCurrentlyOpen = aiChatCoordinator.isSidebarOpen(for: tab.uuid)
                 let pixel: AIChatPixel = isSidebarCurrentlyOpen ?
                     .aiChatSidebarClosed(source: .contextMenu) :
                     .aiChatSidebarOpened(source: .contextMenu,
                                          shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
-                                         minutesSinceSidebarHidden: aiChatSidebarPresenter.sidebarHiddenAt(for: tab.uuid)?.minutesSinceNow())
+                                         minutesSinceSidebarHidden: aiChatCoordinator.sidebarHiddenAt(for: tab.uuid)?.minutesSinceNow())
                 PixelKit.fire(pixel, frequency: .dailyAndStandard)
             }
 
             // Default is new tab, menu action forces sidebar
-            aiChatSidebarPresenter.toggleSidebar()
+            aiChatCoordinator.toggleSidebar()
         }
     }
 
@@ -1512,12 +1530,16 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func configureAIChatButtonTooltip(isSidebarOpen: Bool? = nil) {
         if let tab = tabViewModel?.tab {
+            let isChatFloating = aiChatCoordinator.isChatFloating(for: tab.uuid)
             let isSidebarOpen: Bool = isSidebarOpen ?? {
                 guard let tabID = tabViewModel?.tab.uuid else { return false }
-                return aiChatSidebarPresenter.isSidebarOpen(for: tabID)
+                return aiChatCoordinator.isSidebarOpen(for: tabID)
             }()
 
-            if isSidebarOpen {
+            if isChatFloating {
+                aiChatButton.toolTip = UserText.aiChatShowButton
+                aiChatButton.setAccessibilityTitle(UserText.aiChatShowButton)
+            } else if isSidebarOpen {
                 aiChatButton.toolTip = UserText.aiChatCloseSidebarButton
                 aiChatButton.setAccessibilityTitle(UserText.aiChatCloseSidebarButton)
             } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .url = tab.content {
@@ -1600,7 +1622,7 @@ final class AddressBarButtonsViewController: NSViewController {
                         guard let tab = tabViewModel?.tab else {
                             return UserText.aiChatOpenSidebarButton
                         }
-                        let isShowingSidebar = isSidebarOpen ?? aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
+                        let isShowingSidebar = isSidebarOpen ?? aiChatCoordinator.isSidebarOpen(for: tab.uuid)
                         return isShowingSidebar ? UserText.aiChatCloseSidebarButton : UserText.aiChatOpenSidebarButton
                     }
                 }()

@@ -129,6 +129,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var mouseDownCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
     private var previousScrollViewWidth: CGFloat = .zero
+    var aiChatCoordinator: AIChatCoordinating?
+    private var aiChatCloseWarningPresenter: WarnBeforeQuitOverlayPresenter?
 
     // TabBarRemoteMessagePresentable
     var tabBarRemoteMessageViewModel: TabBarRemoteMessageViewModel
@@ -285,6 +287,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     override func viewWillDisappear() {
         mouseDownCancellable = nil
         tabBarRemoteMessageCancellable = nil
+        dismissAIChatCloseWarningPresenter()
     }
 
     deinit {
@@ -298,6 +301,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         addTabButton?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         collectionView?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 #endif
+        dismissAIChatCloseWarningPresenter()
     }
 
     override func viewDidLayout() {
@@ -1686,6 +1690,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
         return item.view
     }
 
+    func cell(forTabAt index: Int) -> NSView? {
+        guard let item = collectionView.item(at: IndexPath(item: index, section: 0)) as? TabBarViewItem else {
+            return nil
+        }
+        return item.view
+    }
+
     func presentPinnedTabsDiscoveryPopoverIfNecessary() {
         guard !PinnedTabsDiscoveryPopover.popoverPresented else { return }
         PinnedTabsDiscoveryPopover.popoverPresented = true
@@ -1772,6 +1783,71 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        if tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for: tabIndex) {
+            return
+        }
+
+        if let tabID = tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.uuid {
+            aiChatCoordinator?.closeFloatingWindow(for: tabID)
+        }
+        tabCollectionViewModel.remove(at: tabIndex)
+    }
+
+    private func shouldWarnBeforeClosingFloatingAIChat(tabID: String) -> Bool {
+        aiChatCoordinator?.isChatFloating(for: tabID) == true
+    }
+
+    @discardableResult
+    func tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for tabIndex: TabIndex) -> Bool {
+        guard let tabID = tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.uuid,
+              shouldWarnBeforeClosingFloatingAIChat(tabID: tabID),
+              let tabBarViewItem = tabBarViewItem(for: tabIndex) else {
+            return false
+        }
+
+        dismissAIChatCloseWarningPresenter()
+
+        let presenter = WarnBeforeQuitOverlayPresenter(
+            action: .closeTabWithFloatingAIChat,
+            buttonHandlers: [.closeTab: { [weak self] in
+                self?.dismissAIChatCloseWarningPresenter()
+                self?.closeTab(for: tabID)
+            },
+            .dismiss: { [weak self] in
+                self?.dismissAIChatCloseWarningPresenter()
+            }],
+            anchorViewProvider: {
+                tabBarViewItem.view
+            }
+        )
+
+        let manager = WarnBeforeQuitManager(
+            action: .closeTabWithFloatingAIChat,
+            isWarningEnabled: { true }
+        )
+
+        aiChatCloseWarningPresenter = presenter
+        presenter.bindForManualPresentation(to: manager) { }
+        return true
+    }
+
+    private func dismissAIChatCloseWarningPresenter() {
+        aiChatCloseWarningPresenter?.dismiss()
+        aiChatCloseWarningPresenter = nil
+    }
+
+    private func tabBarViewItem(for tabIndex: TabIndex) -> TabBarViewItem? {
+        switch tabIndex {
+        case .pinned(let index):
+            return pinnedTabsCollectionView?.item(at: IndexPath(item: index, section: 0)) as? TabBarViewItem
+        case .unpinned(let index):
+            return collectionView.item(at: IndexPath(item: index, section: 0)) as? TabBarViewItem
+        }
+    }
+
+    private func closeTab(for tabID: String) {
+        aiChatCoordinator?.closeFloatingWindow(for: tabID)
+        guard let tabIndex = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
         tabCollectionViewModel.remove(at: tabIndex)
     }
 

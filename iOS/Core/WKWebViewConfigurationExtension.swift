@@ -23,12 +23,16 @@ import Persistence
 extension WKWebViewConfiguration {
 
     @MainActor
-    public static func persistent(idManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WKWebViewConfiguration {
+    public static func persistent(fireMode: Bool = false, idManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WKWebViewConfiguration { // TODO: - Make fireMode required to force proper usage
         let config = configuration(persistsData: true)
-
-        // Only use a container if there's an id.  We no longer allocate ids so this should not happen.
-        if #available(iOS 17, *), let containerId = idManager.currentID {
-            config.websiteDataStore = WKWebsiteDataStore(forIdentifier: containerId)
+        
+        if #available(iOS 17, *), fireMode {
+            config.websiteDataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
+        } else {
+            // Only use a container if there's an id.  We no longer allocate ids so this should not happen.
+            if #available(iOS 17, *), let containerId = idManager.currentID {
+                config.websiteDataStore = WKWebsiteDataStore(forIdentifier: containerId)
+            }
         }
         return config
     }

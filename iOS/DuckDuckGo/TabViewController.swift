@@ -405,6 +405,7 @@ class TabViewController: UIViewController {
                                    featureFlagger: FeatureFlagger,
                                    contentScopeExperimentManager: ContentScopeExperimentsManaging,
                                    textZoomCoordinator: TextZoomCoordinating,
+                                   autoconsentManagement: AutoconsentManaging,
                                    websiteDataManager: WebsiteDataManaging,
                                    fireproofing: Fireproofing,
                                    tabInteractionStateSource: TabInteractionStateSource?,
@@ -436,6 +437,7 @@ class TabViewController: UIViewController {
                               featureFlagger: featureFlagger,
                               contentScopeExperimentManager: contentScopeExperimentManager,
                               textZoomCoordinator: textZoomCoordinator,
+                              autoconsentManagement: autoconsentManagement,
                               fireproofing: fireproofing,
                               websiteDataManager: websiteDataManager,
                               tabInteractionStateSource: tabInteractionStateSource,
@@ -486,6 +488,7 @@ class TabViewController: UIViewController {
     let contextualOnboardingLogic: ContextualOnboardingLogic
     let onboardingPixelReporter: OnboardingCustomInteractionPixelReporting
     let textZoomCoordinator: TextZoomCoordinating
+    let autoconsentManagement: AutoconsentManaging
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
     let specialErrorPageNavigationHandler: SpecialErrorPageManaging
@@ -538,6 +541,7 @@ class TabViewController: UIViewController {
                    featureFlagger: FeatureFlagger,
                    contentScopeExperimentManager: ContentScopeExperimentsManaging,
                    textZoomCoordinator: TextZoomCoordinating,
+                   autoconsentManagement: AutoconsentManaging,
                    fireproofing: Fireproofing,
                    websiteDataManager: WebsiteDataManaging,
                    tabInteractionStateSource: TabInteractionStateSource?,
@@ -570,6 +574,7 @@ class TabViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.contentScopeExperimentsManager = contentScopeExperimentManager
         self.textZoomCoordinator = textZoomCoordinator
+        self.autoconsentManagement = autoconsentManagement
         self.fireproofing = fireproofing
         self.websiteDataManager = websiteDataManager
         self.tabInteractionStateSource = tabInteractionStateSource
@@ -3071,6 +3076,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.printingSubfeature.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
+        userScripts.autoconsentUserScript.management = autoconsentManagement
         userScripts.contentScopeUserScript.delegate = self
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.setStore(keyValueStore)

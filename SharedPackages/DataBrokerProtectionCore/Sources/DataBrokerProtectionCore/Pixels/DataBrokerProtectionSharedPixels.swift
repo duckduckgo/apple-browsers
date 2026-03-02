@@ -312,7 +312,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             let params = ["code": String(code),
                           Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: version]
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent, let isFreeScan):
             let params = ["actionID": actionId,
                           "message": message,
@@ -320,12 +320,12 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                           Consts.dataBrokerVersionKey: version,
                           "stepType": stepType?.rawValue ?? "unknown",
                           Consts.parentKey: dataBrokerParent ?? ""]
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .otherError(let error, let dataBroker, let version, let isFreeScan):
             let params = ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
                           Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: version]
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .databaseError(_, let functionOccurredIn),
                 .cocoaError(_, let functionOccurredIn),
                 .miscError(_, let functionOccurredIn):
@@ -416,7 +416,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                           Consts.vpnBypassStatusParamKey: vpnBypassStatus,
                           Consts.parentKey: parent,
                           Consts.isAuthenticated: isAuthenticated.description]
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .scanNoResults(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionID, let actionType, let isAuthenticated, let isFreeScan):
             let params = [Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: dataBrokerVersion,
@@ -429,7 +429,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                           Consts.actionIDKey: actionID,
                           Consts.actionTypeKey: actionType,
                           Consts.isAuthenticated: isAuthenticated.description]
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionId, let actionType, let isAuthenticated, let isFreeScan):
             let params = [Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: dataBrokerVersion,
@@ -443,7 +443,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                           Consts.actionIDKey: actionId,
                           Consts.actionTypeKey: actionType,
                           Consts.isAuthenticated: isAuthenticated.description]
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let parent, let actionId, let actionType, let isFreeScan):
             let params = [Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: dataBrokerVersion,
@@ -451,7 +451,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                           Consts.parentKey: parent,
                           Consts.actionIDKey: actionId,
                           Consts.actionTypeKey: actionType]
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs, let isAuthenticated):
             return [Consts.started: String(started),
                     Consts.orphaned: String(orphaned),
@@ -487,10 +487,10 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             if let needBackgroundAppRefresh {
                 params[Consts.needBackgroundAppRefresh] = needBackgroundAppRefresh.description
             }
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .weeklyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
                 .monthlyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
-            return addFreeScanParamIfNeeded(to: [Consts.isAuthenticated: isAuthenticated.description], isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: [Consts.isAuthenticated: isAuthenticated.description], isFreeScan: isFreeScan)
         case .scanningEventNewMatch(let dataBrokerURL),
                 .scanningEventReAppearance(let dataBrokerURL):
             return [Consts.dataBrokerParamKey: dataBrokerURL]
@@ -512,13 +512,13 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.dataBrokerVersionKey: brokerVersion ?? "unknown"]
         case .initialScanTotalDuration(let duration, let profileQueries, let isFreeScan):
             let params = [Consts.durationInMs: String(duration), Consts.profileQueries: String(profileQueries)]
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .initialScanSiteLoadDuration(let duration, let hasError, let brokerURL, let isFreeScan):
             let params = [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .initialScanPostLoadingDuration(let duration, let hasError, let brokerURL, let isFreeScan):
             let params = [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
-            return addFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .initialScanPreStartDuration(let duration):
             return [Consts.durationInMs: String(duration)]
         case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate, let clickActionDelayReductionOptimization):
@@ -676,7 +676,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 }
 
 extension DataBrokerProtectionSharedPixels {
-    private func addFreeScanParamIfNeeded(to params: [String: String], isFreeScan: Bool?) -> [String: String] {
+    private func addingFreeScanParamIfNeeded(to params: [String: String], isFreeScan: Bool?) -> [String: String] {
         guard let isFreeScan else { return params }
         var newParams = params
         newParams[Consts.isFreeScan] = isFreeScan.description

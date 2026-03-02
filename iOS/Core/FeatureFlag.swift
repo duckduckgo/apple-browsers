@@ -289,6 +289,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
 
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
+    case unifiedToggleInput
+
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
     case wideEventPostEndpoint
@@ -442,6 +445,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .fullDuckAIMode,
              .iPadDuckaiOnTab,
              .iPadAIToggle,
+             .unifiedToggleInput,
              .attributedMetrics,
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
@@ -654,6 +658,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.iPadDuckaiOnTab))
         case .iPadAIToggle:
             return .internalOnly()
+        case .unifiedToggleInput:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.unifiedToggleInput))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .onboardingSearchExperience:

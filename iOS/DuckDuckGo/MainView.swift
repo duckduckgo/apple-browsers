@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import UIKit
 import PrivacyConfig
 import AIChat
@@ -107,6 +108,7 @@ extension MainViewFactory {
         createToolbar()
         createNavigationBarContainer()
         createNavigationBarCollectionView()
+        createUnifiedToggleInputContainer()
         createProgressView()
     }
     
@@ -155,13 +157,41 @@ extension MainViewFactory {
 
         /// Enables overflow hit testing for iPad expanded search area.
         /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
-        var allowsOverflowHitTesting = false
+        var allowsOverflowHitTesting = false {
+            didSet {
+                guard allowsOverflowHitTesting != oldValue else { return }
+                if allowsOverflowHitTesting {
+                    addGestureRecognizer(overflowTapGesture)
+                } else {
+                    removeGestureRecognizer(overflowTapGesture)
+                }
+            }
+        }
+
+        private lazy var overflowTapGesture: UITapGestureRecognizer = {
+            let tap = UITapGestureRecognizer(target: self, action: #selector(handleOverflowTap(_:)))
+            return tap
+        }()
+
+        @objc private func handleOverflowTap(_ gesture: UITapGestureRecognizer) {
+            let point = gesture.location(in: self)
+            guard point.y >= bounds.maxY else { return }
+            if let control = Self.deepHitTest(in: self, point: point, event: nil) as? UIControl, control.isEnabled {
+                control.sendActions(for: .primaryActionTriggered)
+            }
+        }
 
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
             if let result = super.hitTest(point, with: event) {
                 return result
             }
             guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
+            // Return self so the overflow tap gesture recognizer receives the touch.
+            // Returning the deep target directly doesn't work because UIKit can't deliver
+            // touches to views whose intermediate ancestors don't claim the point.
+            if Self.deepHitTest(in: self, point: point, event: event) is UIControl {
+                return self
+            }
             return Self.deepHitTest(in: self, point: point, event: event)
         }
 
@@ -253,6 +283,26 @@ extension MainViewFactory {
         superview.addSubview(coordinator.topSlideContainer)
     }
 
+    final class UnifiedToggleInputContainer: UIView {}
+    private func createUnifiedToggleInputContainer() {
+        coordinator.unifiedToggleInputContainer = UnifiedToggleInputContainer()
+        coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
+        coordinator.unifiedToggleInputContainer.isHidden = true
+        superview.addSubview(coordinator.unifiedToggleInputContainer)
+
+        coordinator.keyboardSeamView = UIView()
+        coordinator.keyboardSeamView.translatesAutoresizingMaskIntoConstraints = false
+        coordinator.keyboardSeamView.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        coordinator.keyboardSeamView.isHidden = true
+        superview.addSubview(coordinator.keyboardSeamView)
+        NSLayoutConstraint.activate([
+            coordinator.keyboardSeamView.topAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor),
+            coordinator.keyboardSeamView.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            coordinator.keyboardSeamView.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
+            coordinator.keyboardSeamView.heightAnchor.constraint(equalToConstant: 44),
+        ])
+    }
+
 }
 
 /// Add constraint functions
@@ -267,6 +317,7 @@ extension MainViewFactory {
         constrainTabBarContainer()
         constrainNavigationBarContainer()
         constrainToolbar()
+        constrainUnifiedToggleInputContainer()
     }
     
     private func constrainNavigationBarContainer() {
@@ -345,8 +396,10 @@ extension MainViewFactory {
         let navigationBarContainer = coordinator.navigationBarContainer!
 
         coordinator.constraints.contentContainerTop = contentContainer.constrainView(coordinator.topSlideContainer!, by: .top, to: .bottom)
+        coordinator.constraints.contentContainerTopToSafeArea = contentContainer.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
         coordinator.constraints.contentContainerBottomToToolbarTop = contentContainer.constrainView(toolbar, by: .bottom, to: .top)
         coordinator.constraints.contentContainerBottomToSafeArea = contentContainer.constrainView(superview, by: .bottom)
+        coordinator.constraints.contentContainerBottomToUnifiedToggleInputTop = contentContainer.bottomAnchor.constraint(equalTo: coordinator.unifiedToggleInputContainer.topAnchor)
 
         NSLayoutConstraint.activate([
             contentContainer.constrainView(superview, by: .leading),
@@ -368,6 +421,24 @@ extension MainViewFactory {
             toolbar.constrainView(superview, by: .centerX),
             toolbar.constrainAttribute(.height, to: 49),
             coordinator.constraints.toolbarBottom,
+        ])
+    }
+
+    private func constrainUnifiedToggleInputContainer() {
+        let container = coordinator.unifiedToggleInputContainer!
+        let toolbar = coordinator.toolbar!
+
+        coordinator.constraints.unifiedToggleInputBottom = container.bottomAnchor.constraint(equalTo: toolbar.topAnchor)
+
+        // Ceiling constraint: input bar must never fall below the toolbar,
+        // even when UIKeyboardLayoutGuide contracts (keyboard hides temporarily).
+        let ceilingConstraint = container.bottomAnchor.constraint(lessThanOrEqualTo: toolbar.topAnchor)
+
+        NSLayoutConstraint.activate([
+            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
+            coordinator.constraints.unifiedToggleInputBottom,
+            ceilingConstraint,
         ])
     }
 

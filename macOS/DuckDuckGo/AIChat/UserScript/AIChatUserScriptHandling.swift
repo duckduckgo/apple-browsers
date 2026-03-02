@@ -235,7 +235,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         case .sameTab where isSidebar == false: // for same tab outside of sidebar we force opening new tab to keep the AI chat tab
             windowControllersManager.show(url: url, source: .switchToOpenTab, newTab: true, selected: true)
         default:
-            windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
+            windowControllersManager.open(url, source: .link, target: nil, with: NSApp.currentEvent)
         }
 
         // Fire appropriate pixel based on the name parameter

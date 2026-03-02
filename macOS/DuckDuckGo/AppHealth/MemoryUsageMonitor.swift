@@ -21,6 +21,7 @@ import Combine
 import Foundation
 import os.log
 import PrivacyConfig
+import WebKit
 
 protocol MemoryUsageMonitoring {
     func getCurrentMemoryUsage() -> MemoryUsageMonitor.MemoryReport
@@ -51,6 +52,10 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
         let residentBytes: UInt64
         /// Physical footprint in bytes (memory process is responsible for, matches Activity Monitor).
         let physFootprintBytes: UInt64
+        /// Total resident memory of all WebContent processes in bytes, or `nil` if unavailable.
+        let webContentBytes: UInt64?
+        /// Number of WebContent processes found, or `nil` if unavailable.
+        let webContentProcessCount: Int?
 
         /// Resident memory in megabytes.
         var residentMB: Double { Double(residentBytes) / Double(Self.oneMB) }
@@ -61,6 +66,16 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
         var physFootprintMB: Double { Double(physFootprintBytes) / Double(Self.oneMB) }
         /// Physical footprint in gigabytes.
         var physFootprintGB: Double { Double(physFootprintBytes) / Double(Self.oneGB) }
+
+        /// WebContent memory in megabytes, or `nil` if unavailable.
+        var webContentMB: Double? { webContentBytes.map { Double($0) / Double(Self.oneMB) } }
+        /// WebContent memory in gigabytes, or `nil` if unavailable.
+        var webContentGB: Double? { webContentBytes.map { Double($0) / Double(Self.oneGB) } }
+
+        /// Total memory (main process footprint + WebContent) in bytes, or `nil` if WebContent is unavailable.
+        var totalBytes: UInt64? { webContentBytes.map { physFootprintBytes + $0 } }
+        var totalMB: Double? { totalBytes.map { Double($0) / Double(Self.oneMB) } }
+        var totalGB: Double? { totalBytes.map { Double($0) / Double(Self.oneGB) } }
 
         var residentMemoryString: String {
             if residentBytes > Self.oneGB {
@@ -80,9 +95,30 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
             return "\(formattedValue) MB"
         }
 
-        /// Comparison string showing both resident and physical footprint values.
+        var webContentMemoryString: String {
+            guard let webContentBytes, let webContentMB, let webContentGB else { return "N/A" }
+            if webContentBytes > Self.oneGB {
+                let formattedValue = Self.gbFormatter.string(from: NSNumber(value: webContentGB)) ?? String(webContentGB)
+                return "\(formattedValue) GB"
+            }
+            let formattedValue = Self.mbFormatter.string(from: NSNumber(value: webContentMB)) ?? String(webContentMB)
+            return "\(formattedValue) MB"
+        }
+
+        var totalMemoryString: String {
+            guard let totalBytes, let totalMB, let totalGB else { return "N/A" }
+            if totalBytes > Self.oneGB {
+                let formattedValue = Self.gbFormatter.string(from: NSNumber(value: totalGB)) ?? String(totalGB)
+                return "\(formattedValue) GB"
+            }
+            let formattedValue = Self.mbFormatter.string(from: NSNumber(value: totalMB)) ?? String(totalMB)
+            return "\(formattedValue) MB"
+        }
+
+        /// Comparison string showing physical footprint and WebContent values.
         var comparisonString: String {
-            return "R:\(residentMemoryString) | F:\(footprintMemoryString)"
+            let wcCount = webContentProcessCount.map(String.init) ?? "?"
+            return "M:\(footprintMemoryString) | WC:\(webContentMemoryString)(\(wcCount))"
         }
 
         private static let oneMB: UInt64 = 1_048_576
@@ -204,7 +240,48 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
             physFootprintBytes = 0
         }
 
-        return MemoryReport(residentBytes: residentBytes, physFootprintBytes: physFootprintBytes)
+        let webContentInfo = Self.getWebContentProcessMemory()
+
+        return MemoryReport(
+            residentBytes: residentBytes,
+            physFootprintBytes: physFootprintBytes,
+            webContentBytes: webContentInfo?.totalBytes,
+            webContentProcessCount: webContentInfo?.processCount)
+    }
+
+    /// Queries WebContent process memory using the private WebKit API to get PIDs,
+    /// then reads each process's resident memory via proc_pidinfo.
+    ///
+    /// Returns `nil` if the private API is unavailable or fails, so callers can
+    /// distinguish "0 bytes used" from "unable to measure."
+    private static func getWebContentProcessMemory() -> (totalBytes: UInt64, processCount: Int)? {
+        let selector = Selector(("_webContentProcessInfo"))
+        guard WKProcessPool.responds(to: selector),
+              let processInfoList = WKProcessPool.perform(selector)?
+                .takeUnretainedValue() as? [NSObject] else {
+            return nil
+        }
+
+        var totalBytes: UInt64 = 0
+        var processCount = 0
+
+        let pidSelector = Selector(("pid"))
+        for processInfo in processInfoList {
+            guard processInfo.responds(to: pidSelector),
+                  let pid = processInfo.value(forKey: "pid") as? pid_t,
+                  pid > 0 else { continue }
+
+            var taskInfo = proc_taskinfo()
+            let size = Int32(MemoryLayout<proc_taskinfo>.size)
+            let result = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, size)
+
+            if result == size {
+                totalBytes += taskInfo.pti_resident_size
+                processCount += 1
+            }
+        }
+
+        return (totalBytes, processCount)
     }
 
     deinit {
@@ -309,7 +386,9 @@ extension MemoryUsageMonitor {
         let physFootprintBytes = UInt64(physFootprintMB * 1_048_576)
         let report = MemoryReport(
             residentBytes: physFootprintBytes,
-            physFootprintBytes: physFootprintBytes
+            physFootprintBytes: physFootprintBytes,
+            webContentBytes: nil,
+            webContentProcessCount: nil
         )
         simulatedReport = report
         memoryReportSubject.send(report)

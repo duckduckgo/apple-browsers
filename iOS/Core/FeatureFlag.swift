@@ -727,7 +727,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:
-            return .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.iOSFeatureRollout))
+            return .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout))
         case .autofillOnboardingExperiment:
             return .remoteReleasable(.subfeature(AutofillSubfeature.onboardingExperiment))
         case .supportsSyncChatsDeletion:

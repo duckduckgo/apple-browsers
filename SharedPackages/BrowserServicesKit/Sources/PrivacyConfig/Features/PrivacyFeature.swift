@@ -614,5 +614,5 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
 public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .forceDarkModeOnWebsites }
 
-    case iOSFeatureRollout
+    case featureRollout
 }

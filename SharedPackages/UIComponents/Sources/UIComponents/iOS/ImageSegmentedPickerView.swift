@@ -280,9 +280,11 @@ private struct CustomPickerButton: View {
                     .font(configuration.font)
                     .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
 
-                Text(item.text)
-                    .font(configuration.font)
-                    .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+                if let text = item.text {
+                    Text(text)
+                        .font(configuration.font)
+                        .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+                }
             }
             .contentShape(Rectangle())
         }
@@ -298,7 +300,7 @@ private struct CustomPickerButton: View {
 /// The picker automatically switches between these images based on the selection state.
 public struct ImageSegmentedPickerItem: Identifiable, Hashable {
     public let id = UUID()
-    public let text: String
+    public let text: String?
     public let selectedImage: Image
     public let unselectedImage: Image
 
@@ -308,7 +310,7 @@ public struct ImageSegmentedPickerItem: Identifiable, Hashable {
     ///   - text: The text label for the item.
     ///   - selectedImage: The image to display when selected.
     ///   - unselectedImage: The image to display when not selected.
-    public init(text: String, selectedImage: Image, unselectedImage: Image) {
+    public init(text: String?, selectedImage: Image, unselectedImage: Image) {
         self.text = text
         self.selectedImage = selectedImage
         self.unselectedImage = unselectedImage

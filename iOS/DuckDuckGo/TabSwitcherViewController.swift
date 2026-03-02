@@ -992,12 +992,12 @@ extension BrowsingMode {
         switch self {
         case .normal:
             return ImageSegmentedPickerItem(
-                    text: "",
-                    selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.tabMobile),
-                    unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.tabMobile))
+                text: nil,
+                selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.tabMobile),
+                unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.tabMobile))
         case .fire:
             return ImageSegmentedPickerItem(
-                text: "",
+                text: nil,
                 selectedImage: Image(uiImage: DesignSystemImages.Color.Size16.fire),
                 unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.fire))
         }

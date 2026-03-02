@@ -51,6 +51,7 @@ final class WebView: WKWebView {
     weak var zoomLevelDelegate: WebViewZoomLevelDelegate?
 
     let interactionEventsPublisher = PassthroughSubject<WebViewInteractionEvent, Never>()
+    private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfiguration
 
     private var isLoadingObserver: Any?
@@ -67,12 +68,15 @@ final class WebView: WKWebView {
 
     init(frame: CGRect = .zero,
          configuration: WKWebViewConfiguration = .init(),
+         featureFlagger: FeatureFlagger,
          privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig) {
+        self.featureFlagger = featureFlagger
         self.privacyConfig = privacyConfig
         super.init(frame: frame, configuration: configuration)
     }
 
     required init?(coder: NSCoder) {
+        self.featureFlagger = Application.appDelegate.featureFlagger
         self.privacyConfig = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig
         super.init(coder: coder)
     }
@@ -180,6 +184,27 @@ final class WebView: WKWebView {
         guard canZoomOut else { return }
         zoomLevel = DefaultZoomValue.allCases[self.zoomLevel.index - 1]
         zoomLevelDelegate?.zoomWasSet(to: zoomLevel)
+    }
+
+    // MARK: - Immediate Actions (Look Up)
+
+    // _WKImmediateActionType: 0 = None, 1 = LinkPreview, 2 = DataDetectedItem, 3 = LookupText, 4 = MailtoLink, 5 = TelLink
+    private static let immediateActionTypeLinkPreview = 1
+
+    /// Suppress link preview (which creates a WebView without tracker protection)
+    /// while allowing Look Up, Data Detectors, and other immediate action types.
+    /// See WKWebViewPrivate.h: return nil for default behavior, NSNull to disable entirely.
+    @objc(_immediateActionAnimationControllerForHitTestResult:withType:userData:)
+    func immediateActionAnimationController(forHitTestResult hitTestResult: AnyObject,
+                                            withType type: Int,
+                                            userData: AnyObject?) -> AnyObject? {
+        guard featureFlagger.isFeatureOn(.webViewLookUpAction) else {
+            return NSNull()
+        }
+        if type == Self.immediateActionTypeLinkPreview {
+            return NSNull()
+        }
+        return nil
     }
 
     // MARK: - Menu

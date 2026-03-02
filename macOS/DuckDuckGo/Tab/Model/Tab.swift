@@ -311,8 +311,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         webView = WebView(frame: CGRect(origin: .zero, size: webViewSize),
                           configuration: configuration,
+                          featureFlagger: featureFlagger,
                           privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig)
-        webView.allowsLinkPreview = false
         webView.addsVisitedLinks = true
         webView.setAccessibilityIdentifier("WebView")
 

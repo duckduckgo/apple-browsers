@@ -173,6 +173,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Ctrl+click compatibility fix to preserve right click behavior
     case controlClickFix
+
+    /// Enable Look Up (three-finger click) while keeping link preview disabled
+    case webViewLookUpAction
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

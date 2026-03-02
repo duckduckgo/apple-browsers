@@ -199,7 +199,7 @@ jobs:
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
-    - name: Build Memory Report
+    - name: Build Performance Report
       working-directory: macOS
       run: |
         XCRESULT_PATH=$(find DerivedData/Logs/Test -name "*.xcresult" | head -1)
@@ -219,11 +219,24 @@ jobs:
           --start-time "$START_TIME" \
           > insert-statements-memory.sql
 
+        /scripts/extract_test_attachments.sh \
+          --runner "${{ matrix.runner }}" \
+          --xcresult-path "$XCRESULT_PATH" \
+          --suite StartupPerformanceTests \
+          --run-id "${{ github.run_id }}" \
+          --branch "${{ github.ref_name }}" \
+          --commit-hash "${{ github.sha }}" \
+          --start-time "$START_TIME" \
+          > insert-statements-startup-metrics.sql
+
     - name: Debug Insert SQL
       working-directory: macOS
       run: |
         echo "Generated insert-statements-memory.sql:"
         cat insert-statements-memory.sql
+
+        echo "Generated insert-statements-startup-metrics.sql:"
+        cat insert-statements-startup-metrics.sql
 
     - name: Upload xcresult files (passed on retry)
       uses: actions/upload-artifact@v4
@@ -237,6 +250,13 @@ jobs:
       with:
         name: memory-metrics
         path: macOS/insert-statements-memory.sql
+        retention-days: 1
+    
+    - name: Upload startup metrics
+      uses: actions/upload-artifact@v4
+      with:
+        name: startup-metrics
+        path: macOS/insert-statements-startup-metrics.sql
         retention-days: 1
 
     - name: Stop log stream

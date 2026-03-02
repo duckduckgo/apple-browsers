@@ -987,6 +987,10 @@ extension DefaultOmniBarView {
 
         guard animated else {
             searchAreaContainerView.applyShadowOpacityMultiplier(1)
+            aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
+            if !isSearchAreaExpanded {
+                aiChatSendButton.isHidden = true
+            }
             applyExpansionConstraints()
             applyExpansionClipping()
             layoutIfNeeded()
@@ -1005,14 +1009,17 @@ extension DefaultOmniBarView {
         UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             if self.isSearchAreaExpanded {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.aiChatSendButton.alpha = 1
             } else {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
+                self.aiChatSendButton.alpha = 0
             }
             self.layoutIfNeeded()
         } completion: { _ in
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.aiChatSendButton.isHidden = true
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
             } else {
@@ -1035,13 +1042,13 @@ extension DefaultOmniBarView {
             searchAreaContainerView.bringSubviewToFront(aiChatTextView)
 
             aiChatSendButton.isHidden = false
+            aiChatSendButton.alpha = 0
             searchAreaContainerView.bringSubviewToFront(aiChatSendButton)
             updateAIChatSendButton(hasText: !currentText.isEmpty)
         } else {
             let currentText = aiChatTextView.text ?? ""
             aiChatTextView.isHidden = true
             aiChatTextView.text = ""
-            aiChatSendButton.isHidden = true
 
             textField.text = currentText
             textField.alpha = 1

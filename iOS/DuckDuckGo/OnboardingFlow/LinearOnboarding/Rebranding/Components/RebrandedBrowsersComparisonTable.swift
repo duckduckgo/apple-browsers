@@ -46,14 +46,24 @@ private enum ComparisonTableMetrics {
 }
 
 struct RebrandedBrowsersComparisonTable: View {
-    let shouldAnimateChecks: Bool
+    enum AvailableFeatureAnimation: Equatable {
+        /// Display available features with a static checkmark icon (no animation)
+        case `static`
+        /// Display available features with an animated checkmark that springs in with a staggered delay
+        /// - Parameters:
+        ///   - startAnimation: When true, triggers the checkmark animation sequence
+        ///   - staggeredDelay: Base delay interval multiplied by row index to create staggered effect
+        case animated(startAnimation: Bool, staggeredDelay: TimeInterval = 0.1)
+    }
+
+    let availableFeatureAnimation: AvailableFeatureAnimation
 
     var body: some View {
         VStack(spacing: ComparisonTableMetrics.rowSpacing) {
             ComparisonHeader()
 
             ForEach(Array(RebrandedBrowsersComparisonModel.features.enumerated()), id: \.element.type) { index, feature in
-                FeatureRow(feature: feature, index: index, shouldAnimateChecks: shouldAnimateChecks)
+                FeatureRow(feature: feature, index: index, availableFeatureAnimation: availableFeatureAnimation)
             }
         }
     }
@@ -89,7 +99,7 @@ private struct FeatureRow: View {
 
     let feature: RebrandedBrowsersComparisonModel.Feature
     let index: Int
-    let shouldAnimateChecks: Bool
+    let availableFeatureAnimation: RebrandedBrowsersComparisonTable.AvailableFeatureAnimation
 
     private var backgroundColor: Color {
         index % 2 == 0 ? Color(singleUseColor: .rebranding(.accentAltGlowPrimary)) : Color.clear
@@ -139,13 +149,14 @@ private struct FeatureRow: View {
 
     @ViewBuilder
     private var ddgAvailableFeature: some View {
-        if feature.ddgAvailability == .available {
+        switch availableFeatureAnimation {
+        case let .animated(startAnimation, staggeredDelay) where feature.ddgAvailability == .available:
             CircleCheckView(
                 size: ComparisonTableMetrics.availabilityIconSize,
-                shouldAnimate: shouldAnimateChecks,
-                staggerDelay: 0.1 * Double(index + 1)
+                shouldAnimate: startAnimation,
+                staggerDelay: staggeredDelay * Double(index + 1)
             )
-        } else {
+        default:
             feature.ddgAvailability.image
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -154,6 +165,9 @@ private struct FeatureRow: View {
 
 }
 
+/// Checkmark shape approximating the [Figma design](https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=16525-79061&m=dev)
+///
+/// Design uses image assets without vector bezier paths, so this is a visual approximation using straight line segments to match the appearance.
 struct Checkmark: Shape {
     func path(in rect: CGRect) -> Path {
         var p = Path()
@@ -167,12 +181,33 @@ struct Checkmark: Shape {
     }
 }
 
-// MARK: - Main View
+// MARK: - Circle Check View
+
+private enum CircleCheckViewMetrics {
+    /// Checkmark width ratio relative to circle size (visually tuned to match design appearance)
+    static let checkWidthRatio: CGFloat = 0.65
+    /// Checkmark height ratio relative to circle size (visually tuned to match design appearance)
+    static let checkHeightRatio: CGFloat = 0.55
+
+    /// Stroke thickness relative to circle size (visually balanced)
+    static let strokeWidthRatio: CGFloat = 0.09
+    /// Initial scale of checkmark before animation (creates subtle entry effect)
+    static let initialCheckScale: CGFloat = 0.3
+}
+
+private enum CircleCheckViewAnimation {
+    /// Spring animation for circle and checkmark scale (creates bouncy entrance)
+    static let springAnimation = Animation.spring(duration: 0.45, bounce: 0.45)
+    /// Easing animation for checkmark drawing effect
+    static let checkTrimAnimation = Animation.easeInOut(duration: 0.38)
+    /// Delay between circle appearing and checkmark starting to draw (creates sequenced effect)
+    static let checkAnimationDelay: TimeInterval = 0.2
+}
 
 struct CircleCheckView: View {
     @State private var circleScale: CGFloat = 0
     @State private var checkTrim: CGFloat = 0
-    @State private var checkScale: CGFloat = 0.3
+    @State private var checkScale: CGFloat = CircleCheckViewMetrics.initialCheckScale
 
     let size: CGFloat
     let shouldAnimate: Bool
@@ -192,12 +227,15 @@ struct CircleCheckView: View {
                 .stroke(
                     .white,
                     style: StrokeStyle(
-                        lineWidth: size * 0.09,
+                        lineWidth: size * CircleCheckViewMetrics.strokeWidthRatio,
                         lineCap: .round,
                         lineJoin: .round
                     )
                 )
-                .frame(width: size * 0.65, height: size * 0.55)
+                .frame(
+                    width: size * CircleCheckViewMetrics.checkWidthRatio,
+                    height: size * CircleCheckViewMetrics.checkHeightRatio
+                )
                 .scaleEffect(checkScale)
         }
         .onChange(of: shouldAnimate) { newValue in
@@ -213,16 +251,16 @@ struct CircleCheckView: View {
 
     private func animate() {
         // Phase 1 — circle springs in
-        withAnimation(.spring(duration: 0.45, bounce: 0.45)) {
+        withAnimation(CircleCheckViewAnimation.springAnimation) {
             circleScale = 1
         }
 
-        withAnimation(.spring(duration: 0.45, bounce: 0.45).delay(0.2)) {
+        withAnimation(CircleCheckViewAnimation.springAnimation.delay(CircleCheckViewAnimation.checkAnimationDelay)) {
             checkScale = 1
         }
 
         // Phase 2 — checkmark draws and scales (slight overlap so it feels connected)
-        withAnimation(.easeOut(duration: 0.38).delay(0.2)) {
+        withAnimation(CircleCheckViewAnimation.checkTrimAnimation.delay(CircleCheckViewAnimation.checkAnimationDelay)) {
             checkTrim  = 1
         }
     }

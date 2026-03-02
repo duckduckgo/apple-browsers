@@ -51,7 +51,7 @@ extension OnboardingRebranding.OnboardingView {
                     .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    RebrandedBrowsersComparisonTable(shouldAnimateChecks: showContent)
+                    RebrandedBrowsersComparisonTable(availableFeatureAnimation: .animated(startAnimation: showContent))
 
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: setAsDefaultBrowserAction) {

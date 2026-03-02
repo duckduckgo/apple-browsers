@@ -34,7 +34,7 @@ enum StartupStep: String, Codable, CaseIterable {
 
 // MARK: - StartupMetrics
 
-struct StartupMetrics: Codable {
+struct StartupMetrics {
 
     private(set) var intervals = [StartupStep: Interval]()
 
@@ -95,6 +95,47 @@ extension StartupMetrics {
 
         func timeElapsedSince(endOf earliest: Interval) -> TimeInterval {
             start - earliest.end
+        }
+    }
+}
+
+
+extension StartupMetrics: Encodable {
+
+    enum CodingKeys: String, CodingKey {
+        case appDelegateInit
+        case appWillFinishLaunching
+        case appDidFinishLaunchingBeforeRestoration
+        case appDidFinishLaunchingAfterRestoration
+        case appStateRestoration
+        case mainMenuInit
+        case timeToInteractive
+        case appDelegateInitToWillFinishLaunching
+        case appWillFinishToDidFinishLaunching
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        let stepsToKeys: [(StartupStep, CodingKeys)] = StartupStep.allCases.compactMap { step in
+            guard let codingKey = CodingKeys(rawValue: step.rawValue) else {
+                assertionFailure()
+                return nil
+            }
+
+            return (step, codingKey)
+        }
+
+        for (step, codingKey) in stepsToKeys {
+            try container.encodeIfPresent(duration(step: step), forKey: codingKey)
+        }
+
+        if let delta = timeElapsedBetween(endOf: .appDelegateInit, startOf: .appWillFinishLaunching) {
+            try container.encode(delta, forKey: .appDelegateInitToWillFinishLaunching)
+        }
+
+        if let delta = timeElapsedBetween(endOf: .appWillFinishLaunching, startOf: .appDidFinishLaunchingBeforeRestoration) {
+            try container.encode(delta, forKey: .appWillFinishToDidFinishLaunching)
         }
     }
 }

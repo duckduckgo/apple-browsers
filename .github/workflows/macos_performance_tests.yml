@@ -199,7 +199,7 @@ jobs:
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
-    - name: Build Performance Report
+    - name: Build Memory Report
       working-directory: macOS
       run: |
         XCRESULT_PATH=$(find DerivedData/Logs/Test -name "*.xcresult" | head -1)
@@ -217,13 +217,13 @@ jobs:
           --branch "${{ github.ref_name }}" \
           --commit-hash "${{ github.sha }}" \
           --start-time "$START_TIME" \
-          > insert-statements.sql
+          > insert-statements-memory.sql
 
     - name: Debug Insert SQL
       working-directory: macOS
       run: |
-        echo "Generated insert-statements.sql:"
-        cat insert-statements.sql
+        echo "Generated insert-statements-memory.sql:"
+        cat insert-statements-memory.sql
 
     - name: Upload xcresult files (passed on retry)
       uses: actions/upload-artifact@v4
@@ -236,7 +236,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: memory-metrics
-        path: macOS/insert-statements.sql
+        path: macOS/insert-statements-memory.sql
         retention-days: 1
 
     - name: Stop log stream
@@ -346,9 +346,9 @@ jobs:
         working-directory: .
         run: |
           echo "🏁🏁🏁 Reporting Memory Metrics 🏁"
-          cat insert-statements.sql
+          cat insert-statements-memory.sql
 
-          clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements.sql
+          clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements-memory.sql
 
           echo "🏁🏁🏁 Report complete 🏁🏁🏁"
 

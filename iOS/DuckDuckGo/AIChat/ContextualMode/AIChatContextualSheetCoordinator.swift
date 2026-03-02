@@ -153,8 +153,7 @@ final class AIChatContextualSheetCoordinator {
 
     /// Called by TabViewController when the page navigates to a new URL.
     func notifyPageChanged(url: URL? = nil) async {
-
-
+        guard hasActiveSheet else { return }
         sessionState.notifyPageChanged()
 
         if sessionState.shouldAutoCollectContext {

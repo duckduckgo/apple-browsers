@@ -157,8 +157,11 @@ extension MainViewFactory {
         /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
         var allowsOverflowHitTesting = false {
             didSet {
+                guard allowsOverflowHitTesting != oldValue else { return }
                 if allowsOverflowHitTesting {
                     addGestureRecognizer(overflowTapGesture)
+                } else {
+                    removeGestureRecognizer(overflowTapGesture)
                 }
             }
         }

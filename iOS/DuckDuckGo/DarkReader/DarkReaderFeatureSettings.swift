@@ -92,7 +92,8 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     var isFeatureEnabled: Bool {
         guard #available(iOS 18.4, *) else { return false }
-        guard !isLightTheme else { return false }
+        guard !isLightTheme, featureFlagger.isFeatureOn(.webExtensions) else { return false }
+
         return featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
     }
 

@@ -101,20 +101,7 @@ public extension OnboardingRebranding.OnboardingStyles {
 
             private func backgroundColor(isPressed: Bool, isHovered: Bool) -> Color {
 #if os(iOS)
-                switch (colorScheme, isPressed, isHovered) {
-                case (.light, false, false):
-                    return .clear
-                case (.dark, false, false):
-                    return .clear
-                case (.light, false, true):
-                    return .clear
-                case (.dark, false, true):
-                    return .clear
-                case (_, true, _):
-                    return colorPalette.backgroundAccent
-                case (_, _, _):
-                    return .clear
-                }
+                return isPressed ? colorPalette.backgroundAccent : .clear
 #else
                 if isPressed {
                     return Color(designSystemColor: .controlsFillSecondary)

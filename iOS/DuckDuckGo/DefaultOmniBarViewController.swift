@@ -62,6 +62,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                                                object: nil)
     }
 
+    override func onAIChatSendPressed() {
+        submitIPadDuckAIText()
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         updateShadowAppearanceByApplyingLayerMask()
@@ -311,6 +315,22 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
 extension DefaultOmniBarViewController {
 
+    fileprivate func submitIPadDuckAIText() {
+        let query = omniBarView.aiChatTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !query.isEmpty else { return }
+
+        if selectedTextEntryMode == .aiChat {
+            dismissIPadDuckAIMode()
+            if URL.isValidAddressBarURLInput(query) {
+                omniDelegate?.onOmniQuerySubmitted(query)
+            } else {
+                omniDelegate?.onPromptSubmitted(query, tools: nil)
+            }
+        } else {
+            omniDelegate?.onOmniQuerySubmitted(query)
+        }
+    }
+
     /// Dismisses the duck.ai mode without bringing the keyboard back.
     /// Used after prompt submission where we want the bar fully unfocused.
     fileprivate func dismissIPadDuckAIMode() {
@@ -459,19 +479,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            let query = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            guard !query.isEmpty else { return false }
-
-            if selectedTextEntryMode == .aiChat {
-                dismissIPadDuckAIMode()
-                if URL.isValidAddressBarURLInput(query) {
-                    omniDelegate?.onOmniQuerySubmitted(query)
-                } else {
-                    omniDelegate?.onPromptSubmitted(query, tools: nil)
-                }
-            } else {
-                omniDelegate?.onOmniQuerySubmitted(query)
-            }
+            submitIPadDuckAIText()
             return false
         }
         return true

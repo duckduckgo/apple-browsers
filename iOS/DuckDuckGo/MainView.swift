@@ -155,13 +155,38 @@ extension MainViewFactory {
 
         /// Enables overflow hit testing for iPad expanded search area.
         /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
-        var allowsOverflowHitTesting = false
+        var allowsOverflowHitTesting = false {
+            didSet {
+                if allowsOverflowHitTesting {
+                    addGestureRecognizer(overflowTapGesture)
+                }
+            }
+        }
+
+        private lazy var overflowTapGesture: UITapGestureRecognizer = {
+            let tap = UITapGestureRecognizer(target: self, action: #selector(handleOverflowTap(_:)))
+            return tap
+        }()
+
+        @objc private func handleOverflowTap(_ gesture: UITapGestureRecognizer) {
+            let point = gesture.location(in: self)
+            guard point.y >= bounds.maxY else { return }
+            if let control = Self.deepHitTest(in: self, point: point, event: nil) as? UIControl, control.isEnabled {
+                control.sendActions(for: .primaryActionTriggered)
+            }
+        }
 
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
             if let result = super.hitTest(point, with: event) {
                 return result
             }
             guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
+            // Return self so the overflow tap gesture recognizer receives the touch.
+            // Returning the deep target directly doesn't work because UIKit can't deliver
+            // touches to views whose intermediate ancestors don't claim the point.
+            if Self.deepHitTest(in: self, point: point, event: event) is UIControl {
+                return self
+            }
             return Self.deepHitTest(in: self, point: point, event: event)
         }
 

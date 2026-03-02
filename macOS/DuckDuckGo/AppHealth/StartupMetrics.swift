@@ -99,6 +99,7 @@ extension StartupMetrics {
     }
 }
 
+// MARK: - StartupMetrics + Encodable
 
 extension StartupMetrics: Encodable {
 
@@ -117,25 +118,34 @@ extension StartupMetrics: Encodable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
-        let stepsToKeys: [(StartupStep, CodingKeys)] = StartupStep.allCases.compactMap { step in
-            guard let codingKey = CodingKeys(rawValue: step.rawValue) else {
+        let keysToMilliseconds: [(CodingKeys, TimeInterval)] = StartupStep.allCases.compactMap { step in
+            guard let duration = duration(step: step), let codingKey = CodingKeys(rawValue: step.rawValue) else {
                 assertionFailure()
                 return nil
             }
 
-            return (step, codingKey)
+            return (codingKey, duration.toMilliseconds)
         }
 
-        for (step, codingKey) in stepsToKeys {
-            try container.encodeIfPresent(duration(step: step), forKey: codingKey)
+        for (codingKey, milliseconds) in keysToMilliseconds {
+            try container.encodeIfPresent(milliseconds, forKey: codingKey)
         }
 
-        if let delta = timeElapsedBetween(endOf: .appDelegateInit, startOf: .appWillFinishLaunching) {
-            try container.encode(delta, forKey: .appDelegateInitToWillFinishLaunching)
+        if let deltaMS = timeElapsedBetween(endOf: .appDelegateInit, startOf: .appWillFinishLaunching)?.toMilliseconds {
+            try container.encode(deltaMS, forKey: .appDelegateInitToWillFinishLaunching)
         }
 
-        if let delta = timeElapsedBetween(endOf: .appWillFinishLaunching, startOf: .appDidFinishLaunchingBeforeRestoration) {
-            try container.encode(delta, forKey: .appWillFinishToDidFinishLaunching)
+        if let deltaMS = timeElapsedBetween(endOf: .appWillFinishLaunching, startOf: .appDidFinishLaunchingBeforeRestoration)?.toMilliseconds {
+            try container.encode(deltaMS, forKey: .appWillFinishToDidFinishLaunching)
         }
+    }
+}
+
+// MARK: - TimeInterval Private Helpers
+
+private extension TimeInterval {
+
+    var toMilliseconds: TimeInterval {
+        self * 1000
     }
 }

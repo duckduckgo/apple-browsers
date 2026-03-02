@@ -360,12 +360,27 @@ jobs:
       - name: Download memory metrics
         uses: actions/download-artifact@v4
         with:
+          name: startup-metrics
+
+      - name: Download startup metrics
+        uses: actions/download-artifact@v4
+        with:
           name: memory-metrics
+
+      - name: Report Startup Metrics to ClickHouse
+        working-directory: .
+        run: |
+          echo "🕰️🕰️🕰️ Reporting Startup Metrics 🕰️🕰️🕰️"
+          cat insert-statements-startup-metrics.sql
+
+          clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements-startup-metrics.sql
+
+          echo "🏁🏁🏁 Report complete 🏁🏁🏁"
 
       - name: Report Memory Metrics to ClickHouse
         working-directory: .
         run: |
-          echo "🏁🏁🏁 Reporting Memory Metrics 🏁"
+          echo "🧠🧠🧠 Reporting Memory Metrics 🧠🧠🧠"
           cat insert-statements-memory.sql
 
           clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements-memory.sql

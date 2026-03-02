@@ -1,7 +1,7 @@
 {
-  "images" : [
+  "data" : [
     {
-      "filename" : "Content-Upload-128.pdf",
+      "filename" : "OnboardingLandingLogoAnimation.json",
       "idiom" : "universal"
     }
   ],

@@ -1,5 +1,5 @@
 //
-//  SPUUpdater+UpdaterAvailabilityChecking.swift
+//  AttributedMetricReturningUserProvidingMock.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,8 +16,14 @@
 //  limitations under the License.
 //
 
-import AppUpdaterShared
-import Sparkle
+import Foundation
+import AttributedMetric
 
-extension SPUUpdater: UpdaterAvailabilityChecking {
+public final class AttributedMetricReturningUserProvidingMock: AttributedMetricReturningUserProviding {
+
+    public init(isReturningUser: Bool = false) {
+        self.isReturningUser = isReturningUser
+    }
+
+    public var isReturningUser: Bool = false
 }

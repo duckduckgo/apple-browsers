@@ -19,7 +19,6 @@
 import AppKit
 import Combine
 import Common
-import FeatureFlags
 import Foundation
 import PrivacyConfig
 
@@ -28,7 +27,6 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
 
     public static var appDelegate: AppDelegate! // swiftlint:disable:this weak_delegate
     private var fireWindowPreferenceCancellable: AnyCancellable?
-    private var featureFlagger: FeatureFlagger { delegateTyped.featureFlagger }
 
     /// Event interceptor hook for WarnBeforeQuitManager
     /// Returns nil to consume event, or the event to pass through
@@ -52,6 +50,8 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
         self.delegate = delegate
         Application.appDelegate = delegate
 
+        let menuProfilerToken = delegate.startupProfiler.startMeasuring(.mainMenuInit)
+
         let mainMenu = MainMenu(
             featureFlagger: delegate.featureFlagger,
             bookmarkManager: delegate.bookmarkManager,
@@ -71,6 +71,8 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
             subscriptionManager: delegate.subscriptionManager
         )
         self.mainMenu = mainMenu
+
+        menuProfilerToken.stop()
 
         // Subscribe to Fire Window preference changes to update menu dynamically
         fireWindowPreferenceCancellable = delegate.dataClearingPreferences.$shouldOpenFireWindowByDefault
@@ -151,8 +153,7 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
         }
 
         // Handle the hack to reset the click count to 1 for the next incoming mouse event of the given type.
-        if let expectedEventType = shouldResetClickCountForNextEventOfTypes, expectedEventType.contains(event.type),
-           featureFlagger.isFeatureOn(.tabClosingEventRecreation) {
+        if let expectedEventType = shouldResetClickCountForNextEventOfTypes, expectedEventType.contains(event.type) {
             if event.clickCount > 1 {
                 event = {
                     guard let cg = event.cgEvent?.copy() else { return event }

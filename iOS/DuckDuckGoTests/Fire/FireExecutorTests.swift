@@ -118,7 +118,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockDaxDialogsManager: DummyDaxDialogsManager!
     private var mockSyncService: MockDDGSyncing!
     private var mockFireproofing: MockFireproofing!
-    private var mockTextZoomCoordinator: MockTextZoomCoordinator!
+    private var mockTextZoomCoordinatorProvider: MockTextZoomCoordinatorProvider!
     private var mockHistoryManager: MockHistoryManager!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockDataClearingCapability: MockDataClearingCapability!
@@ -129,6 +129,10 @@ final class FireExecutorTests: XCTestCase {
     private var mockAppSettings: AppSettingsMock!
     private var mockAIChatSyncCleaner: MockAIChatSyncCleaning!
     
+    private var normalTextZoomCoordinator: MockTextZoomCoordinator {
+        mockTextZoomCoordinatorProvider.normalCoordinator
+    }
+    
     override func setUp() {
         super.setUp()
         mockTabManager = MockTabManager()
@@ -137,7 +141,7 @@ final class FireExecutorTests: XCTestCase {
         mockDaxDialogsManager = DummyDaxDialogsManager()
         mockSyncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
         mockFireproofing = MockFireproofing(domains: [])
-        mockTextZoomCoordinator = MockTextZoomCoordinator()
+        mockTextZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()
         mockHistoryManager = MockHistoryManager()
         mockFeatureFlagger = MockFeatureFlagger()
         mockDataClearingCapability = MockDataClearingCapability()
@@ -160,7 +164,7 @@ final class FireExecutorTests: XCTestCase {
         mockDaxDialogsManager = nil
         mockSyncService = nil
         mockFireproofing = nil
-        mockTextZoomCoordinator = nil
+        mockTextZoomCoordinatorProvider = nil
         mockHistoryManager = nil
         mockFeatureFlagger = nil
         mockDataClearingCapability = nil
@@ -186,7 +190,7 @@ final class FireExecutorTests: XCTestCase {
             syncService: syncService ?? mockSyncService,
             bookmarksDatabaseCleaner: bookmarksDatabaseCleaner ?? mockBookmarkDatabaseCleaner,
             fireproofing: fireproofing ?? mockFireproofing,
-            textZoomCoordinator: mockTextZoomCoordinator,
+            textZoomCoordinatorProvider: mockTextZoomCoordinatorProvider,
             historyManager: mockHistoryManager,
             featureFlagger: mockFeatureFlagger,
             dataClearingCapability: mockDataClearingCapability,
@@ -442,8 +446,8 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockDaxDialogsManager.clearHeldURLDataCallCount, 1)
 
         // Then - Verify text zoom is reset with fireproofed domains excluded
-        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsCallCount, 1)
-        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsExcludingDomainsArg, fireproofedDomains)
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsCallCount, 1)
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsExcludingDomainsArg, fireproofedDomains)
 
         // Then - Verify history is removed
         XCTAssertEqual(mockHistoryManager.removeAllHistoryCallCount, 1)
@@ -468,9 +472,9 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockWebsiteDataManager.clearCalledWithDomains, ["test.com"])
 
         // Then - Verify text zoom reset is called with visited domains and excluding domains
-        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomainsCallCount, 1)
-        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomains, ["test.com"])
-        XCTAssertNotNil(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains)
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedDomainsCallCount, 1)
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedDomains, ["test.com"])
+        XCTAssertNotNil(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains)
 
         // Then - Verify browsing history is removed for the tab
         XCTAssertEqual(mockHistoryManager.removeBrowsingHistoryCalls.count, 1)
@@ -493,11 +497,11 @@ final class FireExecutorTests: XCTestCase {
 
         // Then - Verify coordinator receives visited domains and excluding domains
         // The S3 filtering logic happens inside the coordinator/storage
-        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomainsCallCount, 1)
-        let visitedDomains = Set(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedDomains ?? [])
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedDomainsCallCount, 1)
+        let visitedDomains = Set(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedDomains ?? [])
         XCTAssertTrue(visitedDomains.contains("mail.amazon.com"))
         XCTAssertTrue(visitedDomains.contains("facebook.com"))
-        XCTAssertEqual(mockTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains, ["amazon.com"])
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains, ["amazon.com"])
     }
     
     

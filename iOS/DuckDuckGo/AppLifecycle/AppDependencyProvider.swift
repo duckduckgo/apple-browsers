@@ -105,6 +105,33 @@ final class AppDependencyProvider: DependencyProvider {
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     private init() {
+
+        // Configuring PixelKit
+        let isPhone = UIDevice.current.userInterfaceIdiom == .phone
+        let source = isPhone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS
+        PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
+                       appVersion: AppVersion.shared.versionNumber,
+                       source: source.rawValue,
+                       defaultHeaders: [:],
+                       defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
+
+            let url = URL.pixelUrl(forPixelNamed: pixelName)
+            let apiHeaders = APIRequestV2.HeadersV2(userAgent: Pixel.defaultPixelUserAgent, additionalHeaders: headers)
+            guard let request = APIRequestV2(url: url, method: .get, queryItems: parameters.toQueryItems(), headers: apiHeaders) else {
+                assertionFailure("Invalid Pixel request")
+                onComplete(false, nil)
+                return
+            }
+            Task {
+                do {
+                    _ = try await DefaultAPIService().fetch(request: request)
+                    onComplete(true, nil)
+                } catch {
+                    onComplete(false, error)
+                }
+            }
+        }
+
         let featureFlagOverrideStore = UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!
 
         // Apply UI test overrides
@@ -119,6 +146,7 @@ final class AppDependencyProvider: DependencyProvider {
         let experimentManager = ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:))
 
         var featureFlagger: FeatureFlagger
+
         if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
             let mockFeatureFlagger = MockFeatureFlagger()
             self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
@@ -135,13 +163,11 @@ final class AppDependencyProvider: DependencyProvider {
             featureFlagger = defaultFeatureFlagger
         }
 
+        // Configure PixelKit Experiments
+        PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
+                                        eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
+
         self.wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
-        self.freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
-            wideEvent: wideEvent,
-            pixelHandler: FreeTrialPixelHandler(),
-            isFeatureEnabled: { featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
-        )
-        self.freeTrialConversionService.startObservingSubscriptionChanges()
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
 
@@ -235,6 +261,13 @@ final class AppDependencyProvider: DependencyProvider {
         self.subscriptionManager = subscriptionManager
         tokenHandler = subscriptionManager
         authenticationStateProvider = subscriptionManager
+        self.freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
+            wideEvent: wideEvent,
+            pixelHandler: FreeTrialPixelHandler(),
+            subscriptionFetcher: { try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) },
+            isFeatureEnabled: { featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
+        )
+        self.freeTrialConversionService.startObservingSubscriptionChanges()
 
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,

@@ -96,7 +96,7 @@ class FireExecutor: FireExecuting {
     private let syncService: DDGSyncing
     private weak var bookmarksDatabaseCleaner: BookmarkDatabaseCleaning?
     private let fireproofing: Fireproofing
-    private let textZoomCoordinator: TextZoomCoordinating
+    private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
     private let dataClearingCapability: DataClearingCapable
@@ -121,7 +121,7 @@ class FireExecutor: FireExecuting {
          syncService: DDGSyncing,
          bookmarksDatabaseCleaner: BookmarkDatabaseCleaning,
          fireproofing: Fireproofing,
-         textZoomCoordinator: TextZoomCoordinating,
+         textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
          historyManager: HistoryManaging,
          featureFlagger: FeatureFlagger,
          dataClearingCapability: DataClearingCapable? = nil,
@@ -138,7 +138,7 @@ class FireExecutor: FireExecuting {
         self.syncService = syncService
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
         self.fireproofing = fireproofing
-        self.textZoomCoordinator = textZoomCoordinator
+        self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
         self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
@@ -385,12 +385,14 @@ class FireExecutor: FireExecuting {
     
     private func forgetTextZoom() {
         let allowedDomains = fireproofing.allowedDomains
-        textZoomCoordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
+        let coordinator = textZoomCoordinatorProvider.coordinator(for: .normal) // TODO: - Pass fire mode correctly. Also Fire mode ignores fireproofing.
+        coordinator.resetTextZoomLevels(excludingDomains: allowedDomains)
     }
     
     private func forgetTextZoom(forDomains domains: [String]) {
         let allowedDomains = fireproofing.allowedDomains
-        textZoomCoordinator.resetTextZoomLevels(forVisitedDomains: domains, excludingDomains: allowedDomains)
+        let coordinator = textZoomCoordinatorProvider.coordinator(for: .normal) // TODO: - Pass fire mode correctly. Also Fire mode ignores fireproofing.
+        coordinator.resetTextZoomLevels(forVisitedDomains: domains, excludingDomains: allowedDomains)
     }
     
     @MainActor

@@ -153,7 +153,7 @@ final class TabManagerTests: XCTestCase {
                           featureFlagger: MockFeatureFlagger(),
                           contentScopeExperimentManager: MockContentScopeExperimentManager(),
                           appSettings: AppSettingsMock(),
-                          textZoomCoordinator: MockTextZoomCoordinator(),
+                          textZoomCoordinatorProvider: MockTextZoomCoordinatorProvider(),
                           websiteDataManager: MockWebsiteDataManager(),
                           fireproofing: MockFireproofing(),
                           maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),

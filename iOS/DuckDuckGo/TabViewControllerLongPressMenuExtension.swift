@@ -127,7 +127,8 @@ extension TabViewController {
             aiChatSettings: aiChatSettings,
             productSurfaceTelemetry: productSurfaceTelemetry,
             privacyStats: privacyStats,
-            voiceSearchHelper: voiceSearchHelper)
+            voiceSearchHelper: voiceSearchHelper,
+            darkReaderFeatureSettings: darkReaderFeatureSettings)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

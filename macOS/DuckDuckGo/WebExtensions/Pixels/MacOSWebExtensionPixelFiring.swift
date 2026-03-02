@@ -121,6 +121,7 @@ private extension DuckDuckGoWebExtensionType {
 
 // MARK: - WebExtensionPixelFiring Implementation
 
+@available(macOS 15.4, *)
 struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
 
     func fire(_ event: WebExtensionPixelEvent) {

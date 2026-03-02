@@ -46,6 +46,7 @@ private extension DuckDuckGoWebExtensionType {
     }
 }
 
+@available(iOS 18.4, *)
 struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
 
     func fire(_ event: WebExtensionPixelEvent) {

@@ -37,6 +37,7 @@ final class AIChatHistoryListViewController: UIViewController {
         static let cellHeight: CGFloat = 44
         static let horizontalInset: CGFloat = 16
         static let topContentInset: CGFloat = -20
+        static let iPadTopContentInset: CGFloat = 0
         static let escapeHatchTopPadding: CGFloat = 16
         static let escapeHatchHeaderHeight: CGFloat = 72
         static let escapeHatchBottomPadding: CGFloat = 16
@@ -48,10 +49,12 @@ final class AIChatHistoryListViewController: UIViewController {
 
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
+    private let isIPadExperience: Bool
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: .insetGrouped)
+        let style: UITableView.Style = isIPadExperience ? .plain : .insetGrouped
+        let tableView = UITableView(frame: .zero, style: style)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
@@ -59,7 +62,8 @@ final class AIChatHistoryListViewController: UIViewController {
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         tableView.sectionFooterHeight = 0
-        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
+        let topInset = isIPadExperience ? Constants.iPadTopContentInset : Constants.topContentInset
+        tableView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
         return tableView
     }()
 
@@ -72,8 +76,9 @@ final class AIChatHistoryListViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(viewModel: AIChatSuggestionsViewModel, onChatSelected: @escaping (AIChatSuggestion) -> Void) {
+    init(viewModel: AIChatSuggestionsViewModel, isIPadExperience: Bool, onChatSelected: @escaping (AIChatSuggestion) -> Void) {
         self.viewModel = viewModel
+        self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected
         super.init(nibName: nil, bundle: nil)
     }
@@ -166,7 +171,8 @@ final class AIChatHistoryListViewController: UIViewController {
             escapeHatchHostingController = nil
             UIView.performWithoutAnimation {
                 tableView.tableHeaderView = nil
-                tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
+                let topInset = isIPadExperience ? Constants.iPadTopContentInset : Constants.topContentInset
+                tableView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
             }
         }
     }

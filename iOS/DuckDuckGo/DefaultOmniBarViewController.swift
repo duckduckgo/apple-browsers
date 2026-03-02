@@ -483,6 +483,8 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
         if selectedTextEntryMode != .aiChat {
             omniDelegate?.onOmniQueryUpdated(newQuery)
+        } else {
+            omniDelegate?.onAIChatQueryUpdated(newQuery)
         }
         if newQuery.isEmpty {
             refreshState(state.onTextClearedState)

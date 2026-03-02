@@ -34,7 +34,6 @@ extension Tab: NSSecureCoding {
         static let preferencePane = "preferencePane"
         static let historyPane = "historyPane"
         static let lastSelectedAt = "lastSelectedAt"
-        static let isSuspended = "isSuspended"
     }
 
     static var supportsSecureCoding: Bool { true }
@@ -57,8 +56,6 @@ extension Tab: NSSecureCoding {
 
         let interactionStateData: Data? = decoder.decodeIfPresent(at: NSSecureCodingKeys.interactionStateData) ?? decoder.decodeIfPresent(at: NSSecureCodingKeys.sessionStateData)
 
-        let isSuspended: Bool = decoder.decodeBool(forKey: NSSecureCodingKeys.isSuspended)
-
         self.init(uuid: uuid,
                   content: content,
                   title: decoder.decodeIfPresent(at: NSSecureCodingKeys.title),
@@ -66,10 +63,6 @@ extension Tab: NSSecureCoding {
                   interactionStateData: interactionStateData,
                   shouldLoadInBackground: false,
                   lastSelectedAt: decoder.decodeIfPresent(at: NSSecureCodingKeys.lastSelectedAt))
-
-        if isSuspended {
-            self.restoreIsSuspended(true)
-        }
 
         _=self.awakeAfter(using: decoder)
     }
@@ -86,10 +79,6 @@ extension Tab: NSSecureCoding {
 
         coder.encode(content.type.rawValue, forKey: NSSecureCodingKeys.tabType)
         lastSelectedAt.map(coder.encode(forKey: NSSecureCodingKeys.lastSelectedAt))
-
-        if isSuspended {
-            coder.encode(true, forKey: NSSecureCodingKeys.isSuspended)
-        }
 
         if let pane = content.preferencePane {
             coder.encode(pane.rawValue, forKey: NSSecureCodingKeys.preferencePane)

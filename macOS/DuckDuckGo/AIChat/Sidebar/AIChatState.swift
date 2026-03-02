@@ -28,10 +28,6 @@ enum AIChatPresentationMode: String {
 /// Pure per-tab data model for AI Chat. Contains only persisted state --
 /// no view controller references, no Combine plumbing, no AppKit.
 /// Transient UI lifecycle is managed by `AIChatSession`.
-///
-/// `@objc(AIChatSidebar)` keeps NSSecureCoding compatibility with older
-/// archives that encoded this model under the previous class name.
-@objc(AIChatSidebar)
 final class AIChatState: NSObject {
 
     /// The initial AI chat URL to be loaded.

@@ -152,7 +152,8 @@ final class IPadTabChatHistoryCoordinator {
 
         let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
                                            aiChatSettings: aiChatSettings,
-                                           viewModel: viewModel)
+                                           viewModel: viewModel,
+                                           isIPadExperience: true)
         return (manager, viewModel)
     }
 

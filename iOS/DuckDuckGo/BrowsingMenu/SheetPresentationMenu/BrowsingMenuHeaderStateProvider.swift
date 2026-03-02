@@ -30,7 +30,6 @@ final class BrowsingMenuHeaderStateProvider {
 
     func update(
         dataSource: BrowsingMenuHeaderDataSource,
-        isFeatureEnabled: Bool,
         isNewTabPage: Bool = false,
         isAITab: Bool = false,
         isError: Bool,
@@ -39,8 +38,8 @@ final class BrowsingMenuHeaderStateProvider {
         title: String? = nil,
         easterEggLogoURL: String? = nil
     ) {
-        let isHeaderVisible = isFeatureEnabled && !isNewTabPage && !isAITab && hasLink
-        let isAIHeaderVisible = isFeatureEnabled && isAITab
+        let isHeaderVisible = !isNewTabPage && !isAITab && hasLink
+        let isAIHeaderVisible = isAITab
 
         if isAIHeaderVisible {
             cancelRunningFaviconTask()

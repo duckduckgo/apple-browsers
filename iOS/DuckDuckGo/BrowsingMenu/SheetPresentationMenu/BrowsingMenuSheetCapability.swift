@@ -24,11 +24,7 @@ import PrivacyConfig
 
 protocol BrowsingMenuSheetCapable {
     var isEnabled: Bool { get }
-    var isSettingsOptionVisible: Bool { get }
-    var isWebsiteHeaderEnabled: Bool { get }
     var mergeActionsAndBookmarks: Bool { get }
-
-    func setEnabled(_ enabled: Bool)
 }
 
 enum BrowsingMenuSheetCapability {
@@ -37,10 +33,7 @@ enum BrowsingMenuSheetCapability {
         keyValueStore: ThrowingKeyValueStoring,
     ) -> BrowsingMenuSheetCapable {
         if #available(iOS 17, *) {
-            return BrowsingMenuSheetDefaultCapability(
-                featureFlagger: featureFlagger,
-                keyValueStore: keyValueStore
-            )
+            return BrowsingMenuSheetDefaultCapability()
         } else {
             return BrowsingMenuSheetUnavailableCapability()
         }
@@ -48,62 +41,12 @@ enum BrowsingMenuSheetCapability {
 }
 
 struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
-    let isEnabled: Bool = false
-    let isSettingsOptionVisible: Bool = false
-    let isWebsiteHeaderEnabled: Bool = false
     let mergeActionsAndBookmarks: Bool = false
-
-    func setEnabled(_ enabled: Bool) {
-        // no-op
-    }
+    let isEnabled = false
 }
 
 struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
-    let featureFlagger: FeatureFlagger
-    private let keyValueStore: ThrowingKeyValueStoring
 
-    init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) {
-        self.featureFlagger = featureFlagger
-        self.keyValueStore = keyValueStore
-    }
-
-    var isEnabled: Bool {
-        if isEnabledByDefault {
-            if featureFlagger.internalUserDecider.isInternalUser {
-                return storedEnabledValue ?? true
-            }
-            return true
-        }
-        return storedEnabledValue ?? false
-    }
-
-    var isSettingsOptionVisible: Bool {
-        isEnabledByDefault && featureFlagger.internalUserDecider.isInternalUser
-    }
-
-    var isWebsiteHeaderEnabled: Bool {
-        isEnabledByDefault
-    }
-
-    var mergeActionsAndBookmarks: Bool {
-        isEnabledByDefault
-    }
-
-    func setEnabled(_ enabled: Bool) {
-        try? keyValueStore.set(enabled, forKey: StorageKey.experimentalBrowsingMenuEnabled)
-    }
-
-    // MARK: - Private
-
-    private var isEnabledByDefault: Bool {
-        featureFlagger.isFeatureOn(.browsingMenuSheetEnabledByDefault)
-    }
-
-    private var storedEnabledValue: Bool? {
-        try? keyValueStore.object(forKey: StorageKey.experimentalBrowsingMenuEnabled) as? Bool
-    }
-
-    private struct StorageKey {
-        static let experimentalBrowsingMenuEnabled = "com_duckduckgo_experimentalBrowsingMenu_enabled"
-    }
+    let mergeActionsAndBookmarks = true
+    let isEnabled = true
 }

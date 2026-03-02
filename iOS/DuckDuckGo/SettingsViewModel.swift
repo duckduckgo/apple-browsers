@@ -67,7 +67,6 @@ final class SettingsViewModel: ObservableObject {
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
-    var browsingMenuSheetCapability: BrowsingMenuSheetCapable
     private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
     
     private lazy var newBadgeVisibilityManager: NewBadgeVisibilityManaging = {
@@ -290,24 +289,6 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
                 self.appSettings.currentRefreshButtonPosition = $0
                 self.state.refreshButtonPosition = $0
-            }
-        )
-    }
-
-    var showMenuInSheetBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: {
-                self.state.showMenuInSheet
-            },
-            set: {
-                if $0 {
-                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuEnabled)
-                } else {
-                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuDisabled)
-                }
-                
-                self.browsingMenuSheetCapability.setEnabled($0)
-                self.state.showMenuInSheet = self.browsingMenuSheetCapability.isEnabled
             }
         )
     }
@@ -685,7 +666,6 @@ final class SettingsViewModel: ObservableObject {
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         browsingMenuSheetCapability: BrowsingMenuSheetCapable,
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
@@ -721,7 +701,6 @@ final class SettingsViewModel: ObservableObject {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
-        self.browsingMenuSheetCapability = browsingMenuSheetCapability
         self.onboardingSearchExperienceSettingsResolver = onboardingSearchExperienceSettingsResolver ?? OnboardingSearchExperienceSettingsResolver(
             featureFlagger: AppDependencyProvider.shared.featureFlagger,
             onboardingProvider: OnboardingSearchExperience(),
@@ -760,7 +739,6 @@ extension SettingsViewModel {
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
-            showMenuInSheet: browsingMenuSheetCapability.isEnabled,
             forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,

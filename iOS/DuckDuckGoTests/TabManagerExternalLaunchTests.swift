@@ -268,7 +268,8 @@ final class TabManagerExternalLaunchTests {
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             privacyStats: MockPrivacyStats(),
             voiceSearchHelper: MockVoiceSearchHelper(),
-            launchSourceManager: launchSourceManager
+            launchSourceManager: launchSourceManager,
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
     }
 }

@@ -2476,6 +2476,7 @@
 		84C176392DF02556001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C176382DF02556001DEEC7 /* CommonObjCExtensions */; };
 		84C1763B2DF02567001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */; };
 		84C176502DF0462F001DEEC7 /* LetsMove in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1764F2DF0462F001DEEC7 /* LetsMove */; };
+		84C176522DF0462F001DEEC7 /* LetsMove in Frameworks */ = {isa = PBXBuildFile; productRef = 84C176512DF0462F001DEEC7 /* LetsMove */; };
 		84C63D882DF178AF001E5EE3 /* NetworkProtectionInfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 84C63D872DF178AF001E5EE3 /* NetworkProtectionInfoPlist.xcstrings */; };
 		84C96E462CF9BB6400A80A01 /* malwareFilterSet.json in Resources */ = {isa = PBXBuildFile; fileRef = 84C96E442CF9BB6400A80A01 /* malwareFilterSet.json */; };
 		84C96E472CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */ = {isa = PBXBuildFile; fileRef = 84C96E452CF9BB6400A80A01 /* malwareHashPrefixes.json */; };
@@ -6588,6 +6589,7 @@
 				371BBC592D00C897008FA0C7 /* NewTabPage in Frameworks */,
 				3706FCAF293F65D500E42796 /* PrivacyDashboard in Frameworks */,
 				84C1763B2DF02567001DEEC7 /* CommonObjCExtensions in Frameworks */,
+				84C176522DF0462F001DEEC7 /* LetsMove in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -12505,6 +12507,7 @@
 				31D49A3A2DC294A200262F26 /* UIComponents */,
 				85F592DD2DE1E9FE00117D5E /* DesignResourcesKitIcons */,
 				84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */,
+				84C176512DF0462F001DEEC7 /* LetsMove */,
 				7BC26CA92DFC11D800E52480 /* VPN */,
 				D65D0FA02E7239730075A784 /* NetworkQualityMonitor */,
 				379C3E4B2E7238D800058C52 /* URLPredictor */,
@@ -20180,6 +20183,11 @@
 			productName = CommonObjCExtensions;
 		};
 		84C1764F2DF0462F001DEEC7 /* LetsMove */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 84C1764C2DF044D5001DEEC7 /* XCLocalSwiftPackageReference "LocalPackages/LetsMove" */;
+			productName = LetsMove;
+		};
+		84C176512DF0462F001DEEC7 /* LetsMove */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 84C1764C2DF044D5001DEEC7 /* XCLocalSwiftPackageReference "LocalPackages/LetsMove" */;
 			productName = LetsMove;

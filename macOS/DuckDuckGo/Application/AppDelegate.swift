@@ -1631,10 +1631,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let presenter = WarnBeforeQuitOverlayPresenter(
             startupPreferences: startupPreferences,
-            onDontAskAgain: { [tabsPreferences] in
+            buttonHandlers: [.dontShowAgain: { [tabsPreferences] in
                 PixelKit.fire(GeneralPixel.warnBeforeQuitDontShowAgain, frequency: .standard)
                 tabsPreferences.warnBeforeQuitting = false
-            },
+            }],
             onHoverChange: { [weak manager] isHovering in
                 manager?.setMouseHovering(isHovering)
             }

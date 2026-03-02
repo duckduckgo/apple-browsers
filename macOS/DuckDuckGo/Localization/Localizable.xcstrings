@@ -2372,6 +2372,18 @@
         }
       }
     },
+    "aichat.floating.close-confirmation.action" : {
+      "comment" : "Action text shown in Cmd+W confirmation overlay when closing a tab that has detached Duck.ai window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold or press again to close tab and Duck.ai chat"
+          }
+        }
+      }
+    },
     "aichat.floating.close-warning.subtitle" : {
       "comment" : "Subtitle shown in popover warning when closing a tab that has detached Duck.ai window.",
       "extractionState" : "extracted_with_value",

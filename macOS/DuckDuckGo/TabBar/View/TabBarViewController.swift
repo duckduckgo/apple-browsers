@@ -130,7 +130,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var cancellables = Set<AnyCancellable>()
     private var previousScrollViewWidth: CGFloat = .zero
     var aiChatCoordinator: AIChatCoordinating?
-    private var aiChatCloseWarningPopover: NSPopover?
+    private var aiChatCloseWarningPresenter: WarnBeforeQuitOverlayPresenter?
 
     // TabBarRemoteMessagePresentable
     var tabBarRemoteMessageViewModel: TabBarRemoteMessageViewModel
@@ -287,6 +287,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     override func viewWillDisappear() {
         mouseDownCancellable = nil
         tabBarRemoteMessageCancellable = nil
+        dismissAIChatCloseWarningPresenter()
     }
 
     deinit {
@@ -300,6 +301,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         addTabButton?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         collectionView?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 #endif
+        dismissAIChatCloseWarningPresenter()
     }
 
     override func viewDidLayout() {
@@ -1688,6 +1690,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
         return item.view
     }
 
+    func cell(forTabAt index: Int) -> NSView? {
+        guard let item = collectionView.item(at: IndexPath(item: index, section: 0)) as? TabBarViewItem else {
+            return nil
+        }
+        return item.view
+    }
+
     func presentPinnedTabsDiscoveryPopoverIfNecessary() {
         guard !PinnedTabsDiscoveryPopover.popoverPresented else { return }
         PinnedTabsDiscoveryPopover.popoverPresented = true
@@ -1774,7 +1783,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
-        if tryPresentAIChatFloatingCloseWarningIfNeeded(for: tabIndex) {
+        if tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for: tabIndex) {
             return
         }
 
@@ -1788,47 +1797,43 @@ extension TabBarViewController: TabBarViewItemDelegate {
         aiChatCoordinator?.isChatFloating(for: tabID) == true
     }
 
-    private func presentAIChatFloatingCloseWarningPopover(from tabBarViewItem: TabBarViewItem, tabID: String) {
-        aiChatCloseWarningPopover?.close()
-
-        let popover = NSPopover()
-        popover.behavior = .transient
-        popover.animates = true
-
-        let contentView = AIChatFloatingCloseWarningPopoverView(
-            onConfirm: { [weak self, weak popover] in
-                popover?.close()
-                self?.closeTab(for: tabID)
-            },
-            onDismiss: { [weak popover] in
-                popover?.close()
-            }
-        )
-
-        let hostingController = AIChatFloatingCloseWarningPopoverHostingController(rootView: contentView)
-        let fittingSize = hostingController.view.fittingSize
-        hostingController.preferredContentSize = fittingSize
-        popover.contentViewController = hostingController
-        popover.contentSize = fittingSize
-
-        popover.show(positionedBelow: tabBarViewItem.aiChatCloseWarningAnchorRect(), in: tabBarViewItem.view)
-        aiChatCloseWarningPopover = popover
-    }
-
     @discardableResult
-    func tryPresentAIChatFloatingCloseWarningIfNeeded(for tabIndex: TabIndex) -> Bool {
-        guard tabIndex.isUnpinnedTab else {
-            return false
-        }
-
+    func tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for tabIndex: TabIndex) -> Bool {
         guard let tabID = tabCollectionViewModel.tabViewModel(at: tabIndex)?.tab.uuid,
               shouldWarnBeforeClosingFloatingAIChat(tabID: tabID),
               let tabBarViewItem = tabBarViewItem(for: tabIndex) else {
             return false
         }
 
-        presentAIChatFloatingCloseWarningPopover(from: tabBarViewItem, tabID: tabID)
+        dismissAIChatCloseWarningPresenter()
+
+        let presenter = WarnBeforeQuitOverlayPresenter(
+            action: .closeTabWithFloatingAIChat,
+            buttonHandlers: [.closeTab: { [weak self] in
+                self?.dismissAIChatCloseWarningPresenter()
+                self?.closeTab(for: tabID)
+            },
+            .dismiss: { [weak self] in
+                self?.dismissAIChatCloseWarningPresenter()
+            }],
+            anchorViewProvider: {
+                tabBarViewItem.view
+            }
+        )
+
+        let manager = WarnBeforeQuitManager(
+            action: .closeTabWithFloatingAIChat,
+            isWarningEnabled: { true }
+        )
+
+        aiChatCloseWarningPresenter = presenter
+        presenter.bindForManualPresentation(to: manager) { }
         return true
+    }
+
+    private func dismissAIChatCloseWarningPresenter() {
+        aiChatCloseWarningPresenter?.dismiss()
+        aiChatCloseWarningPresenter = nil
     }
 
     private func tabBarViewItem(for tabIndex: TabIndex) -> TabBarViewItem? {
@@ -1979,64 +1984,6 @@ extension TabBarViewController: TabBarViewItemDelegate {
                      hasItemsToTheRight: indexPath.item + 1 < (tabCollection?.tabs.count ?? 0))
     }
 
-}
-
-private struct AIChatFloatingCloseWarningPopoverView: View {
-    private enum Constants {
-        static let horizontalPadding: CGFloat = 24
-        static let verticalPadding: CGFloat = 16
-        static let titleSubtitleSpacing: CGFloat = 8
-        static let contentSpacing: CGFloat = 32
-        static let buttonsSpacing: CGFloat = 16
-        static let closeIconSize: CGFloat = 16
-    }
-
-    let onConfirm: () -> Void
-    let onDismiss: () -> Void
-
-    var body: some View {
-        HStack(spacing: Constants.contentSpacing) {
-            VStack(alignment: .leading, spacing: Constants.titleSubtitleSpacing) {
-                Text(UserText.aiChatFloatingCloseWarningTitle)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .lineLimit(1)
-                Text(UserText.aiChatFloatingCloseWarningSubtitle)
-                    .font(.system(size: 11))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .lineLimit(1)
-            }
-
-            HStack(spacing: Constants.buttonsSpacing) {
-                Button(action: onConfirm) {
-                    Text(UserText.closeTab)
-                        .font(.system(size: 13))
-                        .multilineTextAlignment(.center)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-
-                Button(action: onDismiss) {
-                    Image(.closeLarge)
-                        .frame(width: Constants.closeIconSize, height: Constants.closeIconSize)
-                }
-                .buttonStyle(.plain)
-                .foregroundColor(Color(designSystemColor: .iconsPrimary))
-            }
-        }
-        .padding(.horizontal, Constants.horizontalPadding)
-        .padding(.vertical, Constants.verticalPadding)
-        .fixedSize()
-    }
-}
-
-private final class AIChatFloatingCloseWarningPopoverHostingController: NSHostingController<AIChatFloatingCloseWarningPopoverView> {
-
-    override func viewDidAppear() {
-        super.viewDidAppear()
-        view.window?.initialFirstResponder = nil
-        view.window?.makeFirstResponder(nil)
-    }
 }
 
 extension TabBarViewController {

@@ -768,6 +768,7 @@ final class TabCollectionViewModel: NSObject {
 
     func suspendTab(at tabIndex: TabIndex) {
         guard changesEnabled else { return }
+        guard case .unpinned = tabIndex else { return }
         guard let oldTab = tab(at: tabIndex) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
             return

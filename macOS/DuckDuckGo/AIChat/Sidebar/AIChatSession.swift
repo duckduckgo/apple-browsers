@@ -38,7 +38,7 @@ final class AIChatSession {
     var floatingWindowController: AIChatFloatingWindowController?
 
     private let chatViewControllerSubject = CurrentValueSubject<AIChatViewController?, Never>(nil)
-    private var cancellables = Set<AnyCancellable>()
+    private var restorationDataCancellable: AnyCancellable?
 
     /// Publishes when the active view controller's page context is requested.
     /// Automatically switches to the latest VC's publisher when the VC changes.
@@ -92,18 +92,17 @@ final class AIChatSession {
         chatViewController?.stopLoading()
         floatingWindowController = nil
         chatViewController = nil
-        cancellables.removeAll()
+        restorationDataCancellable = nil
 
         state.setHidden()
     }
 
     private func subscribeToRestorationDataUpdates() {
-        cancellables.removeAll()
+        restorationDataCancellable = nil
 
-        chatViewController?.chatRestorationDataPublisher?
+        restorationDataCancellable = chatViewController?.chatRestorationDataPublisher?
             .sink { [weak self] restorationData in
                 self?.state.restorationData = restorationData
             }
-            .store(in: &cancellables)
     }
 }

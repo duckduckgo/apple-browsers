@@ -39,7 +39,7 @@ final class UnifiedToggleInputToggleView: UIView {
 
     // MARK: - Properties
 
-    private(set) var selectedMode: TextEntryMode = .search
+    private(set) var selectedMode: TextEntryMode = .aiChat
 
     var onModeChanged: ((TextEntryMode) -> Void)?
 
@@ -148,7 +148,7 @@ final class UnifiedToggleInputToggleView: UIView {
                 return bottomConstraint
             }(),
 
-            indicatorToSearch,
+            indicatorToDuckAI,
             indicator.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding),
             indicator.heightAnchor.constraint(equalToConstant: Constants.innerHeight),
             indicator.widthAnchor.constraint(equalTo: searchButton.widthAnchor),

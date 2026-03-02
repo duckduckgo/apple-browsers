@@ -37,7 +37,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - SwitchBarHandling — Dynamic State
 
     @Published private(set) var currentText: String = ""
-    @Published private(set) var currentToggleState: TextEntryMode = .search
+    @Published private(set) var currentToggleState: TextEntryMode = .aiChat
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
     @Published private(set) var hasUserInteractedWithText: Bool = false
 

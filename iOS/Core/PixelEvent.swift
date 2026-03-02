@@ -1632,6 +1632,8 @@ extension Pixel {
         case webExtensionEmbeddedInstalled
         case webExtensionEmbeddedUpgraded
         case webExtensionEmbeddedInstallError
+        case webExtensionDarkReaderEnabled
+        case webExtensionDarkReaderDisabled
     }
 
 }
@@ -3196,6 +3198,8 @@ extension Pixel.Event {
         case .webExtensionEmbeddedInstalled: return "m_web_extension_embedded_installed"
         case .webExtensionEmbeddedUpgraded: return "m_web_extension_embedded_upgraded"
         case .webExtensionEmbeddedInstallError: return "m_web_extension_embedded_install_error"
+        case .webExtensionDarkReaderEnabled: return "m_web_extension_dark_reader_enabled"
+        case .webExtensionDarkReaderDisabled: return "m_web_extension_dark_reader_disabled"
         }
     }
 }

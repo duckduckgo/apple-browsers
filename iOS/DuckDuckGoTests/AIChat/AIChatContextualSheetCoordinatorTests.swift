@@ -107,6 +107,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
+    private var cancellables: Set<AnyCancellable>!
 
     // MARK: - Setup
 
@@ -129,6 +130,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()
         sut.delegate = mockDelegate
+        cancellables = []
     }
 
     @MainActor
@@ -140,6 +142,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockFeatureFlagger = nil
         mockPageContextHandler = nil
         contentBlockingSubject = nil
+        cancellables = nil
         super.tearDown()
     }
 
@@ -318,14 +321,13 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
         var receivedNullPush = false
-        var cancellable: AnyCancellable?
-        cancellable = sut.sessionState.effects
+        sut.sessionState.effects
             .sink { effect in
                 if case .pushContextToFrontend(let data) = effect, data == nil {
                     receivedNullPush = true
                 }
-                _ = cancellable // retain
             }
+            .store(in: &cancellables)
 
         // When
         await sut.notifyPageChanged()
@@ -344,14 +346,13 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         sut.sessionState.handlePromptSubmission("Hello")
 
         var receivedPush = false
-        var cancellable: AnyCancellable?
-        cancellable = sut.sessionState.effects
+        sut.sessionState.effects
             .sink { effect in
                 if case .pushContextToFrontend = effect {
                     receivedPush = true
                 }
-                _ = cancellable
             }
+            .store(in: &cancellables)
 
         // When
         await sut.notifyPageChanged()

@@ -21,12 +21,11 @@ import Foundation
 import Persistence
 
 /// Key namespace for idle-return NTP last background date (typed storage, no dotted keys).
-public enum IdleReturnLastBackgroundDateStorageKeys: String, StorageKeyDescribing {
+enum IdleReturnLastBackgroundDateStorageKeys: String, StorageKeyDescribing {
     case lastBackgroundDate = "idle-return-ntp-last-background-date"
 }
 
 /// StoringKeys for idle-return last background date.
-public struct IdleReturnLastBackgroundDateKeys: StoringKeys {
-    public init() {}
-    public let lastBackgroundDate = StorageKey<Date>(IdleReturnLastBackgroundDateStorageKeys.lastBackgroundDate)
+struct IdleReturnLastBackgroundDateKeys: StoringKeys {
+    let lastBackgroundDate = StorageKey<Date>(IdleReturnLastBackgroundDateStorageKeys.lastBackgroundDate)
 }

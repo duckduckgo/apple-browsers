@@ -39,6 +39,8 @@ public enum SubscriptionURL: Equatable {
     case manageSubscriptionsInAppStore
     case identityTheftRestoration
     case plans
+    case addEmail
+    case addEmailSuccess
     case upgradeToTier(String)
 
     public enum StaticURLs {
@@ -88,6 +90,10 @@ public enum SubscriptionURL: Equatable {
                 baseURL.appendingPathComponent("plans")
             case .upgradeToTier(let tier):
                 baseURL.appendingPathComponent("plans").appendingParameter(name: "tier", value: tier)
+            case .addEmail:
+                baseURL.appendingPathComponent("add-email")
+            case .addEmailSuccess:
+                baseURL.appendingPathComponent("add-email/success")
             }
         }()
 
@@ -127,7 +133,9 @@ public enum SubscriptionURL: Equatable {
             .activationFlowSuccess,
             .manageEmail,
             .identityTheftRestoration,
-            .plans
+            .plans,
+            .addEmail,
+            .addEmailSuccess
         ]
 
         return Set(cases.compactMap { urlCase -> String? in

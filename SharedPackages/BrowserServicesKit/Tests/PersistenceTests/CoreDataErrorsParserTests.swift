@@ -96,7 +96,8 @@ final class CoreDataErrorsParserTests {
         try? db.tearDown(deleteStores: true)
     }
 
-    @Test("Valid objects are saved successfully")
+    @available(iOS 16, macOS 13, *)
+    @Test("Valid objects are saved successfully", .timeLimit(.minutes(1)))
     func validObjectsAreSaved() throws {
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
 
@@ -111,7 +112,8 @@ final class CoreDataErrorsParserTests {
         try context.save()
     }
 
-    @Test("Missing attribute error is identified")
+    @available(iOS 16, macOS 13, *)
+    @Test("Missing attribute error is identified", .timeLimit(.minutes(1)))
     func missingAttributeErrorIdentified() throws {
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
 
@@ -134,7 +136,8 @@ final class CoreDataErrorsParserTests {
         }
     }
 
-    @Test("Multiple missing attributes are identified")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple missing attributes are identified", .timeLimit(.minutes(1)))
     func multipleAttributesMissing() throws {
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
 
@@ -155,7 +158,8 @@ final class CoreDataErrorsParserTests {
         }
     }
 
-    @Test("Read-only store error is identified")
+    @available(iOS 16, macOS 13, *)
+    @Test("Read-only store error is identified", .timeLimit(.minutes(1)))
     func readOnlyStoreError() throws {
         guard let url = db.coordinator.persistentStores.first?.url else {
             Issue.record("Failed to get persistent store URL")
@@ -190,7 +194,8 @@ final class CoreDataErrorsParserTests {
         }
     }
 
-    @Test("Merge conflict error is identified")
+    @available(iOS 16, macOS 13, *)
+    @Test("Merge conflict error is identified", .timeLimit(.minutes(1)))
     func mergeConflictError() throws {
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)
 

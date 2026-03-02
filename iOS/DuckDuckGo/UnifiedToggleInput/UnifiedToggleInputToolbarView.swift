@@ -163,7 +163,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         leftGroup.spacing = Constants.leftGroupSpacing
         leftGroup.alignment = .center
         leftGroup.translatesAutoresizingMaskIntoConstraints = false
-        leftGroup.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        leftGroup.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         leftGroup.layer.cornerRadius = 20
         leftGroup.clipsToBounds = true
 

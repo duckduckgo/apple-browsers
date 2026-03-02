@@ -47,6 +47,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private let internalUserCommands: URLBasedDebugCommands
 
+    var onViewDidAppear: (() -> Void)?
+
     init(isFocussedState: Bool,
          dismissKeyboardOnScroll: Bool,
          tab: Tab,
@@ -119,6 +121,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         guard presentedViewController?.isBeingDismissed ?? true else {
             return
         }
+
+        onViewDidAppear?()
+        onViewDidAppear = nil
 
         associatedTab.viewed = true
 
@@ -199,7 +204,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         favoritesModel.onFavoriteDeleted = { [weak self] _ in
             guard let self else { return }
 
-            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+            updateBorderView()
         }
     }
 

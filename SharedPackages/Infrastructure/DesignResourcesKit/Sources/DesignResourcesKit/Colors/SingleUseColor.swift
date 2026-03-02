@@ -33,6 +33,9 @@ public enum SingleUseColor {
     /// Duck.ai contextual background color
     case duckAIContextualSheetBackground
 
+    /// Card background for the unified toggle input bar (white in light, #3D3D3D in dark)
+    case unifiedToggleInputCardBackground
+
     /// Tab switcher tracker count info panel background color
     case tabSwitcherTrackerCountBackground
 

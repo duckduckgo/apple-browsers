@@ -38,6 +38,7 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     case detectedOnlyRules
     case selfTestOk
     case selfTestFail
+    case errorCacheNotSet
 
     case summary(events: [String: Int])
 
@@ -78,6 +79,7 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         case .detectedOnlyRules: "autoconsent_detected-only-rules"
         case .selfTestOk: "autoconsent_self-test-ok"
         case .selfTestFail: "autoconsent_self-test-fail"
+        case .errorCacheNotSet: "autoconsent_error_cache-not-set"
         case .summary: "autoconsent_summary"
         }
     }
@@ -116,6 +118,9 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
                 .selfTestFail,
                 .summary:
             return [.pixelSource]
+        case .errorCacheNotSet:
+            return []
+
         }
     }
 

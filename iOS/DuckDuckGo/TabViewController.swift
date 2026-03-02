@@ -134,6 +134,7 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
+    private lazy var unifiedToggleInputFeature = UnifiedToggleInputFeature(featureFlagger: featureFlagger)
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -405,6 +406,7 @@ class TabViewController: UIViewController {
                                    featureFlagger: FeatureFlagger,
                                    contentScopeExperimentManager: ContentScopeExperimentsManaging,
                                    textZoomCoordinator: TextZoomCoordinating,
+                                   autoconsentManagement: AutoconsentManaging,
                                    websiteDataManager: WebsiteDataManaging,
                                    fireproofing: Fireproofing,
                                    tabInteractionStateSource: TabInteractionStateSource?,
@@ -436,6 +438,7 @@ class TabViewController: UIViewController {
                               featureFlagger: featureFlagger,
                               contentScopeExperimentManager: contentScopeExperimentManager,
                               textZoomCoordinator: textZoomCoordinator,
+                              autoconsentManagement: autoconsentManagement,
                               fireproofing: fireproofing,
                               websiteDataManager: websiteDataManager,
                               tabInteractionStateSource: tabInteractionStateSource,
@@ -486,6 +489,7 @@ class TabViewController: UIViewController {
     let contextualOnboardingLogic: ContextualOnboardingLogic
     let onboardingPixelReporter: OnboardingCustomInteractionPixelReporting
     let textZoomCoordinator: TextZoomCoordinating
+    let autoconsentManagement: AutoconsentManaging
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
     let specialErrorPageNavigationHandler: SpecialErrorPageManaging
@@ -538,6 +542,7 @@ class TabViewController: UIViewController {
                    featureFlagger: FeatureFlagger,
                    contentScopeExperimentManager: ContentScopeExperimentsManaging,
                    textZoomCoordinator: TextZoomCoordinating,
+                   autoconsentManagement: AutoconsentManaging,
                    fireproofing: Fireproofing,
                    websiteDataManager: WebsiteDataManaging,
                    tabInteractionStateSource: TabInteractionStateSource?,
@@ -570,6 +575,7 @@ class TabViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.contentScopeExperimentsManager = contentScopeExperimentManager
         self.textZoomCoordinator = textZoomCoordinator
+        self.autoconsentManagement = autoconsentManagement
         self.fireproofing = fireproofing
         self.websiteDataManager = websiteDataManager
         self.tabInteractionStateSource = tabInteractionStateSource
@@ -706,8 +712,10 @@ class TabViewController: UIViewController {
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
         let isLargeWidth = AppWidthObserver.shared.isLargeWidth
 
-        if appSettings.currentAddressBarPosition == .bottom && !isLargeWidth {
-            /// When address bar is at bottom on iPhone, offset webview to make room for the bars
+        if appSettings.currentAddressBarPosition == .bottom && !isLargeWidth && !(isAITab && unifiedToggleInputFeature.isAvailable) {
+            /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
+            /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
+            /// manages its own native bottom layout via the UnifiedToggleInput container.
             let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
             webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
         } else {
@@ -3071,6 +3079,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.printingSubfeature.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
+        userScripts.autoconsentUserScript.management = autoconsentManagement
         userScripts.contentScopeUserScript.delegate = self
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.setStore(keyValueStore)

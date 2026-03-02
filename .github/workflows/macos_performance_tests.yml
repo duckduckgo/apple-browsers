@@ -219,7 +219,7 @@ jobs:
           --start-time "$START_TIME" \
           > insert-statements-memory.sql
 
-        /scripts/build-startup-metrics-sql.sh \
+        ./scripts/build-startup-metrics-sql.sh \
           --runner "${{ matrix.runner }}" \
           --xcresult-path "$XCRESULT_PATH" \
           --suite StartupPerformanceTests \

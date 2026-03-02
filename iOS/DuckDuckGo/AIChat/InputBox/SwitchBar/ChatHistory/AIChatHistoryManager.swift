@@ -58,6 +58,7 @@ final class AIChatHistoryManager {
     private let suggestionsReader: AIChatSuggestionsReading
     private let aiChatSettings: AIChatSettingsProvider
     private let viewModel: AIChatSuggestionsViewModel
+    private let isIPadExperience: Bool
     private var cancellables = Set<AnyCancellable>()
     private var currentFetchTask: Task<Void, Never>?
 
@@ -65,10 +66,12 @@ final class AIChatHistoryManager {
 
     init(suggestionsReader: AIChatSuggestionsReading,
          aiChatSettings: AIChatSettingsProvider,
-         viewModel: AIChatSuggestionsViewModel) {
+         viewModel: AIChatSuggestionsViewModel,
+         isIPadExperience: Bool = false) {
         self.suggestionsReader = suggestionsReader
         self.aiChatSettings = aiChatSettings
         self.viewModel = viewModel
+        self.isIPadExperience = isIPadExperience
     }
 
     // MARK: - Public Methods
@@ -82,6 +85,7 @@ final class AIChatHistoryManager {
 
         let viewController = AIChatHistoryListViewController(
             viewModel: viewModel,
+            isIPadExperience: isIPadExperience,
             onChatSelected: { [weak self] chat in
                 guard let self else { return }
                 let url = self.aiChatSettings.aiChatURL.withChatID(chat.chatId)

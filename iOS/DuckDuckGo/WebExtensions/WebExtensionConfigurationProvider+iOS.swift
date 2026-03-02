@@ -28,4 +28,12 @@ struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
     var applicationNameForUserAgent: String {
         "DuckDuckGo/\(AppVersion.shared.versionNumber)"
     }
+
+    var isInspectable: Bool {
+#if DEBUG
+        return true
+#else
+        return AppUserDefaults().inspectableWebViewEnabled
+#endif
+    }
 }

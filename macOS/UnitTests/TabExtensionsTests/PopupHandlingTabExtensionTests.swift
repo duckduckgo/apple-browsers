@@ -123,7 +123,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenUserInteractionPublisherEnabled_ThenMouseDownUpdatesLastInteractionTime() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
 
         let interactionTime: TimeInterval = 1000.0
@@ -163,7 +162,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenUserInteractionPublisherEnabled_ThenKeyDownUpdatesLastInteractionTime() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
 
         let interactionTime: TimeInterval = 1000.0
@@ -203,7 +201,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenUserInteractionPublisherEnabled_ThenMiddleMouseDownUpdatesLastInteractionTime() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
 
         let interactionTime: TimeInterval = 1000.0
@@ -242,7 +239,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     @MainActor
     func testWhenUserInteractionPublisherEnabled_ThenScrollWheelDoesNotUpdateLastInteractionTime() {
         // GIVEN
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
@@ -281,7 +278,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     @MainActor
     func testWhenUserInteractionPublisherDisabled_ThenInteractionsDoNotUpdateLastInteractionTime() {
         // GIVEN
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = false
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = false
         popupHandlingExtension = createExtension()
 
         // Set current mach absolute time
@@ -355,7 +352,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenNoUserInteractionRecorded_ThenShouldRequirePermission() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
@@ -374,29 +370,9 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenOnlyPopupBlockingEnabled_ThenFallsBackToWebKitUserInitiated() {
-        // GIVEN - Only popupBlocking on, extendedUserInitiatedPopupTimeout off
-        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = false
-        popupHandlingExtension = createExtension()
-
-        // WHEN - navigationAction.isUserInitiated = true/false
-        let userInitiatedAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: true)
-        let nonUserInitiatedAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
-
-        // THEN - Should use WebKit's isUserInitiated
-        let userInitiatedBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: userInitiatedAction, windowFeatures: windowFeatures)
-        XCTAssertEqual(userInitiatedBypassReason, .userInitiated(.webKitUserInitiated), "Expected userInitiated with webKitUserInitiated")
-
-        let nonUserInitiatedBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: nonUserInitiatedAction, windowFeatures: windowFeatures)
-        XCTAssertNil(nonUserInitiatedBypassReason, "Non-user-initiated should require permission")
-    }
-
-    @MainActor
     func testWhenBothFeaturesDisabled_ThenFallsBackToWebKitUserInitiated() {
         // GIVEN - Both features off
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = false
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = false
         popupHandlingExtension = createExtension()
 
         // WHEN - navigationAction.isUserInitiated = true/false
@@ -415,7 +391,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenRecentUserInteraction_AndExtendedTimeoutEnabled_ThenShouldAllowPopupWithoutPermission() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
@@ -456,7 +431,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenOldUserInteraction_AndExtendedTimeoutEnabled_ThenShouldRequirePermission() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
@@ -495,7 +469,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenPopupApprovedAndSuppressEmptyUrlsEnabled_ThenEmptyUrlIsBlocked() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = true
         popupHandlingExtension = createExtension()
 
         let queryAddedExpectation = expectation(description: "Permission query added")
@@ -530,49 +503,12 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [permissionGrantedExpectation], timeout: 0.1)
     }
 
-    @MainActor
-    func testWhenPopupApprovedAndSuppressEmptyUrlsDisabled_ThenEmptyUrlIsAllowed() {
-        // GIVEN
-        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = false
-        popupHandlingExtension = createExtension()
-
-        let queryAddedExpectation = expectation(description: "Permission query added")
-        let popupCreatedExpectation = expectation(description: "Popup created")
-
-        // Subscribe to permission query changes
-        mockPermissionModel.$authorizationQuery
-            .compactMap { $0 }
-            .receive(on: DispatchQueue.main)
-            .sink { query in
-                queryAddedExpectation.fulfill()
-                // Grant permission when query is added (async to simulate real behavior)
-                self.mockPermissionModel.allow(query)
-            }
-            .store(in: &cancellables)
-
-        createChildTab = { _, _, _ in
-            popupCreatedExpectation.fulfill()
-            return nil
-        }
-
-        let navigationAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
-
-        // WHEN
-        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
-
-        // THEN - Wait for query to be added, granted, and popup created
-        wait(for: [queryAddedExpectation, popupCreatedExpectation], timeout: 5.0)
-    }
-
     // MARK: - Allow Popups for Current Page Tests
 
     @MainActor
     func testWhenEmptyUrlPopupApproved_AndAllowPopupsForCurrentPageEnabled_ThenSubsequentEmptyUrlsAllowed() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = true
         popupHandlingExtension = createExtension()
 
         let queryAddedExpectation = expectation(description: "Permission query added")
@@ -622,8 +558,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenEmptyUrlPopupApproved_AndAllowPopupsForCurrentPageEnabled_ThenSubsequentAboutUrlsAllowed() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = true
         popupHandlingExtension = createExtension()
 
         let queryAddedExpectation = expectation(description: "Permission query added")
@@ -673,8 +607,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenEmptyUrlPopupApproved_AndAllowPopupsForCurrentPageEnabled_ThenCrossOriginPopupsAllowed() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = true
         popupHandlingExtension = createExtension()
 
         let queryAddedExpectation = expectation(description: "Permission query added")
@@ -724,8 +656,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenNavigationCommits_AndAllowPopupsForCurrentPageEnabled_ThenPopupAllowanceCleared() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = true
         popupHandlingExtension = createExtension()
 
         let queryAddedExpectation = expectation(description: "Permission query added")
@@ -782,11 +712,9 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAllowPopupsForCurrentPageDisabled_ThenCrossOriginPopupsStillRequirePermission() {
+    func testWhenTemporaryPopupAllowanceIsSet_ThenCrossOriginPopupsAreAllowed() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = false
         popupHandlingExtension = createExtension()
 
         let queryAddedExpectation = expectation(description: "Permission query added")
@@ -821,14 +749,14 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Wait for permission callback to complete (inverted expectation ensures tab wasn't created)
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
-        // THEN - Empty/about URLs still allowed, but cross-origin requires permission when feature disabled
+        // THEN - Empty/about URLs and cross-origin popups are temporarily allowed for the page
         let emptyAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
         let emptyBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: emptyAction, windowFeatures: windowFeatures)
         XCTAssertEqual(emptyBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage for empty URL")
 
         let crossOriginAction = WKNavigationAction.mock(url: URL(string: "https://other-domain.com")!, webView: self.webView, isUserInitiated: false)
         let crossOriginBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: crossOriginAction, windowFeatures: windowFeatures)
-        XCTAssertNil(crossOriginBypassReason, "Cross-origin popup should require permission when feature is disabled")
+        XCTAssertEqual(crossOriginBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage for cross-origin")
     }
 
     // MARK: - Multiple Consecutive Popup Tests
@@ -837,8 +765,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenMultiplePopupsReceived_AndAllowForCurrentPageEnabled_ThenAllSubsequentPopupsAllowed() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = true
         popupHandlingExtension = createExtension()
 
         let queryAddedExpectation = expectation(description: "Permission query added")
@@ -885,8 +811,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenAboutBlankPopupApproved_ThenSuppressedAndSubsequentAllowed() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = true
         popupHandlingExtension = createExtension()
 
         let queryAddedExpectation = expectation(description: "Permission query added")
@@ -926,10 +850,9 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     // MARK: - Temporary Allowance API Tests
 
     @MainActor
-    func testWhenSuppressFeatureDisabled_ThenTemporaryAllowanceDoesNotWork() {
-        // GIVEN - suppressEmptyPopUpsOnApproval is OFF
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = false
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = true
+    func testWhenTemporaryAllowanceSet_ThenTemporaryAllowanceWorksForAllPopupURLs() {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         popupHandlingExtension = createExtension()
 
         // Manually set temporary allowance
@@ -940,18 +863,18 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let emptyAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
         let regularAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
-        // THEN - Temporary allowance should NOT work because suppressEmptyPopUpsOnApproval is OFF
+        // THEN - Temporary allowance should work for both empty and regular URLs
         let emptyBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: emptyAction, windowFeatures: windowFeatures)
-        XCTAssertNil(emptyBypassReason, "Empty URL should require permission when suppress feature is off")
+        XCTAssertEqual(emptyBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage for empty URL")
 
         let regularBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: regularAction, windowFeatures: windowFeatures)
-        XCTAssertNil(regularBypassReason, "Regular URL should require permission when suppress feature is off")
+        XCTAssertEqual(regularBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage for regular URL")
     }
 
     @MainActor
     func testSetAndClearPopupAllowanceForCurrentPage() {
         // GIVEN
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         popupHandlingExtension = createExtension()
 
         XCTAssertFalse(popupHandlingExtension.popupsTemporarilyAllowedForCurrentPage, "Should start without allowance")
@@ -970,9 +893,9 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTemporaryAllowanceSet_ThenUserInitiatedStillWorks() {
+    func testWhenTemporaryAllowanceSet_ThenWebKitUserInitiatedActionUsesTemporaryAllowanceBypassReason() {
         // GIVEN
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         popupHandlingExtension = createExtension()
         popupHandlingExtension.setPopupAllowanceForCurrentPage()
 
@@ -981,7 +904,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         // THEN - Should still be allowed
         let userInitiatedBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: userInitiatedAction, windowFeatures: windowFeatures)
-        XCTAssertEqual(userInitiatedBypassReason, .userInitiated(.webKitUserInitiated), "Expected userInitiated with webKitUserInitiated")
+        XCTAssertEqual(userInitiatedBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected temporary allowance bypass reason")
     }
 
     // MARK: - Edge Cases
@@ -990,7 +913,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenTimeoutExactlyAtBoundary_ThenRequiresPermission() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
@@ -1022,7 +944,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     @MainActor
     func testWhenAllowanceSetManually_AndNavigationOccurs_ThenAllowanceCleared() {
         // GIVEN
-        mockFeatureFlagger.featuresStub[FeatureFlag.allowPopupsForCurrentPage.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         popupHandlingExtension = createExtension()
 
         popupHandlingExtension.setPopupAllowanceForCurrentPage()
@@ -1034,37 +956,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         // THEN
         XCTAssertFalse(popupHandlingExtension.popupsTemporarilyAllowedForCurrentPage, "Allowance should be cleared on navigation")
-    }
-
-    @MainActor
-    func testWhenSuppressFeatureDisabled_ThenAboutBlankNotSuppressed() {
-        // GIVEN
-        mockFeatureFlagger.featuresStub[FeatureFlag.suppressEmptyPopUpsOnApproval.rawValue] = false
-        popupHandlingExtension = createExtension()
-
-        let queryAddedExpectation = expectation(description: "Permission query added")
-        let popupCreatedExpectation = expectation(description: "Popup created")
-
-        mockPermissionModel.$authorizationQuery
-            .compactMap { $0 }
-            .receive(on: DispatchQueue.main)
-            .sink { query in
-                queryAddedExpectation.fulfill()
-                self.mockPermissionModel.allow(query)
-            }
-            .store(in: &cancellables)
-
-        createChildTab = { _, _, _ in
-            popupCreatedExpectation.fulfill()
-            return nil
-        }
-
-        // WHEN - about:blank popup
-        let aboutBlankAction = WKNavigationAction.mock(url: URL(string: "about:blank")!, webView: self.webView, isUserInitiated: false)
-        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: aboutBlankAction, windowFeatures: windowFeatures)
-
-        // THEN - Should be created (not suppressed)
-        wait(for: [queryAddedExpectation, popupCreatedExpectation], timeout: 5.0)
     }
 
     // MARK: - Persisted Permission Tests
@@ -1167,7 +1058,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenLinkOpenedInCurrentTab_ThenLastUserInteractionEventNotConsumed() async {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
@@ -1212,7 +1102,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenLinkOpenedInNewTab_ThenLastUserInteractionEventConsumed() async {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
@@ -1261,7 +1150,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testWhenLinkMiddleClickedInNewTab_ThenLastUserInteractionEventConsumed() async {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
@@ -1309,7 +1197,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     @MainActor
     func testWhenPinnedTabNavigatesToAnotherDomain_ThenOpensInNewTab() async {
         // GIVEN - Tab is pinned
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         popupHandlingExtension = createExtension(isTabPinned: true)
 
         // WHEN - Navigate to different domain
@@ -1512,7 +1400,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testOnNewWindowCallback_ClearedAfterUse() async {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         popupHandlingExtension = createExtension()
 
         let interactionTime: TimeInterval = 1000.0
@@ -1559,7 +1446,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testOnNewWindowCallback_OnlyMatchesCorrectURL() async {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         popupHandlingExtension = createExtension()
 
         let interactionTime: TimeInterval = 1000.0
@@ -1606,7 +1492,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testOnNewWindowCallback_WithSwitchToNewTabDisabled() async {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         popupHandlingExtension = createExtension(switchToNewTabWhenOpened: false)
 
         let interactionTime: TimeInterval = 1000.0
@@ -1648,7 +1533,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     func testOnNewWindowCallback_MiddleClickWithSwitchToNewTabDisabled() async {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
-        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         popupHandlingExtension = createExtension(switchToNewTabWhenOpened: false)
 
         let interactionTime: TimeInterval = 1000.0

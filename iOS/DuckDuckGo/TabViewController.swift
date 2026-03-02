@@ -827,7 +827,7 @@ class TabViewController: UIViewController {
         webView.allowsLinkPreview = true
         webView.allowsBackForwardNavigationGestures = true
 
-        webView.preventFlashOnLoad(featureFlagger: featureFlagger)
+        webView.preventFlashOnLoad()
 
         addObservers()
 

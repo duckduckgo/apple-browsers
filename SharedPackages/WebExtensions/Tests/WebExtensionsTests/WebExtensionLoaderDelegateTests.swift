@@ -88,17 +88,136 @@ final class WebExtensionLoaderDelegateTests: XCTestCase {
         XCTAssertEqual(result.version, "1.0.0")
     }
 
+    // MARK: - isInspectable Tests
+
+    @MainActor
+    func testWhenIsInspectableTrue_ThenContextIsInspectable() async throws {
+        let inspectableLoader = WebExtensionLoader(storageProvider: storageProvider, isInspectable: true)
+        inspectableLoader.delegate = delegateMock
+        let identifier = "test-extension-id"
+        let extensionURL = try createTestWebExtension()
+        storageProvider.resolvedExtensionURL = extensionURL
+
+        try await inspectableLoader.loadWebExtension(identifier: identifier, into: controller)
+
+        XCTAssertTrue(delegateMock.willLoadCalled)
+        XCTAssertNotNil(delegateMock.willLoadContext)
+        XCTAssertTrue(delegateMock.willLoadContext?.isInspectable == true)
+    }
+
+    @MainActor
+    func testWhenIsInspectableFalse_ThenContextIsNotInspectable() async throws {
+        let nonInspectableLoader = WebExtensionLoader(storageProvider: storageProvider, isInspectable: false)
+        nonInspectableLoader.delegate = delegateMock
+        let identifier = "test-extension-id"
+        let extensionURL = try createTestWebExtension()
+        storageProvider.resolvedExtensionURL = extensionURL
+
+        try await nonInspectableLoader.loadWebExtension(identifier: identifier, into: controller)
+
+        XCTAssertTrue(delegateMock.willLoadCalled)
+        XCTAssertNotNil(delegateMock.willLoadContext)
+        XCTAssertFalse(delegateMock.willLoadContext?.isInspectable == true)
+    }
+
+    @MainActor
+    func testDefaultIsInspectableIsFalse() async throws {
+        let identifier = "test-extension-id"
+        let extensionURL = try createTestWebExtension()
+        storageProvider.resolvedExtensionURL = extensionURL
+
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+        XCTAssertTrue(delegateMock.willLoadCalled)
+        XCTAssertNotNil(delegateMock.willLoadContext)
+        XCTAssertFalse(delegateMock.willLoadContext?.isInspectable == true)
+    }
+
+    // MARK: - Permission Granting Tests
+
+    @MainActor
+    func testWhenExtensionLoads_ThenRequestedPermissionsAreGranted() async throws {
+        let identifier = "test-extension-id"
+        let extensionURL = try createTestWebExtensionWithPermissions(
+            permissions: ["storage", "tabs"]
+        )
+        storageProvider.resolvedExtensionURL = extensionURL
+
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+        XCTAssertNotNil(delegateMock.willLoadContext)
+        let context = delegateMock.willLoadContext!
+
+        let storagePermission = WKWebExtension.Permission("storage")
+        let tabsPermission = WKWebExtension.Permission("tabs")
+
+        XCTAssertEqual(context.permissionStatus(for: storagePermission), .grantedExplicitly)
+        XCTAssertEqual(context.permissionStatus(for: tabsPermission), .grantedExplicitly)
+    }
+
+    @MainActor
+    func testWhenExtensionLoads_ThenMatchPatternsAreGranted() async throws {
+        let identifier = "test-extension-id"
+        let extensionURL = try createTestWebExtensionWithPermissions(
+            hostPermissions: ["https://example.com/*", "https://duckduckgo.com/*"]
+        )
+        storageProvider.resolvedExtensionURL = extensionURL
+
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+        XCTAssertNotNil(delegateMock.willLoadContext)
+        let context = delegateMock.willLoadContext!
+
+        let examplePattern = try WKWebExtension.MatchPattern(string: "https://example.com/*")
+        let ddgPattern = try WKWebExtension.MatchPattern(string: "https://duckduckgo.com/*")
+
+        XCTAssertEqual(context.permissionStatus(for: examplePattern), .grantedExplicitly)
+        XCTAssertEqual(context.permissionStatus(for: ddgPattern), .grantedExplicitly)
+    }
+
+    @MainActor
+    func testWhenExtensionHasNoPermissions_ThenNoPermissionsAreGranted() async throws {
+        let identifier = "test-extension-id"
+        let extensionURL = try createTestWebExtension()
+        storageProvider.resolvedExtensionURL = extensionURL
+
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+        XCTAssertNotNil(delegateMock.willLoadContext)
+        let context = delegateMock.willLoadContext!
+
+        let storagePermission = WKWebExtension.Permission("storage")
+        XCTAssertNotEqual(context.permissionStatus(for: storagePermission), .grantedExplicitly)
+    }
+
     // MARK: - Test Helpers
 
     private func createTestWebExtension() throws -> URL {
+        return try createTestWebExtensionWithPermissions()
+    }
+
+    private func createTestWebExtensionWithPermissions(
+        permissions: [String] = [],
+        hostPermissions: [String] = []
+    ) throws -> URL {
         let tempDir = FileManager.default.temporaryDirectory
         let extensionDir = tempDir.appendingPathComponent("TestExtension-\(UUID().uuidString)")
+
+        let permissionsJSON = permissions.isEmpty ? "" : """
+            "permissions": [\(permissions.map { "\"\($0)\"" }.joined(separator: ", "))],
+        """
+
+        let hostPermissionsJSON = hostPermissions.isEmpty ? "" : """
+            "host_permissions": [\(hostPermissions.map { "\"\($0)\"" }.joined(separator: ", "))],
+        """
 
         let manifest = """
         {
             "manifest_version": 3,
             "name": "Test Extension",
             "version": "1.0.0",
+            \(permissionsJSON)
+            \(hostPermissionsJSON)
             "description": "Minimal test extension for unit tests"
         }
         """

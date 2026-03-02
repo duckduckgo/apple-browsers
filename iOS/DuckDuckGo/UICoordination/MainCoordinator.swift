@@ -246,15 +246,6 @@ final class MainCoordinator {
                 }
             }
             .store(in: &darkReaderCancellables)
-
-        darkReaderFeatureSettings.excludedDomainsChangedPublisher
-            .sink { [weak self] in
-                guard #available(iOS 18.4, *) else { return }
-                Task { @MainActor in
-                    self?.syncDarkReaderExcludedDomains()
-                }
-            }
-            .store(in: &darkReaderCancellables)
     }
 
     private func setupWebExtensions(privacyConfigurationManager: PrivacyConfigurationManaging) {
@@ -317,7 +308,8 @@ final class MainCoordinator {
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             mainViewController: controller,
             privacyConfigurationManager: privacyConfigurationManager,
-            autoconsentPreferences: AppUserDefaults()
+            autoconsentPreferences: AppUserDefaults(),
+            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
         )
         self.webExtensionManager = webExtensionManager
 
@@ -357,16 +349,6 @@ final class MainCoordinator {
             enabledTypes.insert(.darkReader)
         }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
-        syncDarkReaderExcludedDomains()
-    }
-
-    @available(iOS 18.4, *)
-    private func syncDarkReaderExcludedDomains() {
-        guard darkReaderFeatureSettings.isForceDarkModeEnabled else { return }
-        webExtensionManager?.updateExcludedDomains(
-            darkReaderFeatureSettings.excludedDomains,
-            forExtensionType: .darkReader
-        )
     }
 
     private func clearWebExtensionReferences() {

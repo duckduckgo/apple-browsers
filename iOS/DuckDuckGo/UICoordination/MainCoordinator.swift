@@ -319,7 +319,7 @@ final class MainCoordinator {
         controller.setWebExtensionManager(nil)
     }
 
-    private static func makeHistoryManager(tabsModel: ReadableTabCollection) throws -> HistoryManaging {
+    private static func makeHistoryManager(tabsModel: TabsModelReading) throws -> HistoryManaging {
         let provider = AppDependencyProvider.shared
         switch HistoryManager.make(isAutocompleteEnabledByUser: provider.appSettings.autocomplete,
                                    isRecentlyVisitedSitesEnabledByUser: provider.appSettings.recentlyVisitedSites,

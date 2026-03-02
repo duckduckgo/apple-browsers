@@ -21,7 +21,7 @@ import Foundation
 import Core
 import Combine
 
-public class TabsModel: NSObject, NSCoding, MutableTabCollection {
+public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
     private struct NSCodingKeys {
         static let legacyIndex = "currentIndex"

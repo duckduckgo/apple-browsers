@@ -32,7 +32,7 @@ import PrivacyConfig
 import WebExtensions
 
 protocol TabManaging {
-    var currentTabsModel: MutableTabCollection { get }
+    var currentTabsModel: TabsModelManaging { get }
     @MainActor func prepareAllTabsExceptCurrentForDataClearing()
     @MainActor func prepareCurrentTabForDataClearing()
     func removeAll()
@@ -84,7 +84,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         return _currentBrowsingMode
     }
     
-    var currentTabsModel: MutableTabCollection {
+    var currentTabsModel: TabsModelManaging {
         switch currentBrowsingMode {
         case .fire:
             return tabsModelProvider.fireModeTabsModel
@@ -93,7 +93,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
     }
     
-    var allTabsModel: ReadableTabCollection {
+    var allTabsModel: TabsModelReading {
         tabsModelProvider.aggregateTabsModel
     }
     

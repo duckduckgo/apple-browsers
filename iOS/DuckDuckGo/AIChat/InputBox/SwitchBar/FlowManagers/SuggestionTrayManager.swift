@@ -34,7 +34,7 @@ struct SuggestionTrayDependencies {
     let favoritesViewModel: FavoritesListInteracting
     let bookmarksDatabase: CoreDataDatabase
     let historyManager: HistoryManaging
-    let tabsModelProvider: () -> MutableTabCollection
+    let tabsModelProvider: () -> TabsModelManaging
     let featureFlagger: FeatureFlagger
     let appSettings: AppSettings
     let aiChatSettings: AIChatSettingsProvider

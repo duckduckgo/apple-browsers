@@ -22,7 +22,7 @@ import Foundation
 
 @MainActor
 class MockTabManager: TabManaging {
-    var currentTabsModel: MutableTabCollection = TabsModel(desktop: false)
+    var currentTabsModel: TabsModelManaging = TabsModel(desktop: false)
     
     private(set) var prepareAllTabsExceptCurrentCalled = false
     private(set) var prepareCurrentTabCalled = false

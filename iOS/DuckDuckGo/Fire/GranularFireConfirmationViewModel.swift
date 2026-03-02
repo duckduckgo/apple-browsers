@@ -40,7 +40,7 @@ class GranularFireConfirmationViewModel: ObservableObject {
     let onCancel: () -> Void
     
     // MARK: - Private Variables
-    private let tabsModel: ReadableTabCollection
+    private let tabsModel: TabsModelReading
     private let historyManager: HistoryManaging
     private let fireproofing: Fireproofing
     private let aiChatSettings: AIChatSettingsProvider
@@ -90,7 +90,7 @@ class GranularFireConfirmationViewModel: ObservableObject {
     
     // MARK: - Initializer
     
-    init(tabsModel: ReadableTabCollection,
+    init(tabsModel: TabsModelReading,
          historyManager: HistoryManaging,
          fireproofing: Fireproofing,
          aiChatSettings: AIChatSettingsProvider,

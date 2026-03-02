@@ -128,7 +128,7 @@ class TabSwitcherViewController: UIViewController {
     let privacyStats: PrivacyStatsProviding
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
-    var tabsModel: MutableTabCollection {
+    var tabsModel: TabsModelManaging {
         tabManager.currentTabsModel
     }
 

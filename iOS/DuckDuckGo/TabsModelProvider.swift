@@ -20,18 +20,18 @@
 import Foundation
 import Combine
 
-protocol ReadableTabCollection {
+protocol TabsModelReading {
     var count: Int { get }
     var tabs: [Tab] { get }
 }
 
-extension ReadableTabCollection {
+extension TabsModelReading {
     func indexOf(tab: Tab) -> Int? {
         return tabs.firstIndex { $0 === tab }
     }
 }
 
-protocol MutableTabCollection: AnyObject, ReadableTabCollection {
+protocol TabsModelManaging: AnyObject, TabsModelReading {
     var shouldCreateFireTabs: Bool { get }
     var tabsPublisher: AnyPublisher<[Tab], Never> { get }
     var currentTab: Tab? { get }
@@ -52,23 +52,23 @@ protocol MutableTabCollection: AnyObject, ReadableTabCollection {
 }
 
 protocol TabsModelProviding {
-    var normalTabsModel: MutableTabCollection { get }
-    var fireModeTabsModel: MutableTabCollection { get }
-    var aggregateTabsModel: ReadableTabCollection { get }
+    var normalTabsModel: TabsModelManaging { get }
+    var fireModeTabsModel: TabsModelManaging { get }
+    var aggregateTabsModel: TabsModelReading { get }
     func save()
 }
 
 class TabsModelProvider: TabsModelProviding {
     
     private var _normalTabsModel: TabsModel
-    var normalTabsModel: MutableTabCollection {
+    var normalTabsModel: TabsModelManaging {
         _normalTabsModel
     }
     private var _fireModeTabsModel: TabsModel
-    var fireModeTabsModel: MutableTabCollection {
+    var fireModeTabsModel: TabsModelManaging {
         _fireModeTabsModel
     }
-    private(set) var aggregateTabsModel: ReadableTabCollection
+    private(set) var aggregateTabsModel: TabsModelReading
     private var persistence: TabsModelPersisting
 
     
@@ -86,11 +86,11 @@ class TabsModelProvider: TabsModelProviding {
 }
 
 private extension TabsModelProvider {
-    class AggregateTabsModel: ReadableTabCollection {
-        private var normalTabsModel: ReadableTabCollection
-        private var fireModeTabsModel: ReadableTabCollection
+    class AggregateTabsModel: TabsModelReading {
+        private var normalTabsModel: TabsModelReading
+        private var fireModeTabsModel: TabsModelReading
         
-        init(normalTabsModel: ReadableTabCollection, fireModeTabsModel: ReadableTabCollection) {
+        init(normalTabsModel: TabsModelReading, fireModeTabsModel: TabsModelReading) {
             self.normalTabsModel = normalTabsModel
             self.fireModeTabsModel = fireModeTabsModel
         }

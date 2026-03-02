@@ -67,7 +67,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     var aiChatSettings: AIChatSettingsProvider?
     var keyValueStore: ThrowingKeyValueStoring?
     var daxDialogsManager: DaxDialogsManaging?
-    private weak var tabsModel: MutableTabCollection?
+    private weak var tabsModel: TabsModelManaging?
 
     private lazy var tabSwitcherButton: TabSwitcherButton = TabSwitcherStaticButton()
 
@@ -171,7 +171,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         requestNewTab()
     }
 
-    func refresh(tabsModel: MutableTabCollection?, scrollToSelected: Bool = false) {
+    func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
         
         tabSwitcherButton.isAccessibilityElement = true

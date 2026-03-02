@@ -63,7 +63,7 @@ class SuggestionTrayViewController: UIViewController {
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesModel: FavoritesListInteracting
     private let historyManager: HistoryManaging
-    private let tabsModelProvider: () -> MutableTabCollection
+    private let tabsModelProvider: () -> TabsModelManaging
     private let featureFlagger: FeatureFlagger
     private let appSettings: AppSettings
     private let aiChatSettings: AIChatSettingsProvider
@@ -122,7 +122,7 @@ class SuggestionTrayViewController: UIViewController {
                    favoritesViewModel: FavoritesListInteracting,
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
-                   tabsModelProvider: @escaping () -> MutableTabCollection,
+                   tabsModelProvider: @escaping () -> TabsModelManaging,
                    featureFlagger: FeatureFlagger,
                    appSettings: AppSettings,
                    aiChatSettings: AIChatSettingsProvider,

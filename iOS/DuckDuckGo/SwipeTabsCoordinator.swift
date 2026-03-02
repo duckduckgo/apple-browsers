@@ -26,7 +26,7 @@ class SwipeTabsCoordinator: NSObject {
     static let tabGap: CGFloat = 10
     
     // Set by refresh function
-    weak var tabsModel: MutableTabCollection!
+    weak var tabsModel: TabsModelManaging!
     
     weak var coordinator: MainViewCoordinator!
     weak var tabPreviewsSource: TabPreviewsSource!
@@ -302,7 +302,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 // MARK: Public Interface
 extension SwipeTabsCoordinator {
 
-    func refresh(tabsModel: MutableTabCollection, scrollToSelected: Bool = false) {
+    func refresh(tabsModel: TabsModelManaging, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
         coordinator.navigationBarCollectionView.reloadData()
         
@@ -413,7 +413,7 @@ class OmniBarCell: UICollectionViewCell {
     }
 }
 
-extension MutableTabCollection {
+extension TabsModelManaging {
     
     func safeGetTabAt(_ index: Int) -> Tab? {
         guard tabs.indices.contains(index) else { return nil }

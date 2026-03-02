@@ -2120,6 +2120,18 @@
         }
       }
     },
+    "aichat.address-bar.show-button" : {
+      "comment" : "Button to bring detached Duck.ai window to front",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai"
+          }
+        }
+      }
+    },
     "aichat.address-bar.toggle-sidebar-button" : {
       "comment" : "Button to toggle Duck.ai sidebar",
       "extractionState" : "extracted_with_value",
@@ -2356,6 +2368,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настрой ответы"
+          }
+        }
+      }
+    },
+    "aichat.floating.close-confirmation.action" : {
+      "comment" : "Action text shown in Cmd+W confirmation overlay when closing a tab that has detached Duck.ai window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold or press again to close tab and Duck.ai chat"
+          }
+        }
+      }
+    },
+    "aichat.floating.close-warning.subtitle" : {
+      "comment" : "Subtitle shown in popover warning when closing a tab that has detached Duck.ai window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This will also close the detached sidebar."
+          }
+        }
+      }
+    },
+    "aichat.floating.close-warning.title" : {
+      "comment" : "Title shown in popover warning when closing a tab that has detached Duck.ai window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close tab and Duck.ai chat"
           }
         }
       }
@@ -2720,6 +2768,18 @@
         }
       }
     },
+    "aichat.sidebar.attach-button.tooltip" : {
+      "comment" : "Tooltip for button to dock the floating duck.ai window back into the sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Move to sidebar"
+          }
+        }
+      }
+    },
     "aichat.sidebar.close-button.tooltip" : {
       "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
       "extractionState" : "extracted_with_value",
@@ -2776,6 +2836,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрыть"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.detach-button.tooltip" : {
+      "comment" : "Tooltip for button to detach the duck.ai sidebar into a floating window",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Move to window"
           }
         }
       }
@@ -2896,6 +2968,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.title-button.tooltip" : {
+      "comment" : "Tooltip for the title button in the floating duck.ai window that brings the associated tab to front",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show tab"
           }
         }
       }

@@ -264,7 +264,7 @@ extension MainViewFactory {
 
         coordinator.keyboardSeamView = UIView()
         coordinator.keyboardSeamView.translatesAutoresizingMaskIntoConstraints = false
-        coordinator.keyboardSeamView.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
+        coordinator.keyboardSeamView.backgroundColor = UIColor(Color(singleUseColor: .unifiedToggleInputCardBackground))
         coordinator.keyboardSeamView.isHidden = true
         superview.addSubview(coordinator.keyboardSeamView)
         NSLayoutConstraint.activate([

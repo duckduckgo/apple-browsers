@@ -52,7 +52,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Surfaces
     private static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
-    private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: x3D3D3D)
+    private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
     private static let surfaceCanvas = DynamicColor(lightColor: xFAFAFA, darkColor: x1C1C1C)
 
     // Backgrounds
@@ -269,6 +269,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: background.darkColor)
         case .duckAIContextualSheetBackground:
             return DynamicColor(lightColor: .white, darkColor: .x161616)
+        case .unifiedToggleInputCardBackground:
+            return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
         case .tabSwitcherTrackerCountBackground:
             return DynamicColor(lightColor: .green0, darkColor: .x2C3A2A)
         case let .rebranding(rebrandingColor):

@@ -360,7 +360,6 @@ private extension UnifiedToggleInputView {
         toggleView.onModeChanged = { [weak self] mode in
             guard let self else { return }
             self.handler.setToggleState(mode)
-            self.updateToolbarVisibility(for: mode, animated: true)
             self.delegate?.unifiedToggleInputViewDidChangeMode(self, mode: mode)
             if self.isExpanded {
                 self.textEntryView.becomeFirstResponder()

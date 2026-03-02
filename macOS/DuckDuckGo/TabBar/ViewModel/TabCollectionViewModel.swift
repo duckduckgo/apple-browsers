@@ -783,6 +783,7 @@ final class TabCollectionViewModel: NSObject {
             content: .url(url, source: .pendingStateRestoration),
             title: oldTab.title,
             favicon: oldTab.favicon,
+            interactionStateData: oldTab.getActualInteractionStateData(),
             shouldLoadInBackground: false,
             lastSelectedAt: oldTab.lastSelectedAt
         )

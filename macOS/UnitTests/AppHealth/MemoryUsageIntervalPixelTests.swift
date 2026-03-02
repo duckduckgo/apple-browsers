@@ -32,6 +32,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             architecture: "ARM",
             syncEnabled: false,
             usedAllocationMB: 256,
+            wcTotalMemoryMB: nil,
             uptimeMinutes: 5
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .startup, context: context)
@@ -48,6 +49,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             architecture: "Intel",
             syncEnabled: true,
             usedAllocationMB: 128,
+            wcTotalMemoryMB: nil,
             uptimeMinutes: 10
         )
 
@@ -68,6 +70,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             architecture: "ARM",
             syncEnabled: true,
             usedAllocationMB: 512,
+            wcTotalMemoryMB: nil,
             uptimeMinutes: 240
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .h4, context: context)
@@ -94,6 +97,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             architecture: "Intel",
             syncEnabled: false,
             usedAllocationMB: 64,
+            wcTotalMemoryMB: nil,
             uptimeMinutes: 0
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .startup, context: context)
@@ -147,11 +151,12 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             architecture: "ARM",
             syncEnabled: true,
             usedAllocationMB: 128,
+            wcTotalMemoryMB: nil,
             uptimeMinutes: 30
         )
         let params = context.parameters
 
-        XCTAssertEqual(params.count, 8)
+        XCTAssertEqual(params.count, 9)
         XCTAssertNotNil(params["browser_memory_mb"])
         XCTAssertNotNil(params["windows"])
         XCTAssertNotNil(params["standard_tabs"])
@@ -159,6 +164,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         XCTAssertNotNil(params["architecture"])
         XCTAssertNotNil(params["sync_enabled"])
         XCTAssertNotNil(params["used_allocation"])
+        XCTAssertNotNil(params["wc_total_memory"])
         XCTAssertNotNil(params["uptime"])
     }
 
@@ -171,12 +177,13 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             architecture: "ARM",
             syncEnabled: false,
             usedAllocationMB: 256,
+            wcTotalMemoryMB: nil,
             uptimeMinutes: 60
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .h1, context: context)
 
-        // 7 context params + 1 trigger = 8 total (uptime excluded from interval pixel)
-        XCTAssertEqual(pixel.parameters?.count, 8)
+        // 8 context params + 1 trigger = 9 total (uptime excluded from interval pixel)
+        XCTAssertEqual(pixel.parameters?.count, 9)
     }
 
     // MARK: - Unknown Fallback
@@ -190,6 +197,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             architecture: "ARM",
             syncEnabled: nil,
             usedAllocationMB: nil,
+            wcTotalMemoryMB: nil,
             uptimeMinutes: 5
         )
         let params = context.parameters
@@ -201,6 +209,7 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
         XCTAssertEqual(params["architecture"], "ARM")
         XCTAssertEqual(params["sync_enabled"], "unknown")
         XCTAssertEqual(params["used_allocation"], "unknown")
+        XCTAssertEqual(params["wc_total_memory"], "unknown")
         XCTAssertEqual(params["uptime"], "5")
     }
 
@@ -213,11 +222,12 @@ final class MemoryUsageIntervalPixelTests: XCTestCase {
             architecture: "Intel",
             syncEnabled: nil,
             usedAllocationMB: nil,
+            wcTotalMemoryMB: nil,
             uptimeMinutes: 0
         )
         let pixel = MemoryUsageIntervalPixel.memoryUsage(trigger: .startup, context: context)
 
         // All keys are still present even when values are "unknown" (uptime excluded from interval pixel)
-        XCTAssertEqual(pixel.parameters?.count, 8)
+        XCTAssertEqual(pixel.parameters?.count, 9)
     }
 }

@@ -386,6 +386,7 @@ extension DefaultOmniBarViewController {
 
         return selectedText == text
     }
+
 }
 
 // MARK: - OmniBarEditingStateViewControllerDelegate
@@ -463,7 +464,11 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
             if selectedTextEntryMode == .aiChat {
                 dismissIPadDuckAIMode()
-                omniDelegate?.onPromptSubmitted(query, tools: nil)
+                if URL.isValidAddressBarURLInput(query) {
+                    omniDelegate?.onOmniQuerySubmitted(query)
+                } else {
+                    omniDelegate?.onPromptSubmitted(query, tools: nil)
+                }
             } else {
                 omniDelegate?.onOmniQuerySubmitted(query)
             }
@@ -483,6 +488,8 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
         if selectedTextEntryMode != .aiChat {
             omniDelegate?.onOmniQueryUpdated(newQuery)
+        } else {
+            omniDelegate?.onAIChatQueryUpdated(newQuery)
         }
         if newQuery.isEmpty {
             refreshState(state.onTextClearedState)

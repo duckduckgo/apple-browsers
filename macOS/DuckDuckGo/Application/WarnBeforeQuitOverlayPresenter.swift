@@ -39,14 +39,14 @@ final class WarnBeforeQuitOverlayPresenter {
 
     init(action: ConfirmationAction = .quit,
          startupPreferences: StartupPreferences? = nil,
-         onDontAskAgain: (() -> Void)? = nil,
+         buttonHandlers: [WarnBeforeButtonRole: () -> Void] = [:],
          onHoverChange: ((Bool) -> Void)? = nil,
          windowProvider: @MainActor @escaping () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow },
          anchorViewProvider: (@MainActor () -> NSView?)? = nil) {
         self.viewModel = WarnBeforeQuitViewModel(
             action: action,
             startupPreferences: startupPreferences,
-            onDontAskAgain: onDontAskAgain
+            buttonHandlers: buttonHandlers
         )
         self.windowProvider = windowProvider
         self.anchorViewProvider = anchorViewProvider
@@ -64,6 +64,28 @@ final class WarnBeforeQuitOverlayPresenter {
                 self.handle(state: state)
             }
         }
+    }
+
+    /// Binds this presenter to a manager and executes `onProceed` when confirmed.
+    func bind(to manager: WarnBeforeQuitManager, onProceed: @escaping @MainActor () -> Void) {
+        subscribe(to: manager.stateStream)
+        manager.performOnProceed(onProceed)
+    }
+
+    /// Binds this presenter to a manager for manually presented warning flows.
+    func bindForManualPresentation(to manager: WarnBeforeQuitManager, onProceed: @escaping @MainActor () -> Void) {
+        subscribe(to: manager.stateStream)
+        manager.performOnProceedForManualPresentation(onProceed)
+    }
+
+    /// Presents the overlay immediately without manager state stream.
+    func present() {
+        show()
+    }
+
+    /// Dismisses the overlay immediately.
+    func dismiss() {
+        hide()
     }
 
     // MARK: - Private

@@ -143,7 +143,7 @@ final class LaunchActionHandlerTests {
     @Test("Show keyboard when LaunchAction is .standardLaunch")
     func showKeyboard() {
         let date = Date()
-        let action = LaunchAction.standardLaunch(date)
+        let action = LaunchAction.standardLaunch(lastBackgroundDate: date, isFirstForeground: false)
 
         launchActionHandler.handleLaunchAction(action)
 
@@ -228,8 +228,8 @@ final class LaunchActionHandlerTests {
     @Test("LaunchSourceManager is set to standard when standard launch")
     func launchSourceManagerSetToStandardWhenShowingKeyboard() {
         let date = Date()
-        let action = LaunchAction.standardLaunch(date)
-        
+        let action = LaunchAction.standardLaunch(lastBackgroundDate: date, isFirstForeground: false)
+
         launchSourceManager.setSource(.URL)
         #expect(launchSourceManager.source == .URL)
         
@@ -270,7 +270,7 @@ final class LaunchActionHandlerTests {
         #expect(launchSourceManager.source == .shortcut)
         #expect(launchSourceManager.setSourceCallCount == 2)
         
-        let keyboardAction = LaunchAction.standardLaunch(Date())
+        let keyboardAction = LaunchAction.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: false)
         launchActionHandler.handleLaunchAction(keyboardAction)
         #expect(launchSourceManager.source == .standard)
         #expect(launchSourceManager.setSourceCallCount == 3)
@@ -282,7 +282,7 @@ final class LaunchActionHandlerTests {
         let testCases: [(LaunchAction, LaunchSource)] = [
             (.openURL(URL(string: "https://example.com")!), .URL),
             (.handleShortcutItem(UIApplicationShortcutItem(type: "TestType", localizedTitle: "Test")), .shortcut),
-            (.standardLaunch(Date()), .standard)
+            (.standardLaunch(lastBackgroundDate: Date(), isFirstForeground: false), .standard)
         ]
         
         for (index, (action, expectedSource)) in testCases.enumerated() {
@@ -303,7 +303,7 @@ final class LaunchActionHandlerTests {
         idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
         keyboardPresenter.showKeyboardOnLaunchCalled = false
 
-        launchActionHandler.handleLaunchAction(.standardLaunch(date))
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
 
         #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
@@ -316,11 +316,23 @@ final class LaunchActionHandlerTests {
         idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
         keyboardPresenter.showKeyboardOnLaunchCalled = false
 
-        launchActionHandler.handleLaunchAction(.standardLaunch(date))
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
 
         #expect(!idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
+    }
+
+    @Test("When isFirstForeground is true then keyboard presenter receives nil so keyboard shows on cold start")
+    func whenFirstForegroundThenKeyboardReceivesNil() {
+        let date = Date()
+        idleReturnEvaluator.shouldShowNTPAfterIdleResult = false
+        keyboardPresenter.showKeyboardOnLaunchCalled = false
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: true))
+
+        #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.lastBackgroundDate == nil)
     }
 
 }

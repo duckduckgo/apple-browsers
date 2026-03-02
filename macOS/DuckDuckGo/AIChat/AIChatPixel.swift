@@ -100,6 +100,18 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User finishes dragging the sidebar resize grip (after 500 ms debounce)
     case aiChatSidebarResized(width: Int)
 
+    /// Event Trigger: User detaches the sidebar into a floating window.
+    case aiChatSidebarDetached
+
+    /// Event Trigger: User re-docks a floating window using the attach button.
+    case aiChatSidebarAttached
+
+    /// Event Trigger: User closes a floating window via its close button.
+    case aiChatSidebarFloatingClosed
+
+    /// Event Trigger: User clicks the floating title to activate associated tab.
+    case aiChatSidebarFloatingTabActivated
+
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
@@ -254,6 +266,14 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_sidebar_setting_changed_u"
         case .aiChatSidebarResized:
             return "aichat_sidebar_resized"
+        case .aiChatSidebarDetached:
+            return "aichat_sidebar_detached"
+        case .aiChatSidebarAttached:
+            return "aichat_sidebar_attached"
+        case .aiChatSidebarFloatingClosed:
+            return "aichat_sidebar_floating_closed"
+        case .aiChatSidebarFloatingTabActivated:
+            return "aichat_sidebar_floating_tab_activated"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -351,6 +371,10 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSettingsDisplayed,
                 .aiChatSidebarExpanded,
                 .aiChatSidebarSettingChanged,
+                .aiChatSidebarDetached,
+                .aiChatSidebarAttached,
+                .aiChatSidebarFloatingClosed,
+                .aiChatSidebarFloatingTabActivated,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
@@ -431,6 +455,10 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSidebarExpanded,
                 .aiChatSidebarSettingChanged,
                 .aiChatSidebarResized,
+                .aiChatSidebarDetached,
+                .aiChatSidebarAttached,
+                .aiChatSidebarFloatingClosed,
+                .aiChatSidebarFloatingTabActivated,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,

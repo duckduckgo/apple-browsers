@@ -88,6 +88,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let featureFlagger: FeatureFlagger
     private let contentScopeExperimentManager: ContentScopeExperimentsManaging
     private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
+    private let autoconsentManagementProvider: AutoconsentManagementProviding
     private let fireproofing: Fireproofing
     private let websiteDataManager: WebsiteDataManaging
     private let appSettings: AppSettings
@@ -129,6 +130,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          appSettings: AppSettings,
          textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
+         autoconsentManagementProvider: AutoconsentManagementProviding,
          websiteDataManager: WebsiteDataManaging,
          fireproofing: Fireproofing,
          maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
@@ -161,6 +163,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.contentScopeExperimentManager = contentScopeExperimentManager
         self.appSettings = appSettings
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
+        self.autoconsentManagementProvider = autoconsentManagementProvider
         self.websiteDataManager = websiteDataManager
         self.fireproofing = fireproofing
         self.maliciousSiteProtectionManager = maliciousSiteProtectionManager
@@ -205,6 +208,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         )
 
         let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: tab.textZoomContext)
+        let autoconsentManagement = autoconsentManagementProvider.management(for: tab.autoconsentContext)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
@@ -219,6 +223,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               featureFlagger: featureFlagger,
                                                               contentScopeExperimentManager: contentScopeExperimentManager,
                                                               textZoomCoordinator: textZoomCoordinator,
+                                                              autoconsentManagement: autoconsentManagement,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
                                                               tabInteractionStateSource: interactionStateSource,
@@ -329,6 +334,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         )
 
         let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: tab.textZoomContext)
+        let autoconsentManagement = autoconsentManagementProvider.management(for: tab.autoconsentContext)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
@@ -343,6 +349,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               featureFlagger: featureFlagger,
                                                               contentScopeExperimentManager: contentScopeExperimentManager,
                                                               textZoomCoordinator: textZoomCoordinator,
+                                                              autoconsentManagement: autoconsentManagement,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
                                                               tabInteractionStateSource: interactionStateSource,

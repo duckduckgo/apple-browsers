@@ -33,8 +33,6 @@ import PersistenceTestingUtils
 import Combine
 @testable import Core
 
-// swiftlint:disable force_try
-
 final class MockTabDelegate: TabDelegate {
     private(set) var didRequestLoadQueryCalled = false
     private(set) var capturedQuery: String?
@@ -173,12 +171,13 @@ extension TabViewController {
             featureFlagger: featureFlagger,
             contentScopeExperimentManager: MockContentScopeExperimentManager(),
             textZoomCoordinator: MockTextZoomCoordinator(),
+            autoconsentManagement: MockAutoconsentManagement(),
             websiteDataManager: MockWebsiteDataManager(),
             fireproofing: MockFireproofing(),
             tabInteractionStateSource: MockTabInteractionStateSource(),
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),
-            keyValueStore: try! MockKeyValueFileStore(),
+            keyValueStore: MockKeyValueFileStore(),
             daxDialogsManager: DummyDaxDialogsManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
@@ -252,5 +251,3 @@ final class MockPrivacyStats: PrivacyStatsProviding {
         handleAppTerminationCallCount += 1
     }
 }
-
-// swiftlint:enable force_try

@@ -146,6 +146,10 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     private let interceptorToken = UUID()
 
+    private static func defaultShortcutKeyEquivalent(for action: ConfirmationAction) -> NSEvent.KeyEquivalent {
+        action == .quit ? [.command, "q"] : [.command, "w"]
+    }
+
     // MARK: - Initialization
 
     init?(currentEvent: NSEvent,
@@ -184,6 +188,35 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         (stateStreamStorage, stateSubject) = AsyncStream<State>.makeStream(of: State.self, bufferingPolicy: .bufferingNewest(3))
     }
 
+    init(action: ConfirmationAction,
+         isWarningEnabled: @escaping () -> Bool,
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         now: @escaping () -> Date = Date.init,
+         timerFactory: ((TimeInterval, @escaping @MainActor () -> Void) -> Timer)? = nil,
+         animationDelay: TimeInterval = Constants.defaultAnimationDelay,
+         isModifierHeld: ((NSEvent.ModifierFlags) -> Bool)? = nil,
+         delegate: WarnBeforeQuitManagerDelegate? = nil) {
+        self.shortcutKeyEquivalent = Self.defaultShortcutKeyEquivalent(for: action)
+        self.action = action
+        self.pixelFiring = pixelFiring
+        self.isWarningEnabled = isWarningEnabled
+        self.now = now
+        self.application = delegate ?? (NSApp as? WarnBeforeQuitManagerDelegate)
+        self.timerFactory = timerFactory ?? { @MainActor interval, block in
+            dispatchPrecondition(condition: .onQueue(.main))
+            let timer = Timer(timeInterval: interval, repeats: false) { _ in MainActor.assumeMainThread(block) }
+            RunLoop.current.add(timer, forMode: .common)
+            return timer
+        }
+        self.animationDelay = animationDelay
+        self.isModifierHeld = isModifierHeld ?? { requiredModifiers in
+            let currentModifiers = NSEvent.modifierFlags.deviceIndependent
+            return currentModifiers.intersection(requiredModifiers) == requiredModifiers
+        }
+        self.isPhysicalKeyPress = nil
+        (stateStreamStorage, stateSubject) = AsyncStream<State>.makeStream(of: State.self, bufferingPolicy: .bufferingNewest(3))
+    }
+
     deinit {
         stateSubject.finish()
         DispatchQueue.main.async { [interceptorToken, application] in
@@ -198,6 +231,46 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
     func setMouseHovering(_ isHovering: Bool) {
         Logger.general.debug("WarnBeforeQuitManager: setMouseHovering(\(isHovering))")
         onHoverChange?(isHovering) ?? { self.isHovering = isHovering }()
+    }
+
+    /// Resolves warning flow and runs `onProceed` only when user confirms.
+    func performOnProceed(_ onProceed: @escaping @MainActor () -> Void) {
+        let finish: @MainActor (Bool) -> Void = { shouldProceed in
+            guard shouldProceed else {
+                self.deciderSequenceCompleted(shouldProceed: false)
+                return
+            }
+            onProceed()
+            self.deciderSequenceCompleted(shouldProceed: true)
+        }
+
+        switch shouldTerminate(isAsync: false) {
+        case .sync(let decision):
+            finish(decision == .next)
+        case .async(let task):
+            Task { @MainActor in
+                finish(await task.value == .next)
+            }
+        }
+    }
+
+    /// Runs confirmation flow for manually presented overlays (non-keyboard trigger).
+    func performOnProceedForManualPresentation(_ onProceed: @escaping @MainActor () -> Void) {
+        guard isWarningEnabled() else {
+            onProceed()
+            return
+        }
+        guard currentState == .idle else { return }
+
+        currentState = .keyDown
+        Task { @MainActor in
+            let shouldProceed = await self.waitForSecondPress()
+            self.currentState = .completed(shouldProceed: shouldProceed)
+            if shouldProceed {
+                onProceed()
+            }
+            self.deciderSequenceCompleted(shouldProceed: shouldProceed)
+        }
     }
 
     // MARK: - ApplicationTerminationDecider
@@ -217,7 +290,11 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         // Skip warning for simulated key events (e.g., from mouse button remapping tools).
         // CGEventSource.hidSystemState only reflects physical hardware — programmatic key
         // injections via CGEventPost won't appear in the HID state.
-        if let isPhysicalKeyPress, !isPhysicalKeyPress() {
+        // Exclude floating AI Chat close from this guard: on first Cmd+W after detach,
+        // hidSystemState can briefly report a false negative and incorrectly bypass warning UI.
+        if action != .closeTabWithFloatingAIChat,
+           let isPhysicalKeyPress,
+           !isPhysicalKeyPress() {
             Logger.general.debug("WarnBeforeQuitManager: Skipping warning — key event is not from physical keyboard")
             return .sync(.next)
         }

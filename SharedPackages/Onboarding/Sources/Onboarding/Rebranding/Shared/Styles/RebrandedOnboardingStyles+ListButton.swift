@@ -50,7 +50,6 @@ public extension OnboardingRebranding.OnboardingStyles {
             let colorPalette: OnboardingTheme.ColorPalette
             let optionsListMetrics: OnboardingTheme.ContextualOnboardingMetrics.OptionsListMetrics
 
-            @Environment(\.colorScheme) private var colorScheme
             @State private var isHovered = false
 
             var body: some View {

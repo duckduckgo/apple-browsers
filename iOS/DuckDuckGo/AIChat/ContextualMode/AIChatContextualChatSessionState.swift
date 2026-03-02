@@ -275,7 +275,7 @@ final class AIChatContextualChatSessionState {
     /// Sends a null context to the frontend as a navigation signal.
     /// Used when auto-collect is OFF but multiple contexts are supported,
     /// so the FE can show the "Add page content" button for the new page.
-    func notifyFrontendOfNavigation() {
+    func notifyFrontendOfMultiContextNavigation() {
         guard supportsMultipleContexts, canPushToFrontend() else { return }
         emit(.pushContextToFrontend(nil))
         Logger.aiChat.debug("[SessionState] Sent null context navigation signal to frontend")

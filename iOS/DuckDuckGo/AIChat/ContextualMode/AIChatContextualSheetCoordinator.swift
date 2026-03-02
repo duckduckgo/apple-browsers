@@ -162,7 +162,7 @@ final class AIChatContextualSheetCoordinator {
                 sessionState.clearProcessingNavigationFlag()
             }
         } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat {
-            sessionState.notifyFrontendOfNavigation()
+            sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
         } else {
             sessionState.clearProcessingNavigationFlag()

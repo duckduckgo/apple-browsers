@@ -755,7 +755,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testNotifyFrontendOfNavigationEmitsNullContextWhenFlagEnabled() {
         // Given - chat with initial context, flag ON
         // Note: auto-attach ON is only needed to reach .chatWithInitialContext state.
-        // In production, notifyFrontendOfNavigation() is called when auto-collect is OFF.
+        // In production, notifyFrontendOfMultiContextNavigation() is called when auto-collect is OFF.
         mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext(title: "Page A"))
@@ -774,7 +774,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
             .store(in: &cancellables)
 
         // When
-        sessionState.notifyFrontendOfNavigation()
+        sessionState.notifyFrontendOfMultiContextNavigation()
 
         waitForExpectations(timeout: 1.0)
 
@@ -802,7 +802,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
             .store(in: &cancellables)
 
         // When
-        sessionState.notifyFrontendOfNavigation()
+        sessionState.notifyFrontendOfMultiContextNavigation()
 
         // Then - nothing emitted
         XCTAssertFalse(pushedToFrontend)
@@ -822,7 +822,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
             .store(in: &cancellables)
 
         // When
-        sessionState.notifyFrontendOfNavigation()
+        sessionState.notifyFrontendOfMultiContextNavigation()
 
         // Then - nothing emitted (no chat = canPushToFrontend false)
         XCTAssertFalse(pushedToFrontend)

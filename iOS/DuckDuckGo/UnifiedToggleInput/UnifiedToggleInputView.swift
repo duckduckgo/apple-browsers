@@ -104,7 +104,6 @@ final class UnifiedToggleInputView: UIView {
 
     // MARK: - UI
 
-    private let panelBackgroundView = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
     private let cardView = UIView()
     private let toggleView = UnifiedToggleInputToggleView()
     private let toolsToolbar = UnifiedToggleInputToolbarView()
@@ -112,7 +111,7 @@ final class UnifiedToggleInputView: UIView {
     /// background) shows while the toolbar height animates from 0 → 56.
     private let toolbarBackingView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        view.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -145,9 +144,7 @@ final class UnifiedToggleInputView: UIView {
     // resolve them against the current traitCollection at each use site.
 
     private var cardShadowColor: CGColor {
-        traitCollection.userInterfaceStyle == .dark
-            ? UIColor.white.withAlphaComponent(0.12).cgColor
-            : UIColor(designSystemColor: .shadowSecondary).cgColor
+        UIColor(designSystemColor: .shadowSecondary).cgColor
     }
 
     private var expandedBorderColor: CGColor {
@@ -282,16 +279,11 @@ final class UnifiedToggleInputView: UIView {
             : [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         cardView.layer.maskedCorners = expanded ? expandedCorners : allCorners
 
-        // When collapsing, clear the background immediately so the dark corner
-        // cutouts disappear before the card shrinks back.
-        if !expanded { backgroundColor = .clear }
-
-        cardView.layer.borderWidth = expanded ? 0.5 : 0
-        cardView.layer.borderColor = expanded ? expandedBorderColor : UIColor.clear.cgColor
+        cardView.layer.borderWidth = showToolbar ? 0.5 : 0
+        cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
 
         let changes = {
             self.cardView.layer.cornerRadius = expanded ? Constants.cardCornerRadiusExpanded : Constants.cardCornerRadiusCollapsed
-            self.panelBackgroundView.alpha = expanded ? 1 : 0
             self.cardTopConstraint.constant = vMargin
             self.cardLeadingConstraint.constant = hMargin
             self.cardTrailingConstraint.constant = -hMargin
@@ -311,18 +303,9 @@ final class UnifiedToggleInputView: UIView {
                 delay: 0,
                 options: .curveEaseInOut,
                 animations: changes
-            ) { _ in
-                // Apply the Duck.ai background only once the card has grown to fill
-                // the view — prevents a dark flash at the bottom during expand.
-                if expanded {
-                    self.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-                }
-            }
+            )
         } else {
             changes()
-            if expanded {
-                backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-            }
         }
     }
 
@@ -333,6 +316,8 @@ final class UnifiedToggleInputView: UIView {
 
         let showToolbar = mode == .aiChat
         toolbarHeightConstraint.constant = showToolbar ? 56 : 0
+        cardView.layer.borderWidth = showToolbar ? 0.5 : 0
+        cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
 
         guard animated else {
             toolsToolbar.alpha = showToolbar ? 1 : 0
@@ -360,13 +345,8 @@ private extension UnifiedToggleInputView {
         layer.insertSublayer(expandedShadow0, at: 0)
         layer.insertSublayer(expandedShadow1, at: 1)
 
-        panelBackgroundView.translatesAutoresizingMaskIntoConstraints = false
-        panelBackgroundView.isUserInteractionEnabled = false
-        panelBackgroundView.alpha = 0
-        addSubview(panelBackgroundView)
-
         cardView.translatesAutoresizingMaskIntoConstraints = false
-        cardView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+        cardView.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         cardView.layer.shadowColor = cardShadowColor
         cardView.layer.shadowOpacity = 1.0
@@ -418,6 +398,7 @@ private extension UnifiedToggleInputView {
         cardTrailingConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin)
         cardBottomConstraint = cardView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.cardVerticalMargin)
         cardCollapsedHeightConstraint = cardView.heightAnchor.constraint(equalToConstant: Constants.collapsedCardHeight)
+        cardCollapsedHeightConstraint.priority = .defaultHigh
         cardCollapsedHeightConstraint.isActive = true
         toggleTopConstraint = toggleView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 0)
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
@@ -425,11 +406,6 @@ private extension UnifiedToggleInputView {
         toolbarHeightConstraint = toolsToolbar.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
-            panelBackgroundView.topAnchor.constraint(equalTo: topAnchor),
-            panelBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            panelBackgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            panelBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
-
             cardTopConstraint,
             cardLeadingConstraint,
             cardTrailingConstraint,

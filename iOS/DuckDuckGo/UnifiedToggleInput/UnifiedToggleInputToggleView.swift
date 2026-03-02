@@ -120,7 +120,9 @@ final class UnifiedToggleInputToggleView: UIView {
         backgroundView.addSubview(stackView)
 
         indicatorToSearch = indicator.leadingAnchor.constraint(equalTo: searchButton.leadingAnchor)
+        indicatorToSearch.priority = .defaultHigh
         indicatorToDuckAI = indicator.leadingAnchor.constraint(equalTo: duckAIButton.leadingAnchor)
+        indicatorToDuckAI.priority = .defaultHigh
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: topAnchor),
@@ -133,10 +135,18 @@ final class UnifiedToggleInputToggleView: UIView {
                 return heightConstraint
             }(),
 
-            stackView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding),
             stackView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: Constants.horizontalPadding),
             stackView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -Constants.horizontalPadding),
-            stackView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Constants.horizontalPadding),
+            {
+                let topConstraint = stackView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding)
+                topConstraint.priority = .defaultHigh
+                return topConstraint
+            }(),
+            {
+                let bottomConstraint = stackView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -Constants.horizontalPadding)
+                bottomConstraint.priority = .defaultHigh
+                return bottomConstraint
+            }(),
 
             indicatorToSearch,
             indicator.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: Constants.horizontalPadding),

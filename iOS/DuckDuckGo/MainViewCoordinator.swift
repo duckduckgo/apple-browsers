@@ -38,6 +38,7 @@ class MainViewCoordinator {
     var suggestionTrayContainer: UIView!
     var tabBarContainer: UIView!
     var unifiedToggleInputContainer: UIView!
+    var keyboardSeamView: UIView!
     var toolbar: UIToolbar!
     var toolbarSpacer: UIView!
     var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
@@ -182,13 +183,17 @@ class MainViewCoordinator {
             constraints.unifiedToggleInputBottom = unifiedToggleInputContainer.bottomAnchor
                 .constraint(equalTo: toolbar.topAnchor)
         }
+        constraints.contentContainerBottomToUnifiedToggleInputTop.constant = aboveKeyboard ? 30 : 0
 
         constraints.unifiedToggleInputBottom.isActive = true
         unifiedToggleInputContainer.isHidden = false
+        keyboardSeamView.isHidden = !aboveKeyboard
     }
 
     func hideUnifiedToggleInput() {
         unifiedToggleInputContainer.isHidden = true
+        keyboardSeamView.isHidden = true
+        constraints.contentContainerBottomToUnifiedToggleInputTop.constant = 0
     }
 
     /// Uses alpha + interaction instead of isHidden so the collection view stays laid out
@@ -206,8 +211,6 @@ class MainViewCoordinator {
             }
             constraints.contentContainerBottomToToolbarTop.isActive = false
             constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = true
-            // Background fills the container so nothing shows through to the main view background.
-            unifiedToggleInputContainer.backgroundColor = UIColor(designSystemColor: .panel)
         } else {
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true

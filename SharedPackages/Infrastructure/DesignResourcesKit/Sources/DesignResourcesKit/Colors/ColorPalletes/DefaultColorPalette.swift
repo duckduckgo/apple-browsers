@@ -41,6 +41,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x080808 = Color(0x080808)
     private static let x282828 = Color(0x282828)
     private static let x373737 = Color(0x373737)
+    private static let x3D3D3D = Color(0x3D3D3D)
     private static let x474747 = Color(0x474747)
     private static let x4D4D4D = Color(0x4D4D4D)
     private static let x1C1C1C = Color(0x1C1C1C)
@@ -51,7 +52,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Surfaces
     private static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
-    private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: .x474747)
+    private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: x3D3D3D)
     private static let surfaceCanvas = DynamicColor(lightColor: xFAFAFA, darkColor: x1C1C1C)
 
     // Backgrounds

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import UIKit
 import PrivacyConfig
 import AIChat
@@ -260,6 +261,18 @@ extension MainViewFactory {
         coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
         coordinator.unifiedToggleInputContainer.isHidden = true
         superview.addSubview(coordinator.unifiedToggleInputContainer)
+
+        coordinator.keyboardSeamView = UIView()
+        coordinator.keyboardSeamView.translatesAutoresizingMaskIntoConstraints = false
+        coordinator.keyboardSeamView.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
+        coordinator.keyboardSeamView.isHidden = true
+        superview.addSubview(coordinator.keyboardSeamView)
+        NSLayoutConstraint.activate([
+            coordinator.keyboardSeamView.topAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor),
+            coordinator.keyboardSeamView.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            coordinator.keyboardSeamView.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
+            coordinator.keyboardSeamView.heightAnchor.constraint(equalToConstant: 44),
+        ])
     }
 
 }

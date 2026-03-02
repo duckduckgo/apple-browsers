@@ -54,7 +54,8 @@ extension MainViewController {
             .sink { [weak self] _ in
                 guard let self,
                       let coordinator = self.unifiedToggleInputCoordinator,
-                      coordinator.displayState == .expanded else { return }
+                      coordinator.displayState == .expanded,
+                      self.keyboardShowing else { return }
                 coordinator.showCollapsed()
             }
             .store(in: &unifiedToggleInputCancellables)
@@ -77,6 +78,7 @@ extension MainViewController {
             if let userScript = tab.userScripts?.aiChatUserScript {
                 coordinator.bindToTab(userScript)
             }
+            tab.webView.scrollView.contentInset = .zero
             coordinator.showCollapsed()
             viewCoordinator.setNavigationChromeHidden(true)
             tab.borderView.isTopVisible = false

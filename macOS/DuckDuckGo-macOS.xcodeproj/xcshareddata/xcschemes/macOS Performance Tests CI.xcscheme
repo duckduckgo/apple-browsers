@@ -56,7 +56,7 @@
       </PostActions>
       <TestPlans>
          <TestPlanReference
-            reference = "container:MemoryUsageTests/macOS Performance Tests.xctestplan"
+            reference = "container:PerformanceTests/macOS Performance Tests.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>

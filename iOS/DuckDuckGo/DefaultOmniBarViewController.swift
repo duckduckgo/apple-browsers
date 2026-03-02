@@ -512,6 +512,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         }
 
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
+        omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {

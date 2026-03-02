@@ -1046,7 +1046,7 @@ extension DefaultOmniBarView {
             aiChatSendButton.isHidden = false
             aiChatSendButton.alpha = 0
             searchAreaContainerView.bringSubviewToFront(aiChatSendButton)
-            updateAIChatSendButton(hasText: !currentText.isEmpty)
+            updateAIChatSendButton(hasText: !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         } else {
             let currentText = aiChatTextView.text ?? ""
             aiChatTextView.isHidden = true
@@ -1062,7 +1062,6 @@ extension DefaultOmniBarView {
     func updateTextFieldPlaceholderVisibility(hasText: Bool) {
         guard isSearchAreaExpanded else { return }
         textField.alpha = hasText ? 0 : 1
-        updateAIChatSendButton(hasText: hasText)
     }
 
     func updateAIChatSendButton(hasText: Bool) {

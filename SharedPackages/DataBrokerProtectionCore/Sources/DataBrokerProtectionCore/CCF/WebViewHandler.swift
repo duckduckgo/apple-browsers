@@ -58,7 +58,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
     private var timer: Timer?
 
-    init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, isFakeBroker: Bool = false, executionConfig: BrokerJobExecutionConfig, shouldContinueActionHandler: @escaping () -> Bool, applicationNameForUserAgent: String? = nil) throws {
+    init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, isFakeBroker: Bool = false, executionConfig: BrokerJobExecutionConfig, shouldContinueActionHandler: @escaping () -> Bool, applicationNameForUserAgent: String?) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         let configuration = WKWebViewConfiguration()

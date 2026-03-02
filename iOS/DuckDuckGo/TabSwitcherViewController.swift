@@ -565,9 +565,9 @@ class TabSwitcherViewController: UIViewController {
     }
     
     func markCurrentAsViewed(shouldDismiss: Bool) {
-        // Will be dismissed, so no need to process incoming updates
-        canUpdateCollection = false
         if shouldDismiss {
+            // Will be dismissed, so no need to process incoming updates
+            canUpdateCollection = false
             dismiss()
         }
         if let current = currentSelection {

@@ -124,6 +124,10 @@ public class TabsModel: NSObject, NSCoding, MutableTabCollection {
     }
 
     func insert(tab: Tab, at index: Int) {
+        guard shouldCreateFireTabs == tab.fireTab else {
+            assertionFailure("Wrong tab type for this tabs model")
+            return
+        }
         tabs.insert(tab, at: max(0, index))
     }
     

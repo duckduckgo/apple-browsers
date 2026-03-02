@@ -28,32 +28,31 @@ import Persistence
 ///     minimizing the app, switching to another app, or locking the device.
 struct Background: BackgroundHandling {
 
-    private let lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>
+    private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
     private let appDependencies: AppDependencies
     private let sceneDependencies: SceneDependencies
     private let didTransitionFromLaunching: Bool
     private var services: AppServices { appDependencies.services }
 
-    init(stateContext: Connected.StateContext, lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+    init(stateContext: Connected.StateContext, lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
         appDependencies = stateContext.appDependencies
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = true
-        lastBackgroundDateStorage.lastBackgroundDate = Date()
     }
 
-    init(stateContext: Foreground.StateContext, lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+    init(stateContext: Foreground.StateContext, lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
         appDependencies = stateContext.appDependencies
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = false
-        lastBackgroundDateStorage.lastBackgroundDate = Date()
     }
 
     // MARK: - Handle applicationDidEnterBackground(_:) logic here
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
+        try? lastBackgroundDateStorage.set(Date(), for: \.lastBackgroundDate)
         appDependencies.backgroundTaskManager.startBackgroundTask()
 
         services.dbpService.onBackground()

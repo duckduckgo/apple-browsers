@@ -44,10 +44,10 @@ struct Connected: ConnectedHandling {
     let sceneDependencies: SceneDependencies
     let actionToHandle: AppAction?
     let didFinishLaunchingStartTime: CFAbsoluteTime
-    private let lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>
+    private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
 
     init(stateContext: Launching.StateContext, actionToHandle: AppAction?, window: UIWindow,
-         lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = stateContext.didFinishLaunchingStartTime
         self.actionToHandle = actionToHandle
@@ -84,7 +84,7 @@ struct Connected: ConnectedHandling {
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
     /// This unfortunately happens for iOS 16 and lower. Remove this once we drop support for it.
     init(stateContext: Foreground.StateContext, actionToHandle: AppAction?, window: UIWindow,
-         lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = 0
         self.actionToHandle = actionToHandle
@@ -115,7 +115,7 @@ struct Connected: ConnectedHandling {
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
     /// This unfortunately happens for iOS 16 and lower. Remove this once we drop support for it.
     init(stateContext: Background.StateContext, actionToHandle: AppAction?, window: UIWindow,
-         lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = 0
         self.actionToHandle = actionToHandle

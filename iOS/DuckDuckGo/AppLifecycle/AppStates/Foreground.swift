@@ -44,10 +44,10 @@ struct Foreground: ForegroundHandling {
     private let launchAction: LaunchAction
     private let launchActionHandler: LaunchActionHandler
     private let interactionManager: UIInteractionManager
-    private let lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>
+    private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
 
     init(stateContext: Connected.StateContext, actionToHandle: AppAction?,
-         lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.init(
             appDependencies: stateContext.appDependencies,
             sceneDependencies: stateContext.sceneDependencies,
@@ -58,7 +58,7 @@ struct Foreground: ForegroundHandling {
     }
 
     init(stateContext: Background.StateContext, actionToHandle: AppAction?,
-         lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.init(
             appDependencies: stateContext.appDependencies,
             sceneDependencies: stateContext.sceneDependencies,
@@ -72,13 +72,13 @@ struct Foreground: ForegroundHandling {
                  sceneDependencies: SceneDependencies,
                  isFirstForeground: Bool,
                  actionToHandle: AppAction?,
-                 lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+                 lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.appDependencies = appDependencies
         self.sceneDependencies = sceneDependencies
         self.isFirstForeground = isFirstForeground
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
         launchAction = LaunchAction(actionToHandle: actionToHandle,
-                                    lastBackgroundDate: lastBackgroundDateStorage.lastBackgroundDate,
+                                    lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
                                     isFirstForeground: isFirstForeground)
         let idleReturnEvaluator = IdleReturnEvaluator(
             featureFlagger: appDependencies.featureFlagger,

@@ -53,7 +53,7 @@ struct Launching: LaunchingHandling {
     private let mainCoordinator: MainCoordinator
     private let launchTaskManager = LaunchTaskManager()
     private let launchSourceManager = LaunchSourceManager()
-    private let lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys> = UserDefaults.app.keyedStoring()
+    private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -61,6 +61,7 @@ struct Launching: LaunchingHandling {
         Logger.lifecycle.info("Launching: \(#function)")
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
+        lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
 
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)

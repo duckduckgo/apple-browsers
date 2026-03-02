@@ -270,13 +270,13 @@ final class AIChatCoordinator: AIChatCoordinating {
 
     func revealChat(for prompt: AIChatNativePrompt) {
         guard let currentTabID = sidebarHost.currentTabID else { return }
-        let shouldFocusFloatingWindow = isChatFloating(for: currentTabID)
+        if isChatFloating(for: currentTabID) {
+            sessionStore.sessions[currentTabID]?.chatViewController?.setAIChatPrompt(prompt)
+            focusFloatingWindow(for: currentTabID)
+            return
+        }
 
         presentSidebar(for: prompt)
-
-        if shouldFocusFloatingWindow {
-            focusFloatingWindow(for: currentTabID)
-        }
     }
 
     // MARK: - Show / Hide / Collapse

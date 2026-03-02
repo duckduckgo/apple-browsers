@@ -146,7 +146,7 @@ extension AIChatState: NSSecureCoding {
             return AIChatPresentationMode(rawValue: raw) ?? .hidden
         }
 
-        let wasPresented: Bool = coder.decodeIfPresent(at: CodingKeys.isPresented) ?? true
+        let wasPresented: Bool = coder.decodeIfPresent(at: CodingKeys.isPresented) ?? false
         return wasPresented ? .sidebar : .hidden
     }
 }

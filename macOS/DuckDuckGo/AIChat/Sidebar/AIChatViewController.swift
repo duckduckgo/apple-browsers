@@ -338,8 +338,6 @@ final class AIChatViewController: NSViewController {
         titleArrowView?.isHidden = !isFloating
     }
 
-    func setFloatingTitleActionEnabled(_: Bool) {}
-
     private func createAndSetupWebViewContainer(in container: NSView) {
         webViewContainer = WebViewContainerView(tab: aiTab, webView: aiTab.webView, frame: .zero)
         webViewContainer.translatesAutoresizingMaskIntoConstraints = false

@@ -412,7 +412,6 @@ final class AIChatCoordinator: AIChatCoordinating {
             return
         }
         session.floatingWindowController?.updateTabViewModel(tabViewModel(for: tabID))
-        session.chatViewController?.setFloatingTitleActionEnabled(true)
     }
 
     private func refreshFloatingTitleStateForAllSessions() {

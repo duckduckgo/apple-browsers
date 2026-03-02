@@ -111,7 +111,7 @@ final class UnifiedToggleInputView: UIView {
     /// background) shows while the toolbar height animates from 0 → 56.
     private let toolbarBackingView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(Color(singleUseColor: .unifiedToggleInputCardBackground))
+        view.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -346,7 +346,7 @@ private extension UnifiedToggleInputView {
         layer.insertSublayer(expandedShadow1, at: 1)
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
-        cardView.backgroundColor = UIColor(Color(singleUseColor: .unifiedToggleInputCardBackground))
+        cardView.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         cardView.layer.shadowColor = cardShadowColor
         cardView.layer.shadowOpacity = 1.0

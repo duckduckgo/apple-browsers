@@ -600,6 +600,13 @@ class MainViewController: UIViewController {
 
     }
 
+    private func fireIPadToggleStateOnAppOpenPixel() {
+        guard aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled else { return }
+
+        let pixel: Pixel.Event = aiChatAddressBarExperience.shouldShowModeToggle ? .aiChatIPadToggleEnabledOnAppOpen : .aiChatIPadToggleDisabledOnAppOpen
+        DailyPixel.fireDailyAndCount(pixel: pixel)
+    }
+
     private func fireContextualAutoAttachPixel() {
         let isEnabled = "\(aiChatSettings.isAutomaticContextAttachmentEnabled)"
         DailyPixel.fireDaily(.aiChatContextualAutoAttachDAU,
@@ -1410,6 +1417,7 @@ class MainViewController: UIViewController {
     
     func onForeground() {
         fireExperimentalAddressBarPixel()
+        fireIPadToggleStateOnAppOpenPixel()
         fireContextualAutoAttachPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()

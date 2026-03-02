@@ -361,6 +361,38 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertFalse(receivedPush)
     }
 
+    @MainActor
+    func testNotifyPageChangedDoesNotPushContextWhenSheetDismissedButRetained() async {
+        // Given - sheet presented, chat started, then dismissed
+        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.handlePromptSubmission("Hello")
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        // Simulate dismiss (stopObservingContextUpdates + session timer)
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+
+        // Sheet is retained but not visible
+        XCTAssertTrue(sut.hasActiveSheet)
+        XCTAssertFalse(sut.isSheetPresented)
+
+        var receivedPush = false
+        sut.sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend = effect {
+                    receivedPush = true
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        await sut.notifyPageChanged()
+
+        // Then
+        XCTAssertFalse(receivedPush)
+    }
+
     // MARK: - Helpers
 
 }

@@ -238,7 +238,16 @@ struct CircleCheckView: View {
                 )
                 .scaleEffect(checkScale)
         }
+        .onAppear {
+            // Handle case where shouldAnimate is already true when view appears (e.g., previews or timing changes)
+            if shouldAnimate {
+                DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelay) {
+                    animate()
+                }
+            }
+        }
         .onChange(of: shouldAnimate) { newValue in
+            // Handle case where shouldAnimate transitions from false to true after view appears
             if newValue {
                 DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelay) {
                     animate()

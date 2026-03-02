@@ -48,11 +48,6 @@ protocol TabManaging {
     @MainActor func setBrowsingMode(_ mode: BrowsingMode)
 }
 
-public enum BrowsingMode: Int, CaseIterable {
-    case fire = 0
-    case normal = 1
-}
-
 /// Receives lifecycle events for TabViewController instances managed by TabManager.
 @MainActor
 protocol TabControllerCacheDelegate: AnyObject {

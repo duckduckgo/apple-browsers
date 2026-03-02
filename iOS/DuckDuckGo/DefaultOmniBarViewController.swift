@@ -63,7 +63,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     override func onAIChatSendPressed() {
-        submitIPadDuckAIText()
+        submitIPadDuckAIText(from: omniBarView.aiChatTextView)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -315,12 +315,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
 extension DefaultOmniBarViewController {
 
-    fileprivate func submitIPadDuckAIText() {
-        let query = omniBarView.aiChatTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    fileprivate func submitIPadDuckAIText(from textView: UITextView) {
+        let query = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !query.isEmpty else { return }
 
         if selectedTextEntryMode == .aiChat {
-            omniBarView.aiChatTextView.text = ""
+            textView.text = ""
             omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
             omniBarView.updateAIChatSendButton(hasText: false)
 
@@ -485,7 +485,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            submitIPadDuckAIText()
+            submitIPadDuckAIText(from: textView)
             return false
         }
         return true

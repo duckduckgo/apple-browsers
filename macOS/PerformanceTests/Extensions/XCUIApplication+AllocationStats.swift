@@ -34,11 +34,15 @@ extension XCUIApplication {
         URL(fileURLWithPath: "/tmp/" + bundleID! + "-startup-metrics.json")
     }
 
+    /// Exports the latest Memory Allocations Stats
+    ///
     func cleanExportMemoryStats() {
         try? FileManager.default.removeItem(at: memoryStatsURL)
         typeKey("m", modifierFlags: [.control, .command, .shift, .option])
     }
 
+    /// Exports the latest Startup Metrics
+    ///
     func cleanExportStartupStats() {
         try? FileManager.default.removeItem(at: startupMetricsURL)
         typeKey("s", modifierFlags: [.control, .command, .shift, .option])

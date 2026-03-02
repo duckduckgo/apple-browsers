@@ -2977,8 +2977,6 @@
 		B5CBB60C2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
 		B5D62C802F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */; };
 		B5D62C812F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */; };
-		B5D62C832F56010B00947DFD /* StartupStatsMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C822F56010B00947DFD /* StartupStatsMetric.swift */; };
-		B5D62C852F56081500947DFD /* StartupStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C842F56081500947DFD /* StartupStats.swift */; };
 		B5D62C892F560AB800947DFD /* StartupPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C882F560AB800947DFD /* StartupPerformanceTests.swift */; };
 		B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
 		B5DE8DAA2EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
@@ -5853,8 +5851,6 @@
 		B5C980FE2F229F5C00655B21 /* XCTOptions+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCTOptions+Helpers.swift"; sourceTree = "<group>"; };
 		B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTitleView.swift; sourceTree = "<group>"; };
 		B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsExporter.swift; sourceTree = "<group>"; };
-		B5D62C822F56010B00947DFD /* StartupStatsMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupStatsMetric.swift; sourceTree = "<group>"; };
-		B5D62C842F56081500947DFD /* StartupStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupStats.swift; sourceTree = "<group>"; };
 		B5D62C882F560AB800947DFD /* StartupPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupPerformanceTests.swift; sourceTree = "<group>"; };
 		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
@@ -7823,7 +7819,6 @@
 			children = (
 				B5C980FB2F229ECF00655B21 /* Extensions */,
 				B5C980F82F2298D900655B21 /* Memory */,
-				B5D62C872F56088300947DFD /* Startup */,
 				B59845C52F22774C00A25DA4 /* MemoryUsageTests.swift */,
 				B5D62C882F560AB800947DFD /* StartupPerformanceTests.swift */,
 				37C321132F1E81CA008F4604 /* macOS Performance Tests.xctestplan */,
@@ -11257,15 +11252,6 @@
 				B5C980F92F229EB800655B21 /* XCUIApplication+AllocationStats.swift */,
 			);
 			path = Extensions;
-			sourceTree = "<group>";
-		};
-		B5D62C872F56088300947DFD /* Startup */ = {
-			isa = PBXGroup;
-			children = (
-				B5D62C842F56081500947DFD /* StartupStats.swift */,
-				B5D62C822F56010B00947DFD /* StartupStatsMetric.swift */,
-			);
-			path = Startup;
 			sourceTree = "<group>";
 		};
 		B5E197EA2E8C645500C447CC /* VisualRefresh */ = {
@@ -15820,7 +15806,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B5D62C832F56010B00947DFD /* StartupStatsMetric.swift in Sources */,
 				37C321552F1F8C82008F4604 /* XCUIElementExtension.swift in Sources */,
 				B5C980FF2F229F5C00655B21 /* XCTOptions+Helpers.swift in Sources */,
 				37C321562F1F8C82008F4604 /* XCUIElementQueryExtension.swift in Sources */,
@@ -15831,7 +15816,6 @@
 				37C3215A2F1F8C82008F4604 /* XCUIElementSnapshotExtension.swift in Sources */,
 				37C3215B2F1F8C82008F4604 /* UITests.swift in Sources */,
 				B59845C62F22777700A25DA4 /* MemoryUsageTests.swift in Sources */,
-				B5D62C852F56081500947DFD /* StartupStats.swift in Sources */,
 				B502A3D12F23B4DF00F1AF8B /* XCTestCase+Helpers.swift in Sources */,
 				B5C980FA2F229EB800655B21 /* XCUIApplication+AllocationStats.swift in Sources */,
 				84AC100B2F28B51E000F405B /* XCUIDeviceExtension.swift in Sources */,

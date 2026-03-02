@@ -32,12 +32,25 @@ final class StartupPerformanceTests: XCTestCase {
     }
 
     func testStartupSequenceDuration() throws {
-        let (metric, options, work) = buildStartupMeasurement(iterations: 10) {
-            XCUIApplication.setUp()
-        } completion: { application in
+        let application = XCUIApplication.setUp()
+        defer {
             application.terminate()
         }
 
-        measure(metrics: [metric], options: options, block: work)
+        application.cleanExportStartupStats()
+
+        let statsAsData = try Data(contentsOf: application.startupMetricsURL)
+        let attachment = buildAttachment(payload: statsAsData, description: "Startup Metrics")
+
+        XCTContext.runActivity(named: description) { activity in
+            activity.add(attachment)
+        }
+    }
+
+    func buildAttachment(payload: Data, description: String) -> XCTAttachment {
+        let attachment = XCTAttachment(data: payload, uniformTypeIdentifier: "public.json")
+        attachment.name = description
+        attachment.lifetime = .keepAlways
+        return attachment
     }
 }

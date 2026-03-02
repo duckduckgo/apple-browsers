@@ -43,7 +43,7 @@ extension XCUIApplication {
 
     /// Exports the latest Startup Metrics
     ///
-    func cleanExportStartupStats() {
+    func cleanExportStartupMetrics() {
         try? FileManager.default.removeItem(at: startupMetricsURL)
         typeKey("s", modifierFlags: [.control, .command, .shift, .option])
     }

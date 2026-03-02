@@ -21,8 +21,6 @@ import Foundation
 
 final class StartupPerformanceTests: XCTestCase {
 
-    private var application: XCUIApplication!
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -37,14 +35,21 @@ final class StartupPerformanceTests: XCTestCase {
             application.terminate()
         }
 
-        application.cleanExportStartupStats()
-
-        let statsAsData = try Data(contentsOf: application.startupMetricsURL)
-        let attachment = buildAttachment(payload: statsAsData, description: "Startup Metrics")
-
-        XCTContext.runActivity(named: description) { activity in
+        let attachment = try application.buildStartupMetricsAttachment()
+        XCTContext.runActivity(named: "Attaching Startup Metrics") { activity in
             activity.add(attachment)
         }
+    }
+}
+
+private extension XCUIApplication {
+
+    func buildStartupMetricsAttachment() throws -> XCTAttachment {
+        cleanExportStartupMetrics()
+
+        let payload = try Data(contentsOf: startupMetricsURL)
+
+        return buildAttachment(payload: payload, description: "Startup Metrics")
     }
 
     func buildAttachment(payload: Data, description: String) -> XCTAttachment {

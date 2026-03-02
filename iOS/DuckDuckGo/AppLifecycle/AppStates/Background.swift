@@ -34,19 +34,12 @@ struct Background: BackgroundHandling {
     private let didTransitionFromLaunching: Bool
     private var services: AppServices { appDependencies.services }
 
-    /// Reads from storage; set persists to storage. Written in init when entering background.
-    private var lastBackgroundDate: Date {
-        didSet {
-            lastBackgroundDateStorage.lastBackgroundDate = lastBackgroundDate
-        }
-    }
-
     init(stateContext: Connected.StateContext, lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
         appDependencies = stateContext.appDependencies
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = true
-        lastBackgroundDate = Date()
+        lastBackgroundDateStorage.lastBackgroundDate = Date()
     }
 
     init(stateContext: Foreground.StateContext, lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
@@ -54,7 +47,7 @@ struct Background: BackgroundHandling {
         appDependencies = stateContext.appDependencies
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = false
-        lastBackgroundDate = Date()
+        lastBackgroundDateStorage.lastBackgroundDate = Date()
     }
 
     // MARK: - Handle applicationDidEnterBackground(_:) logic here

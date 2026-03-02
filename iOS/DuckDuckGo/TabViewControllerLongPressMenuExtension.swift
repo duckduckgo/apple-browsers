@@ -117,6 +117,7 @@ extension TabViewController {
             featureFlagger: featureFlagger,
             contentScopeExperimentManager: contentScopeExperimentsManager,
             textZoomCoordinator: textZoomCoordinator,
+            autoconsentManagement: autoconsentManagement,
             websiteDataManager: websiteDataManager,
             fireproofing: fireproofing,
             tabInteractionStateSource: tabInteractionStateSource,

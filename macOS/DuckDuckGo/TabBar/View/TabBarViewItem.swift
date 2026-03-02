@@ -726,6 +726,17 @@ final class TabBarViewItem: NSCollectionViewItem {
         view as! TabBarItemCellView // swiftlint:disable:this force_cast
     }
 
+    /// Preferred popover anchor rect in this item's view coordinates.
+    /// Uses the favicon position when available.
+    func aiChatCloseWarningAnchorRect() -> NSRect {
+        if cell.faviconView.isShown {
+            return cell.faviconView.frame
+        }
+
+        // Fallback for compact states where favicon may be hidden.
+        return NSRect(x: view.bounds.midX - 1, y: view.bounds.minY, width: 2, height: view.bounds.height)
+    }
+
     override init(nibName nibNameOrNil: NSNib.Name?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nil, bundle: nil)
     }

@@ -93,7 +93,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
-            aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
+            aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)

@@ -206,7 +206,7 @@ class MainViewController: UIViewController {
     let featureDiscovery: FeatureDiscovery
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
-    let textZoomCoordinator: TextZoomCoordinating
+    let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
 
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
@@ -266,6 +266,17 @@ class MainViewController: UIViewController {
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
+    lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
+    var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
+    var unifiedToggleInputCancellables = Set<AnyCancellable>()
+
+    // MARK: - iPad Tab Mode Chat History
+    private lazy var iPadTabChatHistoryCoordinator = IPadTabChatHistoryCoordinator(
+        featureFlagger: featureFlagger,
+        privacyConfigurationManager: privacyConfigurationManager,
+        aiChatSettings: aiChatSettings,
+        iPadTabFeature: aichatIPadTabFeature
+    )
 
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     func setWebExtensionEventsCoordinator(_ coordinator: WebExtensionEventsCoordinator?) {
@@ -302,7 +313,7 @@ class MainViewController: UIViewController {
         featureFlagger: FeatureFlagger,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
-        textZoomCoordinator: TextZoomCoordinating,
+        textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
         websiteDataManager: WebsiteDataManaging,
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
@@ -365,7 +376,7 @@ class MainViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.fireproofing = fireproofing
-        self.textZoomCoordinator = textZoomCoordinator
+        self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
@@ -505,6 +516,7 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
+        setUpUnifiedToggleInputIfNeeded()
         subscribeToRefreshButtonSettingsEvents()
         subscribeToCustomizationSettingsEvents()
         subscribeToDaxEasterEggLogoChanges()
@@ -1506,7 +1518,7 @@ class MainViewController: UIViewController {
         }
     }
 
-    fileprivate func loadQuery(_ query: String) {
+    func loadQuery(_ query: String) {
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
             Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.absoluteString ?? "<nil>", privacy: .public)\"")
             return
@@ -1697,6 +1709,13 @@ class MainViewController: UIViewController {
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             updateBrowsingMenuHeaderDataSource()
+            if let tab = currentTab {
+                refreshUnifiedToggleInput(for: tab)
+            } else if let coordinator = unifiedToggleInputCoordinator, coordinator.displayState != .hidden {
+                coordinator.hide()
+                coordinator.unbind()
+                viewCoordinator.setNavigationChromeHidden(false)
+            }
             return
         }
 
@@ -1719,6 +1738,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.startBrowsing()
         }
 
+        refreshUnifiedToggleInput(for: tab)
         updateBrowsingMenuHeaderDataSource()
     }
 
@@ -2103,7 +2123,8 @@ class MainViewController: UIViewController {
         tabsBarController?.backgroundTabAdded()
     }
 
-    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true) {
+    // TODO: - Make fire tab required to force correct usage when applied app wide
+    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, fireTab: Bool = false) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -2117,7 +2138,7 @@ class MainViewController: UIViewController {
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.selectTab(existing)
         } else {
-            tabManager.addHomeTab()
+            tabManager.addHomeTab(fireTab: fireTab)
         }
         attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
@@ -2147,7 +2168,7 @@ class MainViewController: UIViewController {
         findInPageView?.updateConstraints()
     }
 
-    private func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
+    func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
         SpeechRecognizer.requestMicAccess { [weak self] permission in
             guard let self = self else { return }
             if permission {
@@ -2855,6 +2876,10 @@ extension MainViewController: OmniBarDelegate {
         loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
+    func onAIChatQueryUpdated(_ query: String) {
+        iPadTabChatHistoryCoordinator.updateQuery(query)
+    }
+
     func didRequestCurrentURL() -> URL? {
         return currentTab?.url
     }
@@ -3349,12 +3374,23 @@ extension MainViewController: OmniBarDelegate {
     func onOmniBarExpandedStateChanged(isExpanded: Bool) {
         if isExpanded {
             hideSuggestionTray()
+
+            iPadTabChatHistoryCoordinator.delegate = self
+            iPadTabChatHistoryCoordinator.install(
+                in: view,
+                parentViewController: self,
+                searchContainer: viewCoordinator.omniBar.barView.searchContainer,
+                keyboardLayoutGuide: view.keyboardLayoutGuide
+            )
+
             guard expandedOmniBarDismissTapGesture == nil else { return }
             let tap = UITapGestureRecognizer(target: self, action: #selector(dismissExpandedOmniBar))
             tap.cancelsTouchesInView = false
             viewCoordinator.contentContainer.addGestureRecognizer(tap)
             expandedOmniBarDismissTapGesture = tap
         } else {
+            iPadTabChatHistoryCoordinator.tearDown()
+
             if let tap = expandedOmniBarDismissTapGesture {
                 viewCoordinator.contentContainer.removeGestureRecognizer(tap)
                 expandedOmniBarDismissTapGesture = nil
@@ -3607,9 +3643,9 @@ extension MainViewController: TabDelegate {
         keyModifierFlags
     }
 
-    func tabDidRequestNewTab(_ tab: TabViewController) {
+    func tabDidRequestNewTab(_ tab: TabViewController, fireTab: Bool) {
         _ = findInPageView?.resignFirstResponder()
-        newTab()
+        newTab(fireTab: fireTab)
     }
     
     func newTab(reuseExisting: Bool) {
@@ -4855,15 +4891,25 @@ extension MainViewController {
     }
 
     private func showTextZoomEditorIfPossible() {
-        guard let webView = currentTab?.webView else {
+        guard let currentTab, let webView = currentTab.webView else {
             assertionFailure("Expecting current tab with web view")
             return
         }
         Task { @MainActor in
+            let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: currentTab.tabModel.textZoomContext)
             await textZoomCoordinator.showTextZoomEditor(inController: self, forWebView: webView)
         }
     }
 
+}
+
+// MARK: - AIChatHistoryManagerDelegate
+
+extension MainViewController: AIChatHistoryManagerDelegate {
+
+    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL) {
+        onChatHistorySelected(url: url)
+    }
 }
 
 // MARK: - ConsentStatusInfo to CookieConsentInfo Conversion

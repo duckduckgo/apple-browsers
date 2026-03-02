@@ -38,7 +38,7 @@ final class HistoryCaptureTests: XCTestCase {
     func test_whenURLIsCommitted_ThenVisitIsStored() async {
         sut.webViewDidCommit(url: URL.example)
         XCTAssertEqual(1, mockHistoryManager.addVisitCalls.count)
-        XCTAssertEqual([URL.example], mockHistoryManager.addVisitCalls)
+        XCTAssertEqual(mockHistoryManager.addVisitCalls.first?.url, URL.example)
     }
 
     @MainActor
@@ -69,7 +69,7 @@ final class HistoryCaptureTests: XCTestCase {
 
         assertUrlIsExpected(sut.url)
         XCTAssertEqual(1, mockHistoryManager.addVisitCalls.count)
-        assertUrlIsExpected(mockHistoryManager.addVisitCalls[0])
+        assertUrlIsExpected(mockHistoryManager.addVisitCalls[0].url)
     }
 
     @MainActor

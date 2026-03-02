@@ -264,7 +264,11 @@ final class TabCollectionViewModel: NSObject {
 
     @discardableResult func select(at index: TabIndex, forceChange: Bool = false) -> Bool {
         shouldReturnToPreviousActiveTab = false
-        return selectWithoutResettingState(at: index, forceChange: forceChange)
+        let result = selectWithoutResettingState(at: index, forceChange: forceChange)
+        if result, let tab = tab(at: index), tab.isSuspended {
+            tab.resume()
+        }
+        return result
     }
 
     @discardableResult func select(tab: Tab, forceChange: Bool = false) -> Bool {
@@ -760,6 +764,51 @@ final class TabCollectionViewModel: NSObject {
         }
 
         insert(tab)
+    }
+
+    func suspendTab(at tabIndex: TabIndex) {
+        guard changesEnabled else { return }
+        guard let oldTab = tab(at: tabIndex) else {
+            Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
+            return
+        }
+        guard tabIndex != selectionIndex else { return }
+        let tabContent: Tab.TabContent = oldTab.content
+        guard case .url(let url, _, _) = tabContent else { return }
+
+        // Create a fresh, unloaded Tab to hold the slot. Because it never navigates,
+        // no web content process is spawned. The old Tab (and its WKWebView) is released
+        // when replaceTab assigns the new one, letting the OS reclaim the process memory.
+        let suspendedTab = Tab(
+            content: .url(url, source: .pendingStateRestoration),
+            title: oldTab.title,
+            favicon: oldTab.favicon,
+            shouldLoadInBackground: false,
+            lastSelectedAt: oldTab.lastSelectedAt
+        )
+        suspendedTab.restoreIsSuspended(true)
+
+        // Use remove + insert rather than replaceTab: replaceTab has no delegate notification,
+        // so TabBarViewController never updates, the old TabBarViewItem keeps holding the old
+        // TabViewModel → old Tab is never released → web process stays alive.
+        // Save selection first: didRemoveTab adjusts selectionIndex when a tab before the
+        // selected one is removed, and insert doesn't restore it, causing the suspended tab
+        // to end up selected.
+        let savedSelection = selectionIndex
+        remove(at: tabIndex)
+        insert(suspendedTab, at: tabIndex, selected: false)
+        if let savedSelection {
+            selectWithoutResettingState(at: savedSelection, forceChange: false)
+        }
+    }
+
+    func resumeTab(at tabIndex: TabIndex) {
+        guard changesEnabled else { return }
+        guard let tab = tab(at: tabIndex) else {
+            Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
+            return
+        }
+        tab.resume()
     }
 
     func title(forTabWithURL url: URL) -> String? {

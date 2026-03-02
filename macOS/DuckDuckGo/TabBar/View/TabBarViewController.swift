@@ -2552,6 +2552,23 @@ extension TabBarViewController: TabBarViewItemDelegate {
         removeFireproofing(from: tab)
     }
 
+    func tabBarViewItemSuspendAction(_ tabBarViewItem: TabBarViewItem) {
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+        if tabBarViewItem.tabViewModel?.isSuspended == true {
+            tabCollectionViewModel.resumeTab(at: tabIndex)
+        } else {
+            tabCollectionViewModel.suspendTab(at: tabIndex)
+        }
+    }
+
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue stringValue: String) {
         let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView

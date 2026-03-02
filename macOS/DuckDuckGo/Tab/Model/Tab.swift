@@ -563,6 +563,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     @Published private(set) var audioStateTest: WebView.AudioState = .unmuted(isPlayingAudio: false)
 
+    // MARK: - Tab Suspension
+
+    @Published private(set) var isSuspended: Bool = false
+
     var audioStatePublisher: AnyPublisher<WebView.AudioState, Never> {
         webView.audioStatePublisher
     }
@@ -1363,7 +1367,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
             navigation.navigationAction.sourceFrame.securityOrigin
         }
         if !securityOrigin.isEmpty || self.hasCommittedContent {
-            // don‘t reset the initially passed parent tab SecurityOrigin to an empty one for "about:blank" page
+            // don’t reset the initially passed parent tab SecurityOrigin to an empty one for "about:blank" page
             self.securityOrigin = securityOrigin
         }
 
@@ -1570,6 +1574,32 @@ extension Tab: TabDataClearing {
         webView.navigationDelegate = caller
         webView.load(URLRequest(url: .blankPage))
     }
+}
+
+// MARK: - Tab Suspension
+
+extension Tab {
+
+    /// Restores the `isSuspended` flag when decoding from persistent state (NSCoder).
+    func restoreIsSuspended(_ value: Bool) {
+        isSuspended = value
+    }
+
+    /// Marks the tab as suspended. The actual memory is freed by `TabCollectionViewModel`
+    /// which replaces this Tab instance with a fresh, unloaded one.
+    @MainActor
+    func suspend() {
+        isSuspended = true
+    }
+
+    /// Resumes a suspended tab by loading its content URL.
+    @MainActor
+    func resume() {
+        guard isSuspended else { return }
+        isSuspended = false
+        reloadIfNeeded(source: .contentUpdated)
+    }
+
 }
 
 // "protected" properties meant to access otherwise private properties from Tab extensions

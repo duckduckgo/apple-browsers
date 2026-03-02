@@ -46,6 +46,9 @@ protocol TabBarViewModel {
     var crashIndicatorModel: TabCrashIndicatorModel { get }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> { get }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { get }
+    var loadedPageDOMPublisher: PassthroughSubject<Void, Never> { get }
+    var isSuspended: Bool { get }
+    var isSuspendedPublisher: AnyPublisher<Bool, Never> { get }
 }
 
 extension TabViewModel: TabBarViewModel {
@@ -71,6 +74,10 @@ extension TabViewModel: TabBarViewModel {
             .eraseToAnyPublisher()
     }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { tab.webViewRenderingProgressDidChangePublisher }
+    var loadedPageDOMPublisher: PassthroughSubject<Void, Never> {
+        tab.loadedPageDOMPublisher
+    }
+    var isSuspendedPublisher: AnyPublisher<Bool, Never> { $isSuspended.eraseToAnyPublisher() }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -101,6 +108,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemMoveToNewBurnerWindowAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemFireproofSite(_: TabBarViewItem)
     @MainActor func tabBarViewItemMuteUnmuteSite(_: TabBarViewItem)
+    @MainActor func tabBarViewItemSuspendAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemRemoveFireproofing(_: TabBarViewItem)
     @MainActor func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue: String)
 
@@ -1030,6 +1038,22 @@ final class TabBarViewItem: NSCollectionViewItem {
                 self?.refreshProgressColors(rendered: true)
             }
             .store(in: &cancellables)
+
+        tabViewModel.loadedPageDOMPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.stopSpinner()
+            }
+            .store(in: &cancellables)
+
+        tabViewModel.isSuspendedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isSuspended in
+                let alpha: CGFloat = isSuspended ? 0.5 : 1.0
+                self?.cell.faviconView.alphaValue = alpha
+                self?.cell.titleView.alphaValue = alpha
+            }
+            .store(in: &cancellables)
     }
 
     func clear() {
@@ -1364,6 +1388,7 @@ extension TabBarViewItem: NSMenuDelegate {
             addPinMenuItem(to: menu)
         }
         addMuteUnmuteMenuItem(to: menu)
+        addSuspendResumeMenuItem(to: menu)
         menu.addItem(.separator())
 
         // Bookmark/Fireproof Section
@@ -1484,6 +1509,20 @@ extension TabBarViewItem: NSMenuDelegate {
         let muteUnmuteMenuItem = NSMenuItem(title: menuItemTitle, action: #selector(muteUnmuteSiteAction(_:)), keyEquivalent: "")
         muteUnmuteMenuItem.target = self
         menu.addItem(muteUnmuteMenuItem)
+    }
+
+    private func addSuspendResumeMenuItem(to menu: NSMenu) {
+        let isSuspended = tabViewModel?.isSuspended ?? false
+        let title = isSuspended ? UserText.resumeTab : UserText.suspendTab
+        let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
+        menuItem.target = self
+        // Can't suspend the currently active tab
+        menuItem.isEnabled = !isSelected
+        menu.addItem(menuItem)
+    }
+
+    @objc private func suspendTabAction(_ sender: NSMenuItem) {
+        delegate?.tabBarViewItemSuspendAction(self)
     }
 
     private func addCloseMenuItem(to menu: NSMenu) {
@@ -1713,6 +1752,9 @@ extension TabBarViewItem {
     static let mediumWidth = (TabBarViewItem.Width.maximum + TabBarViewItem.Width.minimum) / 2
     @MainActor
     final class PreviewViewController: NSViewController, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout, TabBarViewItemDelegate {
+        func tabBarViewItemSuspendAction(_: TabBarViewItem) {
+
+        }
 
         final class TabBarViewModelMock: TabBarViewModel {
             var url: URL?
@@ -1751,6 +1793,9 @@ extension TabBarViewItem {
             }
 
             var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never>
+
+            @Published var isSuspended: Bool = false
+            var isSuspendedPublisher: AnyPublisher<Bool, Never> { $isSuspended.eraseToAnyPublisher() }
 
             init(width: CGFloat, title: String = "Test Title", url: URL? = nil, favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, isLoading: Bool = false, error: WKError? = nil) {
                 self.width = width

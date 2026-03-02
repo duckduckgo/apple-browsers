@@ -28,10 +28,7 @@ protocol BrowsingMenuSheetCapable {
 }
 
 enum BrowsingMenuSheetCapability {
-    static func create(
-        using featureFlagger: FeatureFlagger,
-        keyValueStore: ThrowingKeyValueStoring,
-    ) -> BrowsingMenuSheetCapable {
+    static func create() -> BrowsingMenuSheetCapable {
         if #available(iOS 17, *) {
             return BrowsingMenuSheetDefaultCapability()
         } else {

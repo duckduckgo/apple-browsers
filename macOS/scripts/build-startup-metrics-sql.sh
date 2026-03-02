@@ -82,7 +82,7 @@ echo "Extracting attachments from: $XCRESULT_PATH" >&2
 xcrun xcresulttool export attachments \
     --path "$XCRESULT_PATH" \
     --output-path "$SUITE" \
-    --test-id "$SUITE"
+    --test-id "$SUITE" >&2
 
 # Step 2: Read the manifest and collect all attachment contents with their test ID
 manifest="$SUITE/manifest.json"

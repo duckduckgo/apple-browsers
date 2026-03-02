@@ -87,9 +87,9 @@ final class StartupStatsMetric: NSObject, XCTMetric {
 
             return XCTPerformanceMeasurement(
                 identifier: "com.duckduckgo.startup.metrics." + step.rawValue,
-                displayName: "App Delegate Init",
+                displayName: step.rawValue,
                 doubleValue: Double(duration),
-                unitSymbol: "Bytes"
+                unitSymbol: "Milliseconds"
             )
         }
 

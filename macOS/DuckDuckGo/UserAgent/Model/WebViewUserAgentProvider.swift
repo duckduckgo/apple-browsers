@@ -20,13 +20,13 @@ import Foundation
 
 enum WebViewUserAgentProvider {
 
-    static var applicationNameForUserAgent: String? {
-        guard let safariVersion = SafariVersionReader.getVersion(),
-              let webKitVersion = WebKitVersionProvider.getVersion() else {
-            return nil
-        }
+    private static let fallbackSafariVersion = "14.1.2"
+    private static let fallbackWebKitVersion = "605.1.15"
 
+    static let applicationNameForUserAgent: String = {
+        let safariVersion = SafariVersionReader.getVersion() ?? fallbackSafariVersion
+        let webKitVersion = WebKitVersionProvider.getVersion() ?? fallbackWebKitVersion
         return "Version/\(safariVersion) Safari/\(webKitVersion)"
-    }
+    }()
 
 }

@@ -270,7 +270,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
         button.isHidden = true
-        button.layer.cornerRadius = 20
+        button.layer.cornerRadius = Metrics.sendButtonSize / 2
         button.layer.masksToBounds = true
         return button
     }()

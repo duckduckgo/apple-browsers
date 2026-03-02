@@ -4869,7 +4869,7 @@
 		37B904732E2A531C00E5DAF7 /* NavigationPixelNavigationResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationPixelNavigationResponder.swift; sourceTree = "<group>"; };
 		37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageNextStepsCardsProvider.swift; sourceTree = "<group>"; };
 		37BF3F13286D8A6500BD9014 /* PinnedTabsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsManager.swift; sourceTree = "<group>"; };
-		37C3210B2F1E80A1008F4604 /* Memory Usage Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Memory Usage Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		37C3210B2F1E80A1008F4604 /* Performance Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Performance Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37C321132F1E81CA008F4604 /* macOS Performance Tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "macOS Performance Tests.xctestplan"; sourceTree = "<group>"; };
 		37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = MemoryUsageTests.xcconfig; sourceTree = "<group>"; };
 		37C749392D55FE690065B48B /* HistoryViewActionsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewActionsHandler.swift; sourceTree = "<group>"; };
@@ -10131,7 +10131,7 @@
 				B6E6B9F32BA1FD90008AA7E1 /* sandbox-test-tool.app */,
 				9D84E43C2CD4E66F0046CD8B /* DBPE2ETests.xctest */,
 				7B2E365F2D6DEFBB00A08CB7 /* com.duckduckgo.mobile.ios.vpn.agent.network-extension.debug.systemextension */,
-				37C3210B2F1E80A1008F4604 /* Memory Usage Tests.xctest */,
+				37C3210B2F1E80A1008F4604 /* Performance Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -12625,9 +12625,9 @@
 			productReference = 376113D42B29CD5B00E794BB /* SyncE2EUITests App Store.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		37C320B62F1E80A1008F4604 /* Memory Usage Tests */ = {
+		37C320B62F1E80A1008F4604 /* Performance Tests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 37C321052F1E80A1008F4604 /* Build configuration list for PBXNativeTarget "Memory Usage Tests" */;
+			buildConfigurationList = 37C321052F1E80A1008F4604 /* Build configuration list for PBXNativeTarget "Performance Tests" */;
 			buildPhases = (
 				37C320BF2F1E80A1008F4604 /* Sources */,
 				37C320F92F1E80A1008F4604 /* Frameworks */,
@@ -12638,7 +12638,7 @@
 			dependencies = (
 				37C320B72F1E80A1008F4604 /* PBXTargetDependency */,
 			);
-			name = "Memory Usage Tests";
+			name = "Performance Tests";
 			packageProductDependencies = (
 				37C320B92F1E80A1008F4604 /* SnapshotTesting */,
 				37C320BB2F1E80A1008F4604 /* AppKitExtensions */,
@@ -12647,7 +12647,7 @@
 				37C320BE2F1E80A1008F4604 /* Utilities */,
 			);
 			productName = "Memory Usage Tests";
-			productReference = 37C3210B2F1E80A1008F4604 /* Memory Usage Tests.xctest */;
+			productReference = 37C3210B2F1E80A1008F4604 /* Performance Tests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		4B1AD89C25FC27E200261379 /* Integration Tests */ = {
@@ -13312,7 +13312,7 @@
 				AA585D7D248FD31100E9A3E2 /* DuckDuckGo Privacy Browser */,
 				3706FA6A293F65D500E42796 /* DuckDuckGo Privacy Browser App Store */,
 				7B4CE8D926F02108009134B1 /* UI Tests */,
-				37C320B62F1E80A1008F4604 /* Memory Usage Tests */,
+				37C320B62F1E80A1008F4604 /* Performance Tests */,
 				565E46DC2B2725DC0013AC2A /* SyncE2EUITests */,
 				376113C82B29CD5B00E794BB /* SyncE2EUITests App Store */,
 				9D84E3FA2CD4E66F0046CD8B /* DBPE2ETests */,
@@ -18882,7 +18882,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		37C321052F1E80A1008F4604 /* Build configuration list for PBXNativeTarget "Memory Usage Tests" */ = {
+		37C321052F1E80A1008F4604 /* Build configuration list for PBXNativeTarget "Performance Tests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				37C321062F1E80A1008F4604 /* Debug */,

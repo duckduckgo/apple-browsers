@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "37C320B62F1E80A1008F4604"
-               BuildableName = "Memory Usage Tests.xctest"
-               BlueprintName = "Memory Usage Tests"
+               BuildableName = "Performance Tests.xctest"
+               BlueprintName = "Performance Tests"
                ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -37,8 +37,8 @@
                   <BuildableReference
                      BuildableIdentifier = "primary"
                      BlueprintIdentifier = "37C320B62F1E80A1008F4604"
-                     BuildableName = "Memory Usage Tests.xctest"
-                     BlueprintName = "Memory Usage Tests"
+                     BuildableName = "Performance Tests.xctest"
+                     BlueprintName = "Performance Tests"
                      ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
                   </BuildableReference>
                </EnvironmentBuildable>

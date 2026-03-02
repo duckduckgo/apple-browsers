@@ -18,6 +18,7 @@
 //
 
 import Core
+import Persistence
 import UIKit
 import PixelKit
 import BrowserServicesKit
@@ -52,6 +53,7 @@ struct Launching: LaunchingHandling {
     private let mainCoordinator: MainCoordinator
     private let launchTaskManager = LaunchTaskManager()
     private let launchSourceManager = LaunchSourceManager()
+    private let lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys> = UserDefaults.app.keyedStoring()
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -330,7 +332,8 @@ extension Launching {
     }
 
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
-        Connected(stateContext: makeStateContext(), actionToHandle: actionToHandle, window: window)
+        Connected(stateContext: makeStateContext(), actionToHandle: actionToHandle, window: window,
+                  lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
 }

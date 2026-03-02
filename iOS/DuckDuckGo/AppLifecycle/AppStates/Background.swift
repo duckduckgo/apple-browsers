@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import Persistence
 
 /// Represents the state where the app is in the background and not visible to the user.
 /// - Usage:
@@ -27,22 +28,33 @@ import Core
 ///     minimizing the app, switching to another app, or locking the device.
 struct Background: BackgroundHandling {
 
-    private let lastBackgroundDate: Date = Date()
+    private let lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>
     private let appDependencies: AppDependencies
     private let sceneDependencies: SceneDependencies
     private let didTransitionFromLaunching: Bool
     private var services: AppServices { appDependencies.services }
 
-    init(stateContext: Connected.StateContext) {
+    /// Reads from storage; set persists to storage. Written in init when entering background.
+    private var lastBackgroundDate: Date {
+        didSet {
+            lastBackgroundDateStorage.lastBackgroundDate = lastBackgroundDate
+        }
+    }
+
+    init(stateContext: Connected.StateContext, lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+        self.lastBackgroundDateStorage = lastBackgroundDateStorage
         appDependencies = stateContext.appDependencies
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = true
+        lastBackgroundDate = Date()
     }
 
-    init(stateContext: Foreground.StateContext) {
+    init(stateContext: Foreground.StateContext, lastBackgroundDateStorage: any KeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+        self.lastBackgroundDateStorage = lastBackgroundDateStorage
         appDependencies = stateContext.appDependencies
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = false
+        lastBackgroundDate = Date()
     }
 
     // MARK: - Handle applicationDidEnterBackground(_:) logic here
@@ -110,7 +122,6 @@ extension Background {
 
     struct StateContext {
 
-        let lastBackgroundDate: Date
         let appDependencies: AppDependencies
         let sceneDependencies: SceneDependencies
         let didTransitionFromLaunching: Bool
@@ -118,11 +129,11 @@ extension Background {
     }
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
-        Foreground(stateContext: StateContext(lastBackgroundDate: lastBackgroundDate,
-                                              appDependencies: appDependencies,
+        Foreground(stateContext: StateContext(appDependencies: appDependencies,
                                               sceneDependencies: sceneDependencies,
                                               didTransitionFromLaunching: didTransitionFromLaunching),
-                   actionToHandle: actionToHandle)
+                   actionToHandle: actionToHandle,
+                   lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
@@ -132,7 +143,8 @@ extension Background {
         Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
                                                        appDependencies: appDependencies),
                   actionToHandle: actionToHandle,
-                  window: window)
+                  window: window,
+                  lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
 }

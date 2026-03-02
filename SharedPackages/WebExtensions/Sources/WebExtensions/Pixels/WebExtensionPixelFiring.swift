@@ -29,10 +29,10 @@ public enum WebExtensionPixelEvent {
     case loaded
     case loadError(error: Error)
 
-    // Embedded extension events
-    case embeddedInstalled
-    case embeddedUpgraded(fromVersion: String?, toVersion: String?)
-    case embeddedInstallError(error: Error)
+    // Embedded extension events (type-specific)
+    case embeddedInstalled(type: DuckDuckGoWebExtensionType)
+    case embeddedUpgraded(type: DuckDuckGoWebExtensionType, fromVersion: String?, toVersion: String?)
+    case embeddedInstallError(type: DuckDuckGoWebExtensionType, error: Error)
 }
 
 /// Protocol for firing web extension pixels.

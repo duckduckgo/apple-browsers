@@ -94,6 +94,31 @@ enum WebExtensionPixel: PixelKitEvent {
     }
 }
 
+@available(macOS 15.4, *)
+private extension DuckDuckGoWebExtensionType {
+
+    var installedPixel: WebExtensionPixel? {
+        switch self {
+        case .embedded: return .embeddedInstalled
+        case .darkReader: return nil
+        }
+    }
+
+    func upgradedPixel(fromVersion: String?, toVersion: String?) -> WebExtensionPixel? {
+        switch self {
+        case .embedded: return .embeddedUpgraded(fromVersion: fromVersion, toVersion: toVersion)
+        case .darkReader: return nil
+        }
+    }
+
+    func installErrorPixel(error: Error) -> WebExtensionPixel? {
+        switch self {
+        case .embedded: return .embeddedInstallError(error: error)
+        case .darkReader: return nil
+        }
+    }
+}
+
 // MARK: - WebExtensionPixelFiring Implementation
 
 struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
@@ -117,12 +142,15 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .loaded
         case .loadError(let error):
             pixel = .loadError(error: error)
-        case .embeddedInstalled:
-            pixel = .embeddedInstalled
-        case .embeddedUpgraded(let fromVersion, let toVersion):
-            pixel = .embeddedUpgraded(fromVersion: fromVersion, toVersion: toVersion)
-        case .embeddedInstallError(let error):
-            pixel = .embeddedInstallError(error: error)
+        case .embeddedInstalled(let type):
+            guard let macPixel = type.installedPixel else { return }
+            pixel = macPixel
+        case .embeddedUpgraded(let type, let fromVersion, let toVersion):
+            guard let macPixel = type.upgradedPixel(fromVersion: fromVersion, toVersion: toVersion) else { return }
+            pixel = macPixel
+        case .embeddedInstallError(let type, let error):
+            guard let macPixel = type.installErrorPixel(error: error) else { return }
+            pixel = macPixel
         }
         PixelKit.fire(pixel, frequency: .dailyAndStandard)
     }

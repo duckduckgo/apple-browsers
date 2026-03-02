@@ -78,7 +78,8 @@ struct Foreground: ForegroundHandling {
         self.isFirstForeground = isFirstForeground
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
         launchAction = LaunchAction(actionToHandle: actionToHandle,
-                                    lastBackgroundDate: lastBackgroundDateStorage.lastBackgroundDate)
+                                    lastBackgroundDate: lastBackgroundDateStorage.lastBackgroundDate,
+                                    isFirstForeground: isFirstForeground)
         let idleReturnEvaluator = IdleReturnEvaluator(
             featureFlagger: appDependencies.featureFlagger,
             privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager

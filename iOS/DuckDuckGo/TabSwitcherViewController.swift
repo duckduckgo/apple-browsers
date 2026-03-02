@@ -245,8 +245,9 @@ class TabSwitcherViewController: UIViewController {
         pickerViewModel.updateScrollProgress(progress)
         tabManager.setBrowsingMode(newMode)
         subscribeToTabChanges()
-        currentSelection = tabManager.currentTabsModel.currentIndex
+        currentSelection = tabsModel.currentIndex
         collectionView.reloadData()
+        updateUIForSelectionMode()
         markCurrentAsViewed(shouldDismiss: false)
         delegate.tabSwitcherDidUpdateBrowsingMode(tabSwitcher: self)
     }
@@ -636,15 +637,6 @@ extension TabSwitcherViewController: TabViewCellDelegate {
 
     func isCurrent(tab: Tab) -> Bool {
         return currentSelection == tabsModel.indexOf(tab: tab)
-    }
-
-    private func removeFavicon(forTab tab: Tab) {
-        DispatchQueue.global(qos: .background).async {
-            if let currentHost = tab.link?.url.host,
-               !self.tabsModel.tabExists(withHost: currentHost) {
-                Favicons.shared.removeTabFavicon(forDomain: currentHost)
-            }
-        }
     }
 
 }

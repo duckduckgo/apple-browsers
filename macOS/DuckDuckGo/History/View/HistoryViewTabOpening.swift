@@ -41,7 +41,7 @@ protocol HistoryViewTabOpening: AnyObject {
  * actual opening tabs and remove the dependency on `WindowControllersManager`.
  */
 protocol URLOpening: AnyObject {
-    @MainActor func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?)
+    @MainActor func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, with: NSEvent?)
 
     @MainActor func openInNewTab(_ urls: [URL], sourceWindow: NSWindow?)
     @MainActor func openInNewWindow(_ urls: [URL], sourceWindow: NSWindow?)
@@ -62,7 +62,7 @@ final class DefaultHistoryViewTabOpener: HistoryViewTabOpening {
     }
 
     @MainActor func open(_ url: URL, window: NSWindow?) {
-        urlOpener().open(url, source: .historyEntry, target: window, event: NSApp.currentEvent)
+        urlOpener().open(url, source: .historyEntry, target: window, with: NSApp.currentEvent)
     }
 
     @MainActor func openInNewTab(_ urls: [URL], sourceWindow: NSWindow?) async {

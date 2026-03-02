@@ -20,31 +20,52 @@
 import Foundation
 import Core
 
+enum TextZoomContext: Hashable {
+    case normal
+    case fireMode
+    
+    var storageKey: String {
+        switch self {
+        case .normal:
+            return "com.duckduckgo.ios.domainTextZoomStorage"
+        case .fireMode:
+            return "com.duckduckgo.ios.fireModeTextZoom"
+        }
+    }
+}
+
 protocol TextZoomCoordinatorProviding {
-    func coordinator(fireMode: Bool) -> TextZoomCoordinating
-    func clearFireModeData()
+    func coordinator(for context: TextZoomContext) -> TextZoomCoordinating
 }
 
 final class TextZoomCoordinatorProvider: TextZoomCoordinatorProviding {
 
-    private let normalCoordinator: TextZoomCoordinating
-    private let fireCoordinator: TextZoomCoordinating
-    private let fireModeStorage: TextZoomStoring
+    private let appSettings: AppSettings
+    private let lock = NSLock()
+    private var coordinators: [TextZoomContext: TextZoomCoordinating] = [:]
 
     init(appSettings: AppSettings) {
-        let normalStorage = TextZoomStorage(key: .domainTextZoomStorage)
-        self.fireModeStorage = TextZoomStorage(key: .fireModeTextZoomStorage)
-
-        self.normalCoordinator = TextZoomCoordinator(appSettings: appSettings, storage: normalStorage)
-        self.fireCoordinator = TextZoomCoordinator(appSettings: appSettings, storage: fireModeStorage)
+        self.appSettings = appSettings
     }
 
-    func coordinator(fireMode: Bool) -> TextZoomCoordinating {
-        fireMode ? fireCoordinator : normalCoordinator
+    func coordinator(for context: TextZoomContext) -> TextZoomCoordinating {
+        lock.lock()
+        defer { lock.unlock() }
+
+        if let existing = coordinators[context] {
+            return existing
+        }
+
+        let storage = TextZoomStorage(storageKey: context.storageKey)
+        let coordinator = TextZoomCoordinator(appSettings: appSettings, storage: storage)
+        coordinators[context] = coordinator
+        return coordinator
     }
 
-    func clearFireModeData() {
-        fireModeStorage.clearAll()
-    }
+}
 
+extension Tab {
+    var textZoomContext: TextZoomContext {
+        self.fireTab ? .fireMode : .normal
+    }
 }

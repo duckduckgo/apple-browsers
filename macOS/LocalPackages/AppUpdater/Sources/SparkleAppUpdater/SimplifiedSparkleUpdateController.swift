@@ -28,7 +28,6 @@ import PixelKit
 import PrivacyConfig
 import Sparkle
 import Subscription
-import SwiftUI
 
 /// Simplified Sparkle update controller.
 ///
@@ -194,12 +193,6 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
         updater?.automaticallyDownloadsUpdates = shouldAutoDownload
         userDriver.areAutomaticUpdatesEnabled = shouldAutoDownload
     }
-
-    // Simplified: Always returns false - no expiration logic
-    public var shouldForceUpdateCheck: Bool { false }
-
-    // Simplified: Always returns false - only "new" behavior
-    public var useLegacyAutoRestartLogic: Bool { false }
 
     public var needsNotificationDot: Bool {
         get {
@@ -697,8 +690,6 @@ extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
         Logger.updates.log("Download complete: \(item.displayVersionString, privacy: .public)")
         updateWideEvent.didCompleteDownload()
         pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidDownloadUpdate))
-
-        userDriver.updateLastUpdateDownloadedDate()
     }
 
     public func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {

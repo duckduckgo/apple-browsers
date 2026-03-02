@@ -27,8 +27,6 @@ import WebKit
 
 struct AppConfiguration {
 
-    private let featureFlagger = AppDependencyProvider.shared.featureFlagger
-
     let atbAndVariantConfiguration = ATBAndVariantConfiguration()
     let persistentStoresConfiguration = PersistentStoresConfiguration()
     let onboardingConfiguration = OnboardingConfiguration()
@@ -40,7 +38,6 @@ struct AppConfiguration {
 
     func start(isBookmarksDBFilePresent: Bool?) throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
-        PixelConfiguration.configure(with: featureFlagger)
 
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 

@@ -59,17 +59,31 @@ final class MockAutoconsentManagement: AutoconsentManaging {
 @MainActor
 final class MockAutoconsentManagementProvider: AutoconsentManagementProviding {
 
-    let normalManagement: MockAutoconsentManagement
-    let fireManagement: MockAutoconsentManagement
+    private var managements: [AutoconsentContext: MockAutoconsentManagement]
+
+    var normalManagement: MockAutoconsentManagement {
+        managements[.normal]!
+    }
+
+    var fireManagement: MockAutoconsentManagement {
+        managements[.fireMode]!
+    }
 
     init(normalManagement: MockAutoconsentManagement? = nil,
          fireManagement: MockAutoconsentManagement? = nil) {
-        self.normalManagement = normalManagement ?? MockAutoconsentManagement()
-        self.fireManagement = fireManagement ?? MockAutoconsentManagement()
+        self.managements = [
+            .normal: normalManagement ?? MockAutoconsentManagement(),
+            .fireMode: fireManagement ?? MockAutoconsentManagement()
+        ]
     }
 
-    func management(fireMode: Bool) -> AutoconsentManaging {
-        fireMode ? fireManagement : normalManagement
+    func management(for context: AutoconsentContext) -> AutoconsentManaging {
+        if let existing = managements[context] {
+            return existing
+        }
+        let mock = MockAutoconsentManagement()
+        managements[context] = mock
+        return mock
     }
 
 }

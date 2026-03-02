@@ -20,7 +20,6 @@ import Foundation
 import Combine
 import AutoconsentStats
 import History
-import PrivacyConfig
 import WebExtensions
 
 /// Coordinates autoconsent events from both user scripts and web extensions,
@@ -30,17 +29,14 @@ final class AutoconsentEventCoordinator {
     private var cancellables = Set<AnyCancellable>()
     private let autoconsentStats: AutoconsentStatsCollecting
     private let historyCoordinating: HistoryCoordinating
-    private let featureFlagger: FeatureFlagger
     private let webExtensionAvailability: WebExtensionAvailabilityProviding
 
     init(autoconsentStats: AutoconsentStatsCollecting,
          historyCoordinating: HistoryCoordinating,
-         featureFlagger: FeatureFlagger,
          webExtensionAvailability: WebExtensionAvailabilityProviding) {
 
         self.autoconsentStats = autoconsentStats
         self.historyCoordinating = historyCoordinating
-        self.featureFlagger = featureFlagger
         self.webExtensionAvailability = webExtensionAvailability
 
         subscribeToNotifications()
@@ -92,8 +88,6 @@ final class AutoconsentEventCoordinator {
 
     private func recordStats(from event: AutoconsentPopupManagedEvent) {
         Task {
-            guard featureFlagger.isFeatureOn(.newTabPageAutoconsentStats) else { return }
-
             let durationInSeconds: TimeInterval = event.duration / 1000.0
             await autoconsentStats.recordAutoconsentAction(
                 clicksMade: Int64(event.totalClicks),

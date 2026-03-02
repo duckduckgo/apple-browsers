@@ -173,8 +173,8 @@ final class TextZoomTests: XCTestCase {
     }
 
     func testWhenUsingDifferentStorageKeys_ThenStoragesAreIsolated() {
-        let normalStorage = TextZoomStorage(key: .domainTextZoomStorage)
-        let fireStorage = TextZoomStorage(key: .fireModeTextZoomStorage)
+        let normalStorage = TextZoomStorage(storageKey: TextZoomContext.normal.storageKey)
+        let fireStorage = TextZoomStorage(storageKey: TextZoomContext.fireMode.storageKey)
         normalStorage.clearAll()
         fireStorage.clearAll()
 
@@ -191,19 +191,6 @@ final class TextZoomTests: XCTestCase {
         fireStorage.clearAll()
         XCTAssertEqual(normalCoordinator.textZoomLevel(forHost: "example.com"), .percent120)
         XCTAssertEqual(fireCoordinator.textZoomLevel(forHost: "example.com"), appSettings.defaultTextZoomLevel)
-    }
-
-    func testTextZoomCoordinatorProvider_ClearFireModeData_OnlyClearsFireStorage() {
-        let provider = TextZoomCoordinatorProvider(appSettings: AppSettingsMock())
-        let normalCoordinator = provider.coordinator(fireMode: false)
-        let fireCoordinator = provider.coordinator(fireMode: true)
-        normalCoordinator.set(textZoomLevel: .percent120, forHost: "normal.com")
-        fireCoordinator.set(textZoomLevel: .percent140, forHost: "fire.com")
-
-        provider.clearFireModeData()
-
-        XCTAssertEqual(normalCoordinator.textZoomLevel(forHost: "normal.com"), .percent120)
-        XCTAssertEqual(fireCoordinator.textZoomLevel(forHost: "fire.com"), AppSettingsMock().defaultTextZoomLevel)
     }
 
 }
@@ -254,7 +241,7 @@ private final class SpyTextZoomStorage: TextZoomStoring {
 final class TextZoomStorageTests: XCTestCase {
 
     private func makeStorage() -> TextZoomStorage {
-        TextZoomStorage(store: InMemoryKeyValueStore(), key: .domainTextZoomStorage)
+        TextZoomStorage(store: InMemoryKeyValueStore(), storageKey: TextZoomContext.normal.storageKey)
     }
 
     func testSetAndGetTextZoomLevel() {

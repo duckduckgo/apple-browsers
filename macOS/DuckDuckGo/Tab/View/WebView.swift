@@ -400,7 +400,7 @@ final class WebView: WKWebView {
 
         return await withCheckedContinuation { continuation in
             self.findInPageCompletionHandler = continuation.resume
-            self.find(string, with: options, maxCount: maxCount)
+            self.find(string, with: options.rawValue, maxCount: maxCount)
         }
     }
 
@@ -414,7 +414,7 @@ final class WebView: WKWebView {
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }()
     // swizzled method to call `_findString:withOptions:maxCount:` without performSelector: usage (as there‘s 3 args)
-    @objc dynamic private func find(_ string: String, with options: _WKFindOptions, maxCount: UInt) {}
+    @objc dynamic private func find(_ string: String, with options: UInt, maxCount: UInt) {}
 
     func clearFindInPageState() {
         guard self.responds(to: Selector.hideFindUI) else {

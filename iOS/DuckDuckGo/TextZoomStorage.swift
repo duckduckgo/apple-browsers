@@ -41,9 +41,9 @@ class TextZoomStorage: TextZoomStoring {
     private let store: KeyValueStoring
     private let key: String
 
-    init(store: KeyValueStoring = UserDefaults.app, key: TextZoomStorageKey) {
+    init(store: KeyValueStoring = UserDefaults.app, storageKey: String) {
         self.store = store
-        self.key = key.rawValue
+        self.key = storageKey
     }
 
     private var textZoomLevels: [String: Int] {

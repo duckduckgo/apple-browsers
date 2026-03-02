@@ -256,10 +256,11 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
 
     /// Runs confirmation flow for manually presented overlays (non-keyboard trigger).
     func performOnProceedForManualPresentation(_ onProceed: @escaping @MainActor () -> Void) {
-        guard isWarningEnabled(), currentState == .idle else {
+        guard isWarningEnabled() else {
             onProceed()
             return
         }
+        guard currentState == .idle else { return }
 
         currentState = .keyDown
         Task { @MainActor in

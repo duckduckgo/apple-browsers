@@ -209,6 +209,52 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
         ])
     }
 
+    func testManualPresentationWhenFlowAlreadyActiveDoesNotProceedOrStartSecondFlow() async throws {
+        // Given
+        var timerCallback: (() -> Void)?
+        var didFirstProceed = false
+        var didSecondProceed = false
+        let timerFactory: (TimeInterval, @escaping () -> Void) -> Timer = { _, callback in
+            timerCallback = callback
+            return Timer()
+        }
+        let manager = WarnBeforeQuitManager(
+            action: .closeTabWithFloatingAIChat,
+            isWarningEnabled: { self.isWarningEnabled },
+            now: { self.now },
+            timerFactory: timerFactory,
+            animationDelay: 0,
+            delegate: mockDelegate
+        )
+
+        let expectations = setupExpectationsForStateChanges(3, manager: manager)
+
+        // When - start manual flow.
+        manager.performOnProceedForManualPresentation {
+            didFirstProceed = true
+        }
+        await fulfillment(of: Array(expectations.prefix(2)), timeout: Constants.expectationTimeout)
+
+        // Re-enter while first flow is active; should be ignored.
+        manager.performOnProceedForManualPresentation {
+            didSecondProceed = true
+        }
+
+        // Then - no bypass on re-entry.
+        XCTAssertFalse(didSecondProceed)
+
+        // Complete first flow by expiring timer.
+        timerCallback?()
+        await fulfillment(of: [expectations[2]], timeout: Constants.expectationTimeout)
+
+        XCTAssertFalse(didFirstProceed)
+        XCTAssertEqual(collectedStates, [
+            .keyDown,
+            .waitingForSecondPress,
+            .completed(shouldProceed: false)
+        ])
+    }
+
     func testInitFiltersDeviceDependentFlags() {
         // Given - Cmd+Q with device-dependent flags mixed in
         let flagsWithDeviceDependent: NSEvent.ModifierFlags = [.command, .numericPad, .function]

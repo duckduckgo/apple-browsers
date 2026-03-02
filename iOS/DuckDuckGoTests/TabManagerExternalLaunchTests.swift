@@ -256,7 +256,7 @@ final class TabManagerExternalLaunchTests {
             featureFlagger: featureFlagger,
             contentScopeExperimentManager: MockContentScopeExperimentManager(),
             appSettings: AppSettingsMock(),
-            textZoomCoordinator: MockTextZoomCoordinator(),
+            textZoomCoordinatorProvider: MockTextZoomCoordinatorProvider(),
             websiteDataManager: MockWebsiteDataManager(),
             fireproofing: MockFireproofing(),
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),

@@ -607,6 +607,8 @@
 		80273AB82ED3E22E00EA03A1 /* SpyDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80273AB72ED3E22B00EA03A1 /* SpyDownloadManager.swift */; };
 		802A826E2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802A826D2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift */; };
 		802A826F2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802A826C2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift */; };
+		8039DBBF2F4A8BA10064C40E /* TextZoomCoordinatorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8039DBBE2F4A8BA10064C40E /* TextZoomCoordinatorProvider.swift */; };
+		803F67E82F48102E0057BD1A /* FireModeCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803F67E72F4810240057BD1A /* FireModeCapability.swift */; };
 		80437D692EFACF2D00D3E896 /* AutoClearSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80437D682EFACF2D00D3E896 /* AutoClearSettingsViewModel.swift */; };
 		80437D6B2EFACF4500D3E896 /* AutoClearSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80437D6A2EFACF4500D3E896 /* AutoClearSettingsView.swift */; };
 		80437D6D2EFB3BDA00D3E896 /* AutoClearSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80437D6C2EFB3BD600D3E896 /* AutoClearSettingsViewModelTests.swift */; };
@@ -2894,6 +2896,8 @@
 		80273AB72ED3E22B00EA03A1 /* SpyDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpyDownloadManager.swift; sourceTree = "<group>"; };
 		802A826C2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsDeleteHelperTests.swift; sourceTree = "<group>"; };
 		802A826D2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsListDataSourceTests.swift; sourceTree = "<group>"; };
+		8039DBBE2F4A8BA10064C40E /* TextZoomCoordinatorProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextZoomCoordinatorProvider.swift; sourceTree = "<group>"; };
+		803F67E72F4810240057BD1A /* FireModeCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireModeCapability.swift; sourceTree = "<group>"; };
 		80437D682EFACF2D00D3E896 /* AutoClearSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearSettingsViewModel.swift; sourceTree = "<group>"; };
 		80437D6A2EFACF4500D3E896 /* AutoClearSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearSettingsView.swift; sourceTree = "<group>"; };
 		80437D6C2EFB3BD600D3E896 /* AutoClearSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearSettingsViewModelTests.swift; sourceTree = "<group>"; };
@@ -6517,6 +6521,7 @@
 		809F9D142EE12CF600943E8A /* Fire */ = {
 			isa = PBXGroup;
 			children = (
+				803F67E72F4810240057BD1A /* FireModeCapability.swift */,
 				80DD30392F2839B3006E1A78 /* Animation */,
 				806DF4082F3B89BD00FBCA3F /* DataClearingCapability.swift */,
 				8065741C2ED917350001497A /* FireExecutor.swift */,
@@ -7123,6 +7128,7 @@
 			children = (
 				859DB80E2CE6263B001F7210 /* TextZoomController.swift */,
 				859DB8122CE6263C001F7210 /* TextZoomCoordinator.swift */,
+				8039DBBE2F4A8BA10064C40E /* TextZoomCoordinatorProvider.swift */,
 				859DB80F2CE6263C001F7210 /* TextZoomEditorModel.swift */,
 				859DB8102CE6263C001F7210 /* TextZoomEditorView.swift */,
 				859DB8112CE6263C001F7210 /* TextZoomLevel.swift */,
@@ -11848,6 +11854,7 @@
 				AA2000020000000000000002 /* PrivacyStats/PrivacyStatsProviding.swift in Sources */,
 				AA2000030000000000000003 /* PrivacyStats/PrivacyStatsDatabase.swift in Sources */,
 				AA2000040000000000000004 /* TabSwitcherTrackerCountViewModel.swift in Sources */,
+				803F67E82F48102E0057BD1A /* FireModeCapability.swift in Sources */,
 				9FF362D82F3DB73F00824B30 /* RebrandedContextualOnboardingDialogs+EndOfJourney.swift in Sources */,
 				83BE9BC3215D69C1009844D9 /* AppConfigurationFetch.swift in Sources */,
 				37CF91622BB474AA00BADCAE /* CrashCollectionOnboardingView.swift in Sources */,
@@ -12079,6 +12086,7 @@
 				C17BA71F2D945A1600562138 /* AutofillCreditCardDetailsViewController.swift in Sources */,
 				C17BA7202D945A1600562138 /* AutofillCreditCardDetailsView.swift in Sources */,
 				9FC555D32E2F4B4100763BEC /* DefaultBrowserPiPTutorialURLProvider.swift in Sources */,
+				8039DBBF2F4A8BA10064C40E /* TextZoomCoordinatorProvider.swift in Sources */,
 				C17BA7212D945A1600562138 /* AutofillCreditCardDetailsViewModel.swift in Sources */,
 				9FD6E6132DFA6B4900C2B032 /* PictureInPictureEvent.swift in Sources */,
 				31951E8E2823003200CAF535 /* AutofillLoginDetailsHeaderView.swift in Sources */,

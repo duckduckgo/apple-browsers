@@ -45,12 +45,18 @@ public extension OnboardingTheme {
 
         /// Primary button background color.
         public let primaryButtonBackgroundColor: Color
+        /// Primary button background color when pressed.
+        public let primaryButtonPressedColor: Color
         /// Primary button foreground/text color.
         public let primaryButtonTextColor: Color
         /// Secondary button background color.
         public let secondaryButtonBackgroundColor: Color
+        /// Secondary button background color when pressed.
+        public let secondaryButtonPressedColor: Color
         /// Secondary button foreground/text color.
         public let secondaryButtonTextColor: Color
+        ///
+        public let backgroundAccent: Color
 
         /// Creates a color palette for onboarding surfaces, text, and controls.
         public init(
@@ -64,9 +70,12 @@ public extension OnboardingTheme {
             optionsListIconColor: Color,
             optionsListTextColor: Color,
             primaryButtonBackgroundColor: Color,
+            primaryButtonPressedColor: Color,
             primaryButtonTextColor: Color,
             secondaryButtonBackgroundColor: Color,
-            secondaryButtonTextColor: Color
+            secondaryButtonPressedColor: Color,
+            secondaryButtonTextColor: Color,
+            backgroundAccent: Color
         ) {
             self.background = background
             self.bubbleBorder = bubbleBorder
@@ -78,9 +87,12 @@ public extension OnboardingTheme {
             self.optionsListIconColor = optionsListIconColor
             self.optionsListTextColor = optionsListTextColor
             self.primaryButtonBackgroundColor = primaryButtonBackgroundColor
+            self.primaryButtonPressedColor = primaryButtonPressedColor
             self.primaryButtonTextColor = primaryButtonTextColor
             self.secondaryButtonBackgroundColor = secondaryButtonBackgroundColor
+            self.secondaryButtonPressedColor = secondaryButtonPressedColor
             self.secondaryButtonTextColor = secondaryButtonTextColor
+            self.backgroundAccent = backgroundAccent
         }
 
         /// Backward-compatible initializer for themes that do not define dedicated secondary button colors.
@@ -95,7 +107,8 @@ public extension OnboardingTheme {
             optionsListIconColor: Color,
             optionsListTextColor: Color,
             primaryButtonBackgroundColor: Color,
-            primaryButtonTextColor: Color
+            primaryButtonTextColor: Color,
+            backgroundAccent: Color
         ) {
             self.init(
                 background: background,
@@ -108,9 +121,12 @@ public extension OnboardingTheme {
                 optionsListIconColor: optionsListIconColor,
                 optionsListTextColor: optionsListTextColor,
                 primaryButtonBackgroundColor: primaryButtonBackgroundColor,
+                primaryButtonPressedColor: primaryButtonBackgroundColor,
                 primaryButtonTextColor: primaryButtonTextColor,
                 secondaryButtonBackgroundColor: primaryButtonBackgroundColor,
-                secondaryButtonTextColor: primaryButtonTextColor
+                secondaryButtonPressedColor: primaryButtonBackgroundColor,
+                secondaryButtonTextColor: primaryButtonTextColor,
+                backgroundAccent: backgroundAccent
             )
         }
     }

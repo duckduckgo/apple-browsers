@@ -206,7 +206,7 @@ class MainViewController: UIViewController {
     let featureDiscovery: FeatureDiscovery
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
-    let textZoomCoordinator: TextZoomCoordinating
+    let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
 
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
@@ -302,7 +302,7 @@ class MainViewController: UIViewController {
         featureFlagger: FeatureFlagger,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
-        textZoomCoordinator: TextZoomCoordinating,
+        textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
         websiteDataManager: WebsiteDataManaging,
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
@@ -365,7 +365,7 @@ class MainViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.fireproofing = fireproofing
-        self.textZoomCoordinator = textZoomCoordinator
+        self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
@@ -2103,7 +2103,8 @@ class MainViewController: UIViewController {
         tabsBarController?.backgroundTabAdded()
     }
 
-    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true) {
+    // TODO: - Make fire tab required to force correct usage when applied app wide
+    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, fireTab: Bool = false) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -2117,7 +2118,7 @@ class MainViewController: UIViewController {
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.selectTab(existing)
         } else {
-            tabManager.addHomeTab()
+            tabManager.addHomeTab(fireTab: fireTab)
         }
         attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
@@ -3607,9 +3608,9 @@ extension MainViewController: TabDelegate {
         keyModifierFlags
     }
 
-    func tabDidRequestNewTab(_ tab: TabViewController) {
+    func tabDidRequestNewTab(_ tab: TabViewController, fireTab: Bool) {
         _ = findInPageView?.resignFirstResponder()
-        newTab()
+        newTab(fireTab: fireTab)
     }
     
     func newTab(reuseExisting: Bool) {
@@ -4855,11 +4856,12 @@ extension MainViewController {
     }
 
     private func showTextZoomEditorIfPossible() {
-        guard let webView = currentTab?.webView else {
+        guard let currentTab, let webView = currentTab.webView else {
             assertionFailure("Expecting current tab with web view")
             return
         }
         Task { @MainActor in
+            let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: currentTab.tabModel.textZoomContext)
             await textZoomCoordinator.showTextZoomEditor(inController: self, forWebView: webView)
         }
     }

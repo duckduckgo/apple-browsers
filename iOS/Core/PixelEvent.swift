@@ -1479,7 +1479,7 @@ extension Pixel {
         case aiChatLegacyOmnibarAichatButtonPressed
         case aiChatLegacyOmnibarBackButtonPressed
 
-        // MARK: iPad Toggle Metrics
+        // MARK: iPad Toggle
         case aiChatIPadTogglePromptSubmitted
         case aiChatIPadToggleURLSubmitted
         case aiChatOmnibarQuerySubmittedIPadToggleEnabled
@@ -2993,7 +2993,7 @@ extension Pixel.Event {
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
         case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
 
-        // MARK: iPad Toggle Metrics
+        // MARK: iPad Toggle
         case .aiChatIPadTogglePromptSubmitted: return "m_aichat_ipad_toggle_prompt_submitted"
         case .aiChatIPadToggleURLSubmitted: return "m_aichat_ipad_toggle_url_submitted"
         case .aiChatOmnibarQuerySubmittedIPadToggleEnabled: return "m_aichat_omnibar_query_submitted_ipad_toggle_enabled"

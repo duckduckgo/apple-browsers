@@ -91,7 +91,10 @@ public struct DefaultScriptRequestValidator: ScriptRequestValidator {
         path = path.hasPrefix("/") ? String(path.dropFirst()) : path
 
         // Verify the path is a known valid subscription path
-        guard allValidPaths.contains(path) else { return false }
+        guard allValidPaths.contains(path) else {
+            assertionFailure("Attempted to request a token for an invalid path: \(path)")
+            return false
+        }
 
         // Verify the host matches the expected subscription domain
         let expectedHost = subscriptionManager.url(for: .baseURL).host

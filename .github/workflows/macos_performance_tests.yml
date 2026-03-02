@@ -225,6 +225,13 @@ jobs:
         echo "Generated insert-statements.sql:"
         cat insert-statements.sql
 
+    - name: Upload xcresult files (passed on retry)
+      uses: actions/upload-artifact@v4
+      with:
+        name: "xcresult-${{ matrix.runner }}"
+        path: "macOS/DerivedData/Logs/Test/*.xcresult"
+        retention-days: 1
+        
     - name: Upload memory metrics
       uses: actions/upload-artifact@v4
       with:

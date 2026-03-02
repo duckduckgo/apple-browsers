@@ -142,13 +142,6 @@ extension Pixel {
         case settingsAutoconsentOn
         case settingsAutoconsentOff
 
-        // Used to compare engagement vs old menu
-        case sheetBrowsingMenuSettings
-        case sheetBrowsingMenuAIChat
-        case sheetBrowsingMenuVPN
-        case sheetBrowsingMenuPasswords
-        case sheetBrowsingMenuNewDuckAddress
-
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuOpenedError
@@ -1727,12 +1720,6 @@ extension Pixel.Event {
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
-
-        case .sheetBrowsingMenuSettings: return "m_sheet-menu_settings"
-        case .sheetBrowsingMenuAIChat: return "m_sheet-menu_aichat"
-        case .sheetBrowsingMenuVPN: return "m_sheet-menu_vpn"
-        case .sheetBrowsingMenuPasswords: return "m_sheet-menu_passwords"
-        case .sheetBrowsingMenuNewDuckAddress: return "m_sheet-menu_new-duck-address"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"

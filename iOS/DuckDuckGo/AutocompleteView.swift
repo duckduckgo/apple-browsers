@@ -26,6 +26,20 @@ struct AutocompleteView: View {
 
     @ObservedObject var model: AutocompleteViewModel
 
+    private enum SectionOrder {
+        case topHits, ddgSuggestions, localResults, aiChat
+    }
+
+    /// Returns true if no sections after `section` in display order have suggestions.
+    private func isLastSection(_ section: SectionOrder) -> Bool {
+        switch section {
+        case .aiChat: return true
+        case .localResults: return model.aiChatSuggestions.isEmpty
+        case .ddgSuggestions: return model.localResults.isEmpty && model.aiChatSuggestions.isEmpty
+        case .topHits: return model.ddgSuggestions.isEmpty && model.localResults.isEmpty && model.aiChatSuggestions.isEmpty
+        }
+    }
+
     var body: some View {
         List {
             if model.isMessageVisible {
@@ -37,31 +51,36 @@ struct AutocompleteView: View {
                     model.onShownToUser()
                 }
             }
-            
+
             SuggestionsSection(suggestions: model.topHits,
                                query: model.query,
+                               hideLastSeparator: model.usePlainListStyle && isLastSection(.topHits),
                                onSuggestionSelected: model.onSuggestionSelected,
                                onSuggestionDeleted: model.deleteSuggestion)
 
             SuggestionsSection(suggestions: model.ddgSuggestions,
                                query: model.query,
+                               hideLastSeparator: model.usePlainListStyle && isLastSection(.ddgSuggestions),
                                onSuggestionSelected: model.onSuggestionSelected,
                                onSuggestionDeleted: model.deleteSuggestion)
 
             SuggestionsSection(suggestions: model.localResults,
                                query: model.query,
+                               hideLastSeparator: model.usePlainListStyle && isLastSection(.localResults),
                                onSuggestionSelected: model.onSuggestionSelected,
                                onSuggestionDeleted: model.deleteSuggestion)
 
             SuggestionsSection(suggestions: model.aiChatSuggestions,
                                query: model.query,
+                               hideLastSeparator: model.usePlainListStyle && isLastSection(.aiChat),
                                onSuggestionSelected: model.onSuggestionSelected,
                                onSuggestionDeleted: model.deleteSuggestion)
 
         }
-        .offset(x: 0, y: -28)
-        .padding(.bottom, -20)
-        .padding(.top, model.isPad ? 10 : 0)
+        .modifier(PlainListStyleModifier(isEnabled: model.usePlainListStyle))
+        .offset(x: 0, y: model.usePlainListStyle ? 0 : -28)
+        .padding(.bottom, model.usePlainListStyle ? 0 : -20)
+        .padding(.top, model.usePlainListStyle ? 0 : (model.isPad ? 10 : 0))
         .modifier(HideScrollContentBackground())
         .background(Color(designSystemColor: .background))
         .modifier(CompactSectionSpacing())
@@ -105,6 +124,20 @@ private struct HistoryMessageView: View {
         }
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity)
+    }
+
+}
+
+private struct PlainListStyleModifier: ViewModifier {
+
+    let isEnabled: Bool
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.listStyle(.plain)
+        } else {
+            content
+        }
     }
 
 }
@@ -161,10 +194,12 @@ private struct SuggestionsSection: View {
 
     let suggestions: [AutocompleteViewModel.SuggestionModel]
     let query: String?
+    var hideLastSeparator: Bool = false
     var onSuggestionSelected: (AutocompleteViewModel.SuggestionModel) -> Void
     var onSuggestionDeleted: (AutocompleteViewModel.SuggestionModel) -> Void
 
     let selectedColor = Color(designSystemColor: .accent)
+
     let unselectedColor = Color(designSystemColor: .surface)
 
     private struct Metrics {
@@ -182,8 +217,23 @@ private struct SuggestionsSection: View {
                  .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
                  .listRowInsets(Metrics.rowInsets)
                  .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
+                 .modifier(HideLastSeparatorModifier(isLastRow: hideLastSeparator && index == suggestions.count - 1))
                  .modifier(SwipeDeleteHistoryModifier(suggestion: suggestions[index], onSuggestionDeleted: onSuggestionDeleted))
             }
+        }
+    }
+
+}
+
+private struct HideLastSeparatorModifier: ViewModifier {
+
+    let isLastRow: Bool
+
+    func body(content: Content) -> some View {
+        if isLastRow {
+            content.listRowSeparator(.hidden)
+        } else {
+            content
         }
     }
 

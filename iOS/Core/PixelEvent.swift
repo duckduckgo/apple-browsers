@@ -1478,6 +1478,15 @@ extension Pixel {
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
         case aiChatLegacyOmnibarBackButtonPressed
+
+        // MARK: iPad Toggle
+        case aiChatIPadTogglePromptSubmitted
+        case aiChatIPadToggleURLSubmitted
+        case aiChatOmnibarQuerySubmittedIPadToggleEnabled
+        case aiChatIPadToggleRecentChatSelectedPinned
+        case aiChatIPadToggleRecentChatSelected
+        case aiChatIPadToggleEnabledOnAppOpen
+        case aiChatIPadToggleDisabledOnAppOpen
         
         // MARK: AI Chat History Deletion
         case aiChatHistoryDeleteSuccessful
@@ -2989,6 +2998,15 @@ extension Pixel.Event {
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
         case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
+
+        // MARK: iPad Toggle
+        case .aiChatIPadTogglePromptSubmitted: return "m_aichat_ipad_toggle_prompt_submitted"
+        case .aiChatIPadToggleURLSubmitted: return "m_aichat_ipad_toggle_url_submitted"
+        case .aiChatOmnibarQuerySubmittedIPadToggleEnabled: return "m_aichat_omnibar_query_submitted_ipad_toggle_enabled"
+        case .aiChatIPadToggleRecentChatSelectedPinned: return "m_aichat_ipad_toggle_recent_chat_selected_pinned"
+        case .aiChatIPadToggleRecentChatSelected: return "m_aichat_ipad_toggle_recent_chat_selected"
+        case .aiChatIPadToggleEnabledOnAppOpen: return "m_aichat_ipad_toggle_enabled_on_app_open"
+        case .aiChatIPadToggleDisabledOnAppOpen: return "m_aichat_ipad_toggle_disabled_on_app_open"
         
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"

@@ -540,6 +540,17 @@ extension AppDelegate {
         }
     }
 
+    @MainActor
+    @objc func exportStartupStats(_ sender: Any?) {
+        do {
+            let windowContext = WindowContext(windowControllersManager: windowControllersManager)
+            let exporter = StartupMetricsExporter(profiler: startupProfiler, previousSessionRestored: startupPreferences.restorePreviousSession, windowContext: windowContext)
+            try exporter.exportMetricsToTemporaryURL()
+        } catch {
+            Logger.general.error("Failed to export Startup Metrics: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @objc func resetRemoteMessages(_ sender: Any?) {
         Task {
             await remoteMessagingClient.store?.resetRemoteMessages()
@@ -796,10 +807,7 @@ extension AppDelegate {
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
-#if SPARKLE
-        guard let dockCustomizer = Application.appDelegate.dockCustomization else { return }
-        dockCustomizer.resetData()
-#endif
+        Application.appDelegate.dockCustomization?.resetData()
     }
 
     @objc func resetLaunchDateToToday(_ sender: Any?) {

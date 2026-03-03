@@ -2997,6 +2997,8 @@
 		B5C980FF2F229F5C00655B21 /* XCTOptions+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C980FE2F229F5C00655B21 /* XCTOptions+Helpers.swift */; };
 		B5CBB60B2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
 		B5CBB60C2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
+		B5D62C802F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */; };
+		B5D62C812F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */; };
 		B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
 		B5DE8DAA2EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
 		B5E197EB2E8C645500C447CC /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */; };
@@ -5880,6 +5882,7 @@
 		B5C980F92F229EB800655B21 /* XCUIApplication+AllocationStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+AllocationStats.swift"; sourceTree = "<group>"; };
 		B5C980FE2F229F5C00655B21 /* XCTOptions+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCTOptions+Helpers.swift"; sourceTree = "<group>"; };
 		B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTitleView.swift; sourceTree = "<group>"; };
+		B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsExporter.swift; sourceTree = "<group>"; };
 		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
 		B5E7B6BF2ED4A52C00094EDF /* TitleDisplayPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleDisplayPolicy.swift; sourceTree = "<group>"; };
@@ -12269,6 +12272,7 @@
 				3727A5A62F17F57A002E10E1 /* MemoryPressureReporter.swift */,
 				37E4778F2EF006E1006369D6 /* MemoryUsageMonitor.swift */,
 				B5F31F482F50C7950060E5C1 /* PerformanceMetricsReporter.swift */,
+				B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */,
 				B57B123E2F4CFAFD00B610F1 /* StartupMetricsBuckets.swift */,
 				B57B12382F4CE34100B610F1 /* StartupMetricsPixel.swift */,
 				B55832282F4DF679008135C9 /* StartupMetrics.swift */,
@@ -14455,6 +14459,7 @@
 				B5F31F462F50C7650060E5C1 /* SystemEnvironment.swift in Sources */,
 				3706FB1B293F65D500E42796 /* SafariDataImporter.swift in Sources */,
 				3199AF702C80734A003AEBDC /* DuckPlayerOnboardingDecider.swift in Sources */,
+				B5D62C812F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */,
 				3706FB1D293F65D500E42796 /* StatisticsLoader.swift in Sources */,
 				B5C2886B2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */,
 				56406D4C2C636A8900BF8FA2 /* SpecialPagesUserScriptExtension.swift in Sources */,
@@ -16919,6 +16924,7 @@
 				4B59023E26B35F3600489384 /* ChromiumLoginReader.swift in Sources */,
 				9F872D982B8DA9F800138637 /* Bookmarks+Tab.swift in Sources */,
 				85D885B326A5A9DE0077C374 /* NSAlert+PasswordManager.swift in Sources */,
+				B5D62C802F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */,
 				983DFB2528B67036006B7E34 /* UserContentUpdating.swift in Sources */,
 				BD7090D22C52ECFE009EED82 /* UnifiedMetadataCollector.swift in Sources */,
 				BD7090CF2C5182FB009EED82 /* UnifiedFeedbackFormView.swift in Sources */,

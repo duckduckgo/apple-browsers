@@ -126,7 +126,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-         dockCustomizer: DockCustomization? = nil,
+         dockCustomizer: DockCustomization?,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          notificationCenter: NotificationCenter = .default,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
@@ -199,30 +199,28 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
-#if SPARKLE
-        if let dockCustomizer = self.dockCustomizer {
-            if dockCustomizer.isAddedToDock == false {
-                if dockCustomizer.shouldShowNotification {
-                    let addToDockMenuItem = NSMenuItem(action: #selector(addToDock(_:)))
-                        .targetting(self)
-                    addToDockMenuItem.view = createMenuItemWithFeatureIndicator(
-                        title: UserText.addDuckDuckGoToDock,
-                        image: moreOptionsMenuIconsProvider.addToDockIcon) {
-                            if let target = addToDockMenuItem.target {
-                                _ = target.perform(addToDockMenuItem.action, with: addToDockMenuItem)
-                            }
-                            self.cancelTracking()
+        if let dockCustomizer = self.dockCustomizer,
+           dockCustomizer.isAddedToDock == false {
+
+            if dockCustomizer.shouldShowNotification {
+                let addToDockMenuItem = NSMenuItem(action: #selector(addToDock(_:)))
+                    .targetting(self)
+                addToDockMenuItem.view = createMenuItemWithFeatureIndicator(
+                    title: UserText.addDuckDuckGoToDock,
+                    image: moreOptionsMenuIconsProvider.addToDockIcon) {
+                        if let target = addToDockMenuItem.target {
+                            _ = target.perform(addToDockMenuItem.action, with: addToDockMenuItem)
                         }
-                    addItem(addToDockMenuItem)
-                } else {
-                    let addToDockMenuItem = NSMenuItem(title: UserText.addDuckDuckGoToDock, action: #selector(addToDock(_:)))
-                        .targetting(self)
-                        .withImage(moreOptionsMenuIconsProvider.addToDockIcon)
-                    addItem(addToDockMenuItem)
-                }
+                        self.cancelTracking()
+                    }
+                addItem(addToDockMenuItem)
+            } else {
+                let addToDockMenuItem = NSMenuItem(title: UserText.addDuckDuckGoToDock, action: #selector(addToDock(_:)))
+                    .targetting(self)
+                    .withImage(moreOptionsMenuIconsProvider.addToDockIcon)
+                addItem(addToDockMenuItem)
             }
         }
-#endif
         if !defaultBrowserPreferences.isDefault {
             let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser, action: #selector(setAsDefault(_:)))
                 .targetting(self)

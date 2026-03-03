@@ -71,7 +71,7 @@ public struct TrackerProtectionEventMapper {
     // MARK: - Classification helpers
 
     public static func isThirdPartyRequest(_ tracker: TrackerProtectionSubfeature.TrackerDetection) -> Bool {
-        return TrackerBlockingReason(rawValue: tracker.reason ?? "") == .thirdPartyRequest
+        return TrackerBlockingReason(rawValue: tracker.reason ?? "")?.isNonTrackerThirdPartyRequest ?? false
     }
 
     /// Returns true when request and page share the same eTLD+1.

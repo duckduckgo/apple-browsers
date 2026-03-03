@@ -35,11 +35,12 @@ public enum TrackerBlockingReason: String {
     // Feature-level reasons (from tracker-protection.js)
     case unprotectedDomain = "unprotectedDomain"
     case thirdPartyRequest = "thirdPartyRequest"
+    case affiliatedThirdPartyRequest = "thirdPartyRequestOwnedByFirstParty"
 
     /// Map to the native AllowReason used by DetectedRequest / privacy dashboard.
     public var allowReason: AllowReason {
         switch self {
-        case .firstParty:
+        case .firstParty, .affiliatedThirdPartyRequest:
             return .ownedByFirstParty
         case .ruleException:
             return .ruleException
@@ -48,5 +49,12 @@ public enum TrackerBlockingReason: String {
         default:
             return .otherThirdPartyRequest
         }
+    }
+
+    /// True for non-tracker third-party requests that should be routed to the
+    /// thirdPartyRequest path, avoiding tracker-only side effects
+    /// (ad-click attribution, blocked-tracker stats, FB callback).
+    public var isNonTrackerThirdPartyRequest: Bool {
+        self == .thirdPartyRequest || self == .affiliatedThirdPartyRequest
     }
 }

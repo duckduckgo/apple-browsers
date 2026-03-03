@@ -190,11 +190,11 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
 
     // MARK: - P0-5: Non-tracker affiliated classification
 
-    func testAffiliatedNonTracker_firstPartyReason_mapsToOwnedByFirstParty() {
+    func testAffiliatedNonTracker_affiliatedReason_mapsToOwnedByFirstParty() {
         let tracker = makeTracker(
             url: "https://fbcdn.net/image.jpg",
             blocked: false,
-            reason: "first party",
+            reason: "thirdPartyRequestOwnedByFirstParty",
             pageUrl: "https://facebook.com",
             entityName: "Facebook",
             ownerName: "Facebook, Inc."
@@ -207,6 +207,21 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
             XCTFail("Expected allowed state with ownedByFirstParty reason")
         }
         XCTAssertEqual(request.entityName, "Facebook")
+    }
+
+    func testAffiliatedNonTracker_routesAsThirdPartyRequest() {
+        let tracker = makeTracker(
+            url: "https://fbcdn.net/image.jpg",
+            blocked: false,
+            reason: "thirdPartyRequestOwnedByFirstParty",
+            pageUrl: "https://facebook.com",
+            entityName: "Facebook",
+            ownerName: "Facebook, Inc."
+        )
+        XCTAssertTrue(
+            TrackerProtectionEventMapper.isThirdPartyRequest(tracker),
+            "Affiliated non-tracker should route as thirdPartyRequest, not through the tracker path"
+        )
     }
 
     func testUnaffiliatedNonTracker_thirdPartyRequestReason_mapsToOtherThirdPartyRequest() {
@@ -282,7 +297,18 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
 
     func testIsThirdPartyRequest_firstPartyReason_returnsFalse() {
         let tracker = makeTracker(reason: "first party")
-        XCTAssertFalse(TrackerProtectionEventMapper.isThirdPartyRequest(tracker))
+        XCTAssertFalse(
+            TrackerProtectionEventMapper.isThirdPartyRequest(tracker),
+            "Entity-affiliated tracker should stay on the tracker path, not be routed as thirdPartyRequest"
+        )
+    }
+
+    func testIsThirdPartyRequest_affiliatedThirdPartyReason_returnsTrue() {
+        let tracker = makeTracker(reason: "thirdPartyRequestOwnedByFirstParty")
+        XCTAssertTrue(
+            TrackerProtectionEventMapper.isThirdPartyRequest(tracker),
+            "Affiliated non-tracker should route as thirdPartyRequest to avoid tracker side effects"
+        )
     }
 
     func testIsThirdPartyRequest_nilReason_returnsFalse() {

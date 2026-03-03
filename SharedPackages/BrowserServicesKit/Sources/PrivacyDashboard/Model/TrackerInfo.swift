@@ -36,7 +36,7 @@ public struct TrackerInfo: Encodable {
     // MARK: - Collecting detected elements
 
     public mutating func addDetectedTracker(_ tracker: DetectedRequest, onPageWithURL url: URL) {
-        guard tracker.pageUrl == url.absoluteString else { return }
+        guard Self.isAssociatedWithPage(tracker.pageUrl, tabURL: url) else { return }
         trackers.insert(tracker)
     }
 
@@ -45,8 +45,24 @@ public struct TrackerInfo: Encodable {
     }
 
     public mutating func addInstalledSurrogateHost(_ host: String, for tracker: DetectedRequest, onPageWithURL url: URL) {
-        guard tracker.pageUrl == url.absoluteString else { return }
+        guard Self.isAssociatedWithPage(tracker.pageUrl, tabURL: url) else { return }
         installedSurrogates.insert(host)
+    }
+
+    /// Check whether a C-S-S–reported `pageUrl` belongs to the same page as the
+    /// native tab URL.  Exact string match is tried first (fast path); on mismatch
+    /// we fall back to same-origin (scheme + host + port) comparison.
+    ///
+    /// The fallback is needed because iframe-originated events may report a
+    /// top-frame URL whose string representation differs from the native tab URL
+    /// (trailing slash, fragment, percent-encoding).  Same-origin is narrow enough
+    /// to prevent cross-site mis-association while tolerating these shape differences.
+    static func isAssociatedWithPage(_ pageUrl: String, tabURL: URL) -> Bool {
+        if pageUrl == tabURL.absoluteString { return true }
+        guard let eventURL = URL(string: pageUrl) else { return false }
+        return eventURL.scheme == tabURL.scheme
+            && eventURL.host == tabURL.host
+            && eventURL.port == tabURL.port
     }
 
     // MARK: - Helper accessors

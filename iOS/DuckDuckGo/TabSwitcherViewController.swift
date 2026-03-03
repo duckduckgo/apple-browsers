@@ -137,7 +137,11 @@ class TabSwitcherViewController: UIViewController {
     private var trackerCountCancellable: AnyCancellable?
     private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
     private var lastAppliedTrackerCountState: TabSwitcherTrackerCountViewModel.State?
-    private var trackerInfoModel: InfoPanelView.Model?
+    private var _trackerInfoModel: InfoPanelView.Model?
+    private var activeTrackerInfoModel: InfoPanelView.Model? {
+        guard tabManager.currentBrowsingMode == .normal else { return nil }
+        return _trackerInfoModel
+    }
 
     private let initialTrackerCountState: TabSwitcherTrackerCountViewModel.State
     
@@ -458,13 +462,13 @@ class TabSwitcherViewController: UIViewController {
         lastAppliedTrackerCountState = state
 
         guard state.isVisible else {
-            trackerInfoModel = nil
+            _trackerInfoModel = nil
             updateTrackerInfoHeaderIfVisible()
             collectionView.collectionViewLayout.invalidateLayout()
             return
         }
 
-        trackerInfoModel = .trackerInfoPanel(
+        _trackerInfoModel = .trackerInfoPanel(
             state: state,
             onTap: { },
             onInfo: { [weak self] in
@@ -484,7 +488,7 @@ class TabSwitcherViewController: UIViewController {
             return
         }
 
-        header.configure(in: self, model: trackerInfoModel)
+        header.configure(in: self, model: activeTrackerInfoModel)
     }
 
     private func presentHideTrackerCountAlert() {
@@ -749,7 +753,7 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
             return UICollectionReusableView()
         }
 
-        header.configure(in: self, model: trackerInfoModel)
+        header.configure(in: self, model: activeTrackerInfoModel)
         return header
     }
 
@@ -854,7 +858,7 @@ extension TabSwitcherViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         referenceSizeForHeaderInSection section: Int) -> CGSize {
-        guard trackerInfoModel != nil else { return .zero }
+        guard activeTrackerInfoModel != nil else { return .zero }
         return CGSize(width: collectionView.bounds.width, height: TabSwitcherTrackerInfoHeaderView.estimatedHeight)
     }
 

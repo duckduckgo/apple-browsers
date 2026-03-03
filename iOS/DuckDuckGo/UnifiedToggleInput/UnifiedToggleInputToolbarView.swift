@@ -61,7 +61,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     var isStopMode: Bool = false {
         didSet {
             guard isStopMode != oldValue else { return }
-            submitButton.isHidden = isStopMode
+            submitButton.isHidden = isStopMode || isSubmitButtonHidden
             stopButton.isHidden = !isStopMode
         }
     }

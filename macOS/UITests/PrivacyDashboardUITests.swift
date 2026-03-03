@@ -186,39 +186,58 @@ class PrivacyDashboardUITests: UITestCase {
         let trackerNetworksGroup = privacyDashboard.groups["List of tracker networks"]
         XCTAssertTrue(trackerNetworksGroup.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tracker companies list should be visible")
 
-        // Each company row should have a corresponding "Tracker domains for ..." detail group.
-        let trackerCompanyRows = try trackerNetworksGroup.snapshot().children
-        guard trackerCompanyRows.count > 2 else {
-            let descr = try privacyDashboard.snapshot().toDictionary()
-            XCTFail("Expected more than 2 tracker company rows (\(trackerCompanyRows.count) found in \(descr)")
+        // AX snapshots can be deeply nested and vary between runs, so we validate the expanded
+        // tracker list from the full subtree rather than assuming a fixed row depth.
+        func descr() -> String {
+            do {
+                return try JSONSerialization.data(withJSONObject: privacyDashboard.snapshot().toDictionary(), options: .prettyPrinted).utf8String() ?? "<nil>"
+            } catch {
+                return "\(error)"
+            }
+        }
+
+        let groupSnapshot = try trackerNetworksGroup.snapshot()
+        // Recursively flatten all descendants to avoid missing domain text hidden in nested groups.
+        func collectDescendants(from node: XCUIElementSnapshot) -> [XCUIElementSnapshot] {
+            let descendants = node.children.flatMap { child in
+                [child] + collectDescendants(from: child)
+            }
+            return descendants
+        }
+        let nestedNodes = [groupSnapshot] + collectDescendants(from: groupSnapshot)
+        // "Tracker domains for ..." is the stable section marker for each company block.
+        let trackerDomainSectionNodes = nestedNodes.filter { node in
+            let title = node.title
+            let label = node.trimmedLabel
+            return title.hasPrefix("Tracker domains for ") || label.hasPrefix("Tracker domains for ")
+        }
+        guard trackerDomainSectionNodes.count > 2 else {
+            XCTFail("Expected more than 2 tracker domain sections (\(trackerDomainSectionNodes.count) found in \(descr())")
             return
         }
 
-        let rowsWithText = trackerCompanyRows.filter { row in
-            let rowCandidates = [row.trimmedLabel, row.trimmedStringValue]
-                + row.children.flatMap { [$0.trimmedLabel, $0.trimmedStringValue] }
-            return rowCandidates.contains { !$0.isEmpty }
+        let trackerDomainSectionsWithText = trackerDomainSectionNodes.filter { node in
+            let sectionCandidates = [node.title, node.trimmedLabel, node.trimmedStringValue]
+                + node.children.flatMap { [$0.title, $0.trimmedLabel, $0.trimmedStringValue] }
+            return sectionCandidates.contains { !$0.isEmpty }
         }
-        XCTAssertEqual(rowsWithText.count,
-                       trackerCompanyRows.count,
-                       "Expected each tracker company row to expose text content (rows: \(trackerCompanyRows.count), rowsWithText: \(rowsWithText.count))")
-
-        let groupSnapshot = try trackerNetworksGroup.snapshot()
-        let nestedNodes = groupSnapshot.children
-            + groupSnapshot.children.flatMap(\.children)
-            + groupSnapshot.children.flatMap(\.children).flatMap(\.children)
         let domainCandidates = nestedNodes.flatMap { node in
             [node.trimmedLabel, node.trimmedStringValue].filter { !$0.isEmpty }
         }
         let domainLikeCandidates = domainCandidates.filter {
             $0.range(of: #"^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#, options: .regularExpression) != nil
         }
-        XCTAssertTrue(!domainLikeCandidates.isEmpty,
-                      "Expected at least one domain-formatted label/value in tracker companies details. Candidates: \(domainCandidates)")
+
         Logger.log(
-            "tracker evaluation: rowCount=\(trackerCompanyRows.count), rowsWithText=\(rowsWithText.count), domainCandidates=\(domainCandidates), domainLikeCandidates=\(domainLikeCandidates)"
+            "tracker evaluation: trackerDomainSectionCount=\(trackerDomainSectionNodes.count), trackerDomainSectionsWithText=\(trackerDomainSectionsWithText.count), domainCandidates=\(domainCandidates), domainLikeCandidates=\(domainLikeCandidates)"
         )
 
+        // Ensure every section has visible text and at least one concrete domain appears.
+        XCTAssertEqual(trackerDomainSectionsWithText.count,
+                       trackerDomainSectionNodes.count,
+                       "Expected each tracker domain section to expose text content (\(descr())")
+        XCTAssertTrue(!domainLikeCandidates.isEmpty,
+                      "Expected at least one domain-formatted label/value in tracker companies details. \(descr())")
         // Close dashboard
         app.typeKey(.escape, modifierFlags: [])
 

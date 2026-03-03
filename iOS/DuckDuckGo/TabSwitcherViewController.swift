@@ -246,7 +246,10 @@ class TabSwitcherViewController: UIViewController {
         tabManager.setBrowsingMode(newMode)
         subscribeToTabChanges()
         currentSelection = tabsModel.currentIndex
-        collectionView.reloadData()
+        UIView.performWithoutAnimation {
+            collectionView.reloadData()
+            collectionView.layoutIfNeeded()
+        }
         updateUIForSelectionMode()
         markCurrentAsViewed(shouldDismiss: false)
         delegate.tabSwitcherDidUpdateBrowsingMode(tabSwitcher: self)
@@ -429,6 +432,7 @@ class TabSwitcherViewController: UIViewController {
 
     private func subscribeToTabChanges() {
         tabObserverCancellable = tabsModel.tabsPublisher
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.collectionView.reloadData()

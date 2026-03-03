@@ -30,7 +30,7 @@ final class AIChatHistoryListViewController: UIViewController {
 
     // MARK: - Constants
 
-    private enum Constants {
+    fileprivate enum Constants {
         static let cellIdentifier = "AIChatHistoryCell"
         static let iconSize: CGFloat = 16
         static let iconTextSpacing: CGFloat = 12
@@ -269,11 +269,13 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
 }
 
 private final class AIChatHistoryCell: UITableViewCell {
-    private static let separatorLeadingInset: CGFloat = 44
+    private static let separatorLeadingInset: CGFloat = AIChatHistoryListViewController.Constants.horizontalInset
+        + AIChatHistoryListViewController.Constants.iconSize
+        + AIChatHistoryListViewController.Constants.iconTextSpacing
 
     private lazy var customSeparator: UIView = {
         let view = UIView()
-        view.backgroundColor = .separator
+        view.backgroundColor = UIColor(designSystemColor: .lines)
         view.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(view)
         NSLayoutConstraint.activate([

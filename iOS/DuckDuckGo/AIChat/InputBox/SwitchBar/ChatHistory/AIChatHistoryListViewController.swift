@@ -224,6 +224,12 @@ extension AIChatHistoryListViewController: UITableViewDataSource {
         let chat = chats[indexPath.row]
         configureCell(cell, with: chat)
 
+        if isIPadExperience && indexPath.row == chats.count - 1 {
+            cell.separatorInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: .greatestFiniteMagnitude)
+        } else {
+            cell.separatorInset = tableView.separatorInset
+        }
+
         return cell
     }
 

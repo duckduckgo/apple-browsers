@@ -282,9 +282,16 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     }
 
     override public func handleNewFlow(_ flow: NEAppProxyFlow) -> Bool {
+        defer {
+            if !(flow is NEAppProxyTCPFlow) {
+                logger.error("🦆 [handleNewFlow] exiting for non-TCP flow")
+            }
+        }
+
         logNewTCPFlow(flow)
 
         guard let flow = flow as? NEAppProxyTCPFlow else {
+            logger.debug("🦆 [handleNewFlow] Non-TCP flow received: \(String(reflecting: type(of: flow)), privacy: .public) - appID: \(String(describing: flow.metaData.sourceAppSigningIdentifier), privacy: .public)")
             logFlowHandlingFailure(flow, message: "Expected a TCP flow, but got something else.  We're ignoring the flow.")
             return false
         }
@@ -337,24 +344,31 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
 
         return true
     }
-
+/*
     override public func handleNewUDPFlow(_ flow: NEAppProxyUDPFlow, initialRemoteEndpoint remoteEndpoint: NWEndpoint) -> Bool {
 
-        guard let remoteEndpoint = remoteEndpoint as? NWHostEndpoint,
-              !isDnsServer(remoteEndpoint) else {
-            return false
+        defer {
+            logger.error("🦆 [handleNewUDPFlow] exiting")
         }
-
-        let printableRemote = remoteEndpoint.hostname
 
         logger.log(
             level: .debug,
             """
-            [UDP] New flow: \(String(describing: flow), privacy: .public)
-            - remote: \(printableRemote, privacy: .public)
+            🦆 [UDP] New flow (pre-guard): \(String(describing: flow), privacy: .public)
+            - remote: \(String(reflecting: remoteEndpoint), privacy: .public)
             - flowID: \(String(describing: flow.metaData.filterFlowIdentifier?.uuidString), privacy: .public)
             - appID: \(String(describing: flow.metaData.sourceAppSigningIdentifier), privacy: .public)
             """)
+
+        guard let remoteEndpoint = remoteEndpoint as? NWHostEndpoint else {
+            logger.debug("🦆 [UDP] Dropping flow: remoteEndpoint is not NWHostEndpoint (type: \(String(reflecting: type(of: remoteEndpoint)), privacy: .public))")
+            return false
+        }
+
+        guard !isDnsServer(remoteEndpoint) else {
+            logger.debug("🦆 [UDP] Dropping flow: DNS resolver endpoint (\(remoteEndpoint.hostname, privacy: .public):\(remoteEndpoint.port, privacy: .public))")
+            return false
+        }
 
         guard let interface else {
             logger.error("[UDP: \(String(describing: flow), privacy: .public)] Expected an interface to exclude traffic through")
@@ -391,7 +405,7 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
         }
 
         return true
-    }
+    }*/
 
     // MARK: - Path Monitors
 

@@ -18,6 +18,9 @@ public protocol WireGuardGoInterface {
     func bumpSockets(handle: Int32)
     func disableSomeRoamingForBrokenMobileSemantics(handle: Int32)
     func setLogger(context: UnsafeMutableRawPointer?, logFunction: (@convention(c) (UnsafeMutableRawPointer?, Int32, UnsafePointer<CChar>?) -> Void)?)
+    func receivePacket(handle: Int32, buf: UnsafeRawPointer, len: Int32) -> Int32
+    func receivePackets(handle: Int32, buf: UnsafeRawPointer, totalLen: Int32) -> Int32
+    func setPacketCallback(handle: Int32, context: UnsafeMutableRawPointer?, callback: (@convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, Int32, Int32) -> Void)?)
 }
 
 // MARK: - WireGuard Adapter
@@ -206,6 +209,16 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
             } else {
                 return nil
             }
+        }
+    }
+
+    /// The WireGuard tunnel handle, or nil if not started.
+    public var tunnelHandle: Int32? {
+        switch state {
+        case .started(let handle, _):
+            return handle
+        default:
+            return nil
         }
     }
 

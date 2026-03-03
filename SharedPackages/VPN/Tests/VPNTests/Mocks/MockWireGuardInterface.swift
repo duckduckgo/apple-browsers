@@ -79,4 +79,15 @@ final class MockWireGuardInterface: WireGuardGoInterface {
         loggerContext = context
         loggerFunction = logFunction
     }
+
+    func receivePacket(handle: Int32, buf: UnsafeRawPointer, len: Int32) -> Int32 {
+        return 0
+    }
+
+    func receivePackets(handle: Int32, buf: UnsafeRawPointer, totalLen: Int32) -> Int32 {
+        return 0
+    }
+
+    func setPacketCallback(handle: Int32, context: UnsafeMutableRawPointer?, callback: (@convention(c) (UnsafeMutableRawPointer?, UnsafeRawPointer?, Int32, Int32) -> Void)?) {
+    }
 }

@@ -28,6 +28,9 @@ public protocol WireGuardAdapterProtocol: AnyObject, HandshakeReporting {
     /// The name of the tunnel interface, if available.
     var interfaceName: String? { get }
 
+    /// The WireGuard tunnel handle returned by `wgTurnOn`, or nil if not started.
+    var tunnelHandle: Int32? { get }
+
     /// Starts the WireGuard tunnel with the specified configuration.
     ///
     /// - Parameters:

@@ -49,6 +49,7 @@ protocol TabBarViewModel {
     var loadedPageDOMPublisher: PassthroughSubject<Void, Never> { get }
     var isSuspended: Bool { get }
     var isSuspendedPublisher: AnyPublisher<Bool, Never> { get }
+    var hasActiveFormInput: Bool { get }
 }
 
 extension TabViewModel: TabBarViewModel {
@@ -66,6 +67,7 @@ extension TabViewModel: TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
+    var hasActiveFormInput: Bool { tab.hasActiveFormInput }
     var canKillWebContentProcess: Bool { tab.canKillWebContentProcess }
     var crashIndicatorModel: TabCrashIndicatorModel { tab.crashIndicatorModel }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
@@ -1518,9 +1520,10 @@ extension TabBarViewItem: NSMenuDelegate {
         let title = isSuspended ? UserText.resumeTab : UserText.suspendTab
         let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
         menuItem.target = self
-        // Can't suspend the currently active tab or one playing audio/video
+        // Can't suspend the currently active tab, one playing audio/video, or one with an active form
         let isPlayingAudio = !isSuspended && (tabViewModel?.audioState.isPlayingAudio ?? false)
-        menuItem.isEnabled = !isSelected && !isPlayingAudio
+        let isFillingForm  = !isSuspended && (tabViewModel?.hasActiveFormInput ?? false)
+        menuItem.isEnabled = !isSelected && !isPlayingAudio && !isFillingForm
         menu.addItem(menuItem)
     }
 
@@ -1799,6 +1802,7 @@ extension TabBarViewItem {
 
             @Published var isSuspended: Bool = false
             var isSuspendedPublisher: AnyPublisher<Bool, Never> { $isSuspended.eraseToAnyPublisher() }
+            var hasActiveFormInput: Bool = false
 
             init(width: CGFloat, title: String = "Test Title", url: URL? = nil, favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, isLoading: Bool = false, error: WKError? = nil) {
                 self.width = width

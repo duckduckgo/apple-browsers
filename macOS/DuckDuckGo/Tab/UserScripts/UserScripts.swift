@@ -58,6 +58,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
     let faviconScript = FaviconUserScript()
+    let formFocusUserScript = FormFocusUserScript()
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -250,7 +251,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentBlockerRulesScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
-        autofillScript
+        autofillScript,
+        formFocusUserScript,
     ]
 
     @MainActor

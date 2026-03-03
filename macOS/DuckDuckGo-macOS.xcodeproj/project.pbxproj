@@ -3512,6 +3512,8 @@
 		BB80DDD02D75E94D00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */; };
 		BB80DDDB2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */; };
 		BB80DDDC2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */; };
+		BB81081A2F5756D000CA0D3E /* FormFocusUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8108192F5756D000CA0D3E /* FormFocusUserScript.swift */; };
+		BB81081B2F5756D000CA0D3E /* FormFocusUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8108192F5756D000CA0D3E /* FormFocusUserScript.swift */; };
 		BB8DD9E92EDF73A900F75D8E /* QuitSurveyDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8DD9E72EDF73A900F75D8E /* QuitSurveyDecider.swift */; };
 		BB8DD9EA2EDF73A900F75D8E /* QuitSurveyDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8DD9E72EDF73A900F75D8E /* QuitSurveyDecider.swift */; };
 		BB8E056E2EE0D22E006CD2E6 /* HomePageSubscriptionCardVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8E056D2EE0D22E006CD2E6 /* HomePageSubscriptionCardVisibilityManager.swift */; };
@@ -6315,6 +6317,7 @@
 		BB7D356F2DB80E040002CDB6 /* TabStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabStyleProviding.swift; sourceTree = "<group>"; };
 		BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresentingTests.swift; sourceTree = "<group>"; };
+		BB8108192F5756D000CA0D3E /* FormFocusUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormFocusUserScript.swift; sourceTree = "<group>"; };
 		BB8DD9E72EDF73A900F75D8E /* QuitSurveyDecider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyDecider.swift; sourceTree = "<group>"; };
 		BB8E056D2EE0D22E006CD2E6 /* HomePageSubscriptionCardVisibilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePageSubscriptionCardVisibilityManager.swift; sourceTree = "<group>"; };
 		BB8E05702EE0D2B9006CD2E6 /* HomePageSubscriptionCardPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePageSubscriptionCardPersistor.swift; sourceTree = "<group>"; };
@@ -11811,6 +11814,7 @@
 		B6BDD9F12940764100F68088 /* UserScripts */ = {
 			isa = PBXGroup;
 			children = (
+				BB8108192F5756D000CA0D3E /* FormFocusUserScript.swift */,
 				85D438B5256E7C9E00F3BAF8 /* ContextMenuSubfeature.swift */,
 				4BB88B4425B7B55C006F6B06 /* DebugUserScript.swift */,
 				856CADEF271710F400E79BB0 /* HoverUserScript.swift */,
@@ -14715,6 +14719,7 @@
 				B5D62C812F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */,
 				3706FB1D293F65D500E42796 /* StatisticsLoader.swift in Sources */,
 				B5C2886B2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */,
+				BB81081B2F5756D000CA0D3E /* FormFocusUserScript.swift in Sources */,
 				56406D4C2C636A8900BF8FA2 /* SpecialPagesUserScriptExtension.swift in Sources */,
 				3793FDD829535EBA00A2E28F /* Assertions.swift in Sources */,
 				EE137E8F2E40F5C70065B5E0 /* DeviceSyncCoordinator.swift in Sources */,
@@ -17455,6 +17460,7 @@
 				4B723E1326B0007A00E14D75 /* CSVLoginExporter.swift in Sources */,
 				B6BCC51E2AFCD9ED002C5499 /* DataImportSourcePicker.swift in Sources */,
 				85C48CCC278D808F00D3263E /* NSAttributedStringExtension.swift in Sources */,
+				BB81081A2F5756D000CA0D3E /* FormFocusUserScript.swift in Sources */,
 				7B5A236F2C46A116007213AC /* ExcludedDomainsModel.swift in Sources */,
 				4B41EDB42B168C55001EEDF4 /* UnifiedFeedbackFormViewModel.swift in Sources */,
 				CD33012C2C89B588009AA127 /* ErrorPageHTMLFactory.swift in Sources */,

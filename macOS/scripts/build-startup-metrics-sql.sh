@@ -115,6 +115,9 @@ def sql_quote(v): "'\''" + v + "'\''";
     branch,
     commit_hash,
     session_restoration,
+    windows,
+    standard_tabs,
+    pinned_tabs,
     app_delegate_init,
     main_menu_init,
     app_will_finish_launching,
@@ -122,10 +125,7 @@ def sql_quote(v): "'\''" + v + "'\''";
     app_did_finish_launching_after_state_restoration,
     app_state_restoration,
     init_to_will_finish_launching,
-    app_will_finish_to_did_finish_launching,
-    windows,
-    standard_tabs,
-    pinned_tabs
+    app_will_finish_to_did_finish_launching
 ) VALUES (
     \($run_id),
     \(sql_quote($runner)),
@@ -134,6 +134,9 @@ def sql_quote(v): "'\''" + v + "'\''";
     \(sql_quote($branch)),
     \(sql_quote($commit_hash)),
     \(.sessionRestoration),
+    \(.windows),
+    \(.standardTabs),
+    \(.pinnedTabs),
     \(.appDelegateInit),
     \(.mainMenuInit),
     \(.appWillFinishLaunching),
@@ -141,9 +144,6 @@ def sql_quote(v): "'\''" + v + "'\''";
     \(.appDidFinishLaunchingAfterRestoration),
     \(.appStateRestoration),
     \(.appDelegateInitToWillFinishLaunching),
-    \(.appWillFinishToDidFinishLaunching),
-    \(.windows),
-    \(.standardTabs),
-    \(.pinnedTabs)
+    \(.appWillFinishToDidFinishLaunching)
 );"
 ' <<< "$raw_metrics"

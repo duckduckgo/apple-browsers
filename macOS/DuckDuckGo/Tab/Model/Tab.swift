@@ -567,6 +567,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     @Published private(set) var isSuspended: Bool = false
     @Published private(set) var hasActiveFormInput: Bool = false
+    @Published private(set) var hasActiveWebRTCConnection: Bool = false
 
     var audioStatePublisher: AnyPublisher<WebView.AudioState, Never> {
         webView.audioStatePublisher
@@ -1288,6 +1289,7 @@ extension Tab: UserContentControllerDelegate {
         userScripts.debugScript.instrumentation = instrumentation
         userScripts.pageObserverScript.delegate = self
         userScripts.formFocusUserScript.delegate = self
+        userScripts.webRTCUserScript.delegate = self
         userScripts.serpSettingsUserScript?.delegate = self
         userScripts.serpSettingsUserScript?.webView = self.webView
         specialPagesUserScript = nil
@@ -1310,6 +1312,15 @@ extension Tab: FormFocusUserScriptDelegate {
     @MainActor
     func formFocusUserScript(_ script: FormFocusUserScript, didChangeFocus focused: Bool) {
         hasActiveFormInput = focused
+    }
+
+}
+
+extension Tab: WebRTCUserScriptDelegate {
+
+    @MainActor
+    func webRTCUserScript(_ script: WebRTCUserScript, didChangeConnectionActive active: Bool) {
+        hasActiveWebRTCConnection = active
     }
 
 }
@@ -1384,6 +1395,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
         hasCommittedContent = true
         hasActiveFormInput = false
+        hasActiveWebRTCConnection = false
     }
 
     @MainActor

@@ -50,6 +50,7 @@ protocol TabBarViewModel {
     var isSuspended: Bool { get }
     var isSuspendedPublisher: AnyPublisher<Bool, Never> { get }
     var hasActiveFormInput: Bool { get }
+    var hasActiveWebRTCConnection: Bool { get }
 }
 
 extension TabViewModel: TabBarViewModel {
@@ -68,6 +69,7 @@ extension TabViewModel: TabBarViewModel {
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
     var hasActiveFormInput: Bool { tab.hasActiveFormInput }
+    var hasActiveWebRTCConnection: Bool { tab.hasActiveWebRTCConnection }
     var canKillWebContentProcess: Bool { tab.canKillWebContentProcess }
     var crashIndicatorModel: TabCrashIndicatorModel { tab.crashIndicatorModel }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
@@ -1520,10 +1522,11 @@ extension TabBarViewItem: NSMenuDelegate {
         let title = isSuspended ? UserText.resumeTab : UserText.suspendTab
         let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
         menuItem.target = self
-        // Can't suspend the currently active tab, one playing audio/video, or one with an active form
-        let isPlayingAudio = !isSuspended && (tabViewModel?.audioState.isPlayingAudio ?? false)
-        let isFillingForm  = !isSuspended && (tabViewModel?.hasActiveFormInput ?? false)
-        menuItem.isEnabled = !isSelected && !isPlayingAudio && !isFillingForm
+        // Can't suspend the currently active tab, one playing audio/video, one with an active form, or an active WebRTC connection
+        let isPlayingAudio    = !isSuspended && (tabViewModel?.audioState.isPlayingAudio ?? false)
+        let isFillingForm     = !isSuspended && (tabViewModel?.hasActiveFormInput ?? false)
+        let hasWebRTCSession  = !isSuspended && (tabViewModel?.hasActiveWebRTCConnection ?? false)
+        menuItem.isEnabled = !isSelected && !isPlayingAudio && !isFillingForm && !hasWebRTCSession
         menu.addItem(menuItem)
     }
 
@@ -1803,6 +1806,7 @@ extension TabBarViewItem {
             @Published var isSuspended: Bool = false
             var isSuspendedPublisher: AnyPublisher<Bool, Never> { $isSuspended.eraseToAnyPublisher() }
             var hasActiveFormInput: Bool = false
+            var hasActiveWebRTCConnection: Bool = false
 
             init(width: CGFloat, title: String = "Test Title", url: URL? = nil, favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, isLoading: Bool = false, error: WKError? = nil) {
                 self.width = width

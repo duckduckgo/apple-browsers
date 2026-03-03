@@ -3514,6 +3514,8 @@
 		BB80DDDC2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */; };
 		BB81081A2F5756D000CA0D3E /* FormFocusUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8108192F5756D000CA0D3E /* FormFocusUserScript.swift */; };
 		BB81081B2F5756D000CA0D3E /* FormFocusUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8108192F5756D000CA0D3E /* FormFocusUserScript.swift */; };
+		BB81081D2F576B5400CA0D3E /* WebRTCUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB81081C2F576B5400CA0D3E /* WebRTCUserScript.swift */; };
+		BB81081E2F576B5400CA0D3E /* WebRTCUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB81081C2F576B5400CA0D3E /* WebRTCUserScript.swift */; };
 		BB8DD9E92EDF73A900F75D8E /* QuitSurveyDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8DD9E72EDF73A900F75D8E /* QuitSurveyDecider.swift */; };
 		BB8DD9EA2EDF73A900F75D8E /* QuitSurveyDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8DD9E72EDF73A900F75D8E /* QuitSurveyDecider.swift */; };
 		BB8E056E2EE0D22E006CD2E6 /* HomePageSubscriptionCardVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8E056D2EE0D22E006CD2E6 /* HomePageSubscriptionCardVisibilityManager.swift */; };
@@ -6318,6 +6320,7 @@
 		BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresentingTests.swift; sourceTree = "<group>"; };
 		BB8108192F5756D000CA0D3E /* FormFocusUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormFocusUserScript.swift; sourceTree = "<group>"; };
+		BB81081C2F576B5400CA0D3E /* WebRTCUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebRTCUserScript.swift; sourceTree = "<group>"; };
 		BB8DD9E72EDF73A900F75D8E /* QuitSurveyDecider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyDecider.swift; sourceTree = "<group>"; };
 		BB8E056D2EE0D22E006CD2E6 /* HomePageSubscriptionCardVisibilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePageSubscriptionCardVisibilityManager.swift; sourceTree = "<group>"; };
 		BB8E05702EE0D2B9006CD2E6 /* HomePageSubscriptionCardPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePageSubscriptionCardPersistor.swift; sourceTree = "<group>"; };
@@ -11814,6 +11817,7 @@
 		B6BDD9F12940764100F68088 /* UserScripts */ = {
 			isa = PBXGroup;
 			children = (
+				BB81081C2F576B5400CA0D3E /* WebRTCUserScript.swift */,
 				BB8108192F5756D000CA0D3E /* FormFocusUserScript.swift */,
 				85D438B5256E7C9E00F3BAF8 /* ContextMenuSubfeature.swift */,
 				4BB88B4425B7B55C006F6B06 /* DebugUserScript.swift */,
@@ -14526,6 +14530,7 @@
 				9FA173E42B7A12B600EE4E6E /* BookmarkDialogFolderManagementView.swift in Sources */,
 				3706FABD293F65D500E42796 /* NSNotificationName+PasswordManager.swift in Sources */,
 				3706FABE293F65D500E42796 /* RulesCompilationMonitor.swift in Sources */,
+				BB81081D2F576B5400CA0D3E /* WebRTCUserScript.swift in Sources */,
 				B520EBE22EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift in Sources */,
 				B6B4D1C62B0B3B5400C26286 /* DataImportReportModel.swift in Sources */,
 				3768D8452C2CC884004120AE /* RemoteMessagingConfigMatcherProvider.swift in Sources */,
@@ -17324,6 +17329,7 @@
 				B64C853026943BC10048FEBE /* Permissions.xcdatamodeld in Sources */,
 				EE339228291BDEFD009F62C1 /* JSAlertController.swift in Sources */,
 				BBDAA91B2DAD4E7400555E1E /* CurrentVPNNavigationBarIconProvider.swift in Sources */,
+				BB81081E2F576B5400CA0D3E /* WebRTCUserScript.swift in Sources */,
 				84A37DDF2DAFB635009E0A68 /* URLDragPreviewProvider.swift in Sources */,
 				3775912D29AAC72700E26367 /* SyncPreferences.swift in Sources */,
 				F1B33DF22BAD929D001128B3 /* SubscriptionAppStoreRestorer.swift in Sources */,

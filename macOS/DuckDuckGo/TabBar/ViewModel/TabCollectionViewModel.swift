@@ -778,6 +778,7 @@ final class TabCollectionViewModel: NSObject {
         guard case .url(let url, _, _) = tabContent else { return }
         guard !oldTab.audioState.isPlayingAudio else { return }
         guard !oldTab.hasActiveFormInput else { return }
+        guard !oldTab.hasActiveWebRTCConnection else { return }
 
         // Create a fresh, unloaded Tab to hold the slot. Because it never navigates,
         // no web content process is spawned. The old Tab (and its WKWebView) is released

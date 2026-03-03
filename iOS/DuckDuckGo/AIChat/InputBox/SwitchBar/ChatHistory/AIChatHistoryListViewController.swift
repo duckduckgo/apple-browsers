@@ -282,7 +282,7 @@ private final class AIChatHistoryCell: UITableViewCell {
             view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Self.separatorLeadingInset),
             view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            view.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale),
+            view.heightAnchor.constraint(equalToConstant: 1.0 / max(traitCollection.displayScale, 1)),
         ])
         return view
     }()

@@ -60,6 +60,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private var task: URLSessionDataTask?
+    private weak var cachedScrollView: UIScrollView?
     private var lastReportedContentHeight: CGFloat = 0
 
     private var isUsingUnifiedPrediction: Bool {
@@ -135,7 +136,11 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         guard model.usePlainListStyle else { return }
-        guard let scrollView = Self.findScrollView(in: view),
+
+        let scrollView = cachedScrollView ?? Self.findScrollView(in: view)
+        cachedScrollView = scrollView
+
+        guard let scrollView,
               scrollView.contentSize.height > 0,
               scrollView.contentSize.height != lastReportedContentHeight else { return }
         lastReportedContentHeight = scrollView.contentSize.height
@@ -254,8 +259,8 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private func updateHeight() {
         guard let lastResults else { return }
 
-        // For plain list style, height is measured from the actual scroll view
-        // content size in viewDidLayoutSubviews, which avoids cell height mismatches.
+        // For plain list style, height is measured from the underlying scroll view's
+        // content size in viewDidLayoutSubviews to avoid hardcoded cell height mismatches.
         if model.usePlainListStyle {
             lastReportedContentHeight = 0
             view.setNeedsLayout()
@@ -281,6 +286,8 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             .autocompleteDidChangeContentHeight(height: CGFloat(height))
     }
 
+    /// Walks the view hierarchy to find the scroll view backing the SwiftUI List.
+    /// The result is cached in `cachedScrollView` to avoid repeated traversals.
     private static func findScrollView(in view: UIView) -> UIScrollView? {
         for subview in view.subviews {
             if let scrollView = subview as? UIScrollView {

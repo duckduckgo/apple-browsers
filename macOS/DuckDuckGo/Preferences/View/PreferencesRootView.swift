@@ -157,7 +157,8 @@ enum Preferences {
                 case .appearance:
                     AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
                                    aiChatModel: model.aiChatPreferences,
-                                   themeManager: themeManager)
+                                   themeManager: themeManager,
+                                   darkReaderFeatureSettings: NSApp.delegateTyped.darkReaderFeatureSettings)
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .subscription:

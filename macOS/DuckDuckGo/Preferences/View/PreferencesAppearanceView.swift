@@ -189,6 +189,7 @@ extension Preferences {
         @ObservedObject var model: AppearancePreferences
         @ObservedObject var aiChatModel: AIChatPreferences
         @ObservedObject var themeManager: ThemeManager
+        var darkReaderFeatureSettings: DarkReaderFeatureSettings?
 
         var body: some View {
             PreferencePane(UserText.appearance) {
@@ -209,6 +210,16 @@ extension Preferences {
                         .padding(.bottom, 16)
 
                     ToggleMenuItem(UserText.syncAppIconWithTheme, isOn: $model.syncAppIconWithTheme)
+
+                    if let darkReaderFeatureSettings, darkReaderFeatureSettings.isFeatureEnabled {
+                        ToggleMenuItem(UserText.forceDarkModeOnWebsites, isOn: Binding(
+                            get: { darkReaderFeatureSettings.isForceDarkModeEnabled },
+                            set: { darkReaderFeatureSettings.setForceDarkModeEnabled($0) }
+                        ))
+                        Text(UserText.forceDarkModeOnWebsitesFooter)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
                 }
 
                 // SECTION 2: Address Bar

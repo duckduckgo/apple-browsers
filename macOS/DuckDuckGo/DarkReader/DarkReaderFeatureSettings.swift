@@ -1,0 +1,124 @@
+//
+//  DarkReaderFeatureSettings.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AppKit
+import Combine
+import FeatureFlags
+import Foundation
+import Persistence
+import PrivacyConfig
+import WebExtensions
+
+protocol DarkReaderFeatureSettings: DarkReaderExcludedDomainsProviding {
+
+    var isFeatureEnabled: Bool { get }
+    var isForceDarkModeEnabled: Bool { get }
+    var excludedDomains: [String] { get }
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> { get }
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> { get }
+    func setForceDarkModeEnabled(_ enabled: Bool)
+    func themeDidChange()
+}
+
+struct DarkReaderSettings: StoringKeys {
+    let forceDarkModeOnWebsitesEnabled = StorageKey<Bool>(.forceDarkModeOnWebsitesEnabled)
+}
+
+final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
+
+    private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let appearancePreferencesProvider: () -> AppearancePreferences?
+    private let storage: any KeyedStoring<DarkReaderSettings>
+    private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
+    private let excludedDomainsChangedSubject = PassthroughSubject<Void, Never>()
+    private var cancellables = Set<AnyCancellable>()
+
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> {
+        forceDarkModeChangedSubject.eraseToAnyPublisher()
+    }
+
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> {
+        excludedDomainsChangedSubject.eraseToAnyPublisher()
+    }
+
+    init(featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         appearancePreferencesProvider: @escaping () -> AppearancePreferences?,
+         storage: (any KeyedStoring<DarkReaderSettings>)? = nil) {
+        self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.appearancePreferencesProvider = appearancePreferencesProvider
+        self.storage = if let storage { storage } else { UserDefaults.standard.keyedStoring() }
+
+        privacyConfigurationManager.updatesPublisher
+            .sink { [weak self] in
+                self?.excludedDomainsChangedSubject.send()
+            }
+            .store(in: &cancellables)
+
+        (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
+            .flagDidChangePublisher
+            .filter { $0.0 == .forceDarkModeOnWebsites }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.forceDarkModeChangedSubject.send(self.isForceDarkModeEnabled)
+            }
+            .store(in: &cancellables)
+    }
+
+    private var isLightTheme: Bool {
+        guard let appearance = appearancePreferencesProvider() else { return false }
+        let themeAppearance = appearance.themeAppearance
+        switch themeAppearance {
+        case .light:
+            return true
+        case .dark:
+            return false
+        case .systemDefault:
+            return NSApp.effectiveAppearance.effectiveThemeAppearance == .light
+        }
+    }
+
+    var isFeatureEnabled: Bool {
+        guard #available(macOS 15.4, *) else { return false }
+        guard !isLightTheme, featureFlagger.isFeatureOn(.webExtensions) else { return false }
+
+        return featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
+    }
+
+    var isForceDarkModeEnabled: Bool {
+        isFeatureEnabled && (storage.forceDarkModeOnWebsitesEnabled ?? false)
+    }
+
+    var excludedDomains: [String] {
+        privacyConfigurationManager.privacyConfig.exceptionsList(forFeature: .forceDarkModeOnWebsites)
+    }
+
+    func setForceDarkModeEnabled(_ enabled: Bool) {
+        guard isFeatureEnabled else { return }
+        let previousValue = storage.forceDarkModeOnWebsitesEnabled ?? false
+        guard previousValue != enabled else { return }
+        storage.forceDarkModeOnWebsitesEnabled = enabled
+        forceDarkModeChangedSubject.send(enabled)
+    }
+
+    func themeDidChange() {
+        forceDarkModeChangedSubject.send(isForceDarkModeEnabled)
+    }
+}

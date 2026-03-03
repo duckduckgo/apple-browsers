@@ -63,6 +63,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
 
+    /// Force Dark Mode on Websites using DarkReader web extension
+    case forceDarkModeOnWebsites
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616130440
     case syncSeamlessAccountSwitching
 
@@ -331,6 +334,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncSeamlessAccountSwitching,
                 .webExtensions,
                 .embeddedExtension,
+                .forceDarkModeOnWebsites,
                 .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
                 .scamSiteProtection,
@@ -436,6 +440,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
+        case .forceDarkModeOnWebsites:
+            return .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .syncCreditCards:

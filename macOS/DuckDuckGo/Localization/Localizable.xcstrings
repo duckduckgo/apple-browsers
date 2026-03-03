@@ -80384,6 +80384,30 @@
         }
       }
     },
+    "preferences.appearance.force-dark-mode-on-websites" : {
+      "comment" : "Toggle to force dark mode on websites using DarkReader",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Force Dark Mode for Websites"
+          }
+        }
+      }
+    },
+    "preferences.appearance.force-dark-mode-on-websites.footer" : {
+      "comment" : "Footer shown below the force dark mode toggle explaining its behavior",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Gives websites a dark appearance if you're using dark theme."
+          }
+        }
+      }
+    },
     "preferences.appearance.show-aichat" : {
       "comment" : "Option to show AI Chat the address bar",
       "extractionState" : "extracted_with_value",

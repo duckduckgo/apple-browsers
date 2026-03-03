@@ -1668,14 +1668,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let darkReaderSettings = AppDarkReaderFeatureSettings(
             featureFlagger: featureFlagger,
-            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            appearancePreferencesProvider: { [weak self] in self?.appearancePreferences }
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager
         )
         self.darkReaderFeatureSettings = darkReaderSettings
 
         darkReaderSettings.forceDarkModeChangedPublisher
             .sink { [weak self] _ in
-                guard #available(macOS 15.4, *) else { return }
                 Task { @MainActor in
                     await self?.syncEmbeddedExtensions()
                 }

@@ -211,10 +211,14 @@ extension Preferences {
 
                     ToggleMenuItem(UserText.syncAppIconWithTheme, isOn: $model.syncAppIconWithTheme)
 
-                    if let darkReaderFeatureSettings, darkReaderFeatureSettings.isFeatureEnabled {
+                    if let darkReaderFeatureSettings, darkReaderFeatureSettings.isFeatureEnabled, model.themeAppearance != .light {
                         ToggleMenuItem(UserText.forceDarkModeOnWebsites, isOn: Binding(
                             get: { darkReaderFeatureSettings.isForceDarkModeEnabled },
-                            set: { darkReaderFeatureSettings.setForceDarkModeEnabled($0) }
+                            set: {
+                                darkReaderFeatureSettings.setForceDarkModeEnabled($0)
+                                // Force update any model to reload the view
+                                model.objectWillChange.send()
+                            }
                         ))
                         Text(UserText.forceDarkModeOnWebsitesFooter)
                             .font(.system(size: 11))

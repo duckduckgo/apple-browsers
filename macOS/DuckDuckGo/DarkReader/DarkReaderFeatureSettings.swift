@@ -43,7 +43,6 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let appearancePreferencesProvider: () -> AppearancePreferences?
     private let storage: any KeyedStoring<DarkReaderSettings>
     private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
     private let excludedDomainsChangedSubject = PassthroughSubject<Void, Never>()
@@ -59,11 +58,9 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         appearancePreferencesProvider: @escaping () -> AppearancePreferences?,
          storage: (any KeyedStoring<DarkReaderSettings>)? = nil) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.appearancePreferencesProvider = appearancePreferencesProvider
         self.storage = if let storage { storage } else { UserDefaults.standard.keyedStoring() }
 
         privacyConfigurationManager.updatesPublisher
@@ -82,22 +79,9 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
             .store(in: &cancellables)
     }
 
-    private var isLightTheme: Bool {
-        guard let appearance = appearancePreferencesProvider() else { return false }
-        let themeAppearance = appearance.themeAppearance
-        switch themeAppearance {
-        case .light:
-            return true
-        case .dark:
-            return false
-        case .systemDefault:
-            return NSApp.effectiveAppearance.effectiveThemeAppearance == .light
-        }
-    }
-
     var isFeatureEnabled: Bool {
         guard #available(macOS 15.4, *) else { return false }
-        guard !isLightTheme, featureFlagger.isFeatureOn(.webExtensions) else { return false }
+        guard featureFlagger.isFeatureOn(.webExtensions) else { return false }
 
         return featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
     }

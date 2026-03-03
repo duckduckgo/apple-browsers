@@ -18,7 +18,6 @@
 
 import Foundation
 import os.log
-import PixelKit
 
 /// Represents an Error that prevented us from exporting the Startup Stats
 ///

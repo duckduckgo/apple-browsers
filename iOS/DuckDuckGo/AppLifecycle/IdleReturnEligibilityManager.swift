@@ -20,22 +20,41 @@
 import Foundation
 import Core
 import Persistence
+import PrivacyConfig
 
-/// Answers whether the user is eligible for "NTP after idle" (and optionally the effective preference).
-/// Uses shared effective-option logic from storage; no separate user-status input.
+/// Answers whether the user is eligible for "NTP after idle", the effective preference, and the idle threshold in seconds.
+/// Uses shared effective-option logic and shared threshold resolution (debug override, remote config, default).
 protocol IdleReturnEligibilityManaging {
     func isEligibleForNTPAfterIdle() -> Bool
     func effectiveAfterInactivityOption() -> AfterInactivityOption
+    func idleThresholdSeconds() -> Int
 }
 
 final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
 
     private let featureFlagger: FeatureFlagger
-    private let keyValueStore: ThrowingKeyValueStoring
+    private let effectiveOptionResolver: AfterInactivityEffectiveOptionResolving
+    private let thresholdResolver: IdleReturnThresholdResolver
 
-    init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) {
+    init(featureFlagger: FeatureFlagger,
+         keyValueStore: ThrowingKeyValueStoring,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil) {
         self.featureFlagger = featureFlagger
-        self.keyValueStore = keyValueStore
+        let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
+        self.effectiveOptionResolver = AfterInactivityEffectiveOptionResolver(storage: storage)
+        self.thresholdResolver = IdleReturnThresholdResolver(
+            privacyConfigurationManager: privacyConfigurationManager,
+            debugOverridesStorage: debugOverridesStorage
+        )
+    }
+
+    init(featureFlagger: FeatureFlagger,
+         effectiveOptionResolver: AfterInactivityEffectiveOptionResolving,
+         thresholdResolver: IdleReturnThresholdResolver) {
+        self.featureFlagger = featureFlagger
+        self.effectiveOptionResolver = effectiveOptionResolver
+        self.thresholdResolver = thresholdResolver
     }
 
     func isEligibleForNTPAfterIdle() -> Bool {
@@ -43,8 +62,10 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
     }
 
     func effectiveAfterInactivityOption() -> AfterInactivityOption {
-        let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
-        let resolver = AfterInactivityEffectiveOptionResolver(storage: storage)
-        return resolver.resolveEffectiveOption()
+        effectiveOptionResolver.resolveEffectiveOption()
+    }
+
+    func idleThresholdSeconds() -> Int {
+        thresholdResolver.thresholdSeconds()
     }
 }

@@ -48,7 +48,7 @@ struct SettingsGeneralView: View {
             }
             // NTP after idle time
             if viewModel.shouldShowNTPAfterIdleSetting {
-                Section(footer: Text(String(format: UserText.settingsAfterInactivityFooterFormat, viewModel.idletimeInterval))) {
+                Section(footer: Text(String(format: UserText.settingsAfterInactivityFooterFormat, viewModel.idleTimeInterval))) {
                     // Text Size
                     SettingsPickerCellView(label: UserText.settingsAfterInactivityLabel,
                                            options: AfterInactivityOption.allCases,

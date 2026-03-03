@@ -37,18 +37,23 @@ public struct AIChatSuggestion: Identifiable, Equatable, Hashable {
     /// Timestamp of the last interaction with this chat
     public let timestamp: Date?
 
+    /// Content of the first user message in the chat
+    public let firstUserMessageContent: String?
+
     public init(
         id: String,
         title: String,
         isPinned: Bool,
         chatId: String,
-        timestamp: Date? = nil
+        timestamp: Date? = nil,
+        firstUserMessageContent: String? = nil
     ) {
         self.id = id
         self.title = title
         self.isPinned = isPinned
         self.chatId = chatId
         self.timestamp = timestamp
+        self.firstUserMessageContent = firstUserMessageContent
     }
 }
 

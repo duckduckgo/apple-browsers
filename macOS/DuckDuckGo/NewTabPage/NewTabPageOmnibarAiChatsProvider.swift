@@ -82,7 +82,8 @@ private extension AIChatSuggestion {
             chatId: chatId,
             title: title,
             pinned: isPinned,
-            lastEdit: timestamp.map { Self.iso8601Formatter.string(from: $0) }
+            lastEdit: timestamp.map { Self.iso8601Formatter.string(from: $0) },
+            firstUserMessageContent: firstUserMessageContent
         )
     }
 

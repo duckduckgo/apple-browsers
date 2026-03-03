@@ -73,6 +73,7 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
         let title: String?
         let pinned: Bool?
         let lastEdit: String?  // ISO date string like "2026-01-19T11:48:10.903Z"
+        let firstUserMessageContent: String?
 
         func toAIChatSuggestion() -> AIChatSuggestion {
             AIChatSuggestion(
@@ -80,7 +81,8 @@ public final class AIChatSuggestionsUserScript: NSObject, Subfeature {
                 title: title ?? "Untitled Chat",
                 isPinned: pinned ?? false,
                 chatId: chatId,
-                timestamp: AIChatSuggestion.parseISO8601Date(lastEdit)
+                timestamp: AIChatSuggestion.parseISO8601Date(lastEdit),
+                firstUserMessageContent: firstUserMessageContent
             )
         }
     }

@@ -75,7 +75,7 @@ struct ScrollableOnboardingBackground: View {
                 exitingTransitionProgress = 1.0
             }
 
-            // Animate entering background after delay (slides in from right)
+            // Animate entering background (slides in from right, overlaps with exit)
             if #available(iOS 17, *) {
                 withAnimation(.easeInOut(duration: Metrics.enterDuration)) {
                     enteringTransitionProgress = 1.0

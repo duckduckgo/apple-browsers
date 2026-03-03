@@ -2314,7 +2314,7 @@
     },
     "aichat.customize-button.tooltip" : {
       "comment" : "Tooltip for the customize button in AI chat omnibar",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2528,6 +2528,18 @@
         }
       }
     },
+    "aichat.model-picker.advanced-section-header" : {
+      "comment" : "Section header in the model picker menu for premium models that require a subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Advanced Models - DuckDuckGo subscription"
+          }
+        }
+      }
+    },
     "aichat.omnibar.placeholder" : {
       "comment" : "Placeholder text shown in the Duck.ai chat input field",
       "extractionState" : "extracted_with_value",
@@ -2584,6 +2596,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Задать вопрос (конфиденциально)"
+          }
+        }
+      }
+    },
+    "aichat.remove-attachment-button.accessibility" : {
+      "comment" : "Accessibility label for the remove attachment button on image thumbnails in AI chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anhang entfernen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove attachment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar archivo adjunto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la pièce jointe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi allegato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bijlage verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń załącznik"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover anexo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить вложение"
+          }
+        }
+      }
+    },
+    "aichat.remove-attachment-button.tooltip" : {
+      "comment" : "Tooltip for the remove attachment button on image thumbnails in AI chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anhang entfernen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove attachment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar archivo adjunto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la pièce jointe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi allegato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bijlage verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń załącznik"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover anexo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить вложение"
           }
         }
       }
@@ -43675,7 +43807,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importer les signets"
+            "value" : "Importer des favoris"
           }
         },
         "it" : {
@@ -95667,7 +95799,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De planwijziging wordt afgerond …\n"
+            "value" : "De planwijziging wordt afgerond …"
           }
         },
         "pl" : {
@@ -95757,7 +95889,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Planänderung in Bearbeitung•…"
+            "value" : "Planänderung in Bearbeitung …"
           }
         },
         "en" : {

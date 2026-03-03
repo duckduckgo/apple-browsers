@@ -73,10 +73,11 @@ public extension OnboardingBubbleView {
         tailPosition: TailPosition,
         currentStep: Int,
         totalSteps: Int,
+        isVisible: Bool = true,
         @ViewBuilder content: @escaping () -> Content
     ) -> some View {
         LinearBubbleWrapper(tailPosition: tailPosition, content: content)
-            .onboardingStepProgress(currentStep: currentStep, totalSteps: totalSteps)
+            .onboardingStepProgress(currentStep: currentStep, totalSteps: totalSteps, isVisible: isVisible)
     }
     #endif
 

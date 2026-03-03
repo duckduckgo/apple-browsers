@@ -24,6 +24,7 @@ private struct OnboardingStepProgressViewModifier: ViewModifier {
 
     let currentStep: Int
     let totalSteps: Int
+    let isVisible: Bool
 
     func body(content: Content) -> some View {
         content
@@ -31,6 +32,8 @@ private struct OnboardingStepProgressViewModifier: ViewModifier {
                 OnboardingStepProgressView(currentStep: currentStep, totalSteps: totalSteps)
                     .alignmentGuide(VerticalAlignment.top) { $0.height / 2 }
                     .alignmentGuide(HorizontalAlignment.trailing) { $0.width + stepProgressTheme.trailingPadding }
+                    .opacity(isVisible ? 1 : 0)
+                    .accessibilityHidden(!isVisible) // Hide from VoiceOver when not visible
             }
     }
 }
@@ -42,9 +45,10 @@ public extension View {
     /// - Parameters:
     ///   - currentStep: The current step number (1-based indexing).
     ///   - totalSteps: The total number of steps in the flow.
+    ///   - isVisible: Whether the step progress indicator should be visible. Default is `true`.
     /// - Returns: A view with a step progress indicator overlay.
-    func onboardingStepProgress(currentStep: Int, totalSteps: Int) -> some View {
-        self.modifier(OnboardingStepProgressViewModifier(currentStep: currentStep, totalSteps: totalSteps))
+    func onboardingStepProgress(currentStep: Int, totalSteps: Int, isVisible: Bool = true) -> some View {
+        self.modifier(OnboardingStepProgressViewModifier(currentStep: currentStep, totalSteps: totalSteps, isVisible: isVisible))
     }
 
 }

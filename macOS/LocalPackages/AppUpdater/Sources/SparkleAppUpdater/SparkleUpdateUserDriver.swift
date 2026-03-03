@@ -1,5 +1,5 @@
 //
-//  SimplifiedUpdateUserDriver.swift
+//  SparkleUpdateUserDriver.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -25,7 +25,7 @@ import PixelKit
 import PrivacyConfig
 import Sparkle
 
-public final class SimplifiedUpdateUserDriver: NSObject, SPUUserDriver {
+public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
     private var internalUserDecider: InternalUserDecider
     public var areAutomaticUpdatesEnabled: Bool
 

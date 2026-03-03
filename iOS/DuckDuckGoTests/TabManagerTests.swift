@@ -166,7 +166,8 @@ final class TabManagerTests: XCTestCase {
                           productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                           privacyStats: MockPrivacyStats(),
                           voiceSearchHelper: MockVoiceSearchHelper(),
-                          launchSourceManager: launchSourceManager)
+                          launchSourceManager: launchSourceManager,
+                          darkReaderFeatureSettings: MockDarkReaderFeatureSettings())
     }
 
 }

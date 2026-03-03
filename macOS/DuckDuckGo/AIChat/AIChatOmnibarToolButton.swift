@@ -56,6 +56,12 @@ final class AIChatOmnibarToolButton: NSView {
         }
     }
 
+    var isEnabled: Bool = true {
+        didSet {
+            updateAppearance()
+        }
+    }
+
     var hoverBackgroundColor: NSColor = .clear
     var pressedBackgroundColor: NSColor = .clear
 
@@ -103,9 +109,23 @@ final class AIChatOmnibarToolButton: NSView {
         setupView()
     }
 
+    var onTabPressed: (() -> Void)?
+
+    override var acceptsFirstResponder: Bool { true }
+    override var canBecomeKeyView: Bool { true }
+
+    override func becomeFirstResponder() -> Bool {
+        setNeedsDisplay(bounds.insetBy(dx: -3, dy: -3))
+        return super.becomeFirstResponder()
+    }
+
+    override func resignFirstResponder() -> Bool {
+        setNeedsDisplay(bounds.insetBy(dx: -3, dy: -3))
+        return super.resignFirstResponder()
+    }
+
     private func setupView() {
         wantsLayer = true
-        layer?.masksToBounds = true
         setAccessibilityRole(.button)
 
         // Setup background layer (circular)
@@ -144,6 +164,13 @@ final class AIChatOmnibarToolButton: NSView {
         CATransaction.setDisableActions(true)
 
         NSAppearance.withAppAppearance {
+            guard isEnabled else {
+                backgroundLayer.opacity = 0
+                iconImageView.contentTintColor = NSColor.secondaryLabelColor
+                CATransaction.commit()
+                return
+            }
+
             // For toggle buttons, skip the pressed effect - just show toggled or normal state
             let showPressedEffect = isMouseDown && !togglesOnClick
 
@@ -215,7 +242,7 @@ final class AIChatOmnibarToolButton: NSView {
 
     override func mouseUp(with event: NSEvent) {
         let locationInView = convert(event.locationInWindow, from: nil)
-        if bounds.contains(locationInView) && isMouseDown {
+        if bounds.contains(locationInView) && isMouseDown && isEnabled {
             if togglesOnClick {
                 isToggled.toggle()
             }
@@ -224,6 +251,42 @@ final class AIChatOmnibarToolButton: NSView {
             }
         }
         isMouseDown = false
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard window?.firstResponder == self else { return }
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+
+        context.saveGState()
+        context.resetClip()
+
+        NSColor.controlAccentColor.setStroke()
+        let borderRect = bounds.insetBy(dx: -1, dy: -1)
+        let focusPath = NSBezierPath(roundedRect: borderRect, xRadius: borderRect.height / 2, yRadius: borderRect.height / 2)
+        focusPath.lineWidth = 1.5
+        focusPath.lineCapStyle = .round
+        focusPath.lineJoinStyle = .round
+        focusPath.stroke()
+
+        context.restoreGState()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 48: // Tab
+            if let onTabPressed {
+                onTabPressed()
+            } else {
+                super.keyDown(with: event)
+            }
+        case 49, 36: // Space, Return - trigger action
+            if isEnabled, let action, let target {
+                NSApp.sendAction(action, to: target, from: self)
+            }
+        default:
+            super.keyDown(with: event)
+        }
     }
 
     override func viewDidChangeEffectiveAppearance() {

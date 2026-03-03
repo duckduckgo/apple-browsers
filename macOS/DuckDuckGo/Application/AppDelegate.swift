@@ -1938,7 +1938,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func subscribeToUpdateControllerChanges() {
         guard AppVersion.runType != .uiTests,
-              let sparkleUpdateController = updateController as? any SparkleUpdateController else { return }
+              let sparkleUpdateController = updateController as? any SparkleUpdateControlling else { return }
 
         updateProgressCancellable = sparkleUpdateController.updateProgressPublisher
             .sink { [weak sparkleUpdateController] progress in

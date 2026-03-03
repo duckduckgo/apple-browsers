@@ -21,6 +21,7 @@ import Common
 import FeatureFlags
 import Foundation
 import OSLog
+import PixelKit
 import PrivacyConfig
 import UserNotifications
 import UserScript
@@ -155,7 +156,12 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return true
         case .notDetermined:
             do {
-                return try await notificationService.requestAuthorization(options: [.alert, .sound])
+                PixelKit.fire(WebNotificationPixel.systemAuthorizationRequested, frequency: .dailyAndCount)
+                let granted = try await notificationService.requestAuthorization(options: [.alert, .sound])
+                if granted {
+                    PixelKit.fire(WebNotificationPixel.systemAuthorizationGranted, frequency: .dailyAndCount)
+                }
+                return granted
             } catch {
                 Logger.general.error("WebNotificationsHandler: Authorization failed - \(error.localizedDescription)")
                 return false
@@ -220,9 +226,11 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         do {
             try await notificationService.add(request)
             Logger.general.debug("WebNotificationsHandler: Notification posted (ID: \(id))")
+            PixelKit.fire(WebNotificationPixel.shown, frequency: .dailyAndCount)
             sendShowEvent(id: id, to: webView)
         } catch {
             Logger.general.error("WebNotificationsHandler: Failed to post - \(error.localizedDescription)")
+            PixelKit.fire(WebNotificationPixel.error(error), frequency: .dailyAndCount)
             sendErrorEvent(id: id, to: webView)
         }
     }

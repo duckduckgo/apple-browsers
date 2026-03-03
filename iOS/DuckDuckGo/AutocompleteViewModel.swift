@@ -50,7 +50,9 @@ class AutocompleteViewModel: ObservableObject {
     @Published var isMessageVisible = true
     @Published var emptySuggestion: [SuggestionModel]?
     @Published var isPad: Bool = false
+    @Published var usePlainListStyle: Bool = false
 
+    var onContentHeightChanged: ((CGFloat) -> Void)?
     weak var delegate: AutocompleteViewModelDelegate?
 
     let isAddressBarAtBottom: Bool

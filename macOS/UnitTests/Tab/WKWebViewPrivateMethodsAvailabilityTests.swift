@@ -35,6 +35,10 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_loadAlternateHTMLString:baseURL:forUnreachableURL:")))
     }
 
+    func testWebViewRespondsTo_immediateActionAnimationControllerForHitTestResult() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_immediateActionAnimationControllerForHitTestResult:withType:userData:")))
+    }
+
     func testWKBackForwardListRespondsTo_removeAllItems() {
         XCTAssertTrue(WKBackForwardList.instancesRespond(to: WKBackForwardList.Selector.removeAllItems))
     }

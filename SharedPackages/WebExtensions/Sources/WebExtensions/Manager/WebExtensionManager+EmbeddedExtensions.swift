@@ -81,18 +81,18 @@ extension WebExtensionManager {
                     let oldVersion = installed.version
                     try uninstallExtension(identifier: installed.uniqueIdentifier)
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type)
-                    pixelFiring.fire(.embeddedUpgraded(fromVersion: oldVersion, toVersion: bundledMetadata.version))
+                    pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
                 } else {
                     Logger.webExtensions.debug("👌 Embedded extension \(descriptor.type.rawValue) is up to date (v\(installed.version ?? "?"))")
                 }
             } else {
                 Logger.webExtensions.info("📦 Installing embedded extension \(descriptor.type.rawValue) v\(bundledMetadata.version ?? "?")")
                 try await installEmbeddedExtension(from: bundledURL, type: descriptor.type)
-                pixelFiring.fire(.embeddedInstalled)
+                pixelFiring.fire(.embeddedInstalled(type: descriptor.type))
             }
         } catch {
             Logger.webExtensions.error("❌ Failed to sync embedded extension \(descriptor.type.rawValue): \(error.localizedDescription)")
-            pixelFiring.fire(.embeddedInstallError(error: error))
+            pixelFiring.fire(.embeddedInstallError(type: descriptor.type, error: error))
         }
     }
 
@@ -131,48 +131,9 @@ extension WebExtensionManager {
         }
     }
 
-    /// Updates the permission status for an embedded extension, denying access to the specified domains.
-    ///
-    /// Previously denied domains that are no longer in the exclusion list will have their denial removed
-    /// by resetting their permission status to `.unknown`.
-    ///
-    /// - Parameters:
-    ///   - excludedDomains: The list of domains to deny access to.
-    ///   - type: The type of embedded extension to update.
-    public func updateExcludedDomains(_ excludedDomains: [String], forExtensionType type: DuckDuckGoWebExtensionType) {
-        guard let installed = installedEmbeddedExtension(for: type),
-              let context = context(for: installed.uniqueIdentifier) else {
-            return
-        }
-
-        let currentDenied = Set(context.deniedPermissionMatchPatterns.keys)
-        let newDeniedPatterns: Set<WKWebExtension.MatchPattern> = Set(excludedDomains.flatMap { domain -> [WKWebExtension.MatchPattern] in
-            [
-                try? WKWebExtension.MatchPattern(scheme: "*", host: domain, path: "/*"),
-                try? WKWebExtension.MatchPattern(scheme: "*", host: "*.\(domain)", path: "/*")
-            ].compactMap { $0 }
-        })
-
-        let toRevoke = currentDenied.subtracting(newDeniedPatterns)
-        let toDeny = newDeniedPatterns.subtracting(currentDenied)
-
-        for pattern in toRevoke {
-            context.setPermissionStatus(.unknown, for: pattern, expirationDate: nil)
-            Logger.webExtensions.debug("🔓 Revoked denial for pattern: \(pattern.description)")
-        }
-
-        for pattern in toDeny {
-            context.setPermissionStatus(.deniedExplicitly, for: pattern, expirationDate: nil)
-            Logger.webExtensions.debug("🚫 Denied pattern for \(type.rawValue): \(pattern.description)")
-        }
-
-        if !toRevoke.isEmpty || !toDeny.isEmpty {
-            Logger.webExtensions.info("Updated domain exclusions for \(type.rawValue): \(excludedDomains.count) domain(s) excluded")
-        }
-    }
-
     /// Determines if the installed extension should be upgraded to the bundled version.
     private func shouldUpgrade(installed: InstalledWebExtension, bundledVersion: String?) -> Bool {
         SemanticVersionComparator().shouldUpgrade(installedVersion: installed.version, bundledVersion: bundledVersion)
     }
+
 }

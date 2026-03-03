@@ -224,9 +224,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212783502979551?focus=true
-    case memoryPressureReporting
-
     /// Memory Usage Reporting
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
     case memoryUsageReporting
@@ -266,6 +263,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
+    case aiChatSidebarFloating
+
     /// Startup Metrics Feature Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
     case startupMetrics
@@ -273,6 +273,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Private Process Name Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
     case privateProcessName
+
+    /// Enable Look Up (three-finger click) while keeping link preview disabled
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
+    case webViewLookUpAction
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -297,12 +301,13 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillPasswordSearchPrioritizeDomain,
                 .warnBeforeQuit,
                 .wideEventPostEndpoint,
-                .memoryPressureReporting,
                 .crashCollectionDisableKeysSorting,
                 .crashCollectionLimitCallStackTreeDepth,
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
-                .nextStepsListWidget:
+                .aiChatSidebarFloating,
+                .nextStepsListWidget,
+                .webViewLookUpAction:
             true
         default:
             false
@@ -381,7 +386,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .warnBeforeQuit,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
-                .memoryPressureReporting,
                 .memoryUsageReporting,
                 .aiChatSync,
                 .heuristicAction,
@@ -391,8 +395,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
                 .aiChatSidebarResizable,
+                .aiChatSidebarFloating,
                 .startupMetrics,
-                .privateProcessName:
+                .privateProcessName,
+                .webViewLookUpAction:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -536,8 +542,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
             return .disabled
-        case .memoryPressureReporting:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryPressureReporting))
         case .memoryUsageReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryUsageReporting))
         case .aiChatSync:
@@ -560,10 +564,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
+        case .aiChatSidebarFloating:
+            return .internalOnly()
         case .startupMetrics:
             return .internalOnly()
         case .privateProcessName:
             return .disabled
+        case .webViewLookUpAction:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         }
     }
 }

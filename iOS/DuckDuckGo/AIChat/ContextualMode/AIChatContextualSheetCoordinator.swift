@@ -85,6 +85,11 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController?.presentingViewController != nil
     }
 
+    /// Whether the sheet is presented and actively observing page context updates.
+    private var isActivelyObservingContext: Bool {
+        contextUpdateCancellable != nil
+    }
+
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -107,7 +112,8 @@ final class AIChatContextualSheetCoordinator {
         self.pixelHandler = pixelHandler
         self.sessionState = AIChatContextualChatSessionState(
             aiChatSettings: aiChatSettings,
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            featureFlagger: featureFlagger
         )
     }
 
@@ -153,16 +159,17 @@ final class AIChatContextualSheetCoordinator {
     /// Called by TabViewController when the page navigates to a new URL.
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
-
         sessionState.notifyPageChanged()
 
-        guard sessionState.shouldAutoCollectContext else {
+        if sessionState.shouldAutoCollectContext {
+            let didTrigger = pageContextHandler.triggerContextCollection()
+            if !didTrigger {
+                sessionState.clearProcessingNavigationFlag()
+            }
+        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && isActivelyObservingContext {
+            sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
-            return
-        }
-
-        let didTrigger = pageContextHandler.triggerContextCollection()
-        if !didTrigger {
+        } else {
             sessionState.clearProcessingNavigationFlag()
         }
     }
@@ -358,6 +365,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidDismiss(_ viewController: AIChatContextualSheetViewController) {
+        stopObservingContextUpdates()
         startSessionTimer()
     }
 

@@ -35,7 +35,8 @@ struct DefaultBrowserAndDockStoreMigratorTests {
         sut = DefaultBrowserAndDockPromptStoreMigrator(oldStore: oldStoreMock, newStore: newStoreMock, dateProvider: timeTraveller.getDate)
     }
 
-    @Test("Check Migration Happens When User Has Seen Generic Prompt But Not Popover")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check Migration Happens When User Has Seen Generic Prompt But Not Popover", .timeLimit(.minutes(1)))
     func whenUserHasSeenPromptAndNotSeenPopoverThenSavePopoverShownDate() {
         // GIVEN
         oldStoreMock.setPromptShown(true)
@@ -49,7 +50,8 @@ struct DefaultBrowserAndDockStoreMigratorTests {
         #expect(!oldStoreMock.didShowPrompt())
     }
 
-    @Test("Check Migration Does Not Happen When User Has Seen Prompt And Seen Popover")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check Migration Does Not Happen When User Has Seen Prompt And Seen Popover", .timeLimit(.minutes(1)))
     func whenUserHasSeenPromptAndSeenPopoverThenDoNotChangePopoverShownDateOrResetPromptShown() {
         // Arrange
         oldStoreMock.setPromptShown(true)
@@ -64,7 +66,8 @@ struct DefaultBrowserAndDockStoreMigratorTests {
         #expect(oldStoreMock.didShowPrompt())
     }
 
-    @Test("Check Migration Does Not Happen When User Has Not Seen Prompt")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check Migration Does Not Happen When User Has Not Seen Prompt", .timeLimit(.minutes(1)))
     func whenUserHasNotSeenPromptThenDoNotChangePopoverShownDateOrResetPromptShown() {
         // Given
         oldStoreMock.setPromptShown(false)
@@ -77,7 +80,8 @@ struct DefaultBrowserAndDockStoreMigratorTests {
         #expect(!oldStoreMock.didShowPrompt())
     }
 
-    @Test("Check Multiple Migration Calls Do Not Overwrite Previous Value")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check Multiple Migration Calls Do Not Overwrite Previous Value", .timeLimit(.minutes(1)))
     func whenCalledMultipleTimesThenSetPopoverShownDateOnce() {
         // GIVEN
         oldStoreMock.setPromptShown(true)

@@ -30,7 +30,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         cancellables = []
     }
 
-    @Test("Get and set observable throwing value")
+    @available(iOS 16, macOS 13, *)
+    @Test("Get and set observable throwing value", .timeLimit(.minutes(1)))
     func getAndSet() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key = "observableThrowingValue"
@@ -45,7 +46,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(try store.object(forKey: key) as? Int == 42)
     }
 
-    @Test("Throws on get")
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws on get", .timeLimit(.minutes(1)))
     func throwsOnGet() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key = "observableThrowingValue"
@@ -57,7 +59,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         }
     }
 
-    @Test("Throws on set")
+    @available(iOS 16, macOS 13, *)
+    @Test("Throws on set", .timeLimit(.minutes(1)))
     func throwsOnSet() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key = "observableThrowingValue"
@@ -69,7 +72,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         }
     }
 
-    @Test("Remove value sets to nil")
+    @available(iOS 16, macOS 13, *)
+    @Test("Remove value sets to nil", .timeLimit(.minutes(1)))
     func removeValue() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key = "observableThrowingValue"
@@ -85,7 +89,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(try store.object(forKey: key) as? Int == nil)
     }
 
-    @Test("Multiple properties store independently")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple properties store independently", .timeLimit(.minutes(1)))
     func multipleProperties() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key1 = "observableThrowingValue"
@@ -107,7 +112,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(try store.object(forKey: key2) as? String == "Alice")
     }
 
-    @Test("Direct dictionary access works")
+    @available(iOS 16, macOS 13, *)
+    @Test("Direct dictionary access works", .timeLimit(.minutes(1)))
     func directDictionaryAccess() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key = "observableThrowingValue"
@@ -121,14 +127,16 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
 
     // MARK: - Observable Tests
 
-    @Test("Store conforms to ObservableThrowingKeyValueStoring")
+    @available(iOS 16, macOS 13, *)
+    @Test("Store conforms to ObservableThrowingKeyValueStoring", .timeLimit(.minutes(1)))
     func storeConformsToObservableThrowingKeyValueStoring() {
         let store = InMemoryObservableThrowingKeyValueStore()
         let conformsToProtocol = store is (any ObservableThrowingKeyValueStoring)
         #expect(conformsToProtocol)
     }
 
-    @Test("Publisher emits for key changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher emits for key changes", .timeLimit(.minutes(1)))
     func publisherEmitsForKeyChanges() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key = "observableThrowingValue"
@@ -145,7 +153,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(changeCount == 1)
     }
 
-    @Test("Publisher does not emit for different key")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher does not emit for different key", .timeLimit(.minutes(1)))
     func publisherDoesNotEmitForDifferentKey() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key1 = "observableThrowingValue"
@@ -165,7 +174,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(changeCount == 0)
     }
 
-    @Test("Multiple subscribers to same key")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple subscribers to same key", .timeLimit(.minutes(1)))
     func multipleSubscribersToSameKey() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key = "observableThrowingValue"
@@ -192,7 +202,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(count2 == 1)
     }
 
-    @Test("Cancelling subscription stops observation")
+    @available(iOS 16, macOS 13, *)
+    @Test("Cancelling subscription stops observation", .timeLimit(.minutes(1)))
     func cancellingSubscriptionStopsObservation() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key = "observableThrowingValue"
@@ -214,7 +225,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(changeCount == 0)
     }
 
-    @Test("Publisher emits after error throw on get")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher emits after error throw on get", .timeLimit(.minutes(1)))
     func publisherEmitsAfterErrorThrowOnGet() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         let key = "observableThrowingValue"
@@ -245,7 +257,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
 
     // MARK: - objectWillChange Tests
 
-    @Test("objectWillChange fires for any key change")
+    @available(iOS 16, macOS 13, *)
+    @Test("objectWillChange fires for any key change", .timeLimit(.minutes(1)))
     func objectWillChangeFiresForAnyKey() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         var changeCount = 0
@@ -263,7 +276,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(changeCount == 3)
     }
 
-    @Test("objectWillChange fires for remove operations")
+    @available(iOS 16, macOS 13, *)
+    @Test("objectWillChange fires for remove operations", .timeLimit(.minutes(1)))
     func objectWillChangeFiresForRemove() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         var changeCount = 0
@@ -282,7 +296,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(changeCount == 1)
     }
 
-    @Test("objectWillChange and publisher(for:) both work together")
+    @available(iOS 16, macOS 13, *)
+    @Test("objectWillChange and publisher(for:) both work together", .timeLimit(.minutes(1)))
     func objectWillChangeAndPublisherWorkTogether() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         var objectWillChangeCount = 0
@@ -314,7 +329,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(publisherCount == 1)
     }
 
-    @Test("objectWillChange does not fire when throwing on set")
+    @available(iOS 16, macOS 13, *)
+    @Test("objectWillChange does not fire when throwing on set", .timeLimit(.minutes(1)))
     func objectWillChangeDoesNotFireWhenThrowingOnSet() {
         let store = InMemoryObservableThrowingKeyValueStore()
         var changeCount = 0
@@ -333,7 +349,8 @@ final class InMemoryObservableThrowingKeyValueStoreTests {
         #expect(changeCount == 0)
     }
 
-    @Test("objectWillChange fires even when throwing on get")
+    @available(iOS 16, macOS 13, *)
+    @Test("objectWillChange fires even when throwing on get", .timeLimit(.minutes(1)))
     func objectWillChangeFiresEvenWhenThrowingOnGet() throws {
         let store = InMemoryObservableThrowingKeyValueStore()
         var changeCount = 0

@@ -1,0 +1,75 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - unified_toggle_input
+name: test_unified_toggle_input
+
+---
+
+# Launch with onboarding skipped and unifiedToggleInput feature flag enabled
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+
+# Step 1: Navigate to Duck.ai tab
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+
+# Dismiss any web modals that appear (onboarding, promo, subscription etc.)
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+
+# Step 2: Verify collapsed state — input bar shows placeholder
+- assertVisible:
+    text: "Ask privately"
+
+# Step 3: Tap to expand — toggle and text field appear
+- tapOn:
+    text: "Ask privately"
+- assertVisible:
+    text: "Search"
+- assertVisible:
+    text: "Duck.ai"
+
+# Step 4: Duck.ai mode is default when expanded — toolbar visible
+- assertVisible:
+    text: "4o-mini"
+
+# Step 5: Switch to Search mode — toolbar disappears
+- tapOn:
+    text: "Search"
+- assertNotVisible:
+    text: "4o-mini"
+
+# Step 6: Switch back to Duck.ai — toolbar reappears
+- tapOn:
+    text: "Duck.ai"
+- assertVisible:
+    text: "4o-mini"
+
+# Step 7: Type text — verify input accepts it
+- tapOn:
+    text: "Ask privately"
+- inputText: "What is a tokamak?"
+- assertVisible:
+    text: "What is a tokamak?"

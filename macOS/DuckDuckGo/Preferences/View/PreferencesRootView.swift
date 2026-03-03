@@ -130,7 +130,7 @@ enum Preferences {
                 switch model.selectedPane {
                 case .defaultBrowser:
                     DefaultBrowserView(defaultBrowserModel: model.defaultBrowserPreferences,
-                                       dockCustomizer: DockCustomizer(),
+                                       dockCustomizer: NSApp.delegateTyped.dockCustomization,
                                        protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:
                     PrivateSearchView(model: model.searchPreferences)
@@ -151,7 +151,7 @@ enum Preferences {
                                 tabsModel: model.tabsPreferences,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
-                                dockCustomizer: DockCustomizer())
+                                dockCustomizer: NSApp.delegateTyped.dockCustomization)
                 case .sync:
                     SyncView()
                 case .appearance:

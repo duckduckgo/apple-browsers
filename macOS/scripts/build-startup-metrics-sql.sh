@@ -92,7 +92,7 @@ raw_metrics="$(jq -r '
     .attachments[].exportedFileName |
     "\($test_id)\t\(.)"
 ' "$manifest" | while IFS=$'\t' read -r test_id filename; do
-    jq --arg test_id "$test_id" '. + {test_id: $test_id}' "$SUITE/$filename"
+    jq --arg test_id "$test_id" '. + {test_id: ($test_id | split("/") | .[-1] | rtrimstr("()"))}' "$SUITE/$filename"
 done | jq -s '.')"
 
 rm -f "$manifest"

@@ -23,6 +23,7 @@ import PrivacyDashboard
 import Suggestions
 import Bookmarks
 import AIChat
+import Core
 
 final class DefaultOmniBarViewController: OmniBarViewController {
 
@@ -325,9 +326,11 @@ extension DefaultOmniBarViewController {
             omniBarView.updateAIChatSendButton(hasText: false)
 
             if URL.isValidAddressBarURLInput(query) {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadToggleURLSubmitted)
                 dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted)
                 omniDelegate?.onPromptSubmitted(query, tools: nil)
             }
         } else {

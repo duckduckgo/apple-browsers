@@ -95,11 +95,12 @@ public enum DataBrokerProtectionSharedPixels {
         public static let removedAtParamKey = "removed_at"
         public static let isAuthenticated = "isAuthenticated"
         public static let clickActionDelayReductionOptimizationKey = "click_action_delay_reduction_optimization"
+        public static let isFreeScan = "free_scan"
     }
 
-    case httpError(error: Error, code: Int, dataBroker: String, version: String)
-    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?)
-    case otherError(error: Error, dataBroker: String, version: String)
+    case httpError(error: Error, code: Int, dataBroker: String, version: String, isFreeScan: Bool?)
+    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?, isFreeScan: Bool?)
+    case otherError(error: Error, dataBroker: String, version: String, isFreeScan: Bool?)
     case databaseError(error: Error, functionOccurredIn: String)
     case cocoaError(error: Error, functionOccurredIn: String)
     case miscError(error: Error, functionOccurredIn: String)
@@ -123,10 +124,10 @@ public enum DataBrokerProtectionSharedPixels {
 #if os(iOS)
     case scanStarted(dataBroker: String)
 #endif
-    case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, isAuthenticated: Bool)
-    case scanNoResults(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionID: String, actionType: String, isAuthenticated: Bool)
-    case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionId: String, actionType: String, isAuthenticated: Bool)
-    case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, parent: String, actionId: String, actionType: String)
+    case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, isAuthenticated: Bool, isFreeScan: Bool?)
+    case scanNoResults(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionID: String, actionType: String, isAuthenticated: Bool, isFreeScan: Bool?)
+    case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionId: String, actionType: String, isAuthenticated: Bool, isFreeScan: Bool?)
+    case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, parent: String, actionId: String, actionType: String, isFreeScan: Bool?)
 
     // Stage Pixels
     case optOutEmailGenerate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
@@ -143,9 +144,9 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double, parent: String)
 
     // KPIs - engagement
-    case dailyActiveUser(isAuthenticated: Bool, needBackgroundAppRefresh: Bool?)
-    case weeklyActiveUser(isAuthenticated: Bool)
-    case monthlyActiveUser(isAuthenticated: Bool)
+    case dailyActiveUser(isAuthenticated: Bool, needBackgroundAppRefresh: Bool?, isFreeScan: Bool?)
+    case weeklyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
+    case monthlyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
 
     // KPIs - events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
@@ -170,9 +171,9 @@ public enum DataBrokerProtectionSharedPixels {
 
     // Initial scans pixels
     // https://app.asana.com/0/1204006570077678/1206981742767458/f
-    case initialScanTotalDuration(duration: Double, profileQueries: Int)
-    case initialScanSiteLoadDuration(duration: Double, hasError: Bool, brokerURL: String)
-    case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String)
+    case initialScanTotalDuration(duration: Double, profileQueries: Int, isFreeScan: Bool?)
+    case initialScanSiteLoadDuration(duration: Double, hasError: Bool, brokerURL: String, isFreeScan: Bool?)
+    case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String, isFreeScan: Bool?)
     case initialScanPreStartDuration(duration: Double)
 
     // Custom stats
@@ -307,21 +308,24 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 
     public var parameters: [String: String]? {
         switch self {
-        case .httpError(_, let code, let dataBroker, let version):
-            return ["code": String(code),
-                    Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: version]
-        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent):
-            return ["actionID": actionId,
-                    "message": message,
-                    Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: version,
-                    "stepType": stepType?.rawValue ?? "unknown",
-                    Consts.parentKey: dataBrokerParent ?? ""]
-        case .otherError(let error, let dataBroker, let version):
-            return ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
-                    Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: version]
+        case .httpError(_, let code, let dataBroker, let version, let isFreeScan):
+            let params = ["code": String(code),
+                          Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: version]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent, let isFreeScan):
+            let params = ["actionID": actionId,
+                          "message": message,
+                          Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: version,
+                          "stepType": stepType?.rawValue ?? "unknown",
+                          Consts.parentKey: dataBrokerParent ?? ""]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .otherError(let error, let dataBroker, let version, let isFreeScan):
+            let params = ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
+                          Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: version]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .databaseError(_, let functionOccurredIn),
                 .cocoaError(_, let functionOccurredIn),
                 .miscError(_, let functionOccurredIn):
@@ -402,48 +406,52 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .scanStarted(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
 #endif
-        case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let isAuthenticated):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.matchesFoundKey: String(matchesFound),
-                    Consts.durationParamKey: String(duration),
-                    Consts.triesKey: String(tries),
-                    Consts.isImmediateOperation: isImmediateOperation.description,
-                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent,
-                    Consts.isAuthenticated: isAuthenticated.description]
-        case .scanNoResults(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionID, let actionType, let isAuthenticated):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: dataBrokerVersion,
-                    Consts.durationParamKey: String(duration),
-                    Consts.triesKey: String(tries),
-                    Consts.isImmediateOperation: isImmediateOperation.description,
-                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent,
-                    Consts.actionIDKey: actionID,
-                    Consts.actionTypeKey: actionType,
-                    Consts.isAuthenticated: isAuthenticated.description]
-        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionId, let actionType, let isAuthenticated):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: dataBrokerVersion,
-                    Consts.durationParamKey: String(duration),
-                    Consts.errorCategoryKey: category,
-                    Consts.errorDetailsKey: details,
-                    Consts.isImmediateOperation: isImmediateOperation.description,
-                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
-                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent,
-                    Consts.actionIDKey: actionId,
-                    Consts.actionTypeKey: actionType,
-                    Consts.isAuthenticated: isAuthenticated.description]
-        case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let parent, let actionId, let actionType):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: dataBrokerVersion,
-                    Consts.triesKey: String(tries),
-                    Consts.parentKey: parent,
-                    Consts.actionIDKey: actionId,
-                    Consts.actionTypeKey: actionType]
+        case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let isAuthenticated, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.matchesFoundKey: String(matchesFound),
+                          Consts.durationParamKey: String(duration),
+                          Consts.triesKey: String(tries),
+                          Consts.isImmediateOperation: isImmediateOperation.description,
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus,
+                          Consts.parentKey: parent,
+                          Consts.isAuthenticated: isAuthenticated.description]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .scanNoResults(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionID, let actionType, let isAuthenticated, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: dataBrokerVersion,
+                          Consts.durationParamKey: String(duration),
+                          Consts.triesKey: String(tries),
+                          Consts.isImmediateOperation: isImmediateOperation.description,
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus,
+                          Consts.parentKey: parent,
+                          Consts.actionIDKey: actionID,
+                          Consts.actionTypeKey: actionType,
+                          Consts.isAuthenticated: isAuthenticated.description]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionId, let actionType, let isAuthenticated, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: dataBrokerVersion,
+                          Consts.durationParamKey: String(duration),
+                          Consts.errorCategoryKey: category,
+                          Consts.errorDetailsKey: details,
+                          Consts.isImmediateOperation: isImmediateOperation.description,
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus,
+                          Consts.parentKey: parent,
+                          Consts.actionIDKey: actionId,
+                          Consts.actionTypeKey: actionType,
+                          Consts.isAuthenticated: isAuthenticated.description]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let parent, let actionId, let actionType, let isFreeScan):
+            let params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: dataBrokerVersion,
+                          Consts.triesKey: String(tries),
+                          Consts.parentKey: parent,
+                          Consts.actionIDKey: actionId,
+                          Consts.actionTypeKey: actionType]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs, let isAuthenticated):
             return [Consts.started: String(started),
                     Consts.orphaned: String(orphaned),
@@ -474,15 +482,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutJobAt42DaysConfirmed(let dataBroker),
                 .optOutJobAt42DaysUnconfirmed(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
-        case .dailyActiveUser(let isAuthenticated, let needBackgroundAppRefresh):
+        case .dailyActiveUser(let isAuthenticated, let needBackgroundAppRefresh, let isFreeScan):
             var params = [Consts.isAuthenticated: isAuthenticated.description]
             if let needBackgroundAppRefresh {
                 params[Consts.needBackgroundAppRefresh] = needBackgroundAppRefresh.description
             }
-            return params
-        case .weeklyActiveUser(let isAuthenticated),
-                .monthlyActiveUser(let isAuthenticated):
-            return [Consts.isAuthenticated: isAuthenticated.description]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .weeklyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .monthlyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
+            return addingFreeScanParamIfNeeded(to: [Consts.isAuthenticated: isAuthenticated.description], isFreeScan: isFreeScan)
         case .scanningEventNewMatch(let dataBrokerURL),
                 .scanningEventReAppearance(let dataBrokerURL):
             return [Consts.dataBrokerParamKey: dataBrokerURL]
@@ -502,12 +510,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.backendServiceCallSite: backendServiceCallSite.rawValue,
                     Consts.dataBrokerParamKey: dataBroker ?? "unknown",
                     Consts.dataBrokerVersionKey: brokerVersion ?? "unknown"]
-        case .initialScanTotalDuration(let duration, let profileQueries):
-            return [Consts.durationInMs: String(duration), Consts.profileQueries: String(profileQueries)]
-        case .initialScanSiteLoadDuration(let duration, let hasError, let brokerURL):
-            return [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
-        case .initialScanPostLoadingDuration(let duration, let hasError, let brokerURL):
-            return [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
+        case .initialScanTotalDuration(let duration, let profileQueries, let isFreeScan):
+            let params = [Consts.durationInMs: String(duration), Consts.profileQueries: String(profileQueries)]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .initialScanSiteLoadDuration(let duration, let hasError, let brokerURL, let isFreeScan):
+            let params = [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .initialScanPostLoadingDuration(let duration, let hasError, let brokerURL, let isFreeScan):
+            let params = [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
+            return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .initialScanPreStartDuration(let duration):
             return [Consts.durationInMs: String(duration)]
         case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate, let clickActionDelayReductionOptimization):
@@ -664,6 +675,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
     }
 }
 
+extension DataBrokerProtectionSharedPixels {
+    private func addingFreeScanParamIfNeeded(to params: [String: String], isFreeScan: Bool?) -> [String: String] {
+        guard let isFreeScan else { return params }
+        var newParams = params
+        newParams[Consts.isFreeScan] = isFreeScan.description
+        return newParams
+    }
+}
+
 public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
 
     public enum Platform {
@@ -695,9 +715,9 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultDatabaseRecreated:
                 self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
-            case .httpError(let error, _, _, _),
-                    .actionFailedError(let error, _, _, _, _, _, _),
-                    .otherError(let error, _, _):
+            case .httpError(let error, _, _, _, _),
+                    .actionFailedError(let error, _, _, _, _, _, _, _),
+                    .otherError(let error, _, _, _):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),
                     .cocoaError(let error, _),

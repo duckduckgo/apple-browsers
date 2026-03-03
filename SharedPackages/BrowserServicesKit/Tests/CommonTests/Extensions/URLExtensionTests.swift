@@ -24,7 +24,8 @@ import Testing
 @MainActor
 final class URLExtensionTests {
 
-    @Test("External URLs are valid")
+    @available(iOS 16, macOS 13, *)
+    @Test("External URLs are valid", .timeLimit(.minutes(1)))
     func external_urls_are_valid() {
         #expect("mailto://user@host.tld".url!.isValid)
         #expect("sms://+44776424232323".url!.isValid)
@@ -61,7 +62,8 @@ final class URLExtensionTests {
         ("https://www.duckduckgo.com/html?q =search", #line),
     ]
 
-    @Test("Navigational URLs are valid", arguments: navigational_urls_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("Navigational URLs are valid", .timeLimit(.minutes(1)), arguments: navigational_urls_args)
     func navigational_urls_are_valid(rawValue: String, line: UInt) throws {
         if #available(macOS 14, *) {
             // This test can't run on macOS 14 or higher
@@ -78,7 +80,8 @@ final class URLExtensionTests {
         "data:user:pass@text/vnd-example+xyz;foo=bar;base64,R0lGODdh",
     ]
 
-    @Test("Non-valid URLs")
+    @available(iOS 16, macOS 13, *)
+    @Test("Non-valid URLs", .timeLimit(.minutes(1)))
     func non_valid_urls() throws {
         if #available(macOS 14, *) {
             // This test can't run on macOS 14 or higher
@@ -90,7 +93,8 @@ final class URLExtensionTests {
         }
     }
 
-    @Test("URL scheme is added when missing")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL scheme is added when missing", .timeLimit(.minutes(1)))
     func when_no_scheme_in_string_url_has_scheme() {
         #expect("duckduckgo.com".url!.absoluteString == "http://duckduckgo.com")
         #expect("example.com".url!.absoluteString == "http://example.com")
@@ -98,7 +102,8 @@ final class URLExtensionTests {
         #expect("localdomain".url == nil)
     }
 
-    @Test("IPv4 addresses must contain four octets")
+    @available(iOS 16, macOS 13, *)
+    @Test("IPv4 addresses must contain four octets", .timeLimit(.minutes(1)))
     func ipv4AddressMustContainFourOctets() {
         #expect("1.4".url == nil)
         #expect("1.4/3.4".url == nil)
@@ -109,7 +114,8 @@ final class URLExtensionTests {
         #expect("1.0.0.4/3.4".url?.absoluteString == "http://1.0.0.4/3.4")
     }
 
-    @Test("URL.naked returns a normalized URL without scheme, www prefix, and trailing slash")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.naked returns a normalized URL without scheme, www prefix, and trailing slash", .timeLimit(.minutes(1)))
     func nakedIsCalled_returnsURLWithNoSchemeWWWPrefixAndLastSlash() {
         let url = URL(string: "http://duckduckgo.com")!
         let duplicate = URL(string: "https://www.duckduckgo.com/")!
@@ -117,7 +123,8 @@ final class URLExtensionTests {
         #expect(url.naked == duplicate.naked)
     }
 
-    @Test("URL.root returns a URL with the host only, removing all other components")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.root returns a URL with the host only, removing all other components", .timeLimit(.minutes(1)))
     func rootIsCalled_returnsURLWithNoPathQueryFragmentUserAndPassword() {
         let url = URL(string: "https://dax:123456@www.duckduckgo.com/test.php?test=S&info=test#fragment")!
 
@@ -143,7 +150,8 @@ final class URLExtensionTests {
         ("sheep%2B:P%40%24swrd@192.168.1.1:8900/", "sheep+", "P@$swrd", #line),
     ]
 
-    @Test("Basic auth credentials are correctly extracted from URLs", arguments: basicAuthCredential_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("Basic auth credentials are correctly extracted from URLs", .timeLimit(.minutes(1)), arguments: basicAuthCredential_args)
     func basicAuthCredential(url: String, user: String?, password: String?, line: UInt) throws {
         if #available(macOS 14, *) {
             // This test can't run on macOS 14 or higher
@@ -173,7 +181,8 @@ final class URLExtensionTests {
         ("sheep%2B:P%40%24swrd@192.168.1.1:8900/", "http://192.168.1.1:8900/", #line),
     ]
 
-    @Test("Basic auth credentials are correctly removed from URLs", arguments: urlRemovingBasicAuthCredential_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("Basic auth credentials are correctly removed from URLs", .timeLimit(.minutes(1)), arguments: urlRemovingBasicAuthCredential_args)
     func urlRemovingBasicAuthCredential(url: String, removingCredential: String, line: UInt) throws {
         if #available(macOS 14, *) {
             // This test can't run on macOS 14 or higher
@@ -184,7 +193,8 @@ final class URLExtensionTests {
         #expect(filtered.absoluteString == removingCredential, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
-    @Test("URL.isRoot correctly identifies root URLs")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.isRoot correctly identifies root URLs", .timeLimit(.minutes(1)))
     func isRoot() {
         let url = URL(string: "https://www.server.com:8080/path?query=string#fragment")!
         let rootUrl = URL(string: "https://www.server.com:8080/")!
@@ -193,7 +203,8 @@ final class URLExtensionTests {
         #expect(!url.isRoot)
     }
 
-    @Test("URL.appendingParameter doesn't change the original URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.appendingParameter doesn't change the original URL", .timeLimit(.minutes(1)))
     func addParameterIsCalled_doesNotChangeExistingURL() {
         let url = URL(string: "https://duckduckgo.com/?q=Battle%20star+Galactica%25a")!
 
@@ -224,13 +235,15 @@ final class URLExtensionTests {
         ("=", "=", "https://duck.com/?%3D=%3D", #line),
     ]
 
-    @Test("URL.appendingParameter correctly encodes RFC3986 reserved characters", arguments: rfc3986QueryReservedChars_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.appendingParameter correctly encodes RFC3986 reserved characters", .timeLimit(.minutes(1)), arguments: rfc3986QueryReservedChars_args)
     func addParameterIsCalled_encodesRFC3986QueryReservedCharactersInTheParameter(name: String, value: String, expected: String, line: UInt) {
         let url = URL(string: "https://duck.com/")!
         #expect(url.appendingParameter(name: name, value: value).absoluteString == expected, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
-    @Test("URL.appendingParameter allows unescaped reserved characters when specified")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.appendingParameter allows unescaped reserved characters when specified", .timeLimit(.minutes(1)))
     func addParameterIsCalled_allowsUnescapedReservedCharactersAsSpecified() {
         let url = URL(string: "https://duck.com/")!
 
@@ -244,27 +257,32 @@ final class URLExtensionTests {
         )
     }
 
-    @Test("URL.trimmedAddressBarString returns nil for empty input")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString returns nil for empty input", .timeLimit(.minutes(1)))
     func punycodeUrlIsCalledOnEmptyStringReturnsNil() {
         #expect(URL(trimmedAddressBarString: "")?.absoluteString == nil)
     }
 
-    @Test("URL.trimmedAddressBarString returns nil for space input")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString returns nil for space input", .timeLimit(.minutes(1)))
     func punycodeUrlIsCalledOnQueryReturnsNil() {
         #expect(URL(trimmedAddressBarString: " ")?.absoluteString == nil)
     }
 
-    @Test("URL.trimmedAddressBarString returns nil for URLs with spaces in the hostname")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString returns nil for URLs with spaces in the hostname", .timeLimit(.minutes(1)))
     func punycodeUrlIsCalledOnQueryWithSpaceThenUrlIsNotReturned() {
         #expect(URL(trimmedAddressBarString: "https://www.duckduckgo .com/html?q=search")?.absoluteString == nil)
     }
 
-    @Test("URL.trimmedAddressBarString returns nil for unicode local hostnames")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString returns nil for unicode local hostnames", .timeLimit(.minutes(1)))
     func punycodeUrlIsCalledOnLocalHostnameReturnsNil() {
         #expect(URL(trimmedAddressBarString: "💩")?.absoluteString == nil)
     }
 
-    @Test("URL.trimmedAddressBarString doesn't interpret 'define:' as a local URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString doesn't interpret 'define:' as a local URL", .timeLimit(.minutes(1)))
     func defineSearchRequestIsMadeNotInterpretedAsLocalURL() {
         #expect(URL(trimmedAddressBarString: "define:300/spartans")?.absoluteString == nil)
     }
@@ -295,20 +313,23 @@ final class URLExtensionTests {
         ("https://www.duckduckgo.com/html?q =search", "https://www.duckduckgo.com/html?q%20=search", "https", #line),
     ]
 
-    @Test("URL.trimmedAddressBarString correctly parses various address bar inputs", arguments: addressBarURLParsing_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString correctly parses various address bar inputs", .timeLimit(.minutes(1)), arguments: addressBarURLParsing_args)
     func addressBarURLParsing(address: String, expectedString: String? = nil, expectedScheme: String? = nil, line: UInt) {
         let url = URL(trimmedAddressBarString: address, useUnifiedLogic: true)
         #expect(url?.scheme == expectedScheme, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         #expect(url?.absoluteString == expectedString, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
-    @Test("URL.trimmedAddressBarString escapes invalid characters in URL parameters")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString escapes invalid characters in URL parameters", .timeLimit(.minutes(1)))
     func urlParametersModifiedWithInvalidCharactersThenParametersArePercentEscaped() {
         #expect(URL(trimmedAddressBarString: "https://www.duckduckgo.com/html?q=a%20search with+space?+and%25plus&ia=calculator")!.absoluteString ==
                 "https://www.duckduckgo.com/html?q=a%20search%20with+space?+and%25plus&ia=calculator")
     }
 
-    @Test("URL.trimmedAddressBarString preserves empty query markers")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString preserves empty query markers", .timeLimit(.minutes(1)))
     func urlWithEmptyQueryIsFixedUpQuestionCharIsKept() {
         #expect(URL(trimmedAddressBarString: "https://duckduckgo.com/?")!.absoluteString ==
                "https://duckduckgo.com/?")
@@ -320,7 +341,8 @@ final class URLExtensionTests {
                "https://duckduckgo.com?")
     }
 
-    @Test("URL.trimmedAddressBarString escapes hash fragments correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString escapes hash fragments correctly", .timeLimit(.minutes(1)))
     func urlWithHashIsFixedUpHashIsCorrectlyEscaped() {
         #expect(URL(trimmedAddressBarString: "https://duckduckgo.com/#hash with #")!.absoluteString ==
                "https://duckduckgo.com/#hash%20with%20%23")
@@ -349,12 +371,14 @@ final class URLExtensionTests {
         ("https://💩.la/💩", "https://xn--ls8h.la/%F0%9F%92%A9", #line),
     ]
 
-    @Test("URL.trimmedAddressBarString correctly handles punycode URLs", arguments: punycodeUrls_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString correctly handles punycode URLs", .timeLimit(.minutes(1)), arguments: punycodeUrls_args)
     func punycodeUrlIsCalledWithEncodedUrlsReturnsCorrectURL(input: String, expected: String, line: UInt) {
         #expect(input.decodedURL?.absoluteString == expected, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
-    @Test("URL.getParameter returns the correct value when the parameter exists")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.getParameter returns the correct value when the parameter exists", .timeLimit(.minutes(1)))
     func paramExistsThengetParameterReturnsCorrectValue() throws {
         let url = URL(string: "http://test.com?firstParam=firstValue&secondParam=secondValue")!
         let expected = "secondValue"
@@ -362,14 +386,16 @@ final class URLExtensionTests {
         #expect(actual == expected)
     }
 
-    @Test("URL.getParameter returns nil when the parameter doesn't exist")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.getParameter returns nil when the parameter doesn't exist", .timeLimit(.minutes(1)))
     func paramDoesNotExistThengetParameterIsNil() throws {
         let url = URL(string: "http://test.com?firstParam=firstValue&secondParam=secondValue")!
         let result = url.getParameter(named: "someOtherParam")
         #expect(result == nil)
     }
 
-    @Test("URL.removeParameter returns a URL without the specified parameter")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.removeParameter returns a URL without the specified parameter", .timeLimit(.minutes(1)))
     func paramExistsThenRemovingReturnUrlWithoutParam() {
         let url = URL(string: "http://test.com?firstParam=firstValue&secondParam=secondValue")!
         let expected = URL(string: "http://test.com?secondParam=secondValue")!
@@ -377,14 +403,16 @@ final class URLExtensionTests {
         #expect(actual == expected)
     }
 
-    @Test("URL.removeParameter returns the same URL when the parameter doesn't exist")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.removeParameter returns the same URL when the parameter doesn't exist", .timeLimit(.minutes(1)))
     func paramDoesNotExistThenRemovingReturnsSameUrl() {
         let url = URL(string: "http://test.com?firstParam=firstValue&secondParam=secondValue")!
         let actual = url.removeParameter(name: "someOtherParam")
         #expect(actual == url)
     }
 
-    @Test("URL.removeParameter preserves plus signs in remaining parameters")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.removeParameter preserves plus signs in remaining parameters", .timeLimit(.minutes(1)))
     func removingAParamThenRemainingUrlWebPlusesAreEncodedToEnsureTheyAreMaintainedAsSpaces() {
         let url = URL(string: "http://test.com?firstParam=firstValue&secondParam=45+%2B+5")!
         let expected = URL(string: "http://test.com?secondParam=45+%2B+5")!
@@ -392,7 +420,8 @@ final class URLExtensionTests {
         #expect(actual == expected)
     }
 
-    @Test("URL.removingParameters returns a URL without the specified parameters")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.removingParameters returns a URL without the specified parameters", .timeLimit(.minutes(1)))
     func removingParamsThenRemovingReturnsUrlWithoutParams() {
         let url = URL(string: "http://test.com?firstParam=firstValue&secondParam=secondValue&thirdParam=thirdValue")!
         let expected = URL(string: "http://test.com?secondParam=secondValue")!
@@ -400,21 +429,24 @@ final class URLExtensionTests {
         #expect(actual == expected)
     }
 
-    @Test("URL.removingParameters returns the same URL when no parameters match")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.removingParameters returns the same URL when no parameters match", .timeLimit(.minutes(1)))
     func paramsDoNotExistThenRemovingReturnsSameUrl() {
         let url = URL(string: "http://test.com?firstParam=firstValue&secondParam=secondValue")!
         let actual = url.removingParameters(named: ["someParam", "someOtherParam"])
         #expect(actual == url)
     }
 
-    @Test("URL.removingParameters returns the same URL when given an empty array")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.removingParameters returns the same URL when given an empty array", .timeLimit(.minutes(1)))
     func emptyParamArrayIsUsedThenRemovingReturnsSameUrl() {
         let url = URL(string: "http://test.com?firstParam=firstValue&secondParam=secondValue")!
         let actual = url.removingParameters(named: [])
         #expect(actual == url)
     }
 
-    @Test("URL.removingParameters preserves plus signs in remaining parameters")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.removingParameters preserves plus signs in remaining parameters", .timeLimit(.minutes(1)))
     func removingParamsThenRemainingUrlWebPlusesAreEncodedToEnsureTheyAreMaintainedAsSpaces() {
         let url = URL(string: "http://test.com?firstParam=firstValue&secondParam=45+%2B+5")!
         let expected = URL(string: "http://test.com?secondParam=45+%2B+5")!
@@ -422,7 +454,8 @@ final class URLExtensionTests {
         #expect(actual == expected)
     }
 
-    @Test("URL.appendingParameter adds a query string when there are no parameters")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.appendingParameter adds a query string when there are no parameters", .timeLimit(.minutes(1)))
     func noParamsThenAddingAppendsQuery() throws {
         let url = URL(string: "http://test.com")!
         let expected = URL(string: "http://test.com?aParam=aValue")!
@@ -430,7 +463,8 @@ final class URLExtensionTests {
         #expect(actual == expected)
     }
 
-    @Test("URL.appendingParameter appends to existing query parameters")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.appendingParameter appends to existing query parameters", .timeLimit(.minutes(1)))
     func paramDoesNotExistThenAddingParamAppendsItToExistingQuery() throws {
         let url = URL(string: "http://test.com?firstParam=firstValue")!
         let expected = URL(string: "http://test.com?firstParam=firstValue&anotherParam=anotherValue")!
@@ -438,7 +472,8 @@ final class URLExtensionTests {
         #expect(actual == expected)
     }
 
-    @Test("URL.appendingParameter encodes parameters with invalid characters")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.appendingParameter encodes parameters with invalid characters", .timeLimit(.minutes(1)))
     func paramHasInvalidCharactersThenAddingParamAppendsEncodedVersion() throws {
         let url = URL(string: "http://test.com")!
         let expected = URL(string: "http://test.com?aParam=43%20%2B%205")!
@@ -446,7 +481,8 @@ final class URLExtensionTests {
         #expect(actual == expected)
     }
 
-    @Test("URL.appendingParameter adds a new value for an existing parameter")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.appendingParameter adds a new value for an existing parameter", .timeLimit(.minutes(1)))
     func paramExistsThenAddingNewValueAppendsParam() throws {
         let url = URL(string: "http://test.com?firstParam=firstValue")!
         let expected = URL(string: "http://test.com?firstParam=firstValue&firstParam=newValue")!
@@ -473,7 +509,8 @@ final class URLExtensionTests {
         ("youtube.com/#link#1", "https://youtube.com#link", false, #line),
     ]
 
-    @Test("URL.matches correctly compares URLs", arguments: matches_comparator_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.matches correctly compares URLs", .timeLimit(.minutes(1)), arguments: matches_comparator_args)
     func matchesComparator(url1: String, url2: String, expected: Bool, line: UInt) {
         if expected {
             #expect(url1.url!.matches(url2.url!), sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
@@ -492,7 +529,8 @@ final class URLExtensionTests {
         ("https://www.youtube.com:123", "youtube.com", 123, "https", false, #line),
     ]
 
-    @Test("URL.matches correctly matches against protection spaces", arguments: matches_protection_space_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.matches correctly matches against protection spaces", .timeLimit(.minutes(1)), arguments: matches_protection_space_args)
     func matchesProtectionSpace(url: String, host: String, port: Int, scheme: String, expected: Bool, line: UInt) {
         let protectionSpace = URLProtectionSpace(host: host, port: port, protocol: scheme, realm: "realm", authenticationMethod: "basic")
         if expected {
@@ -502,7 +540,8 @@ final class URLExtensionTests {
         }
     }
 
-    @Test("URL.getQueryItem returns the correct query item when it exists")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.getQueryItem returns the correct query item when it exists", .timeLimit(.minutes(1)))
     func queryItemWithNameAndURLHasQueryItemReturnsQueryItem() throws {
         // GIVEN
         let url = try #require(URL(string: "www.duckduckgo.com?origin=test"))
@@ -516,7 +555,8 @@ final class URLExtensionTests {
         #expect(queryItem.value == "test")
     }
 
-    @Test("URL.getQueryItem returns nil when the query item doesn't exist")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.getQueryItem returns nil when the query item doesn't exist", .timeLimit(.minutes(1)))
     func queryItemWithNameAndURLDoesNotHaveQueryItemReturnsNil() throws {
         // GIVEN
         let url = try #require(URL(string: "www.duckduckgo.com"))
@@ -528,7 +568,8 @@ final class URLExtensionTests {
         #expect(result == nil)
     }
 
-    @Test("URL.appending(percentEncodedQueryItem:) correctly adds a query item")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.appending(percentEncodedQueryItem:) correctly adds a query item", .timeLimit(.minutes(1)))
     func appendingQueryItemReturnsURLWithQueryItem() throws {
         // GIVEN
         let url = try #require(URL(string: "www.duckduckgo.com"))
@@ -540,7 +581,8 @@ final class URLExtensionTests {
         #expect(result.absoluteString == "www.duckduckgo.com?origin=test")
     }
 
-    @Test("URL.appending(percentEncodedQueryItems:) correctly adds multiple query items")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.appending(percentEncodedQueryItems:) correctly adds multiple query items", .timeLimit(.minutes(1)))
     func appendingQueryItemsReturnsURLWithQueryItems() throws {
         // GIVEN
         let queryItems = [URLQueryItem(name: "origin", value: "test"), URLQueryItem(name: "another_item", value: "test_2")]
@@ -553,7 +595,8 @@ final class URLExtensionTests {
         #expect(result.absoluteString == "www.duckduckgo.com?origin=test&another_item=test_2")
     }
 
-    @Test("URL.getQueryItems returns all query items for a URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.getQueryItems returns all query items for a URL", .timeLimit(.minutes(1)))
     func getQueryItemsReturnsQueryItemsForURL() throws {
         // GIVEN
         let url = try #require(URL(string: "www.duckduckgo.com?origin=test&another_item=test_2"))
@@ -566,7 +609,8 @@ final class URLExtensionTests {
         #expect(result.last == .init(name: "another_item", value: "test_2"))
     }
 
-    @Test("URL.trimmedAddressBarString handles user and password information correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.trimmedAddressBarString handles user and password information correctly", .timeLimit(.minutes(1)))
     func userInfoDoesNotContaintPassword_NavigateToSearch() {
         #expect(URL(trimmedAddressBarString: "user@domain.com") == nil)
 
@@ -586,7 +630,8 @@ final class URLExtensionTests {
         #expect(url3?.password(percentEncoded: false) == "pass")
     }
 
-    @Test("URL handles spaces in path, query, and fragment components")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL handles spaces in path, query, and fragment components", .timeLimit(.minutes(1)))
     func normalizingURLsWithSpacesInDifferentComponents() throws {
         // Path with spaces
         let urlWithSpacesInPath = URL(string: "https://example.com/path with spaces/file.html")
@@ -601,7 +646,8 @@ final class URLExtensionTests {
         #expect(urlWithSpacesInFragment?.absoluteString == "https://example.com/page#section%20with%20spaces")
     }
 
-    @Test("URL correctly handles international characters")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL correctly handles international characters", .timeLimit(.minutes(1)))
     func internationalCharactersInURLComponents() throws {
         // Test with international characters in path
         let urlWithInternationalPath = URL(string: "https://example.com/пример/测试")
@@ -612,7 +658,8 @@ final class URLExtensionTests {
         #expect(urlWithInternationalQuery?.absoluteString == "https://example.com/search?q=%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF")
     }
 
-    @Test("URL correctly handles spaces specifically in auth, path, and query parameters")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL correctly handles spaces specifically in auth, path, and query parameters", .timeLimit(.minutes(1)))
     func spacesInAuthPathAndQueryParameters() throws {
         // URL with spaces in auth
         let urlWithSpacesInAuth = URL(string: "https://user name:pass word@example.com")
@@ -627,7 +674,8 @@ final class URLExtensionTests {
         #expect(urlWithSpacesInQueryParams?.absoluteString == "https://example.com/search?query=hello%20world&category=books%20and%20magazines")
     }
 
-    @Test("URL maintains plus signs in query parameters")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL maintains plus signs in query parameters", .timeLimit(.minutes(1)))
     func plusSignsInQueryParametersArePreserved() throws {
         let url = URL(string: "https://example.com/search?q=c++programming&lang=c++")?
             .appendingParameter(name: "rating", value: "4+")
@@ -635,7 +683,8 @@ final class URLExtensionTests {
         #expect(url?.absoluteString == "https://example.com/search?q=c++programming&lang=c++&rating=4%2B")
     }
 
-    @Test("URL handles email addresses in mailto: URLs correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("URL handles email addresses in mailto: URLs correctly", .timeLimit(.minutes(1)))
     func emailAddressesInMailtoURLs() throws {
         let url = URL(string: "mailto:test@example.com,user@domain.com")
         #expect(url?.absoluteString == "mailto:test@example.com,user@domain.com")
@@ -646,7 +695,8 @@ final class URLExtensionTests {
         #expect(emailAddresses?[1] == "user@domain.com")
     }
 
-    @Test("URL.removingTextFragment removes text fragment if it exists", arguments: [
+    @available(iOS 16, macOS 13, *)
+    @Test("URL.removingTextFragment removes text fragment if it exists", .timeLimit(.minutes(1)), arguments: [
         ("example.com#:~:text=abcd%20", "example.com"),
         ("https://youtube.com/watch?v=12345#:~:text=ab%20cd", "https://youtube.com/watch?v=12345"),
         ("https://example.com/#:~:", "https://example.com/"),

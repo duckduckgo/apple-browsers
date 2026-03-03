@@ -73,7 +73,7 @@ import AIChatTestingUtilities
         let featureFlagger = MockFeatureFlagger()
         let aiChatSettings = MockAIChatSettingsProvider()
         let fireproofing = MockFireproofing()
-        let textZoomCoordinator = MockTextZoomCoordinator()
+        let textZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()
         let subscriptionDataReporter = MockSubscriptionDataReporter()
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
@@ -110,7 +110,8 @@ import AIChatTestingUtilities
                                     featureFlagger: featureFlagger,
                                     contentScopeExperimentManager: MockContentScopeExperimentManager(),
                                     appSettings: AppDependencyProvider.shared.appSettings,
-                                    textZoomCoordinator: textZoomCoordinator,
+                                    textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                    autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                                     websiteDataManager: mockWebsiteDataManager,
                                     fireproofing: fireproofing,
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
@@ -122,7 +123,8 @@ import AIChatTestingUtilities
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     privacyStats: MockPrivacyStats(),
                                     voiceSearchHelper: MockVoiceSearchHelper(),
-                                    launchSourceManager: MockLaunchSourceManager()
+                                    launchSourceManager: MockLaunchSourceManager(),
+                                    darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
@@ -130,7 +132,8 @@ import AIChatTestingUtilities
                                         syncService: syncService,
                                         bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
                                         fireproofing: fireproofing,
-                                        textZoomCoordinator: textZoomCoordinator,
+                                        textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                        autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: mockConfigManager,
@@ -158,7 +161,7 @@ import AIChatTestingUtilities
             featureFlagger: featureFlagger,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,
-            textZoomCoordinator: textZoomCoordinator,
+            textZoomCoordinatorProvider: textZoomCoordinatorProvider,
             websiteDataManager: mockWebsiteDataManager,
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
@@ -181,7 +184,8 @@ import AIChatTestingUtilities
             fireExecutor: fireExecutor,
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
             privacyStats: MockPrivacyStats(),
-            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil)
+            whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

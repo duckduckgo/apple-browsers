@@ -30,6 +30,7 @@ public struct ReleaseNotesValues: Codable {
     enum Status: String {
         case loaded
         case loading
+        case loadingError
         case updateReady
         case updateDownloading
         case updatePreparing
@@ -61,10 +62,10 @@ public final class ReleaseNotesNavigationResponder: NavigationResponder {
         }
     }
     private weak var releaseNotesUserScript: ReleaseNotesUserScript?
-    private let updateController: any SparkleUpdateController
+    private let updateController: any SparkleUpdateControlling
     private let releaseNotesURL: URL
 
-    public init(updateController: any SparkleUpdateController,
+    public init(updateController: any SparkleUpdateControlling,
                 releaseNotesURL: URL,
                 scriptsPublisher: some Publisher<any ReleaseNotesUserScriptProvider, Never>,
                 webViewPublisher: some Publisher<WKWebView, Never>) {
@@ -139,7 +140,7 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: any SparkleUpdateController, pixelFiring: PixelFiring?, keyValueStore: ThrowingKeyValueStoring) {
+    init(from updateController: any SparkleUpdateControlling, pixelFiring: PixelFiring?, keyValueStore: ThrowingKeyValueStoring) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
@@ -176,7 +177,7 @@ extension ReleaseNotesValues {
 
             pixelFiring?.fire(UpdateFlowPixels.releaseNotesEmpty, frequency: .dailyAndCount)
 
-            self.init(status: updateController.updateProgress.toStatus,
+            self.init(status: .loadingError,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,
                       automaticUpdate: updateController.areAutomaticUpdatesEnabled)
@@ -200,16 +201,7 @@ extension ReleaseNotesValues {
             downloadProgress = progress.toDownloadProgress
         }
 
-        // Hack: this is a bit of a hack to get the action button in our Release Notes to show
-        // the appropriate action.  This code only executes if autor-restarts are NOT allowed
-        // which means we're on the new update behavior.
-        //
-        // The rationale for this change is explained here:
-        // https://app.asana.com/1/137249556945/task/1210262960023979/comment/1210277947927308?focus=true
-        //
-        // This was done to provide a quick solution to an issue found during a ship review.
-        //
-        let automaticUpdate = updateController.useLegacyAutoRestartLogic ? updateController.areAutomaticUpdatesEnabled : updateController.isAtRestartCheckpoint
+        let automaticUpdate = updateController.isAtRestartCheckpoint
 
         self.init(status: status,
                   currentVersion: currentVersion,

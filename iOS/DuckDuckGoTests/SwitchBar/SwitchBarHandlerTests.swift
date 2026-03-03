@@ -29,6 +29,10 @@ final class SwitchBarHandlerTests: XCTestCase {
         static let toggleState = "SwitchBarHandler.toggleState"
     }
 
+    private final class MockDevicePlatform: DevicePlatformProviding {
+        static var isIphone: Bool = true
+    }
+
     private var sut: SwitchBarHandler!
     private var mockVoiceSearchHelper: MockVoiceSearchHelper!
     private var mockStorage: MockKeyValueStore!
@@ -36,6 +40,7 @@ final class SwitchBarHandlerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        MockDevicePlatform.isIphone = true
         mockVoiceSearchHelper = MockVoiceSearchHelper()
         mockStorage = MockKeyValueStore()
         cancellables = Set<AnyCancellable>()
@@ -50,15 +55,18 @@ final class SwitchBarHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    private func createSUT() {
+    private func createSUT(devicePlatform: DevicePlatformProviding.Type = MockDevicePlatform.self) {
         sut = SwitchBarHandler(
             voiceSearchHelper: mockVoiceSearchHelper,
             storage: mockStorage, aiChatSettings: MockAIChatSettingsProvider(),
-            sessionStateMetrics: SessionStateMetrics(storage: mockStorage)
+            sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
+            devicePlatform: devicePlatform
         )
     }
 
-    func testVoiceButtonNotVisible_WhenNoTextAndTopBar() {
+    func testVoiceButtonNotVisible_WhenIPadAndNoTextAndTopBar() {
+        MockDevicePlatform.isIphone = false
+        createSUT()
         sut.updateBarPosition(isTop: true)
         mockVoiceSearchHelper.isVoiceSearchEnabled = true
         sut.clearText()
@@ -418,33 +426,20 @@ final class SwitchBarHandlerTests: XCTestCase {
     }
      */
 
-    // MARK: - Voice Button with .fadeOutOnToggle Tests
+    // MARK: - Voice Button Tests (iPhone uses fade-out animation)
 
-    private func createSUTWithFadeOutEnabled() {
-        let mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.fadeOutOnToggle])
-        sut = SwitchBarHandler(
-            voiceSearchHelper: mockVoiceSearchHelper,
-            storage: mockStorage,
-            aiChatSettings: MockAIChatSettingsProvider(),
-            sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
-            featureFlagger: mockFeatureFlagger
-        )
-    }
-
-    func testVoiceButtonVisible_WhenFadeOutEnabledAndTopBarAndNoText() {
-        // Given: FadeOut enabled, top bar position, voice search enabled, no text
-        createSUTWithFadeOutEnabled()
+    func testVoiceButtonVisible_WhenIPhoneAndTopBarAndNoText() {
+        // Given: iPhone, top bar position, voice search enabled, no text
         sut.updateBarPosition(isTop: true)
         mockVoiceSearchHelper.isVoiceSearchEnabled = true
         sut.clearText()
 
-        // Then: Voice button should be visible (new behavior with fadeOut)
+        // Then: Voice button should be visible
         XCTAssertTrue(sut.buttonState.showsVoiceButton)
     }
 
-    func testVoiceButtonNotVisible_WhenFadeOutEnabledAndTopBarAndHasText() {
-        // Given: FadeOut enabled, top bar position, voice search enabled, has text
-        createSUTWithFadeOutEnabled()
+    func testVoiceButtonNotVisible_WhenIPhoneAndTopBarAndHasText() {
+        // Given: iPhone, top bar position, voice search enabled, has text
         sut.updateBarPosition(isTop: true)
         mockVoiceSearchHelper.isVoiceSearchEnabled = true
         sut.updateCurrentText("some text")
@@ -453,9 +448,8 @@ final class SwitchBarHandlerTests: XCTestCase {
         XCTAssertFalse(sut.buttonState.showsVoiceButton)
     }
 
-    func testVoiceButtonVisible_WhenFadeOutEnabledAndBottomBarAndNoText() {
-        // Given: FadeOut enabled, bottom bar position, voice search enabled, no text
-        createSUTWithFadeOutEnabled()
+    func testVoiceButtonVisible_WhenIPhoneAndBottomBarAndNoText() {
+        // Given: iPhone, bottom bar position, voice search enabled, no text
         sut.updateBarPosition(isTop: false)
         mockVoiceSearchHelper.isVoiceSearchEnabled = true
         sut.clearText()

@@ -27,7 +27,7 @@ import RemoteMessaging
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
-        favoritesModel.isEmpty
+        favoritesModel.isEmpty && newTabPageViewModel.escapeHatch == nil
     }
 
     private lazy var borderView = StyledTopBottomBorderView()
@@ -46,6 +46,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let appWidthObserver: AppWidthObserver
 
     private let internalUserCommands: URLBasedDebugCommands
+
+    var onViewDidAppear: (() -> Void)?
 
     init(isFocussedState: Bool,
          dismissKeyboardOnScroll: Bool,
@@ -90,6 +92,19 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         assignFavoriteModelActions()
     }
 
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        newTabPageViewModel.escapeHatch = model
+        if let model {
+            let index = model.targetTabIndex
+            newTabPageViewModel.onEscapeHatchTap = { [weak self] in
+                guard let self else { return }
+                self.delegate?.newTabPageDidRequestSwitchToTab(self, index: index)
+            }
+        } else {
+            newTabPageViewModel.onEscapeHatchTap = nil
+        }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -106,6 +121,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         guard presentedViewController?.isBeingDismissed ?? true else {
             return
         }
+
+        onViewDidAppear?()
+        onViewDidAppear = nil
 
         associatedTab.viewed = true
 
@@ -186,7 +204,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         favoritesModel.onFavoriteDeleted = { [weak self] _ in
             guard let self else { return }
 
-            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+            updateBorderView()
         }
     }
 

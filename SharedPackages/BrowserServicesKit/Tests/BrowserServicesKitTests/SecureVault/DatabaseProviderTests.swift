@@ -193,4 +193,44 @@ class DatabaseProviderTests: XCTestCase {
         XCTAssertEqual(1, try database.accounts().count)
     }
 
+    func test_when_syncable_credentials_resaved_then_lastUpdated_only_advances_if_content_changed() throws {
+        let database = try DefaultAutofillDatabaseProvider(key: simpleL1Key)
+
+        let account = SecureVaultModels.WebsiteAccount(username: "user", domain: "example.com")
+        let credentials = SecureVaultModels.WebsiteCredentials(account: account, password: "pass".data(using: .utf8))
+        let syncable = SecureVaultModels.SyncableCredentials(uuid: UUID().uuidString, credentials: credentials, lastModified: nil)
+
+        try database.inTransaction { db in
+            try database.storeSyncableCredentials(syncable, in: db)
+        }
+
+        let storedAccount = try database.websiteAccountsForDomain("example.com")[0]
+        let accountId = Int64(storedAccount.id!)!
+
+        // Re-save with no content changes (simulating sync dedup) — lastUpdated should NOT change
+        let loadedUnchanged = try database.db.read { db in
+            try XCTUnwrap(try database.syncableCredentialsForAccountId(accountId, in: db))
+        }
+
+        try database.inTransaction { db in
+            try database.storeSyncableCredentials(loadedUnchanged, in: db)
+        }
+
+        let unchangedResult = try database.websiteAccountsForDomain("example.com")[0]
+        XCTAssertEqual(unchangedResult.lastUpdated, storedAccount.lastUpdated, "storeSyncableCredentials should not reset lastUpdated when content is unchanged")
+
+        // Re-save with a content change — lastUpdated SHOULD change
+        var loadedChanged = try database.db.read { db in
+            try XCTUnwrap(try database.syncableCredentialsForAccountId(accountId, in: db))
+        }
+        loadedChanged.credentials?.account.username = "changed-user"
+
+        try database.inTransaction { db in
+            try database.storeSyncableCredentials(loadedChanged, in: db)
+        }
+
+        let changedResult = try database.websiteAccountsForDomain("example.com")[0]
+        XCTAssertGreaterThan(changedResult.lastUpdated, storedAccount.lastUpdated, "storeSyncableCredentials should update lastUpdated when content changes")
+    }
+
 }

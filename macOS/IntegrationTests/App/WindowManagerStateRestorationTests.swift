@@ -101,17 +101,17 @@ final class WindowManagerStateRestorationTests: XCTestCase {
         let model1 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs1), selectionIndex: .unpinned(0), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
         let mainViewController1 = MainViewController(tabCollectionViewModel: model1,
                                                      autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
-                                                     aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
+                                                     aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
                                                      fireCoordinator: fireCoordinator)
         let model2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs2), selectionIndex: .unpinned(2), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
         let mainViewController2 = MainViewController(tabCollectionViewModel: model2,
                                                      autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
-                                                     aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
+                                                     aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
                                                      fireCoordinator: fireCoordinator)
         let windowController1 = MainWindowController(mainViewController: mainViewController1, fireWindowSession: nil, fireViewModel: FireViewModel(tld: Application.appDelegate.tld, visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider()), themeManager: MockThemeManager())
         let windowController2 = MainWindowController(mainViewController: mainViewController2, fireWindowSession: nil, fireViewModel: FireViewModel(tld: Application.appDelegate.tld, visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider()), themeManager: MockThemeManager())
 
-        let state = WindowManagerStateRestoration(mainWindowControllers: [windowController1, windowController2], lastKeyMainWindowController: windowController2, applicationPinnedTabs: pinnedTabManager.tabCollection, aiChatSidebarsByTab: AIChatSidebarsByTab())
+        let state = WindowManagerStateRestoration(mainWindowControllers: [windowController1, windowController2], lastKeyMainWindowController: windowController2, applicationPinnedTabs: pinnedTabManager.tabCollection, aiChatStatesByTab: AIChatStatesByTab())
 
         for (idx, window) in state.windows.enumerated() {
             XCTAssertTrue(areTabCollectionViewModelsEqual(window.model, state.windows[idx].model))

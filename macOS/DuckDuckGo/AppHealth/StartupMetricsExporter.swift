@@ -41,7 +41,7 @@ final class StartupMetricsExporter {
         self.windowContext = windowContext
     }
 
-    /// Exports a fresh MemoryAllocationStats to the specified URL
+    /// Exports the latest `StartupMetrics` as reported by `StartupProfiler` to the specified URL
     ///
     func exportMetrics(targetURL: URL) throws {
         let metrics = profiler.exportMetrics()

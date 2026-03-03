@@ -41,8 +41,8 @@ private enum BubbleBackedDialogMetrics {
 ///
 /// 2. **Child-level animations** (individual content views): Some views have internal state
 ///    transitions that don't change `state.type` (e.g., showing skip dialog, tutorial overlay).
-///    - Child views use `.onboardingViewVisibleAfterDelay()` modifier
-///    - Delay is tuned relative to the parent's bubble animation duration and may slightly exceed it for smoother transitions
+///    - Child views receive a `showContent` binding to control their visibility
+///    - They manage their own hide/show sequencing using the parent's animation timing constants
 enum OnboardingBubbleAnimationMetrics {
     /// How long the bubble takes to resize between steps
     static let bubbleResizeAnimationDuration: TimeInterval = 0.25

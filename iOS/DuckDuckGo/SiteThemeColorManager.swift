@@ -52,6 +52,7 @@ final class SiteThemeColorManager {
         startObservingThemeColor()
     }
 
+    @discardableResult
     func updateThemeColor() -> Bool {
         guard isCurrentTabShowingAIChat == false else {
             resetThemeColor()

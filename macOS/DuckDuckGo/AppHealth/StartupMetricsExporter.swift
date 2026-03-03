@@ -33,17 +33,21 @@ enum StartupMetricsExporterError: Error {
 final class StartupMetricsExporter {
 
     private let profiler: StartupProfiler
+    private let previousSessionRestored: Bool
+    private let windowContext: WindowContext
 
-    init(profiler: StartupProfiler) {
+    init(profiler: StartupProfiler, previousSessionRestored: Bool, windowContext: WindowContext) {
         self.profiler = profiler
+        self.previousSessionRestored = previousSessionRestored
+        self.windowContext = windowContext
     }
 
     /// Exports a fresh MemoryAllocationStats to the specified URL
     ///
     func exportMetrics(targetURL: URL) throws {
         let metrics = profiler.exportMetrics()
-        let encoded = try encodeToJSON(snapshot: metrics)
-
+        let payload = ExportStartupMetrics(metrics: metrics, previousSessionRestored: previousSessionRestored, windowContext: windowContext)
+        let encoded = try encodeToJSON(payload: payload)
         try write(payload: encoded, to: targetURL)
     }
 
@@ -59,9 +63,9 @@ final class StartupMetricsExporter {
 
 private extension StartupMetricsExporter {
 
-    func encodeToJSON(snapshot: StartupMetrics) throws -> Data {
+    func encodeToJSON(payload: ExportStartupMetrics) throws -> Data {
         do {
-            return try JSONEncoder().encode(snapshot)
+            return try JSONEncoder().encode(payload)
         } catch {
             throw StartupMetricsExporterError.errorEncoding
         }
@@ -89,3 +93,80 @@ private extension URL {
         return URL(fileURLWithPath: "/tmp/\(filename)-startup-metrics.json")
     }
 }
+
+// MARK: - ExportStartupMetrics
+
+/// This Transfer Object is a helper that allows us encode the StartupMetrics in a format ready for usage in `macOS Performance Tests`
+private struct ExportStartupMetrics: Encodable {
+    let metrics: StartupMetrics
+    let previousSessionRestored: Bool
+    let windowContext: WindowContext
+}
+
+private extension ExportStartupMetrics {
+
+    enum CodingKeys: String, CodingKey {
+        case pinnedTabs
+        case sessionRestoration
+        case standardTabs
+        case windows
+        case appDelegateInit
+        case appWillFinishLaunching
+        case appDidFinishLaunchingBeforeRestoration
+        case appDidFinishLaunchingAfterRestoration
+        case appStateRestoration
+        case appDelegateInitToWillFinishLaunching
+        case appWillFinishToDidFinishLaunching
+        case mainMenuInit
+        case timeToInteractive
+    }
+
+    func encode(to encoder: Encoder) throws {
+        try encodeContext(to: encoder)
+        try encodeMetrics(to: encoder)
+    }
+
+    func encodeContext(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(windowContext.pinnedTabs, forKey: .pinnedTabs)
+        try container.encode(previousSessionRestored, forKey: .sessionRestoration)
+        try container.encode(windowContext.standardTabs, forKey: .standardTabs)
+        try container.encode(windowContext.windows, forKey: .windows)
+    }
+
+    func encodeMetrics(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        let keysToMilliseconds: [(CodingKeys, TimeInterval)] = StartupStep.allCases.compactMap { step in
+            guard let duration = metrics.duration(step: step), let codingKey = CodingKeys(rawValue: step.rawValue) else {
+                assertionFailure()
+                return nil
+            }
+
+            return (codingKey, duration.toMilliseconds)
+        }
+
+        for (codingKey, milliseconds) in keysToMilliseconds {
+            try container.encodeIfPresent(milliseconds, forKey: codingKey)
+        }
+
+        if let deltaMS = metrics.timeElapsedBetween(endOf: .appDelegateInit, startOf: .appWillFinishLaunching)?.toMilliseconds {
+            try container.encode(deltaMS, forKey: .appDelegateInitToWillFinishLaunching)
+        }
+
+        if let deltaMS = metrics.timeElapsedBetween(endOf: .appWillFinishLaunching, startOf: .appDidFinishLaunchingBeforeRestoration)?.toMilliseconds {
+            try container.encode(deltaMS, forKey: .appWillFinishToDidFinishLaunching)
+        }
+    }
+}
+
+// MARK: - TimeInterval Private Helpers
+
+private extension TimeInterval {
+
+    var toMilliseconds: TimeInterval {
+        self * 1000
+    }
+}
+

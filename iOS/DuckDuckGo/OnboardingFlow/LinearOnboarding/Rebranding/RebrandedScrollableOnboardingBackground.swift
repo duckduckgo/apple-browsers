@@ -205,11 +205,14 @@ private extension OnboardingView.ViewState.Intro.IntroType {
 
     /// Horizontal offset in points determining how much of the entering background is initially visible.
     ///
-    /// This value accounts for negative space in each illustration's.
-    /// A value of 0 means the image's leading edge starts exactly at the screen's trailing edge (fully off-screen).
-    /// The reason for this is that each illustration has a gap between the left side of the image and the illustration
+    /// This value accounts for negative space (empty area) on the left side of each illustration asset.
+    /// Each background image has whitespace between its left edge and where the actual illustration begins.
+    /// By using a non-zero offset, the illustration content becomes visible sooner during the slide-in animation.
     ///
-    /// Design-specified values that vary per onboarding step to match each illustration.
+    /// A value of 0 means the image's leading edge starts exactly at the screen's trailing edge (fully off-screen).
+    /// Higher values mean more of the image is initially visible from the right edge of the screen.
+    ///
+    /// Design-specified values that vary per onboarding step to match each illustration's empty space.
     /// [Figma Assets](https://www.figma.com/design/wMxBpe0mKrRS0nVhtwMGO7/%F0%9F%9A%80-Onboarding-Components--2026-?node-id=3444-40549)
     var leadingOffset: CGFloat {
         switch self {

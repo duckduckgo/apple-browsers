@@ -30,8 +30,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "37C320B62F1E80A1008F4604"
-               BuildableName = "Memory Usage Tests.xctest"
-               BlueprintName = "Memory Usage Tests"
+               BuildableName = "Performance Tests.xctest"
+               BlueprintName = "Performance Tests"
                ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -44,7 +44,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:MemoryUsageTests/macOS Memory Usage Tests.xctestplan"
+            reference = "container:PerformanceTests/macOS Performance Tests.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>
@@ -54,8 +54,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "37C320B62F1E80A1008F4604"
-               BuildableName = "Memory Usage Tests.xctest"
-               BlueprintName = "Memory Usage Tests"
+               BuildableName = "Performance Tests.xctest"
+               BlueprintName = "Performance Tests"
                ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
             </BuildableReference>
          </TestableReference>

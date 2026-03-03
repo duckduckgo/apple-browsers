@@ -1,5 +1,5 @@
 //
-//  SimplifiedSparkleUpdateController.swift
+//  SparkleUpdateController.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -29,12 +29,12 @@ import PrivacyConfig
 import Sparkle
 import Subscription
 
-/// Simplified Sparkle update controller.
+/// Sparkle update controller.
 ///
 /// Update checks rely on Sparkle's built-in scheduling plus check-on-launch.
 /// Internal users check every 30 minutes; external users check every hour.
 /// Sparkle's `canCheckForUpdates` and `sessionInProgress` guards prevent concurrent or invalid checks.
-public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateController {
+public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     public enum Constants {
         public static let internalChannelName = "internal-channel"
@@ -208,7 +208,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     public lazy var notificationDotPublisher = notificationDotSubject.eraseToAnyPublisher()
 
     public private(set) var updater: SPUUpdater?
-    public private(set) var userDriver: SimplifiedUpdateUserDriver
+    public private(set) var userDriver: SparkleUpdateUserDriver
     private let willRelaunchAppSubject = PassthroughSubject<Void, Never>()
     private var internalUserDecider: InternalUserDecider
 
@@ -298,7 +298,7 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
             userPreference: currentAutomaticUpdatesEnabled
         )
 
-        self.userDriver = SimplifiedUpdateUserDriver(
+        self.userDriver = SparkleUpdateUserDriver(
             internalUserDecider: internalUserDecider,
             areAutomaticUpdatesEnabled: shouldAutoDownload,
             settings: self.settings,
@@ -560,9 +560,9 @@ public final class SimplifiedSparkleUpdateController: NSObject, SparkleUpdateCon
     }
 }
 
-extension SimplifiedSparkleUpdateController: SparkleCustomFeedURLProviding {}
+extension SparkleUpdateController: SparkleCustomFeedURLProviding {}
 
-extension SimplifiedSparkleUpdateController: SPUUpdaterDelegate {
+extension SparkleUpdateController: SPUUpdaterDelegate {
 
     public func feedURLString(for updater: SPUUpdater) -> String? {
         guard allowCustomUpdateFeed else { return nil }

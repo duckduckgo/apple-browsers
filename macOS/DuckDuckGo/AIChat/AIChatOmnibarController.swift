@@ -20,6 +20,7 @@ import Cocoa
 import Combine
 import AIChat
 import FeatureFlags
+import os.log
 import PixelKit
 import PrivacyConfig
 import URLPredictor
@@ -43,11 +44,26 @@ final class AIChatOmnibarController {
     private let featureFlagger: FeatureFlagger
     private let searchPreferencesPersistor: SearchPreferencesPersistor
     private let suggestionsReader: AIChatSuggestionsReading?
+    private let modelsService: AIChatModelsProviding
+    private var preferences: AIChatPreferencesPersisting
     private var cancellables = Set<AnyCancellable>()
     private var sharedTextStateCancellable: AnyCancellable?
     private var isUpdatingFromSharedState = false
     private var currentFetchTask: Task<Void, Never>?
+    private var modelsFetchTask: Task<Void, Never>?
     private var hasBeenActivated = false
+
+    /// Available AI models. Empty until successfully fetched from the API.
+    @Published private(set) var models: [AIChatModel] = []
+
+    /// Provides the current image attachments from the container VC.
+    var attachmentsProvider: (() -> [AIChatImageAttachment])?
+
+    /// Called after a successful submit so the container VC can clear its attachment UI.
+    var onAttachmentsClearRequested: (() -> Void)?
+
+    /// Waits for all attachment resizing to complete before proceeding.
+    var waitForAttachmentsReady: (() async -> Void)?
 
     /// View model for managing chat suggestions. Always initialized, but only populated when feature flag is enabled.
     let suggestionsViewModel: AIChatSuggestionsViewModel
@@ -87,7 +103,9 @@ final class AIChatOmnibarController {
         promptHandler: AIChatPromptHandler = .shared,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         searchPreferencesPersistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor(),
-        suggestionsReader: AIChatSuggestionsReading? = nil
+        suggestionsReader: AIChatSuggestionsReading? = nil,
+        preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
+        modelsService: AIChatModelsProviding = AIChatModelsService()
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -95,6 +113,8 @@ final class AIChatOmnibarController {
         self.featureFlagger = featureFlagger
         self.searchPreferencesPersistor = searchPreferencesPersistor
         self.suggestionsReader = suggestionsReader
+        self.preferences = preferences
+        self.modelsService = modelsService
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -115,9 +135,12 @@ final class AIChatOmnibarController {
 
     // MARK: - Suggestions Fetching
 
-    /// Called when the duck.ai omnibar becomes visible. Triggers initial suggestions fetch.
+    /// Called when the duck.ai omnibar becomes visible.
+    /// Triggers a models fetch (on every activation) and suggestions fetch.
     func onOmnibarActivated() {
         hasBeenActivated = true
+
+        fetchModels()
 
         // If feature is disabled, clear any existing suggestions and don't fetch
         if !isSuggestionsEnabled {
@@ -126,6 +149,21 @@ final class AIChatOmnibarController {
         }
 
         fetchSuggestionsIfNeeded(query: currentText)
+    }
+
+    private func fetchModels() {
+        modelsFetchTask?.cancel()
+        modelsFetchTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let remoteModels = try await modelsService.fetchModels()
+                guard !Task.isCancelled else { return }
+                self.models = remoteModels.map { AIChatModel(remoteModel: $0) }
+            } catch {
+                Logger.aiChat.error("Failed to fetch models: \(error.localizedDescription)")
+                PixelKit.fire(AIChatPixel.aiChatModelsFetchFailed, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            }
+        }
     }
 
     private func fetchSuggestionsIfNeeded(query: String) {
@@ -148,6 +186,29 @@ final class AIChatOmnibarController {
 
     // MARK: - Public Methods
 
+    /// The persisted model ID. Only valid when models have been loaded.
+    var persistedModelId: String {
+        preferences.selectedModelId ?? models.first(where: { $0.entityHasAccess })?.id ?? ""
+    }
+
+    /// The model ID to include in the prompt. Returns nil if the user has never
+    /// explicitly selected a model, so the backend uses its default.
+    var currentModelId: String? {
+        preferences.selectedModelId
+    }
+
+    /// Whether the currently selected model supports image upload.
+    /// Returns true when models are unavailable (conservative default — image button remains visible).
+    var selectedModelSupportsImageUpload: Bool {
+        guard !models.isEmpty else { return true }
+        return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? true
+    }
+
+    /// Updates the selected model ID and persists it for future sessions.
+    func updateSelectedModel(_ modelId: String) {
+        preferences.selectedModelId = modelId
+    }
+
     /// Updates the current text being typed by the user
     /// - Parameter text: The new text value
     func updateText(_ text: String) {
@@ -163,6 +224,8 @@ final class AIChatOmnibarController {
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
         currentFetchTask = nil
+        modelsFetchTask?.cancel()
+        modelsFetchTask = nil
         suggestionsReader?.tearDown()
     }
 
@@ -254,18 +317,57 @@ final class AIChatOmnibarController {
 
         PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
-        let nativePrompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true)
-        promptHandler.setData(nativePrompt)
-
         Task { @MainActor in
+            // Wait for any pending image resizes to complete
+            await waitForAttachmentsReady?()
+
+            // Get attachments after resizes are complete
+            let attachments = attachmentsProvider?() ?? []
+            let images = Self.nativePromptImages(from: attachments)
+
+            if !attachments.isEmpty {
+                PixelKit.fire(AIChatPixel.aiChatAddressBarSubmitWithImage(imageCount: attachments.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
+            }
+
             aiChatTabOpener.openAIChatTab(
                 with: .query(trimmedText, shouldAutoSubmit: true),
                 behavior: .currentTab
             )
+            // Re-set prompt after tab opener to include images and model selection (tab opener overwrites with a plain query)
+            let modelId = self.currentModelId
+            let prompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true, images: images, modelId: modelId)
+            promptHandler.setData(prompt)
+
+            onAttachmentsClearRequested?()
+            delegate?.aiChatOmnibarControllerDidSubmit(self)
         }
 
         currentText = ""
-        delegate?.aiChatOmnibarControllerDidSubmit(self)
+    }
+
+    /// Converts image attachments to base64-encoded `NativePromptImage` values for the JS bridge.
+    /// Preserves JPEG encoding for `.jpg`/`.jpeg` sources to avoid payload bloat;
+    /// uses PNG for all other formats (including resized WebP).
+    private static func nativePromptImages(from attachments: [AIChatImageAttachment]) -> [AIChatNativePrompt.NativePromptImage]? {
+        guard !attachments.isEmpty else { return nil }
+        let images = attachments.compactMap { attachment -> AIChatNativePrompt.NativePromptImage? in
+            guard let tiffData = attachment.image.tiffRepresentation,
+                  let bitmap = NSBitmapImageRep(data: tiffData) else {
+                return nil
+            }
+
+            let ext = (attachment.fileName as NSString).pathExtension.lowercased()
+            let isJPEG = ext == "jpg" || ext == "jpeg"
+            let fileType: NSBitmapImageRep.FileType = isJPEG ? .jpeg : .png
+            let format = isJPEG ? "jpeg" : "png"
+
+            guard let data = bitmap.representation(using: fileType, properties: [:]) else {
+                return nil
+            }
+
+            return AIChatNativePrompt.NativePromptImage(data: data.base64EncodedString(), format: format)
+        }
+        return images.isEmpty ? nil : images
     }
 
     /// Checks if the input text is a navigable URL (not a search query).

@@ -346,14 +346,15 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
                                             withBrokerURL brokerURL: String?,
                                             version: String?,
                                             stepType: StepType?,
-                                            dataBrokerParent: String?) {
+                                            dataBrokerParent: String?,
+                                            isFreeScan: Bool?) {
         operationErrors.append(error)
 
         guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else { return }
 
         switch error {
         case .httpError(let code):
-            pixelHandler.fire(.httpError(error: error, code: code, dataBroker: brokerURL, version: version))
+            pixelHandler.fire(.httpError(error: error, code: code, dataBroker: brokerURL, version: version, isFreeScan: isFreeScan))
         case .actionFailed(let actionId, let message):
             pixelHandler.fire(.actionFailedError(error: error,
                                                  actionId: actionId,
@@ -361,9 +362,10 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
                                                  dataBroker: brokerURL,
                                                  version: version,
                                                  stepType: stepType,
-                                                 dataBrokerParent: dataBrokerParent))
+                                                 dataBrokerParent: dataBrokerParent,
+                                                 isFreeScan: isFreeScan))
         default:
-            pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version))
+            pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version, isFreeScan: isFreeScan))
         }
 
         delegate?.queueManagerDidCompleteIndividualJob(self)
@@ -382,6 +384,6 @@ extension JobQueueManager: EmailConfirmationErrorDelegate {
             return
         }
 
-        pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version))
+        pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version, isFreeScan: false))
     }
 }

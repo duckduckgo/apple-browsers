@@ -1,4 +1,4 @@
-name: macOS - Memory Usage tests
+name: macOS - Performance tests
 
 defaults:
   run:
@@ -42,8 +42,8 @@ jobs:
       skip-notify: true
     secrets: inherit
 
-  memory-usage-tests:
-    name: Memory Usage Tests
+  performance-tests:
+    name: Performance Tests
     needs: create-notarized-app
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -158,11 +158,11 @@ jobs:
       run: |
         ./scripts/override-test-baseline-specs.sh
 
-    - name: Build Memory Usage Tests
+    - name: Build Performance Tests
       working-directory: macOS
       run: |
         set -o pipefail && xcodebuild build-for-testing \
-          -scheme "macOS Memory Usage Tests CI" \
+          -scheme "macOS Performance Tests CI" \
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
@@ -186,20 +186,20 @@ jobs:
 
         mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
-    - name: Run Memory Usage Tests
+    - name: Run Performance Tests
       id: run-ui-tests
       working-directory: macOS
       run: |
         defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1
         set -o pipefail && xcodebuild test-without-building \
-          -scheme "macOS Memory Usage Tests CI" \
+          -scheme "macOS Performance Tests CI" \
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
-    - name: Build Memory Metrics Report
+    - name: Build Performance Report
       working-directory: macOS
       run: |
         XCRESULT_PATH=$(find DerivedData/Logs/Test -name "*.xcresult" | head -1)
@@ -258,7 +258,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_memory_usage_tests
+        pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_performance_tests
         pixel-params: |
           runner: ${{ matrix.runner }}
 
@@ -326,7 +326,7 @@ jobs:
 
   report-memory-metrics-to-clickhouse:
     name: Report Memory Metrics to ClickHouse
-    needs: memory-usage-tests
+    needs: performance-tests
     runs-on: [ self-hosted, apple ]
 
     steps:
@@ -347,8 +347,8 @@ jobs:
 
   notify-failure:
     name: Notify on failure
-    if: ${{ always() && github.event_name == 'schedule' && (needs.memory-usage-tests.result == 'failure' || needs.memory-usage-tests.result == 'cancelled') }}
-    needs: [memory-usage-tests]
+    if: ${{ always() && github.event_name == 'schedule' && (needs.performance-tests.result == 'failure' || needs.performance-tests.result == 'cancelled') }}
+    needs: [performance-tests]
     runs-on: ubuntu-latest
 
     steps:
@@ -363,5 +363,5 @@ jobs:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
         asana-project: ${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
-        asana-task-name: GH Workflow Failure - Memory Usage Tests
-        asana-task-description: The Memory Usage Tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        asana-task-name: GH Workflow Failure - Performance Tests
+        asana-task-description: The Performance Tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

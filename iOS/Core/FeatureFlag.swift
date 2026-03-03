@@ -274,6 +274,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
     case aiChatAutoAttachContextByDefault
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
+    case multiplePageContexts
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
@@ -463,6 +466,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .pageContextFeature,
              .aiChatAutoAttachContextByDefault,
              .aiChatSync,
+             .multiplePageContexts,
              .aiChatSuggestions,
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
@@ -698,6 +702,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.pageContext))
         case .aiChatAutoAttachContextByDefault:
             return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
+        case .multiplePageContexts:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
         case .aiChatSync:
             return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:

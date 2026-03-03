@@ -119,6 +119,7 @@ public extension DesignSystemImages {
             public static var calendarWeek: DesignSystemImage { .init(resource: .calendarWeek16) }
             public static var check: DesignSystemImage { .init(resource: .check16) }
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle16) }
+            public static var chat: DesignSystemImage { .init(resource: .chat16) }
             public static var checkGray: DesignSystemImage { .init(resource: .checkGray16) }
             public static var chevronDoubleRight: DesignSystemImage { .init(resource: .chevronDoubleRight16) }
             public static var chevronDownMedium: DesignSystemImage { .init(resource: .chevronDownMedium16) }

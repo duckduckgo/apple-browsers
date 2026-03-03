@@ -153,7 +153,7 @@ final class AIChatSuggestionRowView: NSView {
 
         let icon = suggestion.isPinned
             ? DesignSystemImages.Glyphs.Size16.pin
-            : DesignSystemImages.Glyphs.Size16.history
+            : DesignSystemImages.Glyphs.Size16.chat
         iconImageView.image = icon
         iconImageView.contentTintColor = Constants.iconColor
     }

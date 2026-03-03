@@ -121,8 +121,11 @@ extension MainViewController {
     }
 
     private func refreshAIChatTabChatHeaderSubscriptionState() {
-        let isActive = AppDependencyProvider.shared.subscriptionManager.isSubscriptionPresent()
-        aiChatTabChatHeaderView?.configure(isSubscriptionActive: isActive)
+        Task { @MainActor in
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+            let isActive = (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive) ?? false
+            aiChatTabChatHeaderView?.configure(isSubscriptionActive: isActive)
+        }
     }
 
     private func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {

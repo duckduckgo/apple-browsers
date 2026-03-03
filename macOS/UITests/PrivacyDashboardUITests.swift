@@ -216,26 +216,34 @@ class PrivacyDashboardUITests: UITestCase {
             return
         }
 
-        let trackerDomainSectionsWithText = trackerDomainSectionNodes.filter { node in
-            let sectionCandidates = [node.title, node.trimmedLabel, node.trimmedStringValue]
-                + node.children.flatMap { [$0.title, $0.trimmedLabel, $0.trimmedStringValue] }
-            return sectionCandidates.contains { !$0.isEmpty }
+        let domainPattern = #"^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
+        let trackerDomainSectionsMissingDomains = trackerDomainSectionNodes.filter { node in
+            let sectionNodes = [node] + collectDescendants(from: node)
+            let sectionCandidates = sectionNodes.flatMap { candidateNode in
+                [candidateNode.trimmedLabel, candidateNode.trimmedStringValue]
+            }.filter { !$0.isEmpty }
+            let hasDomainText = sectionCandidates.contains {
+                $0.range(of: domainPattern, options: .regularExpression) != nil
+            }
+            return !hasDomainText
         }
         let domainCandidates = nestedNodes.flatMap { node in
             [node.trimmedLabel, node.trimmedStringValue].filter { !$0.isEmpty }
         }
         let domainLikeCandidates = domainCandidates.filter {
-            $0.range(of: #"^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#, options: .regularExpression) != nil
+            $0.range(of: domainPattern, options: .regularExpression) != nil
+        }
+        let trackerDomainSectionsMissingDomainLabels = trackerDomainSectionsMissingDomains.map { node in
+            node.title.isEmpty ? node.trimmedLabel : node.title
         }
 
         Logger.log(
-            "tracker evaluation: trackerDomainSectionCount=\(trackerDomainSectionNodes.count), trackerDomainSectionsWithText=\(trackerDomainSectionsWithText.count), domainCandidates=\(domainCandidates), domainLikeCandidates=\(domainLikeCandidates)"
+            "tracker evaluation: trackerDomainSectionCount=\(trackerDomainSectionNodes.count), trackerDomainSectionsMissingDomains=\(trackerDomainSectionsMissingDomainLabels), domainCandidates=\(domainCandidates), domainLikeCandidates=\(domainLikeCandidates)"
         )
 
-        // Ensure every section has visible text and at least one concrete domain appears.
-        XCTAssertEqual(trackerDomainSectionsWithText.count,
-                       trackerDomainSectionNodes.count,
-                       "Expected each tracker domain section to expose text content (\(descr())")
+        // Ensure each tracker section contains at least one concrete domain in its subtree.
+        XCTAssertTrue(trackerDomainSectionsMissingDomains.isEmpty,
+                      "Expected each tracker domain section to include a domain-formatted label/value. Missing: \(trackerDomainSectionsMissingDomainLabels). \(descr())")
         XCTAssertTrue(!domainLikeCandidates.isEmpty,
                       "Expected at least one domain-formatted label/value in tracker companies details. \(descr())")
         // Close dashboard
@@ -243,6 +251,7 @@ class PrivacyDashboardUITests: UITestCase {
 
         XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
     }
+
     func testPrivacyDashboard_PhishingDetection_ShowsWarning() throws {
         // Navigate to the phishing test page (matches original integration test)
         let testURL = URL(string: "http://privacy-test-pages.site/security/badware/phishing.html")!

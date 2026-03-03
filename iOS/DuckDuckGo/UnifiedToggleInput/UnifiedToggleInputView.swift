@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
 import DesignResourcesKit
 import UIKit
@@ -30,6 +31,9 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
     func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidTapStopGenerating(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidTapAttach(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidRemoveAttachment(_ view: UnifiedToggleInputView, id: UUID)
 }
 
 // MARK: - Card Position
@@ -64,6 +68,7 @@ final class UnifiedToggleInputView: UIView {
         static let toggleHeight: CGFloat = 40
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25
+        static let attachmentStripHeight: CGFloat = 72
     }
 
     // MARK: - Properties
@@ -87,6 +92,29 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitButtonHidden = isToolbarSubmitHidden }
     }
 
+    func setStopMode(_ isStopMode: Bool) {
+        toolsToolbar.isStopMode = isStopMode
+    }
+
+    func setAttachments(_ attachments: [AIChatImageAttachment]) {
+        attachmentStrip.setAttachments(attachments)
+        let hasAttachments = !attachments.isEmpty
+        attachmentHeightConstraint.constant = hasAttachments ? Constants.attachmentStripHeight : 0
+        attachmentStrip.isHidden = !hasAttachments
+    }
+
+    func updateAttachButtonVisibility(supportsImageUpload: Bool) {
+        toolsToolbar.isImageButtonHidden = !supportsImageUpload
+    }
+
+    func setModelChipName(_ name: String) {
+        toolsToolbar.modelName = name
+    }
+
+    func setModelMenu(_ menu: UIMenu) {
+        toolsToolbar.setModelMenu(menu)
+    }
+
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
     /// so that sibling views (e.g. the content container) animate in sync.
     /// The owning view controller sets this.
@@ -100,6 +128,7 @@ final class UnifiedToggleInputView: UIView {
 
     private let handler: UnifiedToggleInputHandler
     private let textEntryView: SwitchBarTextEntryView
+    private let attachmentStrip = UnifiedToggleInputAttachmentStrip()
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - UI
@@ -176,6 +205,7 @@ final class UnifiedToggleInputView: UIView {
     private var toggleHeightConstraint: NSLayoutConstraint!
     private var inputTopConstraint: NSLayoutConstraint!
     private var toolbarHeightConstraint: NSLayoutConstraint!
+    private var attachmentHeightConstraint: NSLayoutConstraint!
 
     // MARK: - Initialization
 
@@ -382,7 +412,23 @@ private extension UnifiedToggleInputView {
             guard let self else { return }
             handler.submitText(handler.currentText)
         }
+        toolsToolbar.onStopGeneratingTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidTapStopGenerating(self)
+        }
+        toolsToolbar.onAttachTapped = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidTapAttach(self)
+        }
         addSubview(toolsToolbar)
+
+        attachmentStrip.translatesAutoresizingMaskIntoConstraints = false
+        attachmentStrip.isHidden = true
+        attachmentStrip.onRemove = { [weak self] id in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidRemoveAttachment(self, id: id)
+        }
+        addSubview(attachmentStrip)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleCollapsedTap))
         tap.cancelsTouchesInView = false
@@ -403,6 +449,7 @@ private extension UnifiedToggleInputView {
         toggleHeightConstraint = toggleView.heightAnchor.constraint(equalToConstant: 0)
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
         toolbarHeightConstraint = toolsToolbar.heightAnchor.constraint(equalToConstant: 0)
+        attachmentHeightConstraint = attachmentStrip.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
             cardTopConstraint,
@@ -419,12 +466,17 @@ private extension UnifiedToggleInputView {
             textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
 
+            attachmentStrip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
+            attachmentStrip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            attachmentStrip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            attachmentHeightConstraint,
+
             toolbarBackingView.topAnchor.constraint(equalTo: toolsToolbar.topAnchor),
             toolbarBackingView.leadingAnchor.constraint(equalTo: toolsToolbar.leadingAnchor),
             toolbarBackingView.trailingAnchor.constraint(equalTo: toolsToolbar.trailingAnchor),
             toolbarBackingView.bottomAnchor.constraint(equalTo: toolsToolbar.bottomAnchor),
 
-            toolsToolbar.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
+            toolsToolbar.topAnchor.constraint(equalTo: attachmentStrip.bottomAnchor),
             toolsToolbar.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             toolsToolbar.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),

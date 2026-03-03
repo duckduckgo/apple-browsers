@@ -46,6 +46,9 @@ public enum SingleUseColor {
     /// On iOS 26 toolbar buttons get some effect applied to them which affects the lightness of the color.  This is temporary
     /// until we move to a more Liquid Glass based look and feel there.
     case toolbarButton
+
+    /// Background color for the stop-generating button in the Duck.ai native input toolbar (#D0021B).
+    case aiChatStopGenerating
 }
 
 // MARK: - Onboarding Rebranding 2026

@@ -21,4 +21,5 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String)
     func unifiedToggleInputDidSubmitQuery(_ query: String)
     func unifiedToggleInputDidRequestVoiceSearch()
+    func unifiedToggleInputDidRequestImageAttachment(_ coordinator: UnifiedToggleInputCoordinator)
 }

@@ -240,17 +240,17 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - VC Delegate: Submit — AI Chat Mode, With Bound Script
 
-    func test_submitAIChat_withBoundScript_publishesToDidSubmitPrompt() {
+    func test_submitAIChat_withBoundScript_doesNotPublishToDidSubmitPrompt() {
         let userScript = makeTestUserScript()
         sut.bindToTab(userScript)
 
-        let exp = expectation(description: "didSubmitPrompt fires")
+        var didFirePrompt = false
         sut.didSubmitPrompt
-            .sink { XCTAssertEqual($0, "hello AI"); exp.fulfill() }
+            .sink { _ in didFirePrompt = true }
             .store(in: &cancellables)
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat)
-        waitForExpectations(timeout: 1)
+        XCTAssertFalse(didFirePrompt, "didSubmitPrompt should not fire when script handles submit directly")
     }
 
     func test_submitAIChat_withBoundScript_doesNotCallDelegatePromptMethod() {
@@ -284,8 +284,10 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedPrompt: String?
     var submittedQuery: String?
     var didRequestVoiceSearch = false
+    var didRequestImageAttachment = false
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String) { submittedPrompt = prompt }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearch = true }
+    func unifiedToggleInputDidRequestImageAttachment(_ coordinator: UnifiedToggleInputCoordinator) { didRequestImageAttachment = true }
 }

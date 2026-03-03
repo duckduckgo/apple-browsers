@@ -235,7 +235,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         inputBoxCancellables.removeAll()
 
         inputBoxHandler?.didSubmitPrompt
-            .sink(receiveValue: submitPrompt)
+            .sink { [weak self] prompt in self?.submitPrompt(prompt) }
             .store(in: &inputBoxCancellables)
 
         inputBoxHandler?.didPressNewChatButton
@@ -256,7 +256,11 @@ final class AIChatUserScript: NSObject, Subfeature {
     // MARK: - AI Chat Actions
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, pageContext: pageContext)
+        submitPrompt(prompt, images: nil, modelId: nil, pageContext: pageContext)
+    }
+
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?, pageContext: AIChatPageContextData? = nil) {
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, images: images, modelId: modelId, pageContext: pageContext)
         push(.submitPrompt(promptPayload))
     }
     

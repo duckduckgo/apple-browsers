@@ -121,8 +121,6 @@
 		1D5C232D2F150A750055046E /* AIChatSuggestionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5C232B2F150A6E0055046E /* AIChatSuggestionRowView.swift */; };
 		1D5C23402F16CE000055046E /* PassthroughView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5C233F2F16CE000055046E /* PassthroughView.swift */; };
 		1D5C23412F16CE000055046E /* PassthroughView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5C233F2F16CE000055046E /* PassthroughView.swift */; };
-		1D6153782F4DD52D005175A1 /* AIChatModelsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6153772F4DD52A005175A1 /* AIChatModelsService.swift */; };
-		1D6153792F4DD52D005175A1 /* AIChatModelsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6153772F4DD52A005175A1 /* AIChatModelsService.swift */; };
 		1D6216B229069BBF00386B2C /* BWKeyStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6216B129069BBF00386B2C /* BWKeyStorage.swift */; };
 		1D68604F2D36BD28006FC53E /* WebExtensionsDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */; };
 		1D69B7192E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */; };
@@ -198,8 +196,6 @@
 		1DD0DBBC2E3DEE8A00B0E5F1 /* NewTabPageLoadMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */; };
 		1DD0DBBE2E40959D00B0E5F1 /* NewTabPageLoadMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD0DBBD2E40959400B0E5F1 /* NewTabPageLoadMetricsTests.swift */; };
 		1DD0DBBF2E40959D00B0E5F1 /* NewTabPageLoadMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD0DBBD2E40959400B0E5F1 /* NewTabPageLoadMetricsTests.swift */; };
-		1DD473292F4BC02E00ACBF18 /* AIChatPreferencesPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD473282F4BC02E00ACBF18 /* AIChatPreferencesPersistor.swift */; };
-		1DD4732A2F4BC02E00ACBF18 /* AIChatPreferencesPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD473282F4BC02E00ACBF18 /* AIChatPreferencesPersistor.swift */; };
 		1DD6A7B12D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */; };
 		1DD6A7B22D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */; };
 		1DD6A7B42D804ADA006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6A7B32D804AD3006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift */; };
@@ -4538,7 +4534,6 @@
 		1D5C23282F150A630055046E /* AIChatSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSuggestionsView.swift; sourceTree = "<group>"; };
 		1D5C232B2F150A6E0055046E /* AIChatSuggestionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSuggestionRowView.swift; sourceTree = "<group>"; };
 		1D5C233F2F16CE000055046E /* PassthroughView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassthroughView.swift; sourceTree = "<group>"; };
-		1D6153772F4DD52A005175A1 /* AIChatModelsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatModelsService.swift; sourceTree = "<group>"; };
 		1D6216B129069BBF00386B2C /* BWKeyStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWKeyStorage.swift; sourceTree = "<group>"; };
 		1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionsDebugMenu.swift; sourceTree = "<group>"; };
 		1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSuggestionsProviderTests.swift; sourceTree = "<group>"; };
@@ -4581,7 +4576,6 @@
 		1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurnerHomePageView.swift; sourceTree = "<group>"; };
 		1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageLoadMetrics.swift; sourceTree = "<group>"; };
 		1DD0DBBD2E40959400B0E5F1 /* NewTabPageLoadMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageLoadMetricsTests.swift; sourceTree = "<group>"; };
-		1DD473282F4BC02E00ACBF18 /* AIChatPreferencesPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPreferencesPersistor.swift; sourceTree = "<group>"; };
 		1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopUpView.swift; sourceTree = "<group>"; };
 		1DD6A7B32D804AD3006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopUpViewController.swift; sourceTree = "<group>"; };
 		1DD6A7B62D804B56006AE043 /* PinnedTabsDiscoveryPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopover.swift; sourceTree = "<group>"; };
@@ -7303,7 +7297,6 @@
 				31D761082EE85C9D008898F6 /* AIChatTogglePopoverCoordinator.swift */,
 				31D761092EE85C9D008898F6 /* AIChatTogglePopoverPresenter.swift */,
 				3161D15C2DA02380008F59B5 /* AIChatPixel.swift */,
-				1DD473282F4BC02E00ACBF18 /* AIChatPreferencesPersistor.swift */,
 				37AA00AB2E1D3D4000844427 /* AIChatSummarizer.swift */,
 				1EB01D902E61DF2B006CB411 /* AIChatTranslator.swift */,
 				312E63962D9D821500806E2A /* AIChatURL.swift */,
@@ -7312,7 +7305,6 @@
 				3135647A2D9EB8E800BF4B5D /* AIChatAddressBarPromptExtractor.swift */,
 				31521ABF2CC013A400248E6F /* AIChatMenuVisibilityConfigurable.swift */,
 				CC5415622F29238F0084A139 /* AIChatMenuConfigurationMock.swift */,
-				1D6153772F4DD52A005175A1 /* AIChatModelsService.swift */,
 				CC19E9EC2E82CFBB0043F931 /* AIChatHistoryCleaner.swift */,
 				1D5C233F2F16CE000055046E /* PassthroughView.swift */,
 				1D5072052F3A41AE005BE196 /* AIChatModelPickerButton.swift */,
@@ -14646,7 +14638,6 @@
 				F17E7DDF2C7C83E500907A84 /* Logger+FileDownload.swift in Sources */,
 				9F56CFAA2B82DC4300BB7F11 /* AddEditBookmarkFolderView.swift in Sources */,
 				567A23D82C8871290010F66C /* OnboardingFireButtonDialogViewModel.swift in Sources */,
-				1D6153792F4DD52D005175A1 /* AIChatModelsService.swift in Sources */,
 				37FD78122A29EBD100B36DB1 /* SyncErrorHandler.swift in Sources */,
 				1D4B03D62CA4432000224E99 /* BookmarkUrlExtension.swift in Sources */,
 				987799F42999993C005D8EB6 /* LegacyBookmarksStoreMigration.swift in Sources */,
@@ -14893,7 +14884,6 @@
 				B6BCC51F2AFCD9ED002C5499 /* DataImportSourcePicker.swift in Sources */,
 				3706FBDF293F65D500E42796 /* String+Punycode.swift in Sources */,
 				C124AC242D4257BE009FBFD0 /* DataImportExtension.swift in Sources */,
-				1DD4732A2F4BC02E00ACBF18 /* AIChatPreferencesPersistor.swift in Sources */,
 				1D5C23402F16CE000055046E /* PassthroughView.swift in Sources */,
 				EEC4A6722B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift in Sources */,
 				37EE56332D5F197700D53C7C /* BackForwardListItem.swift in Sources */,
@@ -16957,7 +16947,6 @@
 				AA61C0D22727F59B00E6B681 /* ArrayExtension.swift in Sources */,
 				370C23112C7747E200A80A3E /* ImageProcessor.swift in Sources */,
 				373A1AB02842C4EA00586521 /* BookmarkHTMLImporter.swift in Sources */,
-				1DD473292F4BC02E00ACBF18 /* AIChatPreferencesPersistor.swift in Sources */,
 				B6B5F57F2B024105008DB58A /* DataImportSummaryView.swift in Sources */,
 				BB4EC6962D9B5C8000660600 /* ThemeStyleProviding.swift in Sources */,
 				EDB8375E2EDEF27C00505C15 /* PasswordEntryExampleView.swift in Sources */,
@@ -17255,7 +17244,6 @@
 				EEC4A6692B2C87D300F7C0AA /* VPNLocationView.swift in Sources */,
 				AAC5E4D225D6A709007F5990 /* BookmarkList.swift in Sources */,
 				B602E81D2A1E25B1006D261F /* NEOnDemandRuleExtension.swift in Sources */,
-				1D6153782F4DD52D005175A1 /* AIChatModelsService.swift in Sources */,
 				56A0543E2C215FB3007D8FAB /* OnboardingUserScript.swift in Sources */,
 				3748428E2DD76BBC00A96BD9 /* NewTabPageShownPixelSender.swift in Sources */,
 				C1372EF42BBC5BAD003F8793 /* SecureTextField.swift in Sources */,

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import UIKit
 
 // MARK: - Delegate Protocol
@@ -29,6 +30,9 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapStopGenerating(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachmentWithId id: UUID)
 }
 
 // MARK: - View Controller
@@ -91,6 +95,26 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.resignFirstResponder()
     }
 
+    func setStopMode(_ isStopMode: Bool) {
+        inputBarView.setStopMode(isStopMode)
+    }
+
+    func setModelChipName(_ name: String) {
+        inputBarView.setModelChipName(name)
+    }
+
+    func setModelMenu(_ menu: UIMenu) {
+        inputBarView.setModelMenu(menu)
+    }
+
+    func setAttachments(_ attachments: [AIChatImageAttachment]) {
+        inputBarView.setAttachments(attachments)
+    }
+
+    func updateAttachButtonVisibility(supportsImageUpload: Bool) {
+        inputBarView.updateAttachButtonVisibility(supportsImageUpload: supportsImageUpload)
+    }
+
     // MARK: - Lifecycle
 
     override func loadView() {
@@ -127,5 +151,17 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapVoice(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapVoice(self)
+    }
+
+    func unifiedToggleInputViewDidTapStopGenerating(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidTapStopGenerating(self)
+    }
+
+    func unifiedToggleInputViewDidTapAttach(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidTapAttach(self)
+    }
+
+    func unifiedToggleInputViewDidRemoveAttachment(_ view: UnifiedToggleInputView, id: UUID) {
+        delegate?.unifiedToggleInputVC(self, didRemoveAttachmentWithId: id)
     }
 }

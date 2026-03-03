@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
+import PhotosUI
 import UIKit
 
 // MARK: - Unified Toggle Input Setup
@@ -121,5 +123,33 @@ extension MainViewController: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidRequestVoiceSearch() {
         let mode = unifiedToggleInputCoordinator?.inputMode ?? .search
         handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
+    }
+
+    func unifiedToggleInputDidRequestImageAttachment(_ coordinator: UnifiedToggleInputCoordinator) {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.selectionLimit = 4
+        config.filter = .images
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+}
+
+// MARK: - PHPickerViewControllerDelegate
+
+extension MainViewController: PHPickerViewControllerDelegate {
+
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        for result in results {
+            result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
+                guard let image = object as? UIImage else { return }
+                let filename = (result.itemProvider.suggestedName ?? "image") + ".png"
+                let attachment = AIChatImageAttachment(image: image, fileName: filename)
+                DispatchQueue.main.async {
+                    self?.unifiedToggleInputCoordinator?.addAttachment(attachment)
+                }
+            }
+        }
     }
 }

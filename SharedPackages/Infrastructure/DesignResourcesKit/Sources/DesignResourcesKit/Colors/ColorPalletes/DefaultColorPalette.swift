@@ -22,6 +22,7 @@ import SwiftUI
 
 /// See [Figma](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
 struct DefaultColorPalette: ColorPaletteDefinition {
+    private static let xD0021B = Color(0xD0021B)
     private static let x1F1F1F = Color(0x1F1F1F)
     private static let x141415 = Color(0x141415)
     private static let x181818 = Color(0x181818)
@@ -277,6 +278,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return dynamicColor(for: rebrandingColor)
         case .toolbarButton:
             return DynamicColor(lightColor: x1F1F1F.opacity(0.918), darkColor: .tint(0.905))
+        case .aiChatStopGenerating:
+            return DynamicColor(lightColor: xD0021B, darkColor: xD0021B)
         }
     }
 }

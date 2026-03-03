@@ -19,6 +19,8 @@
 
 import AIChat
 import Combine
+import os.log
+import UIKit
 
 // MARK: - State Types
 
@@ -88,11 +90,42 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         textChangeSubject.eraseToAnyPublisher()
     }
 
+    // MARK: - Model Picker
+
+    private let modelsService: AIChatModelsProviding
+    private var preferences: AIChatPreferencesPersisting
+    private var models: [AIChatModel] = []
+    private var modelsFetchTask: Task<Void, Never>?
+
+    private var selectedModelId: String? {
+        preferences.selectedModelId ?? models.first(where: { $0.entityHasAccess })?.id
+    }
+
+    private var selectedModelSupportsImageUpload: Bool {
+        guard !models.isEmpty else { return true }
+        return models.first(where: { $0.id == (selectedModelId ?? "") })?.supportsImageUpload ?? true
+    }
+
+    // MARK: - Attachments
+
+    private(set) var pendingAttachments: [AIChatImageAttachment] = []
+
+    // MARK: - Cancellables
+
+    private var cancellables = Set<AnyCancellable>()
+
     // MARK: - Initialization
 
-    init() {
+    init(
+        modelsService: AIChatModelsProviding = AIChatModelsService(),
+        preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor()
+    ) {
+        self.modelsService = modelsService
+        self.preferences = preferences
         viewController = UnifiedToggleInputViewController()
         viewController.delegate = self
+        observeAIChatStatus()
+        fetchModels()
     }
 
     // MARK: - Tab Binding
@@ -147,13 +180,86 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         intentSubject.send(.hide)
     }
 
+    // MARK: - Attachment Management
+
+    func addAttachment(_ attachment: AIChatImageAttachment) {
+        guard pendingAttachments.count < 4 else { return }
+        pendingAttachments.append(attachment)
+        viewController.setAttachments(pendingAttachments)
+        viewController.updateAttachButtonVisibility(supportsImageUpload: selectedModelSupportsImageUpload && pendingAttachments.count < 4)
+    }
+
     // MARK: - Private
+
+    private func observeAIChatStatus() {
+        $aiChatStatus
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                let isStreaming = status == .loading || status == .streaming
+                self?.viewController.setStopMode(isStreaming)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func fetchModels() {
+        modelsFetchTask?.cancel()
+        modelsFetchTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let remoteModels = try await modelsService.fetchModels()
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self.models = remoteModels.map { AIChatModel(remoteModel: $0) }
+                    self.updateModelChip()
+                    self.viewController.setModelMenu(self.makeModelMenu())
+                    self.viewController.updateAttachButtonVisibility(supportsImageUpload: self.selectedModelSupportsImageUpload)
+                }
+            } catch {
+                Logger.aiChat.error("Failed to fetch models: \(error)")
+            }
+        }
+    }
+
+    private func updateModelChip() {
+        let name = models.first(where: { $0.id == (selectedModelId ?? "") })?.name ?? selectedModelId ?? ""
+        viewController.setModelChipName(name)
+    }
+
+    private func makeModelMenu() -> UIMenu {
+        let actions = models.map { model in
+            let isSelected = model.id == (selectedModelId ?? "")
+            let action = UIAction(
+                title: model.name,
+                image: model.menuIcon,
+                state: isSelected ? .on : .off
+            ) { [weak self] _ in
+                guard let self else { return }
+                self.preferences.selectedModelId = model.id
+                self.updateModelChip()
+                self.viewController.setModelMenu(self.makeModelMenu())
+                self.viewController.updateAttachButtonVisibility(supportsImageUpload: self.selectedModelSupportsImageUpload && self.pendingAttachments.count < 4)
+            }
+            return action
+        }
+        return UIMenu(children: actions)
+    }
+
+    private func nativePromptImages(from attachments: [AIChatImageAttachment]) -> [AIChatNativePrompt.NativePromptImage]? {
+        guard !attachments.isEmpty else { return nil }
+        let images = attachments.compactMap { attachment -> AIChatNativePrompt.NativePromptImage? in
+            guard let data = attachment.image.pngData() else { return nil }
+            return AIChatNativePrompt.NativePromptImage(data: data.base64EncodedString(), format: "png")
+        }
+        return images.isEmpty ? nil : images
+    }
 
     private func resetInputState() {
         viewController.text = ""
         textState = .empty
         aiChatStatus = .unknown
         aiChatInputBoxVisibility = .unknown
+        pendingAttachments.removeAll()
+        viewController.setAttachments([])
     }
 }
 
@@ -175,8 +281,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             didSubmitQuery.send(text)
         case .aiChat:
             showCollapsed()
-            if boundUserScript != nil {
-                didSubmitPrompt.send(text)
+            if let script = boundUserScript {
+                let images = nativePromptImages(from: pendingAttachments)
+                script.submitPrompt(text, images: images, modelId: selectedModelId)
+                pendingAttachments.removeAll()
+                viewController.setAttachments([])
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text)
             }
@@ -194,5 +303,19 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidRequestVoiceSearch()
+    }
+
+    func unifiedToggleInputVCDidTapStopGenerating(_ vc: UnifiedToggleInputViewController) {
+        didPressStopGeneratingButton.send(())
+    }
+
+    func unifiedToggleInputVCDidTapAttach(_ vc: UnifiedToggleInputViewController) {
+        delegate?.unifiedToggleInputDidRequestImageAttachment(self)
+    }
+
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachmentWithId id: UUID) {
+        pendingAttachments.removeAll { $0.id == id }
+        viewController.setAttachments(pendingAttachments)
+        viewController.updateAttachButtonVisibility(supportsImageUpload: selectedModelSupportsImageUpload && pendingAttachments.count < 4)
     }
 }

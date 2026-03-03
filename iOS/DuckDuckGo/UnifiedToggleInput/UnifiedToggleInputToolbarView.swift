@@ -21,8 +21,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
 
-/// Horizontal toolbar with AI tool buttons: globe, image, [spacer], model picker chip, submit.
-/// All buttons except submit are non-functional stubs for Part 1.
+/// Horizontal toolbar with AI tool buttons: image, [spacer], model picker chip, submit/stop.
 final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Constants
@@ -31,7 +30,6 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let verticalPadding: CGFloat = 8
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
-        static let leftGroupSpacing: CGFloat = 4
         static let rightGroupSpacing: CGFloat = 8
         static let chipHeight: CGFloat = 32
         static let chipCornerRadius: CGFloat = 16
@@ -42,10 +40,9 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Callbacks
 
-    var onSearchTapped: (() -> Void)?
     var onAttachTapped: (() -> Void)?
-    var onModelPickerTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
+    var onStopGeneratingTapped: (() -> Void)?
 
     // MARK: - State
 
@@ -57,17 +54,27 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { submitButton.isHidden = isSubmitButtonHidden }
     }
 
-    var modelName: String = "4o-mini" {
+    var isImageButtonHidden: Bool = false {
+        didSet { imageButton.isHidden = isImageButtonHidden }
+    }
+
+    var isStopMode: Bool = false {
+        didSet {
+            guard isStopMode != oldValue else { return }
+            submitButton.isHidden = isStopMode
+            stopButton.isHidden = !isStopMode
+        }
+    }
+
+    var modelName: String = "" {
         didSet { modelChipLabel.text = modelName }
     }
 
-    // MARK: - UI Components
+    func setModelMenu(_ menu: UIMenu) {
+        modelChipButton.menu = menu
+    }
 
-    private lazy var globeButton: UIButton = makeToolButton(
-        image: DesignSystemImages.Glyphs.Size16.globe,
-        accessibilityLabel: UserText.aiChatToolbarSearchButtonAccessibilityLabel,
-        action: #selector(searchTapped)
-    )
+    // MARK: - UI Components
 
     private lazy var imageButton: UIButton = makeToolButton(
         image: DesignSystemImages.Glyphs.Size16.image,
@@ -78,7 +85,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     private lazy var modelChipButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(modelPickerTapped), for: .touchUpInside)
+        button.showsMenuAsPrimaryAction = true
 
         button.addSubview(modelChipLabel)
         button.addSubview(modelChipChevron)
@@ -105,7 +112,6 @@ final class UnifiedToggleInputToolbarView: UIView {
     private lazy var modelChipLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = modelName
         label.font = .systemFont(ofSize: Constants.chipFontSize, weight: .regular)
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.setContentHuggingPriority(.required, for: .horizontal)
@@ -139,6 +145,24 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
+    private lazy var stopButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "stop.fill"), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor(singleUseColor: .aiChatStopGenerating)
+        button.layer.cornerRadius = Constants.toolButtonSize / 2
+        button.clipsToBounds = true
+        button.isHidden = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityLabel = UserText.aiChatToolbarStopGeneratingButtonAccessibilityLabel
+        button.addTarget(self, action: #selector(stopGeneratingTapped), for: .touchUpInside)
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+            button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+        ])
+        return button
+    }()
+
     // MARK: - Initialization
 
     override init(frame: CGRect) {
@@ -158,26 +182,17 @@ final class UnifiedToggleInputToolbarView: UIView {
     // MARK: - Setup
 
     private func setupUI() {
-        let leftGroup = UIStackView(arrangedSubviews: [globeButton, imageButton])
-        leftGroup.axis = .horizontal
-        leftGroup.spacing = Constants.leftGroupSpacing
-        leftGroup.alignment = .center
-        leftGroup.translatesAutoresizingMaskIntoConstraints = false
-        leftGroup.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
-        leftGroup.layer.cornerRadius = 20
-        leftGroup.clipsToBounds = true
-
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [modelChipButton, submitButton])
+        let rightGroup = UIStackView(arrangedSubviews: [modelChipButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
         rightGroup.translatesAutoresizingMaskIntoConstraints = false
 
-        let outerStack = UIStackView(arrangedSubviews: [leftGroup, spacer, rightGroup])
+        let outerStack = UIStackView(arrangedSubviews: [imageButton, spacer, rightGroup])
         outerStack.axis = .horizontal
         outerStack.alignment = .center
         outerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -219,8 +234,7 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Actions
 
-    @objc private func searchTapped() { onSearchTapped?() }
     @objc private func attachTapped() { onAttachTapped?() }
-    @objc private func modelPickerTapped() { onModelPickerTapped?() }
     @objc private func submitTapped() { onSubmitTapped?() }
+    @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
 }

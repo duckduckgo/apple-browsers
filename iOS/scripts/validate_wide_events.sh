@@ -1,14 +1,19 @@
 #!/bin/bash
 
 # validate_wide_events.sh
-# Displays the wide event validation log from the iOS Simulator.
+# Validates wide event logs from the iOS Simulator against definitions.
 #
 # Usage:
 #   ./validate_wide_events.sh
 
 set -e
 
+# Get the directory where the script is stored
+SCRIPT_DIR=$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")
+BASE_DIR="${SCRIPT_DIR}/.."
+
 BUNDLE_ID="com.duckduckgo.mobile.ios"
+PIXEL_DEFINITIONS_PATH="${BASE_DIR}/PixelDefinitions"
 
 # Check for a booted simulator
 if ! xcrun simctl list devices booted 2>/dev/null | grep -q "Booted"; then
@@ -36,6 +41,6 @@ if [[ ! -f "${LOG_FILE}" ]]; then
     exit 0
 fi
 
-echo "Wide event validation log:"
-echo "=========================="
-cat "${LOG_FILE}"
+cd "${BASE_DIR}"
+echo "Validating wide event log..."
+npm run validate-wide-event-debug-logs "${PIXEL_DEFINITIONS_PATH}" "${LOG_FILE}"

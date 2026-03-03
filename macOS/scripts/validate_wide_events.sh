@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # validate_wide_events.sh
-# Displays the wide event validation log from the macOS app.
+# Validates wide event logs from the macOS app against definitions.
 #
 # Usage:
 #   ./validate_wide_events.sh [bundle_id]
@@ -25,8 +25,13 @@
 
 set -e
 
+# Get the directory where the script is stored
+SCRIPT_DIR=$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")
+BASE_DIR="${SCRIPT_DIR}/.."
+
 LOG_FILENAME="wide-event-validation-log.jsonl"
 BUNDLE_ID="${1:-com.duckduckgo.macos.browser.debug}"
+PIXEL_DEFINITIONS_PATH="${BASE_DIR}/PixelDefinitions"
 
 SANDBOXED_LOG="${HOME}/Library/Containers/${BUNDLE_ID}/Data/Library/Caches/${LOG_FILENAME}"
 UNSANDBOXED_LOG="${HOME}/Library/Caches/${LOG_FILENAME}"
@@ -44,6 +49,6 @@ else
     exit 0
 fi
 
-echo "Wide event validation log (${BUNDLE_ID}):"
-echo "=========================="
-cat "${LOG_FILE}"
+cd "${BASE_DIR}"
+echo "Validating wide event log..."
+npm run validate-wide-event-debug-logs "${PIXEL_DEFINITIONS_PATH}" "${LOG_FILE}"

@@ -33,6 +33,7 @@ private struct OnboardingStepProgressViewModifier: ViewModifier {
                     .alignmentGuide(VerticalAlignment.top) { $0.height / 2 }
                     .alignmentGuide(HorizontalAlignment.trailing) { $0.width + stepProgressTheme.trailingPadding }
                     .opacity(isVisible ? 1 : 0)
+                    .accessibilityHidden(!isVisible) // Hide from VoiceOver when not visible
             }
     }
 }

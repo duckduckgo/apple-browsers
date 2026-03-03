@@ -1,0 +1,97 @@
+//
+//  PromoHistoryStoreTests.swift
+//
+//  Copyright © 2020 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Combine
+import PersistenceTestingUtils
+import XCTest
+@testable import DuckDuckGo_Privacy_Browser
+
+final class PromoHistoryStoreTests: XCTestCase {
+
+    private var store: PromoHistoryStore!
+    private var backingStore: InMemoryThrowingKeyValueStore!
+
+    override func setUp() {
+        super.setUp()
+        backingStore = InMemoryThrowingKeyValueStore()
+        store = PromoHistoryStore(store: backingStore, queue: nil)
+    }
+
+    override func tearDown() {
+        store = nil
+        backingStore = nil
+        super.tearDown()
+    }
+
+    func testWhenRecordForUnknownId_ThenReturnsDefaultRecord() {
+        let record = store.record(for: "unknown-promo")
+
+        XCTAssertEqual(record.id, "unknown-promo")
+        XCTAssertEqual(record.timesDismissed, 0)
+        XCTAssertNil(record.lastDismissed)
+        XCTAssertNil(record.lastShown)
+        XCTAssertNil(record.nextEligibleDate)
+        XCTAssertFalse(record.actioned)
+    }
+
+    func testWhenSaveRecord_ThenRecordForReturnsSavedRecord() {
+        var record = PromoHistoryRecord(id: "test-promo")
+        record.timesDismissed = 2
+        let now = Date()
+        let nextEligibleDate = now.addingTimeInterval(86400)
+        record.lastShown = now
+        record.lastDismissed = now
+        record.nextEligibleDate = nextEligibleDate
+        record.actioned = true
+
+        store.save(record)
+
+        let loaded = store.record(for: "test-promo")
+        XCTAssertEqual(loaded.id, record.id)
+        XCTAssertEqual(loaded.timesDismissed, 2)
+        XCTAssertEqual(try XCTUnwrap(loaded.lastShown).timeIntervalSince1970, now.timeIntervalSince1970, accuracy: 1.0)
+        XCTAssertEqual(try XCTUnwrap(loaded.lastDismissed).timeIntervalSince1970, now.timeIntervalSince1970, accuracy: 1.0)
+        XCTAssertEqual(try XCTUnwrap(loaded.nextEligibleDate).timeIntervalSince1970, nextEligibleDate.timeIntervalSince1970, accuracy: 1.0)
+        XCTAssertTrue(loaded.actioned)
+    }
+
+    func testWhenResetAll_ThenRecordsAreCleared() {
+        let record = PromoHistoryRecord(id: "reset-promo")
+        store.save(record)
+
+        store.resetAll()
+
+        XCTAssertEqual(store.record(for: "reset-promo").timesDismissed, 0)
+        XCTAssertNil(store.record(for: "reset-promo").lastDismissed)
+        XCTAssertNil(store.record(for: "reset-promo").lastShown)
+        XCTAssertNil(store.record(for: "reset-promo").nextEligibleDate)
+        XCTAssertFalse(store.record(for: "reset-promo").actioned)
+    }
+
+    func testIsEligibleAsOf_MatchesIsEligibleBehavior() {
+        var record = PromoHistoryRecord(id: "eligible-test")
+        record.nextEligibleDate = Date().addingTimeInterval(-1)
+
+        XCTAssertTrue(record.isEligible(asOf: Date()))
+        XCTAssertTrue(record.isEligible)
+
+        record.nextEligibleDate = Date().addingTimeInterval(3600)
+        XCTAssertFalse(record.isEligible(asOf: Date()))
+        XCTAssertFalse(record.isEligible)
+    }
+}

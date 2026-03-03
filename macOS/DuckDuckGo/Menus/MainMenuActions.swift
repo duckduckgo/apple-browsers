@@ -543,7 +543,8 @@ extension AppDelegate {
     @MainActor
     @objc func exportStartupStats(_ sender: Any?) {
         do {
-            let exporter = StartupMetricsExporter(profiler: Application.appDelegate.startupProfiler)
+            let windowContext = WindowContext(windowControllersManager: windowControllersManager)
+            let exporter = StartupMetricsExporter(profiler: startupProfiler, previousSessionRestored: startupPreferences.restorePreviousSession, windowContext: windowContext)
             try exporter.exportMetricsToTemporaryURL()
         } catch {
             Logger.general.error("Failed to export Startup Metrics: \(error.localizedDescription, privacy: .public)")

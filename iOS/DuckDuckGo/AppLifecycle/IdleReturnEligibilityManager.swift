@@ -22,8 +22,6 @@ import Core
 import Persistence
 import PrivacyConfig
 
-/// Answers whether the user is eligible for "NTP after idle", the effective preference, and the idle threshold in seconds.
-/// Uses shared effective-option logic and shared threshold resolution (debug override, remote config, default).
 protocol IdleReturnEligibilityManaging {
     func isEligibleForNTPAfterIdle() -> Bool
     func effectiveAfterInactivityOption() -> AfterInactivityOption

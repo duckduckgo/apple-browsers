@@ -20,11 +20,8 @@
 import Foundation
 import Persistence
 
-/// Single source of truth for "effective" after-inactivity option: stored value if present,
-/// otherwise new user → New Tab, returning user → Last Used Tab (from `idleReturnNewUser` in storage).
-/// One API: returns the option and saves the new-user default (NTP + clear flag) when needed.
-/// Used by Settings (when reading the picker) and IdleReturnEligibilityManager.
 protocol AfterInactivityEffectiveOptionResolving {
+    /// Returns the user selected or default option for page to open after idle time.
     func resolveEffectiveOption() -> AfterInactivityOption
 }
 
@@ -37,12 +34,12 @@ final class AfterInactivityEffectiveOptionResolver: AfterInactivityEffectiveOpti
     }
 
     /// Returns the effective option and, when it is .newTab for a new user with no stored value,
-    /// persists that choice and clears `idleReturnNewUser`. Caller can call e.g. objectWillChange.send() after reading if needed.
+    /// persists that choice and clears `idleReturnNewUser`.
     func resolveEffectiveOption() -> AfterInactivityOption {
-        if let raw = try? storage.value(for: \AfterInactivitySettingKeys.afterInactivityOption),
+        if let raw = try? storage.afterInactivityOption,
            let option = AfterInactivityOption(rawValue: raw) {
             return option
-        } else if (try? storage.value(for: \AfterInactivitySettingKeys.idleReturnNewUser)) == true {
+        } else if (try? storage.idleReturnNewUser) == true {
             try? storage.set(AfterInactivityOption.newTab.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
             try? storage.set(false, for: \AfterInactivitySettingKeys.idleReturnNewUser)
             return .newTab

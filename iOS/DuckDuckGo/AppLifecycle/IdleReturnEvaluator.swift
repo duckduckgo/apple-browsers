@@ -36,8 +36,6 @@ struct IdleReturnDebugOverridesKeys: StoringKeys {
     let thresholdSecondsOverride = StorageKey<Int>(IdleReturnDebugStorageKeys.idleReturnThresholdSecondsDebugOverride)
 }
 
-/// Single source for idle threshold in seconds: debug override, then remote config, then default.
-/// Used by IdleReturnEvaluator and Settings (footer display).
 struct IdleReturnThresholdResolver {
 
     private let debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)?

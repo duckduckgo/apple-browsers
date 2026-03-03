@@ -125,10 +125,10 @@ extension DataImportWideEventData {
         case timeout
     }
 
-    public func pixelParameters() -> [String: String] {
-        var params = Dictionary(compacting: [
+    public func jsonParameters() -> [String: Encodable] {
+        var params: [String: Encodable] = Dictionary(compacting: [
             (WideEventParameter.DataImportFeature.source, source.id),
-            (WideEventParameter.DataImportFeature.latency, overallDuration?.stringValue(.noBucketing)),
+            (WideEventParameter.DataImportFeature.latency, overallDuration?.intValue(.noBucketing)),
         ])
 
         for type in DataImport.DataType.allCases {
@@ -145,7 +145,7 @@ extension DataImportWideEventData {
 
 private extension DataImportWideEventData {
 
-    func addTypeStatusAndReason(_ status: WideEventStatus?, type: DataType, to params: inout [String: String]) {
+    func addTypeStatusAndReason(_ status: WideEventStatus?, type: DataType, to params: inout [String: Encodable]) {
         guard let status else { return }
         params[WideEventParameter.DataImportFeature.status(for: type)] = status.description
 
@@ -157,14 +157,14 @@ private extension DataImportWideEventData {
         }
     }
 
-    func addTypeImporterLatency(_ interval: WideEvent.MeasuredInterval?, type: DataType, to params: inout [String: String]) {
+    func addTypeImporterLatency(_ interval: WideEvent.MeasuredInterval?, type: DataType, to params: inout [String: Encodable]) {
         guard let duration = interval?.durationMilliseconds else { return }
-        params[WideEventParameter.DataImportFeature.latency(for: type)] = String(Int(duration))
+        params[WideEventParameter.DataImportFeature.latency(for: type)] = Int(duration)
     }
 
-    func addTypeError(_ error: WideEventErrorData?, type: DataType, to params: inout [String: String]) {
+    func addTypeError(_ error: WideEventErrorData?, type: DataType, to params: inout [String: Encodable]) {
         guard let error else { return }
-        let errorParams = error.pixelParameters()
+        let errorParams = error.jsonParameters()
         for (key, value) in errorParams {
             let typeKey = transformErrorKey(key, for: type)
             params[typeKey] = value

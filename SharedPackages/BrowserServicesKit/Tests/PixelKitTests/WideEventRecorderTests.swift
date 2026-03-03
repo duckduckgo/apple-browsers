@@ -172,5 +172,5 @@ private final class WideEventDataMeasuringMock: WideEventDataMeasuringInterval {
         self.measuredInterval = measuredInterval
     }
 
-    func pixelParameters() -> [String: String] { [:] }
+    func jsonParameters() -> [String: Encodable] { [:] }
 }

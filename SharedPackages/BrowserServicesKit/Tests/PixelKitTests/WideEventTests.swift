@@ -117,8 +117,8 @@ final class MockWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    func pixelParameters() -> [String: String] {
-        var params: [String: String] = [:]
+    func jsonParameters() -> [String: Encodable] {
+        var params: [String: Encodable] = [:]
 
         if let failingStep = failingStep {
             params["feature.data.ext.failing_step"] = failingStep.rawValue
@@ -128,7 +128,7 @@ final class MockWideEventData: WideEventData {
             params["feature.data.ext.test_identifier"] = testIdentifier
         }
 
-        params["feature.data.ext.test_eligible"] = String(testEligible)
+        params["feature.data.ext.test_eligible"] = testEligible
 
         return params
     }
@@ -309,7 +309,7 @@ final class WideEventTests: XCTestCase {
             var appData: WideEventAppData = WideEventAppData()
             var globalData: WideEventGlobalData = WideEventGlobalData(platform: "", sampleRate: 1.0)
             var errorData: WideEventErrorData?
-            func pixelParameters() -> [String: String] { [:] }
+            func jsonParameters() -> [String: Encodable] { [:] }
 
             enum CodingError: Error { case encodingNotSupported }
 

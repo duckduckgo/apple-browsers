@@ -57,7 +57,7 @@ public struct WideEventMetadata {
 }
 
 extension WideEventMetadata: WideEventParameterProviding {
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         Dictionary(compacting: [
             (WideEventParameter.Meta.type, type),
             (WideEventParameter.Meta.version, version),
@@ -180,16 +180,6 @@ public struct WideEventGlobalData: Codable {
 }
 
 extension WideEventGlobalData: WideEventParameterProviding {
-    public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-
-        parameters[WideEventParameter.Global.platform] = platform
-        parameters[WideEventParameter.Global.type] = type
-        parameters[WideEventParameter.Global.sampleRate] = String(sampleRate)
-
-        return parameters
-    }
-
     public func jsonParameters() -> [String: Encodable] {
         var parameters: [String: Encodable] = [:]
 
@@ -254,12 +244,12 @@ public struct WideEventAppData: Codable {
 
 extension WideEventAppData: WideEventParameterProviding {
 
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         Dictionary(compacting: [
             (WideEventParameter.App.name, name),
             (WideEventParameter.App.version, version),
             (WideEventParameter.App.formFactor, formFactor),
-            (WideEventParameter.App.internalUser, internalUser == true ? "true" : nil),
+            (WideEventParameter.App.internalUser, internalUser == true ? true : nil),
         ])
     }
 
@@ -279,7 +269,7 @@ public struct WideEventContextData: Codable {
 
 extension WideEventContextData: WideEventParameterProviding {
 
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         Dictionary(compacting: [
             (WideEventParameter.Context.name, name),
         ])
@@ -329,17 +319,17 @@ extension WideEventErrorData {
 }
 
 extension WideEventErrorData: WideEventParameterProviding {
-    public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
+    public func jsonParameters() -> [String: Encodable] {
+        var parameters: [String: Encodable] = [:]
 
         parameters[WideEventParameter.Feature.errorDomain] = domain
-        parameters[WideEventParameter.Feature.errorCode] = String(code)
+        parameters[WideEventParameter.Feature.errorCode] = code
         parameters[WideEventParameter.Feature.errorDescription] = description
 
         for (index, nested) in underlyingErrors.enumerated() {
             let suffix = index == 0 ? "" : String(index + 1)
             parameters[WideEventParameter.Feature.underlyingErrorDomain + suffix] = nested.domain
-            parameters[WideEventParameter.Feature.underlyingErrorCode + suffix] = String(nested.code)
+            parameters[WideEventParameter.Feature.underlyingErrorCode + suffix] = nested.code
         }
 
         return parameters
@@ -355,6 +345,10 @@ extension WideEvent.MeasuredInterval {
 
     public func stringValue(_ bucket: DurationBucket) -> String? {
         durationMilliseconds.map { String(bucket.apply($0)) }
+    }
+
+    public func intValue(_ bucket: DurationBucket) -> Int? {
+        durationMilliseconds.map { bucket.apply($0) }
     }
 
 }

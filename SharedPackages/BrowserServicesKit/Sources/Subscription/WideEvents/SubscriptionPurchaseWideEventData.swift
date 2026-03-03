@@ -124,17 +124,17 @@ extension SubscriptionPurchaseWideEventData {
         case missingEntitlementsDelayedActivation = "missing_entitlements_delayed_activation"
     }
 
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         let bucket: DurationBucket = .bucketed(Self.bucket)
 
         return Dictionary(compacting: [
             (WideEventParameter.SubscriptionFeature.purchasePlatform, purchasePlatform.rawValue),
             (WideEventParameter.SubscriptionFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.SubscriptionFeature.subscriptionIdentifier, subscriptionIdentifier),
-            (WideEventParameter.SubscriptionFeature.freeTrialEligible, String(freeTrialEligible)),
-            (WideEventParameter.SubscriptionFeature.accountCreationLatency, createAccountDuration?.stringValue(bucket)),
-            (WideEventParameter.SubscriptionFeature.accountPaymentLatency, completePurchaseDuration?.stringValue(bucket)),
-            (WideEventParameter.SubscriptionFeature.accountActivationLatency, activateAccountDuration?.stringValue(bucket)),
+            (WideEventParameter.SubscriptionFeature.freeTrialEligible, freeTrialEligible),
+            (WideEventParameter.SubscriptionFeature.accountCreationLatency, createAccountDuration?.intValue(bucket)),
+            (WideEventParameter.SubscriptionFeature.accountPaymentLatency, completePurchaseDuration?.intValue(bucket)),
+            (WideEventParameter.SubscriptionFeature.accountActivationLatency, activateAccountDuration?.intValue(bucket)),
         ])
     }
 

@@ -130,7 +130,7 @@ extension SubscriptionPlanChangeWideEventData {
         case missingEntitlementsDelayedActivation = "missing_entitlements_delayed_activation"
     }
 
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         let bucket: DurationBucket = .bucketed(Self.bucket)
 
         return Dictionary(compacting: [
@@ -140,8 +140,8 @@ extension SubscriptionPlanChangeWideEventData {
             (WideEventParameter.PlanChangeFeature.subscriptionIdentifier, toPlan),
             (WideEventParameter.PlanChangeFeature.changeType, changeType?.rawValue),
             (WideEventParameter.PlanChangeFeature.failingStep, failingStep?.rawValue),
-            (WideEventParameter.PlanChangeFeature.paymentLatency, paymentDuration?.stringValue(bucket)),
-            (WideEventParameter.PlanChangeFeature.confirmationLatency, confirmationDuration?.stringValue(bucket)),
+            (WideEventParameter.PlanChangeFeature.paymentLatency, paymentDuration?.intValue(bucket)),
+            (WideEventParameter.PlanChangeFeature.confirmationLatency, confirmationDuration?.intValue(bucket)),
         ])
     }
 

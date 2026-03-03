@@ -806,17 +806,6 @@ final class SenderTestWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    func pixelParameters() -> [String: String] {
-        var params: [String: String] = [:]
-
-        if let testIdentifier = testIdentifier {
-            params["feature.data.ext.test_identifier"] = testIdentifier
-        }
-
-        params["feature.data.ext.test_eligible"] = String(testEligible)
-        return params
-    }
-
     func jsonParameters() -> [String: Encodable] {
         var params: [String: Encodable] = [:]
 

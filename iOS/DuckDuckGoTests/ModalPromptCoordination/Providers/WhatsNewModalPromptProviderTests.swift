@@ -531,6 +531,7 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         #expect(mockPixelReporter.capturedDismissType == .itemAction)
     }
 
+    @available(iOS 16, *) // TimeLimitTrait is only available since iOS 16+
     @Test("Check URL Item Action Callback Handles Action For On-Demand Context", .timeLimit(.minutes(1)))
     func whenURLItemActionCallbackInvokedInOnDemandContextThenActionHandledAndDismissPixelFires() async throws {
         // GIVEN

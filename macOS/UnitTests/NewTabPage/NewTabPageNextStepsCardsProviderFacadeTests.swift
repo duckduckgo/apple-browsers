@@ -18,11 +18,13 @@
 
 import BrowserServicesKit
 import Combine
+import Common
 import NewTabPage
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SubscriptionTestingUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {

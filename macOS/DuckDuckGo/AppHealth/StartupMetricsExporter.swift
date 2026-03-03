@@ -146,7 +146,7 @@ private extension ExportStartupMetrics {
         }
 
         for (codingKey, milliseconds) in keysToMilliseconds {
-            try container.encodeIfPresent(milliseconds, forKey: codingKey)
+            try container.encode(milliseconds, forKey: codingKey)
         }
 
         if let deltaMS = metrics.timeElapsedBetween(endOf: .appDelegateInit, startOf: .appWillFinishLaunching)?.toMilliseconds {

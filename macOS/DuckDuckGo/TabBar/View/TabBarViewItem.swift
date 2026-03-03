@@ -1518,8 +1518,9 @@ extension TabBarViewItem: NSMenuDelegate {
         let title = isSuspended ? UserText.resumeTab : UserText.suspendTab
         let menuItem = NSMenuItem(title: title, action: #selector(suspendTabAction(_:)), keyEquivalent: "")
         menuItem.target = self
-        // Can't suspend the currently active tab
-        menuItem.isEnabled = !isSelected
+        // Can't suspend the currently active tab or one playing audio/video
+        let isPlayingAudio = !isSuspended && (tabViewModel?.audioState.isPlayingAudio ?? false)
+        menuItem.isEnabled = !isSelected && !isPlayingAudio
         menu.addItem(menuItem)
     }
 

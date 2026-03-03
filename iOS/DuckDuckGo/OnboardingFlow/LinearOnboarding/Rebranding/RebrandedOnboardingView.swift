@@ -571,8 +571,8 @@ private struct SlideLeftAndFadeModifier: ViewModifier, Animatable {
                 // Slide left: at progress=1.0, trailing edge reaches screen's leading edge
                 // Image is centered in frame, so: offset = -(screenWidth/2 + imageWidth/2)
                 .offset(x: -(geometry.size.width / 2 + geometry.size.width / 2) * progress)
-                // Fade out twice as fast as the slide
-                .opacity(1.0 - progress * 2)
+                // Fade out twice as fast as the slide, clamped to avoid negative opacity
+                .opacity(max(0, 1.0 - progress * 2))
         }
     }
 }

@@ -156,10 +156,10 @@ private struct ExitingBackgroundView<Content: View>: View, Animatable {
         // Slide left until image's trailing edge aligns with screen's leading edge
         // Image is centered in frame, so: offset = -(frameCenter + imageHalfWidth)
         // At progress=1.0: image trailing edge reaches x=0 (screen leading edge)
-        // Fade out background twice as fast as it slides out.
+        // Fade out background twice as fast as it slides out, clamped to avoid negative opacity.
         content
             .offset(x: -(screenWidth / 2 + imageWidth / 2) * progress)
-            .opacity(1.0 - progress * 2)
+            .opacity(max(0, 1.0 - progress * 2))
     }
 }
 

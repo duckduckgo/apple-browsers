@@ -44,13 +44,13 @@ final class AIChatTabChatHeaderView: UIView {
 
     private lazy var settingsButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.list,
-        accessibilityLabel: UserText.aiChatHeaderSettingsAccessibilityLabel,
+        accessibilityLabel: "Chat settings",
         action: #selector(settingsTapped)
     )
 
     private lazy var newChatButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.compose,
-        accessibilityLabel: UserText.aiChatHeaderNewChatAccessibilityLabel,
+        accessibilityLabel: "New chat",
         action: #selector(newChatTapped)
     )
 
@@ -219,7 +219,7 @@ final class AIChatTabChatHeaderView: UIView {
         button = makeIconButtonLegacy(image: image)
 #endif
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.tintColor = UIColor.label.withAlphaComponent(0.84)
+        button.tintColor = UIColor(designSystemColor: .icons)
         button.accessibilityLabel = accessibilityLabel
         button.addTarget(self, action: action, for: .touchUpInside)
         return button

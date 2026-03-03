@@ -244,6 +244,12 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
         let chat = chats[indexPath.row]
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
         DailyPixel.fireDailyAndCount(pixel: pixel)
+
+        if isIPadExperience {
+            let iPadPixel: Pixel.Event = chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected
+            DailyPixel.fireDailyAndCount(pixel: iPadPixel)
+        }
+
         onChatSelected(chat)
     }
 

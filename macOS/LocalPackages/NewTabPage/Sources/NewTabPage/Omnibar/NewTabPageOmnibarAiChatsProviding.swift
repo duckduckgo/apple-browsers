@@ -8,6 +8,6 @@
 public protocol NewTabPageOmnibarAiChatsProviding: AnyObject {
 
     @MainActor
-    func aiChats() async -> NewTabPageDataModel.AiChatsData
+    func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData
 
 }

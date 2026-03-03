@@ -206,17 +206,23 @@ public extension NewTabPageDataModel {
 
     // MARK: - omnibar_getAiChats
 
+    struct OmnibarGetAiChatsRequest: Codable, Equatable {
+        let query: String?
+    }
+
     struct AiChat: Codable, Equatable {
         let chatId: String
         let title: String
         let pinned: Bool?
         let lastEdit: String?
+        let firstUserMessageContent: String?
 
-        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil) {
+        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil, firstUserMessageContent: String? = nil) {
             self.chatId = chatId
             self.title = title
             self.pinned = pinned
             self.lastEdit = lastEdit
+            self.firstUserMessageContent = firstUserMessageContent
         }
     }
 

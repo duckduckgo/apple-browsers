@@ -55,11 +55,12 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
     }
 
     @MainActor
-    func aiChats() async -> NewTabPageDataModel.AiChatsData {
+    func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData {
         guard featureFlagger.isFeatureOn(.aiChatNtpRecentChats) else {
             return .empty
         }
-        let (pinned, recent) = await suggestionsReader.fetchSuggestions(query: nil)
+        let normalizedQuery = query?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let (pinned, recent) = await suggestionsReader.fetchSuggestions(query: normalizedQuery?.isEmpty == false ? normalizedQuery : nil)
         let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
         viewModel.setChats(pinned: pinned, recent: recent)
         let chats = viewModel.filteredSuggestions.map { $0.asNewTabPageAiChat }

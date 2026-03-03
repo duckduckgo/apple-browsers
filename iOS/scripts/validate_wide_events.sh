@@ -42,5 +42,6 @@ if [[ ! -f "${LOG_FILE}" ]]; then
 fi
 
 cd "${BASE_DIR}"
+npm run validate-pixel-defs
 echo "Validating wide event log..."
 npm run validate-wide-event-debug-logs "${PIXEL_DEFINITIONS_PATH}" "${LOG_FILE}"

@@ -24,8 +24,9 @@ protocol FormFocusUserScriptDelegate: AnyObject {
 }
 
 /// Injects a lightweight script that sends a one-way message whenever the user focuses or
-/// blurs a form element (input, textarea, select, or contenteditable). Used to prevent
-/// tab suspension while the user is actively filling a form.
+/// blurs a form element (input, textarea, select, contenteditable, or iframe). Iframe tracking
+/// covers cross-origin embedded forms (Stripe, PayPal, etc.) where JS cannot be injected
+/// directly. Used to prevent tab suspension while the user is actively interacting with a form.
 final class FormFocusUserScript: NSObject, UserScript {
 
     // swiftlint:disable:next line_length
@@ -36,6 +37,7 @@ final class FormFocusUserScript: NSObject, UserScript {
             if (!el) return false;
             var tag = el.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+            if (tag === 'IFRAME') return true;
             if (el.isContentEditable) return true;
             return false;
         }

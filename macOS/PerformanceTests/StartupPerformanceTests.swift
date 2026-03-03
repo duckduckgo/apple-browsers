@@ -29,7 +29,7 @@ final class StartupPerformanceTests: XCTestCase {
         UITests.firstRun()
     }
 
-    func testStartupSequenceDuration() throws {
+    func testStartupSequenceDurationWithoutStateRestoration() throws {
         let application = XCUIApplication.setUp()
         defer {
             application.terminate()
@@ -39,6 +39,42 @@ final class StartupPerformanceTests: XCTestCase {
         XCTContext.runActivity(named: "Attaching Startup Metrics") { activity in
             activity.add(attachment)
         }
+    }
+
+    func testStartupSequenceDurationWithStateRestoration() throws {
+        let application = XCUIApplication.setUp()
+
+        /// Enable session restoration
+        application.openPreferencesWindow()
+        application.preferencesSetRestorePreviousSession(to: .restoreLastSession)
+        application.closePreferencesWindow()
+
+        /// Disable warn before quit so Cmd+Q quits immediately
+        application.disableWarnBeforeQuitting()
+
+        /// Create state to restore: 2 windows with multiple tabs
+        application.openNewTab()
+        application.openNewTab()
+        application.openNewWindow()
+        application.openNewTab()
+        application.openNewTab()
+
+        /// Quit properly to save state, then relaunch to trigger restoration
+        application.typeKey("q", modifierFlags: [.command])
+
+        /// Lalaunch
+        application.launch()
+
+        let attachment = try application.buildStartupMetricsAttachment()
+        XCTContext.runActivity(named: "Attaching Startup Metrics") { activity in
+            activity.add(attachment)
+        }
+
+        /// Ensure State Restoration remains disabled
+        application.openPreferencesWindow()
+        application.preferencesSetRestorePreviousSession(to: .newWindow)
+        application.closePreferencesWindow()
+        application.terminate()
     }
 }
 

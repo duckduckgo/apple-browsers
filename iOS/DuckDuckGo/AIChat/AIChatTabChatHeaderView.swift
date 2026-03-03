@@ -112,7 +112,7 @@ final class AIChatTabChatHeaderView: UIView {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.attributedText = makeTitleAttributedString(
-            text: UserText.aiChatHeaderTryPro,
+            text: UserText.aiChatHeaderPaidTitle,
             font: .daxSubheadSemibold(),
             color: UIColor(designSystemColor: .textPrimary)
         )
@@ -192,6 +192,13 @@ final class AIChatTabChatHeaderView: UIView {
             upgradeArrow.widthAnchor.constraint(equalToConstant: Constants.upgradeArrowSize),
             upgradeArrow.heightAnchor.constraint(equalToConstant: Constants.upgradeArrowSize),
         ])
+
+        upgradeLabel.accessibilityCustomActions = [
+            UIAccessibilityCustomAction(name: UserText.aiChatHeaderUpgrade) { [weak self] _ in
+                self?.upgradeTapped()
+                return true
+            }
+        ]
 
         configure(isSubscriptionActive: false)
         updateButtonShadows()

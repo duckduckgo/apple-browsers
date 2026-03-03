@@ -76,7 +76,6 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         // MARK: Header
         let headerItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeNewTabEntry()),
-            .init(entryBuilder.makeNewFireTabEntry()), // TODO: - This is a temporary location
             .init(entryBuilder.makeChatEntry()),
             .init(entryBuilder.makeSettingsEntry())
         ].compactMap { $0 }

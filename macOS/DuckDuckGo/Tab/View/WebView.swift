@@ -217,7 +217,19 @@ final class WebView: WKWebView {
             assertionFailure("Methods not available")
             return
         }
-        method_exchangeImplementations(originalMethod, swizzledMethod)
+
+        // Ensure the original selector exists on WebView itself before swizzling so we don't mutate WKWebView globally.
+        let didAddOriginalMethod = class_addMethod(WebView.self,
+                                                   Selector.immediateActionAnimationController,
+                                                   method_getImplementation(originalMethod),
+                                                   method_getTypeEncoding(originalMethod))
+        guard didAddOriginalMethod,
+              let webViewOriginalMethod = class_getInstanceMethod(WebView.self, Selector.immediateActionAnimationController) else {
+            assertionFailure("Failed to add original method to WebView")
+            return
+        }
+
+        method_exchangeImplementations(webViewOriginalMethod, swizzledMethod)
     }()
 
     // MARK: - Menu

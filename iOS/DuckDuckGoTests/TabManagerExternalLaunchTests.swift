@@ -235,7 +235,8 @@ final class TabManagerExternalLaunchTests {
         launchSourceManager: LaunchSourceManaging
     ) throws -> TabManager {
         let tabsPersistence = TabsModelPersistence(
-            store: MockKeyValueFileStore(),
+            normalStore: MockKeyValueFileStore(),
+            fireStore: MockKeyValueFileStore(),
             legacyStore: MockKeyValueStore()
         )
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)

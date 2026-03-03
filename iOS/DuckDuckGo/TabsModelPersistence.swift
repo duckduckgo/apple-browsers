@@ -24,13 +24,6 @@ import Core
 enum TabsModelStorageKey {
     case normal
     case fire
-
-    var rawKey: String {
-        switch self {
-        case .normal: return "TabsModelKey"
-        case .fire: return "FireTabsModelKey"
-        }
-    }
 }
 
 protocol TabsModelPersisting {
@@ -49,11 +42,14 @@ enum TabsPersistenceError: Error {
 class TabsModelPersistence: TabsModelPersisting {
 
     private struct Constants {
-        static let storageName = "TabsModel"
+        static let normalStorageName = "TabsModel"
+        static let fireStorageName = "FireTabsModel"
+        static let storageKey = "TabsModelKey"
         static let legacyUDKey = "com.duckduckgo.opentabs"
     }
 
-    private let store: ThrowingKeyValueStoring
+    private let normalStore: ThrowingKeyValueStoring
+    private let fireStore: ThrowingKeyValueStoring
     private let legacyStore: KeyValueStoring
 
     convenience init() throws {
@@ -64,8 +60,10 @@ class TabsModelPersistence: TabsModelPersisting {
         }
 
         do {
-            let store = try KeyValueFileStore(location: appSupportDir, name: Constants.storageName)
-            self.init(store: store,
+            let normalStore = try KeyValueFileStore(location: appSupportDir, name: Constants.normalStorageName)
+            let fireStore = try KeyValueFileStore(location: appSupportDir, name: Constants.fireStorageName)
+            self.init(normalStore: normalStore,
+                      fireStore: fireStore,
                       legacyStore: UserDefaults.app)
         } catch {
             // Move app to Terminating state
@@ -73,10 +71,19 @@ class TabsModelPersistence: TabsModelPersisting {
         }
     }
 
-    init(store: ThrowingKeyValueStoring,
+    init(normalStore: ThrowingKeyValueStoring,
+         fireStore: ThrowingKeyValueStoring,
          legacyStore: KeyValueStoring) {
-        self.store = store
+        self.normalStore = normalStore
+        self.fireStore = fireStore
         self.legacyStore = legacyStore
+    }
+
+    private func store(for key: TabsModelStorageKey) -> ThrowingKeyValueStoring {
+        switch key {
+        case .normal: return normalStore
+        case .fire: return fireStore
+        }
     }
 
     private func unarchive(data: Data) -> TabsModel? {
@@ -98,7 +105,8 @@ class TabsModelPersistence: TabsModelPersisting {
     }
 
     public func getTabsModel(for key: TabsModelStorageKey) throws -> TabsModel? {
-        let data = try store.object(forKey: key.rawKey) as? Data
+        let targetStore = store(for: key)
+        let data = try targetStore.object(forKey: Constants.storageKey) as? Data
         if let data {
             return unarchive(data: data)
         }
@@ -108,7 +116,7 @@ class TabsModelPersistence: TabsModelPersisting {
         if let legacyData = legacyStore.object(forKey: Constants.legacyUDKey) as? Data,
            let model = unarchive(data: legacyData) {
             do {
-                try store.set(legacyData, forKey: key.rawKey)
+                try targetStore.set(legacyData, forKey: Constants.storageKey)
                 legacyStore.removeObject(forKey: Constants.legacyUDKey)
             } catch {
                 Logger.general.error("Could not migrate Tabs Model \(error.localizedDescription, privacy: .public)")
@@ -119,22 +127,22 @@ class TabsModelPersistence: TabsModelPersisting {
     }
 
     public func clear(for key: TabsModelStorageKey) {
-        try? store.removeObject(forKey: key.rawKey)
+        try? store(for: key).removeObject(forKey: Constants.storageKey)
         if key == .normal {
             legacyStore.removeObject(forKey: Constants.legacyUDKey)
         }
     }
 
     public func clearAll() {
-        try? store.removeObject(forKey: TabsModelStorageKey.normal.rawKey)
-        try? store.removeObject(forKey: TabsModelStorageKey.fire.rawKey)
+        try? normalStore.removeObject(forKey: Constants.storageKey)
+        try? fireStore.removeObject(forKey: Constants.storageKey)
         legacyStore.removeObject(forKey: Constants.legacyUDKey)
     }
 
     public func save(model: TabsModel, for key: TabsModelStorageKey) {
         do {
             let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
-            try store.set(data, forKey: key.rawKey)
+            try store(for: key).set(data, forKey: Constants.storageKey)
         } catch {
             DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
                                          pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,

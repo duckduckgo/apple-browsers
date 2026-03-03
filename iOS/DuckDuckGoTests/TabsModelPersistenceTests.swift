@@ -32,19 +32,23 @@ class TabsModelPersistenceTests: XCTestCase {
         static let secondUrl = "http://anotherurl.com"
     }
 
-    var mockStore: ThrowingKeyValueStoring!
+    var mockNormalStore: ThrowingKeyValueStoring!
+    var mockFireStore: ThrowingKeyValueStoring!
     var mockLegacyStore: KeyValueStoring!
     var persistence: TabsModelPersisting!
 
     override func setUp() async throws {
         try await super.setUp()
 
-        let store = try MockKeyValueFileStore(throwOnInit: nil)
+        let normalStore = try MockKeyValueFileStore(throwOnInit: nil)
+        let fireStore = try MockKeyValueFileStore(throwOnInit: nil)
         let legacyStore = MockKeyValueStore()
-        mockStore = store
+        mockNormalStore = normalStore
+        mockFireStore = fireStore
         mockLegacyStore = legacyStore
 
-        persistence = TabsModelPersistence(store: store,
+        persistence = TabsModelPersistence(normalStore: normalStore,
+                                           fireStore: fireStore,
                                            legacyStore: legacyStore)
 
         setupUserDefault(with: #file)
@@ -122,7 +126,7 @@ class TabsModelPersistenceTests: XCTestCase {
         mockLegacyStore.set(data, forKey: "com.duckduckgo.opentabs")
 
         let newData = try NSKeyedArchiver.archivedData(withRootObject: TabsModel(desktop: false), requiringSecureCoding: false)
-        try mockStore.set(newData, forKey: "TabsModelKey")
+        try mockNormalStore.set(newData, forKey: "TabsModelKey")
 
         let loaded = try persistence.getTabsModel(for: .normal)
         XCTAssertNotNil(loaded)

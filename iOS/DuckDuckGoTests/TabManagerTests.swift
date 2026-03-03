@@ -161,7 +161,8 @@ final class TabManagerTests: XCTestCase {
                      historyManager: MockHistoryManager = MockHistoryManager(),
                      featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
                      launchSourceManager: LaunchSourceManaging = MockLaunchSourceManager()) throws -> TabManager {
-        let tabsPersistence = TabsModelPersistence(store: MockKeyValueFileStore(),
+        let tabsPersistence = TabsModelPersistence(normalStore: MockKeyValueFileStore(),
+                                                   fireStore: MockKeyValueFileStore(),
                                                    legacyStore: MockKeyValueStore())
         let fireModel = fireModel ?? TabsModel(tabs: [], desktop: false, mode: .fire)
         let modelProvider = TabsModelProvider(normalTabsModel: model, fireModeTabsModel: fireModel, persistence: tabsPersistence)

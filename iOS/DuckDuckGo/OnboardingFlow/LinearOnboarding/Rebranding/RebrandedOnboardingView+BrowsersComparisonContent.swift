@@ -26,15 +26,18 @@ extension OnboardingRebranding.OnboardingView {
     struct BrowsersComparisonContent: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
+        @Binding var showContent: Bool
         private let title: String
         private let setAsDefaultBrowserAction: () -> Void
         private let cancelAction: () -> Void
 
         init(
+            showContent: Binding<Bool>,
             title: String,
             setAsDefaultBrowserAction: @escaping () -> Void,
             cancelAction: @escaping () -> Void
         ) {
+            self._showContent = showContent
             self.title = title
             self.setAsDefaultBrowserAction = setAsDefaultBrowserAction
             self.cancelAction = cancelAction
@@ -48,7 +51,7 @@ extension OnboardingRebranding.OnboardingView {
                     .multilineTextAlignment(.center)
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
-                    RebrandedBrowsersComparisonTable()
+                    RebrandedBrowsersComparisonTable(availableFeatureAnimation: .animated(startAnimation: showContent))
 
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
                         Button(action: setAsDefaultBrowserAction) {

@@ -104,6 +104,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private var webExtensionManager: WebExtensionManaging?
     private let launchSourceManager: LaunchSourceManaging
+    private let darkReaderFeatureSettings: DarkReaderFeatureSettings
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -143,7 +144,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          privacyStats: PrivacyStatsProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
-         launchSourceManager: LaunchSourceManaging
+         launchSourceManager: LaunchSourceManaging,
+         darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
         self.model = model
         self.persistence = persistence
@@ -177,6 +179,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.privacyStats = privacyStats
         self.voiceSearchHelper = voiceSearchHelper
         self.launchSourceManager = launchSourceManager
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
         registerForNotifications()
     }
 
@@ -235,7 +238,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
                                                               privacyStats: privacyStats,
-                                                              voiceSearchHelper: voiceSearchHelper)
+                                                              voiceSearchHelper: voiceSearchHelper,
+                                                              darkReaderFeatureSettings: darkReaderFeatureSettings)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -361,7 +365,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
                                                               privacyStats: privacyStats,
-                                                              voiceSearchHelper: voiceSearchHelper)
+                                                              voiceSearchHelper: voiceSearchHelper,
+                                                              darkReaderFeatureSettings: darkReaderFeatureSettings)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

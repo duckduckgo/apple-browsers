@@ -1478,6 +1478,15 @@ extension Pixel {
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
         case aiChatLegacyOmnibarBackButtonPressed
+
+        // MARK: iPad Toggle
+        case aiChatIPadTogglePromptSubmitted
+        case aiChatIPadToggleURLSubmitted
+        case aiChatOmnibarQuerySubmittedIPadToggleEnabled
+        case aiChatIPadToggleRecentChatSelectedPinned
+        case aiChatIPadToggleRecentChatSelected
+        case aiChatIPadToggleEnabledOnAppOpen
+        case aiChatIPadToggleDisabledOnAppOpen
         
         // MARK: AI Chat History Deletion
         case aiChatHistoryDeleteSuccessful
@@ -1632,6 +1641,12 @@ extension Pixel {
         case webExtensionEmbeddedInstalled
         case webExtensionEmbeddedUpgraded
         case webExtensionEmbeddedInstallError
+
+        case webExtensionDarkReaderInstalled
+        case webExtensionDarkReaderUpgraded
+        case webExtensionDarkReaderInstallError
+        case webExtensionDarkReaderEnabled
+        case webExtensionDarkReaderDisabled
     }
 
 }
@@ -2983,6 +2998,15 @@ extension Pixel.Event {
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
         case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
+
+        // MARK: iPad Toggle
+        case .aiChatIPadTogglePromptSubmitted: return "m_aichat_ipad_toggle_prompt_submitted"
+        case .aiChatIPadToggleURLSubmitted: return "m_aichat_ipad_toggle_url_submitted"
+        case .aiChatOmnibarQuerySubmittedIPadToggleEnabled: return "m_aichat_omnibar_query_submitted_ipad_toggle_enabled"
+        case .aiChatIPadToggleRecentChatSelectedPinned: return "m_aichat_ipad_toggle_recent_chat_selected_pinned"
+        case .aiChatIPadToggleRecentChatSelected: return "m_aichat_ipad_toggle_recent_chat_selected"
+        case .aiChatIPadToggleEnabledOnAppOpen: return "m_aichat_ipad_toggle_enabled_on_app_open"
+        case .aiChatIPadToggleDisabledOnAppOpen: return "m_aichat_ipad_toggle_disabled_on_app_open"
         
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
@@ -3196,6 +3220,12 @@ extension Pixel.Event {
         case .webExtensionEmbeddedInstalled: return "m_web_extension_embedded_installed"
         case .webExtensionEmbeddedUpgraded: return "m_web_extension_embedded_upgraded"
         case .webExtensionEmbeddedInstallError: return "m_web_extension_embedded_install_error"
+
+        case .webExtensionDarkReaderInstalled: return "m_web_extension_dark_reader_installed"
+        case .webExtensionDarkReaderUpgraded: return "m_web_extension_dark_reader_upgraded"
+        case .webExtensionDarkReaderInstallError: return "m_web_extension_dark_reader_install_error"
+        case .webExtensionDarkReaderEnabled: return "m_web_extension_dark_reader_enabled"
+        case .webExtensionDarkReaderDisabled: return "m_web_extension_dark_reader_disabled"
         }
     }
 }

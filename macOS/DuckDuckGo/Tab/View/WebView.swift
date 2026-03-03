@@ -20,6 +20,7 @@ import Carbon.HIToolbox
 import Cocoa
 import Combine
 import CommonObjCExtensions
+import FeatureFlags
 import PrivacyConfig
 import WebKit
 
@@ -51,6 +52,7 @@ final class WebView: WKWebView {
     weak var zoomLevelDelegate: WebViewZoomLevelDelegate?
 
     let interactionEventsPublisher = PassthroughSubject<WebViewInteractionEvent, Never>()
+    private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfiguration
 
     private var isLoadingObserver: Any?
@@ -67,13 +69,22 @@ final class WebView: WKWebView {
 
     init(frame: CGRect = .zero,
          configuration: WKWebViewConfiguration = .init(),
+         featureFlagger: FeatureFlagger,
          privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig) {
+        self.featureFlagger = featureFlagger
         self.privacyConfig = privacyConfig
+
+        _=Self.swizzleImmediateActionAnimationControllerOnce
+
         super.init(frame: frame, configuration: configuration)
     }
 
     required init?(coder: NSCoder) {
+        self.featureFlagger = Application.appDelegate.featureFlagger
         self.privacyConfig = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig
+
+        _=Self.swizzleImmediateActionAnimationControllerOnce
+
         super.init(coder: coder)
     }
 
@@ -181,6 +192,45 @@ final class WebView: WKWebView {
         zoomLevel = DefaultZoomValue.allCases[self.zoomLevel.index - 1]
         zoomLevelDelegate?.zoomWasSet(to: zoomLevel)
     }
+
+    // MARK: - Immediate Actions (Look Up)
+
+    /// Suppress link preview (which creates a WebView without tracker protection)
+    /// while allowing Look Up, Data Detectors, and other immediate action types.
+    /// See WKWebViewPrivate.h: return nil for default behavior, NSNull to disable entirely.
+    @objc dynamic func swizzled_immediateActionAnimationController(forHitTestResult hitTestResult: AnyObject,
+                                                                   withType type: UInt /* _WKImmediateActionType */,
+                                                                   userData: AnyObject?) -> AnyObject? {
+        guard featureFlagger.isFeatureOn(.webViewLookUpAction) else {
+            return NSNull()
+        }
+        if type == _WKImmediateActionType.linkPreview.rawValue {
+            return NSNull()
+        }
+        return nil
+    }
+
+    static private let swizzleImmediateActionAnimationControllerOnce: () = {
+        guard let originalMethod = class_getInstanceMethod(WebView.self, Selector.immediateActionAnimationController),
+              let swizzledMethod = class_getInstanceMethod(WebView.self, #selector(swizzled_immediateActionAnimationController(forHitTestResult:withType:userData:)))
+        else {
+            assertionFailure("Methods not available")
+            return
+        }
+
+        // Ensure the original selector exists on WebView itself before swizzling so we don't mutate WKWebView globally.
+        let didAddOriginalMethod = class_addMethod(WebView.self,
+                                                   Selector.immediateActionAnimationController,
+                                                   method_getImplementation(originalMethod),
+                                                   method_getTypeEncoding(originalMethod))
+        guard didAddOriginalMethod,
+              let webViewOriginalMethod = class_getInstanceMethod(WebView.self, Selector.immediateActionAnimationController) else {
+            assertionFailure("Failed to add original method to WebView")
+            return
+        }
+
+        method_exchangeImplementations(webViewOriginalMethod, swizzledMethod)
+    }()
 
     // MARK: - Menu
 
@@ -427,6 +477,7 @@ final class WebView: WKWebView {
     private enum Selector {
         static let findString = NSSelectorFromString("_findString:options:maxCount:")
         static let hideFindUI = NSSelectorFromString("_hideFindUI")
+        static let immediateActionAnimationController = NSSelectorFromString("_immediateActionAnimationControllerForHitTestResult:withType:userData:")
     }
 
 }

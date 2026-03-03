@@ -28,15 +28,18 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     private var sessionState: AIChatContextualChatSessionState!
     private var mockSettings: MockAIChatSettingsProvider!
     private var mockPixelHandler: MockContextualModePixelHandler!
+    private var mockFeatureFlagger: MockFeatureFlagger!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         mockSettings = MockAIChatSettingsProvider()
         mockPixelHandler = MockContextualModePixelHandler()
+        mockFeatureFlagger = MockFeatureFlagger()
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger
         )
         cancellables = []
     }
@@ -46,6 +49,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState = nil
         mockSettings = nil
         mockPixelHandler = nil
+        mockFeatureFlagger = nil
         super.tearDown()
     }
 
@@ -587,7 +591,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         if case .pushContextToFrontend(let contextData) = receivedEffect {
-            XCTAssertEqual(contextData.title, "Test Page")
+            XCTAssertEqual(contextData?.title, "Test Page")
         } else {
             XCTFail("Expected pushContextToFrontend effect")
         }
@@ -694,6 +698,134 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         XCTAssertTrue(pushedToFrontend)
+    }
+
+    // MARK: - Multiple Page Contexts Tests
+
+    func testAutoAttachPushesContextWhenMultipleContextsFlagEnabled() {
+        // Given - start chat WITH initial context, then navigate
+        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+        sessionState.handlePromptSubmission("Hello")
+        XCTAssertEqual(sessionState.frontendState, .chatWithInitialContext)
+
+        var pushedContexts: [AIChatPageContextData?] = []
+        sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend(let data) = effect {
+                    pushedContexts.append(data)
+                }
+            }
+            .store(in: &cancellables)
+
+        // When - auto-attach pushes new context
+        sessionState.notifyPageChanged()
+        sessionState.updateContext(makeTestContext(title: "Page B"))
+
+        // Then
+        XCTAssertEqual(pushedContexts.count, 1)
+        XCTAssertEqual(pushedContexts.first??.title, "Page B")
+    }
+
+    func testAutoAttachDoesNotPushContextWhenMultipleContextsFlagDisabled() {
+        // Given - start chat WITH initial context, flag OFF (default)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+        sessionState.handlePromptSubmission("Hello")
+        XCTAssertEqual(sessionState.frontendState, .chatWithInitialContext)
+
+        var pushedToFrontend = false
+        sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend = effect {
+                    pushedToFrontend = true
+                }
+            }
+            .store(in: &cancellables)
+
+        // When - navigate and update context
+        sessionState.notifyPageChanged()
+        sessionState.updateContext(makeTestContext(title: "Page B"))
+
+        // Then - no push (backward compatible)
+        XCTAssertFalse(pushedToFrontend)
+    }
+
+    func testNotifyFrontendOfNavigationEmitsNullContextWhenFlagEnabled() {
+        // Given - chat with initial context, flag ON
+        // Note: auto-attach ON is only needed to reach .chatWithInitialContext state.
+        // In production, notifyFrontendOfMultiContextNavigation() is called when auto-collect is OFF.
+        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+        sessionState.handlePromptSubmission("Hello")
+
+        let expectation = expectation(description: "Null context pushed")
+        var receivedEffect: SheetEffect?
+
+        sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend = effect {
+                    receivedEffect = effect
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.notifyFrontendOfMultiContextNavigation()
+
+        waitForExpectations(timeout: 1.0)
+
+        // Then
+        if case .pushContextToFrontend(let contextData) = receivedEffect {
+            XCTAssertNil(contextData)
+        } else {
+            XCTFail("Expected pushContextToFrontend effect with nil")
+        }
+    }
+
+    func testNotifyFrontendOfNavigationDoesNothingWhenFlagDisabled() {
+        // Given - chat with initial context, flag OFF (default)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+        sessionState.handlePromptSubmission("Hello")
+
+        var pushedToFrontend = false
+        sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend = effect {
+                    pushedToFrontend = true
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.notifyFrontendOfMultiContextNavigation()
+
+        // Then - nothing emitted
+        XCTAssertFalse(pushedToFrontend)
+    }
+
+    func testNotifyFrontendOfNavigationDoesNothingInNoChat() {
+        // Given - no active chat, flag ON
+        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+
+        var pushedToFrontend = false
+        sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend = effect {
+                    pushedToFrontend = true
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.notifyFrontendOfMultiContextNavigation()
+
+        // Then - nothing emitted (no chat = canPushToFrontend false)
+        XCTAssertFalse(pushedToFrontend)
     }
 
     // MARK: - Helpers

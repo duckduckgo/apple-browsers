@@ -113,18 +113,20 @@ public final class DataBrokerProtectionEngagementPixels {
             return
         }
 
+        let isFreeScan = !isAuthenticated
+
         if shouldWeFireDailyPixel(date: currentDate) {
-            handler.fire(.dailyActiveUser(isAuthenticated: isAuthenticated, needBackgroundAppRefresh: needBackgroundAppRefresh))
+            handler.fire(.dailyActiveUser(isAuthenticated: isAuthenticated, needBackgroundAppRefresh: needBackgroundAppRefresh, isFreeScan: isFreeScan))
             repository.markDailyPixelSent()
         }
 
         if shouldWeFireWeeklyPixel(date: currentDate) {
-            handler.fire(.weeklyActiveUser(isAuthenticated: isAuthenticated))
+            handler.fire(.weeklyActiveUser(isAuthenticated: isAuthenticated, isFreeScan: isFreeScan))
             repository.markWeeklyPixelSent()
         }
 
         if shouldWeFireMonthlyPixel(date: currentDate) {
-            handler.fire(.monthlyActiveUser(isAuthenticated: isAuthenticated))
+            handler.fire(.monthlyActiveUser(isAuthenticated: isAuthenticated, isFreeScan: isFreeScan))
             repository.markMonthlyPixelSent()
         }
     }

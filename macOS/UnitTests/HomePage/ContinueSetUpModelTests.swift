@@ -42,7 +42,9 @@ final class ContinueSetUpModelTests: XCTestCase {
     var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
     var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
     var cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler!
-    private let nonAppStoreFeatureTypes: [HomePage.Models.FeatureType] = [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+    private var nonAppStoreFeatureTypes: [HomePage.Models.FeatureType] {
+        [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+    }
 
     @MainActor override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
@@ -323,7 +325,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            applicationBuildType: makeBuildType(isAppStoreBuild: false)
         )
         vm.shouldShowAllFeatures = true
         let expectedMatrix = expectedFeatureMatrixWithout(types: [])

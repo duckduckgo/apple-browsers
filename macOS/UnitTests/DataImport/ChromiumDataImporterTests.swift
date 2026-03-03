@@ -24,7 +24,8 @@ import Testing
 
 class ChromiumDataImporterTests {
 
-    @Test("Check if bookmarks import summary is populated after a successful bookmark import")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if bookmarks import summary is populated after a successful bookmark import", .timeLimit(.minutes(1)))
     func whenImportingBookmarks_AndBookmarkImportSucceeds_ThenSummaryIsPopulated() async throws {
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
@@ -40,7 +41,8 @@ class ChromiumDataImporterTests {
         #expect(bookmarks.failed == 3)
     }
 
-    @Test("Check if bookmarks and custom shortcuts are merged and bookmarks bar is not favorited after importing bookmarks")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if bookmarks and custom shortcuts are merged and bookmarks bar is not favorited after importing bookmarks", .timeLimit(.minutes(1)))
     func whenImportingBookmarks_BookmarksAndCustomShortcutsAreMerged_AndBookmarksBarIsNotFavorited() async throws {
         var bookmarksToImport: ImportedBookmarks?
         var bookmarksBarMarkedAsFavorites: Bool?
@@ -60,7 +62,8 @@ class ChromiumDataImporterTests {
         #expect(bookmarksBarMarkedAsFavorites == false)
     }
 
-    @Test("Check if bookmarks and top sites shortcuts are merged and bookmarks bar is not favorited after importing bookmarks")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if bookmarks and top sites shortcuts are merged and bookmarks bar is not favorited after importing bookmarks", .timeLimit(.minutes(1)))
     func whenImportingBookmarks_BookmarksAndTopSitesShortcutsAreMerged_AndBookmarksBarIsNotFavorited() async throws {
         var bookmarksToImport: ImportedBookmarks?
         var bookmarksBarMarkedAsFavorites: Bool?

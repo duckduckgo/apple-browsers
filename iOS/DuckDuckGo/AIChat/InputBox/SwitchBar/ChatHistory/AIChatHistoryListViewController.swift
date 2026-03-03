@@ -30,13 +30,14 @@ final class AIChatHistoryListViewController: UIViewController {
 
     // MARK: - Constants
 
-    private enum Constants {
+    fileprivate enum Constants {
         static let cellIdentifier = "AIChatHistoryCell"
         static let iconSize: CGFloat = 16
         static let iconTextSpacing: CGFloat = 12
         static let cellHeight: CGFloat = 44
         static let horizontalInset: CGFloat = 16
         static let topContentInset: CGFloat = -20
+        static let iPadTopContentInset: CGFloat = 0
         static let escapeHatchTopPadding: CGFloat = 16
         static let escapeHatchHeaderHeight: CGFloat = 72
         static let escapeHatchBottomPadding: CGFloat = 16
@@ -48,18 +49,25 @@ final class AIChatHistoryListViewController: UIViewController {
 
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
+    private let isIPadExperience: Bool
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: .insetGrouped)
+        let style: UITableView.Style = isIPadExperience ? .plain : .insetGrouped
+        let tableView = UITableView(frame: .zero, style: style)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
+        tableView.register(AIChatHistoryCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
-        tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
+        if isIPadExperience {
+            tableView.separatorStyle = .none
+        } else {
+            tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
+        }
         tableView.sectionFooterHeight = 0
-        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
+        let topInset = isIPadExperience ? Constants.iPadTopContentInset : Constants.topContentInset
+        tableView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
         return tableView
     }()
 
@@ -72,8 +80,9 @@ final class AIChatHistoryListViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(viewModel: AIChatSuggestionsViewModel, onChatSelected: @escaping (AIChatSuggestion) -> Void) {
+    init(viewModel: AIChatSuggestionsViewModel, isIPadExperience: Bool, onChatSelected: @escaping (AIChatSuggestion) -> Void) {
         self.viewModel = viewModel
+        self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected
         super.init(nibName: nil, bundle: nil)
     }
@@ -166,7 +175,8 @@ final class AIChatHistoryListViewController: UIViewController {
             escapeHatchHostingController = nil
             UIView.performWithoutAnimation {
                 tableView.tableHeaderView = nil
-                tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
+                let topInset = isIPadExperience ? Constants.iPadTopContentInset : Constants.topContentInset
+                tableView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
             }
         }
     }
@@ -218,6 +228,10 @@ extension AIChatHistoryListViewController: UITableViewDataSource {
         let chat = chats[indexPath.row]
         configureCell(cell, with: chat)
 
+        if isIPadExperience, let historyCell = cell as? AIChatHistoryCell {
+            historyCell.showsCustomSeparator = indexPath.row < chats.count - 1
+        }
+
         return cell
     }
 
@@ -238,6 +252,12 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
         let chat = chats[indexPath.row]
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
         DailyPixel.fireDailyAndCount(pixel: pixel)
+
+        if isIPadExperience {
+            let iPadPixel: Pixel.Event = chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected
+            DailyPixel.fireDailyAndCount(pixel: iPadPixel)
+        }
+
         onChatSelected(chat)
     }
 
@@ -251,5 +271,29 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         return 0
+    }
+}
+
+private final class AIChatHistoryCell: UITableViewCell {
+    private static let separatorLeadingInset: CGFloat = AIChatHistoryListViewController.Constants.horizontalInset
+        + AIChatHistoryListViewController.Constants.iconSize
+        + AIChatHistoryListViewController.Constants.iconTextSpacing
+
+    private lazy var customSeparator: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(designSystemColor: .lines)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(view)
+        NSLayoutConstraint.activate([
+            view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Self.separatorLeadingInset),
+            view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            view.heightAnchor.constraint(equalToConstant: 1.0 / max(traitCollection.displayScale, 1)),
+        ])
+        return view
+    }()
+
+    var showsCustomSeparator: Bool = true {
+        didSet { customSeparator.isHidden = !showsCustomSeparator }
     }
 }

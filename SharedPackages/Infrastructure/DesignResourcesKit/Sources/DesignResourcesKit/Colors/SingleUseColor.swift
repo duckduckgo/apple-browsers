@@ -33,6 +33,9 @@ public enum SingleUseColor {
     /// Duck.ai contextual background color
     case duckAIContextualSheetBackground
 
+    /// Card background for the unified toggle input bar (white in light, #3D3D3D in dark)
+    case unifiedToggleInputCardBackground
+
     /// Tab switcher tracker count info panel background color
     case tabSwitcherTrackerCountBackground
 
@@ -64,10 +67,13 @@ public extension SingleUseColor {
         case surfaceTertiary
 
         case buttonsPrimaryDefault
+        case buttonsPrimaryPressed
         case buttonsPrimaryText
 
         case buttonsSecondaryDefault
+        case buttonsSecondaryPressed
         case buttonsSecondaryText
+        case backgroundAccent // This in Figma is accentAltGlowPrimary but in the components screen default value is different than onboarding value
 
         case controlsFillPrimary
 

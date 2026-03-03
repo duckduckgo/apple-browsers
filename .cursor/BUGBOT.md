@@ -1,5 +1,9 @@
 # PR Review Guidelines for Cursor Bugbot
 
+## Unit Tests
+
+When adding new tests that use Swift Testing (via the `@Test`) macro, always include a timeout. Swift Testing has a default timeout of 60 minutes which can exceed the timeout of the workflow overall.
+
 ## Pixel Changes
 
 When a PR adds or modifies pixel events in Swift, verify that a corresponding pixel definition `.json5` file exists and is correct.

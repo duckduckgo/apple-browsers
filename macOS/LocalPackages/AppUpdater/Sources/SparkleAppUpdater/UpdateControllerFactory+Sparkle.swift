@@ -40,15 +40,15 @@ extension UpdateControllerFactory: SparkleUpdateControllerFactory {
                                    allowCustomUpdateFeed: Bool,
                                    wideEvent: WideEventManaging,
                                    isOnboardingFinished: @escaping () -> Bool,
-                                   openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateController {
-        return SimplifiedSparkleUpdateController(internalUserDecider: internalUserDecider,
-                                                 featureFlagger: featureFlagger,
-                                                 pixelFiring: pixelFiring,
-                                                 notificationPresenter: notificationPresenter,
-                                                 keyValueStore: keyValueStore,
-                                                 allowCustomUpdateFeed: allowCustomUpdateFeed,
-                                                 wideEvent: wideEvent,
-                                                 isOnboardingFinished: isOnboardingFinished,
-                                                 openUpdatesPage: openUpdatesPage)
+                                   openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateControlling {
+        return SparkleUpdateController(internalUserDecider: internalUserDecider,
+                                       featureFlagger: featureFlagger,
+                                       pixelFiring: pixelFiring,
+                                       notificationPresenter: notificationPresenter,
+                                       keyValueStore: keyValueStore,
+                                       allowCustomUpdateFeed: allowCustomUpdateFeed,
+                                       wideEvent: wideEvent,
+                                       isOnboardingFinished: isOnboardingFinished,
+                                       openUpdatesPage: openUpdatesPage)
     }
 }

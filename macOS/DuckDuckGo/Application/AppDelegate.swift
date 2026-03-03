@@ -214,7 +214,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aiChatTabManaging: windowControllersManager
     )
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
-    let aiChatSidebarProvider: AIChatSidebarProviding
+    let aiChatSessionStore: AIChatSessionStoring
     let aiChatPreferences: AIChatPreferences
 
     let privacyStats: PrivacyStatsCollecting
@@ -378,9 +378,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didFinishLaunching = false
 
     var updateController: UpdateController?
-#if SPARKLE
     var dockCustomization: DockCustomization?
-#endif
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
     static var firstLaunchDate: Date
@@ -413,7 +411,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
-    override init() {
+    init(dockCustomization: DockCustomization?) {
         let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)
         defer {
@@ -421,6 +419,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         self.startupProfiler = startupProfiler
+        self.dockCustomization = dockCustomization
 
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
         let didCrashDuringCrashHandlersSetUp = UserDefaultsWrapper(key: .didCrashDuringCrashHandlersSetUp, defaultValue: false)
@@ -578,7 +577,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         wideEvent = WideEvent(featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger))
 
-        aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
+        aiChatSessionStore = AIChatSessionStore(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
             storage: DefaultAIChatPreferencesStorage(),
             remoteSettings: AIChatRemoteSettings(
@@ -1117,7 +1116,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         webExtensionManagerHolder.appDelegate = self
 
         memoryPressureReporter = MemoryPressureReporter(
-            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared,
             memoryUsageMonitor: memoryUsageMonitor,
             windowContext: WindowContext(windowControllersManager: windowControllersManager),
@@ -1253,10 +1251,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here
         }
-
-        #if SPARKLE
-        dockCustomization = DockCustomizer()
-        #endif
 
         let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()
@@ -1439,9 +1433,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily, doNotEnforcePrefix: true)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily, doNotEnforcePrefix: true)
-#if SPARKLE
-        PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: DockCustomizer().isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
-#endif
+        if let dockCustomization {
+            PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily, doNotEnforcePrefix: true)
+        }
     }
 
     private func fireDailyFireWindowConfigurationPixels() {
@@ -1631,10 +1625,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let presenter = WarnBeforeQuitOverlayPresenter(
             startupPreferences: startupPreferences,
-            onDontAskAgain: { [tabsPreferences] in
+            buttonHandlers: [.dontShowAgain: { [tabsPreferences] in
                 PixelKit.fire(GeneralPixel.warnBeforeQuitDontShowAgain, frequency: .standard)
                 tabsPreferences.warnBeforeQuitting = false
-            },
+            }],
             onHoverChange: { [weak manager] isHovering in
                 manager?.setMouseHovering(isHovering)
             }
@@ -1939,7 +1933,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func subscribeToUpdateControllerChanges() {
         guard AppVersion.runType != .uiTests,
-              let sparkleUpdateController = updateController as? any SparkleUpdateController else { return }
+              let sparkleUpdateController = updateController as? any SparkleUpdateControlling else { return }
 
         updateProgressCancellable = sparkleUpdateController.updateProgressPublisher
             .sink { [weak sparkleUpdateController] progress in

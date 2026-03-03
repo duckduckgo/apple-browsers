@@ -2,7 +2,7 @@ appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
     - unified_toggle_input
-name: test_unified_toggle_input
+name: test_ai_chat_tab_header
 
 ---
 
@@ -40,41 +40,20 @@ name: test_unified_toggle_input
         - tapOn: "×"
 - runFlow:
     when:
-        visible: "Back to Settings"
+        visible: "×"
     commands:
-        - tapOn: "Back to Settings"
+        - tapOn: "×"
 
-# Step 2: Verify collapsed state — input bar shows placeholder
+# Step 2: Verify Chat Tab Header elements
 - assertVisible:
-    text: "Ask privately"
+    text: "Free Plan"
+- assertVisible:
+    text: "Upgrade"
+- assertVisible:
+    text: "Chat settings"
+- assertVisible:
+    text: "New chat"
 
-# Step 3: Tap to expand — toggle and text field appear
-- tapOn:
-    text: "Ask privately"
-- assertVisible:
-    text: "Search"
-- assertVisible:
-    text: "Duck.ai"
-
-# Step 4: Duck.ai mode is default when expanded — toolbar visible
-- assertVisible:
-    text: "4o-mini"
-
-# Step 5: Switch to Search mode — toolbar disappears
-- tapOn:
-    text: "Search"
+# Step 3: Verify omnibar is hidden on Duck.ai tab
 - assertNotVisible:
-    text: "4o-mini"
-
-# Step 6: Switch back to Duck.ai — toolbar reappears
-- tapOn:
-    text: "Duck.ai"
-- assertVisible:
-    text: "4o-mini"
-
-# Step 7: Type text — verify input accepts it
-- tapOn:
-    text: "Ask privately"
-- inputText: "What is a tokamak?"
-- assertVisible:
-    text: "What is a tokamak?"
+    id: "searchEntry"

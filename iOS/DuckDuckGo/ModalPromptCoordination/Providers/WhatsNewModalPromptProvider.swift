@@ -117,6 +117,17 @@ extension WhatsNewCoordinator: RemoteMessagingPresenter {
     @MainActor
     func presentActivitySheet(value: String, title: String?) async {
         let activityController = UIActivityViewController(activityItems: [TitleValueShareItem(value: value, title: title).item], applicationActivities: nil)
+        if let popoverPresentationController = activityController.popoverPresentationController,
+           let sourceView = navigationController?.view {
+            popoverPresentationController.sourceView = sourceView
+            popoverPresentationController.sourceRect = CGRect(
+                x: sourceView.bounds.midX,
+                y: sourceView.bounds.midY,
+                width: 0,
+                height: 0
+            )
+            popoverPresentationController.permittedArrowDirections = []
+        }
         activityController.completionWithItemsHandler = { [weak self] _, result, _, _ in
             self?.measureSheetShown(result: result)
         }

@@ -3447,6 +3447,10 @@ extension MainViewController: OmniBarDelegate {
             closeTab(tabToClose)
         }
     }
+    
+    func isCurrentTabFireTab() -> Bool {
+        tabManager.currentTabsModel.currentTab?.fireTab ?? false
+    }
 }
 
 // MARK: - AutocompleteViewControllerDelegate Methods

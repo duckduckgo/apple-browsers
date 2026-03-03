@@ -142,7 +142,7 @@ class SwitchBarTextEntryView: UIView {
         textView.font = textFont
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = UIColor.clear
-        textView.tintColor = UIColor(designSystemColor: .accent)
+        textView.tintColor = UIColor(designSystemColor: handler.isFireTab ? .fireMode : .accent)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none

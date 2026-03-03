@@ -32,15 +32,18 @@ extension OnboardingRebranding.OnboardingView {
         private let skipAction: () -> Void
 
         @State private var showSkipOnboarding = false
+        @Binding var showContent: Bool
 
         init(
             title: String,
             skipOnboardingView: AnyView?,
+            showContent: Binding<Bool>,
             continueAction: @escaping () -> Void,
             skipAction: @escaping () -> Void
         ) {
             self.title = title
             self.skipOnboardingView = skipOnboardingView
+            self._showContent = showContent
             self.continueAction = continueAction
             self.skipAction = skipAction
         }
@@ -48,7 +51,6 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             if showSkipOnboarding {
                 skipOnboardingView
-                    .onboardingViewVisibleAfterDelay(OnboardingBubbleAnimationMetrics.contentFadeInDelay) // OnboardingViewState does not change in this case so we need to manually fade in the content after bubble resizes.
             } else {
                 content
             }
@@ -76,12 +78,7 @@ extension OnboardingRebranding.OnboardingView {
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         if skipOnboardingView != nil {
-                            Button(action: {
-                                withAnimation {
-                                    showSkipOnboarding = true
-                                }
-                                skipAction()
-                            }) {
+                            Button(action: showSkipOnboardingDialog) {
                                 Text(UserText.Onboarding.Intro.skipCTA)
                             }
                             .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
@@ -89,6 +86,46 @@ extension OnboardingRebranding.OnboardingView {
                     }
                 }
             )
+        }
+
+        /// Handles the transition from intro to skip onboarding dialog with proper animation timing.
+        ///
+        /// This function orchestrates a three-phase animation sequence:
+        /// 1. Hide current content immediately (no fade-out animation)
+        /// 2. Switch to skip dialog and animate bubble resize
+        /// 3. Show new content after bubble finishes resizing
+        ///
+        /// Note: The bubble resize is triggered by the withAnimation wrapping showSkipOnboarding.
+        /// Unlike state.type changes which trigger the parent's .animation() modifier, this internal
+        /// view switch requires an explicit animation context to smoothly resize the bubble.
+        private func showSkipOnboardingDialog() {
+            // Phase 1: Hide current content immediately
+            showContent = false
+            skipAction()
+
+            if #available(iOS 17.0, *) {
+                // Phase 2: Animate view switch and bubble resize
+                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                    showSkipOnboarding = true
+                } completion: {
+                    // Phase 3: Show new content after bubble finishes resizing
+                    withAnimation {
+                        showContent = true
+                    }
+                }
+            } else {
+                // Phase 2: Animate view switch and bubble resize
+                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                    showSkipOnboarding = true
+                }
+
+                // Phase 3: Show new content after bubble finishes resizing (timing-based fallback)
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                    withAnimation {
+                        showContent = true
+                    }
+                }
+            }
         }
 
     }

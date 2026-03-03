@@ -18,7 +18,6 @@
 
 import Foundation
 import os.log
-import PixelKit
 
 /// Represents an Error that prevented us from exporting the Startup Stats
 ///
@@ -41,7 +40,7 @@ final class StartupMetricsExporter {
         self.windowContext = windowContext
     }
 
-    /// Exports a fresh MemoryAllocationStats to the specified URL
+    /// Exports the latest `StartupMetrics` as reported by `StartupProfiler` to the specified URL
     ///
     func exportMetrics(targetURL: URL) throws {
         let metrics = profiler.exportMetrics()
@@ -147,7 +146,7 @@ private extension ExportStartupMetrics {
         }
 
         for (codingKey, milliseconds) in keysToMilliseconds {
-            try container.encodeIfPresent(milliseconds, forKey: codingKey)
+            try container.encode(milliseconds, forKey: codingKey)
         }
 
         if let deltaMS = metrics.timeElapsedBetween(endOf: .appDelegateInit, startOf: .appWillFinishLaunching)?.toMilliseconds {

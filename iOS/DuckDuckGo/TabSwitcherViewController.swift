@@ -145,6 +145,7 @@ class TabSwitcherViewController: UIViewController {
 
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
+    private var pendingTabSelection: Tab?
     private var pickerViewModel: ImageSegmentedPickerViewModel
     private(set) var segmentedPickerHostingController: UIHostingController<TabSwitcherPickerWrapper>?
     private var pickerSelectionCancellable: AnyCancellable?
@@ -623,16 +624,19 @@ class TabSwitcherViewController: UIViewController {
     }
     
     func markCurrentAsViewed(shouldDismiss: Bool) {
-        if shouldDismiss {
-            // Will be dismissed, so no need to process incoming updates
-            canUpdateCollection = false
-            dismiss()
-        }
         if let current = currentSelection {
             let tab = tabsModel.get(tabAt: current)
-            tab.viewed = true
-            tabManager.save()
-            delegate?.tabSwitcher(self, didSelectTab: tab)
+
+            if shouldDismiss {
+                pendingTabSelection = nil
+                tab.viewed = true
+                tabManager.save()
+                canUpdateCollection = false
+                dismiss()
+                delegate?.tabSwitcher(self, didSelectTab: tab)
+            } else {
+                pendingTabSelection = tab
+            }
         }
     }
 
@@ -652,7 +656,16 @@ class TabSwitcherViewController: UIViewController {
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
         canUpdateCollection = false
         tabManager.allTabsModel.tabs.forEach { $0.removeObserver(self) }
+
+        let pendingTab = pendingTabSelection
+        pendingTabSelection = nil
+
         super.dismiss(animated: animated) {
+            if let tab = pendingTab {
+                tab.viewed = true
+                self.tabManager.save()
+                self.delegate?.tabSwitcher(self, didSelectTab: tab)
+            }
             completion?()
             self.delegate?.tabSwitcherDidDismiss(tabSwitcher: self)
         }

@@ -18,48 +18,10 @@
 //
 
 import XCTest
-@testable import TrackerRadarKit
-@testable import Core
-import Foundation
-import BrowserServicesKit
-import Common
-import os.log
 
-class DomainMatchingReportTests: XCTestCase {
-    private var data = JsonTestDataLoader()
+final class DomainMatchingReportTests: XCTestCase {
 
-    func testRegularDomainMatchingRules() throws {
-        let trackerJSON = data.fromJsonFile("privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_radar_reference.json")
-        let testJSON = data.fromJsonFile("privacy-reference-tests/tracker-radar-tests/TR-domain-matching/domain_matching_tests.json")
-
-        let trackerData = try JSONDecoder().decode(TrackerData.self, from: trackerJSON)
-        
-        let refTests = try JSONDecoder().decode(RefTests.self, from: testJSON)
-        let tests = refTests.domainTests.tests
-        
-        let resolver = TrackerResolver(tds: trackerData, unprotectedSites: [], tempList: [], tld: TLD())
-
-        for test in tests {
-            let skip = test.exceptPlatforms?.contains("ios-browser")
-            if skip == true {
-                print("!!SKIPPING TEST: %s", test.name)
-                continue
-            }
-            print("TEST: %s", test.name)
-            
-            let tracker = resolver.trackerFromUrl(test.requestURL,
-                                                  pageUrlString: test.siteURL,
-                                                  resourceType: test.requestType,
-                                                  potentiallyBlocked: true)
-            
-            if test.expectAction == "block" {
-                XCTAssertNotNil(tracker)
-                XCTAssert(tracker?.isBlocked ?? false)
-            } else if test.expectAction == "ignore" {
-                XCTAssertFalse(tracker?.isBlocked ?? false)
-            } else {
-                XCTAssert(tracker?.isBlocked ?? true)
-            }
-        }
+    func testDomainMatchingReferenceCoverageMovedToBrowserServicesKit() throws {
+        throw XCTSkip("Legacy iOS TrackerResolver tests were removed with the trackerProtection migration; reference coverage now lives in BrowserServicesKit/content-scope-scripts tests.")
     }
 }

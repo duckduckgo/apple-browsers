@@ -126,7 +126,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-         dockCustomizer: DockCustomization? = nil,
+         dockCustomizer: DockCustomization?,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          notificationCenter: NotificationCenter = .default,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,

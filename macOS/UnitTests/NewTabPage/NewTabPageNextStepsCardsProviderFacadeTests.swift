@@ -259,7 +259,7 @@ private extension NewTabPageNextStepsCardsProviderFacadeTests {
             ? NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards
             : NewTabPageNextStepsSingleCardProvider.defaultStandardCards
 
-        if AppVersion.isSandboxed {
+        if NSApp.isSandboxed {
             return cards.filter { $0 != .addAppToDockMac }
         } else {
             return cards

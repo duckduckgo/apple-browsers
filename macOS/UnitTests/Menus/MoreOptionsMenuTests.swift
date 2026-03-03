@@ -99,7 +99,12 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false,
-                                      dockCustomizer: DockCustomization? = nil,
+                                      freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
+        setupMoreOptionsMenu(isFireWindowDefault: isFireWindowDefault, dockCustomizer: self.dockCustomizer, freeTrialBadgePersistor: freeTrialBadgePersistor)
+    }
+    @MainActor
+    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false,
+                                      dockCustomizer: DockCustomization?,
                                       freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
         let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
         aiChatPreferencesStorage.showShortcutInApplicationMenu = true
@@ -118,7 +123,7 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
                                           freemiumDBPFeature: mockFreemiumDBPFeature,
                                           freemiumDBPPresenter: mockFreemiumDBPPresenter,
-                                          dockCustomizer: dockCustomizer ?? self.dockCustomizer,
+                                          dockCustomizer: dockCustomizer,
                                           defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
                                           notificationCenter: mockNotificationCenter,
                                           featureFlagger: mockFeatureFlagger,

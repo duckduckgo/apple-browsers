@@ -284,6 +284,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         aiChatInputBoxVisibility = .unknown
         pendingAttachments.removeAll()
         viewController.setAttachments([])
+        viewController.updateAttachButtonVisibility(supportsImageUpload: selectedModelSupportsImageUpload && pendingAttachments.count < 4)
     }
 }
 
@@ -310,10 +311,12 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 script.submitPrompt(text, images: images, modelId: selectedModelId)
                 pendingAttachments.removeAll()
                 viewController.setAttachments([])
+                viewController.updateAttachButtonVisibility(supportsImageUpload: selectedModelSupportsImageUpload && pendingAttachments.count < 4)
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text)
                 pendingAttachments.removeAll()
                 viewController.setAttachments([])
+                viewController.updateAttachButtonVisibility(supportsImageUpload: selectedModelSupportsImageUpload && pendingAttachments.count < 4)
             }
         }
     }

@@ -51,7 +51,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var isSubmitButtonHidden: Bool = false {
-        didSet { submitButton.isHidden = isSubmitButtonHidden }
+        didSet { submitButton.isHidden = isSubmitButtonHidden || isStopMode }
     }
 
     var isImageButtonHidden: Bool = false {

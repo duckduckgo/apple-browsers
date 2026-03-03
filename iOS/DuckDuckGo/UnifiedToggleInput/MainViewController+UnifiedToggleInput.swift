@@ -126,8 +126,9 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidRequestImageAttachment(_ coordinator: UnifiedToggleInputCoordinator) {
+        guard coordinator.pendingAttachments.count < 4 else { return }
         var config = PHPickerConfiguration(photoLibrary: .shared())
-        config.selectionLimit = 4 - coordinator.pendingAttachments.count
+        config.selectionLimit = max(4 - coordinator.pendingAttachments.count, 1)
         config.filter = .images
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = self

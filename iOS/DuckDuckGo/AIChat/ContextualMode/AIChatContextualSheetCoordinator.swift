@@ -85,6 +85,11 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController?.presentingViewController != nil
     }
 
+    /// Whether the sheet is presented and actively observing page context updates.
+    private var isActivelyObservingContext: Bool {
+        contextUpdateCancellable != nil
+    }
+
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
@@ -161,7 +166,7 @@ final class AIChatContextualSheetCoordinator {
             if !didTrigger {
                 sessionState.clearProcessingNavigationFlag()
             }
-        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat {
+        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && isActivelyObservingContext {
             sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
         } else {

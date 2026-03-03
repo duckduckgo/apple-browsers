@@ -33,6 +33,7 @@ import BrowserServicesKit
 import PrivacyConfig
 import AIChat
 import UIComponents
+
 class TabSwitcherViewController: UIViewController {
 
     struct Constants {
@@ -146,6 +147,8 @@ class TabSwitcherViewController: UIViewController {
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private var pickerViewModel: ImageSegmentedPickerViewModel
+    private let pickerItems: [ImageSegmentedPickerItem]
+    private let tabCountModel: TabCountModel
     private(set) var segmentedPickerHostingController: UIHostingController<TabSwitcherPickerWrapper>?
     private var pickerSelectionCancellable: AnyCancellable?
     private var fireModeCapability: FireModeCapable {
@@ -187,6 +190,9 @@ class TabSwitcherViewController: UIViewController {
         self.tabSwitcherSettings = tabSwitcherSettings
         self.daxDialogsManager = daxDialogsManager
         self.initialTrackerCountState = initialTrackerCountState
+        let tabCountModel = TabCountModel()
+        self.tabCountModel = tabCountModel
+        self.pickerItems = BrowsingMode.allCases.map { $0.segmentedPickerItem(tabCountModel: tabCountModel) }
         self.pickerViewModel = ImageSegmentedPickerViewModel(
                 items: pickerItems,
                 selectedItem: pickerItems[tabManager.currentBrowsingMode.rawValue],
@@ -207,9 +213,6 @@ class TabSwitcherViewController: UIViewController {
         titleBarView.scrollEdgeAppearance = appearance
     }
     
-    // Items for the segmented picker
-    private let pickerItems = BrowsingMode.allCases.map { $0.segmentedPickerItem }
-
     private func setupModeToggle() {
         guard fireModeCapability.isFireModeEnabled else {
             return
@@ -537,9 +540,9 @@ class TabSwitcherViewController: UIViewController {
     func refreshTitleViews() {
         let fireModeEnabled = fireModeCapability.isFireModeEnabled
         let tabsCountTitle = fireModeEnabled ? nil : UserText.numberOfTabs(tabsModel.count)
-        // TODO: - Update icon count
         let title = selectedTabs.isEmpty ? tabsCountTitle : UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
         titleBarView.topItem?.title = title
+        tabCountModel.count = tabManager.normalTabsModel.count
     }
 
     func displayBookmarkAllStatusMessage(with results: BookmarkAllResult, openTabsCount: Int) {
@@ -987,14 +990,17 @@ struct TabSwitcherPickerWrapper: View {
     }
 }
 
+// MARK: - Picker Items
+
 extension BrowsingMode {
-    var segmentedPickerItem: ImageSegmentedPickerItem {
+    func segmentedPickerItem(tabCountModel: TabCountModel) -> ImageSegmentedPickerItem {
         switch self {
         case .normal:
-            return ImageSegmentedPickerItem(
-                text: nil,
-                selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.tabMobile),
-                unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.tabMobile))
+            let itemView = AnyView(TabCountBadge(model: tabCountModel))
+            return ImageSegmentedPickerItem(text: nil,
+                                            selectedCustomView: itemView,
+                                            unselectedCustomView: itemView)
+            
         case .fire:
             return ImageSegmentedPickerItem(
                 text: nil,

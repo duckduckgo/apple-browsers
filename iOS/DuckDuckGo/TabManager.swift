@@ -88,6 +88,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
     }
     
+    var normalTabsModel: TabsModelManaging {
+        tabsModelProvider.normalTabsModel
+    }
+    
     var allTabsModel: TabsModelReading {
         tabsModelProvider.aggregateTabsModel
     }

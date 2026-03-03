@@ -84,6 +84,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             debugFlags: "",
             privacyExperiments: "",
             isPirEnabled: nil,
+            isForceDarkModeEnabled: nil,
             pageLoadTiming: nil
         )
 
@@ -137,6 +138,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             debugFlags: "",
             privacyExperiments: "",
             isPirEnabled: true,
+            isForceDarkModeEnabled: nil,
             pageLoadTiming: nil
         )
 

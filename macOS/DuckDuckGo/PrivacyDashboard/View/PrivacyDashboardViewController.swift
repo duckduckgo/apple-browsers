@@ -441,6 +441,7 @@ extension PrivacyDashboardViewController {
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
                                                isPirEnabled: isPirEnabled,
+                                               isForceDarkModeEnabled: NSApp.delegateTyped.darkReaderFeatureSettings?.isForceDarkModeEnabled,
                                                pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming,
                                                detectorMetrics: detectorMetrics)
         return websiteBreakage

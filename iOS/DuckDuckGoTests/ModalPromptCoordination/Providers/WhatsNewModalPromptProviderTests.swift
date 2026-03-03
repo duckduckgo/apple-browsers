@@ -531,7 +531,7 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         #expect(mockPixelReporter.capturedDismissType == .itemAction)
     }
 
-    @Test("Check URL Item Action Callback Handles Action For On-Demand Context")
+    @Test("Check URL Item Action Callback Handles Action For On-Demand Context", .timeLimit(.minutes(1)))
     func whenURLItemActionCallbackInvokedInOnDemandContextThenActionHandledAndDismissPixelFires() async throws {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")

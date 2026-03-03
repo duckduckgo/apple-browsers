@@ -125,7 +125,8 @@ def sql_quote(v): "'\''" + v + "'\''";
     app_did_finish_launching_after_state_restoration,
     app_state_restoration,
     init_to_will_finish_launching,
-    app_will_finish_to_did_finish_launching
+    app_will_finish_to_did_finish_launching,
+    time_to_interactive
 ) VALUES (
     \($run_id),
     \(sql_quote($runner)),
@@ -144,6 +145,7 @@ def sql_quote(v): "'\''" + v + "'\''";
     \(.appDidFinishLaunchingAfterRestoration),
     \(.appStateRestoration),
     \(.appDelegateInitToWillFinishLaunching),
-    \(.appWillFinishToDidFinishLaunching)
+    \(.appWillFinishToDidFinishLaunching),
+    \(.timeToInteractive)
 );"
 ' <<< "$raw_metrics"

@@ -21,23 +21,38 @@ import Foundation
 import os.log
 import TrackerRadarKit
 
-/// Source of tracker data for the C-S-S trackerProtection feature.
+/// Source of tracker data and surrogates for the C-S-S trackerProtection feature.
 ///
-/// Provides the full tracker data set (not the surrogate-filtered subset) for
-/// injection into the privacy config. The JS-side TrackerResolver needs all
-/// trackers to detect both surrogate and non-surrogate tracker requests.
+/// Provides the full tracker data set (not the surrogate-filtered subset) and
+/// the raw surrogates.txt payload for injection into the privacy config.
+/// The JS-side TrackerResolver needs all trackers to detect both surrogate
+/// and non-surrogate tracker requests, and the surrogates text to build the
+/// runtime surrogate function map.
 public protocol TrackerProtectionDataSource {
     var trackerData: TrackerData? { get }
     var encodedTrackerData: String? { get }
+    /// Raw surrogates.txt content for C-S-S to parse into callable surrogate functions.
+    var surrogatesText: String? { get }
 }
 
 /// Default implementation using `CompiledRuleListsSource` (typically `ContentBlockerRulesManager`).
+///
+/// The `surrogatesProvider` closure lets platform code supply the surrogates.txt
+/// content from its own configuration store without coupling BSK to the
+/// `Configuration` module.
 public struct DefaultTrackerProtectionDataSource: TrackerProtectionDataSource {
 
     private let contentBlockingManager: CompiledRuleListsSource
+    private let surrogatesProvider: () -> String?
 
-    public init(contentBlockingManager: CompiledRuleListsSource) {
+    public init(contentBlockingManager: CompiledRuleListsSource,
+                surrogatesProvider: @escaping () -> String? = { nil }) {
         self.contentBlockingManager = contentBlockingManager
+        self.surrogatesProvider = surrogatesProvider
+    }
+
+    public var surrogatesText: String? {
+        surrogatesProvider()
     }
 
     public var trackerData: TrackerData? {

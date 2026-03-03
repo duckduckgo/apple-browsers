@@ -3117,6 +3117,8 @@ extension TabViewController: UserContentControllerDelegate {
 // MARK: - TrackerProtectionSubfeatureDelegate
 extension TabViewController: TrackerProtectionSubfeatureDelegate {
 
+    private static let trackerProtectionMapper = TrackerProtectionEventMapper(tld: tld)
+
     func trackerProtectionShouldProcessTrackers(_ subfeature: TrackerProtectionSubfeature) -> Bool {
         return privacyInfo?.isFor(self.url) ?? false
     }
@@ -3125,17 +3127,13 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
                            didDetectTracker tracker: TrackerProtectionSubfeature.TrackerDetection) {
         guard let url = url else { return }
 
-        let state: BlockingState = tracker.blocked ? .blocked : .allowed(reason: Self.allowReason(from: tracker.reason))
-        let eTLDplus1 = Self.tld.eTLDplus1(forStringURL: tracker.url)
-        let entity = tracker.entityName.map { Entity(displayName: $0, domains: nil, prevalence: tracker.prevalence) }
-        let detectedRequest = DetectedRequest(url: tracker.url,
-                                              eTLDplus1: eTLDplus1,
-                                              knownTracker: nil,
-                                              entity: entity,
-                                              state: state,
-                                              pageUrl: tracker.pageUrl)
+        if Self.trackerProtectionMapper.isThirdPartyRequestSameSite(tracker) {
+            return
+        }
 
-        if tracker.reason == "thirdPartyRequest" {
+        let detectedRequest = Self.trackerProtectionMapper.detectedRequest(from: tracker)
+
+        if TrackerProtectionEventMapper.isThirdPartyRequest(tracker) {
             privacyInfo?.trackerInfo.add(detectedThirdPartyRequest: detectedRequest)
             return
         }
@@ -3162,31 +3160,10 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
 
     func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
                            didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
-        guard let url = url, let surrogateHost = URL(string: surrogate.url)?.host else { return }
+        guard let url = url, let surrogateHost = Self.trackerProtectionMapper.surrogateHost(from: surrogate) else { return }
 
-        let eTLDplus1 = Self.tld.eTLDplus1(forStringURL: surrogate.url)
-        let entity = Entity(displayName: surrogateHost, domains: nil, prevalence: nil)
-        let detectedRequest = DetectedRequest(url: surrogate.url,
-                                              eTLDplus1: eTLDplus1,
-                                              knownTracker: nil,
-                                              entity: entity,
-                                              state: .blocked,
-                                              pageUrl: surrogate.pageUrl)
-
+        let detectedRequest = Self.trackerProtectionMapper.detectedRequest(from: surrogate)
         privacyInfo?.trackerInfo.addInstalledSurrogateHost(surrogateHost, for: detectedRequest, onPageWithURL: url)
-    }
-
-    private static func allowReason(from reason: String?) -> AllowReason {
-        switch reason {
-        case "first party":
-            return .ownedByFirstParty
-        case "matched rule - exception":
-            return .ruleException
-        case "unprotectedDomain":
-            return .protectionDisabled
-        default:
-            return .otherThirdPartyRequest
-        }
     }
 }
 

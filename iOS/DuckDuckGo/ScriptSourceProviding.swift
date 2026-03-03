@@ -21,6 +21,7 @@ import Foundation
 import Core
 import Combine
 import BrowserServicesKit
+import Configuration
 import PrivacyConfig
 import DDGSync
 import enum UserScript.UserScriptError
@@ -91,7 +92,14 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
         syncErrorHandler = dependencies.syncErrorHandler
         webExtensionAvailability = dependencies.webExtensionAvailability
-        trackerProtectionDataSource = DefaultTrackerProtectionDataSource(contentBlockingManager: contentBlockingManager)
+        let configStore = ConfigurationStore()
+        trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
+            contentBlockingManager: contentBlockingManager,
+            surrogatesProvider: {
+                guard let data = configStore.loadData(for: .surrogates) else { return nil }
+                return String(data: data, encoding: .utf8)
+            }
+        )
 
         contentScopeProperties = ContentScopeProperties(gpcEnabled: dependencies.appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,

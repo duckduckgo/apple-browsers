@@ -78,6 +78,12 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
             Logger.contentBlocking.warning("TrackerProtection: No encodedTrackerData available")
         }
 
+        if let surrogatesText = dataSource.surrogatesText {
+            settings["surrogates"] = surrogatesText
+        } else {
+            Logger.contentBlocking.warning("TrackerProtection: No surrogates data available")
+        }
+
         let privacyConfig = privacyConfigurationManager.privacyConfig
 
         var allowlistDict: [String: [[String: Any]]] = [:]
@@ -90,6 +96,7 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
 
         settings["tempUnprotectedDomains"] = privacyConfig.tempUnprotectedDomains
         settings["userUnprotectedDomains"] = privacyConfig.userUnprotectedDomains
+        settings["contentBlockingExceptions"] = privacyConfig.exceptionsList(forFeature: .contentBlocking)
         settings["blockingEnabled"] = privacyConfig.isEnabled(featureKey: .contentBlocking)
         settings["ctlEnabled"] = ctlEnabled
 

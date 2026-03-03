@@ -164,7 +164,14 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.syncServiceProvider = syncServiceProvider
         self.syncErrorHandler = syncErrorHandler
         self.webExtensionAvailability = webExtensionAvailability
-        self.trackerProtectionDataSource = DefaultTrackerProtectionDataSource(contentBlockingManager: contentBlockingManager)
+        let surrogatesConfigStorage = configStorage
+        self.trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
+            contentBlockingManager: contentBlockingManager,
+            surrogatesProvider: {
+                guard let data = surrogatesConfigStorage.loadData(for: .surrogates) else { return nil }
+                return String(data: data, encoding: .utf8)
+            }
+        )
 
         self.newTabPageActionsManager = newTabPageActionsManager
         self.sessionKey = generateSessionKey()

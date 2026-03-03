@@ -138,8 +138,87 @@ final class TrackerProtectionSubfeatureTests: XCTestCase {
 
     // MARK: - Message Origin Policy
 
+    /// `.all` is intentional: tracker events originate from cross-origin iframes,
+    /// matching legacy WKScriptMessageHandler behavior.
     func testWhenMessageOriginPolicyIsAccessedThenAllOriginsAreAllowed() {
         let subfeature = TrackerProtectionSubfeature()
-        XCTAssertEqual(subfeature.messageOriginPolicy, .all)
+        if case .all = subfeature.messageOriginPolicy {
+            // expected
+        } else {
+            XCTFail("Expected .all message origin policy for cross-origin iframe support")
+        }
+    }
+
+    // MARK: - Malformed Payload Rejection
+
+    func testWhenTrackerDetectedMissingRequiredFieldsThenDecodeFails() {
+        let missingUrl: [String: Any] = ["blocked": true, "isSurrogate": false, "pageUrl": "https://example.com"]
+        let missingBlocked: [String: Any] = ["url": "https://t.example/p.js", "isSurrogate": false, "pageUrl": "https://example.com"]
+        let missingIsSurrogate: [String: Any] = ["url": "https://t.example/p.js", "blocked": true, "pageUrl": "https://example.com"]
+        let missingPageUrl: [String: Any] = ["url": "https://t.example/p.js", "blocked": true, "isSurrogate": false]
+
+        for (label, params) in [("url", missingUrl), ("blocked", missingBlocked),
+                                  ("isSurrogate", missingIsSurrogate), ("pageUrl", missingPageUrl)] {
+            guard let data = try? JSONSerialization.data(withJSONObject: params) else {
+                XCTFail("Failed to serialize params for missing \(label)")
+                continue
+            }
+            XCTAssertThrowsError(try JSONDecoder().decode(TrackerProtectionSubfeature.TrackerDetection.self, from: data),
+                                 "Expected decode failure when \(label) is missing")
+        }
+    }
+
+    func testWhenSurrogateInjectedMissingRequiredFieldsThenDecodeFails() {
+        let missingUrl: [String: Any] = ["blocked": true, "isSurrogate": true, "pageUrl": "https://example.com"]
+        let missingPageUrl: [String: Any] = ["url": "https://t.example/p.js", "blocked": true, "isSurrogate": true]
+
+        for (label, params) in [("url", missingUrl), ("pageUrl", missingPageUrl)] {
+            guard let data = try? JSONSerialization.data(withJSONObject: params) else {
+                XCTFail("Failed to serialize params for missing \(label)")
+                continue
+            }
+            XCTAssertThrowsError(try JSONDecoder().decode(TrackerProtectionSubfeature.SurrogateInjection.self, from: data),
+                                 "Expected decode failure when \(label) is missing")
+        }
+    }
+
+    func testWhenPayloadIsEmptyThenDecodeFails() {
+        let emptyParams: [String: Any] = [:]
+        guard let data = try? JSONSerialization.data(withJSONObject: emptyParams) else {
+            XCTFail("Failed to serialize empty params")
+            return
+        }
+        XCTAssertThrowsError(try JSONDecoder().decode(TrackerProtectionSubfeature.TrackerDetection.self, from: data))
+        XCTAssertThrowsError(try JSONDecoder().decode(TrackerProtectionSubfeature.SurrogateInjection.self, from: data))
+    }
+
+    func testWhenPayloadHasWrongTypeThenDecodeFails() {
+        let wrongTypes: [String: Any] = [
+            "url": 123,
+            "blocked": "yes",
+            "isSurrogate": "true",
+            "pageUrl": true
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: wrongTypes) else {
+            XCTFail("Failed to serialize wrong-type params")
+            return
+        }
+        XCTAssertThrowsError(try JSONDecoder().decode(TrackerProtectionSubfeature.TrackerDetection.self, from: data))
+    }
+
+    // MARK: - TrackerBlockingReason mapping
+
+    func testAllowReasonMappingFromTypedReasons() {
+        XCTAssertEqual(TrackerBlockingReason.firstParty.allowReason, .ownedByFirstParty)
+        XCTAssertEqual(TrackerBlockingReason.ruleException.allowReason, .ruleException)
+        XCTAssertEqual(TrackerBlockingReason.unprotectedDomain.allowReason, .protectionDisabled)
+        XCTAssertEqual(TrackerBlockingReason.defaultBlock.allowReason, .otherThirdPartyRequest)
+        XCTAssertEqual(TrackerBlockingReason.thirdPartyRequest.allowReason, .otherThirdPartyRequest)
+        XCTAssertEqual(TrackerBlockingReason.surrogate.allowReason, .otherThirdPartyRequest)
+    }
+
+    func testUnknownReasonStringFallsBackToOtherThirdPartyRequest() {
+        let unknown = TrackerBlockingReason(rawValue: "some unknown reason")
+        XCTAssertNil(unknown)
     }
 }

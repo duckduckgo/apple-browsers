@@ -1,0 +1,92 @@
+//
+//  TrackerProtectionEventMapper.swift
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Common
+import ContentBlocking
+import Foundation
+import TrackerRadarKit
+
+/// Shared converter for C-S-S tracker-protection events to native DetectedRequest.
+/// Eliminates duplicated mapping logic between iOS TabViewController and macOS ContentBlockingTabExtension.
+public struct TrackerProtectionEventMapper {
+
+    private let tld: TLD
+
+    public init(tld: TLD) {
+        self.tld = tld
+    }
+
+    // MARK: - TrackerDetection mapping
+
+    public func detectedRequest(from tracker: TrackerProtectionSubfeature.TrackerDetection) -> DetectedRequest {
+        let reason = TrackerBlockingReason(rawValue: tracker.reason ?? "")
+        let state: BlockingState = tracker.blocked ? .blocked : .allowed(reason: reason?.allowReason ?? .otherThirdPartyRequest)
+        let eTLDplus1 = tld.eTLDplus1(forStringURL: tracker.url)
+
+        return DetectedRequest(
+            url: tracker.url,
+            eTLDplus1: eTLDplus1,
+            ownerName: tracker.ownerName,
+            entityName: tracker.entityName,
+            category: tracker.category,
+            prevalence: tracker.prevalence,
+            state: state,
+            pageUrl: tracker.pageUrl
+        )
+    }
+
+    // MARK: - SurrogateInjection mapping
+
+    public func detectedRequest(from surrogate: TrackerProtectionSubfeature.SurrogateInjection) -> DetectedRequest {
+        let eTLDplus1 = tld.eTLDplus1(forStringURL: surrogate.url)
+        let surrogateHost = URL(string: surrogate.url)?.host ?? ""
+
+        return DetectedRequest(
+            url: surrogate.url,
+            eTLDplus1: eTLDplus1,
+            ownerName: nil,
+            entityName: surrogateHost,
+            category: nil,
+            prevalence: nil,
+            state: .blocked,
+            pageUrl: surrogate.pageUrl
+        )
+    }
+
+    // MARK: - Classification helpers
+
+    public static func isThirdPartyRequest(_ tracker: TrackerProtectionSubfeature.TrackerDetection) -> Bool {
+        return TrackerBlockingReason(rawValue: tracker.reason ?? "") == .thirdPartyRequest
+    }
+
+    /// Returns true if the third-party request is actually same-site (same eTLD+1),
+    /// meaning it should be suppressed from the privacy dashboard.
+    public func isThirdPartyRequestSameSite(_ tracker: TrackerProtectionSubfeature.TrackerDetection) -> Bool {
+        guard Self.isThirdPartyRequest(tracker) else { return false }
+
+        let requestETLDplus1 = tld.eTLDplus1(forStringURL: tracker.url)
+        let pageETLDplus1 = tld.eTLDplus1(forStringURL: tracker.pageUrl)
+
+        guard let requestETLDplus1, let pageETLDplus1 else { return false }
+        return requestETLDplus1 == pageETLDplus1
+    }
+
+    public func surrogateHost(from surrogate: TrackerProtectionSubfeature.SurrogateInjection) -> String? {
+        return URL(string: surrogate.url)?.host
+    }
+}

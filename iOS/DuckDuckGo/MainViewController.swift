@@ -1880,10 +1880,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            let isPlainStyle = aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled
-            self.suggestionTrayController?.useFloatingStyle = !isPlainStyle
-            let widthPadding: CGFloat = isPlainStyle ? 0 : 32
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + widthPadding)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32)
         } else {
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
             self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)

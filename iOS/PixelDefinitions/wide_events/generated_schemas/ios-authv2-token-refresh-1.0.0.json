@@ -28,12 +28,16 @@
         },
         "global": {
             "type": "object",
-            "required": ["platform", "type", "sample_rate"],
+            "required": ["platform", "type", "sample_rate", "is_first_daily_occurrence"],
             "additionalProperties": false,
             "properties": {
                 "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
                 "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
-                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 }
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
             }
         },
         "feature": {

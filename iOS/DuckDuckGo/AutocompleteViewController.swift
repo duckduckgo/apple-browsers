@@ -60,7 +60,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private var task: URLSessionDataTask?
-    private weak var cachedScrollView: UIScrollView?
     private var lastReportedContentHeight: CGFloat = 0
 
     private var isUsingUnifiedPrediction: Bool {
@@ -126,25 +125,17 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
         view.backgroundColor = UIColor(designSystemColor: .background)
 
+        model.onContentHeightChanged = { [weak self] height in
+            guard let self, height > 0, height != self.lastReportedContentHeight else { return }
+            self.lastReportedContentHeight = height
+            self.presentationDelegate?.autocompleteDidChangeContentHeight(height: height)
+        }
+
         queryDebounceCancellable = $query
             .debounce(for: .milliseconds(Self.debounceDelayMS), scheduler: RunLoop.main)
             .sink { [weak self] query in
                 self?.requestSuggestions(query: query)
             }
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        guard model.usePlainListStyle else { return }
-
-        let scrollView = cachedScrollView ?? Self.findScrollView(in: view)
-        cachedScrollView = scrollView
-
-        guard let scrollView,
-              scrollView.contentSize.height > 0,
-              scrollView.contentSize.height != lastReportedContentHeight else { return }
-        lastReportedContentHeight = scrollView.contentSize.height
-        presentationDelegate?.autocompleteDidChangeContentHeight(height: scrollView.contentSize.height)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -259,13 +250,8 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private func updateHeight() {
         guard let lastResults else { return }
 
-        // For plain list style, height is measured from the underlying scroll view's
-        // content size in viewDidLayoutSubviews to avoid hardcoded cell height mismatches.
-        if model.usePlainListStyle {
-            lastReportedContentHeight = 0
-            view.setNeedsLayout()
-            return
-        }
+        // For plain list style, height is reported by SwiftUI via ContentHeightPreferenceKey.
+        if model.usePlainListStyle { return }
 
         let messageHeight = model.isMessageVisible ? 196 : 0
         let sectionPadding = 12
@@ -284,20 +270,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
         self.presentationDelegate?
             .autocompleteDidChangeContentHeight(height: CGFloat(height))
-    }
-
-    /// Walks the view hierarchy to find the scroll view backing the SwiftUI List.
-    /// The result is cached in `cachedScrollView` to avoid repeated traversals.
-    private static func findScrollView(in view: UIView) -> UIScrollView? {
-        for subview in view.subviews {
-            if let scrollView = subview as? UIScrollView {
-                return scrollView
-            }
-            if let found = findScrollView(in: subview) {
-                return found
-            }
-        }
-        return nil
     }
 
     func sectionHeight(_ suggestions: [Suggestion]) -> Int {

@@ -46,7 +46,12 @@ struct AutocompleteView: View {
                 HistoryMessageView {
                     model.onDismissMessage()
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(
+                    GeometryReader { proxy in
+                        Color(designSystemColor: .surface)
+                            .preference(key: ContentHeightPreferenceKey.self, value: proxy.size.height)
+                    }
+                )
                 .onAppear {
                     model.onShownToUser()
                 }
@@ -78,6 +83,11 @@ struct AutocompleteView: View {
 
         }
         .modifier(PlainListStyleModifier(isEnabled: model.usePlainListStyle))
+        .onPreferenceChange(ContentHeightPreferenceKey.self) { height in
+            if model.usePlainListStyle {
+                model.onContentHeightChanged?(height)
+            }
+        }
         .offset(x: 0, y: model.usePlainListStyle ? 0 : -28)
         .padding(.bottom, model.usePlainListStyle ? 0 : -20)
         .padding(.top, model.usePlainListStyle ? 0 : (model.isPad ? 10 : 0))
@@ -178,6 +188,13 @@ private struct CompactSectionSpacing: ViewModifier {
 
 }
 
+private struct ContentHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value += nextValue()
+    }
+}
+
 private struct HideScrollContentBackground: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 16, *) {
@@ -214,7 +231,12 @@ private struct SuggestionsSection: View {
                  } label: {
                     SuggestionView(model: suggestions[index], query: query)
                  }
-                 .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
+                 .listRowBackground(
+                    GeometryReader { proxy in
+                        (autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
+                            .preference(key: ContentHeightPreferenceKey.self, value: proxy.size.height)
+                    }
+                 )
                  .listRowInsets(Metrics.rowInsets)
                  .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
                  .modifier(HideLastSeparatorModifier(isLastRow: hideLastSeparator && index == suggestions.count - 1))

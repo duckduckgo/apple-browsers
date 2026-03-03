@@ -103,6 +103,13 @@
             }
         ]
     },
+    "m_mac_aichat_models_fetch_failed": {
+        "description": "Fired when the models API fetch fails (endpoint unreachable or returns error)",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_mac_aichat_sidebar_detached": {
         "description": "Fired when user detaches the AI Chat sidebar into a floating window",
         "owners": ["jaceklyp"],

@@ -211,13 +211,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
+        let supportsNativeChatInput = supportsFullMode && featureFlagger.isFeatureOn(.unifiedToggleInput)
+
         return AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
             supportsOpeningSettings: defaults.supportsOpeningSettings,
             supportsNativePrompt: defaults.supportsNativePrompt,
             supportsStandaloneMigration: experimentalAIChatManager.isStandaloneMigrationSupported,
-            supportsNativeChatInput: defaults.supportsNativeChatInput,
+            supportsNativeChatInput: supportsNativeChatInput,
             supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
             supportsPageContext: supportsContextualMode,
@@ -226,7 +228,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
-            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync)
+            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync),
+            supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts)
         )
     }
 

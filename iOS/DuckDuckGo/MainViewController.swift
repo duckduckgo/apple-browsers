@@ -266,6 +266,9 @@ class MainViewController: UIViewController {
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
     private let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
+    lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
+    var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
+    var unifiedToggleInputCancellables = Set<AnyCancellable>()
 
     // MARK: - iPad Tab Mode Chat History
     private lazy var iPadTabChatHistoryCoordinator = IPadTabChatHistoryCoordinator(
@@ -513,6 +516,7 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
+        setUpUnifiedToggleInputIfNeeded()
         subscribeToRefreshButtonSettingsEvents()
         subscribeToCustomizationSettingsEvents()
         subscribeToDaxEasterEggLogoChanges()
@@ -598,6 +602,13 @@ class MainViewController: UIViewController {
         DailyPixel.fireDaily(.aiChatExperimentalAddressBarIsEnabledDaily,
                              withAdditionalParameters: [isEnabledParam: isEnableValue])
 
+    }
+
+    private func fireIPadToggleStateOnAppOpenPixel() {
+        guard aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled else { return }
+
+        let pixel: Pixel.Event = aiChatAddressBarExperience.shouldShowModeToggle ? .aiChatIPadToggleEnabledOnAppOpen : .aiChatIPadToggleDisabledOnAppOpen
+        DailyPixel.fireDailyAndCount(pixel: pixel)
     }
 
     private func fireContextualAutoAttachPixel() {
@@ -1410,6 +1421,7 @@ class MainViewController: UIViewController {
     
     func onForeground() {
         fireExperimentalAddressBarPixel()
+        fireIPadToggleStateOnAppOpenPixel()
         fireContextualAutoAttachPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
@@ -1514,7 +1526,7 @@ class MainViewController: UIViewController {
         }
     }
 
-    fileprivate func loadQuery(_ query: String) {
+    func loadQuery(_ query: String) {
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
             Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.absoluteString ?? "<nil>", privacy: .public)\"")
             return
@@ -1705,6 +1717,13 @@ class MainViewController: UIViewController {
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             updateBrowsingMenuHeaderDataSource()
+            if let tab = currentTab {
+                refreshUnifiedToggleInput(for: tab)
+            } else if let coordinator = unifiedToggleInputCoordinator, coordinator.displayState != .hidden {
+                coordinator.hide()
+                coordinator.unbind()
+                viewCoordinator.setNavigationChromeHidden(false)
+            }
             return
         }
 
@@ -1727,6 +1746,7 @@ class MainViewController: UIViewController {
             viewCoordinator.omniBar.startBrowsing()
         }
 
+        refreshUnifiedToggleInput(for: tab)
         updateBrowsingMenuHeaderDataSource()
     }
 
@@ -2156,7 +2176,7 @@ class MainViewController: UIViewController {
         findInPageView?.updateConstraints()
     }
 
-    private func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
+    func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
         SpeechRecognizer.requestMicAccess { [weak self] permission in
             guard let self = self else { return }
             if permission {

@@ -35,6 +35,7 @@ protocol IPadModeToggleTextModeling {
     var sharedText: String { get }
     var isTransitioning: Bool { get }
     var showPlaceholder: Bool { get }
+    var hasSubmittableText: Bool { get }
 
     func updateText(_ text: String)
     func transition(to newMode: TextEntryMode) -> ModeToggleTransition?
@@ -50,6 +51,10 @@ final class IPadModeToggleTextModel: IPadModeToggleTextModeling {
 
     var showPlaceholder: Bool {
         sharedText.isEmpty
+    }
+
+    var hasSubmittableText: Bool {
+        !sharedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     func updateText(_ text: String) {

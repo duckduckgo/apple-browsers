@@ -33,12 +33,12 @@ public protocol ScriptRequestValidator {
     func canPageRequestToken(_ message: WKScriptMessage) async -> Bool
 }
 
-/// Default implementation of `ScriptRequestValidator` that validates token requests based on URL path and host verification.
+/// Default implementation of `ScriptRequestValidator` that validates token requests based on URL path prefix and host verification.
 ///
 /// This validator implements a multi-layer security check to ensure that only authorized subscription pages
 /// can request tokens. The validation process includes:
 /// - Main frame verification (prevents iframe attacks)
-/// - URL path validation against known subscription paths
+/// - URL path prefix validation (must be under `/subscriptions/` or `/identity-theft-restoration`)
 /// - Host matching against expected subscription domain
 /// - Security origin verification to prevent XSS attacks
 ///
@@ -46,10 +46,6 @@ public protocol ScriptRequestValidator {
 public struct DefaultScriptRequestValidator: ScriptRequestValidator {
 
     private let subscriptionManager: any SubscriptionManager
-
-    /// Set of all valid subscription URL paths that are authorized to request tokens.
-    /// Paths are dynamically retrieved from `SubscriptionURL.allSubscriptionPaths()`.
-    private var allValidPaths: Set<String> { SubscriptionURL.allSubscriptionPaths() }
 
     /// Creates a new validator with the specified subscription manager.
     ///
@@ -64,10 +60,9 @@ public struct DefaultScriptRequestValidator: ScriptRequestValidator {
     /// 1. Verifies the request comes from the main frame (not an iframe)
     /// 2. Extracts and validates the requesting page's URL and host
     /// 3. Verifies the URL uses HTTPS scheme (rejects HTTP and other protocols)
-    /// 4. Normalizes the URL path by filtering out empty and "/" components
-    /// 5. Checks if the path matches a known valid subscription path
-    /// 6. Verifies the host matches the expected subscription domain
-    /// 7. Confirms the security origin matches the host (prevents XSS)
+    /// 4. Checks if the path is under `/subscriptions/` or is `/identity-theft-restoration`
+    /// 5. Verifies the host matches the expected subscription domain
+    /// 6. Confirms the security origin matches the host (prevents XSS)
     ///
     /// - Parameter message: The script message containing the token request
     /// - Returns: `true` if all security checks pass and the request is authorized, `false` otherwise
@@ -86,12 +81,14 @@ public struct DefaultScriptRequestValidator: ScriptRequestValidator {
         // Verify the URL uses HTTPS to prevent token exposure over insecure connections
         guard webViewURL.scheme == "https" else { return false }
 
-        // Normalise the path by filtering out empty and "/" components, then joining
-        var path = webViewURL.pathComponents.filter { !$0.isEmpty && $0 != "/" }.joined(separator: "/")
-        path = path.hasPrefix("/") ? String(path.dropFirst()) : path
-
-        // Verify the path is a known valid subscription path
-        guard allValidPaths.contains(path) else { return false }
+        // Verify the path is under /subscriptions/ or is /identity-theft-restoration
+        let subscriptionsPath = subscriptionManager.url(for: .baseURL).path
+        let identityTheftRestorationPath = subscriptionManager.url(for: .identityTheftRestoration).path
+        guard webViewURL.path == subscriptionsPath
+                || webViewURL.path.hasPrefix("\(subscriptionsPath)/")
+                || webViewURL.path == identityTheftRestorationPath else {
+            return false
+        }
 
         // Verify the host matches the expected subscription domain
         let expectedHost = subscriptionManager.url(for: .baseURL).host

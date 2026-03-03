@@ -418,7 +418,8 @@ class TabViewController: UIViewController {
                                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                                    privacyStats: PrivacyStatsProviding,
-                                   voiceSearchHelper: VoiceSearchHelperProtocol) -> TabViewController {
+                                   voiceSearchHelper: VoiceSearchHelperProtocol,
+                                   darkReaderFeatureSettings: DarkReaderFeatureSettings) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
@@ -450,7 +451,8 @@ class TabViewController: UIViewController {
                               productSurfaceTelemetry: productSurfaceTelemetry,
                               sharedSecureVault: sharedSecureVault,
                               privacyStats: privacyStats,
-                              voiceSearchHelper: voiceSearchHelper
+                              voiceSearchHelper: voiceSearchHelper,
+                              darkReaderFeatureSettings: darkReaderFeatureSettings
             )
         })
         return controller
@@ -504,6 +506,7 @@ class TabViewController: UIViewController {
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
+    let darkReaderFeatureSettings: DarkReaderFeatureSettings
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let pageContextHandler = AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
@@ -556,7 +559,8 @@ class TabViewController: UIViewController {
                    aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
                    sharedSecureVault: (any AutofillSecureVault)? = nil,
                    privacyStats: PrivacyStatsProviding,
-                   voiceSearchHelper: VoiceSearchHelperProtocol) {
+                   voiceSearchHelper: VoiceSearchHelperProtocol,
+                   darkReaderFeatureSettings: DarkReaderFeatureSettings) {
 
         self.tabModel = tabModel
         self.viewModel = TabViewModel(tab: tabModel, historyManager: historyManager)
@@ -598,6 +602,7 @@ class TabViewController: UIViewController {
                                                          productSurfaceTelemetry: productSurfaceTelemetry)
         self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
         self.voiceSearchHelper = voiceSearchHelper
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
@@ -1469,7 +1474,7 @@ class TabViewController: UIViewController {
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
                                                                      breakageReportingSubfeature: breakageReportingSubfeature,
-                                                                     isForceDarkModeEnabled: nil)
+                                                                     isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled)
     }
 
     public func print() {

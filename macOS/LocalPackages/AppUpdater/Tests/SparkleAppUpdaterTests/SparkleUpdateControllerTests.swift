@@ -1,5 +1,5 @@
 //
-//  SimplifiedSparkleUpdateControllerTests.swift
+//  SparkleUpdateControllerTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import PrivacyConfig
 import SparkleAppUpdater
 import XCTest
 
-final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
+final class SparkleUpdateControllerTests: XCTestCase {
 
     var mockFeatureFlagger: MockFeatureFlagger!
 
@@ -42,7 +42,7 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
     func testResolveAutoDownload_customFeedEnabled_flagOff_preferenceOn_returnsFalse() {
         // Flag OFF = not in enabledUpdateFeatureFlags array
 
-        let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
+        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
@@ -54,7 +54,7 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
     func testResolveAutoDownload_customFeedEnabled_debugFlagOn_preferenceOn_returnsTrue() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInDEBUG]
 
-        let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
+        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
@@ -70,7 +70,7 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
     func testResolveAutoDownload_customFeedEnabled_debugFlagOn_preferenceOff_returnsFalse() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInDEBUG]
 
-        let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
+        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: false
@@ -84,7 +84,7 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
     func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOff_preferenceOn_returnsFalse() {
         // Flag OFF = not in enabledUpdateFeatureFlags array.
 
-        let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
+        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
@@ -96,7 +96,7 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
     func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOn_preferenceOn_matchesBuild() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInREVIEW]
 
-        let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
+        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
@@ -112,7 +112,7 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
     func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOn_preferenceOff_returnsFalse() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInREVIEW]
 
-        let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
+        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: true,
             featureFlagger: mockFeatureFlagger,
             userPreference: false
@@ -124,7 +124,7 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
     // MARK: - Custom Feed Disabled
 
     func testResolveAutoDownload_customFeedDisabled_preferenceOn_returnsTrue() {
-        let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
+        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: false,
             featureFlagger: mockFeatureFlagger,
             userPreference: true
@@ -134,7 +134,7 @@ final class SimplifiedSparkleUpdateControllerTests: XCTestCase {
     }
 
     func testResolveAutoDownload_customFeedDisabled_preferenceOff_returnsFalse() {
-        let result = SimplifiedSparkleUpdateController.resolveAutoDownloadEnabled(
+        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: false,
             featureFlagger: mockFeatureFlagger,
             userPreference: false

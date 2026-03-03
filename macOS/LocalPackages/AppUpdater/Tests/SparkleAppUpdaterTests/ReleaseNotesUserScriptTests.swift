@@ -92,8 +92,8 @@ private final class MockURLWebView: WKWebView {
     }
 }
 
-/// Minimal stub implementing SparkleUpdateController for testing ReleaseNotesValues construction.
-private final class StubSparkleUpdateController: NSObject, SparkleUpdateController {
+/// Minimal stub implementing SparkleUpdateControlling for testing ReleaseNotesValues construction.
+private final class StubSparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     var isAtRestartCheckpoint = false
     var shouldForceUpdateCheck = false

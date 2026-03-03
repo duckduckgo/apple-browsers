@@ -179,7 +179,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     private var isAtRestartCheckpoint: Bool {
-        (updateController as? any SparkleUpdateController)?.isAtRestartCheckpoint ?? false
+        (updateController as? any SparkleUpdateControlling)?.isAtRestartCheckpoint ?? false
     }
 
 #if SPARKLE_ALLOWS_UNSIGNED_UPDATES
@@ -214,7 +214,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     func checkForUpdate(userInitiated: Bool) {
         if userInitiated {
             updateController?.checkForUpdateSkippingRollout()
-        } else if let sparkleUpdateController = updateController as? any SparkleUpdateController {
+        } else if let sparkleUpdateController = updateController as? any SparkleUpdateControlling {
             sparkleUpdateController.checkForUpdateRespectingRollout()
         }
     }

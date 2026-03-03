@@ -247,6 +247,67 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         XCTAssertNil(settings?["surrogates"])
     }
 
+    // MARK: - P0-10: CTL platform behavior
+
+    func testCTLEnabledFalse_settingsReflectDisabled() {
+        let (manager, _) = makeManager()
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(
+            featureFlagger: MockFeatureFlagger(),
+            privacyConfigurationManager: manager,
+            trackerProtectionDataSource: makeDataSource(),
+            ctlEnabled: false
+        )
+
+        let settings = trackerProtectionSettings(from: generator)
+        XCTAssertEqual(settings?["ctlEnabled"] as? Bool, false,
+                       "iOS platform should always pass ctlEnabled=false")
+    }
+
+    func testCTLEnabledTrue_settingsReflectEnabled() {
+        let (manager, _) = makeManager()
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(
+            featureFlagger: MockFeatureFlagger(),
+            privacyConfigurationManager: manager,
+            trackerProtectionDataSource: makeDataSource(),
+            ctlEnabled: true
+        )
+
+        let settings = trackerProtectionSettings(from: generator)
+        XCTAssertEqual(settings?["ctlEnabled"] as? Bool, true,
+                       "macOS platform should pass ctlEnabled reflecting live state")
+    }
+
+    func testCTLDefault_isFalse() {
+        let (manager, _) = makeManager()
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(
+            featureFlagger: MockFeatureFlagger(),
+            privacyConfigurationManager: manager,
+            trackerProtectionDataSource: makeDataSource()
+        )
+
+        let settings = trackerProtectionSettings(from: generator)
+        XCTAssertEqual(settings?["ctlEnabled"] as? Bool, false,
+                       "Default ctlEnabled should be false (iOS behavior)")
+    }
+
+    // MARK: - P1-5: Surrogates absent
+
+    func testNoSurrogatesField_trackerProtectionStillGenerated() {
+        let (manager, _) = makeManager()
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(
+            featureFlagger: MockFeatureFlagger(),
+            privacyConfigurationManager: manager,
+            trackerProtectionDataSource: makeDataSource(surrogatesText: nil)
+        )
+
+        let features = generatedFeatures(from: generator)
+        XCTAssertNotNil(features?["trackerProtection"], "trackerProtection should still be present without surrogates")
+
+        let settings = trackerProtectionSettings(from: generator)
+        XCTAssertNil(settings?["surrogates"], "surrogates field should be absent, not empty")
+        XCTAssertNotNil(settings?["blockingEnabled"], "blocking should still be configured")
+    }
+
     // MARK: - No data source
 
     func testNoDataSourceOmitsTrackerProtection() {

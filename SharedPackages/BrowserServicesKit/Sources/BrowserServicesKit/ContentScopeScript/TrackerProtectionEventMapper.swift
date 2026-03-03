@@ -74,11 +74,10 @@ public struct TrackerProtectionEventMapper {
         return TrackerBlockingReason(rawValue: tracker.reason ?? "") == .thirdPartyRequest
     }
 
-    /// Returns true if the third-party request is actually same-site (same eTLD+1),
-    /// meaning it should be suppressed from the privacy dashboard.
-    public func isThirdPartyRequestSameSite(_ tracker: TrackerProtectionSubfeature.TrackerDetection) -> Bool {
-        guard Self.isThirdPartyRequest(tracker) else { return false }
-
+    /// Returns true when request and page share the same eTLD+1.
+    /// Same-site detections (both tracker and non-tracker) are suppressed
+    /// from the privacy dashboard, matching legacy WebKit first-party behavior.
+    public func isSameSiteDetection(_ tracker: TrackerProtectionSubfeature.TrackerDetection) -> Bool {
         let requestETLDplus1 = tld.eTLDplus1(forStringURL: tracker.url)
         let pageETLDplus1 = tld.eTLDplus1(forStringURL: tracker.pageUrl)
 

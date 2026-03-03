@@ -1,0 +1,354 @@
+//
+//  TrackerProtectionEventMapperTests.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+@testable import BrowserServicesKit
+import Common
+import ContentBlocking
+
+final class TrackerProtectionEventMapperTests: XCTestCase {
+
+    private let tld = TLD()
+    private lazy var mapper = TrackerProtectionEventMapper(tld: tld)
+
+    // MARK: - Helpers
+
+    private func makeTracker(
+        url: String = "https://tracker.example/pixel.js",
+        blocked: Bool = true,
+        reason: String? = "default block",
+        isSurrogate: Bool = false,
+        pageUrl: String = "https://example.com",
+        entityName: String? = "Tracker Inc",
+        ownerName: String? = "Tracker Inc",
+        category: String? = "Analytics",
+        prevalence: Double? = 0.1,
+        isAllowlisted: Bool? = false
+    ) -> TrackerProtectionSubfeature.TrackerDetection {
+        let params: [String: Any?] = [
+            "url": url,
+            "blocked": blocked,
+            "reason": reason,
+            "isSurrogate": isSurrogate,
+            "pageUrl": pageUrl,
+            "entityName": entityName,
+            "ownerName": ownerName,
+            "category": category,
+            "prevalence": prevalence,
+            "isAllowlisted": isAllowlisted
+        ]
+        let filtered = params.compactMapValues { $0 }
+        let data = try! JSONSerialization.data(withJSONObject: filtered)
+        return try! JSONDecoder().decode(TrackerProtectionSubfeature.TrackerDetection.self, from: data)
+    }
+
+    private func makeSurrogate(
+        url: String = "https://tracker.example/analytics.js",
+        pageUrl: String = "https://example.com"
+    ) -> TrackerProtectionSubfeature.SurrogateInjection {
+        let params: [String: Any] = [
+            "url": url,
+            "blocked": true,
+            "reason": "matched rule - surrogate",
+            "isSurrogate": true,
+            "pageUrl": pageUrl
+        ]
+        let data = try! JSONSerialization.data(withJSONObject: params)
+        return try! JSONDecoder().decode(TrackerProtectionSubfeature.SurrogateInjection.self, from: data)
+    }
+
+    // MARK: - P0-1: Same-site suppression (strict same eTLD+1)
+
+    func testSameSiteDetection_sameETLDplus1_tracker_returnsTrue() {
+        let tracker = makeTracker(
+            url: "https://cdn.example.com/pixel.js",
+            blocked: true,
+            reason: "default block",
+            pageUrl: "https://www.example.com/page"
+        )
+        XCTAssertTrue(mapper.isSameSiteDetection(tracker))
+    }
+
+    func testSameSiteDetection_sameETLDplus1_thirdPartyRequest_returnsTrue() {
+        let tracker = makeTracker(
+            url: "https://cdn.example.com/image.png",
+            blocked: false,
+            reason: "thirdPartyRequest",
+            pageUrl: "https://www.example.com"
+        )
+        XCTAssertTrue(mapper.isSameSiteDetection(tracker))
+    }
+
+    func testSameSiteDetection_differentETLDplus1_returnsFalse() {
+        let tracker = makeTracker(
+            url: "https://tracker.other.com/pixel.js",
+            pageUrl: "https://www.example.com"
+        )
+        XCTAssertFalse(mapper.isSameSiteDetection(tracker))
+    }
+
+    func testSameSiteDetection_sameHost_returnsTrue() {
+        let tracker = makeTracker(
+            url: "https://example.com/pixel.js",
+            pageUrl: "https://example.com/page"
+        )
+        XCTAssertTrue(mapper.isSameSiteDetection(tracker))
+    }
+
+    func testSameSiteDetection_firstPartyReason_sameETLDplus1_returnsTrue() {
+        let tracker = makeTracker(
+            url: "https://cdn.example.com/script.js",
+            blocked: false,
+            reason: "first party",
+            pageUrl: "https://www.example.com"
+        )
+        XCTAssertTrue(mapper.isSameSiteDetection(tracker))
+    }
+
+    // MARK: - P0-2: Affiliated third-party tracker → ownedByFirstParty
+
+    func testAffiliatedTracker_firstPartyReason_mapsToOwnedByFirstParty() {
+        let tracker = makeTracker(
+            url: "https://connect.facebook.net/sdk.js",
+            blocked: false,
+            reason: "first party",
+            pageUrl: "https://facebook.com",
+            entityName: "Facebook",
+            ownerName: "Facebook, Inc."
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertFalse(request.isBlocked)
+        if case .allowed(let reason) = request.state {
+            XCTAssertEqual(reason, .ownedByFirstParty)
+        } else {
+            XCTFail("Expected allowed state with ownedByFirstParty reason")
+        }
+        XCTAssertEqual(request.ownerName, "Facebook, Inc.")
+        XCTAssertEqual(request.entityName, "Facebook")
+    }
+
+    // MARK: - P0-3: Unaffiliated third-party tracker
+
+    func testUnaffiliatedTracker_blocked_mapsToBlocked() {
+        let tracker = makeTracker(
+            url: "https://tracker.example/pixel.js",
+            blocked: true,
+            reason: "default block",
+            pageUrl: "https://mysite.com"
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertTrue(request.isBlocked)
+        XCTAssertEqual(request.state, .blocked)
+    }
+
+    func testUnaffiliatedTracker_ignored_mapsToOtherThirdPartyRequest() {
+        let tracker = makeTracker(
+            url: "https://tracker.example/pixel.js",
+            blocked: false,
+            reason: "default ignore",
+            pageUrl: "https://mysite.com"
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertFalse(request.isBlocked)
+        if case .allowed(let reason) = request.state {
+            XCTAssertEqual(reason, .otherThirdPartyRequest)
+        } else {
+            XCTFail("Expected allowed state")
+        }
+    }
+
+    // MARK: - P0-4: Non-tracker same-site suppression
+
+    func testThirdPartyRequest_sameSite_isSameSiteDetection() {
+        let tracker = makeTracker(
+            url: "https://cdn.example.com/style.css",
+            blocked: false,
+            reason: "thirdPartyRequest",
+            pageUrl: "https://www.example.com",
+            entityName: nil,
+            ownerName: nil,
+            category: nil,
+            prevalence: nil
+        )
+        XCTAssertTrue(mapper.isSameSiteDetection(tracker))
+    }
+
+    // MARK: - P0-5: Non-tracker affiliated classification
+
+    func testAffiliatedNonTracker_firstPartyReason_mapsToOwnedByFirstParty() {
+        let tracker = makeTracker(
+            url: "https://fbcdn.net/image.jpg",
+            blocked: false,
+            reason: "first party",
+            pageUrl: "https://facebook.com",
+            entityName: "Facebook",
+            ownerName: "Facebook, Inc."
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertFalse(request.isBlocked)
+        if case .allowed(let reason) = request.state {
+            XCTAssertEqual(reason, .ownedByFirstParty)
+        } else {
+            XCTFail("Expected allowed state with ownedByFirstParty reason")
+        }
+        XCTAssertEqual(request.entityName, "Facebook")
+    }
+
+    func testUnaffiliatedNonTracker_thirdPartyRequestReason_mapsToOtherThirdPartyRequest() {
+        let tracker = makeTracker(
+            url: "https://cdn.other.com/lib.js",
+            blocked: false,
+            reason: "thirdPartyRequest",
+            pageUrl: "https://example.com",
+            entityName: nil,
+            ownerName: nil
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertFalse(request.isBlocked)
+        if case .allowed(let reason) = request.state {
+            XCTAssertEqual(reason, .otherThirdPartyRequest)
+        } else {
+            XCTFail("Expected allowed state")
+        }
+    }
+
+    // MARK: - P0-6: pageUrl passthrough
+
+    func testPageUrlPassedThrough_tracker() {
+        let tracker = makeTracker(pageUrl: "https://example.com/page?q=1")
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertEqual(request.pageUrl, "https://example.com/page?q=1")
+    }
+
+    func testPageUrlPassedThrough_surrogate() {
+        let surrogate = makeSurrogate(pageUrl: "https://example.com/page?q=1")
+        let request = mapper.detectedRequest(from: surrogate)
+        XCTAssertEqual(request.pageUrl, "https://example.com/page?q=1")
+    }
+
+    // MARK: - P0-7/P0-8: Surrogate mapping
+
+    func testSurrogateDetection_mapsToBlocked() {
+        let surrogate = makeSurrogate(url: "https://tracker.example/analytics.js")
+        let request = mapper.detectedRequest(from: surrogate)
+        XCTAssertTrue(request.isBlocked)
+        XCTAssertEqual(request.state, .blocked)
+    }
+
+    func testSurrogateHost_extracted() {
+        let surrogate = makeSurrogate(url: "https://tracker.example/analytics.js")
+        let host = mapper.surrogateHost(from: surrogate)
+        XCTAssertEqual(host, "tracker.example")
+    }
+
+    func testSurrogateHost_iframePageUrl() {
+        let surrogate = makeSurrogate(
+            url: "https://tracker.example/analytics.js",
+            pageUrl: "https://example.com/page-with-iframe"
+        )
+        let request = mapper.detectedRequest(from: surrogate)
+        XCTAssertEqual(request.pageUrl, "https://example.com/page-with-iframe")
+        XCTAssertTrue(request.isBlocked)
+    }
+
+    // MARK: - P0-9: FB callback parity — tested via ContentBlockingTabExtension
+
+    // MARK: - isThirdPartyRequest classification
+
+    func testIsThirdPartyRequest_thirdPartyRequestReason_returnsTrue() {
+        let tracker = makeTracker(reason: "thirdPartyRequest")
+        XCTAssertTrue(TrackerProtectionEventMapper.isThirdPartyRequest(tracker))
+    }
+
+    func testIsThirdPartyRequest_defaultBlockReason_returnsFalse() {
+        let tracker = makeTracker(reason: "default block")
+        XCTAssertFalse(TrackerProtectionEventMapper.isThirdPartyRequest(tracker))
+    }
+
+    func testIsThirdPartyRequest_firstPartyReason_returnsFalse() {
+        let tracker = makeTracker(reason: "first party")
+        XCTAssertFalse(TrackerProtectionEventMapper.isThirdPartyRequest(tracker))
+    }
+
+    func testIsThirdPartyRequest_nilReason_returnsFalse() {
+        let tracker = makeTracker(reason: nil)
+        XCTAssertFalse(TrackerProtectionEventMapper.isThirdPartyRequest(tracker))
+    }
+
+    // MARK: - P1-6: Metadata fidelity
+
+    func testMetadataFidelity_allFieldsPreserved() {
+        let tracker = makeTracker(
+            url: "https://tracker.example/pixel.js",
+            blocked: true,
+            reason: "default block",
+            pageUrl: "https://example.com",
+            entityName: "Tracker Inc",
+            ownerName: "Tracker Inc",
+            category: "Analytics",
+            prevalence: 0.42
+        )
+        let request = mapper.detectedRequest(from: tracker)
+
+        XCTAssertEqual(request.url, "https://tracker.example/pixel.js")
+        XCTAssertEqual(request.ownerName, "Tracker Inc")
+        XCTAssertEqual(request.entityName, "Tracker Inc")
+        XCTAssertEqual(request.category, "Analytics")
+        XCTAssertEqual(request.prevalence, 0.42)
+        XCTAssertEqual(request.pageUrl, "https://example.com")
+        XCTAssertNotNil(request.eTLDplus1)
+    }
+
+    func testMetadataFidelity_nilOptionalFieldsPreserved() {
+        let tracker = makeTracker(
+            entityName: nil,
+            ownerName: nil,
+            category: nil,
+            prevalence: nil
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertNil(request.ownerName)
+        XCTAssertNil(request.entityName)
+        XCTAssertNil(request.category)
+        XCTAssertNil(request.prevalence)
+    }
+
+    // MARK: - Unprotected domain reason mapping
+
+    func testUnprotectedDomainReason_mapsToProtectionDisabled() {
+        let tracker = makeTracker(blocked: false, reason: "unprotectedDomain")
+        let request = mapper.detectedRequest(from: tracker)
+        if case .allowed(let reason) = request.state {
+            XCTAssertEqual(reason, .protectionDisabled)
+        } else {
+            XCTFail("Expected allowed state with protectionDisabled")
+        }
+    }
+
+    // MARK: - Rule exception reason mapping
+
+    func testRuleExceptionReason_mapsToRuleException() {
+        let tracker = makeTracker(blocked: false, reason: "matched rule - exception")
+        let request = mapper.detectedRequest(from: tracker)
+        if case .allowed(let reason) = request.state {
+            XCTAssertEqual(reason, .ruleException)
+        } else {
+            XCTFail("Expected allowed state with ruleException")
+        }
+    }
+}

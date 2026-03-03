@@ -149,7 +149,7 @@ extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
 
     func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
                            didDetectTracker tracker: TrackerProtectionSubfeature.TrackerDetection) {
-        if trackerProtectionMapper.isThirdPartyRequestSameSite(tracker) {
+        if trackerProtectionMapper.isSameSiteDetection(tracker) {
             return
         }
 
@@ -162,7 +162,7 @@ extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
 
         trackersSubject.send(DetectedTracker(request: detectedRequest, type: .tracker))
 
-        if tracker.ownerName == fbBlockingEnabledProvider.fbEntity && fbBlockingEnabledProvider.fbBlockingEnabled {
+        if tracker.blocked && tracker.ownerName == fbBlockingEnabledProvider.fbEntity && fbBlockingEnabledProvider.fbBlockingEnabled {
             fbBlockingEnabledProvider.trackerDetected()
         }
     }

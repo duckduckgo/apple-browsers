@@ -32,7 +32,7 @@ extension OnboardingRebranding.OnboardingView {
                     isSelected: !viewModel.isSearchAndAIChatEnabled.wrappedValue,
                     selectedImage: OnboardingRebrandingImages.SearchExperience.searchOn,
                     unselectedImage: OnboardingRebrandingImages.SearchExperience.searchOff,
-                    title: UserText.settingsAIPickerSearchOnly,
+                    title: UserText.Onboarding.SearchExperience.searchOnlyOption,
                     accentColor: onboardingTheme.colorPalette.optionsListIconColor
                 ) {
                     viewModel.isSearchAndAIChatEnabled.wrappedValue = false
@@ -42,7 +42,7 @@ extension OnboardingRebranding.OnboardingView {
                     isSelected: viewModel.isSearchAndAIChatEnabled.wrappedValue,
                     selectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOn,
                     unselectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOff,
-                    title: UserText.settingsAIPickerSearchAndDuckAI,
+                    title: UserText.Onboarding.SearchExperience.searchAndDuckAIOption,
                     accentColor: onboardingTheme.colorPalette.optionsListIconColor
                 ) {
                     viewModel.isSearchAndAIChatEnabled.wrappedValue = true
@@ -70,7 +70,7 @@ private struct PickerOption: View {
                     .renderingMode(.original)
                     .resizable()
                     .scaledToFit()
-                    .frame(height: PickerMetrics.imageHeight)
+                    .frame(height: PickerMetrics.imageHeight, alignment: .top)
 
                 Text(title)
                     .font(onboardingTheme.typography.small)

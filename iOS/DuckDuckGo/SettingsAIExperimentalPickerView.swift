@@ -36,7 +36,7 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: !isDuckAISelected,
                 selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAIActive : .searchExperimentalOn,
                 unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAI : .searchExperimentalOff,
-                title: UserText.settingsAIPickerSearchOnly,
+                title: UserText.Onboarding.SearchExperience.searchOnlyOption,
                 showNewBadge: false
             ) {
                 isDuckAISelected = false
@@ -46,7 +46,7 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: isDuckAISelected,
                 selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAIActive : .aiExperimentalOn,
                 unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAI : .aiExperimentalOff,
-                title: UserText.settingsAIPickerSearchAndDuckAI,
+                title: UserText.Onboarding.SearchExperience.searchAndDuckAIOption,
                 showNewBadge: false
             ) {
                 isDuckAISelected = true
@@ -81,7 +81,7 @@ private struct PickerOptionView: View {
                 Image(isSelected ? selectedImage : unselectedImage)
                     .resizable()
                     .scaledToFit()
-                    .frame(height: shouldUseVerticalLayout ? SettingsAIExperimentalPickerViewLayout.imageHeight : nil)
+                    .frame(height: shouldUseVerticalLayout ? SettingsAIExperimentalPickerViewLayout.imageHeight : nil, alignment: .top)
 
                 textAndBadgeView
 
@@ -111,10 +111,12 @@ private struct PickerOptionView: View {
                 Text(title)
                     .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
                 if showNewBadge {
                     BadgeView(text: UserText.settingsItemNewBadge)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
     

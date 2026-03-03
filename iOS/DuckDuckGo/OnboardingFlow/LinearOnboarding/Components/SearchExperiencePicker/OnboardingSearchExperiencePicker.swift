@@ -23,7 +23,6 @@ struct OnboardingSearchExperiencePicker: View {
     @ObservedObject var viewModel: OnboardingSearchExperiencePickerViewModel
 
     var body: some View {
-        SettingsAIExperimentalPickerView(
-            isDuckAISelected: viewModel.isSearchAndAIChatEnabled)
+        SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.isSearchAndAIChatEnabled)
     }
 }

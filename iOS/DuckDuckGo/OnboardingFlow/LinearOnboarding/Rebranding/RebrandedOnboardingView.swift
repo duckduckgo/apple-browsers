@@ -46,7 +46,7 @@ private enum BubbleBackedDialogMetrics {
 enum OnboardingBubbleAnimationMetrics {
     /// How long the bubble takes to resize between steps
     static let bubbleResizeAnimationDuration: TimeInterval = 0.25
-    /// How long to wait before triggering state change after content fades out
+    /// How long to wait before triggering state change after content is hidden
     static let contentFadeOutDelay: TimeInterval = 0.15
     /// How long to wait before fading in new content (includes bubble resize duration plus buffer)
     static let contentFadeInDelay: TimeInterval = 0.3
@@ -475,7 +475,7 @@ extension OnboardingRebranding {
         /// Animates bubble content with a hide → optional action → show sequence.
         ///
         /// This three-phase sequence prevents cross-fading between old and new content:
-        /// 1. Hide current content (sets opacity to 0)
+        /// 1. Hide current content immediately (no fade-out animation)
         /// 2. Optionally execute action after brief delay (triggers state change and bubble resize)
         /// 3. Show new content after bubble finishes resizing
         ///
@@ -486,7 +486,7 @@ extension OnboardingRebranding {
             showBubbleContent = false
 
             if let action {
-                // Phase 2: After content fades out, trigger the action
+                // Phase 2: After content is hidden, trigger the action
                 DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeOutDelay) {
                     // Call action without animation wrapper
                     // The bubble resize animation is handled by .animation(..., value: state.type) modifier on the bubble view

@@ -120,5 +120,67 @@
             ["platform", "form_factor"]
         ],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_web_extension_dark_reader_installed": {
+        "description": "Fires when the embedded (bundled) Dark Reader extension is successfully installed for the first time.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "m_web_extension_dark_reader_upgraded": {
+        "description": "Fires when the embedded (bundled) Dark Reader extension is upgraded to a newer version.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "from_version",
+                "type": "string",
+                "description": "The previous version of the embedded Dark Reader extension before upgrade"
+            },
+            {
+                "key": "to_version",
+                "type": "string",
+                "description": "The new version of the embedded Dark Reader extension after upgrade"
+            }
+        ]
+    },
+    "m_web_extension_dark_reader_install_error": {
+        "description": "Fires when installing or upgrading the embedded (bundled) Dark Reader extension fails.",
+        "owners": ["dus7"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_web_extension_dark_reader_enabled": {
+        "description": "Fires when the user enables the Dark Reader extension in settings.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
+    },
+    "m_web_extension_dark_reader_disabled": {
+        "description": "Fires when the user disables the Dark Reader extension in settings.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["appVersion"]
     }
 }

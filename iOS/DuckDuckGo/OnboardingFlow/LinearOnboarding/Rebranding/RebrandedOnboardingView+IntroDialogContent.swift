@@ -91,7 +91,7 @@ extension OnboardingRebranding.OnboardingView {
         /// Handles the transition from intro to skip onboarding dialog with proper animation timing.
         ///
         /// This function orchestrates a three-phase animation sequence:
-        /// 1. Hide current content (sets opacity to 0 via parent's showContent binding)
+        /// 1. Hide current content immediately (no fade-out animation)
         /// 2. Switch to skip dialog and animate bubble resize
         /// 3. Show new content after bubble finishes resizing
         ///
@@ -99,7 +99,7 @@ extension OnboardingRebranding.OnboardingView {
         /// Unlike state.type changes which trigger the parent's .animation() modifier, this internal
         /// view switch requires an explicit animation context to smoothly resize the bubble.
         private func showSkipOnboardingDialog() {
-            // Phase 1: Hide current content
+            // Phase 1: Hide current content immediately
             showContent = false
             skipAction()
 

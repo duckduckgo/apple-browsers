@@ -87,13 +87,16 @@ final class IdleReturnEvaluator: IdleReturnEvaluating {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let debugOverridesStorage: any KeyedStoring<IdleReturnDebugOverridesKeys>
+    private let idleReturnEligibilityManager: IdleReturnEligibilityManaging?
 
     init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil) {
+         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging? = nil) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.debugOverridesStorage = if let debugOverridesStorage { debugOverridesStorage } else { UserDefaults.app.keyedStoring() }
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
     }
 
     func shouldShowNTPAfterIdle(lastBackgroundDate: Date?) -> Bool {
@@ -101,6 +104,9 @@ final class IdleReturnEvaluator: IdleReturnEvaluating {
             return false
         }
         guard let lastBackgroundDate else {
+            return false
+        }
+        guard idleReturnEligibilityManager?.isEligibleForNTPAfterIdle() ?? true else {
             return false
         }
         let thresholdSeconds = idleThresholdSeconds()

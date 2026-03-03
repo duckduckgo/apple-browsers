@@ -39,6 +39,7 @@ private enum ComparisonTableMetrics {
     static let availabilityIconSize: CGFloat = 24
     static let statusColumnWidth: CGFloat = 36
     static let statusColumnSpacing: CGFloat = 8
+    static let circleCheckViewSize: CGFloat = 20
 
     // Separator
     static let separatorColor = Color(singleUseColor: .rebranding(.decorationPrimary))
@@ -152,7 +153,7 @@ private struct FeatureRow: View {
         switch availableFeatureAnimation {
         case let .animated(startAnimation, staggeredDelay) where feature.ddgAvailability == .available:
             CircleCheckView(
-                size: ComparisonTableMetrics.availabilityIconSize,
+                size: ComparisonTableMetrics.circleCheckViewSize,
                 shouldAnimate: startAnimation,
                 staggerDelay: staggeredDelay * Double(index + 1)
             )
@@ -217,7 +218,7 @@ struct CircleCheckView: View {
         ZStack {
             // 1. Background circle
             Circle()
-                .fill(.green)
+                .fill(Color.green50)
                 .frame(width: size, height: size)
                 .scaleEffect(circleScale)
 

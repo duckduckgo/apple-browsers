@@ -80,6 +80,13 @@ final class SettingsViewModel: ObservableObject {
         )
     }()
 
+    private var afterInactivityStorage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> {
+        keyValueStore.throwingKeyedStoring()
+    }
+
+    /// Same source as IdleReturnEvaluator (debug override, then remote config) for footer display.
+    private lazy var idleReturnDebugOverridesStorage: any KeyedStoring<IdleReturnDebugOverridesKeys> = UserDefaults.app.keyedStoring()
+
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
 
@@ -346,6 +353,28 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.privacyStore.authenticationEnabled = $0
                 self.state.applicationLock = $0
+            }
+        )
+    }
+
+    var shouldShowNTPAfterIdleSetting: Bool {
+        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+    }
+
+    /// Formatted idle threshold from remote config (same source as IdleReturnEvaluator). Used in settings footer.
+    var idletimeInterval: String {
+        formattedIdleThreshold(from: idleThresholdSecondsForDisplay())
+    }
+
+    var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
+        Binding<AfterInactivityOption>(
+            get: {
+                let resolver = AfterInactivityEffectiveOptionResolver(storage: self.afterInactivityStorage)
+                return resolver.resolveEffectiveOption()
+            },
+            set: {
+                try? self.afterInactivityStorage.set($0.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+                self.objectWillChange.send()
             }
         )
     }
@@ -929,6 +958,44 @@ extension SettingsViewModel {
         try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
         shouldShowSetAsDefaultBrowser = false
         shouldShowImportPasswords = false
+    }
+
+    private func idleThresholdSecondsForDisplay() -> Int {
+        if let overrideSeconds: Int = idleReturnDebugOverridesStorage.thresholdSecondsOverride, overrideSeconds > 0 {
+            return overrideSeconds
+        }
+        typealias IdleReturnEvaluatorConstants = IdleReturnEvaluator.IdleReturnEvaluatorConstants
+        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: IdleReturnEvaluatorConstants.subfeature),
+              let jsonData = settings.data(using: .utf8) else {
+            return IdleReturnEvaluatorConstants.defaultIdleThresholdSeconds
+        }
+        do {
+            if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+               let value = settingsDict[IdleReturnEvaluatorConstants.idleThresholdSecondsSettingKey] as? NSNumber,
+               value.intValue >= 0 {
+                return value.intValue
+            }
+        } catch {
+            Logger.general.debug("Idle return NTP idleThresholdSeconds parse failed: \(error.localizedDescription)")
+        }
+        return IdleReturnEvaluatorConstants.defaultIdleThresholdSeconds
+    }
+
+    /// Formats idle threshold seconds for settings footer (e.g. "1 minute", "5 minutes", "1 hour", "2 hours").
+    private func formattedIdleThreshold(from seconds: Int) -> String {
+        let oneHour = 3600
+        if seconds >= oneHour {
+            let hours = seconds / oneHour
+            if hours == 1 {
+                return UserText.settingsAfterInactivityIdleIntervalHourSingular
+            }
+            return String(format: UserText.settingsAfterInactivityIdleIntervalHoursFormat, hours)
+        }
+        let minutes = seconds / 60
+        if minutes <= 1 {
+            return UserText.settingsAfterInactivityIdleIntervalPlaceholder
+        }
+        return String(format: UserText.settingsAfterInactivityIdleIntervalMinutesFormat, minutes)
     }
 }
 

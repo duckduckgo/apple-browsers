@@ -1956,6 +1956,7 @@
 		CBAD0F252D02EE49006267B8 /* LastBackgroundDateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F242D02EE48006267B8 /* LastBackgroundDateStore.swift */; };
 		CBAD0F272D02EE4B006267B8 /* AfterInactivitySettingStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F262D02EE4A006267B8 /* AfterInactivitySettingStorage.swift */; };
 		CBAD0F2B2D02EE4E006267B8 /* AfterInactivityEffectiveOptionResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F2A2D02EE4D006267B8 /* AfterInactivityEffectiveOptionResolver.swift */; };
+		CBAD0F3B2D02EE5B006267B8 /* IdleReturnCohort.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F3A2D02EE5B006267B8 /* IdleReturnCohort.swift */; };
 		CBAD0F2D2D02EE50006267B8 /* IdleReturnEligibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F2C2D02EE4F006267B8 /* IdleReturnEligibilityManager.swift */; };
 		CBAD0F312D02EE50006267B8 /* IdleReturnEligibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F302D02EE50006267B8 /* IdleReturnEligibilityManagerTests.swift */; };
 		CBAD0F332D02EE50006267B8 /* AfterInactivityEffectiveOptionResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBAD0F322D02EE50006267B8 /* AfterInactivityEffectiveOptionResolverTests.swift */; };
@@ -4484,6 +4485,7 @@
 		CBAD0F242D02EE48006267B8 /* LastBackgroundDateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastBackgroundDateStore.swift; sourceTree = "<group>"; };
 		CBAD0F262D02EE4A006267B8 /* AfterInactivitySettingStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterInactivitySettingStorage.swift; sourceTree = "<group>"; };
 		CBAD0F2A2D02EE4D006267B8 /* AfterInactivityEffectiveOptionResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterInactivityEffectiveOptionResolver.swift; sourceTree = "<group>"; };
+		CBAD0F3A2D02EE5B006267B8 /* IdleReturnCohort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleReturnCohort.swift; sourceTree = "<group>"; };
 		CBAD0F2C2D02EE4F006267B8 /* IdleReturnEligibilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleReturnEligibilityManager.swift; sourceTree = "<group>"; };
 		CBAD0F302D02EE50006267B8 /* IdleReturnEligibilityManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleReturnEligibilityManagerTests.swift; sourceTree = "<group>"; };
 		CBAD0F322D02EE50006267B8 /* AfterInactivityEffectiveOptionResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterInactivityEffectiveOptionResolverTests.swift; sourceTree = "<group>"; };
@@ -9248,6 +9250,7 @@
 				CBAD0F1A2D02EE41006267B8 /* IdleReturnEvaluator.swift */,
 				CBAD0F262D02EE4A006267B8 /* AfterInactivitySettingStorage.swift */,
 				CBAD0F2A2D02EE4D006267B8 /* AfterInactivityEffectiveOptionResolver.swift */,
+				CBAD0F3A2D02EE5B006267B8 /* IdleReturnCohort.swift */,
 				CBAD0F2C2D02EE4F006267B8 /* IdleReturnEligibilityManager.swift */,
 				CBAD0F242D02EE48006267B8 /* LastBackgroundDateStore.swift */,
 				CBAD0EF72CFE1D14006267B8 /* AppStates */,
@@ -11685,6 +11688,7 @@
 				CBAD0F1B2D02EE42006267B8 /* IdleReturnEvaluator.swift in Sources */,
 				CBAD0F272D02EE4B006267B8 /* AfterInactivitySettingStorage.swift in Sources */,
 				CBAD0F2B2D02EE4E006267B8 /* AfterInactivityEffectiveOptionResolver.swift in Sources */,
+				CBAD0F3B2D02EE5B006267B8 /* IdleReturnCohort.swift in Sources */,
 				CBAD0F2D2D02EE50006267B8 /* IdleReturnEligibilityManager.swift in Sources */,
 				CBAD0F252D02EE49006267B8 /* LastBackgroundDateStore.swift in Sources */,
 				CB3C788A2D06D3A700A7E4ED /* Background.swift in Sources */,

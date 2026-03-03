@@ -133,7 +133,7 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
-    private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    let idleReturnEligibilityManager: IdleReturnEligibilityManaging
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool

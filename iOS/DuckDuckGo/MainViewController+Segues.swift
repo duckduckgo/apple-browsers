@@ -424,11 +424,6 @@ extension MainViewController {
             imageLoader: remoteMessagingImageLoader,
             featureFlagger: featureFlagger)
 
-        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
-            featureFlagger: featureFlagger,
-            keyValueStore: keyValueStore,
-            privacyConfigurationManager: privacyConfigurationManager
-        )
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                   subscriptionFeatureAvailability: subscriptionFeatureAvailability,

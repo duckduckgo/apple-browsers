@@ -62,7 +62,7 @@ final class StartupPerformanceTests: XCTestCase {
         /// Quit properly to save state, then relaunch to trigger restoration
         application.typeKey("q", modifierFlags: [.command])
 
-        /// Lalaunch
+        /// Launch
         application.launch()
 
         let attachment = try application.buildStartupMetricsAttachment()

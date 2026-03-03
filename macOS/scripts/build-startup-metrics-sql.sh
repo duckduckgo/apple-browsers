@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-# extract_test_attachments.sh
+# build-startup-metrics-sql.sh
 #
 # Extracts startup time metrics from xcresult bundle test
 # attachments and generates SQL insert statements for ClickHouse
 # reporting.
 #
-# Usage: extract_test_attachments.sh --runner <runner> --xcresult-path <path> --suite <suite> --run-id <id> --branch <branch> --commit-hash <hash> --start-time <time>
+# Usage: build-startup-metrics-sql.sh --runner <runner> --xcresult-path <path> --suite <suite> --run-id <id> --branch <branch> --commit-hash <hash> --start-time <time>
 #
 # Required:
 #   --runner        - The runner identifier (e.g., "macos-15-xlarge")

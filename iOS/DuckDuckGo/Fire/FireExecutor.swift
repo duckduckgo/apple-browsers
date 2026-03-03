@@ -97,6 +97,7 @@ class FireExecutor: FireExecuting {
     private weak var bookmarksDatabaseCleaner: BookmarkDatabaseCleaning?
     private let fireproofing: Fireproofing
     private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
+    private let autoconsentManagementProvider: AutoconsentManagementProviding
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
     private let dataClearingCapability: DataClearingCapable
@@ -122,6 +123,7 @@ class FireExecutor: FireExecuting {
          bookmarksDatabaseCleaner: BookmarkDatabaseCleaning,
          fireproofing: Fireproofing,
          textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
+         autoconsentManagementProvider: AutoconsentManagementProviding,
          historyManager: HistoryManaging,
          featureFlagger: FeatureFlagger,
          dataClearingCapability: DataClearingCapable? = nil,
@@ -139,6 +141,7 @@ class FireExecutor: FireExecuting {
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
         self.fireproofing = fireproofing
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
+        self.autoconsentManagementProvider = autoconsentManagementProvider
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
         self.dataClearingCapability = dataClearingCapability ?? DataClearingCapability.create(using: featureFlagger)
@@ -338,7 +341,7 @@ class FireExecutor: FireExecuting {
         await websiteDataManager.clear(dataStore: storeToUse)
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.count)"])
 
-        AutoconsentManagement.shared.clearCache()
+        autoconsentManagementProvider.management(for: .normal).clearCache()
         daxDialogsManager.clearHeldURLData()
 
         if self.syncService.authState == .inactive {
@@ -369,7 +372,7 @@ class FireExecutor: FireExecuting {
         async let contextualChatTask: Void = deleteContextualChatIfNeeded(tabViewModel: tabViewModel)
         
         // Sync tasks
-        AutoconsentManagement.shared.clearCache(forDomains: domains)
+        autoconsentManagementProvider.management(for: tabViewModel.tab.autoconsentContext).clearCache(forDomains: domains)
         forgetTextZoom(forDomains: domains)
         
         // Await async tasks

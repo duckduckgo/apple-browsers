@@ -74,7 +74,10 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     public var subscriptionURL: SubscriptionURL?
     public func url(for type: SubscriptionURL) -> URL {
         subscriptionURL = type
-        return resultURL
+        if let resultURL {
+            return resultURL
+        }
+        return type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
     }
 
     public var urlForPurchaseFromRedirect: URL!

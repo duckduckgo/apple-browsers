@@ -119,6 +119,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockSyncService: MockDDGSyncing!
     private var mockFireproofing: MockFireproofing!
     private var mockTextZoomCoordinatorProvider: MockTextZoomCoordinatorProvider!
+    private var mockAutoconsentManagementProvider: MockAutoconsentManagementProvider!
     private var mockHistoryManager: MockHistoryManager!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockDataClearingCapability: MockDataClearingCapability!
@@ -142,6 +143,7 @@ final class FireExecutorTests: XCTestCase {
         mockSyncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
         mockFireproofing = MockFireproofing(domains: [])
         mockTextZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()
+        mockAutoconsentManagementProvider = MockAutoconsentManagementProvider()
         mockHistoryManager = MockHistoryManager()
         mockFeatureFlagger = MockFeatureFlagger()
         mockDataClearingCapability = MockDataClearingCapability()
@@ -165,6 +167,7 @@ final class FireExecutorTests: XCTestCase {
         mockSyncService = nil
         mockFireproofing = nil
         mockTextZoomCoordinatorProvider = nil
+        mockAutoconsentManagementProvider = nil
         mockHistoryManager = nil
         mockFeatureFlagger = nil
         mockDataClearingCapability = nil
@@ -191,6 +194,7 @@ final class FireExecutorTests: XCTestCase {
             bookmarksDatabaseCleaner: bookmarksDatabaseCleaner ?? mockBookmarkDatabaseCleaner,
             fireproofing: fireproofing ?? mockFireproofing,
             textZoomCoordinatorProvider: mockTextZoomCoordinatorProvider,
+            autoconsentManagementProvider: mockAutoconsentManagementProvider,
             historyManager: mockHistoryManager,
             featureFlagger: mockFeatureFlagger,
             dataClearingCapability: mockDataClearingCapability,

@@ -88,6 +88,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let featureFlagger: FeatureFlagger
     private let contentScopeExperimentManager: ContentScopeExperimentsManaging
     private let textZoomCoordinatorProvider: TextZoomCoordinatorProviding
+    private let autoconsentManagementProvider: AutoconsentManagementProviding
     private let fireproofing: Fireproofing
     private let websiteDataManager: WebsiteDataManaging
     private let appSettings: AppSettings
@@ -103,6 +104,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private var webExtensionManager: WebExtensionManaging?
     private let launchSourceManager: LaunchSourceManaging
+    private let darkReaderFeatureSettings: DarkReaderFeatureSettings
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -129,6 +131,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          appSettings: AppSettings,
          textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
+         autoconsentManagementProvider: AutoconsentManagementProviding,
          websiteDataManager: WebsiteDataManaging,
          fireproofing: Fireproofing,
          maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
@@ -141,7 +144,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          privacyStats: PrivacyStatsProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
-         launchSourceManager: LaunchSourceManaging
+         launchSourceManager: LaunchSourceManaging,
+         darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
         self.model = model
         self.persistence = persistence
@@ -161,6 +165,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.contentScopeExperimentManager = contentScopeExperimentManager
         self.appSettings = appSettings
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
+        self.autoconsentManagementProvider = autoconsentManagementProvider
         self.websiteDataManager = websiteDataManager
         self.fireproofing = fireproofing
         self.maliciousSiteProtectionManager = maliciousSiteProtectionManager
@@ -174,6 +179,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.privacyStats = privacyStats
         self.voiceSearchHelper = voiceSearchHelper
         self.launchSourceManager = launchSourceManager
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
         registerForNotifications()
     }
 
@@ -205,6 +211,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         )
 
         let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: tab.textZoomContext)
+        let autoconsentManagement = autoconsentManagementProvider.management(for: tab.autoconsentContext)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
@@ -219,6 +226,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               featureFlagger: featureFlagger,
                                                               contentScopeExperimentManager: contentScopeExperimentManager,
                                                               textZoomCoordinator: textZoomCoordinator,
+                                                              autoconsentManagement: autoconsentManagement,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
                                                               tabInteractionStateSource: interactionStateSource,
@@ -230,7 +238,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
                                                               privacyStats: privacyStats,
-                                                              voiceSearchHelper: voiceSearchHelper)
+                                                              voiceSearchHelper: voiceSearchHelper,
+                                                              darkReaderFeatureSettings: darkReaderFeatureSettings)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -329,6 +338,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         )
 
         let textZoomCoordinator = textZoomCoordinatorProvider.coordinator(for: tab.textZoomContext)
+        let autoconsentManagement = autoconsentManagementProvider.management(for: tab.autoconsentContext)
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
@@ -343,6 +353,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               featureFlagger: featureFlagger,
                                                               contentScopeExperimentManager: contentScopeExperimentManager,
                                                               textZoomCoordinator: textZoomCoordinator,
+                                                              autoconsentManagement: autoconsentManagement,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
                                                               tabInteractionStateSource: interactionStateSource,
@@ -354,7 +365,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
                                                               privacyStats: privacyStats,
-                                                              voiceSearchHelper: voiceSearchHelper)
+                                                              voiceSearchHelper: voiceSearchHelper,
+                                                              darkReaderFeatureSettings: darkReaderFeatureSettings)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

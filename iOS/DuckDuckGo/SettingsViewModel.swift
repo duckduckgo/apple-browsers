@@ -596,6 +596,10 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.darkReaderFeatureSettings.setForceDarkModeEnabled($0)
                 self.state.forceWebsiteDarkMode = $0
+                DailyPixel.fireDailyAndCount(
+                    pixel: $0 ? .webExtensionDarkReaderEnabled : .webExtensionDarkReaderDisabled,
+                    pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+                )
             }
         )
     }

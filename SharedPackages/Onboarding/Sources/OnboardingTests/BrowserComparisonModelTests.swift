@@ -23,7 +23,7 @@ final class BrowserComparisonModelTests: XCTestCase {
 
     func testBrowserComparisonFeaturePrivateSearchIsCorrect() throws {
         // WHEN
-        let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .privateSearch })?.type.title)
+        let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures(locale: Locale(identifier: "en_US")).first(where: { $0.type == .privateSearch })?.type.title)
 
         // THEN
         XCTAssertEqual(result, BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch)
@@ -32,7 +32,7 @@ final class BrowserComparisonModelTests: XCTestCase {
 
     func testBrowserComparisonFeatureBlockThirdPartyTrackersIsCorrect() throws {
         // WHEN
-        let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .blockThirdPartyTrackers })?.type.title)
+        let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures(locale: Locale(identifier: "en_US")).first(where: { $0.type == .blockThirdPartyTrackers })?.type.title)
 
         // THEN
         XCTAssertEqual(result, BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.trackerBlockers)
@@ -40,7 +40,7 @@ final class BrowserComparisonModelTests: XCTestCase {
 
     func testBrowserComparisonFeatureBlockCookiePopupsIsCorrect() throws {
         // WHEN
-        let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .blockCookiePopups })?.type.title)
+        let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures(locale: Locale(identifier: "en_US")).first(where: { $0.type == .blockCookiePopups })?.type.title)
 
         // THEN
         XCTAssertEqual(result, BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopups)
@@ -48,7 +48,7 @@ final class BrowserComparisonModelTests: XCTestCase {
 
     func testBrowserComparisonFeatureBlockCreepyAdsIsCorrect() throws {
         // WHEN
-        let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .blockCreepyAds })?.type.title)
+        let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures(locale: Locale(identifier: "en_US")).first(where: { $0.type == .blockCreepyAds })?.type.title)
 
         // THEN
         XCTAssertEqual(result, BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.creepyAds)
@@ -56,10 +56,29 @@ final class BrowserComparisonModelTests: XCTestCase {
 
     func testWhenIsNotHighlightsThenBrowserComparisonFeatureEraseBrowsingDataIsCorrect() throws {
         // WHEN
-        let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .eraseBrowsingData })?.type.title)
+        let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures(locale: Locale(identifier: "es_ES")).first(where: { $0.type == .eraseBrowsingData })?.type.title)
 
         // THEN
         XCTAssertEqual(result, BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.eraseBrowsingData)
+    }
+
+    func testWhenLanguageIsEnglishThenAIChatRowIsSecond() throws {
+#if os(iOS)
+        let englishFeatures = BrowsersComparisonModel.privacyFeatures(locale: Locale(identifier: "en_US"))
+        XCTAssertGreaterThan(englishFeatures.count, 1)
+        XCTAssertEqual(englishFeatures[1].type, .privateAIChat)
+#else
+        throw XCTSkip("iOS-specific ordering test")
+#endif
+    }
+
+    func testWhenLanguageIsEnglishThenEraseBrowsingDataRowIsRemoved() throws {
+#if os(iOS)
+        let englishFeatures = BrowsersComparisonModel.privacyFeatures(locale: Locale(identifier: "en_US"))
+        XCTAssertNil(englishFeatures.first(where: { $0.type == .eraseBrowsingData }))
+#else
+        throw XCTSkip("iOS-specific variant test")
+#endif
     }
 
 }

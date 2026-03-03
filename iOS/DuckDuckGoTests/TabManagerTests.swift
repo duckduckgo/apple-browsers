@@ -154,6 +154,7 @@ final class TabManagerTests: XCTestCase {
                           contentScopeExperimentManager: MockContentScopeExperimentManager(),
                           appSettings: AppSettingsMock(),
                           textZoomCoordinatorProvider: MockTextZoomCoordinatorProvider(),
+                          autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                           websiteDataManager: MockWebsiteDataManager(),
                           fireproofing: MockFireproofing(),
                           maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
@@ -165,7 +166,8 @@ final class TabManagerTests: XCTestCase {
                           productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                           privacyStats: MockPrivacyStats(),
                           voiceSearchHelper: MockVoiceSearchHelper(),
-                          launchSourceManager: launchSourceManager)
+                          launchSourceManager: launchSourceManager,
+                          darkReaderFeatureSettings: MockDarkReaderFeatureSettings())
     }
 
 }

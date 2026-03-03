@@ -111,6 +111,9 @@ extension OnboardingRebranding.OnboardingView {
             static let textOpacityDelay: TimeInterval = 0.393
             static let textOpacityDuration: TimeInterval = 0.221
 
+            // Exit animations (fade out logo and text)
+            static let exitFadeDuration: TimeInterval = 0.3
+
             // Lottie playback parameters
             static let logoLottieFPS: Double = 30
             static let logoLottieTotalFrames: Double = 60
@@ -124,7 +127,7 @@ extension OnboardingRebranding.OnboardingView {
             static let illustrationLottiePlaybackDuration: TimeInterval = (illustrationLottieTotalFrames - illustrationLottieStartFrame) / illustrationLottieFPS
 
             /// Time from `.onAppear` until every entrance animation (SwiftUI + Lottie) has finished.
-            static var totalDuration: TimeInterval {
+            static var entranceDuration: TimeInterval {
                 max(
                     groupScaleDelay + groupScaleDuration,
                     groupOffsetDelay + groupOffsetDuration,
@@ -136,6 +139,11 @@ extension OnboardingRebranding.OnboardingView {
                 )
             }
 
+            /// Time from `.onAppear` until all animations (entrance + exit) have finished.
+            static var totalDuration: TimeInterval {
+                entranceDuration + exitFadeDuration
+            }
+
             // MARK: SwiftUI Animations
 
             static let groupScaleAnimation: Animation = .timingCurve(0.66, 0, 0.34, 1, duration: groupScaleDuration).delay(groupScaleDelay)
@@ -143,6 +151,7 @@ extension OnboardingRebranding.OnboardingView {
             static let logoScaleAnimation: Animation = .timingCurve(0.26, 0.642, 0.48, 1.0, duration: logoScaleDuration).delay(logoScaleDelay)
             static let textOffsetAnimation: Animation = .timingCurve(0.4, 0.774, 0.74, 1.0, duration: textOffsetDuration).delay(textOffsetDelay)
             static let textOpacityAnimation: Animation = .timingCurve(0.333, 0, 0.667, 1.0, duration: textOpacityDuration).delay(textOpacityDelay)
+            static let exitFadeAnimation: Animation = .easeOut(duration: exitFadeDuration)
         }
 
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -191,6 +200,7 @@ extension OnboardingRebranding.OnboardingView {
                     .matchedGeometryEffect(id: OnboardingView.daxGeometryEffectID, in: animationNamespace)
                     .frame(width: Metrics.logoSize, height: Metrics.logoSize)
                     .scaleEffect(logo.scale)
+                    .opacity(logo.opacity)
 
                 // Text
                 Text(UserText.onboardingWelcomeHeader)
@@ -252,9 +262,22 @@ extension OnboardingRebranding.OnboardingView {
 
             // Background: no SwiftUI animation — Lottie plays from frame 22 internally
 
-            // Notify parent when all animations (SwiftUI + Lottie) have finished
+            // After entrance animations complete, fade out logo and text
+            DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.entranceDuration) {
+                animateExit()
+            }
+
+            // Notify parent when all animations (entrance + exit) have finished
             DispatchQueue.main.asyncAfter(deadline: .now() + LandingAnimationTiming.totalDuration) {
                 onAnimationComplete()
+            }
+        }
+
+        private func animateExit() {
+            // Fade out logo and text
+            withAnimation(LandingAnimationTiming.exitFadeAnimation) {
+                logo.opacity = 0
+                text.opacity = 0
             }
         }
     }

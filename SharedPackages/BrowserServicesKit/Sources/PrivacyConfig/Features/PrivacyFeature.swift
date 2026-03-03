@@ -377,6 +377,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case supportsSyncChatsDeletion
 
     case sidebarResizable
+
+    /// Enables support for adding multiple page contexts to a single chat session
+    case multiplePageContexts
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -611,4 +614,10 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .webExtensions }
 
     case embeddedExtension
+}
+
+public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .forceDarkModeOnWebsites }
+
+    case featureRollout
 }

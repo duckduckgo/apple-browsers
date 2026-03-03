@@ -162,7 +162,8 @@ final class MainCoordinator {
                                 sharedSecureVault: sharedSecureVault,
                                 privacyStats: privacyStats,
                                 voiceSearchHelper: voiceSearchHelper,
-                                launchSourceManager: launchSourceManager)
+                                launchSourceManager: launchSourceManager,
+                                darkReaderFeatureSettings: darkReaderFeatureSettings)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,

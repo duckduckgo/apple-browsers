@@ -228,7 +228,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
-            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync)
+            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync),
+            supportsMultipleContexts: supportsContextualMode && featureFlagger.isFeatureOn(.multiplePageContexts)
         )
     }
 

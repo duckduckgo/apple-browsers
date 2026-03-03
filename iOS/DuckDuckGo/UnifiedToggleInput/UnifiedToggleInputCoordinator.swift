@@ -212,7 +212,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
                     self.models = remoteModels.map { AIChatModel(remoteModel: $0) }
                     self.updateModelChip()
                     self.viewController.setModelMenu(self.makeModelMenu())
-                    self.viewController.updateAttachButtonVisibility(supportsImageUpload: self.selectedModelSupportsImageUpload)
+                    self.viewController.updateAttachButtonVisibility(supportsImageUpload: self.selectedModelSupportsImageUpload && self.pendingAttachments.count < 4)
                 }
             } catch {
                 Logger.aiChat.error("Failed to fetch models: \(error)")
@@ -247,10 +247,34 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     private func nativePromptImages(from attachments: [AIChatImageAttachment]) -> [AIChatNativePrompt.NativePromptImage]? {
         guard !attachments.isEmpty else { return nil }
         let images = attachments.compactMap { attachment -> AIChatNativePrompt.NativePromptImage? in
-            guard let data = attachment.image.pngData() else { return nil }
+            let resizedImage = Self.resizeIfNeeded(attachment.image, maxDimension: 512)
+            guard let data = resizedImage.pngData() else { return nil }
             return AIChatNativePrompt.NativePromptImage(data: data.base64EncodedString(), format: "png")
         }
         return images.isEmpty ? nil : images
+    }
+
+    private static func resizeIfNeeded(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+
+        guard size.width > maxDimension || size.height > maxDimension else {
+            return image
+        }
+
+        let aspectRatio = size.width / size.height
+        let newSize: CGSize
+        if size.width > size.height {
+            newSize = CGSize(width: maxDimension, height: maxDimension / aspectRatio)
+        } else {
+            newSize = CGSize(width: maxDimension * aspectRatio, height: maxDimension)
+        }
+
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 
     private func resetInputState() {
@@ -288,6 +312,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 viewController.setAttachments([])
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text)
+                pendingAttachments.removeAll()
+                viewController.setAttachments([])
             }
         }
     }

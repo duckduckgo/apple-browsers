@@ -71,7 +71,7 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
     func testMenuItemAction_IsRunUpdateFromMenuItem() {
         let menuItem = SparkleUpdateMenuItemFactory.menuItem(for: mockController)
 
-        XCTAssertEqual(menuItem.action, #selector(SparkleUpdateController.runUpdateFromMenuItem))
+        XCTAssertEqual(menuItem.action, #selector(SparkleUpdateControllerObjC.runUpdateFromMenuItem))
     }
 
     // MARK: - Image Test
@@ -85,11 +85,11 @@ final class SparkleUpdateMenuItemFactoryTests: XCTestCase {
 
 // MARK: - Mock
 
-private final class MockSparkleUpdateController: NSObject, SparkleUpdateController {
+private final class MockSparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     var isAtRestartCheckpoint = false
 
-    // MARK: - SparkleUpdateController
+    // MARK: - SparkleUpdateControlling
 
     var willRelaunchAppPublisher: AnyPublisher<Void, Never> {
         Empty().eraseToAnyPublisher()

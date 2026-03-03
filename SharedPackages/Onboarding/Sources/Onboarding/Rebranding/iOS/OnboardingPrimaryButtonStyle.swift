@@ -42,7 +42,7 @@ struct OnboardingPrimaryButtonStyle: ButtonStyle {
             .padding(.vertical)
             .padding(.horizontal, nil)
             .frame(minWidth: 0, maxWidth: .infinity, maxHeight: 40)
-            .background(colorPalette.primaryButtonBackgroundColor)
+            .background(configuration.isPressed ? colorPalette.primaryButtonPressedColor : colorPalette.primaryButtonBackgroundColor)
             .cornerRadius(64.0)
     }
 

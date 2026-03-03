@@ -46,7 +46,6 @@ public enum PrivacyFeature: String {
     case sync
     case privacyDashboard
     case updates
-    case updatesWontAutomaticallyRestartApp
     case privacyPro
     case sslCertificates
     case toggleReports
@@ -144,17 +143,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
 
-    /// Tab closing event recreation feature flag (failsafe for removing private API)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
-    case tabClosingEventRecreation
-
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
-
-    /// Failsafe for the modular termination decider pattern
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212684817782056?focus=true
-    case terminationDeciderSequence
 
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
@@ -215,9 +206,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
     case genericBackgroundTask
-
-    // https://app.asana.com/1/137249556945/project/392891325557410/task/1211597475706631?focus=true
-    case webViewFlashPrevention
 
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
@@ -371,8 +359,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
-    /// Controls different input sizes and fade out animation for toggle.
-    case fadeOutOnToggle
+    case unifiedToggleInput
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
@@ -561,13 +548,6 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     case scamProtection
 }
 
-public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
-
-    // https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
-    case scheduledDefaultBrowserAndDockPromptsInactiveUser // macOS
-}
-
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 
@@ -625,31 +605,16 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
     }
 
     case createWebViewGatingFailsafe
-
-    /// Use extended user-initiated popup timeout (extends from 1s to 6s)
-    case extendedUserInitiatedPopupTimeout
-
-    /// Suppress empty or about: URL popups after permission approval
-    case suppressEmptyPopUpsOnApproval
-
-    /// Allow popups for current page after permission approval (until next navigation)
-    case allowPopupsForCurrentPage
-
-    /// Show popup permission button in inactive state when temporary allowance is active
-    case popupPermissionButtonPersistence
-}
-
-public enum UpdatesSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .updates
-    }
-
-    /// Simplified update flow without expiration logic
-    case simplifiedFlow
 }
 
 public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .webExtensions }
 
     case embeddedExtension
+}
+
+public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .forceDarkModeOnWebsites }
+
+    case featureRollout
 }

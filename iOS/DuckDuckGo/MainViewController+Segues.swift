@@ -432,7 +432,6 @@ extension MainViewController {
                                                   historyManager: historyManager,
                                                   syncPausedStateManager: syncPausedStateManager,
                                                   subscriptionDataReporter: subscriptionDataReporter,
-                                                  textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
                                                   serpSettings: serpSettingsProvider,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
@@ -450,7 +449,8 @@ extension MainViewController {
                                                       using: featureFlagger,
                                                       keyValueStore: keyValueStore
                                                   ),
-                                                  whatsNewCoordinator: whatsNewCoordinator)
+                                                  whatsNewCoordinator: whatsNewCoordinator,
+                                                  darkReaderFeatureSettings: darkReaderFeatureSettings)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)

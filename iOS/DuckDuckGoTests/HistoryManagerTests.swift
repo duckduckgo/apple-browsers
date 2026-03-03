@@ -56,7 +56,7 @@ final class HistoryManagerTests: XCTestCase {
                      netflixURL,
                      ddgURL]
         for url in urls {
-            historyManager.addVisit(of: url, tabID: "1")
+            historyManager.addVisit(of: url, tabID: "1", fireTab: false)
             historyManager.updateTitleIfNeeded(title: url.absoluteString, url: url)
             historyManager.commitChanges(url: url)
         }
@@ -106,7 +106,7 @@ final class HistoryManagerTests: XCTestCase {
                                             isRecentlyVisitedSitesEnabledByUser: true)
         
         let testURL = URL(string: "https://example.com")!
-        historyManager.addVisit(of: testURL, tabID: "tab-1")
+        historyManager.addVisit(of: testURL, tabID: "tab-1", fireTab: false)
         
         XCTAssertEqual(spyHistoryCoordinator.addVisitCalls.count, 1)
         XCTAssertEqual(spyHistoryCoordinator.addVisitCalls.first?.url, testURL)
@@ -125,7 +125,7 @@ final class HistoryManagerTests: XCTestCase {
                                             isRecentlyVisitedSitesEnabledByUser: true)
         
         let testURL = URL(string: "https://example.com")!
-        historyManager.addVisit(of: testURL, tabID: "tab-1")
+        historyManager.addVisit(of: testURL, tabID: "tab-1", fireTab: false)
         
         XCTAssertTrue(spyHistoryCoordinator.addVisitCalls.isEmpty)
         XCTAssertEqual(mockTabHistoryCoordinator.addVisitCalls.count, 1)
@@ -179,6 +179,27 @@ final class HistoryManagerTests: XCTestCase {
 
         XCTAssertEqual(spyHistoryCoordinator.burnVisitsForTabIDCalls.count, 1)
         XCTAssertEqual(spyHistoryCoordinator.burnVisitsForTabIDCalls.first, "test-tab-123")
+    }
+    
+    @MainActor
+    func testWhenFireTab_ThenAddVisitUsesOnlyTabHistoryCoordinator() async throws {
+        let spyHistoryCoordinator = SpyHistoryCoordinator()
+        let mockTabHistoryCoordinator = MockTabHistoryCoordinating()
+        let historyManager = HistoryManager(dbCoordinator: spyHistoryCoordinator,
+                                            tld: TLD(),
+                                            tabHistoryCoordinator: mockTabHistoryCoordinator,
+                                            isAutocompleteEnabledByUser: true,
+                                            isRecentlyVisitedSitesEnabledByUser: true)
+        
+        let testURL = URL(string: "https://example.com")!
+        historyManager.addVisit(of: testURL, tabID: "tab-1", fireTab: true)
+        
+        // Fire tabs should never use global history coordinator
+        XCTAssertTrue(spyHistoryCoordinator.addVisitCalls.isEmpty)
+        // Fire tabs should use tab history coordinator
+        XCTAssertEqual(mockTabHistoryCoordinator.addVisitCalls.count, 1)
+        XCTAssertEqual(mockTabHistoryCoordinator.addVisitCalls.first?.url, testURL)
+        XCTAssertEqual(mockTabHistoryCoordinator.addVisitCalls.first?.tabID, "tab-1")
     }
 
     private func makeHistoryManager(_ db: CoreDataDatabase) -> HistoryManager {

@@ -51,7 +51,6 @@ final class SettingsViewModel: ObservableObject {
     var emailManager: EmailManager { EmailManager() }
     private(set) var historyManager: HistoryManaging
     let subscriptionDataReporter: SubscriptionDataReporting?
-    let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
     let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -174,6 +173,12 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.tabSwitcherTrackerCount)
     }
 
+    let darkReaderFeatureSettings: DarkReaderFeatureSettings
+
+    var isForceWebsiteDarkModeAvailable: Bool {
+        darkReaderFeatureSettings.isFeatureEnabled
+    }
+
     var isBlackFridayCampaignEnabled: Bool {
         blackFridayCampaignProvider.isCampaignEnabled
     }
@@ -244,6 +249,12 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: .settingsThemeSelectorPressed)
                 self.state.appThemeStyle = $0
                 ThemeManager.shared.setThemeStyle($0)
+                self.state.forceWebsiteDarkMode = self.darkReaderFeatureSettings.isForceDarkModeEnabled
+                // Delay to allow web views to re-render with the new interface style
+                // before the dark reader extension is enabled or disabled.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.darkReaderFeatureSettings.themeDidChange()
+                }
             }
         )
     }
@@ -579,6 +590,20 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var forceWebsiteDarkModeBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.forceWebsiteDarkMode },
+            set: {
+                self.darkReaderFeatureSettings.setForceDarkModeEnabled($0)
+                self.state.forceWebsiteDarkMode = $0
+                DailyPixel.fireDailyAndCount(
+                    pixel: $0 ? .webExtensionDarkReaderEnabled : .webExtensionDarkReaderDisabled,
+                    pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+                )
+            }
+        )
+    }
+
     var universalLinksBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.allowUniversalLinks },
@@ -651,7 +676,6 @@ final class SettingsViewModel: ObservableObject {
          historyManager: HistoryManaging,
          syncPausedStateManager: any SyncPausedStateManaging,
          subscriptionDataReporter: SubscriptionDataReporting,
-         textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
          serpSettings: SERPSettingsProviding,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
@@ -672,9 +696,11 @@ final class SettingsViewModel: ObservableObject {
          browsingMenuSheetCapability: BrowsingMenuSheetCapable,
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
-         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
+         darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
 
+        self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
         self.legacyViewProvider = legacyViewProvider
@@ -685,7 +711,6 @@ final class SettingsViewModel: ObservableObject {
         self.historyManager = historyManager
         self.syncPausedStateManager = syncPausedStateManager
         self.subscriptionDataReporter = subscriptionDataReporter
-        self.textZoomCoordinator = textZoomCoordinator
         self.aiChatSettings = aiChatSettings
         self.serpSettings = serpSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
@@ -743,6 +768,7 @@ extension SettingsViewModel {
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
             showMenuInSheet: browsingMenuSheetCapability.isEnabled,
+            forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoClearAIChatHistory: appSettings.autoClearAIChatHistory,

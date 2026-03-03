@@ -19,7 +19,6 @@
 import Foundation
 import os.log
 import PixelKit
-import PrivacyConfig
 
 /// Represents an Error that prevented us from exporting the Startup Stats
 ///
@@ -169,4 +168,3 @@ private extension TimeInterval {
         self * 1000
     }
 }
-

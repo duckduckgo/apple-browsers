@@ -43,7 +43,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let storage: any KeyedStoring<DarkReaderSettings>
+    private var storage: any ThrowingKeyedStoring<DarkReaderSettings>
     private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
     private let excludedDomainsChangedSubject = PassthroughSubject<Void, Never>()
     private var cancellables = Set<AnyCancellable>()
@@ -58,10 +58,10 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         storage: (any KeyedStoring<DarkReaderSettings>)? = nil) {
+         storage: (any ThrowingKeyedStoring<DarkReaderSettings>)) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.storage = if let storage { storage } else { UserDefaults.standard.keyedStoring() }
+        self.storage = storage
 
         privacyConfigurationManager.updatesPublisher
             .sink { [weak self] in
@@ -87,7 +87,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     }
 
     var isForceDarkModeEnabled: Bool {
-        isFeatureEnabled && (storage.forceDarkModeOnWebsitesEnabled ?? false)
+        isFeatureEnabled && ((try? storage.forceDarkModeOnWebsitesEnabled) ?? false)
     }
 
     var excludedDomains: [String] {
@@ -96,9 +96,9 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     func setForceDarkModeEnabled(_ enabled: Bool) {
         guard isFeatureEnabled else { return }
-        let previousValue = storage.forceDarkModeOnWebsitesEnabled ?? false
+        let previousValue = (try? storage.forceDarkModeOnWebsitesEnabled) ?? false
         guard previousValue != enabled else { return }
-        storage.forceDarkModeOnWebsitesEnabled = enabled
+        try? storage.set(enabled, for: \.forceDarkModeOnWebsitesEnabled)
         forceDarkModeChangedSubject.send(enabled)
     }
 

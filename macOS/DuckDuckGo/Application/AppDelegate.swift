@@ -1668,7 +1668,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let darkReaderSettings = AppDarkReaderFeatureSettings(
             featureFlagger: featureFlagger,
-            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            storage: keyValueStore.throwingKeyedStoring()
         )
         self.darkReaderFeatureSettings = darkReaderSettings
 
@@ -1769,7 +1770,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if featureFlagger.isFeatureOn(.embeddedExtension) {
             enabledTypes.insert(.embedded)
         }
-        if darkReaderFeatureSettings?.isForceDarkModeEnabled == true {
+        if (try? darkReaderFeatureSettings?.isForceDarkModeEnabled ?? false) == true {
             enabledTypes.insert(.darkReader)
         }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)

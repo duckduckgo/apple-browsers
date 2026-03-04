@@ -29,7 +29,7 @@ extension CrashReportingFactory: SparkleCrashReportingFactory {
                                    crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
                                    fireCrashPixel: @escaping (_ bundleID: String?, _ appVersion: String?, _ failedToReadCrashVersion: Bool) -> Void,
                                    fireFailedToReadContentsPixel: @escaping () -> Void,
-                                   promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) -> any CrashReporting {
+                                   promptForConsent: @escaping (CrashReportPresenting) async -> Bool) -> any CrashReporting {
         CrashReporter(internalUserDecider: internalUserDecider,
                       keyValueStore: keyValueStore,
                       crashSenderPixelEvents: crashSenderPixelEvents,
@@ -43,7 +43,7 @@ public final class CrashReporter: CrashReporting {
     private let internalUserDecider: InternalUserDecider
     private let fireCrashPixel: (_ bundleID: String?, _ appVersion: String?, _ failedToReadCrashVersion: Bool) -> Void
     private let fireFailedToReadContentsPixel: () -> Void
-    private let promptForConsent: (_ crashPayload: Data) async -> Bool
+    private let promptForConsent: (CrashReportPresenting) async -> Bool
     private let settings: any ThrowingKeyedStoring<CrashReportingSettings>
 
     private let reader = CrashReportReader()
@@ -55,7 +55,7 @@ public final class CrashReporter: CrashReporting {
                 crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
                 fireCrashPixel: @escaping (_ bundleID: String?, _ appVersion: String?, _ failedToReadCrashVersion: Bool) -> Void,
                 fireFailedToReadContentsPixel: @escaping () -> Void,
-                promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) {
+                promptForConsent: @escaping (CrashReportPresenting) async -> Bool) {
         self.internalUserDecider = internalUserDecider
         self.settings = keyValueStore.throwingKeyedStoring()
         self.sender = CrashReportSender(platform: .macOS, pixelEvents: crashSenderPixelEvents)
@@ -75,27 +75,24 @@ public final class CrashReporter: CrashReporting {
         try? settings.set(Date(), for: \.lastCrashReportCheckDate)
 
         guard let latest = crashReports.last else {
+            // No new crash reports
             return
         }
 
         for crash in crashReports {
             if let appVersion = crash.appVersion {
-                fireCrashPixel(crash.bundleID, appVersion, false)
+                fireCrashPixel(crash.bundleID, appVersion, /*failedToReadCrashVersion:*/ false)
             } else {
-                fireCrashPixel(crash.bundleID, nil, true)
+                fireCrashPixel(crash.bundleID, nil, /*failedToReadCrashVersion:*/ true)
             }
         }
 
         if internalUserDecider.isInternalUser {
             await send(crashReports)
             return
+        } else if await promptForConsent(latest) {
+            await send(crashReports)
         }
-
-        guard let latestPayload = latest.contentData, await promptForConsent(latestPayload) else {
-            return
-        }
-
-        await send(crashReports)
     }
 
     private func send(_ crashReports: [CrashReport]) async {

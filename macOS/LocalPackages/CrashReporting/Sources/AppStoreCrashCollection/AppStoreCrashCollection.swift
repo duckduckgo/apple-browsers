@@ -83,7 +83,7 @@ public final class AppStoreCrashCollection: CrashReporting {
             if self.internalUserDecider.isInternalUser {
                 completion()
             } else {
-                Task {
+                Task { @MainActor in
                     if await self.promptForConsent(lastPayload) {
                         completion()
                     }

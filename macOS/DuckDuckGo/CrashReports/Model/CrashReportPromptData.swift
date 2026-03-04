@@ -17,11 +17,8 @@
 //
 
 import Common
+import CrashReportingShared
 import Foundation
-
-protocol CrashReportPresenting {
-    var content: String? { get }
-}
 
 struct CrashDataPayload: CrashReportPresenting {
     let data: Data

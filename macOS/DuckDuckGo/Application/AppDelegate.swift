@@ -1018,9 +1018,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
-        crashReporting = Self.makeCrashReporting(internalUserDecider: internalUserDecider,
-                                                 featureFlagger: featureFlagger,
-                                                 keyValueStore: UserDefaults.standard)
+        crashReporting = CrashReportingFactory.makeCrashReporting(internalUserDecider: internalUserDecider,
+                                                                  featureFlagger: featureFlagger,
+                                                                  keyValueStore: UserDefaults.standard)
 
         let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)
         let eventMapper = WatchdogEventMapper(diagnosticProvider: watchdogDiagnosticProvider)
@@ -1438,67 +1438,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         syncService.initializeIfNeeded()
         syncService.scheduler.notifyAppLifecycleEvent()
         SyncDiagnosisHelper(syncService: syncService).diagnoseAccountStatus()
-    }
-
-    private static func makeCrashReporting(internalUserDecider: InternalUserDecider, featureFlagger: FeatureFlagger, keyValueStore: any ThrowingKeyValueStoring) -> any CrashReporting {
-        let buildType = StandardApplicationBuildType()
-        if buildType.isAppStoreBuild {
-            guard #available(macOS 12.0, *) else {
-                fatalError("App Store crash reporting requires macOS 12.0 or newer")
-            }
-
-            guard let appStoreFactory = CrashReportingFactory.self as? any AppStoreCrashReportingFactory.Type else {
-                fatalError("Failed to instantiate app store crash reporting")
-            }
-
-            return appStoreFactory.instantiate(
-                internalUserDecider: internalUserDecider,
-                featureFlagger: featureFlagger,
-                crashSenderPixelEvents: CrashReportSender.pixelEvents,
-                fireCrashPixel: { parameters in
-                    var params = parameters
-                    let appIdentifier = CrashPixelAppIdentifier(params.removeValue(forKey: "bundle"))
-                    PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier),
-                                  frequency: .dailyAndStandard,
-                                  withAdditionalParameters: params,
-                                  includeAppVersionParameter: false)
-                },
-                promptForConsent: { payload in
-                    await CrashReportPromptPresenter().showPrompt(for: CrashDataPayload(data: payload)) == .allow
-                }
-            )
-        }
-
-        assert(buildType.isSparkleBuild)
-        guard let crashReportingFactory = CrashReportingFactory.self as? any SparkleCrashReportingFactory.Type else {
-            fatalError("Failed to instantiate sparkle crash reporting")
-        }
-
-        return crashReportingFactory.instantiate(
-            internalUserDecider: internalUserDecider,
-            keyValueStore: keyValueStore,
-            crashSenderPixelEvents: CrashReportSender.pixelEvents,
-            fireCrashPixel: { bundleID, appVersion, failedToReadCrashVersion in
-                let appIdentifier = CrashPixelAppIdentifier(bundleID)
-                if let appVersion {
-                    PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier),
-                                  frequency: .dailyAndStandard,
-                                  withAdditionalParameters: [PixelKit.Parameters.appVersion: appVersion],
-                                  includeAppVersionParameter: false)
-                } else {
-                    let additionalParameters = failedToReadCrashVersion ? ["failedToReadCrashVersion": "true"] : [:]
-                    PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier),
-                                  frequency: .dailyAndStandard,
-                                  withAdditionalParameters: additionalParameters)
-                }
-            },
-            fireFailedToReadContentsPixel: {
-                PixelKit.fire(GeneralPixel.crashReportingFailedToReadContents, frequency: .dailyAndStandard)
-            },
-            promptForConsent: { payload in
-                await CrashReportPromptPresenter().showPrompt(for: CrashDataPayload(data: payload)) == .allow
-            }
-        )
     }
 
     @MainActor

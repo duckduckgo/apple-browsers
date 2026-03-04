@@ -27,13 +27,17 @@ public protocol CrashReporting {
     func start() async
 }
 
+public protocol CrashReportPresenting {
+    var content: String? { get }
+}
+
 public protocol SparkleCrashReportingFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
                             keyValueStore: any ThrowingKeyValueStoring,
                             crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
                             fireCrashPixel: @escaping (_ bundleID: String?, _ appVersion: String?, _ failedToReadCrashVersion: Bool) -> Void,
                             fireFailedToReadContentsPixel: @escaping () -> Void,
-                            promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) -> any CrashReporting
+                            promptForConsent: @escaping (CrashReportPresenting) async -> Bool) -> any CrashReporting
 }
 
 @available(macOS 12.0, *)

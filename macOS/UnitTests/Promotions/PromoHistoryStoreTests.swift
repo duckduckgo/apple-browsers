@@ -52,11 +52,9 @@ final class PromoHistoryStoreTests: XCTestCase {
     func testWhenSaveRecord_ThenRecordForReturnsSavedRecord() {
         var record = PromoHistoryRecord(id: "test-promo")
         record.timesDismissed = 2
-        let now = Date()
-        let nextEligibleDate = now.addingTimeInterval(86400)
-        record.lastShown = now
-        record.lastDismissed = now
-        record.nextEligibleDate = nextEligibleDate
+        record.lastDismissed = Date()
+        record.lastShown = Date()
+        record.nextEligibleDate = .distantFuture
         record.actioned = true
 
         store.save(record)
@@ -64,9 +62,29 @@ final class PromoHistoryStoreTests: XCTestCase {
         let loaded = store.record(for: "test-promo")
         XCTAssertEqual(loaded.id, record.id)
         XCTAssertEqual(loaded.timesDismissed, 2)
-        XCTAssertEqual(try XCTUnwrap(loaded.lastShown).timeIntervalSince1970, now.timeIntervalSince1970, accuracy: 1.0)
-        XCTAssertEqual(try XCTUnwrap(loaded.lastDismissed).timeIntervalSince1970, now.timeIntervalSince1970, accuracy: 1.0)
-        XCTAssertEqual(try XCTUnwrap(loaded.nextEligibleDate).timeIntervalSince1970, nextEligibleDate.timeIntervalSince1970, accuracy: 1.0)
+        XCTAssertNotNil(loaded.lastDismissed)
+        XCTAssertNotNil(loaded.lastShown)
+        XCTAssertEqual(loaded.nextEligibleDate, .distantFuture)
+        XCTAssertTrue(loaded.actioned)
+    }
+
+    func testWhenSaveRecord_ThenStateRoundTripsCorrectly() {
+        var record = PromoHistoryRecord(id: "round-trip-promo")
+        record.timesDismissed = 3
+        let now = Date()
+        record.lastShown = now
+        record.lastDismissed = now
+        record.nextEligibleDate = now.addingTimeInterval(86400)
+        record.actioned = true
+
+        store.save(record)
+
+        let newStore = PromoHistoryStore(store: backingStore, queue: nil)
+        let loaded = newStore.record(for: "round-trip-promo")
+        XCTAssertEqual(loaded.timesDismissed, 3)
+        XCTAssertEqual(try XCTUnwrap(loaded.lastShown).timeIntervalSince1970, now.timeIntervalSince1970, accuracy: 1)
+        XCTAssertEqual(try XCTUnwrap(loaded.lastDismissed).timeIntervalSince1970, now.timeIntervalSince1970, accuracy: 1)
+        XCTAssertEqual(try XCTUnwrap(loaded.nextEligibleDate).timeIntervalSince1970, try XCTUnwrap(record.nextEligibleDate).timeIntervalSince1970, accuracy: 1)
         XCTAssertTrue(loaded.actioned)
     }
 

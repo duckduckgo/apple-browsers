@@ -354,6 +354,67 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
         XCTAssertNil(request.prevalence)
     }
 
+    // MARK: - End-to-end reason chain (event payload -> DetectedRequest state -> dashboard grouping)
+
+    func testReasonChain_ruleException_mapsToAllowlisted() {
+        let tracker = makeTracker(
+            url: "https://tracker.example/pixel.js",
+            blocked: false,
+            reason: "matched rule - exception",
+            pageUrl: "https://mysite.com"
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertEqual(request.state, .allowed(reason: .ruleException))
+        XCTAssertFalse(TrackerProtectionEventMapper.isThirdPartyRequest(tracker),
+                       "Rule exception tracker should NOT route as thirdPartyRequest")
+    }
+
+    func testReasonChain_defaultBlock_mapsToBlocked() {
+        let tracker = makeTracker(
+            url: "https://tracker.example/pixel.js",
+            blocked: true,
+            reason: "default block",
+            pageUrl: "https://mysite.com"
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertEqual(request.state, .blocked)
+        XCTAssertFalse(TrackerProtectionEventMapper.isThirdPartyRequest(tracker),
+                       "Blocked tracker should NOT route as thirdPartyRequest")
+    }
+
+    func testReasonChain_thirdPartyRequest_mapsToAlsoLoaded() {
+        let tracker = makeTracker(
+            url: "https://cdn.other.com/lib.js",
+            blocked: false,
+            reason: "thirdPartyRequest",
+            pageUrl: "https://mysite.com",
+            entityName: nil,
+            ownerName: nil,
+            category: nil,
+            prevalence: nil
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertEqual(request.state, .allowed(reason: .otherThirdPartyRequest))
+        XCTAssertTrue(TrackerProtectionEventMapper.isThirdPartyRequest(tracker),
+                      "Non-tracker third-party should route as thirdPartyRequest")
+    }
+
+    func testReasonChain_affiliatedThirdParty_mapsToOwnedByFirstParty() {
+        let tracker = makeTracker(
+            url: "https://fbcdn.net/image.jpg",
+            blocked: false,
+            reason: "thirdPartyRequestOwnedByFirstParty",
+            pageUrl: "https://facebook.com",
+            entityName: "Facebook",
+            ownerName: "Facebook, Inc."
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertEqual(request.state, .allowed(reason: .ownedByFirstParty),
+                       "Affiliated non-tracker should map to ownedByFirstParty (key affiliated path on Apple)")
+        XCTAssertTrue(TrackerProtectionEventMapper.isThirdPartyRequest(tracker),
+                      "Affiliated non-tracker should route as thirdPartyRequest, not through the tracker path")
+    }
+
     // MARK: - Unprotected domain reason mapping
 
     func testUnprotectedDomainReason_mapsToProtectionDisabled() {

@@ -167,7 +167,12 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         let surrogatesConfigStorage = configStorage
         self.trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
             contentBlockingManager: contentBlockingManager,
-            additionalRuleLists: [DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName],
+            additionalRuleLists: [
+                DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName,
+                AdClickAttributionRulesSplitter.blockingAttributionRuleListName(
+                    forListNamed: DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
+                ),
+            ],
             surrogatesProvider: {
                 guard let data = surrogatesConfigStorage.loadData(for: .surrogates) else { return nil }
                 return String(data: data, encoding: .utf8)

@@ -46,7 +46,6 @@ protocol TabBarViewModel {
     var crashIndicatorModel: TabCrashIndicatorModel { get }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> { get }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { get }
-    var loadedPageDOMPublisher: PassthroughSubject<Void, Never> { get }
 }
 
 extension TabViewModel: TabBarViewModel {
@@ -72,9 +71,6 @@ extension TabViewModel: TabBarViewModel {
             .eraseToAnyPublisher()
     }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { tab.webViewRenderingProgressDidChangePublisher }
-    var loadedPageDOMPublisher: PassthroughSubject<Void, Never> {
-        tab.loadedPageDOMPublisher
-    }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -1649,7 +1645,6 @@ extension TabBarViewItem {
             let crashIndicatorModel: TabCrashIndicatorModel = TabCrashIndicatorModel()
             var canKillWebContentProcess: Bool = false
 
-            var loadedPageDOMPublisher = PassthroughSubject<Void, Never>()
             @Published var isLoading: Bool
             @Published var error: WKError?
             var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {

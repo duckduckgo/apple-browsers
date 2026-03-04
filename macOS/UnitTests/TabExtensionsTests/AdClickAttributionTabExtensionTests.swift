@@ -168,9 +168,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
         logic.onRulesChanged = { _ in }
 
         let childTab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), extensionsBuilder: extensionsBuilder, parentTab: parentTab)
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-        }
 
         waitForExpectations(timeout: 1)
         XCTAssertEqual(childTab.adClickAttribution?.currentAttributionState, mockAttribution.currentAttributionState)
@@ -236,9 +233,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
         }
 
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-        }
 
         let onDetectionDidStart = expectation(description: "detection.onDidStart")
         detection.onDidStart = { [urls] url in
@@ -283,9 +277,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
             return false
         }
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-        }
 
         schemeHandler.middleware = [{ [data] request in
             guard request.url!.path == "/" else { return nil}
@@ -346,9 +337,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
             return false
         }
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-        }
 
         // For first load, redirect from url1 to url2
         schemeHandler.middleware = [{ request in
@@ -422,9 +410,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
             return .failure(NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost))
         }]
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-        }
 
         let onDetectionDidStart = expectation(description: "detection.onDidStart")
         detection.onDidStart = { [urls] url in
@@ -452,9 +437,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
             return false
         }
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-        }
 
         detection.onDidStart = { Logger.tests.log("detection.onDidStart \($0?.absoluteString ?? "<nil>", privacy: .public)") }
         detection.on2XXResponse = { Logger.tests.log("detection.on2XXResponse \($0?.absoluteString ?? "<nil>", privacy: .public)") }
@@ -518,9 +500,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
         }
 
         let tab = Tab(content: .none, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-        }
 
         waitForExpectations(timeout: 1)
 
@@ -587,9 +566,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
             userScriptInstalled.fulfill()
         }
         let tab = Tab(content: .none, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-        }
 
         waitForExpectations(timeout: 1)
 
@@ -616,9 +592,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
             userScriptInstalled.fulfill()
         }
         let tab = Tab(content: .none, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-        }
 
         waitForExpectations(timeout: 1)
 
@@ -648,9 +621,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
     @MainActor
     func testOnTrackerDataupdated_onRequestDetectedIsCalled() {
         let tab = Tab(content: .none, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-        }
 
         let mockRequest = DetectedRequest(url: "testurl.com", eTLDplus1: nil, knownTracker: nil, entity: .init(displayName: "entity", domains: nil, prevalence: 1), state: .blocked, pageUrl: "pageurl.com")
         let onRequestDetected = expectation(description: "onRequestDetected")

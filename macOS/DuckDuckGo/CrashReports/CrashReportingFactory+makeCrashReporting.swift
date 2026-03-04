@@ -46,11 +46,11 @@ extension CrashReportingFactory {
                 featureFlagger: featureFlagger,
                 crashSenderPixelEvents: CrashReportSender.pixelEvents,
                 fireCrashPixel: { parameters in
-                    var params = parameters
-                    let appIdentifier = CrashPixelAppIdentifier(params.removeValue(forKey: "bundle"))
+                    var updatedParameters = parameters
+                    let appIdentifier = CrashPixelAppIdentifier(updatedParameters.removeValue(forKey: .bundle))
                     PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier),
                                   frequency: .dailyAndStandard,
-                                  withAdditionalParameters: params,
+                                  withAdditionalParameters: Dictionary(uniqueKeysWithValues: updatedParameters.map { ($0.key.rawValue, $0.value) }),
                                   includeAppVersionParameter: false)
                 },
                 promptForConsent: { payload in

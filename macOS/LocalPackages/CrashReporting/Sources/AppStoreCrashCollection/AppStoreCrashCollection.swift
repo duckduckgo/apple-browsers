@@ -29,7 +29,7 @@ extension CrashReportingFactory: AppStoreCrashReportingFactory {
     public static func instantiate(internalUserDecider: InternalUserDecider,
                                    featureFlagger: FeatureFlagger,
                                    crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
-                                   fireCrashPixel: @escaping (_ parameters: [String: String]) -> Void,
+                                   fireCrashPixel: @escaping (_ parameters: [CrashReportPixelParameter: String]) -> Void,
                                    promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) -> any CrashReporting {
         return AppStoreCrashCollection(internalUserDecider: internalUserDecider,
                                        featureFlagger: featureFlagger,
@@ -47,13 +47,13 @@ public final class AppStoreCrashCollection: CrashReporting {
     private let internalUserDecider: InternalUserDecider
     private let featureFlagger: FeatureFlagger
     private let crashSenderPixelEvents: EventMapping<CrashReportSenderError>?
-    private let fireCrashPixel: (_ parameters: [String: String]) -> Void
+    private let fireCrashPixel: (_ parameters: [CrashReportPixelParameter: String]) -> Void
     private let promptForConsent: (_ crashPayload: Data) async -> Bool
 
     public init(internalUserDecider: InternalUserDecider,
                 featureFlagger: FeatureFlagger,
                 crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
-                fireCrashPixel: @escaping (_ parameters: [String: String]) -> Void,
+                fireCrashPixel: @escaping (_ parameters: [CrashReportPixelParameter: String]) -> Void,
                 promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) {
         self.internalUserDecider = internalUserDecider
         self.featureFlagger = featureFlagger
@@ -72,7 +72,7 @@ public final class AppStoreCrashCollection: CrashReporting {
 
             pixelParameters.forEach { parameters in
                 var updatedParameters = parameters
-                updatedParameters["appVersion"] = CrashCollection.removeBuildNumber(from: updatedParameters["appVersion"])
+                updatedParameters[.appVersion] = CrashCollection.removeBuildNumber(from: updatedParameters[.appVersion])
                 self.fireCrashPixel(updatedParameters)
             }
 

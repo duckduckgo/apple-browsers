@@ -45,7 +45,7 @@ public protocol AppStoreCrashReportingFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
                             featureFlagger: FeatureFlagger,
                             crashSenderPixelEvents: EventMapping<CrashReportSenderError>?,
-                            fireCrashPixel: @escaping (_ parameters: [String: String]) -> Void,
+                            fireCrashPixel: @escaping (_ parameters: [CrashReportPixelParameter: String]) -> Void,
                             promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) -> any CrashReporting
 }
 

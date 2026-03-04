@@ -30,6 +30,7 @@ import Configuration
 import ContentScopeScripts
 import CoreData
 import Crashes
+import CrashReportingShared
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DDGSync
@@ -84,12 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let fileStore: FileStore
 
-#if APPSTORE
-    private let crashCollection = CrashCollection(crashReportSender: CrashReportSender(platform: .macOSAppStore,
-                                                                                       pixelEvents: CrashReportSender.pixelEvents))
-#else
-    private let crashReporter: CrashReporter
-#endif
+    private let crashReporting: any CrashReporting
 
     let watchdog: Watchdog
     private let watchdogSleepMonitor: WatchdogSleepMonitor
@@ -1021,9 +1017,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
-#if !APPSTORE
-        crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
-#endif
+        crashReporting = CrashReportingFactory.makeCrashReporting(internalUserDecider: internalUserDecider,
+                                                                  featureFlagger: featureFlagger,
+                                                                  keyValueStore: UserDefaults.standard)
 
         let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)
         let eventMapper = WatchdogEventMapper(diagnosticProvider: watchdogDiagnosticProvider)
@@ -1285,43 +1281,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         applyPreferredTheme()
 
-#if APPSTORE
-        let sortKeys = !featureFlagger.isFeatureOn(.crashCollectionDisableKeysSorting)
-        let isCallStackLimitingEnabled = featureFlagger.isFeatureOn(.crashCollectionLimitCallStackTreeDepth)
-        let callStackDepthLimit: Int? = isCallStackLimitingEnabled ? 250 : nil
-
-        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: callStackDepthLimit, sortKeys: sortKeys) { [weak self] pixelParameters, payloads, completion in
-
-            pixelParameters.forEach { parameters in
-                var params = parameters
-                params[PixelKit.Parameters.appVersion] = CrashCollection.removeBuildNumber(from: params[PixelKit.Parameters.appVersion])
-                let appIdentifier = CrashPixelAppIdentifier(params.removeValue(forKey: "bundle"))
-                PixelKit.fire(
-                    GeneralPixel.crash(appIdentifier: appIdentifier),
-                    frequency: .dailyAndStandard,
-                    withAdditionalParameters: params,
-                    includeAppVersionParameter: false
-                )
-            }
-
-            guard let lastPayload = payloads.last else {
-                return
-            }
-            if self?.internalUserDecider.isInternalUser == true {
-                completion()
-            } else {
-                Task { @MainActor in
-                    if await CrashReportPromptPresenter().showPrompt(for: CrashDataPayload(data: lastPayload)) == .allow {
-                        completion()
-                    }
-                }
+        if case .normal = AppVersion.runType {
+            Task {
+                await crashReporting.start()
             }
         }
-#else
-        Task {
-            await crashReporter.checkForNewReports()
-        }
-#endif
 
         subscribeToEmailProtectionStatusNotifications()
         subscribeToDataImportCompleteNotification()

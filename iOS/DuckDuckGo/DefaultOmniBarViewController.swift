@@ -396,7 +396,7 @@ extension DefaultOmniBarViewController {
             omniBarView.onCollapseAnimationCompleted = { [weak self] in
                 guard let self else { return }
                 self.beginEditing(animated: false, forTextEntryMode: .search)
-                self.omniBarView.textField.text = transition.text
+                self.updateQuery(transition.text)
                 self.modeToggleTextModel.endTransition()
             }
         }

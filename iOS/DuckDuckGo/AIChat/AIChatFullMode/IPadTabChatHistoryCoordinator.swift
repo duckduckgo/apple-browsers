@@ -36,8 +36,10 @@ final class IPadTabChatHistoryCoordinator {
         static let widthPadding: CGFloat = 0
         /// Matches `AIChatHistoryListViewController.Constants.cellHeight`.
         static let cellHeight: CGFloat = 44
-        /// Vertical padding for the plain table view style.
-        static let sectionPadding: CGFloat = 0
+        /// Extra vertical padding to account for the `.insetGrouped` table style's
+        /// built-in section insets (top/bottom rounded-corner area) minus the negative
+        /// content inset applied by AIChatHistoryListViewController.
+        static let groupedSectionPadding: CGFloat = 32
     }
 
     // MARK: - Properties
@@ -113,7 +115,7 @@ final class IPadTabChatHistoryCoordinator {
             .sink { [weak self] suggestions in
                 guard let self else { return }
                 let count = CGFloat(suggestions.count)
-                let height = suggestions.isEmpty ? 0 : count * Layout.cellHeight + Layout.sectionPadding
+                let height = suggestions.isEmpty ? 0 : count * Layout.cellHeight + Layout.groupedSectionPadding
                 self.heightConstraint?.constant = height
                 self.floatingWrapper?.isHidden = suggestions.isEmpty
             }

@@ -1,5 +1,5 @@
 //
-//  CrashCollectionExtensionTests.swift
+//  CrashCollection+Version.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,17 +17,17 @@
 //
 
 import Crashes
-import Testing
-@testable import DuckDuckGo_Privacy_Browser
 
-struct CrashCollectionExtensionTests {
-
-    @Test("Build number is removed from App Version")
-    @available(macOS 12.0, *)
-    func buildNumberIsRemovedFromAppVersion() {
-        #expect(CrashCollection.removeBuildNumber(from: nil) == nil)
-        #expect(CrashCollection.removeBuildNumber(from: "1.2") == "1.2")
-        #expect(CrashCollection.removeBuildNumber(from: "1.2.3") == "1.2.3")
-        #expect(CrashCollection.removeBuildNumber(from: "1.2.3.4") == "1.2.3")
+@available(macOS 12.0, *)
+public extension CrashCollection {
+    static func removeBuildNumber(from appVersion: String?) -> String? {
+        guard let appVersion else {
+            return nil
+        }
+        let versionComponents = appVersion.split(separator: ".")
+        guard versionComponents.count > 3 else {
+            return appVersion
+        }
+        return versionComponents.prefix(3).joined(separator: ".")
     }
 }

@@ -37,6 +37,15 @@ public enum CrashCollectionPlatform {
     }
 }
 
+public enum CrashReportPixelParameter: String {
+    case appVersion
+    case code
+    case type
+    case signal
+    case first
+    case bundle
+}
+
 @available(iOSApplicationExtension, unavailable)
 @available(iOS 13, macOS 12, *)
 public final class CrashCollection {
@@ -49,7 +58,7 @@ public final class CrashCollection {
         self.crcidManager = CRCIDManager(store: crashCollectionStorage)
     }
 
-    public func start(didFindCrashReports: @escaping (_ pixelParameters: [[String: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
+    public func start(didFindCrashReports: @escaping (_ pixelParameters: [[CrashReportPixelParameter: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
         start(process: { payloads in
             payloads.map { $0.jsonRepresentation() }
         }, didFindCrashReports: didFindCrashReports)
@@ -62,7 +71,7 @@ public final class CrashCollection {
     ///     Provides processed JSON data to be presented to the user and Pixel parameters to fire a crash Pixel.
     ///     `uploadReports` callback is used when the user accepts uploading the crash report and starts crash upload to the server.
     public func start(process: @escaping ([MXDiagnosticPayload]) -> [Data],
-                      didFindCrashReports: @escaping (_ pixelParameters: [[String: String]],
+                      didFindCrashReports: @escaping (_ pixelParameters: [[CrashReportPixelParameter: String]],
                                                       _ payloads: [Data],
                                                       _ uploadReports: @escaping () -> Void) -> Void,
                       didFinishHandlingResponse: @escaping (() -> Void) = {}) {
@@ -76,18 +85,18 @@ public final class CrashCollection {
                 .flatMap { $0 }
                 .map { diagnostic in
 
-                    var params = [
-                        "appVersion": "\(diagnostic.applicationVersion).\(diagnostic.metaData.applicationBuildVersion)",
-                        "code": "\(diagnostic.exceptionCode ?? -1)",
-                        "type": "\(diagnostic.exceptionType ?? -1)",
-                        "signal": "\(diagnostic.signal ?? -1)",
+                    var params: [CrashReportPixelParameter: String] = [
+                        .appVersion: "\(diagnostic.applicationVersion).\(diagnostic.metaData.applicationBuildVersion)",
+                        .code: "\(diagnostic.exceptionCode ?? -1)",
+                        .type: "\(diagnostic.exceptionType ?? -1)",
+                        .signal: "\(diagnostic.signal ?? -1)",
                     ]
                     if first {
-                        params["first"] = "1"
+                        params[.first] = "1"
                     }
 
                     let metadataJSON = try? JSONSerialization.jsonObject(with: diagnostic.metaData.jsonRepresentation()) as? [String: Any]
-                    params["bundle"] = metadataJSON?["bundleIdentifier"] as? String
+                    params[.bundle] = metadataJSON?["bundleIdentifier"] as? String
                     return params
                 }
 
@@ -119,7 +128,7 @@ public final class CrashCollection {
     ///   - didFindCrashReports: callback called after payload preprocessing is finished.
     ///     Provides processed JSON data to be presented to the user and Pixel parameters to fire a crash Pixel.
     ///     `uploadReports` callback is used when the user accepts uploading the crash report and starts crash upload to the server.
-    public func startAttachingCrashLogMessages(callStackDepthLimit: Int? = nil, sortKeys: Bool = true, didFindCrashReports: @escaping (_ pixelParameters: [[String: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
+    public func startAttachingCrashLogMessages(callStackDepthLimit: Int? = nil, sortKeys: Bool = true, didFindCrashReports: @escaping (_ pixelParameters: [[CrashReportPixelParameter: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
         start(process: { payloads in
             payloads.compactMap { payload in
                 var dict = payload.dictionaryRepresentation()

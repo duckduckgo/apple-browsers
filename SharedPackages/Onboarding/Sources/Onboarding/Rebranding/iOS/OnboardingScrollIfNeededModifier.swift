@@ -70,7 +70,9 @@ private struct ScrollViewScrollObserver: UIViewRepresentable {
 
         func startObserving(from view: UIView) {
             guard let scrollView = Self.findScrollView(from: view),
-                  scrollView !== observedScrollView else { return }
+                  scrollView !== observedScrollView else {
+                return
+            }
 
             observedScrollView = scrollView
             scrollView.alwaysBounceVertical = false
@@ -90,18 +92,28 @@ private struct ScrollViewScrollObserver: UIViewRepresentable {
             }
         }
 
-        /// The `.background()` modifier places the observer as a sibling of the
-        /// `UIScrollView` that SwiftUI creates, so we check siblings at each level.
+        /// The `.background()` modifier places the observer near the `UIScrollView`
+        /// that SwiftUI creates. The scroll view may be nested inside intermediate
+        /// hosting views, so we search each sibling's subtree rather than only
+        /// checking direct siblings.
         private static func findScrollView(from view: UIView) -> UIScrollView? {
             var current: UIView? = view
             while let v = current {
                 if let scrollView = v as? UIScrollView { return scrollView }
                 if let parent = v.superview {
                     for sibling in parent.subviews where sibling !== v {
-                        if let scrollView = sibling as? UIScrollView { return scrollView }
+                        if let scrollView = firstScrollView(in: sibling) { return scrollView }
                     }
                 }
                 current = v.superview
+            }
+            return nil
+        }
+
+        private static func firstScrollView(in view: UIView) -> UIScrollView? {
+            if let scrollView = view as? UIScrollView { return scrollView }
+            for subview in view.subviews {
+                if let scrollView = firstScrollView(in: subview) { return scrollView }
             }
             return nil
         }

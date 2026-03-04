@@ -71,6 +71,7 @@ class SuggestionTrayViewController: UIViewController {
     private let featureDiscovery: FeatureDiscovery
     private let hideBorder: Bool
 
+    var useFloatingStyle: Bool = true
     var coversFullScreen: Bool = false
 
     var selectedSuggestion: Suggestion? {
@@ -210,19 +211,31 @@ class SuggestionTrayViewController: UIViewController {
     
     func float(withWidth width: CGFloat) {
 
-        containerView.layer.cornerRadius = 24
-        containerView.layer.masksToBounds = true
- 
-        backgroundView.layer.cornerRadius = 24
-        backgroundView.backgroundColor = UIColor(designSystemColor: .background)
-        backgroundView.clipsToBounds = false
-        backgroundView.applyActiveShadow()
+        if useFloatingStyle {
+            containerView.layer.cornerRadius = 24
+            containerView.layer.masksToBounds = true
 
-        topConstraint.constant = 4
+            backgroundView.layer.cornerRadius = 24
+            backgroundView.backgroundColor = UIColor(designSystemColor: .background)
+            backgroundView.clipsToBounds = false
+            backgroundView.applyActiveShadow()
+        } else {
+            containerView.layer.cornerRadius = 16
+            containerView.layer.cornerCurve = .continuous
+            containerView.layer.masksToBounds = true
+
+            backgroundView.layer.cornerRadius = 16
+            backgroundView.layer.cornerCurve = .continuous
+            backgroundView.backgroundColor = UIColor(designSystemColor: .background)
+            backgroundView.clipsToBounds = false
+            backgroundView.applyDefaultShadow()
+        }
+
+        topConstraint.constant = useFloatingStyle ? 4 : 15
 
         let isFirstPresentation = fullHeightConstraint.isActive
         if isFirstPresentation {
-            variableHeightConstraint.constant = Constant.suggestionTrayInitialHeight
+            variableHeightConstraint.constant = useFloatingStyle ? Constant.suggestionTrayInitialHeight : 0
         }
 
         variableWidthConstraint.constant = width
@@ -412,8 +425,12 @@ extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDe
     
     func autocompleteDidChangeContentHeight(height: CGFloat) {
         guard !fullHeightConstraint.isActive else { return }
-        
-        if height > Constant.suggestionTrayInitialHeight {
+
+        if useFloatingStyle {
+            if height > Constant.suggestionTrayInitialHeight {
+                variableHeightConstraint.constant = height
+            }
+        } else {
             variableHeightConstraint.constant = height
         }
     }

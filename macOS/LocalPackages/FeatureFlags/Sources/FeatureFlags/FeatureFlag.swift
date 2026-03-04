@@ -273,6 +273,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Private Process Name Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
     case privateProcessName
+
+    /// Enable Look Up (three-finger click) while keeping link preview disabled
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
+    case webViewLookUpAction
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -302,7 +306,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
                 .aiChatSidebarFloating,
-                .nextStepsListWidget:
+                .nextStepsListWidget,
+                .webViewLookUpAction:
             true
         default:
             false
@@ -392,7 +397,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarResizable,
                 .aiChatSidebarFloating,
                 .startupMetrics,
-                .privateProcessName:
+                .privateProcessName,
+                .webViewLookUpAction:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -564,6 +570,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privateProcessName:
             return .disabled
+        case .webViewLookUpAction:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         }
     }
 }

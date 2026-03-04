@@ -2055,8 +2055,21 @@ public struct UserText {
     public enum Onboarding {
 
         public enum Intro {
-            public static let title = NSLocalizedString("onboarding.highlights.intro.title", value: "Hi there.\n\nReady for a faster browser that keeps you protected?", comment: "The title of the onboarding dialog popup")
-            public static let continueCTA = NSLocalizedString("onboarding.intro.cta", value: "Let’s do it!", comment: "Button to continue the onboarding process")
+            public static var title: String {
+                if Locale.current.isEnglishLanguage {
+                    NotLocalizedString("onboarding.highlights.intro.title.english-only", value: "Hi there.\n\nReady for a faster browser that protects you and lets you decide when and how to use AI?", comment: "The title of the onboarding dialog popup for English-language copy update")
+                } else {
+                    NSLocalizedString("onboarding.highlights.intro.title", value: "Hi there.\n\nReady for a faster browser that keeps you protected?", comment: "The title of the onboarding dialog popup")
+                }
+            }
+
+            public static var continueCTA: String {
+                if Locale.current.isEnglishLanguage {
+                    NotLocalizedString("onboarding.intro.cta.english-only", value: "Let’s get started!", comment: "Button to continue the onboarding process for English-language copy update")
+                } else {
+                    NSLocalizedString("onboarding.intro.cta", value: "Let’s do it!", comment: "Button to continue the onboarding process")
+                }
+            }
             public static let skipCTA = NSLocalizedString("onboarding.intro.cta.skip", value: "I’ve been here before", comment: "Button to skip the onboarding process")
 
             enum Debug {

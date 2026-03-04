@@ -217,6 +217,8 @@ final class AIChatContextualWebViewController: UIViewController {
 
     func pushPageContext(_ context: AIChatPageContextData?) {
         if isPageReady && isContentHandlerReady {
+            hasPendingChipContext = false
+            pendingChipContext = nil
             aiChatContentHandler.submitPageContext(context)
         } else {
             hasPendingChipContext = true

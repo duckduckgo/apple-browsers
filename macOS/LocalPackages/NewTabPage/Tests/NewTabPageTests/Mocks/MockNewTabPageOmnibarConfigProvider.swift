@@ -44,4 +44,6 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     }
 
     @Published  var showCustomizePopover: Bool = false
+
+    var isAIChatRecentChatsEnabled: Bool = false
 }

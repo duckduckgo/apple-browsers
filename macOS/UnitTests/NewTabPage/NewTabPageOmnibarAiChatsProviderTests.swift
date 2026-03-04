@@ -202,6 +202,7 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
 
     var showCustomizePopover: Bool = false
+    var isAIChatRecentChatsEnabled: Bool = true
 }
 
 private extension AIChatSuggestion {

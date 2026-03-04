@@ -149,11 +149,7 @@ final class AIChatSuggestionRowView: NSView {
     }
 
     private func configure(with suggestion: AIChatSuggestion) {
-        if let firstUserMessageContent = suggestion.firstUserMessageContent, !firstUserMessageContent.isEmpty {
-            titleLabel.stringValue = "\(suggestion.title) - \"\(firstUserMessageContent)\""
-        } else {
-            titleLabel.stringValue = suggestion.title
-        }
+        titleLabel.stringValue = suggestion.title
 
         let icon = suggestion.isPinned
             ? DesignSystemImages.Glyphs.Size16.pin

@@ -91,7 +91,7 @@ final class UIInteractionManagerTests {
     func startCallsOnWebViewReadyForInteractionsAndDoesNotShowKeyboard() async {
         await withCheckedContinuation { continuation in
             uiInteractionManager.start(
-                launchAction: .standardLaunch(nil),
+                launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: false),
                 onWebViewReadyForInteractions: {
                     #expect(self.mockAutoClearService.waitForDataClearedCalled)
                     #expect(!self.mockLaunchActionHandler.handleLaunchActionCalled)
@@ -106,7 +106,7 @@ final class UIInteractionManagerTests {
     func startCallsOnAppReadyForInteractions() async {
         await withCheckedContinuation { continuation in
             uiInteractionManager.start(
-                launchAction: .standardLaunch(nil),
+                launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: false),
                 onWebViewReadyForInteractions: {
                     #expect(!self.mockLaunchActionHandler.handleLaunchActionCalled)
                 },

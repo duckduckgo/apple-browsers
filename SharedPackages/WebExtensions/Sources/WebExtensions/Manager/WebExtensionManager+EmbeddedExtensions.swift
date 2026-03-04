@@ -81,18 +81,18 @@ extension WebExtensionManager {
                     let oldVersion = installed.version
                     try uninstallExtension(identifier: installed.uniqueIdentifier)
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type)
-                    pixelFiring.fire(.embeddedUpgraded(fromVersion: oldVersion, toVersion: bundledMetadata.version))
+                    pixelFiring.fire(.embeddedUpgraded(type: descriptor.type, fromVersion: oldVersion, toVersion: bundledMetadata.version))
                 } else {
                     Logger.webExtensions.debug("👌 Embedded extension \(descriptor.type.rawValue) is up to date (v\(installed.version ?? "?"))")
                 }
             } else {
                 Logger.webExtensions.info("📦 Installing embedded extension \(descriptor.type.rawValue) v\(bundledMetadata.version ?? "?")")
                 try await installEmbeddedExtension(from: bundledURL, type: descriptor.type)
-                pixelFiring.fire(.embeddedInstalled)
+                pixelFiring.fire(.embeddedInstalled(type: descriptor.type))
             }
         } catch {
             Logger.webExtensions.error("❌ Failed to sync embedded extension \(descriptor.type.rawValue): \(error.localizedDescription)")
-            pixelFiring.fire(.embeddedInstallError(error: error))
+            pixelFiring.fire(.embeddedInstallError(type: descriptor.type, error: error))
         }
     }
 
@@ -135,4 +135,5 @@ extension WebExtensionManager {
     private func shouldUpgrade(installed: InstalledWebExtension, bundledVersion: String?) -> Bool {
         SemanticVersionComparator().shouldUpgrade(installedVersion: installed.version, bundledVersion: bundledVersion)
     }
+
 }

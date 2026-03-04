@@ -21,6 +21,7 @@ import Foundation
 @testable import DuckDuckGo
 import BrowserServicesKit
 import Core
+import Persistence
 import XCTest
 import WebKit
 
@@ -29,8 +30,7 @@ final class TextZoomTests: XCTestCase {
     let viewScaleKey = "viewScale"
 
     func testZoomLevelAppliedToWebView() {
-        let storage = TextZoomStorage()
-        storage.textZoomLevels = [:]
+        let storage = SpyTextZoomStorage()
 
         let coordinator: TextZoomCoordinating = makeTextZoomCoordinator(storage: storage)
         let webView = URLFixedWebView(frame: .zero, configuration: .nonPersistent())
@@ -63,16 +63,14 @@ final class TextZoomTests: XCTestCase {
         coordinator.onWebViewCreated(applyToWebView: webView)
         XCTAssertEqual(1.2, webView.value(forKey: viewScaleKey) as? Double)
 
-        // When reset to the default then "forget"
+        // When reset to default, coordinator should remove the domain from storage (spy records remove)
         coordinator.set(textZoomLevel: .percent100, forHost: host)
-        XCTAssertEqual(storage.textZoomLevels, [:])
+        XCTAssertEqual(storage.removeCalls, ["example.com"])
     }
 
     func testMenuItemCreation() {
         let host = "example.com"
-
-        let storage = TextZoomStorage()
-        storage.textZoomLevels = [:]
+        let storage = SpyTextZoomStorage()
 
         let coordinator: TextZoomCoordinating = makeTextZoomCoordinator(storage: storage)
         coordinator.set(textZoomLevel: .percent120, forHost: host)
@@ -113,9 +111,7 @@ final class TextZoomTests: XCTestCase {
     func testSettingAndResetingDomainTextZoomLevels() {
         let host1 = "example.com"
         let host2 = "another.org"
-
-        let storage = TextZoomStorage()
-        storage.textZoomLevels = [:]
+        let storage = SpyTextZoomStorage()
 
         let coordinator: TextZoomCoordinating = makeTextZoomCoordinator(storage: storage)
         coordinator.set(textZoomLevel: .percent120, forHost: host1)
@@ -125,6 +121,9 @@ final class TextZoomTests: XCTestCase {
         XCTAssertEqual(coordinator.textZoomLevel(forHost: host2), .percent140)
 
         coordinator.resetTextZoomLevels(excludingDomains: [host1])
+        XCTAssertEqual(storage.resetExcludingDomainsCalls, [[host1]])
+        // Simulate storage having cleared host2 only; coordinator then returns default for host2, stored value for host1
+        storage.stubbedLevels.removeValue(forKey: host2)
         XCTAssertEqual(coordinator.textZoomLevel(forHost: host1), .percent120)
         XCTAssertEqual(coordinator.textZoomLevel(forHost: host2), AppSettingsMock().defaultTextZoomLevel)
     }
@@ -132,49 +131,39 @@ final class TextZoomTests: XCTestCase {
     func testResetTextZoomLevelsForVisitedDomains_ClearsSpecifiedDomains() {
         let host1 = "example.com"
         let host2 = "another.org"
-
-        let storage = TextZoomStorage()
-        storage.textZoomLevels = [:]
+        let storage = SpyTextZoomStorage()
 
         let coordinator: TextZoomCoordinating = makeTextZoomCoordinator(storage: storage)
         coordinator.set(textZoomLevel: .percent120, forHost: host1)
         coordinator.set(textZoomLevel: .percent140, forHost: host2)
 
         coordinator.resetTextZoomLevels(forVisitedDomains: [host1], excludingDomains: [])
+        XCTAssertEqual(storage.resetForVisitedDomainsCalls.count, 1)
+        XCTAssertEqual(storage.resetForVisitedDomainsCalls[0].visited, [host1])
+        XCTAssertEqual(storage.resetForVisitedDomainsCalls[0].excluding, [])
+        // Simulate storage having cleared host1 only
+        storage.stubbedLevels.removeValue(forKey: host1)
 
         XCTAssertEqual(coordinator.textZoomLevel(forHost: host1), AppSettingsMock().defaultTextZoomLevel)
         XCTAssertEqual(coordinator.textZoomLevel(forHost: host2), .percent140)
     }
 
     func testResetTextZoomLevelsForVisitedDomains_SubdomainClearsETLDplus1() {
-        let storage = TextZoomStorage()
-        storage.textZoomLevels = [:]
+        let storage = SpyTextZoomStorage()
 
         let coordinator: TextZoomCoordinating = makeTextZoomCoordinator(storage: storage)
         coordinator.set(textZoomLevel: .percent120, forHost: "example.com")
 
-        // Passing a subdomain should clear the eTLD+1 stored value
         coordinator.resetTextZoomLevels(forVisitedDomains: ["www.example.com"], excludingDomains: [])
+        XCTAssertEqual(storage.resetForVisitedDomainsCalls.last?.visited, ["www.example.com"])
+        // Simulate storage having cleared example.com (eTLD+1 of www.example.com)
+        storage.stubbedLevels.removeValue(forKey: "example.com")
 
         XCTAssertEqual(coordinator.textZoomLevel(forHost: "example.com"), AppSettingsMock().defaultTextZoomLevel)
     }
 
-    func testResetTextZoomLevelsForVisitedDomains_WhenSubdomainVisitedAndRootExcluded_ThenNotCleared() {
-        // Given - amazon.com is excluded (fireproofed), stored text zoom for amazon.com
-        let storage = TextZoomStorage()
-        storage.textZoomLevels = ["amazon.com": TextZoomLevel.percent120.rawValue]
-
-        // When - Visit mail.amazon.com (subdomain), exclude amazon.com
-        storage.resetTextZoomLevels(forVisitedDomains: ["mail.amazon.com"], excludingDomains: ["amazon.com"])
-
-        // Then - amazon.com text zoom should be preserved (excluded)
-        XCTAssertEqual(storage.textZoomLevelForDomain("amazon.com"), .percent120)
-    }
-
-    private func makeTextZoomCoordinator(
-        appSettings: AppSettings = AppSettingsMock(),
-        storage: TextZoomStoring = MockTextZoomStorage()
-    ) -> TextZoomCoordinating {
+    private func makeTextZoomCoordinator(appSettings: AppSettings = AppSettingsMock(),
+                                         storage: TextZoomStoring) -> TextZoomCoordinating {
         return TextZoomCoordinator(appSettings: appSettings,
                                    storage: storage)
     }
@@ -183,27 +172,143 @@ final class TextZoomTests: XCTestCase {
         return Link(title: title, url: url, localPath: localPath)
     }
 
+    func testWhenUsingDifferentStorageKeys_ThenStoragesAreIsolated() {
+        let normalStorage = TextZoomStorage(storageKey: TextZoomContext.normal.storageKey)
+        let fireStorage = TextZoomStorage(storageKey: TextZoomContext.fireMode.storageKey)
+        normalStorage.clearAll()
+        fireStorage.clearAll()
+
+        let appSettings = AppSettingsMock()
+        let normalCoordinator = TextZoomCoordinator(appSettings: appSettings, storage: normalStorage)
+        let fireCoordinator = TextZoomCoordinator(appSettings: appSettings, storage: fireStorage)
+
+        normalCoordinator.set(textZoomLevel: .percent120, forHost: "example.com")
+        fireCoordinator.set(textZoomLevel: .percent140, forHost: "example.com")
+
+        XCTAssertEqual(normalCoordinator.textZoomLevel(forHost: "example.com"), .percent120)
+        XCTAssertEqual(fireCoordinator.textZoomLevel(forHost: "example.com"), .percent140)
+
+        fireStorage.clearAll()
+        XCTAssertEqual(normalCoordinator.textZoomLevel(forHost: "example.com"), .percent120)
+        XCTAssertEqual(fireCoordinator.textZoomLevel(forHost: "example.com"), appSettings.defaultTextZoomLevel)
+    }
+
 }
 
-/// Nothing else should be using storage directly so just keeping it here out of the way.
-private class MockTextZoomStorage: TextZoomStoring {
+// MARK: - SpyTextZoomStorage
 
-    func textZoomLevelForDomain(_ domain: String) -> DuckDuckGo.TextZoomLevel? {
-        return nil
+/// Spy with no storage logic: records calls and returns/updates only stubbedLevels for get/set/remove.
+private final class SpyTextZoomStorage: TextZoomStoring {
+
+    /// Return value for textZoomLevelForDomain. Updated by set (add) and remove (remove) only.
+    var stubbedLevels: [String: TextZoomLevel] = [:]
+
+    private(set) var setCalls: [(TextZoomLevel, String)] = []
+    private(set) var removeCalls: [String] = []
+    private(set) var resetExcludingDomainsCalls: [[String]] = []
+    private(set) var resetForVisitedDomainsCalls: [(visited: [String], excluding: [String])] = []
+    private(set) var clearAllCallCount = 0
+
+    func textZoomLevelForDomain(_ domain: String) -> TextZoomLevel? {
+        stubbedLevels[domain]
     }
-    
-    func set(textZoomLevel: DuckDuckGo.TextZoomLevel, forDomain domain: String) {
+
+    func set(textZoomLevel: TextZoomLevel, forDomain domain: String) {
+        setCalls.append((textZoomLevel, domain))
+        stubbedLevels[domain] = textZoomLevel
     }
-    
+
     func removeTextZoomLevel(forDomain domain: String) {
+        removeCalls.append(domain)
+        stubbedLevels.removeValue(forKey: domain)
     }
-    
+
     func resetTextZoomLevels(excludingDomains: [String]) {
+        resetExcludingDomainsCalls.append(excludingDomains)
     }
 
     func resetTextZoomLevels(forVisitedDomains visitedDomains: [String], excludingDomains: [String]) {
+        resetForVisitedDomainsCalls.append((visitedDomains, excludingDomains))
     }
 
+    func clearAll() {
+        clearAllCallCount += 1
+    }
+}
+
+// MARK: - TextZoomStorageTests
+
+final class TextZoomStorageTests: XCTestCase {
+
+    private func makeStorage() -> TextZoomStorage {
+        TextZoomStorage(store: InMemoryKeyValueStore(), storageKey: TextZoomContext.normal.storageKey)
+    }
+
+    func testSetAndGetTextZoomLevel() {
+        let storage = makeStorage()
+        XCTAssertNil(storage.textZoomLevelForDomain("example.com"))
+        storage.set(textZoomLevel: .percent120, forDomain: "example.com")
+        XCTAssertEqual(storage.textZoomLevelForDomain("example.com"), .percent120)
+        storage.set(textZoomLevel: .percent140, forDomain: "example.com")
+        XCTAssertEqual(storage.textZoomLevelForDomain("example.com"), .percent140)
+    }
+
+    func testRemoveTextZoomLevel() {
+        let storage = makeStorage()
+        storage.set(textZoomLevel: .percent120, forDomain: "example.com")
+        storage.removeTextZoomLevel(forDomain: "example.com")
+        XCTAssertNil(storage.textZoomLevelForDomain("example.com"))
+    }
+
+    func testResetTextZoomLevelsExcludingDomains() {
+        let storage = makeStorage()
+        storage.set(textZoomLevel: .percent120, forDomain: "example.com")
+        storage.set(textZoomLevel: .percent140, forDomain: "another.org")
+        storage.resetTextZoomLevels(excludingDomains: ["example.com"])
+        XCTAssertEqual(storage.textZoomLevelForDomain("example.com"), .percent120)
+        XCTAssertNil(storage.textZoomLevelForDomain("another.org"))
+    }
+
+    func testResetTextZoomLevelsForVisitedDomains_ClearsVisitedNotExcluded() {
+        let storage = makeStorage()
+        storage.set(textZoomLevel: .percent120, forDomain: "example.com")
+        storage.set(textZoomLevel: .percent140, forDomain: "another.org")
+        storage.resetTextZoomLevels(forVisitedDomains: ["example.com"], excludingDomains: [])
+        XCTAssertNil(storage.textZoomLevelForDomain("example.com"))
+        XCTAssertEqual(storage.textZoomLevelForDomain("another.org"), .percent140)
+    }
+
+    func testResetTextZoomLevelsForVisitedDomains_WhenSubdomainVisitedAndRootExcluded_ThenNotCleared() {
+        let storage = makeStorage()
+        storage.set(textZoomLevel: .percent120, forDomain: "amazon.com")
+        storage.resetTextZoomLevels(forVisitedDomains: ["mail.amazon.com"], excludingDomains: ["amazon.com"])
+        XCTAssertEqual(storage.textZoomLevelForDomain("amazon.com"), .percent120)
+    }
+
+    func testClearAll() {
+        let storage = makeStorage()
+        storage.set(textZoomLevel: .percent120, forDomain: "example.com")
+        storage.clearAll()
+        XCTAssertNil(storage.textZoomLevelForDomain("example.com"))
+    }
+}
+
+// MARK: - InMemoryKeyValueStore
+
+private final class InMemoryKeyValueStore: KeyValueStoring {
+    private var storage: [String: Any] = [:]
+
+    func object(forKey defaultName: String) -> Any? {
+        storage[defaultName]
+    }
+
+    func set(_ value: Any?, forKey defaultName: String) {
+        storage[defaultName] = value
+    }
+
+    func removeObject(forKey defaultName: String) {
+        storage.removeValue(forKey: defaultName)
+    }
 }
 
 private class URLFixedWebView: WKWebView {

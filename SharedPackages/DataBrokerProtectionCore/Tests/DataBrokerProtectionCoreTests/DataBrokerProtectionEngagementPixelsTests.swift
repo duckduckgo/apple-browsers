@@ -65,7 +65,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
-        XCTAssertTrue(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil)))
+        XCTAssertTrue(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil, isFreeScan: false)))
         XCTAssertTrue(repository.wasDailyPixelSent)
     }
 
@@ -76,7 +76,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-02-21"))
 
-        XCTAssertTrue(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil)))
+        XCTAssertTrue(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil, isFreeScan: false)))
         XCTAssertTrue(repository.wasDailyPixelSent)
     }
 
@@ -87,7 +87,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
-        XCTAssertFalse(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil)))
+        XCTAssertFalse(wasPixelFired(.dailyActiveUser(isAuthenticated: true, needBackgroundAppRefresh: nil, isFreeScan: false)))
         XCTAssertFalse(repository.wasDailyPixelSent)
     }
 
@@ -98,7 +98,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
-        XCTAssertTrue(wasPixelFired(.weeklyActiveUser(isAuthenticated: true)))
+        XCTAssertTrue(wasPixelFired(.weeklyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertTrue(repository.wasWeeklyPixelSent)
     }
 
@@ -109,7 +109,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-02-27"))
 
-        XCTAssertTrue(wasPixelFired(.weeklyActiveUser(isAuthenticated: true)))
+        XCTAssertTrue(wasPixelFired(.weeklyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertTrue(repository.wasWeeklyPixelSent)
     }
 
@@ -120,7 +120,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-02-26"))
 
-        XCTAssertFalse(wasPixelFired(.weeklyActiveUser(isAuthenticated: true)))
+        XCTAssertFalse(wasPixelFired(.weeklyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertFalse(repository.wasWeeklyPixelSent)
     }
 
@@ -131,7 +131,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
 
-        XCTAssertTrue(wasPixelFired(.monthlyActiveUser(isAuthenticated: true)))
+        XCTAssertTrue(wasPixelFired(.monthlyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertTrue(repository.wasMonthlyPixelSent)
     }
 
@@ -142,7 +142,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-03-19"))
 
-        XCTAssertTrue(wasPixelFired(.monthlyActiveUser(isAuthenticated: true)))
+        XCTAssertTrue(wasPixelFired(.monthlyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertTrue(repository.wasMonthlyPixelSent)
     }
 
@@ -153,8 +153,40 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
         sut.fireEngagementPixel(isAuthenticated: true, currentDate: dateFromString("2024-03-18"))
 
-        XCTAssertFalse(wasPixelFired(.monthlyActiveUser(isAuthenticated: true)))
+        XCTAssertFalse(wasPixelFired(.monthlyActiveUser(isAuthenticated: true, isFreeScan: false)))
         XCTAssertFalse(repository.wasMonthlyPixelSent)
+    }
+
+    // MARK: - Free scan parameter
+
+    func testWhenUserIsAuthenticated_thenEngagementPixelsIncludeFreeScanFalse() {
+        database.setFetchedProfile(fakeProfile)
+        repository.setLatestDailyPixel = nil
+        repository.setLatestWeeklyPixel = nil
+        repository.setLatestMonthlyPixel = nil
+        let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
+
+        sut.fireEngagementPixel(isAuthenticated: true, currentDate: Date())
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        for pixel in firedPixels {
+            XCTAssertEqual(pixel.parameters?["free_scan"], "false", "Expected free_scan=false for authenticated user on pixel \(pixel.name)")
+        }
+    }
+
+    func testWhenUserIsNotAuthenticated_thenEngagementPixelsIncludeFreeScanTrue() {
+        database.setFetchedProfile(fakeProfile)
+        repository.setLatestDailyPixel = nil
+        repository.setLatestWeeklyPixel = nil
+        repository.setLatestMonthlyPixel = nil
+        let sut = DataBrokerProtectionEngagementPixels(database: database, handler: handler, repository: repository)
+
+        sut.fireEngagementPixel(isAuthenticated: false, currentDate: Date())
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        for pixel in firedPixels {
+            XCTAssertEqual(pixel.parameters?["free_scan"], "true", "Expected free_scan=true for unauthenticated user on pixel \(pixel.name)")
+        }
     }
 
     private func wasPixelFired(_ pixel: DataBrokerProtectionSharedPixels) -> Bool {

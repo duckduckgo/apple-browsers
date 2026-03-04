@@ -3306,19 +3306,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Turn On Sync & Backup"
-          }
-        }
-      }
-    },
-    "preferences.sync.single-device-setup.prompt" : {
-      "comment" : "Prompt shown on 'sync with another device' screen to guide user who may only have a single device",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Don't have another device?"
+            "value" : "Sync & Back Up This Device Only"
           }
         }
       }

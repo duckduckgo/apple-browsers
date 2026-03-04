@@ -118,8 +118,7 @@ enum UserText {
     static let syncWithAnotherDeviceUseTextCode = NSLocalizedString("preferences.sync.sync-with-another-device.use-text-code-link", bundle: Bundle.module, value: "Use Text Code Instead", comment: "Sync with another device dialog view text code link")
     static let syncWithAnotherDeviceStep1 = NSLocalizedString("preferences.sync.sync-with-another-device.step1", bundle: Bundle.module, value: "On another device, open **DuckDuckGo**", comment: "First instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around 'DuckDuckGo'.")
     static let syncWithAnotherDeviceStep2 = NSLocalizedString("preferences.sync.sync-with-another-device.step2", bundle: Bundle.module, value: "Go to **Settings › Sync & Backup › Sync With Another Device**", comment: "Second instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around the Settings path.")
-    static let syncSingleDeviceSetupPrompt = NSLocalizedString("preferences.sync.single-device-setup.prompt", bundle: Bundle.module, value: "Don't have another device?", comment: "Prompt shown on 'sync with another device' screen to guide user who may only have a single device")
-    static let syncSingleDeviceSetupAction = NSLocalizedString("preferences.sync.single-device-setup.action", bundle: Bundle.module, value: "Turn On Sync & Backup", comment: "Button to turn on sync and backup for a single device")
+    static let syncSingleDeviceSetupAction = NSLocalizedString("preferences.sync.single-device-setup.action", bundle: Bundle.module, value: "Sync & Back Up This Device Only", comment: "Button to turn on sync and backup for a single device")
 
     // Save recovery PDF dialog
     static let saveRecoveryPDF = NSLocalizedString("prefrences.sync.save-recovery-pdf", bundle: Bundle.module, value: "Save Your Recovery Code", comment: "Caption for a button to save Sync recovery PDF")

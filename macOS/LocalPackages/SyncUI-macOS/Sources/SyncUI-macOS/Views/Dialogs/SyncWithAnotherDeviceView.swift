@@ -257,23 +257,20 @@ struct SyncWithAnotherDeviceView: View {
         Button {
             model.delegate?.turnOnSync()
         } label: {
-            AdaptiveStack {
-                Text(UserText.syncSingleDeviceSetupPrompt)
+            HStack {
+                Text(UserText.syncSingleDeviceSetupAction)
                     .foregroundColor(.primary)
-            } trailing: {
-                HStack(spacing: 4) {
-                    Text(UserText.syncSingleDeviceSetupAction)
-                        .foregroundColor(.secondary)
-                    Image(.chevronMediumRight16)
-                        .foregroundColor(.secondary)
-                }
+                Spacer()
+                Image(.chevronMediumRight16)
+                    .foregroundColor(.secondary)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 14)
+            .frame(minWidth: Metrics.contentMinWidth)
+            .roundedBorder()
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .roundedBorder()
-        .frame(minWidth: Metrics.contentMinWidth)
     }
 
     private func shareContent(_ sharedText: String) {
@@ -300,62 +297,6 @@ private struct NumberBadge: View {
                 .foregroundColor(.secondary)
         }
         .frame(width: 16, height: 16)
-    }
-}
-
-/// Lays out two children side-by-side when they fit, or stacked vertically (leading-aligned) when they don't.
-///
-private struct AdaptiveStack<Leading: View, Trailing: View>: View {
-    let leading: Leading
-    let trailing: Trailing
-    var spacing: CGFloat = 8
-
-    @State private var useVerticalLayout = false
-
-    init(spacing: CGFloat = 8, @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
-        self.spacing = spacing
-        self.leading = leading()
-        self.trailing = trailing()
-    }
-
-    var body: some View {
-        if useVerticalLayout {
-            VStack(alignment: .leading, spacing: spacing) {
-                leading
-                trailing
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        } else {
-            HStack {
-                leading
-                Spacer()
-                trailing
-            }
-            .background(
-                GeometryReader { geo in
-                    HStack(spacing: spacing) {
-                        leading.fixedSize()
-                        trailing.fixedSize()
-                    }
-                    .hidden()
-                    .fixedSize()
-                    .background(GeometryReader { inner in
-                        Color.clear.preference(key: AdaptiveStackOverflowKey.self, value: inner.size.width > geo.size.width)
-                    })
-                }
-                    .hidden()
-            )
-            .onPreferenceChange(AdaptiveStackOverflowKey.self) { overflows in
-                useVerticalLayout = overflows
-            }
-        }
-    }
-}
-
-private struct AdaptiveStackOverflowKey: PreferenceKey {
-    static var defaultValue = false
-    static func reduce(value: inout Bool, nextValue: () -> Bool) {
-        value = value || nextValue()
     }
 }
 

@@ -306,6 +306,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
+
+    /// Gates the Suspend Tab / Resume Tab context menu actions for debugging purposes
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213528425856806
+    case tabSuspensionDebugging
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -437,6 +441,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatNtpRecentChats,
                 .aiChatSidebarFloating,
                 .privateProcessName,
+                .tabSuspensionDebugging,
                 .aiChatChromeSidebar,
                 .webViewLookUpAction,
                 .promoQueue,
@@ -637,6 +642,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.removeSuggestion))
         case .screenTimeCleaning:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.screenTimeCleaning))
+        case .tabSuspensionDebugging:
+            return .disabled
         }
     }
 }

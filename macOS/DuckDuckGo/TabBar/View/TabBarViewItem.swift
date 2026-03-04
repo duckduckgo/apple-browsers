@@ -1516,6 +1516,7 @@ extension TabBarViewItem: NSMenuDelegate {
     }
 
     private func addSuspendResumeMenuItem(to menu: NSMenu) {
+        guard featureFlagger.isFeatureOn(.tabSuspensionDebugging) else { return }
         guard !isPinned else { return }
         guard case .url = tabViewModel?.tabContent else { return }
         let isSuspended = tabViewModel?.isSuspended ?? false

@@ -20,23 +20,31 @@ import XCTest
 
 extension XCUIApplication {
 
-    /// Our Temporary Stats URL is in `/tmp` for simplicity reasons, as `FileManager.default.temporaryDirectory` will always
+    /// `Memory Allocations` are stored in `/tmp` for simplicity reasons, as `FileManager.default.temporaryDirectory` will always
     /// point to a different location due to the macOS Sandbox restrictions.
     ///
     var memoryStatsURL: URL {
         URL(fileURLWithPath: "/tmp/" + bundleID! + "-allocations.json")
     }
 
-    func cleanExportMemoryStats() {
-        deleteMemoryStats()
-        exportMemoryStats()
+    /// `Startup Metrics` are stored in `/tmp` for simplicity reasons, as `FileManager.default.temporaryDirectory` will always
+    /// point to a different location due to the macOS Sandbox restrictions.
+    ///
+    var startupMetricsURL: URL {
+        URL(fileURLWithPath: "/tmp/" + bundleID! + "-startup-metrics.json")
     }
 
-    private func exportMemoryStats() {
+    /// Exports the latest Memory Allocations Stats
+    ///
+    func cleanExportMemoryStats() {
+        try? FileManager.default.removeItem(at: memoryStatsURL)
         typeKey("m", modifierFlags: [.control, .command, .shift, .option])
     }
 
-    private func deleteMemoryStats() {
-        try? FileManager.default.removeItem(at: memoryStatsURL)
+    /// Exports the latest Startup Metrics
+    ///
+    func cleanExportStartupMetrics() {
+        try? FileManager.default.removeItem(at: startupMetricsURL)
+        typeKey("s", modifierFlags: [.control, .command, .shift, .option])
     }
 }

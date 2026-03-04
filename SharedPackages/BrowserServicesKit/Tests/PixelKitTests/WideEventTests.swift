@@ -602,6 +602,96 @@ final class WideEventTests: XCTestCase {
     }
 }
 
+// MARK: - Parameter Conversion Tests
+
+final class WideEventParameterConversionTests: XCTestCase {
+
+    func testStringValuesPassThroughUnchanged() {
+        let provider = TestParameterProvider(parameters: [
+            "key1": "hello",
+            "key2": "world",
+        ])
+
+        let pixel = provider.pixelParameters()
+        XCTAssertEqual(pixel["key1"], "hello")
+        XCTAssertEqual(pixel["key2"], "world")
+    }
+
+    func testBoolConvertsToString() {
+        let provider = TestParameterProvider(parameters: [
+            "enabled": true,
+            "disabled": false,
+        ])
+
+        let pixel = provider.pixelParameters()
+        XCTAssertEqual(pixel["enabled"], "true")
+        XCTAssertEqual(pixel["disabled"], "false")
+    }
+
+    func testIntConvertsToString() {
+        let provider = TestParameterProvider(parameters: [
+            "code": 42,
+            "negative": -1,
+            "zero": 0,
+        ])
+
+        let pixel = provider.pixelParameters()
+        XCTAssertEqual(pixel["code"], "42")
+        XCTAssertEqual(pixel["negative"], "-1")
+        XCTAssertEqual(pixel["zero"], "0")
+    }
+
+    func testUInt64ConvertsToString() {
+        let provider = TestParameterProvider(parameters: [
+            "large": UInt64(10_737_418_240),
+        ])
+
+        let pixel = provider.pixelParameters()
+        XCTAssertEqual(pixel["large"], "10737418240")
+    }
+
+    func testFloatConvertsToString() {
+        let provider = TestParameterProvider(parameters: [
+            "rate": Float(0.5),
+            "whole": Float(1.0),
+        ])
+
+        let pixel = provider.pixelParameters()
+        XCTAssertEqual(pixel["rate"], "0.5")
+        XCTAssertEqual(pixel["whole"], "1.0")
+    }
+
+    func testMixedTypesConvertCorrectly() {
+        let provider = TestParameterProvider(parameters: [
+            "name": "test",
+            "enabled": true,
+            "count": 7,
+            "rate": Float(0.25),
+            "bytes": UInt64(1024),
+        ])
+
+        let pixel = provider.pixelParameters()
+        XCTAssertEqual(pixel["name"], "test")
+        XCTAssertEqual(pixel["enabled"], "true")
+        XCTAssertEqual(pixel["count"], "7")
+        XCTAssertEqual(pixel["rate"], "0.25")
+        XCTAssertEqual(pixel["bytes"], "1024")
+    }
+
+    func testEmptyParametersReturnsEmpty() {
+        let provider = TestParameterProvider(parameters: [:])
+        XCTAssertTrue(provider.pixelParameters().isEmpty)
+    }
+}
+
+private struct TestParameterProvider: WideEventParameterProviding {
+    let parameters: [String: Encodable]
+
+    func jsonParameters() -> [String: Encodable] {
+        parameters
+    }
+}
+
 // MARK: - WideEventSending Tests
 
 final class WideEventSendingTests: XCTestCase {

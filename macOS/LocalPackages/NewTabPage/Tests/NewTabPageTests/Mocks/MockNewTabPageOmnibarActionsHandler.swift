@@ -23,6 +23,7 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     var submitSearchHandler: ((String, NewTabPageDataModel.OpenTarget) -> Void)?
     var openSuggestionHandler: ((NewTabPageDataModel.Suggestion, NewTabPageDataModel.OpenTarget) -> Void)?
     var submitChatHandler: ((String, NewTabPageDataModel.OpenTarget) -> Void)?
+    var openAiChatHandler: ((String, Bool, NewTabPageDataModel.OpenAiChatTrigger, NewTabPageDataModel.OpenTarget) -> Void)?
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget) {
@@ -37,5 +38,10 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     @MainActor
     func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget) {
         submitChatHandler?(chat, target)
+    }
+
+    @MainActor
+    func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPageDataModel.OpenTarget) {
+        openAiChatHandler?(chatId, isPinned, trigger, target)
     }
 }

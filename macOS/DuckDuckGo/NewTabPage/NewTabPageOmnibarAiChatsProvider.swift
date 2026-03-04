@@ -33,6 +33,10 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
         self.featureFlagger = featureFlagger
         self.suggestionsReader = suggestionsReader
 
+        // configProvider is not stored — Combine keeps the publisher pipeline alive
+        // as long as the cancellables are retained. If configProvider is deallocated,
+        // the publishers stop emitting, which is safe (no teardown needed if there's
+        // nothing to manage).
         configProvider.modePublisher
             .filter { $0 == .search }
             .sink { [weak self] _ in
@@ -59,8 +63,10 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
         guard featureFlagger.isFeatureOn(.aiChatNtpRecentChats) else {
             return .empty
         }
-        let normalizedQuery = query?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let (pinned, recent) = await suggestionsReader.fetchSuggestions(query: normalizedQuery?.isEmpty == false ? normalizedQuery : nil)
+        let effectiveQuery = query
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .flatMap { $0.isEmpty ? nil : $0 }
+        let (pinned, recent) = await suggestionsReader.fetchSuggestions(query: effectiveQuery)
         let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
         viewModel.setChats(pinned: pinned, recent: recent)
         let chats = viewModel.filteredSuggestions.map { $0.asNewTabPageAiChat }

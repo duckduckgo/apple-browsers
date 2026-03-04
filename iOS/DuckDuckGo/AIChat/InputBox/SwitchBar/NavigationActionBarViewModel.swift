@@ -42,6 +42,10 @@ final class NavigationActionBarViewModel: ObservableObject {
     var isTopBarPosition: Bool {
         switchBarHandler.isTopBarPosition
     }
+    
+    var isFireTab: Bool {
+        switchBarHandler.isFireTab
+    }
 
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling

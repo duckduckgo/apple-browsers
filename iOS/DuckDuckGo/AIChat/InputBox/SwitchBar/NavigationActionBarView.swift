@@ -311,10 +311,12 @@ final class NavigationActionBarView: UIView {
                                    pressedForeground: UIColor(designSystemColor: .icons),
                                    pressedBackground: UIColor(designSystemColor: .surface))
         } else {
+            let backgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+            let pressedBackgroundColor = viewModel.isFireTab ? UIColor(singleUseColor: .fireModeAccentTertiary) : UIColor(designSystemColor: .accentTertiary)
             searchButton.setColors(foreground: UIColor(designSystemColor: .accentContentPrimary),
-                                   background: UIColor(designSystemColor: .accent),
+                                   background: backgroundColor,
                                    pressedForeground: UIColor(designSystemColor: .accentContentPrimary),
-                                   pressedBackground: UIColor(designSystemColor: .accentTertiary))
+                                   pressedBackground: pressedBackgroundColor)
         }
         searchButton.isEnabled = hasText
         

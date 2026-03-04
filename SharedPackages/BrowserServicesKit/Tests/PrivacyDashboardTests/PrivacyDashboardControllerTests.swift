@@ -262,6 +262,7 @@ final class PrivacyDashboardControllerTests: XCTestCase {
         let config = WKWebViewConfiguration()
         let mockWebView = MockWebView(frame: .zero, configuration: config, expectation: expectation)
         privacyDashboardController.webView = mockWebView
+        privacyDashboardController.webView(mockWebView, didFinish: nil)
 
         privacyDashboardController.privacyInfo!.malicousSiteThreatKind = .phishing
 

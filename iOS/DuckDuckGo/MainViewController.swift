@@ -1699,6 +1699,7 @@ class MainViewController: UIViewController {
 
     private func refreshOmniBar() {
         updateOmniBarLoadingState()
+        viewCoordinator.omniBar.refreshFireMode(fireMode: currentTab?.tabModel.fireTab ?? false)
 
         guard let tab = currentTab, tab.link != nil else {
             viewCoordinator.omniBar.stopBrowsing()

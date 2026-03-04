@@ -137,6 +137,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupView() {
+        if handler.isFireTab {
+            overrideUserInterfaceStyle = .dark
+        }
+        
         let fontMetrics = UIFontMetrics(forTextStyle: .body)
         let textFont = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
         textView.font = textFont
@@ -234,47 +238,6 @@ class SwitchBarTextEntryView: UIView {
     }
 
     // MARK: - UI Updates
-    
-    /// Applies fire mode appearance by forcing dark mode and setting a custom background.
-    ///
-    /// Fire mode uses `overrideUserInterfaceStyle = .dark` so all subviews automatically
-    /// adopt dark mode colors (text, icons, controls, etc.) without individual overrides.
-    /// The background needs special handling because we want different shades depending
-    /// on the actual system appearance — a medium gray in light mode, and a darker tone
-    /// in dark mode. Since this view's own trait is overridden to `.dark`, we read the
-    /// real system appearance from `UIScreen.main` instead.
-    ///
-    /// Must be called after the view is added to the hierarchy (needs `superview` for trait observation).
-    func updateUIForFireMode() {
-        guard handler.isFireTab else { return }
-
-        // Force dark appearance so all child views render in dark mode
-        overrideUserInterfaceStyle = .dark
-
-        updateBackgroundForFireMode()
-
-        // Re-evaluate the background when the system appearance changes,
-        // since this view can't observe its own trait (already overridden to .dark).
-        // Fire mode is not supported on iOS < 17, so no need for an alternative.
-        if #available(iOS 17.0, *) {
-            superview?.registerForTraitChanges([UITraitUserInterfaceStyle.self]) { [weak self] (_: UIView, _) in
-                self?.updateBackgroundForFireMode()
-            }
-        }
-    }
-
-    /// Sets the background color based on the real system appearance.
-    ///
-    /// Uses `UIScreen.main.traitCollection` because this view's own `traitCollection`
-    /// is always `.dark` due to `overrideUserInterfaceStyle`.
-    private func updateBackgroundForFireMode() {
-        guard handler.isFireTab else { return }
-        if UIScreen.main.traitCollection.userInterfaceStyle == .light {
-            backgroundColor = UIColor(Color(singleUseColor: .fireModeBackgroundLight))
-        } else {
-            backgroundColor = UIColor(Color(singleUseColor: .fireModeBackgroundDark))
-        }
-    }
 
     private func updateForCurrentMode() {
         wasTextEmptyForAutocorrection = textView.text.isEmpty

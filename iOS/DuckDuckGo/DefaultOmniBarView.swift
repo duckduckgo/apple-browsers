@@ -209,6 +209,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
+    var fireMode: Bool = false
+
     var onTextEntered: (() -> Void)?
     var onVoiceSearchButtonPressed: (() -> Void)?
     var onAbortButtonPressed: (() -> Void)?
@@ -500,6 +502,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         activeOutlineView.layer.cornerCurve = .continuous
         activeOutlineView.backgroundColor = .clear
 
+        updateFireModeAppearance()
+
         stackView.axis = .horizontal
         stackView.alignment = .fill
         stackView.distribution = .fill
@@ -572,6 +576,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         menuButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(menuButtonLongPress)))
 
         aiChatLeftButton.addTarget(self, action: #selector(aiChatLeftButtonTap), for: .touchUpInside)
+    }
+
+    private func updateFireModeAppearance() {
+        if fireMode {
+            searchAreaContainerView.backgroundColor = UIColor(Color(singleUseColor: .fireModeBackground))
+            activeOutlineView.layer.borderColor = UIColor(Color(singleUseColor: .fireModeAccent)).cgColor
+        } else {
+            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+            activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
+        }
     }
 
     private func updateShadows() {
@@ -668,8 +682,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
+            updateFireModeAppearance()
         }
+    }
+    
+    func refreshFireMode(fireMode: Bool) {
+        self.fireMode = fireMode
+        updateFireModeAppearance()
+        setUpExpandedTextViewProperties()
+        searchAreaView.updateFireModeAppearance(fireMode: fireMode)
     }
 
     @objc private func privacyIconPressed() {
@@ -926,7 +947,7 @@ extension DefaultOmniBarView {
     func setUpExpandedTextViewProperties() {
         aiChatTextView.font = UIFont.daxBodyRegular()
         aiChatTextView.textColor = UIColor(designSystemColor: .textPrimary)
-        aiChatTextView.tintColor = UIColor(designSystemColor: .accent)
+        aiChatTextView.tintColor = fireMode ? UIColor(Color(singleUseColor: .fireModeAccent)) : UIColor(designSystemColor: .accent)
         aiChatTextView.autocapitalizationType = .none
         aiChatTextView.autocorrectionType = .no
         aiChatTextView.spellCheckingType = .no

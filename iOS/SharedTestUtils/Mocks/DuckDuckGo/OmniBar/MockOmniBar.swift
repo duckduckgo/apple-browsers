@@ -68,8 +68,10 @@ final class MockOmniBar: OmniBar {
     func refreshCustomizableButton() {}
     func enterAIChatMode() { }
     func setDaxEasterEggLogoURL(_ logoURL: String?) { }
+    func refreshFireMode(fireMode: Bool) { }
 
     final class MockOmniBarView: UIView, OmniBarView {
+        
         required init?(coder: NSCoder) {
             fatalError("init(coder:) has not been implemented")
         }
@@ -106,6 +108,7 @@ final class MockOmniBar: OmniBar {
         func moveSeparatorToBottom() { }
         func hideButtons() { }
         func revealButtons() { }
+        func refreshFireMode(fireMode: Bool) { }
 
         var progressView: DuckDuckGo.ProgressView?
         var privacyIconView: UIView?

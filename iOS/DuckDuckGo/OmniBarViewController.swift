@@ -374,6 +374,10 @@ class OmniBarViewController: UIViewController, OmniBar {
             textField.attributedText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: textField.isEditing || forceFullURL)
         }
     }
+    
+    func refreshFireMode(fireMode: Bool) {
+        barView.refreshFireMode(fireMode: fireMode)
+    }
 
     func enterPhoneState() {
         refreshState(state.onEnterPhoneState)

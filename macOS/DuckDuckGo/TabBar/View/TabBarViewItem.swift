@@ -1227,10 +1227,6 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.startSpinnerIfNeeded(isLoading: isLoading, error: error, url: url)
     }
 
-    private func stopSpinner() {
-        cell.faviconView.stopSpinner()
-    }
-
     private func refreshProgressColors(rendered: Bool) {
         let url = tabViewModel?.url
         cell.refreshProgressColors(rendered: rendered, url: url)

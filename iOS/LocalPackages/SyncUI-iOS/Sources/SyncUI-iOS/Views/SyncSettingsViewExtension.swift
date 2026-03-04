@@ -176,6 +176,8 @@ extension SyncSettingsView {
             Button(UserText.saveRecoveryPDFButton) {
                 model.saveRecoveryPDF()
             }
+        } header: {
+            Text(UserText.recoverySectionHeader)
         } footer: {
             Text(UserText.saveRecoveryPDFFooter)
         }

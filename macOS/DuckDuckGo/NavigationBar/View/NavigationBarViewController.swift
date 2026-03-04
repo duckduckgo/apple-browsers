@@ -39,6 +39,8 @@ final class NavigationBarViewController: NSViewController {
         static let downloadsButtonAutoHidingInterval: TimeInterval = 5 * 60
         static let maxDragDistanceToExpandHoveredFolder: CGFloat = 4
         static let dragOverFolderExpandDelay: TimeInterval = 0.3
+        static let duckAISidebarOpenImageName = "Sidebar-Open-16"
+        static let duckAISidebarCloseImageName = "Sidebar-Close-16"
     }
 
 #if DEBUG
@@ -99,6 +101,10 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var overflowButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet private var optionsButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var optionsButtonHeightConstraint: NSLayoutConstraint!
+
+    private var duckAISidebarButton: MouseOverButton?
+    private var duckAISidebarButtonWidthConstraint: NSLayoutConstraint?
+    private var duckAISidebarButtonHeightConstraint: NSLayoutConstraint?
 
     private let downloadListCoordinator: DownloadListCoordinator
 
@@ -179,6 +185,9 @@ final class NavigationBarViewController: NSViewController {
     private var heightChangeAnimation: DispatchWorkItem?
 
     private var downloadsButtonHidingTimer: Timer?
+    private var aiChatSidebarPresenceCancellable: AnyCancellable?
+    private var aiChatMenuConfigCancellable: AnyCancellable?
+    private var toolbarSidebarFeatureFlagCancellable: AnyCancellable?
 
     @UserDefaultsWrapper(key: .homeButtonPosition, defaultValue: .right)
     static private var homeButtonPosition: HomeButtonPosition
@@ -207,8 +216,17 @@ final class NavigationBarViewController: NSViewController {
                 passwordManagementButton,
                 addressBarViewController?.addressBarTextField,
                 addressBarViewController?.passiveTextField,
-                addressBarViewController?.addressBarButtonsViewController?.bookmarkButton
+                addressBarViewController?.addressBarButtonsViewController?.bookmarkButton,
+                duckAISidebarButton
         ]
+    }
+
+    private var isChromeSidebarFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.chromeSidebar)
+    }
+
+    private var isToolbarSidebarVariantEnabled: Bool {
+        featureFlagger.isFeatureOn(.toolbarSidebar) && !isChromeSidebarFeatureEnabled
     }
 
     // MARK: View Lifecycle
@@ -456,6 +474,7 @@ final class NavigationBarViewController: NSViewController {
         menuButtons.spacing = theme.navigationToolbarButtonsSpacing
 
         setupNavigationButtons()
+        subscribeToToolbarSidebarFeatureFlag()
         setupOverflowMenu()
         setupNetworkProtectionButton()
 
@@ -1042,6 +1061,71 @@ final class NavigationBarViewController: NSViewController {
         setupNavigationButtonsCornerRadius()
     }
 
+    private func setupDuckAISidebarButton() {
+        guard duckAISidebarButton == nil else { return }
+
+        let button = MouseOverButton(frame: .zero)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.target = self
+        button.action = #selector(duckAISidebarButtonAction(_:))
+        button.sendAction(on: .leftMouseDown)
+        button.image = .aiChat
+        button.setAccessibilityIdentifier("NavigationBarViewController.duckAISidebarButton")
+
+        if let optionsButtonIndex = menuButtons.arrangedSubviews.firstIndex(of: optionsButton) {
+            menuButtons.insertArrangedSubview(button, at: optionsButtonIndex)
+        } else {
+            menuButtons.addArrangedSubview(button)
+        }
+
+        let widthConstraint = button.widthAnchor.constraint(equalToConstant: theme.addressBarStyleProvider.addressBarButtonSize)
+        let heightConstraint = button.heightAnchor.constraint(equalToConstant: theme.addressBarStyleProvider.addressBarButtonSize)
+        NSLayoutConstraint.activate([widthConstraint, heightConstraint])
+
+        duckAISidebarButtonWidthConstraint = widthConstraint
+        duckAISidebarButtonHeightConstraint = heightConstraint
+        duckAISidebarButton = button
+        setupNavigationButtonColors()
+        setupNavigationButtonsCornerRadius()
+        updateDuckAISidebarButtonState()
+    }
+
+    private func removeDuckAISidebarButton() {
+        guard let duckAISidebarButton else { return }
+        menuButtons.removeArrangedSubview(duckAISidebarButton)
+        duckAISidebarButton.removeFromSuperview()
+        self.duckAISidebarButton = nil
+        duckAISidebarButtonWidthConstraint = nil
+        duckAISidebarButtonHeightConstraint = nil
+    }
+
+    private func subscribeToToolbarSidebarFeatureFlag() {
+        toolbarSidebarFeatureFlagCancellable = featureFlagger.updatesPublisher
+            .map { [weak self] in
+                self?.isToolbarSidebarVariantEnabled ?? false
+            }
+            .prepend(isToolbarSidebarVariantEnabled)
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isEnabled in
+                self?.applyToolbarSidebarFeatureFlagState(isEnabled: isEnabled)
+            }
+    }
+
+    private func applyToolbarSidebarFeatureFlagState(isEnabled: Bool) {
+        if isEnabled {
+            setupDuckAISidebarButton()
+            subscribeToAIChatSidebarChanges()
+            subscribeToAIChatMenuConfigChanges()
+            updateDuckAISidebarButtonState()
+            return
+        }
+
+        aiChatSidebarPresenceCancellable = nil
+        aiChatMenuConfigCancellable = nil
+        removeDuckAISidebarButton()
+    }
+
     private func setupNavigationButtonIcons() {
         let iconsProvider = theme.iconsProvider
 
@@ -1056,12 +1140,14 @@ final class NavigationBarViewController: NSViewController {
         bookmarkListButton.image = iconsProvider.navigationToolbarIconsProvider.bookmarksButtonImage
         optionsButton.image = iconsProvider.navigationToolbarIconsProvider.moreOptionsbuttonImage
         overflowButton.image = iconsProvider.navigationToolbarIconsProvider.overflowButtonImage
+        duckAISidebarButton?.image = duckAISidebarIcon(isSidebarOpen: false)
     }
 
     private func setupNavigationButtonColors() {
         let allButtons: [MouseOverButton] = [
             goBackButton, goForwardButton, refreshOrStopButton, homeButton,
-            downloadsButton, shareButton, passwordManagementButton, bookmarkListButton, optionsButton]
+            downloadsButton, shareButton, passwordManagementButton, bookmarkListButton, optionsButton
+        ] + (duckAISidebarButton.map { [$0] } ?? [])
 
         let colorsProvider = theme.colorsProvider
 
@@ -1096,6 +1182,8 @@ final class NavigationBarViewController: NSViewController {
         overflowButtonHeightConstraint.constant = addressBarStyleProvider.addressBarButtonSize
         optionsButtonWidthConstraint.constant = addressBarStyleProvider.addressBarButtonSize
         optionsButtonHeightConstraint.constant = addressBarStyleProvider.addressBarButtonSize
+        duckAISidebarButtonWidthConstraint?.constant = addressBarStyleProvider.addressBarButtonSize
+        duckAISidebarButtonHeightConstraint?.constant = addressBarStyleProvider.addressBarButtonSize
     }
 
     private func setupBackgroundViewsAndColors() {
@@ -1176,6 +1264,7 @@ final class NavigationBarViewController: NSViewController {
         networkProtectionButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
         optionsButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
         overflowButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
+        duckAISidebarButton?.setCornerRadius(theme.toolbarButtonsCornerRadius)
     }
 
     private func subscribeToSelectedTabViewModel() {
@@ -1184,7 +1273,63 @@ final class NavigationBarViewController: NSViewController {
             self?.subscribeToNavigationActionFlags()
             self?.subscribeToCredentialsToSave()
             self?.subscribeToTabContent()
+            self?.updateDuckAISidebarButtonState()
         }
+    }
+
+    private func subscribeToAIChatSidebarChanges() {
+        aiChatSidebarPresenceCancellable = aiChatCoordinator.sidebarPresenceDidChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateDuckAISidebarButtonState()
+            }
+    }
+
+    private func subscribeToAIChatMenuConfigChanges() {
+        aiChatMenuConfigCancellable = aiChatMenuConfig.valuesChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateDuckAISidebarButtonState()
+            }
+    }
+
+    private func canToggleDuckAISidebar(for tab: Tab) -> Bool {
+        if aiChatCoordinator.isSidebarOpen(for: tab.uuid) {
+            return true
+        }
+
+        guard !aiChatCoordinator.isChatFloating(for: tab.uuid),
+              aiChatMenuConfig.shouldOpenAIChatInSidebar,
+              case .url = tab.content else {
+            return false
+        }
+        return true
+    }
+
+    private func duckAISidebarIcon(isSidebarOpen: Bool) -> NSImage? {
+        let imageName = isSidebarOpen ? Constants.duckAISidebarCloseImageName : Constants.duckAISidebarOpenImageName
+        return NSImage(named: NSImage.Name(imageName))
+    }
+
+    private func updateDuckAISidebarButtonState() {
+        guard let duckAISidebarButton else { return }
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else {
+            duckAISidebarButton.isEnabled = false
+            duckAISidebarButton.state = .off
+            duckAISidebarButton.image = duckAISidebarIcon(isSidebarOpen: false)
+            duckAISidebarButton.toolTip = UserText.aiChatOpenSidebarButton
+            duckAISidebarButton.setAccessibilityTitle(UserText.aiChatOpenSidebarButton)
+            return
+        }
+
+        let isSidebarOpen = aiChatCoordinator.isSidebarOpen(for: tab.uuid)
+        let canToggleSidebar = canToggleDuckAISidebar(for: tab)
+        let tooltip = isSidebarOpen ? UserText.aiChatCloseSidebarButton : UserText.aiChatOpenSidebarButton
+        duckAISidebarButton.image = duckAISidebarIcon(isSidebarOpen: isSidebarOpen)
+        duckAISidebarButton.isEnabled = canToggleSidebar
+        duckAISidebarButton.toolTip = tooltip
+        duckAISidebarButton.setAccessibilityTitle(tooltip)
+        duckAISidebarButton.state = isSidebarOpen ? .on : .off
     }
 
     private func subscribeToTabContent() {
@@ -1192,6 +1337,7 @@ final class NavigationBarViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] _ in
                 self?.updatePasswordManagementButton()
+                self?.updateDuckAISidebarButtonState()
             })
     }
 
@@ -1372,6 +1518,25 @@ final class NavigationBarViewController: NSViewController {
         } else {
             selectedTabViewModel.reload()
         }
+    }
+
+    @objc private func duckAISidebarButtonAction(_ sender: NSButton) {
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else {
+            return
+        }
+
+        let isSidebarOpen = aiChatCoordinator.isSidebarOpen(for: tab.uuid)
+        if !isSidebarOpen && !canToggleDuckAISidebar(for: tab) {
+            updateDuckAISidebarButtonState()
+            return
+        }
+
+        if let mainViewController = parent as? MainViewController {
+            mainViewController.toggleDuckAISidebar()
+        } else {
+            aiChatCoordinator.toggleSidebar()
+        }
+        updateDuckAISidebarButtonState()
     }
 
     @IBAction func homeButtonAction(_ sender: NSButton) {

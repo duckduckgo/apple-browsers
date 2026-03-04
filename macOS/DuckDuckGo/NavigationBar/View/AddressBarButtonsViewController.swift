@@ -272,6 +272,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var trackerAnimationTriggerCancellable: AnyCancellable?
     private var privacyEntryPointIconUpdateCancellable: AnyCancellable?
     private var tabRemovalCancellables = Set<AnyCancellable>()
+    private var toolbarSidebarFeatureFlagCancellable: AnyCancellable?
 
     private struct TrackerAnimationDomainState {
         var lastVisitedDomain: String?
@@ -303,6 +304,9 @@ final class AddressBarButtonsViewController: NSViewController {
         AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
                                       hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
     }()
+    private var isDuckAIEntryPointsFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.toolbarSidebar) || featureFlagger.isFeatureOn(.chromeSidebar)
+    }
 
     private(set) lazy var aiChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating? = {
         AIChatTogglePopoverCoordinator(windowControllersManager: NSApp.delegateTyped.windowControllersManager)
@@ -372,6 +376,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToButtonsVisibility()
         subscribeToAIChatPreferences()
         subscribeToAIChatCoordinator()
+        subscribeToToolbarSidebarFeatureFlag()
         subscribeToThemeChanges()
         subscribeToTabRemovals()
 
@@ -440,6 +445,19 @@ final class AddressBarButtonsViewController: NSViewController {
         setupButtonsSize()
         setupButtonIcons()
         setupButtonPaddings()
+    }
+
+    private func subscribeToToolbarSidebarFeatureFlag() {
+        toolbarSidebarFeatureFlagCancellable = featureFlagger.updatesPublisher
+            .map { [weak self] in
+                self?.isDuckAIEntryPointsFeatureEnabled ?? false
+            }
+            .prepend(isDuckAIEntryPointsFeatureEnabled)
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateButtons()
+            }
     }
 
     func setupButtonPaddings(isFocused: Bool = false) {
@@ -1218,7 +1236,11 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        if isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+        let isToggleVisible = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        && aiChatSettings.isAIFeaturesEnabled
+        && aiChatSettings.showSearchAndDuckAIToggle
+        && (isDuckAIEntryPointsFeatureEnabled || isTextFieldEditorFirstResponder)
+        if isToggleVisible {
             bookmarkButton.isShown = false
             updateAIChatDividerVisibility()
             return
@@ -1318,7 +1340,10 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
-        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        let isToggleFeatureEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        && aiChatSettings.isAIFeaturesEnabled
+        && aiChatSettings.showSearchAndDuckAIToggle
+        && (isDuckAIEntryPointsFeatureEnabled || isTextFieldEditorFirstResponder)
 
         if isTextFieldEditorFirstResponder {
             if isToggleFeatureEnabled {
@@ -1808,7 +1833,9 @@ final class AddressBarButtonsViewController: NSViewController {
 
         stopAnimationsAfterFocus()
 
-        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        let isToggleFeatureEnabled = (isDuckAIEntryPointsFeatureEnabled || isTextFieldEditorFirstResponder)
+        && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        && aiChatSettings.isAIFeaturesEnabled
         let shouldShowToggle = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
 
         // Update key view chain when toggle visibility changes

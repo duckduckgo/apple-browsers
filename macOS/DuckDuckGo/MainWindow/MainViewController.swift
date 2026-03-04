@@ -164,6 +164,7 @@ final class MainViewController: NSViewController {
             fireproofDomains: fireproofDomains,
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
             featureFlagger: featureFlagger,
+            aiChatMenuConfig: aiChatMenuConfig,
             tabDragAndDropManager: tabDragAndDropManager,
             autoconsentStatsPopoverCoordinator: NSApp.delegateTyped.autoconsentStatsPopoverCoordinator
         )
@@ -549,6 +550,14 @@ final class MainViewController: NSViewController {
                 aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
             }
         }
+    }
+
+    func openNewDuckAIChatTab() {
+        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+    }
+
+    func toggleDuckAISidebar() {
+        aiChatCoordinator.toggleSidebar()
     }
 
     private func wireToggleReferenceToAIChatTextContainer() {

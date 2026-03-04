@@ -684,9 +684,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        if isSearchAreaExpanded, !aiChatSendButton.isHidden {
-            let buttonPoint = aiChatSendButton.convert(point, from: self)
-            if aiChatSendButton.point(inside: buttonPoint, with: event) {
+        if isSearchAreaExpanded {
+            if !aiChatSendButton.isHidden {
+                let buttonPoint = aiChatSendButton.convert(point, from: self)
+                if aiChatSendButton.point(inside: buttonPoint, with: event) {
+                    return true
+                }
+            }
+            let textViewPoint = aiChatTextView.convert(point, from: self)
+            if !aiChatTextView.isHidden, aiChatTextView.point(inside: textViewPoint, with: event) {
                 return true
             }
         }
@@ -694,10 +700,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        if isSearchAreaExpanded, !aiChatSendButton.isHidden {
-            let buttonPoint = aiChatSendButton.convert(point, from: self)
-            if aiChatSendButton.point(inside: buttonPoint, with: event) {
-                return aiChatSendButton
+        if isSearchAreaExpanded {
+            if !aiChatSendButton.isHidden {
+                let buttonPoint = aiChatSendButton.convert(point, from: self)
+                if aiChatSendButton.point(inside: buttonPoint, with: event) {
+                    return aiChatSendButton
+                }
+            }
+            if !aiChatTextView.isHidden {
+                let textViewPoint = aiChatTextView.convert(point, from: self)
+                if aiChatTextView.point(inside: textViewPoint, with: event) {
+                    return aiChatTextView.hitTest(textViewPoint, with: event) ?? aiChatTextView
+                }
             }
         }
         return super.hitTest(point, with: event)

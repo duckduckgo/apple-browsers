@@ -407,6 +407,26 @@ class OmniBarCell: UICollectionViewCell {
         }
     }
 
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        if super.point(inside: point, with: event) {
+            return true
+        }
+        // Only accept overflow points that the omnibar's expanded search area actually claims
+        guard point.y >= bounds.maxY, let omniBarView = omniBar?.barView else { return false }
+        let omniBarPoint = omniBarView.convert(point, from: self)
+        return omniBarView.point(inside: omniBarPoint, with: event)
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let result = super.hitTest(point, with: event) {
+            return result
+        }
+        // Forward overflow points to the omnibar view
+        guard point.y >= bounds.maxY, let omniBarView = omniBar?.barView else { return nil }
+        let omniBarPoint = omniBarView.convert(point, from: self)
+        return omniBarView.hitTest(omniBarPoint, with: event)
+    }
+
     deinit {
         controller?.removeFromParent()
         controller = nil

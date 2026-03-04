@@ -80,6 +80,7 @@ struct BrokenSiteReportMocks {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
                          pageLoadTiming: nil)
 #endif
     }
@@ -143,6 +144,7 @@ struct BrokenSiteReportMocks {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
                          pageLoadTiming: nil)
 #endif
     }
@@ -206,6 +208,7 @@ struct BrokenSiteReportMocks {
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
                          pageLoadTiming: nil)
 #endif
     }

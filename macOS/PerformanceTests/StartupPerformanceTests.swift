@@ -64,6 +64,7 @@ final class StartupPerformanceTests: XCTestCase {
 
         /// Launch
         application.launch()
+        XCTAssertTrue(application.windows.firstMatch.waitForExistence(timeout: 10), "Window did not appear after launch")
 
         let attachment = try application.buildStartupMetricsAttachment()
         XCTContext.runActivity(named: "Attaching Startup Metrics") { activity in

@@ -357,12 +357,12 @@ jobs:
     runs-on: [ self-hosted, apple ]
 
     steps:
-      - name: Download memory metrics
+      - name: Download startup metrics
         uses: actions/download-artifact@v4
         with:
           name: startup-metrics
 
-      - name: Download startup metrics
+      - name: Download memory metrics
         uses: actions/download-artifact@v4
         with:
           name: memory-metrics

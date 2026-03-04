@@ -586,6 +586,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
             activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
         }
+        progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
 
     private func updateShadows() {

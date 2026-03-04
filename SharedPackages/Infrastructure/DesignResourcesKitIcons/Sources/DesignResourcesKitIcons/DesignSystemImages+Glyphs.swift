@@ -384,6 +384,7 @@ public extension DesignSystemImages {
             public static var clear: DesignSystemImage { .init(resource: .clear24) }
             public static var cookie: DesignSystemImage { .init(resource: .cookie24) }
             public static var cookieWhole: DesignSystemImage { .init(resource: .cookieWhole24) }
+            public static var compose: DesignSystemImage { .init(resource: .compose24) }
             public static var copy: DesignSystemImage { .init(resource: .copy24) }
             public static var covid: DesignSystemImage { .init(resource: .covid24) }
             public static var creditCard: DesignSystemImage { .init(resource: .creditCard24) }

@@ -48,19 +48,20 @@ final class CrashCollectionService {
                 // Calculate appIdentifier for what crashed - nil for main bundle, otherwise the app identifier is the bundle identifier minus the main bundle identifier.
                 var params = params
                 var appIdentifier: String?
-                if let bundle = params.removeValue(forKey: "bundle"),
+                if let bundle = params.removeValue(forKey: .bundle),
                    let mainBundle = Bundle.main.bundleIdentifier {
                     if bundle != mainBundle {
                         appIdentifier = bundle.dropping(prefix: mainBundle).removingCharacters(in: .punctuationCharacters).lowercased()
                     }
                 }
 
-                Pixel.fire(pixel: .dbCrashDetected(appIdentifier: appIdentifier), withAdditionalParameters: params, includedParameters: [])
+                let additionalParameters = Dictionary(uniqueKeysWithValues: params.map { ($0.key.rawValue, $0.value) })
+                Pixel.fire(pixel: .dbCrashDetected(appIdentifier: appIdentifier), withAdditionalParameters: additionalParameters, includedParameters: [])
 
                 // Each crash comes with an `appVersion` parameter representing the version that the crash occurred on.
                 // This is to disambiguate the situation where a crash occurs, but isn't sent until the next update.
                 // If for some reason the parameter can't be found, fall back to the current version.
-                if let crashAppVersion = params[PixelParameters.appVersion] {
+                if let crashAppVersion = params[.appVersion] {
                     let dailyParameters = [PixelParameters.appVersion: crashAppVersion]
                     DailyPixel.fireDaily(.dbCrashDetectedDaily(appIdentifier: appIdentifier), withAdditionalParameters: dailyParameters)
                 } else {

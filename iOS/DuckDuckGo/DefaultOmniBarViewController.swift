@@ -46,6 +46,27 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         view = omniBarView
     }
 
+    // MARK: - Key Commands
+
+    override var keyCommands: [UIKeyCommand]? {
+        guard dependencies.aiChatAddressBarExperience.shouldShowModeToggle,
+              omniBarView.textField.isFirstResponder || omniBarView.aiChatTextView.isFirstResponder else {
+            return super.keyCommands
+        }
+
+        let shiftEnter = UIKeyCommand(action: #selector(handleShiftEnter), input: "\r", modifierFlags: .shift)
+        shiftEnter.wantsPriorityOverSystemBehavior = true
+        return (super.keyCommands ?? []) + [shiftEnter]
+    }
+
+    @objc private func handleShiftEnter() {
+        if selectedTextEntryMode == .aiChat {
+            omniBarView.aiChatTextView.insertText("\n")
+        } else {
+            setSelectedTextEntryMode(.aiChat)
+        }
+    }
+
     // MARK: - Initialization
 
     override func viewDidLoad() {

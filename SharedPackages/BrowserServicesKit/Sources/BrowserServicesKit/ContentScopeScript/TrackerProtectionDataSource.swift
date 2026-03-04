@@ -40,14 +40,22 @@ public protocol TrackerProtectionDataSource {
 /// The `surrogatesProvider` closure lets platform code supply the surrogates.txt
 /// content from its own configuration store without coupling BSK to the
 /// `Configuration` module.
+///
+/// On macOS, ClickToLoad rules are compiled into a separate rule list.
+/// Pass the list name via `additionalRuleLists` so the merged tracker data
+/// includes CTL rules (e.g. `block-ctl-fb`), making them visible to the
+/// C-S-S TrackerResolver for blocking decisions and dashboard reporting.
 public struct DefaultTrackerProtectionDataSource: TrackerProtectionDataSource {
 
     private let contentBlockingManager: CompiledRuleListsSource
     private let surrogatesProvider: () -> String?
+    private let additionalRuleLists: [String]
 
     public init(contentBlockingManager: CompiledRuleListsSource,
+                additionalRuleLists: [String] = [],
                 surrogatesProvider: @escaping () -> String? = { nil }) {
         self.contentBlockingManager = contentBlockingManager
+        self.additionalRuleLists = additionalRuleLists
         self.surrogatesProvider = surrogatesProvider
     }
 
@@ -56,26 +64,55 @@ public struct DefaultTrackerProtectionDataSource: TrackerProtectionDataSource {
     }
 
     public var trackerData: TrackerData? {
-        contentBlockingManager.currentMainRules?.trackerData
+        mergedTrackerData()
     }
 
     /// Returns JSON-encoded full tracker data for the C-S-S trackerProtection feature.
     ///
-    /// Encodes the full `trackerData`, not the pre-filtered `encodedTrackerData` from
-    /// `Rules`. The `Rules.encodedTrackerData` only contains trackers with surrogates
-    /// (filtered by `extractSurrogates`), but trackerProtection needs all trackers.
+    /// Encodes the full merged `trackerData` (main + additional lists), not the
+    /// pre-filtered `encodedTrackerData` from `Rules`.  trackerProtection needs
+    /// all trackers including CTL rules.
     public var encodedTrackerData: String? {
-        guard let trackerData = contentBlockingManager.currentMainRules?.trackerData else {
-            Logger.contentBlocking.warning("TrackerProtectionDataSource: currentMainRules is nil")
+        guard let data = mergedTrackerData() else {
+            Logger.contentBlocking.warning("TrackerProtectionDataSource: no tracker data available")
             return nil
         }
 
-        guard let encodedData = try? JSONEncoder().encode(trackerData),
+        guard let encodedData = try? JSONEncoder().encode(data),
               let encodedString = String(data: encodedData, encoding: .utf8) else {
             Logger.contentBlocking.warning("TrackerProtectionDataSource: Failed to encode trackerData")
             return nil
         }
 
         return encodedString
+    }
+
+    /// Merge main TDS tracker data with any additional compiled rule lists
+    /// (e.g. ClickToLoad).  Takes a single snapshot of `currentRules` to
+    /// avoid torn reads while rules are recompiling.
+    private func mergedTrackerData() -> TrackerData? {
+        let rulesSnapshot = contentBlockingManager.currentRules
+        guard let main = rulesSnapshot.first(where: {
+            $0.name == DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
+        }) else {
+            Logger.contentBlocking.warning("TrackerProtectionDataSource: currentMainRules is nil")
+            return nil
+        }
+
+        guard !additionalRuleLists.isEmpty else { return main.trackerData }
+
+        var trackers = main.trackerData.trackers
+        var entities = main.trackerData.entities
+        var domains = main.trackerData.domains
+
+        for name in additionalRuleLists {
+            guard let rules = rulesSnapshot.first(where: { $0.name == name }) else { continue }
+            trackers.merge(rules.trackerData.trackers) { _, new in new }
+            entities.merge(rules.trackerData.entities) { _, new in new }
+            domains.merge(rules.trackerData.domains) { _, new in new }
+        }
+
+        return TrackerData(trackers: trackers, entities: entities, domains: domains,
+                           cnames: main.trackerData.cnames)
     }
 }

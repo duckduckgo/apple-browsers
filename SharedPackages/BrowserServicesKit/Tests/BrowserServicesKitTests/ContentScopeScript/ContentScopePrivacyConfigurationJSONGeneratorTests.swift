@@ -308,6 +308,27 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         XCTAssertNotNil(settings?["blockingEnabled"], "blocking should still be configured")
     }
 
+    // MARK: - CTL-disabled regression guard
+
+    func testCTLRulesPresent_ctlDisabled_settingsStillPassCtlDisabled() {
+        let ctlTrackerData = """
+        {"trackers":{"facebook.net":{"domain":"facebook.net","owner":{"name":"Facebook"},"default":"ignore","rules":[{"rule":"facebook\\\\.net/.*sdk\\\\.js","action":"block-ctl-fb"}]}},"entities":{"Facebook":{"domains":["facebook.net"]}},"domains":{"facebook.net":"Facebook"}}
+        """
+        let (manager, _) = makeManager()
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(
+            featureFlagger: MockFeatureFlagger(),
+            privacyConfigurationManager: manager,
+            trackerProtectionDataSource: makeDataSource(encodedData: ctlTrackerData),
+            ctlEnabled: false
+        )
+
+        let settings = trackerProtectionSettings(from: generator)
+        XCTAssertEqual(settings?["ctlEnabled"] as? Bool, false,
+                       "ctlEnabled must be false even when CTL rules are in the payload")
+        XCTAssertEqual(settings?["trackerData"] as? String, ctlTrackerData,
+                       "CTL tracker data should be passed through unchanged")
+    }
+
     // MARK: - No data source
 
     func testNoDataSourceOmitsTrackerProtection() {

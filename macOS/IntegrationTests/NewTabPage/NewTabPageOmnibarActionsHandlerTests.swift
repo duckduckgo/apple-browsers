@@ -120,25 +120,25 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     @MainActor
     func testOpenAiChatPinnedMouseFiresCorrectPixel() {
         handler.openAiChat("chat-1", isPinned: true, trigger: .mouse, target: .sameTab)
-        XCTAssertEqual(firedPixels, ["new_tab_page_aichat_recent_chat_selected_pinned_mouse"])
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_pinned_mouse"])
     }
 
     @MainActor
     func testOpenAiChatPinnedKeyboardFiresCorrectPixel() {
         handler.openAiChat("chat-1", isPinned: true, trigger: .keyboard, target: .sameTab)
-        XCTAssertEqual(firedPixels, ["new_tab_page_aichat_recent_chat_selected_pinned_keyboard"])
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_pinned_keyboard"])
     }
 
     @MainActor
     func testOpenAiChatUnpinnedMouseFiresCorrectPixel() {
         handler.openAiChat("chat-1", isPinned: false, trigger: .mouse, target: .sameTab)
-        XCTAssertEqual(firedPixels, ["new_tab_page_aichat_recent_chat_selected_mouse"])
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_mouse"])
     }
 
     @MainActor
     func testOpenAiChatUnpinnedKeyboardFiresCorrectPixel() {
         handler.openAiChat("chat-1", isPinned: false, trigger: .keyboard, target: .sameTab)
-        XCTAssertEqual(firedPixels, ["new_tab_page_aichat_recent_chat_selected_keyboard"])
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_keyboard"])
     }
 
  }

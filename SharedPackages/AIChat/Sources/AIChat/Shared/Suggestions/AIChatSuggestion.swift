@@ -76,6 +76,14 @@ extension AIChatSuggestion {
         guard let dateString else { return nil }
         return iso8601Formatter.date(from: dateString)
     }
+
+    /// Formats a Date into an ISO8601 string with fractional seconds.
+    /// - Parameter date: Date to format.
+    /// - Returns: ISO8601 formatted date string, or nil if date is nil.
+    public static func formatISO8601Date(_ date: Date?) -> String? {
+        guard let date else { return nil }
+        return iso8601Formatter.string(from: date)
+    }
 }
 
 // MARK: - Mock Data

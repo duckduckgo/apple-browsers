@@ -76,19 +76,12 @@ final class NewTabPageOmnibarAiChatsProvider: NewTabPageOmnibarAiChatsProviding 
 }
 
 private extension AIChatSuggestion {
-
-    static let iso8601Formatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
     var asNewTabPageAiChat: NewTabPageDataModel.AiChat {
         NewTabPageDataModel.AiChat(
             chatId: chatId,
             title: title,
             pinned: isPinned,
-            lastEdit: timestamp.map { Self.iso8601Formatter.string(from: $0) },
+            lastEdit: Self.formatISO8601Date(timestamp),
             firstUserMessageContent: firstUserMessageContent
         )
     }

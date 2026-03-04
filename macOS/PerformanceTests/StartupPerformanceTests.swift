@@ -35,6 +35,8 @@ final class StartupPerformanceTests: XCTestCase {
             application.terminate()
         }
 
+        /// `UITests.firstRun()` closes the browser with no windows open. We'll manually open a new Window
+        application.openNewWindow()
         XCTAssertTrue(application.windows.firstMatch.waitForExistence(timeout: 10), "Window did not appear after launch")
 
         let attachment = try application.buildStartupMetricsAttachment()

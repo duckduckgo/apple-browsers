@@ -431,6 +431,21 @@ final class AppearancePreferences: ObservableObject {
         }
     }
 
+    var darkReaderFeatureSettings: DarkReaderFeatureSettings?
+
+    var isForceDarkModeVisible: Bool {
+        guard let darkReaderFeatureSettings else { return false }
+        return darkReaderFeatureSettings.isFeatureEnabled && themeAppearance != .light
+    }
+
+    var forceDarkModeEnabled: Bool {
+        get { darkReaderFeatureSettings?.isForceDarkModeEnabled ?? false }
+        set {
+            darkReaderFeatureSettings?.setForceDarkModeEnabled(newValue)
+            objectWillChange.send()
+        }
+    }
+
     var isContinueSetUpAvailable: Bool {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
         return (privacyConfigurationManager?.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) ?? true) && osVersion.majorVersion >= 12

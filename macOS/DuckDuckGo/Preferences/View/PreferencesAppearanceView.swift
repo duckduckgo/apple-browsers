@@ -189,7 +189,6 @@ extension Preferences {
         @ObservedObject var model: AppearancePreferences
         @ObservedObject var aiChatModel: AIChatPreferences
         @ObservedObject var themeManager: ThemeManager
-        var darkReaderFeatureSettings: DarkReaderFeatureSettings?
 
         var body: some View {
             PreferencePane(UserText.appearance) {
@@ -211,14 +210,10 @@ extension Preferences {
 
                     ToggleMenuItem(UserText.syncAppIconWithTheme, isOn: $model.syncAppIconWithTheme)
 
-                    if let darkReaderFeatureSettings, darkReaderFeatureSettings.isFeatureEnabled, model.themeAppearance != .light {
+                    if model.isForceDarkModeVisible {
                         ToggleMenuItem(UserText.forceDarkModeOnWebsites, isOn: Binding(
-                            get: { darkReaderFeatureSettings.isForceDarkModeEnabled },
-                            set: {
-                                darkReaderFeatureSettings.setForceDarkModeEnabled($0)
-                                // Force update any model to reload the view
-                                model.objectWillChange.send()
-                            }
+                            get: { model.forceDarkModeEnabled },
+                            set: { model.forceDarkModeEnabled = $0 }
                         ))
                         Text(UserText.forceDarkModeOnWebsitesFooter)
                             .font(.system(size: 11))

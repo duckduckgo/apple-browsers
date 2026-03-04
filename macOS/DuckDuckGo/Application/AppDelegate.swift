@@ -1636,6 +1636,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             storage: keyValueStore.throwingKeyedStoring()
         )
         self.darkReaderFeatureSettings = darkReaderSettings
+        appearancePreferences.darkReaderFeatureSettings = darkReaderSettings
 
         darkReaderSettings.forceDarkModeChangedPublisher
             .sink { [weak self] _ in

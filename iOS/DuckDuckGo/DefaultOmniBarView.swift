@@ -209,7 +209,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
-    var fireMode: Bool = false
+    private var fireMode: Bool = false
 
     var onTextEntered: (() -> Void)?
     var onVoiceSearchButtonPressed: (() -> Void)?
@@ -496,7 +496,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         activeOutlineView.isUserInteractionEnabled = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
-        activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
+        activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
         activeOutlineView.layer.borderWidth = Metrics.activeBorderWidth
         activeOutlineView.layer.cornerRadius = Metrics.activeBorderRadius
         activeOutlineView.layer.cornerCurve = .continuous
@@ -580,11 +580,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func updateFireModeAppearance() {
         if fireMode {
-            searchAreaContainerView.backgroundColor = UIColor(Color(singleUseColor: .fireModeBackground))
-            activeOutlineView.layer.borderColor = UIColor(Color(singleUseColor: .fireModeAccent)).cgColor
+            searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeBackground)
+            activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
         } else {
             searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
-            activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
+            activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
         }
         progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
@@ -948,7 +948,7 @@ extension DefaultOmniBarView {
     func setUpExpandedTextViewProperties() {
         aiChatTextView.font = UIFont.daxBodyRegular()
         aiChatTextView.textColor = UIColor(designSystemColor: .textPrimary)
-        aiChatTextView.tintColor = fireMode ? UIColor(Color(singleUseColor: .fireModeAccent)) : UIColor(designSystemColor: .accent)
+        aiChatTextView.tintColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
         aiChatTextView.autocapitalizationType = .none
         aiChatTextView.autocorrectionType = .no
         aiChatTextView.spellCheckingType = .no

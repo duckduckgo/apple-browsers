@@ -273,7 +273,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .fireModeAccent: return fireModeAccent
         case .fireModeAccentTertiary: return fireModeAccentTertiary
         case .fireModeBackground: return fireModeBackground
-        case .fireModePrimary: return DynamicColor(lightColor: textPrimary.darkColor, darkColor: textPrimary.darkColor)
         }
     }
 }

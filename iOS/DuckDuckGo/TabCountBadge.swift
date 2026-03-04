@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKitIcons
 
+@MainActor
 final class TabCountModel: ObservableObject {
     @Published var count: Int
 

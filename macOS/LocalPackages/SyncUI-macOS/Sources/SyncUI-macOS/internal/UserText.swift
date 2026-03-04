@@ -100,17 +100,10 @@ enum UserText {
 
     // Sync with another device dialog
     static let syncWithAnotherDeviceTitle = NSLocalizedString("preferences.sync.sync-with-another-device.dialog-title", bundle: Bundle.module, value: "Sync With Another Device", comment: "Sync with another device dialog title")
-    static func syncWithAnotherDeviceSubtitle(syncMenuPath: String) -> String {
-        let localized = NSLocalizedString("preferences.sync.sync-with-another-device.dialog-subtitle2", bundle: Bundle.module, value: "Open the DuckDuckGo app on your other device and go to %@.", comment: "Sync with another device dialog subtitle - Instruction with sync menu path item inserted")
-        return String(format: localized, syncMenuPath)
-    }
-    static let syncWithAnotherDevicePath = NSLocalizedString("sync.with.another.device.path", bundle: Bundle.module, value: "Settings › Sync & Backup › Sync With Another Device", comment: "Path to Sync with another device")
     static let syncWithAnotherDeviceShowCodeButton = NSLocalizedString("preferences.sync.sync-with-another-device.show-code-button", bundle: Bundle.module, value: "Show Code", comment: "Text on show code button on Sync with another device dialog")
     static let syncWithAnotherDeviceScanThisQRCodeButton = NSLocalizedString("preferences.sync.sync-with-another-device.scan-qr-code-button", bundle: Bundle.module, value: "Scan This QR Code", comment: "Text on scan QR code button on Sync with another device dialog")
     static let syncWithAnotherDeviceEnterCodeButton = NSLocalizedString("preferences.sync.sync-with-another-device.enter-code-button", bundle: Bundle.module, value: "Enter Code", comment: "Text on enter code button on Sync with another device dialog")
     static let syncWithAnotherDeviceShowQRCodeExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.show-qr-code-explanation", bundle: Bundle.module, value: "Scan this QR code to connect.", comment: "Sync with another device dialog show qr code explanation")
-    static let syncWithAnotherDeviceShowQRCodeExplanationPrefix = NSLocalizedString("preferences.sync.sync-with-another-device.show-qr-code-explanation-prefix", bundle: Bundle.module, value: "Scan using the", comment: "Sync with another device dialog show qr code explanation - first part (second part will be the app name)")
-    static let syncWithAnotherDeviceShowQRCodeExplanationApp = NSLocalizedString("preferences.sync.sync-with-another-device.show-qr-code-explanation-app", bundle: Bundle.module, value: "DuckDuckGo App", comment: "Sync with another device dialog show qr code explanation - app name")
     static let syncWithAnotherDeviceEnterCodeExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.enter-code-explanation", bundle: Bundle.module, value: "Paste the code here to sync.", comment: "Sync with another device dialog enter code explanation")
     static let syncWithAnotherDeviceShowCodeExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.show-code-explanation", bundle: Bundle.module, value: "Share this code to connect with a desktop machine.", comment: "Sync with another device dialog show code explanation")
     static let syncWithAnotherDeviceShowCodeToPasteExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.show-code-to-paste-explanation", bundle: Bundle.module, value: "Paste code in DuckDuckGo App", comment: "Sync with another device dialog show code explanation")

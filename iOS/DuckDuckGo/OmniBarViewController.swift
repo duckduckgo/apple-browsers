@@ -705,6 +705,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             expandable.setSearchAreaExpanded(shouldExpand, animated: false)
 
             expandable.updateLeftIconForMode(shouldShowModeToggle ? selectedTextEntryMode : .search)
+            expandable.setLeftIconHiddenForModeToggle(shouldShowModeToggle && isAddressBarSelected)
         }
 
         if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled == false {

@@ -108,6 +108,7 @@ protocol ExpandableOmniBarView: OmniBarView {
     func updateTextFieldPlaceholderVisibility(hasText: Bool)
     func updateAIChatSendButton(hasText: Bool)
     func updateLeftIconForMode(_ mode: TextEntryMode)
+    func setLeftIconHiddenForModeToggle(_ hidden: Bool)
 }
 
 protocol OmniBarStatusUpdateable: AnyObject {

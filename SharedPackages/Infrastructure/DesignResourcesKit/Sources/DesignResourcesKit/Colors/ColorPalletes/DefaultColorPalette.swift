@@ -36,6 +36,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let xFFFFFF = Color(0xFFFFFF)
     private static let xFAFAFA = Color(0xFAFAFA)
     private static let x3969EF = Color(0x3969EF)
+    private static let x3D3D3D = Color(0x3D3D3D)
 
     // New dark mode colors
     private static let x080808 = Color(0x080808)
@@ -91,7 +92,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let decorationQuaternary = DynamicColor(lightColor: x1F1F1F.opacity(0.03), darkColor: xF9F9F9.opacity(0.03))
 
     // Fire Tabs
-    private static let fireMode = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
+    private static let fireModeOrange = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
+    private static let fireModeBackgroundLight = DynamicColor(staticColor: x3D3D3D)
+    private static let fireModeBackgroundDark = DynamicColor(staticColor: surfaceCanvas.darkColor)
 
     // Highlight
     private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
@@ -244,9 +247,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
             // Buttons/DestructivePrimary
         case .buttonsDestructivePrimaryPressed: return buttonsDestructivePrimaryPressed
-
-            // Fire Tabs
-        case .fireMode: return fireMode
         }
     }
 
@@ -270,6 +270,10 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return dynamicColor(for: rebrandingColor)
         case .toolbarButton:
             return DynamicColor(lightColor: x1F1F1F.opacity(0.918), darkColor: .tint(0.905))
+        case .fireModeAccent: return fireModeOrange
+        case .fireModeBackgroundLight: return fireModeBackgroundLight
+        case .fireModeBackgroundDark: return fireModeBackgroundDark
+        case .fireModePrimary: return DynamicColor(lightColor: textPrimary.darkColor, darkColor: textPrimary.darkColor)
         }
     }
 }

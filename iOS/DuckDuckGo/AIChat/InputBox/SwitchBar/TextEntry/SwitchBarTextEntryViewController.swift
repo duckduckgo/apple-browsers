@@ -102,6 +102,8 @@ class SwitchBarTextEntryViewController: UIViewController {
         containerView.translatesAutoresizingMaskIntoConstraints = false
         textEntryView.translatesAutoresizingMaskIntoConstraints = false
         buttonsContainerView.translatesAutoresizingMaskIntoConstraints = false
+        
+        textEntryView.updateUIForFireMode()
     }
 
     private func setupContainerViewAppearance() {

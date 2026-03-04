@@ -43,6 +43,12 @@ public enum SingleUseColor {
     /// On iOS 26 toolbar buttons get some effect applied to them which affects the lightness of the color.  This is temporary
     /// until we move to a more Liquid Glass based look and feel there.
     case toolbarButton
+
+    // Fire Mode
+    case fireModeAccent
+    case fireModeBackgroundLight
+    case fireModeBackgroundDark
+    case fireModePrimary
 }
 
 // MARK: - Onboarding Rebranding 2026

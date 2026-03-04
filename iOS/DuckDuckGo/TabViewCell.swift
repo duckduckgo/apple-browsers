@@ -343,9 +343,10 @@ final class TabViewCell: UICollectionViewCell {
 
     func updateCurrentTabBorder() {
         let isFireTab = tab?.fireTab ?? false
-        let currentTabColor: DesignSystemColor = isFireTab ? .fireMode : .decorationTertiary
+        let currentTabColor: UIColor = isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .decorationTertiary)
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
-        border.layer.borderColor = UIColor(designSystemColor: isSelectionModeEnabled ? .accent : currentTabColor).cgColor
+        let borderColor = isSelectionModeEnabled ? UIColor(designSystemColor: .accent) : currentTabColor
+        border.layer.borderColor = borderColor.cgColor
         border.layer.borderWidth = showBorder ? Constants.selectedBorderWidth : Constants.unselectedBorderWidth
     }
 

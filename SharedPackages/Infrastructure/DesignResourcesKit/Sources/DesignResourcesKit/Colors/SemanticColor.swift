@@ -124,8 +124,5 @@ public enum DesignSystemColor {
     case decorationTertiary
     case decorationQuaternary
 
-    // Fire Tabs
-    case fireMode
-
 }
 #endif

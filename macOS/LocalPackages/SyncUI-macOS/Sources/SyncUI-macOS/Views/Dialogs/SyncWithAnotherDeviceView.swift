@@ -78,7 +78,7 @@ struct SyncWithAnotherDeviceView: View {
 
     fileprivate func pickerView() -> some View {
         return HStack(spacing: 0) {
-            pickerOptionView(imageName: "QR-Icon", title: UserText.syncWithAnotherDeviceShowQRCodeButton, tag: 0)
+            pickerOptionView(imageName: "QR-Icon", title: UserText.syncWithAnotherDeviceScanThisQRCodeButton, tag: 0)
             pickerOptionView(imageName: "Keyboard-16D", title: UserText.syncWithAnotherDeviceEnterCodeButton, tag: 1)
         }
         .padding(2)

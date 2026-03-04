@@ -3611,6 +3611,18 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device.scan-qr-code-button" : {
+      "comment" : "Text on scan QR code button on Sync with another device dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan This QR Code"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.show-code-button" : {
       "comment" : "Text on show code button on Sync with another device dialog",
       "extractionState" : "extracted_with_value",
@@ -3793,7 +3805,7 @@
     },
     "preferences.sync.sync-with-another-device.show-qr-code-button" : {
       "comment" : "Text on scan QR code button on Sync with another device dialog",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3804,7 +3816,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Scan QR Code"
+            "value" : "Scan This QR Code"
           }
         },
         "es" : {

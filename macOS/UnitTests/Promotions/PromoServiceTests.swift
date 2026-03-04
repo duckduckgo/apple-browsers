@@ -109,12 +109,16 @@ final class PromoServiceTests: XCTestCase {
         let promo1 = PromoTestHelpers.makePromo(id: "coexist-a", coexistingPromoIDs: ["coexist-b"], delegate: delegate1)
         let promo2 = PromoTestHelpers.makePromo(id: "coexist-b", coexistingPromoIDs: ["coexist-a"], delegate: delegate2)
         let promoService = makeService(promos: [promo1, promo2])
-        let expectation = XCTestExpectation(description: "promos are hidden")
+        let bothShownExpectation = XCTestExpectation(description: "both promos shown")
+        let hideExpectation = XCTestExpectation(description: "promos are hidden")
         promoService.visiblePromosPublisher
             .dropFirst()
             .sink { promos in
+                if promos.contains(where: { $0.id == "coexist-a" }) && promos.contains(where: { $0.id == "coexist-b" }) {
+                    bothShownExpectation.fulfill()
+                }
                 if promos.isEmpty {
-                    expectation.fulfill()
+                    hideExpectation.fulfill()
                 }
             }
             .store(in: &cancellables)
@@ -122,9 +126,10 @@ final class PromoServiceTests: XCTestCase {
         // When
         promoService.applicationDidBecomeActive()
         triggerSubject.send(.appLaunched)
+        await fulfillment(of: [bothShownExpectation], timeout: timeout)
         delegate1.completeShow(with: .actioned)
         delegate2.completeShow(with: .actioned)
-        await fulfillment(of: [expectation], timeout: timeout)
+        await fulfillment(of: [hideExpectation], timeout: timeout)
 
         // Then
         XCTAssertEqual(delegate1.hideCallCount, 1)
@@ -213,12 +218,16 @@ final class PromoServiceTests: XCTestCase {
         let promo1 = PromoTestHelpers.makePromo(id: "ntp-a", triggers: triggers, context: .newTabPage, coexistingPromoIDs: ["ntp-b"], delegate: delegate1)
         let promo2 = PromoTestHelpers.makePromo(id: "ntp-b", triggers: triggers, context: .newTabPage, coexistingPromoIDs: ["ntp-a"], delegate: delegate2)
         let promoService = makeService(promos: [promo1, promo2])
-        let expectation = XCTestExpectation(description: "promos are hidden")
+        let bothShownExpectation = XCTestExpectation(description: "both promos shown")
+        let hideExpectation = XCTestExpectation(description: "promos are hidden")
         promoService.visiblePromosPublisher
             .dropFirst()
             .sink { promos in
+                if promos.contains(where: { $0.id == "ntp-a" }) && promos.contains(where: { $0.id == "ntp-b" }) {
+                    bothShownExpectation.fulfill()
+                }
                 if promos.isEmpty {
-                    expectation.fulfill()
+                    hideExpectation.fulfill()
                 }
             }
             .store(in: &cancellables)
@@ -227,9 +236,10 @@ final class PromoServiceTests: XCTestCase {
         promoService.applicationDidBecomeActive()
         triggerSubject.send(.appLaunched)
         triggerSubject.send(.newTabPageAppeared)
+        await fulfillment(of: [bothShownExpectation], timeout: timeout)
         delegate1.completeShow(with: .actioned)
         delegate2.completeShow(with: .actioned)
-        await fulfillment(of: [expectation], timeout: timeout)
+        await fulfillment(of: [hideExpectation], timeout: timeout)
 
         // Then
         XCTAssertEqual(delegate1.hideCallCount, 1)

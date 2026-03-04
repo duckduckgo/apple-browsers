@@ -480,7 +480,7 @@ extension SuggestionJsonScenarioTests {
             historyCoordinator.history
         }
         
-        func addVisit(of url: URL, tabID: String?) {
+        func addVisit(of url: URL, tabID: String?, fireTab: Bool = false) {
         }
         
         func updateTitleIfNeeded(title: String, url: URL) {

@@ -35,7 +35,8 @@ final class KeyValueFileStoreTests {
 
     // MARK: - Protocol Conformance Tests
 
-    @Test("KeyValueFileStore conforms to ThrowingKeyValueStoring")
+    @available(iOS 16, macOS 13, *)
+    @Test("KeyValueFileStore conforms to ThrowingKeyValueStoring", .timeLimit(.minutes(1)))
     func storeConformsToThrowingKeyValueStoring() throws {
         let name = UUID().uuidString
         let store = try KeyValueFileStore(location: Self.tempDir, name: name)
@@ -44,7 +45,8 @@ final class KeyValueFileStoreTests {
         #expect(conformsToProtocol)
     }
 
-    @Test("KeyValueFileStore does not conform to ObservableThrowingKeyValueStoring")
+    @available(iOS 16, macOS 13, *)
+    @Test("KeyValueFileStore does not conform to ObservableThrowingKeyValueStoring", .timeLimit(.minutes(1)))
     func storeDoesNotConformToObservableThrowingKeyValueStoring() throws {
         let name = UUID().uuidString
         let store = try KeyValueFileStore(location: Self.tempDir, name: name)
@@ -56,7 +58,8 @@ final class KeyValueFileStoreTests {
 
     // MARK: - Basic Functionality Tests
 
-    @Test("File missing throws no error")
+    @available(iOS 16, macOS 13, *)
+    @Test("File missing throws no error", .timeLimit(.minutes(1)))
     func fileMissingNoErrorIsThrown() throws {
         let name = UUID().uuidString
         let s = try KeyValueFileStore(location: Self.tempDir, name: name)
@@ -64,7 +67,8 @@ final class KeyValueFileStoreTests {
         #expect(try s.object(forKey: "a") == nil)
     }
 
-    @Test("File reuse throws error")
+    @available(iOS 16, macOS 13, *)
+    @Test("File reuse throws error", .timeLimit(.minutes(1)))
     func fileReusedErrorIsThrown() throws {
         let name = UUID().uuidString
         let firstStore = try KeyValueFileStore(location: Self.tempDir, name: name)
@@ -77,7 +81,8 @@ final class KeyValueFileStoreTests {
         _ = firstStore
     }
 
-    @Test("Persisting simple objects")
+    @available(iOS 16, macOS 13, *)
+    @Test("Persisting simple objects", .timeLimit(.minutes(1)))
     func persistingSimpleObjects() throws {
         let name = UUID().uuidString
         var s = try KeyValueFileStore(location: Self.tempDir, name: name)
@@ -110,7 +115,8 @@ final class KeyValueFileStoreTests {
         #expect(try s.object(forKey: "data") as? Data == "data".data(using: .utf8))
     }
 
-    @Test("Persisting collections")
+    @available(iOS 16, macOS 13, *)
+    @Test("Persisting collections", .timeLimit(.minutes(1)))
     func persistingCollections() throws {
         let name = UUID().uuidString
         var s = try KeyValueFileStore(location: Self.tempDir, name: name)
@@ -134,7 +140,8 @@ final class KeyValueFileStoreTests {
         #expect(try s.object(forKey: "dict") as? [String: Int] == ["a": 1, "b": 2])
     }
 
-    @Test("Persisting unsupported objects")
+    @available(iOS 16, macOS 13, *)
+    @Test("Persisting unsupported objects", .timeLimit(.minutes(1)))
     func persistingUnsupportedObjects() throws {
         let name = UUID().uuidString
         var s = try KeyValueFileStore(location: Self.tempDir, name: name)

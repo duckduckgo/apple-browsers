@@ -196,22 +196,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017698257925?focus=true
     case popupBlocking
 
-    /// Use extended user-initiated popup timeout (extends from 1s to 6s)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212001891093823?focus=true
-    case extendedUserInitiatedPopupTimeout
-
-    /// Suppress empty or about: URL popups after permission approval
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300907?focus=true
-    case suppressEmptyPopUpsOnApproval
-
-    /// Allow all popups for current page after permission approval (until next navigation)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300913?focus=true
-    case allowPopupsForCurrentPage
-
-    /// Show popup permission button in inactive state when temporary allowance is active
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300919?focus=true
-    case popupPermissionButtonPersistence
-
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
@@ -223,10 +207,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
     case firstTimeQuitSurvey
-
-    /// Modular termination decider pattern for app quit flow
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212684817782056?focus=true
-    case terminationDeciderSequence
 
     /// Prioritize results where the domain matches the search query when searching passwords & autofill
     case autofillPasswordSearchPrioritizeDomain
@@ -243,9 +223,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212783502979551?focus=true
-    case memoryPressureReporting
 
     /// Memory Usage Reporting
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
@@ -286,9 +263,20 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
+    case aiChatSidebarFloating
+
     /// Startup Metrics Feature Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
     case startupMetrics
+
+    /// Private Process Name Flag
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
+    case privateProcessName
+
+    /// Enable Look Up (three-finger click) while keeping link preview disabled
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
+    case webViewLookUpAction
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -307,23 +295,19 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
                 .blurryAddressBarTahoeFix,
-                .allowPopupsForCurrentPage,
-                .extendedUserInitiatedPopupTimeout,
-                .suppressEmptyPopUpsOnApproval,
-                .popupPermissionButtonPersistence,
                 .dataImportWideEventMeasurement,
                 .firstTimeQuitSurvey,
                 .aiChatOmnibarOnboarding,
-                .terminationDeciderSequence,
                 .autofillPasswordSearchPrioritizeDomain,
                 .warnBeforeQuit,
                 .wideEventPostEndpoint,
-                .memoryPressureReporting,
                 .crashCollectionDisableKeysSorting,
                 .crashCollectionLimitCallStackTreeDepth,
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
-                .nextStepsListWidget:
+                .aiChatSidebarFloating,
+                .nextStepsListWidget,
+                .webViewLookUpAction:
             true
         default:
             false
@@ -394,10 +378,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .blackFridayCampaign,
                 .allowProTierPurchase,
                 .popupBlocking,
-                .extendedUserInitiatedPopupTimeout,
-                .suppressEmptyPopUpsOnApproval,
-                .allowPopupsForCurrentPage,
-                .popupPermissionButtonPersistence,
                 .webNotifications,
                 .newPermissionView,
                 .firstTimeQuitSurvey,
@@ -406,7 +386,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .warnBeforeQuit,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
-                .memoryPressureReporting,
                 .memoryUsageReporting,
                 .aiChatSync,
                 .heuristicAction,
@@ -416,13 +395,15 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
                 .aiChatSidebarResizable,
-                .startupMetrics:
+                .aiChatSidebarFloating,
+                .startupMetrics,
+                .privateProcessName,
+                .webViewLookUpAction:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .terminationDeciderSequence,
                 .crashCollectionDisableKeysSorting,
                 .crashCollectionLimitCallStackTreeDepth:
             return false
@@ -452,7 +433,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .webExtensions:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .syncSeamlessAccountSwitching:
@@ -545,22 +526,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .popupBlocking:
             return .remoteReleasable(.feature(.popupBlocking))
-        case .extendedUserInitiatedPopupTimeout:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.extendedUserInitiatedPopupTimeout))
-        case .suppressEmptyPopUpsOnApproval:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.suppressEmptyPopUpsOnApproval))
-        case .allowPopupsForCurrentPage:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
-        case .popupPermissionButtonPersistence:
-            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
         case .webNotifications:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications))
         case .newPermissionView:
             return .remoteReleasable(.feature(.combinedPermissionView))
         case .firstTimeQuitSurvey:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
-        case .terminationDeciderSequence:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.terminationDeciderSequence))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .autofillPasswordsStatusBar:
@@ -571,8 +542,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
             return .disabled
-        case .memoryPressureReporting:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryPressureReporting))
         case .memoryUsageReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryUsageReporting))
         case .aiChatSync:
@@ -595,8 +564,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
+        case .aiChatSidebarFloating:
+            return .internalOnly()
         case .startupMetrics:
             return .internalOnly()
+        case .privateProcessName:
+            return .disabled
+        case .webViewLookUpAction:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         }
     }
 }

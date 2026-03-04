@@ -142,10 +142,12 @@ final class SiteThemeColorManager {
     private func applyThemeColor(_ color: UIColor?) {
         let newColor = color ?? UIColor(designSystemColor: .background)
 
-        if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
-            viewCoordinator.statusBackground.backgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
-        } else {
-            viewCoordinator.statusBackground.backgroundColor = newColor
+        if !viewCoordinator.isNavigationChromeHidden {
+            if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
+                viewCoordinator.statusBackground.backgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
+            } else {
+                viewCoordinator.statusBackground.backgroundColor = newColor
+            }
         }
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
         tabViewController?.webView?.underPageBackgroundColor = newColor

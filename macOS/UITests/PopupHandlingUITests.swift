@@ -51,10 +51,6 @@ final class PopupHandlingUITests: UITestCase {
             ],
             featureFlags: [
                 "popupBlocking": true,
-                "extendedUserInitiatedPopupTimeout": true,
-                "suppressEmptyPopUpsOnApproval": true,
-                "allowPopupsForCurrentPage": true,
-                "popupPermissionButtonPersistence": true
             ]
         )
 

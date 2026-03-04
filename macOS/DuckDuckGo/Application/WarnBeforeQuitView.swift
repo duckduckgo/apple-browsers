@@ -63,7 +63,8 @@ struct WarnBeforeQuitView: View {
     }
 
     // Sizing for close action (compact variant)
-    private var isCloseAction: Bool { viewModel.action == .close }
+    private var isCloseAction: Bool { viewModel.action != .quit }
+    private var isFloatingChatCloseAction: Bool { viewModel.isFloatingChatCloseAction }
     private var progressSize: CGFloat { isCloseAction ? 50 : 55 }
     private var circleSize: CGFloat { isCloseAction ? 46 : 52 }
     private var shortcutFontSize: CGFloat { isCloseAction ? 13 : 15 }
@@ -108,7 +109,7 @@ struct WarnBeforeQuitView: View {
             .offset(y: isCloseAction ? Constants.arrowHeight : 0)
 
             // Arrow pointing up for close pinned tab action
-            if viewModel.action == .close {
+            if isCloseAction {
                 Triangle()
                     .fill(backgroundColor)
                     .frame(width: Constants.arrowWidth, height: Constants.arrowHeight)
@@ -184,6 +185,13 @@ struct WarnBeforeQuitView: View {
     }
 
     private var mainContent: some View {
+        if isFloatingChatCloseAction {
+            return AnyView(floatingChatCloseContent)
+        }
+        return AnyView(defaultWarnBeforeContent)
+    }
+
+    private var defaultWarnBeforeContent: some View {
         HStack(spacing: 0) {
             // Circular progress indicator
             ZStack {
@@ -210,7 +218,7 @@ struct WarnBeforeQuitView: View {
                     .frame(width: circleSize, height: circleSize)
 
                 // Shortcut text - drawn LAST (on top)
-                Text(verbatim: viewModel.action.shortcutText)
+                Text(verbatim: viewModel.shortcutText)
                     .font(.system(size: shortcutFontSize, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
             }
@@ -218,7 +226,7 @@ struct WarnBeforeQuitView: View {
 
             // Text content
             VStack(alignment: .leading, spacing: 8) {
-                Text(viewModel.action.actionText)
+                Text(viewModel.actionText)
                     .font(.system(size: titleFontSize, weight: .bold))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: true, vertical: false)
@@ -232,40 +240,88 @@ struct WarnBeforeQuitView: View {
             }
             .padding(.trailing, Constants.textToButtonSpacing)
 
-            // "Don‘t Show Again" button
-            Text(UserText.confirmDontShowAgain)
-                .font(.system(size: buttonFontSize, weight: .regular))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.horizontal, buttonPaddingH)
-                .padding(.vertical, buttonPaddingV)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(isButtonHovered ?
-                                Color(designSystemColor: .controlsFillSecondary) :
-                                Color(designSystemColor: .controlsFillPrimary))
-                )
-                .fixedSize()
-                .animation(.easeInOut(duration: 0.15), value: isButtonHovered)
-                .contentShape(Rectangle())
-                .onHover { hovering in
-                    isButtonHovered = hovering
-                    if hovering {
-                        NSCursor.pointingHand.push()
-                    } else {
-                        NSCursor.pop()
+            if viewModel.shouldShowButton(.dontShowAgain) {
+                // "Don‘t Show Again" button
+                Text(UserText.confirmDontShowAgain)
+                    .font(.system(size: buttonFontSize, weight: .regular))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .padding(.horizontal, buttonPaddingH)
+                    .padding(.vertical, buttonPaddingV)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(isButtonHovered ?
+                                    Color(designSystemColor: .controlsFillSecondary) :
+                                    Color(designSystemColor: .controlsFillPrimary))
+                    )
+                    .fixedSize()
+                    .animation(.easeInOut(duration: 0.15), value: isButtonHovered)
+                    .contentShape(Rectangle())
+                    .onHover { hovering in
+                        isButtonHovered = hovering
+                        if hovering {
+                            NSCursor.pointingHand.push()
+                        } else {
+                            NSCursor.pop()
+                        }
                     }
-                }
-                // Handle mouse-down event on the "Don‘t Show Again" button
-                // apply conditionally only if the mouse is hovering over the view when `window.ignoresMouseEvents` is false,
-                // otherwise, the gesture recognizer breaks.
-                .conditionalGesture(isHovering: isHovering) {
-                    viewModel.dontAskAgainTapped()
-                }
-                .accessibilityIdentifier("WarnBeforeQuitView.dontShowAgainButton")
+                    // Handle mouse-down event on the "Don‘t Show Again" button
+                    // apply conditionally only if the mouse is hovering over the view when `window.ignoresMouseEvents` is false,
+                    // otherwise, the gesture recognizer breaks.
+                    .conditionalGesture(isHovering: isHovering) {
+                        viewModel.triggerButton(.dontShowAgain)
+                    }
+                    .accessibilityIdentifier("WarnBeforeQuitView.dontShowAgainButton")
+            }
         }
         .padding(.trailing, horizontalPadding)
         .padding(.leading, horizontalPadding - 2) // Circle has own padding of 2px
         .padding(.vertical, verticalPadding)
+        .background(
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(backgroundColor)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+        .onHover { hovering in
+            isHovering = hovering
+            viewModel.hoverChanged(hovering)
+        }
+    }
+
+    private var floatingChatCloseContent: some View {
+        HStack(spacing: 32) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(viewModel.actionText)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .fixedSize(horizontal: true, vertical: false)
+
+                if let subtitle = viewModel.subtitleText {
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .fixedSize(horizontal: true, vertical: false)
+                }
+            }
+
+            HStack(spacing: 16) {
+                Button(action: { viewModel.triggerButton(.closeTab) }) {
+                    Text(UserText.closeTab)
+                        .font(.system(size: 13))
+                        .multilineTextAlignment(.center)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+
+                Button(action: { viewModel.triggerButton(.dismiss) }) {
+                    Image(.closeLarge)
+                        .frame(width: 16, height: 16)
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 32, style: .continuous)
                 .fill(backgroundColor)
@@ -606,7 +662,7 @@ struct InteractivePreview: View {
             DesignSystemPalette.current = colorPalette
             let vm = makeViewModel(colorPalette)
             // Center the close action balloon in the preview
-            if vm.action == .close {
+            if vm.action != .quit {
                 // Position anchor to center the balloon body
                 vm.balloonAnchorPosition = CGPoint(x: 120, y: 50)
             }
@@ -617,7 +673,7 @@ struct InteractivePreview: View {
             DesignSystemPalette.current = newPalette
             let vm = makeViewModel(newPalette)
             // Center the close action balloon in the preview
-            if vm.action == .close {
+            if vm.action != .quit {
                 vm.balloonAnchorPosition = CGPoint(x: 120, y: 50)
             }
             viewModel = vm
@@ -661,7 +717,7 @@ struct InteractivePreview: View {
     @Previewable @State var colorPalette: ColorPalette = .default
 
     InteractivePreview(colorPalette: $colorPalette) { _ in
-        WarnBeforeQuitViewModel(action: .close, startupPreferences: nil)
+        WarnBeforeQuitViewModel(action: .closePinnedTab, startupPreferences: nil)
     }
 }
 

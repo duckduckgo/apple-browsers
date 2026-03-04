@@ -51,7 +51,6 @@ final class SettingsViewModel: ObservableObject {
     var emailManager: EmailManager { EmailManager() }
     private(set) var historyManager: HistoryManaging
     let subscriptionDataReporter: SubscriptionDataReporting?
-    let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
     let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -80,6 +79,12 @@ final class SettingsViewModel: ObservableObject {
             currentAppVersionProvider: { AppVersion.shared.versionNumber }
         )
     }()
+
+    private var afterInactivityStorage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> {
+        keyValueStore.throwingKeyedStoring()
+    }
+
+    private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
@@ -250,6 +255,12 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: .settingsThemeSelectorPressed)
                 self.state.appThemeStyle = $0
                 ThemeManager.shared.setThemeStyle($0)
+                self.state.forceWebsiteDarkMode = self.darkReaderFeatureSettings.isForceDarkModeEnabled
+                // Delay to allow web views to re-render with the new interface style
+                // before the dark reader extension is enabled or disabled.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.darkReaderFeatureSettings.themeDidChange()
+                }
             }
         )
     }
@@ -341,6 +352,26 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.privacyStore.authenticationEnabled = $0
                 self.state.applicationLock = $0
+            }
+        )
+    }
+
+    var shouldShowNTPAfterIdleSetting: Bool {
+        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+    }
+
+    var idleTimeInterval: String {
+        formattedIdleThreshold(from: idleReturnEligibilityManager.idleThresholdSeconds())
+    }
+
+    var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
+        Binding<AfterInactivityOption>(
+            get: {
+                self.idleReturnEligibilityManager.effectiveAfterInactivityOption()
+            },
+            set: {
+                try? self.afterInactivityStorage.set($0.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+                self.objectWillChange.send()
             }
         )
     }
@@ -591,6 +622,10 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.darkReaderFeatureSettings.setForceDarkModeEnabled($0)
                 self.state.forceWebsiteDarkMode = $0
+                DailyPixel.fireDailyAndCount(
+                    pixel: $0 ? .webExtensionDarkReaderEnabled : .webExtensionDarkReaderDisabled,
+                    pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
+                )
             }
         )
     }
@@ -667,7 +702,6 @@ final class SettingsViewModel: ObservableObject {
          historyManager: HistoryManaging,
          syncPausedStateManager: any SyncPausedStateManaging,
          subscriptionDataReporter: SubscriptionDataReporting,
-         textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
          serpSettings: SERPSettingsProviding,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
@@ -679,6 +713,7 @@ final class SettingsViewModel: ObservableObject {
          urlOpener: URLOpener = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
@@ -689,7 +724,7 @@ final class SettingsViewModel: ObservableObject {
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
-         darkReaderFeatureSettings: DarkReaderFeatureSettings = AppDarkReaderFeatureSettings()
+         darkReaderFeatureSettings: DarkReaderFeatureSettings
     ) {
 
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
@@ -703,7 +738,6 @@ final class SettingsViewModel: ObservableObject {
         self.historyManager = historyManager
         self.syncPausedStateManager = syncPausedStateManager
         self.subscriptionDataReporter = subscriptionDataReporter
-        self.textZoomCoordinator = textZoomCoordinator
         self.aiChatSettings = aiChatSettings
         self.serpSettings = serpSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
@@ -715,6 +749,7 @@ final class SettingsViewModel: ObservableObject {
         self.urlOpener = urlOpener
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
@@ -926,6 +961,28 @@ extension SettingsViewModel {
         try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
         shouldShowSetAsDefaultBrowser = false
         shouldShowImportPasswords = false
+    }
+
+    private func formattedIdleThreshold(from seconds: Int) -> String {
+        let oneHour = 3600
+        if seconds >= oneHour {
+            let hours = seconds / oneHour
+            if hours == 1 {
+                return UserText.settingsAfterInactivityIdleIntervalHourSingular
+            }
+            return String(format: UserText.settingsAfterInactivityIdleIntervalHoursFormat, hours)
+        }
+        let minutes = seconds / 60
+        if minutes >= 1 {
+            if minutes == 1 {
+                return UserText.settingsAfterInactivityIdleIntervalPlaceholder
+            }
+            return String(format: UserText.settingsAfterInactivityIdleIntervalMinutesFormat, minutes)
+        }
+        if seconds == 1 {
+            return UserText.settingsAfterInactivityIdleIntervalSecondSingular
+        }
+        return String(format: UserText.settingsAfterInactivityIdleIntervalSecondsFormat, seconds)
     }
 }
 

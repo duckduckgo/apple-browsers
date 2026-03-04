@@ -48,6 +48,7 @@ final class AIChatHistoryListViewController: UIViewController {
 
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
+    private let isIPadExperience: Bool
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var tableView: UITableView = {
@@ -72,8 +73,9 @@ final class AIChatHistoryListViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(viewModel: AIChatSuggestionsViewModel, onChatSelected: @escaping (AIChatSuggestion) -> Void) {
+    init(viewModel: AIChatSuggestionsViewModel, isIPadExperience: Bool, onChatSelected: @escaping (AIChatSuggestion) -> Void) {
         self.viewModel = viewModel
+        self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected
         super.init(nibName: nil, bundle: nil)
     }
@@ -238,6 +240,12 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
         let chat = chats[indexPath.row]
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
         DailyPixel.fireDailyAndCount(pixel: pixel)
+
+        if isIPadExperience {
+            let iPadPixel: Pixel.Event = chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected
+            DailyPixel.fireDailyAndCount(pixel: iPadPixel)
+        }
+
         onChatSelected(chat)
     }
 

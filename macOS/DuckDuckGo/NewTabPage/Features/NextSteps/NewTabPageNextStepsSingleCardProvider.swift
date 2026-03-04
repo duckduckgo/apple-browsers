@@ -52,6 +52,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     private let syncService: DDGSyncing?
+    private let isAppStoreBuild: Bool
 
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
@@ -132,10 +133,10 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     @Published private var cardList: [NewTabPageDataModel.CardID] = []
 
-    /// Returns the list of cards to be displayed, or an empty list if the continue set up cards view is considered outdated.
+    /// Returns the list of cards to be displayed, or an empty list if the continue set up cards view is considered outdated or was previously closed.
     /// The widget only shows the first card in the list, but we provide the full list of available cards so it can show a progress indicator.
     var cards: [NewTabPageDataModel.CardID] {
-        guard !appearancePreferences.isContinueSetUpCardsViewOutdated else {
+        guard !appearancePreferences.isContinueSetUpCardsViewOutdated, !appearancePreferences.continueSetUpCardsClosed else {
             return []
         }
         return cardList
@@ -143,12 +144,17 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
     var cardsPublisher: AnyPublisher<[NewTabPageDataModel.CardID], Never> {
         let cards = $cardList.dropFirst().removeDuplicates()
-        let cardsDidBecomeOutdated = appearancePreferences.$isContinueSetUpCardsViewOutdated.removeDuplicates()
+        let cardsAreVisible = appearancePreferences.$isContinueSetUpCardsViewOutdated
+            .combineLatest(appearancePreferences.$continueSetUpCardsClosed)
+            .map { isOutdated, isClosed in
+                !(isOutdated || isClosed)
+            }
+            .removeDuplicates()
 
-        return Publishers.CombineLatest(cards, cardsDidBecomeOutdated)
+        return Publishers.CombineLatest(cards, cardsAreVisible)
             .subscribe(on: scheduler)
-            .map { cards, isOutdated -> [NewTabPageDataModel.CardID] in
-                guard !isOutdated else {
+            .map { cards, areVisible -> [NewTabPageDataModel.CardID] in
+                guard areVisible else {
                     return []
                 }
                 return cards
@@ -170,6 +176,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          duckPlayerPreferences: DuckPlayerPreferencesPersistor,
          subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
          syncService: DDGSyncing?,
+         applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
          scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         self.cardActionHandler = cardActionHandler
         self.pixelHandler = pixelHandler
@@ -185,6 +192,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.duckPlayerPreferences = duckPlayerPreferences
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
         self.syncService = syncService
+        self.isAppStoreBuild = applicationBuildType.isAppStoreBuild
         self.scheduler = scheduler
         self.shouldUseAdvancedCardOrdering = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering)
         self.standardCards = defaultStandardCards
@@ -305,11 +313,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .bringStuff:
             return !dataImportProvider.didImport
         case .addAppToDockMac:
-#if !APPSTORE
-            return !dockCustomizer.isAddedToDock
-#else
-            return false
-#endif
+            return !isAppStoreBuild && !dockCustomizer.isAddedToDock
         case .duckplayer:
             return duckPlayerPreferences.duckPlayerModeBool == nil && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
         case .emailProtection:

@@ -3804,60 +3804,60 @@
       }
     },
     "preferences.sync.sync-with-another-device.show-qr-code-button" : {
-      "comment" : "Text on show QR code button on Sync with another device dialog",
+      "comment" : "Text on scan QR code button on Sync with another device dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "QR-Code anzeigen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Show QR Code"
+            "value" : "Scan QR Code"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mostrar código QR"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Afficher le code QR"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mostra il codice QR"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "QR-code weergeven"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Pokaż kod QR"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Mostrar código QR"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Показать QR-код"
           }
         }

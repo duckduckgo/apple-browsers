@@ -24,9 +24,7 @@ import Common
 final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
 
     private var updateController: UpdateController?
-#if SPARKLE
     private var dockCustomization: DockCustomization?
-#endif
 
     var notificationLayer: CALayer?
     private var cancellable: AnyCancellable?
@@ -49,9 +47,7 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
 
         if AppVersion.runType != .uiTests {
             updateController = Application.appDelegate.updateController
-#if SPARKLE
             dockCustomization = Application.appDelegate.dockCustomization
-#endif
         }
         subscribeToUpdateInfo()
     }
@@ -67,13 +63,9 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
     }
 
     private func subscribeToUpdateInfo() {
-        var dockPublisher: AnyPublisher<Bool, Never>
-#if SPARKLE
-        guard let dockCustomization = dockCustomization else { return }
-        dockPublisher = dockCustomization.shouldShowNotificationPublisher
-#else
-        dockPublisher = .init(Just(false))
-#endif
+        let dockPublisher: AnyPublisher<Bool, Never> =
+            dockCustomization?.shouldShowNotificationPublisher
+            ?? Just(false).eraseToAnyPublisher()
         guard let updateController else { return }
 
         cancellable = Publishers.CombineLatest4(updateController.hasPendingUpdatePublisher, updateController.notificationDotPublisher, dockPublisher, isEnabledPublisher)

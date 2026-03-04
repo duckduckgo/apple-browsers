@@ -1,0 +1,52 @@
+// iPad Duck.ai toggle metrics for submissions, history selection, and app-open state.
+{
+    "m_aichat_ipad_toggle_prompt_submitted": {
+        "description": "Fires when user submits a Duck.ai prompt from the iPad Duck.ai toggle",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_ipad_toggle_url_submitted": {
+        "description": "Fires when user submits a URL from the iPad Duck.ai toggle",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_omnibar_query_submitted_ipad_toggle_enabled": {
+        "description": "Fires when user submits a query through the omnibar while the iPad Duck.ai toggle is enabled",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_ipad_toggle_recent_chat_selected_pinned": {
+        "description": "Fires when user selects a pinned chat suggestion from iPad Duck.ai toggle history",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_ipad_toggle_recent_chat_selected": {
+        "description": "Fires when user selects a non-pinned chat suggestion from iPad Duck.ai toggle history",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_ipad_toggle_enabled_on_app_open": {
+        "description": "Fires when app enters foreground on iPad and the Duck.ai mode toggle is enabled",
+        "owners": ["Bunn"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_ipad_toggle_disabled_on_app_open": {
+        "description": "Fires when app enters foreground on iPad and the Duck.ai mode toggle is disabled",
+        "owners": ["Bunn"],
+        "triggers": ["startup"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

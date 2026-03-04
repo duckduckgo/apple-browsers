@@ -23,6 +23,7 @@ import PrivacyDashboard
 import Suggestions
 import Bookmarks
 import AIChat
+import Core
 
 final class DefaultOmniBarViewController: OmniBarViewController {
 
@@ -43,6 +44,27 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     override func loadView() {
         view = omniBarView
+    }
+
+    // MARK: - Key Commands
+
+    override var keyCommands: [UIKeyCommand]? {
+        guard dependencies.aiChatAddressBarExperience.shouldShowModeToggle,
+              omniBarView.textField.isFirstResponder || omniBarView.aiChatTextView.isFirstResponder else {
+            return super.keyCommands
+        }
+
+        let shiftEnter = UIKeyCommand(action: #selector(handleShiftEnter), input: "\r", modifierFlags: .shift)
+        shiftEnter.wantsPriorityOverSystemBehavior = true
+        return (super.keyCommands ?? []) + [shiftEnter]
+    }
+
+    @objc private func handleShiftEnter() {
+        if selectedTextEntryMode == .aiChat {
+            omniBarView.aiChatTextView.insertText("\n")
+        } else {
+            setSelectedTextEntryMode(.aiChat)
+        }
     }
 
     // MARK: - Initialization
@@ -325,9 +347,11 @@ extension DefaultOmniBarViewController {
             omniBarView.updateAIChatSendButton(hasText: false)
 
             if URL.isValidAddressBarURLInput(query) {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadToggleURLSubmitted)
                 dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted)
                 omniDelegate?.onPromptSubmitted(query, tools: nil)
             }
         } else {

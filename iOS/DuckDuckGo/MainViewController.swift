@@ -3461,7 +3461,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func useNewOmnibarTransitionBehaviour() -> Bool {
-        idleReturnEligibilityManager.isEligibleForNTPAfterIdle()
+        escapeHatchForEditingState() != nil
     }
 
     func onSwitchTabToIndex(_ index: Int) {

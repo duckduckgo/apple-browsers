@@ -43,6 +43,8 @@ final class AIChatHistoryListViewController: UIViewController {
         static let escapeHatchBottomPadding: CGFloat = 16
         /// Top content inset when escape hatch is shown so the card has visible space below the bar.
         static let escapeHatchTopContentInset: CGFloat = 8
+        static let escapeHatchMaxWidth: CGFloat = 380
+        static let escapeHatchMaxWidthPad: CGFloat = 455
     }
 
     // MARK: - Properties
@@ -117,9 +119,15 @@ final class AIChatHistoryListViewController: UIViewController {
         viewModel.$filteredSuggestions
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.tableView.reloadData()
+                guard let self else { return }
+                self.tableView.reloadData()
+                self.updateScrollEnabled()
             }
             .store(in: &cancellables)
+    }
+
+    private func updateScrollEnabled() {
+        tableView.isScrollEnabled = !chats.isEmpty
     }
 
     /// Shows or hides the escape hatch (Return to tab card) as the table header. Pass nil to hide.
@@ -149,10 +157,22 @@ final class AIChatHistoryListViewController: UIViewController {
             hosting.view.translatesAutoresizingMaskIntoConstraints = false
             wrapper.addSubview(hosting.view)
 
-            let horizontalInset: CGFloat = 16
+            let maxWidth = isIPadExperience ? Constants.escapeHatchMaxWidthPad : Constants.escapeHatchMaxWidth
+            let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
+            preferredWidth.priority = .defaultHigh
+
+            let minimumLeading = hosting.view.leadingAnchor.constraint(greaterThanOrEqualTo: wrapper.leadingAnchor, constant: Constants.horizontalInset)
+            minimumLeading.priority = .required - 1
+
+            let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: wrapper.trailingAnchor, constant: -Constants.horizontalInset)
+            minimumTrailing.priority = .required - 1
+
             NSLayoutConstraint.activate([
-                hosting.view.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor, constant: horizontalInset),
-                hosting.view.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor, constant: -horizontalInset),
+                hosting.view.centerXAnchor.constraint(equalTo: wrapper.centerXAnchor),
+                hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
+                preferredWidth,
+                minimumLeading,
+                minimumTrailing,
                 hosting.view.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: Constants.escapeHatchTopPadding),
                 hosting.view.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -Constants.escapeHatchBottomPadding)
             ])
@@ -166,6 +186,7 @@ final class AIChatHistoryListViewController: UIViewController {
                 tableView.tableHeaderView = wrapper
                 tableView.contentInset = UIEdgeInsets(top: Constants.escapeHatchTopContentInset, left: 0, bottom: 0, right: 0)
             }
+            updateScrollEnabled()
         } else {
             if let hosting = escapeHatchHostingController {
                 hosting.willMove(toParent: nil)
@@ -178,6 +199,7 @@ final class AIChatHistoryListViewController: UIViewController {
                 let topInset = isIPadExperience ? Constants.iPadTopContentInset : Constants.topContentInset
                 tableView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
             }
+            updateScrollEnabled()
         }
     }
 

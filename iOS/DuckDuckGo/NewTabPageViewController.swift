@@ -83,7 +83,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter)
 
-        super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
+        super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
+                                            narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,

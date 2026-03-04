@@ -29,7 +29,7 @@ public extension WideEventParameterProviding {
             if let string = value as? String {
                 return string
             }
-            return "\(value)"
+            return String(describing: value)
         }
     }
 }

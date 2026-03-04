@@ -973,13 +973,6 @@ final class TabBarViewItem: NSCollectionViewItem {
                 self?.refreshProgressColors(rendered: true)
             }
             .store(in: &cancellables)
-
-        tabViewModel.loadedPageDOMPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.stopSpinner()
-            }
-            .store(in: &cancellables)
     }
 
     func clear() {

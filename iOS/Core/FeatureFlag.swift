@@ -723,7 +723,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingRebranding:
             return .disabled
         case .webExtensions:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:

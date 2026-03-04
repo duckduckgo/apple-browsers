@@ -75,6 +75,12 @@ struct Launching: LaunchingHandling {
         // Handles one-time application setup during launch
         try configuration.start(isBookmarksDBFilePresent: isBookmarksDBFilePresent)
 
+        // Set idleReturnNewUser at launch (before statistics load) so new vs existing users get the correct after-inactivity default.
+        IdleReturnCohort.setCohortIfNeeded(
+            storage: appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring(),
+            statisticsStore: StatisticsUserDefaults()
+        )
+
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services
         // These services are instantiated early in the app lifecycle for two main reasons:

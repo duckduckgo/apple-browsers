@@ -1127,9 +1127,7 @@ extension MainViewController {
                 }
             }
         )
-        presenter.bind(to: manager) {
-            onProceed()
-        }
+        runKeyboardWarnBeforeConfirmationFlow(manager: manager, presenter: presenter, onProceed: onProceed)
     }
 
     /// Shows the pinned tab close confirmation overlay
@@ -1164,8 +1162,35 @@ extension MainViewController {
                 self?.tabBarViewController.cell(forPinnedTabAt: pinnedIndex)
             }
         )
-        presenter.bind(to: manager) {
-            onProceed()
+        runKeyboardWarnBeforeConfirmationFlow(manager: manager, presenter: presenter, onProceed: onProceed)
+    }
+
+    /// Executes the keyboard-initiated WarnBefore flow using the legacy ordering
+    /// (subscribe -> shouldTerminate -> onProceed -> deciderSequenceCompleted),
+    /// which keeps Cmd+W key-repeat handling behavior stable.
+    private func runKeyboardWarnBeforeConfirmationFlow(
+        manager: WarnBeforeQuitManager,
+        presenter: WarnBeforeQuitOverlayPresenter,
+        onProceed: @escaping @MainActor () -> Void
+    ) {
+        presenter.subscribe(to: manager.stateStream)
+        switch manager.shouldTerminate(isAsync: false) {
+        case .sync(let decision):
+            let shouldProceed = decision == .next
+            if shouldProceed {
+                onProceed()
+            }
+            manager.deciderSequenceCompleted(shouldProceed: shouldProceed)
+        case .async(let task):
+            Task { @MainActor in
+                let decision = await task.value
+                let shouldProceed = decision == .next
+                if shouldProceed {
+                    onProceed()
+                }
+                await Task.yield()
+                manager.deciderSequenceCompleted(shouldProceed: shouldProceed)
+            }
         }
     }
 

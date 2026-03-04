@@ -21,6 +21,7 @@ import Combine
 import FeatureFlags
 import Foundation
 import Persistence
+import PixelKit
 import PrivacyConfig
 import WebExtensions
 
@@ -44,6 +45,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private var storage: any ThrowingKeyedStoring<DarkReaderSettings>
+    private let pixelFiring: PixelFiring?
     private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
     private let excludedDomainsChangedSubject = PassthroughSubject<Void, Never>()
     private var cancellables = Set<AnyCancellable>()
@@ -58,10 +60,12 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         storage: (any ThrowingKeyedStoring<DarkReaderSettings>)) {
+         storage: (any ThrowingKeyedStoring<DarkReaderSettings>),
+         pixelFiring: PixelFiring? = nil) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.storage = storage
+        self.pixelFiring = pixelFiring
 
         privacyConfigurationManager.updatesPublisher
             .sink { [weak self] in
@@ -99,6 +103,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
         let previousValue = (try? storage.forceDarkModeOnWebsitesEnabled) ?? false
         guard previousValue != enabled else { return }
         try? storage.set(enabled, for: \.forceDarkModeOnWebsitesEnabled)
+        pixelFiring?.fire(enabled ? WebExtensionPixel.darkReaderEnabled : WebExtensionPixel.darkReaderDisabled, frequency: .dailyAndCount)
         forceDarkModeChangedSubject.send(enabled)
     }
 

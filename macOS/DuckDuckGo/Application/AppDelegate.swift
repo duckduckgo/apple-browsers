@@ -1633,7 +1633,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let darkReaderSettings = AppDarkReaderFeatureSettings(
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            storage: keyValueStore.throwingKeyedStoring()
+            storage: keyValueStore.throwingKeyedStoring(),
+            pixelFiring: PixelKit.shared
         )
         self.darkReaderFeatureSettings = darkReaderSettings
         appearancePreferences.darkReaderFeatureSettings = darkReaderSettings

@@ -25,6 +25,9 @@ import Core
 
 struct SettingsAIExperimentalPickerView: View {
     @Binding var isDuckAISelected: Bool
+    // Keep both option titles at the same measured height so indicators align
+    // whether one title wraps or both remain on a single line.
+    @State private var maxOptionTitleHeight: CGFloat = 0
 
     init(isDuckAISelected: Binding<Bool>) {
         self._isDuckAISelected = isDuckAISelected
@@ -33,24 +36,34 @@ struct SettingsAIExperimentalPickerView: View {
     var body: some View {
         HStack(alignment: .top, spacing: SettingsAIExperimentalPickerViewLayout.optionsHorizontalSpacing) {
             PickerOptionView(
+                optionID: 0,
                 isSelected: !isDuckAISelected,
                 selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAIActive : .searchExperimentalOn,
                 unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAI : .searchExperimentalOff,
                 title: UserText.Onboarding.SearchExperience.searchOnlyOption,
-                showNewBadge: false
+                showNewBadge: false,
+                titleMinHeight: maxOptionTitleHeight
             ) {
                 isDuckAISelected = false
             }
+            .frame(maxWidth: .infinity, alignment: .top)
 
             PickerOptionView(
+                optionID: 1,
                 isSelected: isDuckAISelected,
                 selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAIActive : .aiExperimentalOn,
                 unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAI : .aiExperimentalOff,
                 title: UserText.Onboarding.SearchExperience.searchAndDuckAIOption,
-                showNewBadge: false
+                showNewBadge: false,
+                titleMinHeight: maxOptionTitleHeight
             ) {
                 isDuckAISelected = true
             }
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+        // Collect per-option measured title heights and apply the maximum to both.
+        .onPreferenceChange(OptionTitleHeightsPreferenceKey.self) { heights in
+            maxOptionTitleHeight = heights.values.max() ?? 0
         }
         .frame(height: SettingsAIExperimentalPickerViewLayout.viewHeight)
         .frame(maxWidth: SettingsAIExperimentalPickerViewLayout.maxViewWidth)
@@ -66,15 +79,17 @@ struct SettingsAIExperimentalPickerView: View {
 }
 
 private struct PickerOptionView: View {
+    let optionID: Int
     let isSelected: Bool
     let selectedImage: ImageResource
     let unselectedImage: ImageResource
     let title: String
     let showNewBadge: Bool
+    let titleMinHeight: CGFloat
     let action: () -> Void
-    
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    
     var body: some View {
         Button(action: action) {
             VStack(spacing: SettingsAIExperimentalPickerViewLayout.optionContentVerticalSpacing) {
@@ -84,42 +99,67 @@ private struct PickerOptionView: View {
                     .frame(height: shouldUseVerticalLayout ? SettingsAIExperimentalPickerViewLayout.imageHeight : nil, alignment: .top)
 
                 textAndBadgeView
+                    // Equalize title block height between the two options.
+                    .frame(minHeight: titleMinHeight, alignment: .top)
 
                 CheckmarkView(isSelected: isSelected)
                     .scaledToFit()
                     .frame(height: SettingsAIExperimentalPickerViewLayout.checkmarkHeight)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .top)
         }
+        .frame(maxWidth: .infinity, alignment: .top)
         .buttonStyle(.plain)
     }
     
     @ViewBuilder
     private var textAndBadgeView: some View {
         if shouldUseVerticalLayout {
-            VStack(spacing: 4) {
-                Text(title)
-                    .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .multilineTextAlignment(.center)
-                if showNewBadge {
-                    BadgeView(text: UserText.settingsItemNewBadge)
+            measuredTitleBlock {
+                VStack(spacing: 4) {
+                    Text(title)
+                        .daxFootnoteRegular()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if showNewBadge {
+                        BadgeView(text: UserText.settingsItemNewBadge)
+                    }
                 }
             }
         } else {
-            HStack(spacing: 6) {
-                Text(title)
-                    .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .multilineTextAlignment(.center)
-                if showNewBadge {
-                    BadgeView(text: UserText.settingsItemNewBadge)
+            measuredTitleBlock {
+                HStack(spacing: 6) {
+                    Text(title)
+                        .daxFootnoteRegular()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .layoutPriority(1)
+                    if showNewBadge {
+                        BadgeView(text: UserText.settingsItemNewBadge)
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
-    
+
+    private func measuredTitleBlock<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .frame(maxWidth: .infinity, alignment: .center)
+            .background(
+                GeometryReader { geometry in
+                    // Report measured title block height to parent for equalization.
+                    Color.clear.preference(
+                        key: OptionTitleHeightsPreferenceKey.self,
+                        value: [optionID: geometry.size.height]
+                    )
+                }
+            )
+    }
+
     private var shouldUseVerticalLayout: Bool {
         dynamicTypeSize.isAccessibilitySize || dynamicTypeSize > .large
     }
@@ -140,6 +180,15 @@ private struct CheckmarkView: View {
                 .renderingMode(.template)
                 .foregroundStyle(Color(designSystemColor: .iconsTertiary))
         }
+    }
+}
+
+private struct OptionTitleHeightsPreferenceKey: PreferenceKey {
+    static var defaultValue: [Int: CGFloat] = [:]
+
+    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
+        // Last value for a given option ID wins during this render pass.
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 

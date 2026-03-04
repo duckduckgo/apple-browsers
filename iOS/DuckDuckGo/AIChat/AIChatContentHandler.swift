@@ -63,6 +63,9 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 
     /// Called when the user submits a prompt.
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling)
+
+    /// Called when the frontend requests page context (`getAIChatPageContext`), signaling it has initialized and registered its JS message handlers.
+    func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling)
 }
 
 /// Handles content initialization, payload management, and URL building for AIChat.
@@ -103,6 +106,10 @@ extension AIChatContentHandling {
     func submitPrompt(_ prompt: String) {
         submitPrompt(prompt, pageContext: nil)
     }
+}
+
+extension AIChatContentHandlingDelegate {
+    func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {}
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -231,6 +238,10 @@ final class AIChatContentHandler: AIChatContentHandling {
 extension AIChatContentHandler: AIChatUserScriptDelegate {
     
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages) {
+        if message == .getAIChatPageContext {
+            delegate?.aiChatContentHandlerDidReceivePageContextRequest(self)
+        }
+
         switch message {
         case .openAIChatSettings:
             delegate?.aiChatContentHandlerDidReceiveOpenSettingsRequest(self)

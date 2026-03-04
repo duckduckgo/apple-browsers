@@ -494,6 +494,7 @@ class MainViewController: UIViewController {
 
         if featureFlagger.isFeatureOn(.iPadAIToggle) {
             viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
+            viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
         }
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
@@ -3458,7 +3459,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func useNewOmnibarTransitionBehaviour() -> Bool {
-        idleReturnEligibilityManager.isEligibleForNTPAfterIdle()
+        escapeHatchForEditingState() != nil
     }
 
     func onSwitchTabToIndex(_ index: Int) {

@@ -106,15 +106,9 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
             return
         }
 
-        // When NTP shows the escape hatch card, hide the editing-state Dax logo so only the NTP logo is visible (no double logo).
         if useNewTransitionBehaviour {
             toVC.view.backgroundColor = toVC.view.backgroundColor ?? UIColor.systemBackground
             toVC.view.alpha = 1.0
-
-            let hideLogoForTransition = toVC.isEscapeHatchCardVisible
-            if hideLogoForTransition {
-                toVC.setLogoHidden(true)
-            }
         } else {
             toVC.view.alpha = 0
         }
@@ -134,8 +128,6 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         } else {
             animator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut)
         }
-
-        let hideLogoForTransition = useNewTransitionBehaviour && toVC.isEscapeHatchCardVisible
 
         animator.addAnimations {
             if !self.isTopBarPosition {
@@ -158,9 +150,6 @@ final class UniversalOmniBarEditingStateTransition: NSObject, UIViewControllerAn
         }, delayFactor: 0.3)
 
         animator.addCompletion { position in
-            if hideLogoForTransition {
-                toVC.setLogoHidden(false)
-            }
             transitionContext.completeTransition(position == .end)
         }
 

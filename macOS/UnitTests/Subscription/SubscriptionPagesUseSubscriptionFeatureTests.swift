@@ -372,8 +372,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(mockWideEvent.completions.count, 2)
         let startedFirst = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
         let startedSecond = try XCTUnwrap(mockWideEvent.started.last as? SubscriptionRestoreWideEventData)
-        XCTAssertEqual(startedFirst.contextData.name, "funnel_appsettings_macos")
-        XCTAssertEqual(startedSecond.contextData.name, "funnel_onpurchasecheck_multiple")
+        XCTAssertEqual(startedFirst.funnelName, "funnel_appsettings_macos")
+        XCTAssertEqual(startedSecond.funnelName, "funnel_onpurchasecheck_multiple")
     }
 
     // MARK: - GetSubscriptionTierOptions Tests

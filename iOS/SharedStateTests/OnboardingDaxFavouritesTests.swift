@@ -38,6 +38,12 @@ import AIChatTestingUtilities
 
 // swiftlint:disable force_try
 
+private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
+    func isEligibleForNTPAfterIdle() -> Bool { false }
+    func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
+    func idleThresholdSeconds() -> Int { 60 }
+}
+
  @MainActor
  final class OnboardingDaxFavouritesTests: XCTestCase {
     private var sut: MainViewController!
@@ -159,6 +165,7 @@ import AIChatTestingUtilities
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
             featureFlagger: featureFlagger,
+            idleReturnEligibilityManager: MockIdleReturnEligibilityManagerForMainVC(),
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,
             textZoomCoordinatorProvider: textZoomCoordinatorProvider,

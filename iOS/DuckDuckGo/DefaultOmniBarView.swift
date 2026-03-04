@@ -1085,6 +1085,10 @@ extension DefaultOmniBarView {
         }
     }
 
+    func setLeftIconHiddenForModeToggle(_ hidden: Bool) {
+        searchAreaView.setLeftIconAreaHidden(hidden)
+    }
+
     private func applyExpansionConstraints() {
         if isSearchAreaExpanded {
             searchStackBottomEqualConstraint?.isActive = false

@@ -75,9 +75,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         }
 
         return FadeInView {
-            OnboardingConditionalCenteredScrollableContainerView {
-                OnboardingRebranding.OnboardingTrySearchDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
-            }
+            OnboardingRebranding.OnboardingTrySearchDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
         }
         .applyContextualOnboardingBackground(backgroundType: .tryASearch)
         .onFirstAppear { [weak self] in
@@ -105,9 +103,7 @@ private extension RebrandedNewTabDaxDialogFactory {
         }
 
         return FadeInView {
-            OnboardingConditionalCenteredScrollableContainerView {
-                OnboardingRebranding.OnboardingTrySiteDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
-            }
+            OnboardingRebranding.OnboardingTrySiteDialog(viewModel: viewModel, onManualDismiss: manualDismissAction)
         }
         .applyContextualOnboardingBackground(backgroundType: .tryVisitingASiteNTP)
         .onFirstAppear { [weak self] in
@@ -137,7 +133,7 @@ private extension RebrandedNewTabDaxDialogFactory {
     
     func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         return FadeInView {
-            OnboardingConditionalCenteredScrollableContainerView {
+            ScrollView(.vertical, showsIndicators: false) {
                 OnboardingRebranding.OnboardingEndOfJourneyDialog(
                     message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                     cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
@@ -151,6 +147,7 @@ private extension RebrandedNewTabDaxDialogFactory {
                     }
                 )
             }
+            .scrollIfNeeded()
         }
         .applyContextualOnboardingBackground(backgroundType: .endOfJourney)
         .onFirstAppear { [weak self] in
@@ -192,32 +189,30 @@ private extension RebrandedNewTabDaxDialogFactory {
         let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.skip
 
         return FadeInView {
-            OnboardingConditionalCenteredScrollableContainerView {
-                OnboardingRebranding.OnboardingSubscriptionPromoDialog(
-                    title: title,
-                    message: message,
-                    proceedText: proceedButtonText,
-                    dismissText: dismissText,
-                    proceedAction: { [weak self] in
-                        self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
-                        let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
-                        NotificationCenter.default.post(
-                            name: .settingsDeepLinkNotification,
-                            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
-                            userInfo: nil
-                        )
-                        onDismiss(false)
-                    },
-                    dismissAction: {
-                        onDismiss(true)
-                    },
-                    onManualDismiss: { [weak self] in
-                        self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
-                        self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
-                        onDismiss(true)
-                    }
-                )
-            }
+            OnboardingRebranding.OnboardingSubscriptionPromoDialog(
+                title: title,
+                message: message,
+                proceedText: proceedButtonText,
+                dismissText: dismissText,
+                proceedAction: { [weak self] in
+                    self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
+                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
+                    NotificationCenter.default.post(
+                        name: .settingsDeepLinkNotification,
+                        object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
+                        userInfo: nil
+                    )
+                    onDismiss(false)
+                },
+                dismissAction: {
+                    onDismiss(true)
+                },
+                onManualDismiss: { [weak self] in
+                    self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
+                    self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
+                    onDismiss(true)
+                }
+            )
         }
         .applyContextualOnboardingBackground(backgroundType: .privacyProTrial)
         .onFirstAppear { [weak self] in

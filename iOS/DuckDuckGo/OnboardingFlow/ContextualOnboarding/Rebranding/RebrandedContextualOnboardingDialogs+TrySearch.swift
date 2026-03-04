@@ -36,16 +36,18 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                OnboardingRebranding.ContextualDaxDialogContent(
-                    orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation().build(v: vSizeClass, h: hSizeClass),
-                    title: title,
-                    message: message
-                ) {
-                    OnboardingRebranding.ContextualOnboardingListView(list: viewModel.itemsList, action: viewModel.listItemPressed)
+            ScrollView(.vertical, showsIndicators: false) {
+                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
+                    OnboardingRebranding.ContextualDaxDialogContent(
+                        orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation().build(v: vSizeClass, h: hSizeClass),
+                        title: title,
+                        message: message
+                    ) {
+                        OnboardingRebranding.ContextualOnboardingListView(list: viewModel.itemsList, action: viewModel.listItemPressed)
+                    }
                 }
+                .padding(theme.contextualOnboardingMetrics.containerPadding)
             }
-            .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
         }
     }

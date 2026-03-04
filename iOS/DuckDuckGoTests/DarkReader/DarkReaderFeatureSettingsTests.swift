@@ -223,7 +223,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     func testExcludedDomains_ReturnsExceptionsListFromPrivacyConfig() throws {
         let mockConfig = try XCTUnwrap(mockPrivacyConfigManager.privacyConfig as? MockPrivacyConfiguration)
-        mockConfig.exceptionsListClosure = { feature in
+        mockConfig.exceptionsList = { feature in
             if feature == .forceDarkModeOnWebsites {
                 return ["example.com", "test.org"]
             }

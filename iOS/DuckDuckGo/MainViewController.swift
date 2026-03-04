@@ -269,6 +269,7 @@ class MainViewController: UIViewController {
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
+    var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
 
     // MARK: - iPad Tab Mode Chat History
     private lazy var iPadTabChatHistoryCoordinator = IPadTabChatHistoryCoordinator(
@@ -507,6 +508,7 @@ class MainViewController: UIViewController {
         chromeManager.delegate = self
         initTabButton()
         initBookmarksButton()
+        setUpUnifiedToggleInputIfNeeded()
         loadInitialView()
         previewsSource.prepare()
         addLaunchTabNotificationObserver()
@@ -516,7 +518,6 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
-        setUpUnifiedToggleInputIfNeeded()
         subscribeToRefreshButtonSettingsEvents()
         subscribeToCustomizationSettingsEvents()
         subscribeToDaxEasterEggLogoChanges()
@@ -1722,7 +1723,8 @@ class MainViewController: UIViewController {
             } else if let coordinator = unifiedToggleInputCoordinator, coordinator.displayState != .hidden {
                 coordinator.hide()
                 coordinator.unbind()
-                viewCoordinator.setNavigationChromeHidden(false)
+                viewCoordinator.hideAITabChrome()
+                refreshStatusBarBackgroundAfterAIChrome()
             }
             return
         }
@@ -4357,7 +4359,15 @@ extension MainViewController {
         updateFindInPage()
     }
 
+    func refreshStatusBarBackgroundAfterAIChrome() {
+        if !themeColorManager.updateThemeColor() {
+            updateStatusBarBackgroundColor()
+        }
+    }
+
     private func updateStatusBarBackgroundColor() {
+        guard !viewCoordinator.isNavigationChromeHidden else { return }
+
         let theme = ThemeManager.shared.currentTheme
 
         if appSettings.currentAddressBarPosition == .bottom {

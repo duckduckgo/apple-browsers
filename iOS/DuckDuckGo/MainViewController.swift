@@ -133,6 +133,7 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
+    let idleReturnEligibilityManager: IdleReturnEligibilityManaging
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -269,6 +270,7 @@ class MainViewController: UIViewController {
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
+    var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
 
     // MARK: - iPad Tab Mode Chat History
     private lazy var iPadTabChatHistoryCoordinator = IPadTabChatHistoryCoordinator(
@@ -311,6 +313,7 @@ class MainViewController: UIViewController {
         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
+        idleReturnEligibilityManager: IdleReturnEligibilityManaging,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
         textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
@@ -375,6 +378,7 @@ class MainViewController: UIViewController {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.fireproofing = fireproofing
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
@@ -507,6 +511,7 @@ class MainViewController: UIViewController {
         chromeManager.delegate = self
         initTabButton()
         initBookmarksButton()
+        setUpUnifiedToggleInputIfNeeded()
         loadInitialView()
         previewsSource.prepare()
         addLaunchTabNotificationObserver()
@@ -516,7 +521,6 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
-        setUpUnifiedToggleInputIfNeeded()
         subscribeToRefreshButtonSettingsEvents()
         subscribeToCustomizationSettingsEvents()
         subscribeToDaxEasterEggLogoChanges()
@@ -602,6 +606,13 @@ class MainViewController: UIViewController {
         DailyPixel.fireDaily(.aiChatExperimentalAddressBarIsEnabledDaily,
                              withAdditionalParameters: [isEnabledParam: isEnableValue])
 
+    }
+
+    private func fireIPadToggleStateOnAppOpenPixel() {
+        guard aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled else { return }
+
+        let pixel: Pixel.Event = aiChatAddressBarExperience.shouldShowModeToggle ? .aiChatIPadToggleEnabledOnAppOpen : .aiChatIPadToggleDisabledOnAppOpen
+        DailyPixel.fireDailyAndCount(pixel: pixel)
     }
 
     private func fireContextualAutoAttachPixel() {
@@ -1229,7 +1240,7 @@ class MainViewController: UIViewController {
     }
 
     private func buildEscapeHatch(tabSwitchedFromIndex: Int? = nil) -> EscapeHatchModel? {
-        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) else {
+        guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else {
             return nil
         }
         let tabs = tabManager.model.tabs
@@ -1414,6 +1425,7 @@ class MainViewController: UIViewController {
     
     func onForeground() {
         fireExperimentalAddressBarPixel()
+        fireIPadToggleStateOnAppOpenPixel()
         fireContextualAutoAttachPixel()
         fireKeyboardSettingsPixels()
         fireTemporaryTelemetryPixels()
@@ -1714,7 +1726,8 @@ class MainViewController: UIViewController {
             } else if let coordinator = unifiedToggleInputCoordinator, coordinator.displayState != .hidden {
                 coordinator.hide()
                 coordinator.unbind()
-                viewCoordinator.setNavigationChromeHidden(false)
+                viewCoordinator.hideAITabChrome()
+                refreshStatusBarBackgroundAfterAIChrome()
             }
             return
         }
@@ -3437,7 +3450,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func escapeHatchForEditingState() -> EscapeHatchModel? {
-        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn),
+        guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle(),
               tabManager.model.currentTab?.link == nil else {
             return nil
         }
@@ -3445,7 +3458,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func useNewOmnibarTransitionBehaviour() -> Bool {
-        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+        idleReturnEligibilityManager.isEligibleForNTPAfterIdle()
     }
 
     func onSwitchTabToIndex(_ index: Int) {
@@ -4346,7 +4359,15 @@ extension MainViewController {
         updateFindInPage()
     }
 
+    func refreshStatusBarBackgroundAfterAIChrome() {
+        if !themeColorManager.updateThemeColor() {
+            updateStatusBarBackgroundColor()
+        }
+    }
+
     private func updateStatusBarBackgroundColor() {
+        guard !viewCoordinator.isNavigationChromeHidden else { return }
+
         let theme = ThemeManager.shared.currentTheme
 
         if appSettings.currentAddressBarPosition == .bottom {

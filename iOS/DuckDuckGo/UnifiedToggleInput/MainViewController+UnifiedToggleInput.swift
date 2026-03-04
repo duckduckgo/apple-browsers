@@ -18,6 +18,7 @@
 //
 
 import Combine
+import Subscription
 import UIKit
 
 // MARK: - Unified Toggle Input Setup
@@ -44,6 +45,8 @@ extension MainViewController {
         ])
         inputVC.didMove(toParent: self)
 
+        setUpAIChatTabChatHeader()
+
         coordinator.intentPublisher
             .sink { [weak self] intent in
                 self?.handleUnifiedToggleInputIntent(intent)
@@ -66,13 +69,22 @@ extension MainViewController {
                 self.unifiedToggleInputCoordinator?.viewController.isVoiceSearchAvailable = self.voiceSearchHelper.isVoiceSearchEnabled
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        NotificationCenter.default.publisher(for: .entitlementsDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, self.currentTab?.isAITab == true else { return }
+                self.refreshAIChatTabChatHeaderSubscriptionState()
+            }
+            .store(in: &unifiedToggleInputCancellables)
     }
 
     func refreshUnifiedToggleInput(for tab: TabViewController) {
         guard unifiedToggleInputFeature.isAvailable,
               let coordinator = unifiedToggleInputCoordinator else { return }
 
-        if !tab.isAITab && coordinator.displayState == .hidden { return }
+        if !tab.isAITab && coordinator.displayState == .hidden &&
+            viewCoordinator.aiChatTabChatHeaderContainer.isHidden { return }
 
         if tab.isAITab {
             if let userScript = tab.userScripts?.aiChatUserScript {
@@ -80,15 +92,38 @@ extension MainViewController {
             }
             tab.webView.scrollView.contentInset = .zero
             coordinator.showCollapsed()
-            viewCoordinator.setNavigationChromeHidden(true)
+            viewCoordinator.showAITabChrome()
+            refreshAIChatTabChatHeaderSubscriptionState()
             tab.borderView.isTopVisible = false
             tab.borderView.isBottomVisible = false
         } else {
             coordinator.hide()
             coordinator.unbind()
+            viewCoordinator.hideAITabChrome()
+            refreshStatusBarBackgroundAfterAIChrome()
             tab.borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
             tab.borderView.isBottomVisible = true
-            viewCoordinator.setNavigationChromeHidden(false)
+        }
+    }
+
+    private func setUpAIChatTabChatHeader() {
+        let headerView = AIChatTabChatHeaderView()
+        headerView.delegate = self
+        headerView.translatesAutoresizingMaskIntoConstraints = false
+        viewCoordinator.aiChatTabChatHeaderContainer.addSubview(headerView)
+        NSLayoutConstraint.activate([
+            headerView.topAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.trailingAnchor),
+            headerView.bottomAnchor.constraint(equalTo: viewCoordinator.aiChatTabChatHeaderContainer.bottomAnchor),
+        ])
+        self.aiChatTabChatHeaderView = headerView
+    }
+
+    private func refreshAIChatTabChatHeaderSubscriptionState() {
+        Task { @MainActor [weak self] in
+            let isActive = (try? await AppDependencyProvider.shared.subscriptionManager.isFeatureEnabled(.paidAIChat)) ?? false
+            self?.aiChatTabChatHeaderView?.configure(isSubscriptionActive: isActive)
         }
     }
 
@@ -114,12 +149,34 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
         unifiedToggleInputCoordinator?.hide()
-        viewCoordinator.setNavigationChromeHidden(false)
+        viewCoordinator.hideAITabChrome()
+        refreshStatusBarBackgroundAfterAIChrome()
         loadQuery(query)
     }
 
     func unifiedToggleInputDidRequestVoiceSearch() {
         let mode = unifiedToggleInputCoordinator?.inputMode ?? .search
         handleVoiceSearchOpenRequest(preferredTarget: mode == .aiChat ? .AIChat : .SERP)
+    }
+}
+
+// MARK: - AIChatTabChatHeaderViewDelegate
+
+extension MainViewController: AIChatTabChatHeaderViewDelegate {
+
+    func aiChatTabChatHeaderDidTapSettings() {
+        unifiedToggleInputCoordinator?.showCollapsed()
+        currentTab?.submitToggleSidebarAction()
+    }
+
+    func aiChatTabChatHeaderDidTapNewChat() {
+        currentTab?.submitStartChatAction()
+    }
+
+    func aiChatTabChatHeaderDidTapUpgrade() {
+        NotificationCenter.default.post(
+            name: .settingsDeepLinkNotification,
+            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow()
+        )
     }
 }

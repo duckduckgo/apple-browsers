@@ -262,5 +262,3 @@ struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     func setForceDarkModeEnabled(_ enabled: Bool) {}
     func themeDidChange() {}
 }
-
-// swiftlint:enable force_try

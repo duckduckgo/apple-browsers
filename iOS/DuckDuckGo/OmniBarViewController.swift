@@ -746,6 +746,9 @@ class OmniBarViewController: UIViewController, OmniBar {
             resignFirstResponder()
 
             DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
+            if dependencies.aiChatAddressBarExperience.shouldShowModeToggle {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarQuerySubmittedIPadToggleEnabled)
+            }
 
             if selectedTextEntryMode == .aiChat {
                 omniDelegate?.onPromptSubmitted(query, tools: nil)

@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import CrashReportingShared
 
 final class CrashReportPromptViewController: NSViewController {
     @IBOutlet weak var titleLabel: NSTextField!

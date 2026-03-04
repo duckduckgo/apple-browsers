@@ -505,6 +505,20 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureConfirmSkipOnboardingCTAAction)
     }
 
+    func testWhenConfirmSkipOnboardingActionIsCalledThenAIChatSearchInputChoiceIsStoredAsEnabled() {
+        // GIVEN
+        let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true), onboardingSearchExperienceProvider: mockSearchExperienceProvider)
+        XCTAssertFalse(mockSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
+
+        // WHEN
+        sut.confirmSkipOnboardingAction()
+
+        // THEN
+        XCTAssertTrue(mockSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
+        XCTAssertEqual(mockSearchExperienceProvider.lastStoredValue, true)
+    }
+
     func testWhenStartOnboardingActionResumingTrueIsCalledThenPixelReporterMeasureResumeOnboardingCTA() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)

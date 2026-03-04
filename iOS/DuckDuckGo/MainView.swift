@@ -109,6 +109,7 @@ extension MainViewFactory {
         createNavigationBarContainer()
         createNavigationBarCollectionView()
         createUnifiedToggleInputContainer()
+        createAIChatTabChatHeaderContainer()
         createProgressView()
     }
     
@@ -303,6 +304,14 @@ extension MainViewFactory {
         ])
     }
 
+    final class AIChatTabChatHeaderContainer: UIView {}
+    private func createAIChatTabChatHeaderContainer() {
+        coordinator.aiChatTabChatHeaderContainer = AIChatTabChatHeaderContainer()
+        coordinator.aiChatTabChatHeaderContainer.translatesAutoresizingMaskIntoConstraints = false
+        coordinator.aiChatTabChatHeaderContainer.isHidden = true
+        superview.addSubview(coordinator.aiChatTabChatHeaderContainer)
+    }
+
 }
 
 /// Add constraint functions
@@ -318,6 +327,7 @@ extension MainViewFactory {
         constrainNavigationBarContainer()
         constrainToolbar()
         constrainUnifiedToggleInputContainer()
+        constrainAIChatTabChatHeaderContainer()
     }
     
     private func constrainNavigationBarContainer() {
@@ -439,6 +449,19 @@ extension MainViewFactory {
             container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
             coordinator.constraints.unifiedToggleInputBottom,
             ceilingConstraint,
+        ])
+    }
+
+    private func constrainAIChatTabChatHeaderContainer() {
+        let container = coordinator.aiChatTabChatHeaderContainer!
+
+        coordinator.constraints.contentContainerTopToAIChatHeader = coordinator.contentContainer.topAnchor
+            .constraint(equalTo: container.bottomAnchor)
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
+            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])
     }
 

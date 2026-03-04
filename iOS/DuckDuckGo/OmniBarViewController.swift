@@ -705,6 +705,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             expandable.setSearchAreaExpanded(shouldExpand, animated: false)
 
             expandable.updateLeftIconForMode(shouldShowModeToggle ? selectedTextEntryMode : .search)
+            expandable.setLeftIconHiddenForModeToggle(shouldShowModeToggle && isAddressBarSelected)
         }
 
         if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled == false {
@@ -746,6 +747,9 @@ class OmniBarViewController: UIViewController, OmniBar {
             resignFirstResponder()
 
             DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
+            if dependencies.aiChatAddressBarExperience.shouldShowModeToggle {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarQuerySubmittedIPadToggleEnabled)
+            }
 
             if selectedTextEntryMode == .aiChat {
                 omniDelegate?.onPromptSubmitted(query, tools: nil)

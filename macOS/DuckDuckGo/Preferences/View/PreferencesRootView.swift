@@ -130,7 +130,7 @@ enum Preferences {
                 switch model.selectedPane {
                 case .defaultBrowser:
                     DefaultBrowserView(defaultBrowserModel: model.defaultBrowserPreferences,
-                                       dockCustomizer: DockCustomizer(),
+                                       dockCustomizer: NSApp.delegateTyped.dockCustomization,
                                        protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:
                     PrivateSearchView(model: model.searchPreferences)
@@ -151,7 +151,7 @@ enum Preferences {
                                 tabsModel: model.tabsPreferences,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
-                                dockCustomizer: DockCustomizer())
+                                dockCustomizer: NSApp.delegateTyped.dockCustomization)
                 case .sync:
                     SyncView()
                 case .appearance:
@@ -214,7 +214,7 @@ enum Preferences {
 
                     let subscriptionRestoreEmailSettingsWideEventData = SubscriptionRestoreWideEventData(
                         restorePlatform: .emailAddress,
-                        contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
+                        funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
                     )
                     showTab(.subscription(url))
 
@@ -228,7 +228,7 @@ enum Preferences {
                                                                                    storePurchaseManager: subscriptionManager.storePurchaseManager())
                             let subscriptionRestoreAppleSettingsWideEventData = SubscriptionRestoreWideEventData(
                                 restorePlatform: .appleAccount,
-                                contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
+                                funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
                             )
                             let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
                                                                                                      appStoreRestoreFlow: appStoreRestoreFlow,

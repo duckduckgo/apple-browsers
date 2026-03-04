@@ -48,7 +48,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         testPermissionManager = TestPermissionManager()
         mockPermissionModel = PermissionModel(permissionManager: testPermissionManager,
                                               featureFlagger: mockFeatureFlagger)
-        webView = WebView()
+        webView = WebView(featureFlagger: mockFeatureFlagger)
         configuration = WKWebViewConfiguration()
         windowFeatures = WKWindowFeatures()
         mockMachAbsTime = 1000.0 // Default mock time

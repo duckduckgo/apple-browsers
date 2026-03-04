@@ -1419,10 +1419,7 @@ final class NavigationBarViewController: NSViewController {
     @IBAction func optionsButtonAction(_ sender: NSButton) {
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         let freemiumDBPFeature = Application.appDelegate.freemiumDBPFeature
-        var dockCustomization: DockCustomization?
-#if SPARKLE
-        dockCustomization = Application.appDelegate.dockCustomization
-#endif
+        let dockCustomization = Application.appDelegate.dockCustomization
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                    bookmarkManager: bookmarkManager,
                                    historyCoordinator: historyCoordinator,

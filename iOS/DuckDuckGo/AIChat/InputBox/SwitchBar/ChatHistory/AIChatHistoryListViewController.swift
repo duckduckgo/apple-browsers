@@ -43,8 +43,8 @@ final class AIChatHistoryListViewController: UIViewController {
         static let escapeHatchBottomPadding: CGFloat = 16
         /// Top content inset when escape hatch is shown so the card has visible space below the bar.
         static let escapeHatchTopContentInset: CGFloat = 8
-        static let escapeHatchMaxWidth: CGFloat = 380
-        static let escapeHatchMaxWidthPad: CGFloat = 455
+        static let escapeHatchMaxWidth: CGFloat = HomeMessageCollectionViewCell.maximumWidth
+        static let escapeHatchMaxWidthPad: CGFloat = HomeMessageCollectionViewCell.maximumWidthPad
     }
 
     // MARK: - Properties

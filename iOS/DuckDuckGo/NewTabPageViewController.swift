@@ -27,7 +27,12 @@ import RemoteMessaging
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
-        favoritesModel.isEmpty && newTabPageViewModel.escapeHatch == nil
+        guard favoritesModel.isEmpty else { return false }
+        if newTabPageViewModel.escapeHatch != nil {
+            let isLandscape = view.bounds.width > view.bounds.height
+            return !isLandscape
+        }
+        return true
     }
 
     private lazy var borderView = StyledTopBottomBorderView()

@@ -130,6 +130,9 @@ private extension NewTabPageView {
             .padding(.vertical, sectionsViewPadding(in: proxy))
             .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
         }
+        .if(dismissKeyboardOnScroll, transform: {
+            $0.ignoresSafeArea(.keyboard)
+        })
     }
 
     private var shouldShowLogoInEmptyState: Bool {

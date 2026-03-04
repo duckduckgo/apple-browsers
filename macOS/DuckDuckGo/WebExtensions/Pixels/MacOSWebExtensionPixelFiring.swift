@@ -49,6 +49,8 @@ enum WebExtensionPixel: PixelKitEvent {
     case darkReaderInstalled
     case darkReaderUpgraded(fromVersion: String?, toVersion: String?)
     case darkReaderInstallError(error: Error)
+    case darkReaderEnabled
+    case darkReaderDisabled
 
     // MARK: - PixelKitEvent
 
@@ -82,6 +84,10 @@ enum WebExtensionPixel: PixelKitEvent {
             return "m_mac_web_extension_dark_reader_upgraded"
         case .darkReaderInstallError:
             return "m_mac_web_extension_dark_reader_install_error"
+        case .darkReaderEnabled:
+            return "m_mac_web_extension_dark_reader_enabled"
+        case .darkReaderDisabled:
+            return "m_mac_web_extension_dark_reader_disabled"
         }
     }
 

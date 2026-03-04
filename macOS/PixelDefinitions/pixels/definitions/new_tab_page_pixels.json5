@@ -4,28 +4,28 @@
         "description": "Fires when the user opens a pinned recent AI chat from the New Tab Page omnibar by clicking with the mouse.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
     "m_mac_new_tab_page_aichat_recent_chat_selected_pinned_keyboard": {
         "description": "Fires when the user opens a pinned recent AI chat from the New Tab Page omnibar by pressing enter on the keyboard.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
     "m_mac_new_tab_page_aichat_recent_chat_selected_mouse": {
         "description": "Fires when the user opens a non-pinned recent AI chat from the New Tab Page omnibar by clicking with the mouse.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
     "m_mac_new_tab_page_aichat_recent_chat_selected_keyboard": {
         "description": "Fires when the user opens a non-pinned recent AI chat from the New Tab Page omnibar by pressing enter on the keyboard.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
     "m_mac_new-tab-page_search_submitted": {

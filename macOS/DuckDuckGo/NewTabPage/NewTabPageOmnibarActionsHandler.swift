@@ -138,6 +138,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
     }
 
+    @MainActor
     func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPage.NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         let pixel: NewTabPagePixel
         switch (isPinned, trigger) {

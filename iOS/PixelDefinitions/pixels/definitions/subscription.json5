@@ -385,16 +385,10 @@
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                "key": "context.name",
+                "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "Context name for the flow",
-                "enum": [
-                    "funnel_onboarding_ios",
-                    "funnel_appsettings_ios",
-                    "funnel_appmenu_ios",
-                    "funnel_app_ios",
-                    "funnel_app_ios__details"
-                ]
+                "description": "The funnel that led to the subscription flow",
+                "pattern": "^funnel_"
             }
         ]
     },
@@ -468,15 +462,10 @@
                 "enum": [-1, 10000, 30000, 60000, 300000, 600000, 900000]
             },
             {
-                "key": "context.name",
+                "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "Context name for the flow",
-                "enum": [
-                    "funnel_appsettings_ios",
-                    "funnel_purchaseoffer_ios",
-                    "funnel_prepurchasecheck_ios",
-                    "funnel_onpurchasecheck_multiple"
-                ]
+                "description": "The funnel that led to the restore flow",
+                "pattern": "^funnel_"
             }
         ]
     },
@@ -564,10 +553,10 @@
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                "key": "context.name",
+                "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "Context name for the flow",
-                "enum": ["funnel_appsettings_ios", "funnel_app_ios"]
+                "description": "The funnel that led to the plan change flow",
+                "pattern": "^funnel_"
             }
         ]
     },

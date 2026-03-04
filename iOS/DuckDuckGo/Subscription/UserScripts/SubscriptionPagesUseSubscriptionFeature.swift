@@ -443,7 +443,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             purchasePlatform: .appStore,
             subscriptionIdentifier: subscriptionSelection.id,
             freeTrialEligible: freeTrialEligible,
-            contextData: WideEventContextData(name: subscriptionAttributionOrigin))
+            funnelName: subscriptionAttributionOrigin)
 
         self.purchaseWideEventData = data
         wideEvent.startFlow(data)
@@ -622,7 +622,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                 changeType: changeType,
                 fromPlan: fromPlan,
                 toPlan: subscriptionSelection.id,
-                contextData: WideEventContextData(name: subscriptionAttributionOrigin ?? "")
+                funnelName: subscriptionAttributionOrigin
             )
             planChangeWideEventData = wideData
             wideEvent.startFlow(wideData)

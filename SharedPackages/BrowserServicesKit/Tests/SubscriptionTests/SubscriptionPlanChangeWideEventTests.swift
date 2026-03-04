@@ -67,13 +67,12 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
     // MARK: - Successful Plan Change Flow Tests
 
     func testSuccessfulAppStorePlanChangeFlow() throws {
-        let context = WideEventContextData(name: "funnel_appsettings_ios")
         let planChangeData = SubscriptionPlanChangeWideEventData(
             purchasePlatform: .appStore,
             changeType: .upgrade,
             fromPlan: "ddg.privacy.plus.monthly.renews.us",
             toPlan: "ddg.privacy.pro.monthly.renews.us",
-            contextData: context
+            funnelName: "funnel_appsettings_ios"
         )
 
         wideEvent.startFlow(planChangeData)
@@ -122,7 +121,8 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.subscription_identifier"], "ddg.privacy.pro.monthly.renews.us")
         XCTAssertEqual(params["feature.data.ext.payment_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.confirmation_latency_ms_bucketed"], "5000")
-        XCTAssertEqual(params["context.name"], "funnel_appsettings_ios")
+        XCTAssertEqual(params["feature.data.ext.funnel_name"], "funnel_appsettings_ios")
+        XCTAssertNil(params["context.name"])
 
         XCTAssertNotNil(params["app.name"])
         XCTAssertNotNil(params["app.version"])
@@ -134,13 +134,12 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
     }
 
     func testSuccessfulStripePlanChangeFlow() throws {
-        let context = WideEventContextData(name: "funnel_appsettings_macos")
         let planChangeData = SubscriptionPlanChangeWideEventData(
             purchasePlatform: .stripe,
             changeType: .downgrade,
             fromPlan: "ddg.privacy.pro.yearly.renews.us",
             toPlan: "ddg.privacy.plus.yearly.renews.us",
-            contextData: context
+            funnelName: "funnel_appsettings_macos"
         )
 
         wideEvent.startFlow(planChangeData)
@@ -163,17 +162,17 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "stripe")
         XCTAssertEqual(params["feature.data.ext.change_type"], "DOWNGRADE")
-        XCTAssertEqual(params["context.name"], "funnel_appsettings_macos")
+        XCTAssertEqual(params["feature.data.ext.funnel_name"], "funnel_appsettings_macos")
+        XCTAssertNil(params["context.name"])
     }
 
     func testCrossgradePlanChangeFlow() throws {
-        let context = WideEventContextData(name: "funnel_appsettings_ios")
         let planChangeData = SubscriptionPlanChangeWideEventData(
             purchasePlatform: .appStore,
             changeType: .crossgrade,
             fromPlan: "ddg.privacy.pro.monthly.renews.us",
             toPlan: "ddg.privacy.pro.yearly.renews.us",
-            contextData: context
+            funnelName: "funnel_appsettings_ios"
         )
 
         wideEvent.startFlow(planChangeData)
@@ -319,13 +318,12 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
     // MARK: - Nil ChangeType Tests
 
     func testPlanChangeFlowWithNilChangeType() throws {
-        let context = WideEventContextData(name: "funnel_appsettings_ios")
         let planChangeData = SubscriptionPlanChangeWideEventData(
             purchasePlatform: .appStore,
             changeType: nil,
             fromPlan: "ddg.privacy.plus.monthly.renews.us",
             toPlan: "ddg.privacy.pro.monthly.renews.us",
-            contextData: context
+            funnelName: "funnel_appsettings_ios"
         )
 
         wideEvent.startFlow(planChangeData)
@@ -485,13 +483,12 @@ final class SubscriptionPlanChangeWideEventTests: XCTestCase {
     // MARK: - Latency Bucketing Tests
 
     func testLatencyBucketing() throws {
-        let context = WideEventContextData(name: "funnel_appsettings_ios")
         let planChangeData = SubscriptionPlanChangeWideEventData(
             purchasePlatform: .appStore,
             changeType: .upgrade,
             fromPlan: "ddg.privacy.plus.monthly.renews.us",
             toPlan: "ddg.privacy.pro.monthly.renews.us",
-            contextData: context
+            funnelName: "funnel_appsettings_ios"
         )
 
         wideEvent.startFlow(planChangeData)

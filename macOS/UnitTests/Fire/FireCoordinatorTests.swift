@@ -41,7 +41,8 @@ struct FireCoordinatorTests {
                         windowControllersManager: windowControllersManager,
                         faviconManagement: faviconManagement,
                         tld: tld,
-                        isAppActiveProvider: { true })
+                        isAppActiveProvider: { true },
+                        tabCleanupPreparer: MockTabCleanupPreparer())
 
         let fireViewModel = FireViewModel(fire: fire)
         return FireCoordinator(tld: tld,
@@ -236,6 +237,10 @@ struct FireCoordinatorTests {
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
     }
 
+}
+
+private final class MockTabCleanupPreparer: TabCleanupPreparing {
+    func prepareTabsForCleanup(_ tabs: [TabViewModel]) async {}
 }
 
 private final class TestPresenter: FireDialogViewPresenting {

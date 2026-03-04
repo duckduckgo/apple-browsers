@@ -55,4 +55,5 @@ final class StandardApplicationBuildType: ApplicationBuildType {
         return false
         #endif
     }
+
 }

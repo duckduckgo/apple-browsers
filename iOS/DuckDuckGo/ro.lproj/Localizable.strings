@@ -4054,7 +4054,7 @@
 "tab.switcher.tracker.count.keep.action" = "Păstrează";
 
 /* Subtitle for tracker count banner indicating time window */
-"tab.switcher.tracker.count.subtitle" = "in last 7 days";
+"tab.switcher.tracker.count.subtitle" = "în ultimele 7 zile";
 
 /* Do not translate - stringsdict entry */
 "tab.switcher.tracker.count.title" = "tab.switcher.tracker.count.title";

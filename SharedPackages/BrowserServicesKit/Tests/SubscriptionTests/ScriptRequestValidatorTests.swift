@@ -33,7 +33,7 @@ final class ScriptRequestValidatorTests: XCTestCase {
     override func setUp() {
         super.setUp()
         subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.resultURL = validBaseURL
+        subscriptionManager.currentEnvironment = .init(serviceEnvironment: .production, purchasePlatform: .appStore)
         validator = DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
     }
 
@@ -67,21 +67,6 @@ final class ScriptRequestValidatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(result, "Base URL path should be allowed")
-    }
-
-    func testCanPageRequestToken_AllValidPaths_ReturnTrue() async throws {
-        // Given
-        let validPaths = SubscriptionURL.allSubscriptionPaths()
-
-        // When/Then
-        for path in validPaths {
-            let urlString = path.isEmpty ? "https://duckduckgo.com/subscriptions" : "https://duckduckgo.com/\(path)"
-            let url = URL(string: urlString)!
-            let message = createMockMessage(url: url, isMainFrame: true, securityOriginHost: validHost)
-
-            let result = await validator.canPageRequestToken(message)
-            XCTAssertTrue(result, "Path '\(path)' should be allowed")
-        }
     }
 
     // MARK: - Main Frame Tests
@@ -165,14 +150,38 @@ final class ScriptRequestValidatorTests: XCTestCase {
 
     func testCanPageRequestToken_InvalidPath_ReturnsFalse() async throws {
         // Given
-        let url = URL(string: "https://duckduckgo.com/subscriptions/invalid-path")!
+        let url = URL(string: "https://duckduckgo.com/some-other-path")!
         let message = createMockMessage(url: url, isMainFrame: true, securityOriginHost: validHost)
 
         // When
         let result = await validator.canPageRequestToken(message)
 
         // Then
-        XCTAssertFalse(result, "Invalid paths should be rejected")
+        XCTAssertFalse(result, "Paths outside /subscriptions/ should be rejected")
+    }
+
+    func testCanPageRequestToken_UnknownSubscriptionSubpath_ReturnsTrue() async throws {
+        // Given - any path under /subscriptions/ should be allowed without needing explicit registration
+        let url = URL(string: "https://duckduckgo.com/subscriptions/future-feature")!
+        let message = createMockMessage(url: url, isMainFrame: true, securityOriginHost: validHost)
+
+        // When
+        let result = await validator.canPageRequestToken(message)
+
+        // Then
+        XCTAssertTrue(result, "Any path under /subscriptions/ should be allowed")
+    }
+
+    func testCanPageRequestToken_PathOutsideAllowedPrefixes_ReturnsFalse() async throws {
+        // Given
+        let url = URL(string: "https://duckduckgo.com/settings")!
+        let message = createMockMessage(url: url, isMainFrame: true, securityOriginHost: validHost)
+
+        // When
+        let result = await validator.canPageRequestToken(message)
+
+        // Then
+        XCTAssertFalse(result, "Paths outside allowed prefixes should be rejected")
     }
 
     func testCanPageRequestToken_PathWithTrailingSlash_HandledCorrectly() async throws {

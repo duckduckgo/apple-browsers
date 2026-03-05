@@ -149,7 +149,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
 
         let subscriptionRestoreWideEventData = SubscriptionRestoreWideEventData(
             restorePlatform: .purchaseBackgroundTask,
-            contextData: WideEventContextData(name: "funnel_onpurchasecheck_multiple")
+            funnelName: "funnel_onpurchasecheck_multiple"
         )
 
         var externalID: String?

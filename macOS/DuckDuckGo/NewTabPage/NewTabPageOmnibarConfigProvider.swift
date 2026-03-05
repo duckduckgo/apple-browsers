@@ -19,7 +19,9 @@
 import AIChat
 import AppKit
 import Combine
+import FeatureFlags
 import NewTabPage
+import PrivacyConfig
 import os.log
 import Persistence
 import PixelKit
@@ -84,14 +86,18 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     private let keyValueStore: ThrowingKeyValueStoring
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
+    private let featureFlagger: FeatureFlagger
     private let firePixel: (PixelKitEvent) -> Void
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
+    private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
+         featureFlagger: FeatureFlagger,
          firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
+        self.featureFlagger = featureFlagger
         self.firePixel = firePixel
     }
 
@@ -118,6 +124,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             } catch {
                 Logger.newTabPageOmnibar.error("Failed to set omnibar mode in keyValueStore: \(error.localizedDescription)")
             }
+            modeSubject.send(newValue)
         }
     }
 
@@ -140,6 +147,14 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> {
         aiChatShortcutSettingProvider.isAIChatSettingVisiblePublisher
+    }
+
+    var modePublisher: AnyPublisher<NewTabPageDataModel.OmnibarMode, Never> {
+        modeSubject.eraseToAnyPublisher()
+    }
+
+    var isAIChatRecentChatsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
     }
 
     var showCustomizePopover: Bool {

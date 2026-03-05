@@ -38,6 +38,11 @@ name: test_unified_toggle_input
         visible: "×"
     commands:
         - tapOn: "×"
+- runFlow:
+    when:
+        visible: "Back to Settings"
+    commands:
+        - tapOn: "Back to Settings"
 
 # Step 2: Verify collapsed state — input bar shows placeholder
 - assertVisible:

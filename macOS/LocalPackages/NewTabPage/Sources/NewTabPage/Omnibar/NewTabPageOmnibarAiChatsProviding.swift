@@ -1,7 +1,7 @@
 //
-//  CrashCollectionExtension.swift
+//  NewTabPageOmnibarAiChatsProviding.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,19 +16,9 @@
 //  limitations under the License.
 //
 
-import Crashes
+public protocol NewTabPageOmnibarAiChatsProviding: AnyObject {
 
-@available(macOS 12.0, *)
-extension CrashCollection {
+    @MainActor
+    func aiChats(query: String?) async -> NewTabPageDataModel.AiChatsData
 
-    static func removeBuildNumber(from appVersion: String?) -> String? {
-        guard let appVersion else {
-            return nil
-        }
-        let versionComponents = appVersion.split(separator: ".")
-        guard versionComponents.count > 3 else {
-            return appVersion
-        }
-        return versionComponents.prefix(3).joined(separator: ".")
-    }
 }

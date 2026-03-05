@@ -20,6 +20,7 @@ import AppKit
 import Combine
 import Common
 import CoreLocation
+import PixelKit
 import UserNotifications
 import os.log
 
@@ -117,7 +118,11 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         case .notification:
             Task { @MainActor in
                 do {
+                    PixelKit.fire(WebNotificationPixel.systemAuthorizationRequested, frequency: .dailyAndCount)
                     let granted = try await notificationService.requestAuthorization(options: [.alert, .sound])
+                    if granted {
+                        PixelKit.fire(WebNotificationPixel.systemAuthorizationGranted, frequency: .dailyAndCount)
+                    }
                     completion(granted ? .authorized : .denied)
                 } catch {
                     Logger.general.error("SystemPermissionManager: Notification authorization failed - \(error.localizedDescription)")

@@ -45,7 +45,7 @@ final class NewTabPageWebViewModel: NSObject {
 
         let configuration = WKWebViewConfiguration()
         configuration.applyNewTabPageWebViewConfiguration(with: featureFlagger, newTabPageUserScript: newTabPageUserScript)
-        webView = WebView(frame: .zero, configuration: configuration)
+        webView = WebView(frame: .zero, configuration: configuration, featureFlagger: featureFlagger)
 
         self.newTabPageLoadMetrics = newTabPageLoadMetrics
 

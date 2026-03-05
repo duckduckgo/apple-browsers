@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import UIKit
 
 class MainViewCoordinator {
@@ -37,6 +38,7 @@ class MainViewCoordinator {
     var statusBackground: UIView!
     var suggestionTrayContainer: UIView!
     var tabBarContainer: UIView!
+    var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
     var keyboardSeamView: UIView!
     var toolbar: UIToolbar!
@@ -51,6 +53,8 @@ class MainViewCoordinator {
 
     let constraints = Constraints()
     var toolbarHandler: ToolbarStateHandling!
+    private var savedStatusBackgroundColor: UIColor?
+    private(set) var isNavigationChromeHidden = false
 
     // The default after creating the hiearchy is top
     var addressBarPosition: AddressBarPosition = .top
@@ -89,6 +93,7 @@ class MainViewCoordinator {
         var unifiedToggleInputBottom: NSLayoutConstraint!
         var contentContainerBottomToUnifiedToggleInputTop: NSLayoutConstraint!
         var contentContainerTopToSafeArea: NSLayoutConstraint!
+        var contentContainerTopToAIChatHeader: NSLayoutConstraint!
 
     }
 
@@ -196,27 +201,58 @@ class MainViewCoordinator {
         constraints.contentContainerBottomToUnifiedToggleInputTop.constant = 0
     }
 
+    func showAITabChrome() {
+        showAIChatTabChatHeader()
+        setNavigationChromeHidden(true)
+    }
+
+    func hideAITabChrome() {
+        hideAIChatTabChatHeader()
+        setNavigationChromeHidden(false)
+    }
+
+    func showAIChatTabChatHeader() {
+        aiChatTabChatHeaderContainer.isHidden = false
+    }
+
+    func hideAIChatTabChatHeader() {
+        aiChatTabChatHeaderContainer.isHidden = true
+    }
+
     /// Uses alpha + interaction instead of isHidden so the collection view stays laid out
     /// and its pan gesture can be relocated to drive tab swiping.
     func setNavigationChromeHidden(_ hidden: Bool) {
         if hidden {
+            if !isNavigationChromeHidden {
+                savedStatusBackgroundColor = statusBackground.backgroundColor
+            }
+            isNavigationChromeHidden = true
+            statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
             navigationBarContainer.alpha = 0
             navigationBarContainer.isUserInteractionEnabled = false
-            if !addressBarPosition.isBottom {
-                constraints.contentContainerTop.isActive = false
+            constraints.contentContainerTop.isActive = false
+            if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
+                constraints.contentContainerTopToSafeArea.isActive = false
+                constraints.contentContainerTopToAIChatHeader.isActive = true
+            } else {
                 constraints.contentContainerTopToSafeArea.isActive = true
-                // Shrink statusBackground to the status bar height so it doesn't paint over web content.
+            }
+            if !addressBarPosition.isBottom {
                 constraints.statusBackgroundToNavigationBarContainerBottom.isActive = false
                 constraints.statusBackgroundBottomToSafeAreaTop.isActive = true
             }
             constraints.contentContainerBottomToToolbarTop.isActive = false
             constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = true
         } else {
+            if isNavigationChromeHidden {
+                statusBackground.backgroundColor = savedStatusBackgroundColor
+                savedStatusBackgroundColor = nil
+            }
+            isNavigationChromeHidden = false
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
-            // Always restore — this constraint may have been modified in top-bar mode even if
-            // the address bar has since moved to bottom.
             constraints.contentContainerTopToSafeArea.isActive = false
+            constraints.contentContainerTopToAIChatHeader?.isActive = false
             constraints.contentContainerTop.isActive = true
             if !addressBarPosition.isBottom {
                 constraints.statusBackgroundBottomToSafeAreaTop.isActive = false
@@ -226,7 +262,6 @@ class MainViewCoordinator {
             }
             constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = false
             constraints.contentContainerBottomToToolbarTop.isActive = true
-            unifiedToggleInputContainer.backgroundColor = nil
         }
     }
 

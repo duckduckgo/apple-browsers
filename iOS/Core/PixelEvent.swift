@@ -142,22 +142,6 @@ extension Pixel {
         case settingsAutoconsentOn
         case settingsAutoconsentOff
 
-        case experimentalBrowsingMenuEnabled
-        case experimentalBrowsingMenuDisabled
-        case experimentalBrowsingMenuUsed
-        case experimentalBrowsingMenuDisplayed
-        case experimentalBrowsingMenuDisplayedNTP
-        case experimentalBrowsingMenuDisplayedAIChat
-        case experimentalBrowsingMenuDisplayedError
-        case experimentalBrowsingMenuDismissed
-
-        // Used to compare engagement vs old menu
-        case sheetBrowsingMenuSettings
-        case sheetBrowsingMenuAIChat
-        case sheetBrowsingMenuVPN
-        case sheetBrowsingMenuPasswords
-        case sheetBrowsingMenuNewDuckAddress
-
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuOpenedError
@@ -1478,6 +1462,15 @@ extension Pixel {
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
         case aiChatLegacyOmnibarBackButtonPressed
+
+        // MARK: iPad Toggle
+        case aiChatIPadTogglePromptSubmitted
+        case aiChatIPadToggleURLSubmitted
+        case aiChatOmnibarQuerySubmittedIPadToggleEnabled
+        case aiChatIPadToggleRecentChatSelectedPinned
+        case aiChatIPadToggleRecentChatSelected
+        case aiChatIPadToggleEnabledOnAppOpen
+        case aiChatIPadToggleDisabledOnAppOpen
         
         // MARK: AI Chat History Deletion
         case aiChatHistoryDeleteSuccessful
@@ -1632,6 +1625,12 @@ extension Pixel {
         case webExtensionEmbeddedInstalled
         case webExtensionEmbeddedUpgraded
         case webExtensionEmbeddedInstallError
+
+        case webExtensionDarkReaderInstalled
+        case webExtensionDarkReaderUpgraded
+        case webExtensionDarkReaderInstallError
+        case webExtensionDarkReaderEnabled
+        case webExtensionDarkReaderDisabled
     }
 
 }
@@ -1736,21 +1735,6 @@ extension Pixel.Event {
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
-
-        case .experimentalBrowsingMenuEnabled: return "m_experimental-browsing-menu_enabled"
-        case .experimentalBrowsingMenuDisabled: return "m_experimental-browsing-menu_disabled"
-        case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"
-        case .experimentalBrowsingMenuDisplayed: return "m_experimental-browsing-menu_displayed"
-        case .experimentalBrowsingMenuDisplayedNTP: return "m_experimental-browsing-menu_displayed_ntp"
-        case .experimentalBrowsingMenuDisplayedAIChat: return "m_experimental-browsing-menu_displayed_aichat"
-        case .experimentalBrowsingMenuDisplayedError: return "m_experimental-browsing-menu_displayed_error"
-        case .experimentalBrowsingMenuDismissed: return "m_experimental-browsing-menu_dismissed"
-
-        case .sheetBrowsingMenuSettings: return "m_sheet-menu_settings"
-        case .sheetBrowsingMenuAIChat: return "m_sheet-menu_aichat"
-        case .sheetBrowsingMenuVPN: return "m_sheet-menu_vpn"
-        case .sheetBrowsingMenuPasswords: return "m_sheet-menu_passwords"
-        case .sheetBrowsingMenuNewDuckAddress: return "m_sheet-menu_new-duck-address"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -2983,6 +2967,15 @@ extension Pixel.Event {
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
         case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
+
+        // MARK: iPad Toggle
+        case .aiChatIPadTogglePromptSubmitted: return "m_aichat_ipad_toggle_prompt_submitted"
+        case .aiChatIPadToggleURLSubmitted: return "m_aichat_ipad_toggle_url_submitted"
+        case .aiChatOmnibarQuerySubmittedIPadToggleEnabled: return "m_aichat_omnibar_query_submitted_ipad_toggle_enabled"
+        case .aiChatIPadToggleRecentChatSelectedPinned: return "m_aichat_ipad_toggle_recent_chat_selected_pinned"
+        case .aiChatIPadToggleRecentChatSelected: return "m_aichat_ipad_toggle_recent_chat_selected"
+        case .aiChatIPadToggleEnabledOnAppOpen: return "m_aichat_ipad_toggle_enabled_on_app_open"
+        case .aiChatIPadToggleDisabledOnAppOpen: return "m_aichat_ipad_toggle_disabled_on_app_open"
         
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
@@ -3196,6 +3189,12 @@ extension Pixel.Event {
         case .webExtensionEmbeddedInstalled: return "m_web_extension_embedded_installed"
         case .webExtensionEmbeddedUpgraded: return "m_web_extension_embedded_upgraded"
         case .webExtensionEmbeddedInstallError: return "m_web_extension_embedded_install_error"
+
+        case .webExtensionDarkReaderInstalled: return "m_web_extension_dark_reader_installed"
+        case .webExtensionDarkReaderUpgraded: return "m_web_extension_dark_reader_upgraded"
+        case .webExtensionDarkReaderInstallError: return "m_web_extension_dark_reader_install_error"
+        case .webExtensionDarkReaderEnabled: return "m_web_extension_dark_reader_enabled"
+        case .webExtensionDarkReaderDisabled: return "m_web_extension_dark_reader_disabled"
         }
     }
 }

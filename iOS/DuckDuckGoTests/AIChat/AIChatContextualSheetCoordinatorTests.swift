@@ -104,8 +104,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockDelegate: MockDelegate!
     private var mockPresentingVC: MockPresentingViewController!
     private var mockSettings: MockAIChatSettingsProvider!
+    private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
+    private var cancellables: Set<AnyCancellable>!
 
     // MARK: - Setup
 
@@ -113,6 +115,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockSettings = MockAIChatSettingsProvider()
+        mockFeatureFlagger = MockFeatureFlagger()
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         sut = AIChatContextualSheetCoordinator(
@@ -121,12 +124,13 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: mockFeatureFlagger,
             pageContextHandler: mockPageContextHandler
         )
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()
         sut.delegate = mockDelegate
+        cancellables = []
     }
 
     @MainActor
@@ -135,8 +139,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockDelegate = nil
         mockPresentingVC = nil
         mockSettings = nil
+        mockFeatureFlagger = nil
         mockPageContextHandler = nil
         contentBlockingSubject = nil
+        cancellables = nil
         super.tearDown()
     }
 
@@ -301,6 +307,120 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     // MARK: - Session Timer Tests
 
+    // MARK: - Multiple Page Contexts Tests
+
+    @MainActor
+    func testNotifyPageChangedSendsNavigationSignalWhenAutoCollectOffAndMultipleContextsEnabled() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+
+        // Start a chat so hasActiveChat is true
+        sut.sessionState.handlePromptSubmission("Hello")
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        var receivedNullPush = false
+        sut.sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend(let data) = effect, data == nil {
+                    receivedNullPush = true
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        await sut.notifyPageChanged()
+
+        // Then - null signal sent to FE, no context collection triggered
+        XCTAssertTrue(receivedNullPush)
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
+    @MainActor
+    func testNotifyPageChangedDoesNotSendNavigationSignalWhenMultipleContextsDisabled() async {
+        // Given - flag OFF (default)
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+
+        sut.sessionState.handlePromptSubmission("Hello")
+
+        var receivedPush = false
+        sut.sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend = effect {
+                    receivedPush = true
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        await sut.notifyPageChanged()
+
+        // Then - no signal sent (backward compatible)
+        XCTAssertFalse(receivedPush)
+    }
+
+    @MainActor
+    func testNotifyPageChangedDoesNotPushContextWhenSheetDismissedButRetained() async {
+        // Given - sheet presented, chat started, then dismissed
+        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.handlePromptSubmission("Hello")
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        // Simulate dismiss (stopObservingContextUpdates + session timer)
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+
+        // Sheet is retained but not visible
+        XCTAssertTrue(sut.hasActiveSheet)
+        XCTAssertFalse(sut.isSheetPresented)
+
+        var receivedPush = false
+        sut.sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend = effect {
+                    receivedPush = true
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        await sut.notifyPageChanged()
+
+        // Then
+        XCTAssertFalse(receivedPush)
+    }
+
+    @MainActor
+    func testNotifyPageChangedDoesNotSendNullSignalWhenSheetDismissedButRetained() async {
+        // Given - auto-collect OFF, multi-context ON, chat started, then dismissed
+        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.handlePromptSubmission("Hello")
+
+        // Simulate dismiss
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+        XCTAssertTrue(sut.hasActiveSheet)
+        XCTAssertFalse(sut.isSheetPresented)
+
+        var receivedPush = false
+        sut.sessionState.effects
+            .sink { effect in
+                if case .pushContextToFrontend = effect {
+                    receivedPush = true
+                }
+            }
+            .store(in: &cancellables)
+
+        // When - navigate while sheet is dismissed
+        await sut.notifyPageChanged()
+
+        // Then - no null signal sent (sheet not visible)
+        XCTAssertFalse(receivedPush)
+    }
 
     // MARK: - Helpers
 

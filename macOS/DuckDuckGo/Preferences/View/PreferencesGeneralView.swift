@@ -36,7 +36,7 @@ extension Preferences {
         @ObservedObject var maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences
         @State private var showingCustomHomePageSheet = false
         @State private var isAddedToDock = false
-        var dockCustomizer: DockCustomizer
+        let dockCustomizer: DockCustomization?
         let featureFlagger = NSApp.delegateTyped.featureFlagger
         let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -61,40 +61,40 @@ extension Preferences {
             PreferencePane(UserText.general) {
 
                 // SECTION: Shortcuts
-#if !APPSTORE
-                PreferencePaneSection(UserText.shortcuts, spacing: 4) {
-                    PreferencePaneSubSection {
-                        HStack {
-                            if isAddedToDock || dockCustomizer.isAddedToDock {
-                                HStack {
-                                    Image(.checkCircle).foregroundColor(Color(.successGreen))
-                                    Text(UserText.isAddedToDock)
-                                }
-                                .transition(.opacity)
-                                .padding(.trailing, 8)
-                            } else {
-                                HStack {
-                                    Image(.warning).foregroundColor(Color(.linkBlue))
-                                    Text(UserText.isNotAddedToDock)
-                                }
-                                .padding(.trailing, 8)
-                                Button(action: {
-                                    withAnimation {
-                                        PixelKit.fire(GeneralPixel.userAddedToDockFromSettings,
-                                                      includeAppVersionParameter: false)
-                                        dockCustomizer.addToDock()
-                                        isAddedToDock = true
+                if let dockCustomizer {
+                    PreferencePaneSection(UserText.shortcuts, spacing: 4) {
+                        PreferencePaneSubSection {
+                            HStack {
+                                if isAddedToDock || dockCustomizer.isAddedToDock {
+                                    HStack {
+                                        Image(.checkCircle).foregroundColor(Color(.successGreen))
+                                        Text(UserText.isAddedToDock)
                                     }
-                                }) {
-                                    Text(UserText.addToDock)
-                                        .fixedSize(horizontal: true, vertical: false)
-                                        .multilineTextAlignment(.center)
+                                    .transition(.opacity)
+                                    .padding(.trailing, 8)
+                                } else {
+                                    HStack {
+                                        Image(.warning).foregroundColor(Color(.linkBlue))
+                                        Text(UserText.isNotAddedToDock)
+                                    }
+                                    .padding(.trailing, 8)
+                                    Button(action: {
+                                        withAnimation {
+                                            PixelKit.fire(GeneralPixel.userAddedToDockFromSettings,
+                                                          includeAppVersionParameter: false)
+                                            dockCustomizer.addToDock()
+                                            isAddedToDock = true
+                                        }
+                                    }) {
+                                        Text(UserText.addToDock)
+                                            .fixedSize(horizontal: true, vertical: false)
+                                            .multilineTextAlignment(.center)
+                                    }
                                 }
                             }
                         }
                     }
                 }
-#endif
                 // SECTION: On Startup
                 PreferencePaneSection(UserText.onStartup) {
 

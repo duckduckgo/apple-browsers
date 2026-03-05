@@ -18,15 +18,11 @@
 
 import Common
 import Crashes
+import CrashReportingShared
 import Foundation
 import MetricKit
 
-protocol CrashReportPresenting {
-    var content: String? { get }
-}
-
 protocol CrashReport: CrashReportPresenting {
-
     static var fileExtension: String { get }
 
     var url: URL { get }
@@ -102,7 +98,6 @@ final class JSONCrashReport: CrashReport {
         "deviceIdentifierForVendor",
         "rolloutId"
     ]
-
     private static let pidRegex = regex(#""pid"\s*:\s*(\d+)(?:,|$)"#)
     private static let timestampRegex = regex(#""timestamp"\s*:\s*"([^"]+)""#)
     private static let dateFormatter: DateFormatter = {
@@ -139,8 +134,8 @@ final class JSONCrashReport: CrashReport {
         if let diagnostic = try? CrashLogMessageExtractor().crashDiagnostic(for: timestamp, pid: pid)?.diagnosticData(), !diagnostic.isEmpty,
            let json = try? JSONEncoder().encode(diagnostic).utf8String()?.trimmingCharacters(in: CharacterSet(charactersIn: "{}")),
            let openBraceIdx = fileContents.firstIndex(of: "{") {
-                // insert `"message": "…", "stackTrace": […],` json part after the first `{` in the report
-               fileContents.insert(contentsOf: json + ",", at: fileContents.index(after: openBraceIdx))
+            // insert `"message": "…", "stackTrace": […],` json part after the first `{` in the report
+            fileContents.insert(contentsOf: json + ",", at: fileContents.index(after: openBraceIdx))
         }
 
         return fileContents
@@ -154,8 +149,7 @@ final class JSONCrashReport: CrashReport {
         guard let content,
               let header = content.split(separator: "\n").first,
               let headerData = header.data(using: .utf8),
-              let headerJSON = try? JSONSerialization.jsonObject(with: headerData, options: []) as? [String: Any]
-        else {
+              let headerJSON = try? JSONSerialization.jsonObject(with: headerData, options: []) as? [String: Any] else {
             return nil
         }
         return headerJSON
@@ -170,13 +164,5 @@ final class JSONCrashReport: CrashReport {
             return nil
         }
         return version
-    }
-}
-
-struct CrashDataPayload: CrashReportPresenting {
-    let data: Data
-
-    var content: String? {
-        data.utf8String()
     }
 }

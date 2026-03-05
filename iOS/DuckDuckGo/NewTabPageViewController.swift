@@ -27,7 +27,12 @@ import RemoteMessaging
 final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
-        favoritesModel.isEmpty && newTabPageViewModel.escapeHatch == nil
+        guard favoritesModel.isEmpty else { return false }
+        if newTabPageViewModel.escapeHatch != nil {
+            let isLandscape = view.bounds.width > view.bounds.height
+            return !isLandscape
+        }
+        return true
     }
 
     private lazy var borderView = StyledTopBottomBorderView()
@@ -83,7 +88,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter)
 
-        super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
+        super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
+                                            narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,

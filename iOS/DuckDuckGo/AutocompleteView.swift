@@ -37,7 +37,7 @@ struct AutocompleteView: View {
                     model.onShownToUser()
                 }
             }
-            
+
             SuggestionsSection(suggestions: model.topHits,
                                query: model.query,
                                onSuggestionSelected: model.onSuggestionSelected,
@@ -165,6 +165,7 @@ private struct SuggestionsSection: View {
     var onSuggestionDeleted: (AutocompleteViewModel.SuggestionModel) -> Void
 
     let selectedColor = Color(designSystemColor: .accent)
+
     let unselectedColor = Color(designSystemColor: .surface)
 
     private struct Metrics {

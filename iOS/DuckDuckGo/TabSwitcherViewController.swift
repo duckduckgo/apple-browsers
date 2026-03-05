@@ -155,6 +155,7 @@ class TabSwitcherViewController: UIViewController {
     private let tabCountModel: TabCountModel
     private(set) var segmentedPickerHostingController: UIHostingController<TabSwitcherPickerWrapper>?
     private var pickerSelectionCancellable: AnyCancellable?
+    private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
     private var fireModeCapability: FireModeCapable {
         FireModeCapability.create(using: featureFlagger)
     }
@@ -251,7 +252,7 @@ class TabSwitcherViewController: UIViewController {
         subscribeToTabChanges()
         currentSelection = tabsModel.currentIndex
         UIView.performWithoutAnimation {
-            collectionView.reloadData()
+            reloadCollectionView()
             collectionView.layoutIfNeeded()
         }
         updateUIForSelectionMode()
@@ -289,6 +290,12 @@ class TabSwitcherViewController: UIViewController {
             collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            
+            // Fire mode empty view
+            fireModeEmptyStateHostingController?.view.topAnchor.constraint(equalTo: collectionView.topAnchor),
+            fireModeEmptyStateHostingController?.view.leadingAnchor.constraint(equalTo: collectionView.leadingAnchor),
+            fireModeEmptyStateHostingController?.view.trailingAnchor.constraint(equalTo: collectionView.trailingAnchor),
+            fireModeEmptyStateHostingController?.view.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor),
 
             interfaceMode.isLarge ? collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
                 collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
@@ -337,6 +344,11 @@ class TabSwitcherViewController: UIViewController {
         borderView.isBottomVisible = !interfaceMode.isLarge
         activateLayoutConstraintsBasedOnBarPosition()
     }
+    
+    private func reloadCollectionView() {
+        collectionView.reloadData()
+        updateFireModeEmptyStateVisibility()
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -345,6 +357,7 @@ class TabSwitcherViewController: UIViewController {
         createTitleBar()
         setupModeToggle()
         setupBackgroundView()
+        setupFireModeEmptyState()
         collectionView.register(
             TabSwitcherTrackerInfoHeaderView.self,
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
@@ -430,6 +443,26 @@ class TabSwitcherViewController: UIViewController {
         collectionView.backgroundView = view
     }
 
+    private func setupFireModeEmptyState() {
+        guard fireModeCapability.isFireModeEnabled else {
+            return
+        }
+        let hostingController = UIHostingController(rootView: FireModeEmptyStateView())
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.didMove(toParent: self)
+
+        fireModeEmptyStateHostingController = hostingController
+    }
+
+    private func updateFireModeEmptyStateVisibility() {
+        let shouldShow = tabManager.currentBrowsingMode == .fire && tabsModel.tabs.isEmpty
+        fireModeEmptyStateHostingController?.view.isHidden = !shouldShow
+    }
+
     func refreshDisplayModeButton() {
         tabsStyle = tabSwitcherSettings.isGridViewEnabled ? .grid : .list
     }
@@ -439,7 +472,7 @@ class TabSwitcherViewController: UIViewController {
             .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.collectionView.reloadData()
+                self?.reloadCollectionView()
             }
     }
 
@@ -510,6 +543,7 @@ class TabSwitcherViewController: UIViewController {
         updateUIForSelectionMode()
         setupBarsLayout()
         trackerCountViewModel?.refresh()
+        updateFireModeEmptyStateVisibility()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
@@ -673,7 +707,8 @@ class TabSwitcherViewController: UIViewController {
 extension TabSwitcherViewController: TabViewCellDelegate {
 
     func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
-        let shouldDismiss = tabsModel.count == indexPaths.count // TODO: - Handle fire mode
+        let isDeletingAll = tabsModel.count == indexPaths.count
+        let shouldDismiss = isDeletingAll && !tabsModel.allowsEmpty
         let tabsToClose = indexPaths.map { tabsModel.get(tabAt: $0.row) }
         delegate?.tabSwitcher(self, willCloseTabs: tabsToClose)
 
@@ -684,12 +719,13 @@ extension TabSwitcherViewController: TabViewCellDelegate {
         } completion: { _ in
             self.currentSelection = self.tabsModel.currentIndex
             self.isProcessingUpdates = false
-            if self.tabsModel.tabs.isEmpty {
-                self.tabsModel.add(tab: Tab(fireTab: self.tabsModel.shouldCreateFireTabs)) // TODO: - Only in normal mode
+            if self.tabsModel.tabs.isEmpty && !self.tabsModel.allowsEmpty {
+                self.tabsModel.add(tab: Tab(fireTab: self.tabsModel.shouldCreateFireTabs))
             }
             self.delegate?.tabSwitcherDidBulkCloseTabs(tabSwitcher: self)
             self.refreshTitleViews()
             self.updateUIForSelectionMode()
+            self.updateFireModeEmptyStateVisibility()
             if shouldDismiss {
                 self.dismiss()
             }
@@ -901,7 +937,7 @@ extension TabSwitcherViewController {
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 
-        collectionView.reloadData()
+        reloadCollectionView()
     }
 
 }
@@ -946,7 +982,7 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
             collectionView.insertItems(at: [destination])
         } completion: { _ in
             if self.isEditing {
-                collectionView.reloadData() // Clears the selection
+                self.reloadCollectionView() // Clears the selection
                 collectionView.selectItem(at: destination, animated: true, scrollPosition: [])
                 self.barsHandler.configureButtonActions(tabsStyle: self.tabsStyle, canShowSelectionMenu: self.canShowSelectionMenu)
             } else {

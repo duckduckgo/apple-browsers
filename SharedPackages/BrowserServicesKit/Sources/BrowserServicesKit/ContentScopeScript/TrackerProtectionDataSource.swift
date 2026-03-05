@@ -21,25 +21,17 @@ import Foundation
 import os.log
 import TrackerRadarKit
 
-/// Source of tracker data and surrogates for the C-S-S trackerProtection feature.
+/// Source of tracker data for the C-S-S trackerProtection feature.
 ///
-/// Provides the full tracker data set (not the surrogate-filtered subset) and
-/// the raw surrogates.txt payload for injection into the privacy config.
-/// The JS-side TrackerResolver needs all trackers to detect both surrogate
-/// and non-surrogate tracker requests, and the surrogates text to build the
-/// runtime surrogate function map.
+/// Provides the full tracker data set (not the surrogate-filtered subset)
+/// for injection into the privacy config.  Surrogates are bundled statically
+/// inside C-S-S at build time and no longer supplied by native code.
 public protocol TrackerProtectionDataSource {
     var trackerData: TrackerData? { get }
     var encodedTrackerData: String? { get }
-    /// Raw surrogates.txt content for C-S-S to parse into callable surrogate functions.
-    var surrogatesText: String? { get }
 }
 
 /// Default implementation using `CompiledRuleListsSource` (typically `ContentBlockerRulesManager`).
-///
-/// The `surrogatesProvider` closure lets platform code supply the surrogates.txt
-/// content from its own configuration store without coupling BSK to the
-/// `Configuration` module.
 ///
 /// On macOS, ClickToLoad rules are compiled into a separate rule list.
 /// Pass the list name via `additionalRuleLists` so the merged tracker data
@@ -48,19 +40,12 @@ public protocol TrackerProtectionDataSource {
 public struct DefaultTrackerProtectionDataSource: TrackerProtectionDataSource {
 
     private let contentBlockingManager: CompiledRuleListsSource
-    private let surrogatesProvider: () -> String?
     private let additionalRuleLists: [String]
 
     public init(contentBlockingManager: CompiledRuleListsSource,
-                additionalRuleLists: [String] = [],
-                surrogatesProvider: @escaping () -> String? = { nil }) {
+                additionalRuleLists: [String] = []) {
         self.contentBlockingManager = contentBlockingManager
         self.additionalRuleLists = additionalRuleLists
-        self.surrogatesProvider = surrogatesProvider
-    }
-
-    public var surrogatesText: String? {
-        surrogatesProvider()
     }
 
     public var trackerData: TrackerData? {

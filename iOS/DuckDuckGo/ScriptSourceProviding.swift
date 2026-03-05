@@ -92,13 +92,8 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
         syncErrorHandler = dependencies.syncErrorHandler
         webExtensionAvailability = dependencies.webExtensionAvailability
-        let configStore = ConfigurationStore()
         trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
-            contentBlockingManager: contentBlockingManager,
-            surrogatesProvider: {
-                guard let data = configStore.loadData(for: .surrogates) else { return nil }
-                return String(data: data, encoding: .utf8)
-            }
+            contentBlockingManager: contentBlockingManager
         )
 
         contentScopeProperties = ContentScopeProperties(gpcEnabled: dependencies.appSettings.sendDoNotSell,

@@ -58,8 +58,8 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         return (manager, config)
     }
 
-    private func makeDataSource(encodedData: String? = "{}", surrogatesText: String? = nil) -> MockTrackerProtectionDataSource {
-        MockTrackerProtectionDataSource(encodedTrackerData: encodedData, surrogatesText: surrogatesText)
+    private func makeDataSource(encodedData: String? = "{}") -> MockTrackerProtectionDataSource {
+        MockTrackerProtectionDataSource(encodedTrackerData: encodedData)
     }
 
     private func generatedFeatures(from generator: ContentScopePrivacyConfigurationJSONGenerator) -> [String: Any]? {
@@ -220,31 +220,21 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         XCTAssertEqual(settings?["contentBlockingExceptions"] as? [String], ["exception.com"])
     }
 
-    // MARK: - Surrogates passthrough
+    // MARK: - Surrogates removed (bundled in C-S-S at build time)
 
-    func testSurrogatesTextIncludedInSettings() {
-        let surrogates = "google-analytics.com/ga.js application/javascript\n(function() {})();\n"
+    func testSurrogatesNeverWrittenToSettings() {
         let (manager, _) = makeManager()
         let generator = ContentScopePrivacyConfigurationJSONGenerator(
             featureFlagger: MockFeatureFlagger(),
             privacyConfigurationManager: manager,
-            trackerProtectionDataSource: makeDataSource(surrogatesText: surrogates)
+            trackerProtectionDataSource: makeDataSource()
         )
 
         let settings = trackerProtectionSettings(from: generator)
-        XCTAssertEqual(settings?["surrogates"] as? String, surrogates)
-    }
-
-    func testNilSurrogatesOmitsSurrogatesSetting() {
-        let (manager, _) = makeManager()
-        let generator = ContentScopePrivacyConfigurationJSONGenerator(
-            featureFlagger: MockFeatureFlagger(),
-            privacyConfigurationManager: manager,
-            trackerProtectionDataSource: makeDataSource(surrogatesText: nil)
-        )
-
-        let settings = trackerProtectionSettings(from: generator)
-        XCTAssertNil(settings?["surrogates"])
+        XCTAssertNil(settings?["surrogates"], "surrogates must not appear in trackerProtection settings")
+        XCTAssertNotNil(settings?["trackerData"], "trackerData should still be present")
+        XCTAssertNotNil(settings?["blockingEnabled"], "blockingEnabled should still be present")
+        XCTAssertNotNil(settings?["ctlEnabled"], "ctlEnabled should still be present")
     }
 
     // MARK: - P0-10: CTL platform behavior
@@ -290,22 +280,32 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
                        "Default ctlEnabled should be false (iOS behavior)")
     }
 
-    // MARK: - P1-5: Surrogates absent
+    // MARK: - Settings shape guard
 
-    func testNoSurrogatesField_trackerProtectionStillGenerated() {
+    func testTrackerProtectionSettings_containOnlyExpectedKeys() {
         let (manager, _) = makeManager()
         let generator = ContentScopePrivacyConfigurationJSONGenerator(
             featureFlagger: MockFeatureFlagger(),
             privacyConfigurationManager: manager,
-            trackerProtectionDataSource: makeDataSource(surrogatesText: nil)
+            trackerProtectionDataSource: makeDataSource()
         )
 
-        let features = generatedFeatures(from: generator)
-        XCTAssertNotNil(features?["trackerProtection"], "trackerProtection should still be present without surrogates")
+        let expectedKeys: Set<String> = [
+            "trackerData", "allowlist", "tempUnprotectedDomains",
+            "userUnprotectedDomains", "contentBlockingExceptions",
+            "blockingEnabled", "ctlEnabled"
+        ]
 
-        let settings = trackerProtectionSettings(from: generator)
-        XCTAssertNil(settings?["surrogates"], "surrogates field should be absent, not empty")
-        XCTAssertNotNil(settings?["blockingEnabled"], "blocking should still be configured")
+        guard let settings = trackerProtectionSettings(from: generator) else {
+            XCTFail("trackerProtection settings missing")
+            return
+        }
+
+        let actualKeys = Set(settings.keys)
+        XCTAssertEqual(actualKeys, expectedKeys,
+                       "trackerProtection settings keys should match expected set exactly")
+        XCTAssertFalse(actualKeys.contains("surrogates"),
+                       "surrogates must never appear in trackerProtection settings")
     }
 
     // MARK: - CTL-disabled regression guard
@@ -352,10 +352,8 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
 private struct MockTrackerProtectionDataSource: TrackerProtectionDataSource {
     var trackerData: TrackerRadarKit.TrackerData? { nil }
     let encodedTrackerData: String?
-    let surrogatesText: String?
 
-    init(encodedTrackerData: String? = "{}", surrogatesText: String? = nil) {
+    init(encodedTrackerData: String? = "{}") {
         self.encodedTrackerData = encodedTrackerData
-        self.surrogatesText = surrogatesText
     }
 }

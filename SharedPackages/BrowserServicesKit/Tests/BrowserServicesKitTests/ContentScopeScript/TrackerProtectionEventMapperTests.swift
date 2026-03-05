@@ -320,10 +320,10 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
 
     func testMetadataFidelity_allFieldsPreserved() {
         let tracker = makeTracker(
-            url: "https://tracker.example/pixel.js",
+            url: "https://tracker.test.com/pixel.js",
             blocked: true,
             reason: "default block",
-            pageUrl: "https://example.com",
+            pageUrl: "https://page.test.com",
             entityName: "Tracker Inc",
             ownerName: "Tracker Inc",
             category: "Analytics",
@@ -331,13 +331,13 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
         )
         let request = mapper.detectedRequest(from: tracker)
 
-        XCTAssertEqual(request.url, "https://tracker.example/pixel.js")
+        XCTAssertEqual(request.url, "https://tracker.test.com/pixel.js")
         XCTAssertEqual(request.ownerName, "Tracker Inc")
         XCTAssertEqual(request.entityName, "Tracker Inc")
         XCTAssertEqual(request.category, "Analytics")
         XCTAssertEqual(request.prevalence, 0.42)
-        XCTAssertEqual(request.pageUrl, "https://example.com")
-        XCTAssertNotNil(request.eTLDplus1)
+        XCTAssertEqual(request.pageUrl, "https://page.test.com")
+        XCTAssertEqual(request.eTLDplus1, "test.com")
     }
 
     func testMetadataFidelity_nilOptionalFieldsPreserved() {

@@ -164,7 +164,6 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.syncServiceProvider = syncServiceProvider
         self.syncErrorHandler = syncErrorHandler
         self.webExtensionAvailability = webExtensionAvailability
-        let surrogatesConfigStorage = configStorage
         self.trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
             contentBlockingManager: contentBlockingManager,
             additionalRuleLists: [
@@ -172,11 +171,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
                 AdClickAttributionRulesSplitter.blockingAttributionRuleListName(
                     forListNamed: DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
                 ),
-            ],
-            surrogatesProvider: {
-                guard let data = surrogatesConfigStorage.loadData(for: .surrogates) else { return nil }
-                return String(data: data, encoding: .utf8)
-            }
+            ]
         )
 
         self.newTabPageActionsManager = newTabPageActionsManager

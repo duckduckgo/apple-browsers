@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PixelKit
 
 /// Protocol for finding and focusing tabs, enabling isolated testing.
 @MainActor
@@ -51,6 +52,7 @@ final class WebNotificationClickHandler {
         }
 
         tabFinder.focusTab(tab)
+        PixelKit.fire(WebNotificationPixel.clicked, frequency: .dailyAndCount)
         tab.webNotifications?.sendClickEvent(notificationId: notificationId)
     }
 }

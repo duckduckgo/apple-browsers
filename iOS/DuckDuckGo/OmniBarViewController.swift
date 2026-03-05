@@ -264,6 +264,9 @@ class OmniBarViewController: UIViewController, OmniBar {
         expandableBarView?.onAIChatModePressed = { [weak self] in
             self?.setSelectedTextEntryMode(.aiChat)
         }
+        expandableBarView?.onAIChatSendPressed = { [weak self] in
+            self?.onAIChatSendPressed()
+        }
     }
 
     private func configureEditingMenu() {
@@ -702,6 +705,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             expandable.setSearchAreaExpanded(shouldExpand, animated: false)
 
             expandable.updateLeftIconForMode(shouldShowModeToggle ? selectedTextEntryMode : .search)
+            expandable.setLeftIconHiddenForModeToggle(shouldShowModeToggle && isAddressBarSelected)
         }
 
         if dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled == false {
@@ -743,6 +747,9 @@ class OmniBarViewController: UIViewController, OmniBar {
             resignFirstResponder()
 
             DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
+            if dependencies.aiChatAddressBarExperience.shouldShowModeToggle {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarQuerySubmittedIPadToggleEnabled)
+            }
 
             if selectedTextEntryMode == .aiChat {
                 omniDelegate?.onPromptSubmitted(query, tools: nil)
@@ -783,6 +790,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         textField.text = nil
         expandableBarView?.aiChatTextView.text = nil
         expandableBarView?.updateTextFieldPlaceholderVisibility(hasText: false)
+        expandableBarView?.updateAIChatSendButton(hasText: false)
         omniDelegate?.onOmniQueryUpdated("")
     }
 
@@ -946,6 +954,10 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onAIChatBrandingPressed() {
         omniDelegate?.onAIChatBrandingPressed()
+    }
+
+    func onAIChatSendPressed() {
+        // Overridden in DefaultOmniBarViewController
     }
 }
 

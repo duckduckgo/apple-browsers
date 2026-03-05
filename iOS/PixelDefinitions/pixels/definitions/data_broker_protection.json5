@@ -491,12 +491,13 @@
     },
     "m_ios_dbp_engagement_dau": {
         "description": "Fired daily for active PIR users",
-        "owners": ["quanganhdo"],
+        "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["scheduled"],
         "parameters": [
             "appVersion",
             "pixelSource",
             "dbpIsAuthenticated",
+            "dbpIsFreeScan",
             {
                 "key": "need_background_app_refresh",
                 "description": "Whether Background App Refresh is required for DBP on this device.",
@@ -507,15 +508,15 @@
     },
     "m_ios_dbp_engagement_wau": {
         "description": "Fired weekly for active PIR users",
-        "owners": ["quanganhdo"],
+        "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["scheduled"],
-        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated"]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
     },
     "m_ios_dbp_engagement_mau": {
         "description": "Fired monthly for active PIR users",
-        "owners": ["quanganhdo"],
+        "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["scheduled"],
-        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated"]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
     },
     "m_ios_dbp_weekly_child-broker_orphaned-optouts": {
         "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",
@@ -1035,7 +1036,48 @@
                 "type": "string",
                 "enum": ["scan", "optOut", "unknown"]
             },
-            "dbpParentBroker"
+            "dbpParentBroker",
+            "dbpIsFreeScan"
+        ]
+    },
+    "m_ios_dbp_data_broker_http_error": {
+        "description": "Fired when a data broker scan or opt-out operation fails with an HTTP error.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "errorDomain",
+            "errorCode",
+            {
+                "key": "code",
+                "description": "The HTTP status code returned by the failing operation",
+                "type": "string"
+            },
+            "dbpIsFreeScan"
+        ]
+    },
+    "m_ios_dbp_data_broker_other_error": {
+        "description": "Fired when a data broker scan or opt-out operation fails with a non-HTTP, non-action error.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "errorDomain",
+            "errorCode",
+            {
+                "key": "kind",
+                "description": "The normalized data broker protection error kind",
+                "type": "string"
+            },
+            "dbpIsFreeScan"
         ]
     },
     "m_ios_dbp_notification_sent_first_scan_complete": {

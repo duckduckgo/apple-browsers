@@ -34,8 +34,6 @@ extension OnboardingRebranding.OnboardingView {
         private let cta: String
         private let action: () -> Void
 
-        @State private var showContent = true
-        @State private var videoPlayerWidth: CGFloat = 0.0
         @StateObject private var videoPlayerModel = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
 
         init(title: String,
@@ -70,7 +68,6 @@ extension OnboardingRebranding.OnboardingView {
                             .padding(.horizontal, -11)
                         videoPlayer
                             .tempPlaceholder()
-                            .visibility(showContent ? .visible : .invisible)
                             .onFirstAppear {
                                 videoPlayerModel.loadAsset(url: Self.videoURL, shouldLoopVideo: true)
                                 // Need to delay playing a video. If calling play too early the video won't play.
@@ -79,9 +76,6 @@ extension OnboardingRebranding.OnboardingView {
                                 }
                             }
                     }
-                        .onFrameUpdate(in: .global, using: VideoPlayerFramePreferenceKey.self) { rect in
-                            videoPlayerWidth = rect.width
-                        }
                 ),
                 title: {
                     Text(title)
@@ -94,28 +88,19 @@ extension OnboardingRebranding.OnboardingView {
                         Text(cta)
                     }
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
-                    .visibility(showContent ? .visible : .invisible)
                 }
             )
         }
 
         private var videoPlayer: some View {
-            // Calculate the height of the video based on the width it takes maintaining its aspect ratio
-            let heightRatio = videoPlayerWidth * (Self.videoSize.height / Self.videoSize.width)
-            return PlayerView(coordinator: videoPlayerModel)
-                .frame(width: videoPlayerWidth, height: heightRatio)
+            PlayerView(coordinator: videoPlayerModel)
+                .aspectRatio(Self.videoSize.width / Self.videoSize.height, contentMode: .fit)
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
                     videoPlayerModel.pause()
-
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                     videoPlayerModel.play()
                 }
-        }
-
-        private struct VideoPlayerFramePreferenceKey: PreferenceKey {
-            static var defaultValue: CGRect = .zero
-            static func reduce(value: inout CGRect, nextValue: () -> CGRect) {}
         }
 
     }

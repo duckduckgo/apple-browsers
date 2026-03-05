@@ -181,6 +181,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         if let button = tabSwitcherStyleButton.customView as? BrowserChromeButton {
             button.setImage(tabsStyle.image)
         }
+        tabSwitcherStyleButton.accessibilityLabel = tabsStyle.accessibilityLabel
 
         // Configure edit button with menu
         if let button = editButton.customView as? BrowserChromeButton {
@@ -201,7 +202,6 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         // Configure accessibility labels
         self.fireButton.accessibilityLabel = "Close all tabs and clear data"
         self.fireButton.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
-        self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
         self.duckChatButton.accessibilityLabel = UserText.duckAiFeatureName
         self.plusButton.accessibilityLabel = UserText.keyCommandNewTab
         self.doneButton.accessibilityLabel = UserText.navigationTitleDone

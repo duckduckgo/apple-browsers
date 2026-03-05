@@ -47,6 +47,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     weak var customToggleControl: NSControl?
+    weak var containerViewController: AIChatOmnibarContainerViewController? {
+        didSet { wireTabCycle() }
+    }
     var heightDidChange: ((CGFloat) -> Void)?
 
     init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
@@ -317,6 +320,40 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         focusTextView()
         let textLength = textView.string.count
         textView.selectedRange = NSRange(location: textLength, length: 0)
+    }
+
+    // MARK: - Tab Navigation
+
+    /// Called by the owner when the toggle receives a Tab press in AI Chat mode.
+    func handleToggleTabPressed() {
+        guard let containerVC = containerViewController else {
+            focusTextViewWithCursorAtEnd()
+            return
+        }
+        if containerVC.isImageUploadButtonAvailableForFocus {
+            containerVC.makeImageUploadButtonFirstResponder()
+        } else if containerVC.isModelPickerButtonAvailableForFocus {
+            containerVC.makeModelPickerButtonFirstResponder()
+        } else {
+            focusTextViewWithCursorAtEnd()
+        }
+    }
+
+    private func wireTabCycle() {
+        guard let containerVC = containerViewController else { return }
+
+        containerVC.onImageUploadButtonTabPressed = { [weak self, weak containerVC] in
+            guard let self, let containerVC else { return }
+            if containerVC.isModelPickerButtonAvailableForFocus {
+                containerVC.makeModelPickerButtonFirstResponder()
+            } else {
+                self.focusTextViewWithCursorAtEnd()
+            }
+        }
+
+        containerVC.onModelPickerButtonTabPressed = { [weak self] in
+            self?.focusTextViewWithCursorAtEnd()
+        }
     }
 
     func insertNewline() {

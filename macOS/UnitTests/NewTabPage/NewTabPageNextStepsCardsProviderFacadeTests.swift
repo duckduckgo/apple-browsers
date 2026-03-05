@@ -18,11 +18,13 @@
 
 import BrowserServicesKit
 import Combine
+import Common
 import NewTabPage
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SubscriptionTestingUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
@@ -252,13 +254,16 @@ final class NewTabPageNextStepsCardsProviderFacadeTests: XCTestCase {
 }
 
 private extension NewTabPageNextStepsCardsProviderFacadeTests {
-    func defaultCards(for provider: NewTabPageNextStepsSingleCardProvider) -> [NewTabPageDataModel.CardID] {
-        let cards = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) ? NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards : NewTabPageNextStepsSingleCardProvider.defaultStandardCards
-#if APPSTORE
-        return cards.filter { $0 != .addAppToDockMac }
-#else
-        return cards
-#endif
+    func defaultCards(for _: NewTabPageNextStepsSingleCardProvider) -> [NewTabPageDataModel.CardID] {
+        let cards = featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering)
+            ? NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards
+            : NewTabPageNextStepsSingleCardProvider.defaultStandardCards
+
+        if NSApp.isSandboxed {
+            return cards.filter { $0 != .addAppToDockMac }
+        } else {
+            return cards
+        }
     }
 
     func createFacade(featureFlagger: FeatureFlagger) -> NewTabPageNextStepsCardsProviderFacade {

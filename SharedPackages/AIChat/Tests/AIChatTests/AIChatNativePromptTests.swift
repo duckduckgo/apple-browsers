@@ -243,6 +243,109 @@ struct AIChatNativePromptTests {
         #expect(prompt == expectedPrompt)
     }
 
+    // MARK: - Query with Images and Model
+
+    @Test
+    func encodingQueryWithImagesAndModel() throws {
+        let images = [
+            AIChatNativePrompt.NativePromptImage(data: "base64data", format: "png")
+        ]
+        let prompt = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, images: images, modelId: "gpt-4o")
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        #expect(queryDict["prompt"] as? String == "Describe this")
+        #expect(queryDict["autoSubmit"] as? Bool == true)
+        #expect(queryDict["modelId"] as? String == "gpt-4o")
+
+        let imagesArray = try #require(queryDict["images"] as? [[String: String]])
+        #expect(imagesArray.count == 1)
+        #expect(imagesArray[0]["data"] == "base64data")
+        #expect(imagesArray[0]["format"] == "png")
+    }
+
+    @Test
+    func encodingQueryWithoutOptionalFields() throws {
+        let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: true)
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        #expect(queryDict["prompt"] as? String == "hello")
+        #expect(queryDict["autoSubmit"] as? Bool == true)
+        // Optional fields should be nil/absent
+        #expect(queryDict["modelId"] == nil || queryDict["modelId"] is NSNull)
+        #expect(queryDict["images"] == nil || queryDict["images"] is NSNull)
+        #expect(queryDict["toolChoice"] == nil || queryDict["toolChoice"] is NSNull)
+    }
+
+    @Test
+    func decodingQueryWithImagesAndModel() throws {
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "query",
+                "query": {
+                    "prompt": "Describe this",
+                    "autoSubmit": true,
+                    "modelId": "gpt-4o",
+                    "images": [
+                        {"data": "base64data", "format": "png"}
+                    ]
+                }
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+
+        let images = [AIChatNativePrompt.NativePromptImage(data: "base64data", format: "png")]
+        let expected = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, images: images, modelId: "gpt-4o")
+        #expect(prompt == expected)
+    }
+
+    @Test
+    func decodingQueryWithoutOptionalFieldsIsBackwardCompatible() throws {
+        // Old-format JSON without the new optional fields should still decode
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "query",
+                "query": {
+                    "prompt": "hello",
+                    "autoSubmit": true
+                }
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+        #expect(prompt == AIChatNativePrompt.queryPrompt("hello", autoSubmit: true))
+    }
+
+    @Test
+    func encodingQueryWithMultipleImages() throws {
+        let images = [
+            AIChatNativePrompt.NativePromptImage(data: "img1", format: "png"),
+            AIChatNativePrompt.NativePromptImage(data: "img2", format: "png"),
+        ]
+        let prompt = AIChatNativePrompt.queryPrompt("Compare these", autoSubmit: true, images: images)
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        let imagesArray = try #require(queryDict["images"] as? [[String: String]])
+        #expect(imagesArray.count == 2)
+        #expect(imagesArray[0]["data"] == "img1")
+        #expect(imagesArray[1]["data"] == "img2")
+    }
+
+    @Test
+    func encodingQueryWithToolChoice() throws {
+        let prompt = AIChatNativePrompt.queryPrompt("Search for this", autoSubmit: true, toolChoice: ["WebSearch"])
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        let toolChoice = try #require(queryDict["toolChoice"] as? [String])
+        #expect(toolChoice == ["WebSearch"])
+    }
+
     // MARK: - Helpers
 
     private func decodePrompt(from json: String) throws -> AIChatNativePrompt {

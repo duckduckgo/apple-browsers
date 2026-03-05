@@ -119,7 +119,8 @@ final class MainCoordinator {
                                                          contextualOnboardingLogic: daxDialogs,
                                                          contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
-        let textZoomCoordinator = Self.makeTextZoomCoordinator()
+        let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
+        let autoconsentManagementProvider = AutoconsentManagementProvider()
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
@@ -147,7 +148,8 @@ final class MainCoordinator {
                                 featureFlagger: featureFlagger,
                                 contentScopeExperimentManager: contentScopeExperimentManager,
                                 appSettings: AppDependencyProvider.shared.appSettings,
-                                textZoomCoordinator: textZoomCoordinator,
+                                textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                autoconsentManagementProvider: autoconsentManagementProvider,
                                 websiteDataManager: websiteDataManager,
                                 fireproofing: fireproofing,
                                 maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
@@ -160,14 +162,16 @@ final class MainCoordinator {
                                 sharedSecureVault: sharedSecureVault,
                                 privacyStats: privacyStats,
                                 voiceSearchHelper: voiceSearchHelper,
-                                launchSourceManager: launchSourceManager)
+                                launchSourceManager: launchSourceManager,
+                                darkReaderFeatureSettings: darkReaderFeatureSettings)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
                                         syncService: syncService.sync,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         fireproofing: fireproofing,
-                                        textZoomCoordinator: textZoomCoordinator,
+                                        textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                        autoconsentManagementProvider: autoconsentManagementProvider,
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: privacyConfigurationManager,
@@ -175,6 +179,11 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner)
         let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
+        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
+            featureFlagger: featureFlagger,
+            keyValueStore: keyValueStore,
+            privacyConfigurationManager: privacyConfigurationManager
+        )
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -193,9 +202,10 @@ final class MainCoordinator {
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
                                         voiceSearchHelper: voiceSearchHelper,
                                         featureFlagger: featureFlagger,
+                                        idleReturnEligibilityManager: idleReturnEligibilityManager,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
-                                        textZoomCoordinator: textZoomCoordinator,
+                                        textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                         websiteDataManager: websiteDataManager,
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
@@ -392,9 +402,8 @@ final class MainCoordinator {
         return tabsModel
     }
 
-    private static func makeTextZoomCoordinator() -> TextZoomCoordinator {
-        TextZoomCoordinator(appSettings: AppDependencyProvider.shared.appSettings,
-                            storage: TextZoomStorage()  )
+    private static func makeTextZoomCoordinatorProvider() -> TextZoomCoordinatorProvider {
+        TextZoomCoordinatorProvider(appSettings: AppDependencyProvider.shared.appSettings)
     }
 
     private static func makeWebsiteDataManager(fireproofing: Fireproofing,

@@ -108,6 +108,26 @@ public struct AppVersion: OSVersionProviding {
                 return false
             }
         }
+
+        /// Whether the app should attempt to restore windows and tabs from the previous session on launch.
+        public var stateRestorationAllowed: Bool {
+            switch self {
+            case .normal, .uiTests, .uiTestsPerformance:
+                return true
+            case .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
+                return false
+            }
+        }
+
+        /// Whether the app should open a fallback window on launch when no window was restored or opened by a URL event.
+        public var opensWindowOnStartupIfNeeded: Bool {
+            switch self {
+            case .normal, .uiTestsPerformance:
+                return true
+            case .integrationTests, .unitTests, .uiTests, .uiTestsOnboarding, .xcPreviews:
+                return false
+            }
+        }
     }
 
     public static let runType: AppRunType = {

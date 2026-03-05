@@ -1255,7 +1255,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         profilerToken.advance(to: .appStateRestoration)
 
-        if [.normal, .uiTests].contains(AppVersion.runType) {
+        if AppVersion.runType.stateRestorationAllowed {
             stateRestorationManager.applicationDidFinishLaunching()
         }
 
@@ -1266,7 +1266,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setUpAutoClearHandler()
         BWManager.shared.initCommunication()
 
-        if [AppVersion.AppRunType.normal, .uiTestsPerformance].contains(AppVersion.runType),
+        if AppVersion.runType.opensWindowOnStartupIfNeeded,
            !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {

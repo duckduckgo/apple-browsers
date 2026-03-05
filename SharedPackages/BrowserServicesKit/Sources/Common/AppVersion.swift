@@ -96,12 +96,13 @@ public struct AppVersion: OSVersionProviding {
         case integrationTests
         case uiTests
         case uiTestsOnboarding
+        case uiTestsPerformance
         case xcPreviews
 
         /// Defines if app run type requires loading full environment, i.e. databases, saved state, keychain etc.
         public var requiresEnvironment: Bool {
             switch self {
-            case .normal, .integrationTests, .uiTests, .uiTestsOnboarding:
+            case .normal, .integrationTests, .uiTests, .uiTestsOnboarding, .uiTestsPerformance:
                 return true
             case .unitTests, .xcPreviews:
                 return false
@@ -124,6 +125,8 @@ public struct AppVersion: OSVersionProviding {
             return .xcPreviews
         } else if ProcessInfo.processInfo.environment["UITEST_MODE_ONBOARDING"] == "1"{
             return .uiTestsOnboarding
+        } else if ProcessInfo.processInfo.environment["UITEST_MODE_PERFORMANCE"] == "1"{
+            return .uiTestsPerformance
         } else if ProcessInfo.processInfo.environment["UITEST_MODE"] == "1" || isCI {
             return .uiTests
         } else {

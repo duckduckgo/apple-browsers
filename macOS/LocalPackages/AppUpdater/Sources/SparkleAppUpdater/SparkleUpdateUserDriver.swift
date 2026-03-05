@@ -36,18 +36,16 @@ public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
     private var bytesToDownload: UInt64 = 0
     private var bytesDownloaded: UInt64 = 0
 
-    let onProgressChange: (UpdateCycleProgress, (() -> Void)?) -> Void
-
-    public var currentUpdate: Update?
+    var onProgressChange: (DriverProgress, (() -> Void)?) -> Void
 
     public private(set) var sparkleUpdateState: SPUUserUpdateState?
 
     // MARK: - Initializers
 
-    public init(internalUserDecider: InternalUserDecider,
+    init(internalUserDecider: InternalUserDecider,
                 areAutomaticUpdatesEnabled: Bool,
                 settings: (any ThrowingKeyedStoring<UpdateControllerSettings>),
-                onProgressChange: @escaping (UpdateCycleProgress, (() -> Void)?) -> Void) {
+                onProgressChange: @escaping (DriverProgress, (() -> Void)?) -> Void) {
 
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
@@ -134,7 +132,7 @@ public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     public func showDownloadInitiated(cancellation: @escaping () -> Void) {
-        onProgressChange(.downloadDidStart(currentUpdate!), nil)
+        onProgressChange(.downloadDidStart, nil)
     }
 
     public func showDownloadDidReceiveExpectedContentLength(_ expectedContentLength: UInt64) {
@@ -147,15 +145,15 @@ public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
         if bytesDownloaded > bytesToDownload {
             bytesToDownload = bytesDownloaded
         }
-        onProgressChange(.downloading(currentUpdate!, Double(bytesDownloaded) / Double(bytesToDownload)), nil)
+        onProgressChange(.downloading(Double(bytesDownloaded) / Double(bytesToDownload)), nil)
     }
 
     public func showDownloadDidStartExtractingUpdate() {
-        onProgressChange(.extractionDidStart(currentUpdate!), nil)
+        onProgressChange(.extractionDidStart, nil)
     }
 
     public func showExtractionReceivedProgress(_ progress: Double) {
-        onProgressChange(.extracting(currentUpdate!, progress), nil)
+        onProgressChange(.extracting(progress), nil)
     }
 
     public func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
@@ -171,7 +169,7 @@ public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
 
     public func showInstallingUpdate(withApplicationTerminated applicationTerminated: Bool, retryTerminatingApplication: @escaping () -> Void) {
         Logger.updates.info("Updater started the installation")
-        onProgressChange(.installationDidStart(currentUpdate!), nil)
+        onProgressChange(.installationDidStart, nil)
 
         if !applicationTerminated {
             Logger.updates.log("Updater re-sent a quit event")
@@ -189,7 +187,7 @@ public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
     ///   - relaunched: Whether the app was relaunched
     ///   - acknowledgement: Callback to acknowledge completion
     public func showUpdateInstalledAndRelaunched(_ relaunched: Bool, acknowledgement: @escaping () -> Void) {
-        onProgressChange(.installing(currentUpdate!), nil)
+        onProgressChange(.installing, nil)
         // Record successful update timestamp for future time-since-update tracking.
         // We do this here (not in WideEvent completion) because this callback happens
         // AFTER successful installation, making it the authoritative source.

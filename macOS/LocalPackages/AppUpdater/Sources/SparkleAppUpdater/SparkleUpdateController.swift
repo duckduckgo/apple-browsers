@@ -125,6 +125,43 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         handleUpdateNotification()
     }
 
+    private func mapDriverProgress(_ driverProgress: DriverProgress) -> UpdateCycleProgress? {
+        switch driverProgress {
+        case .updateCycleDidStart:
+            return .updateCycleDidStart
+        case .updateCycleDone(let reason):
+            return .updateCycleDone(reason)
+        case .updaterError(let error):
+            return .updaterError(error)
+        case .downloadDidStart:
+            guard let update = latestUpdate else { return handleStateMismatch(phase: "downloadDidStart") }
+            return .downloadDidStart(update)
+        case .downloading(let progress):
+            guard let update = latestUpdate else { return handleStateMismatch(phase: "downloading") }
+            return .downloading(update, progress)
+        case .extractionDidStart:
+            guard let update = latestUpdate else { return handleStateMismatch(phase: "extractionDidStart") }
+            return .extractionDidStart(update)
+        case .extracting(let progress):
+            guard let update = latestUpdate else { return handleStateMismatch(phase: "extracting") }
+            return .extracting(update, progress)
+        case .installationDidStart:
+            guard let update = latestUpdate else { return handleStateMismatch(phase: "installationDidStart") }
+            return .installationDidStart(update)
+        case .installing:
+            guard let update = latestUpdate else { return handleStateMismatch(phase: "installing") }
+            return .installing(update)
+        }
+    }
+
+    /// Returns nil — caller skips the state transition.
+    /// Theoretically unreachable: Sparkle always calls didFindValidUpdate before active phases.
+    private func handleStateMismatch(phase: String) -> UpdateCycleProgress? {
+        assertionFailure("Driver reported active phase '\(phase)' but latestUpdate is nil")
+        pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterProgressStateMismatch(phase: phase)))
+        return nil
+    }
+
     @Published public private(set) var latestUpdate: Update?
 
     public var latestUpdatePublisher: Published<Update?>.Publisher { $latestUpdate }
@@ -302,9 +339,15 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
             internalUserDecider: internalUserDecider,
             areAutomaticUpdatesEnabled: shouldAutoDownload,
             settings: self.settings,
-            onProgressChange: progressState.handleProgressChange
+            onProgressChange: { _, _ in }
         )
         super.init()
+
+        // Now that self is available, install the real mapping closure
+        userDriver.onProgressChange = { [weak self] driverProgress, resume in
+            guard let self, let mapped = self.mapDriverProgress(driverProgress) else { return }
+            self.progressState.handleProgressChange(mapped, resume)
+        }
 
         // Subscribe to progress state changes
         progressCancellable = progressState.updateProgressPublisher
@@ -650,7 +693,6 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
         pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
-        userDriver.currentUpdate = latestUpdate
 
         cachePendingUpdate(from: item)
 
@@ -662,7 +704,6 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
     }
 
     public func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: any Error) {
-        userDriver.currentUpdate = nil
         // Sparkle background checks bypass our check methods, so ensure tracking exists
         updateWideEvent.ensureFlowExists(initiationType: .automatic)
 
@@ -684,7 +725,8 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
     public func updater(_ updater: SPUUpdater, willDownloadUpdate item: SUAppcastItem, with request: NSMutableURLRequest) {
         Logger.updates.log("Downloading update: \(item.displayVersionString, privacy: .public)")
-        progressState.transition(to: .downloadDidStart(latestUpdate!))
+        guard let mapped = mapDriverProgress(.downloadDidStart) else { return }
+        progressState.transition(to: mapped)
         updateWideEvent.didStartDownload()
     }
 
@@ -696,7 +738,8 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
     public func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {
         Logger.updates.debug("Extracting update: \(item.displayVersionString, privacy: .public)")
-        progressState.transition(to: .extractionDidStart(latestUpdate!))
+        guard let mapped = mapDriverProgress(.extractionDidStart) else { return }
+        progressState.transition(to: mapped)
         updateWideEvent.didStartExtraction()
     }
 

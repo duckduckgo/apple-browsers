@@ -101,6 +101,51 @@ final class PromoHistoryStoreTests: XCTestCase {
         XCTAssertFalse(store.record(for: "reset-promo").actioned)
     }
 
+    func testWhenPermanentlyDismissed_ThenSurvivesPersistenceRoundTrip() {
+        var record = PromoHistoryRecord(id: "permanently-dismissed-promo")
+        record.nextEligibleDate = .distantFuture
+
+        store.save(record)
+
+        let freshStore = PromoHistoryStore(store: backingStore, queue: nil)
+        let loaded = freshStore.record(for: "permanently-dismissed-promo")
+
+        XCTAssertTrue(loaded.isPermanentlyDismissed)
+    }
+
+    func testWhenBackingStoreIsCorrupt_ThenInitializesEmpty() {
+        let corruptStore = InMemoryThrowingKeyValueStore()
+        corruptStore.underlyingDict["com.duckduckgo.promo.history"] = Data("invalid json".utf8)
+
+        let storeFromCorrupt = PromoHistoryStore(store: corruptStore, queue: nil)
+        let record = storeFromCorrupt.record(for: "any-promo")
+
+        XCTAssertEqual(record.id, "any-promo")
+        XCTAssertEqual(record.timesDismissed, 0)
+        XCTAssertNil(record.lastDismissed)
+        XCTAssertNil(record.lastShown)
+        XCTAssertNil(record.nextEligibleDate)
+        XCTAssertFalse(record.actioned)
+    }
+
+    func testWhenResetAll_ThenPersistsAcrossStoreRecreation() {
+        var record = PromoHistoryRecord(id: "reset-persist-promo")
+        record.timesDismissed = 5
+        record.actioned = true
+        store.save(record)
+
+        store.resetAll()
+
+        let freshStore = PromoHistoryStore(store: backingStore, queue: nil)
+        let loaded = freshStore.record(for: "reset-persist-promo")
+
+        XCTAssertEqual(loaded.timesDismissed, 0)
+        XCTAssertNil(loaded.lastDismissed)
+        XCTAssertNil(loaded.lastShown)
+        XCTAssertNil(loaded.nextEligibleDate)
+        XCTAssertFalse(loaded.actioned)
+    }
+
     func testIsEligibleAsOf_MatchesIsEligibleBehavior() {
         var record = PromoHistoryRecord(id: "eligible-test")
         record.nextEligibleDate = Date().addingTimeInterval(-1)

@@ -130,6 +130,10 @@ class TabSwitcherViewController: UIViewController {
         tabManager.currentTabsModel
     }
 
+    var canDismissOnEmpty: Bool {
+        !tabManager.currentBrowsingMode.allowsEmpty
+    }
+
     var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
 
     private var tabObserverCancellable: AnyCancellable?
@@ -686,7 +690,9 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func forgetAll(_ fireRequest: FireRequest) {
-        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self, fireRequest: fireRequest)
+        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self,
+                                                     fireRequest: fireRequest,
+                                                     dismiss: canDismissOnEmpty)
     }
 
     func dismiss() {

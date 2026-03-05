@@ -222,11 +222,15 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private var isChromeSidebarFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.chromeSidebar)
+        featureFlagger.isFeatureOn(.chromeSidebar) && !isAddressSidebarFeatureEnabled
+    }
+
+    private var isAddressSidebarFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.addressSidebar)
     }
 
     private var isToolbarSidebarVariantEnabled: Bool {
-        featureFlagger.isFeatureOn(.toolbarSidebar) && !isChromeSidebarFeatureEnabled
+        featureFlagger.isFeatureOn(.toolbarSidebar) && !isChromeSidebarFeatureEnabled && !isAddressSidebarFeatureEnabled
     }
 
     // MARK: View Lifecycle

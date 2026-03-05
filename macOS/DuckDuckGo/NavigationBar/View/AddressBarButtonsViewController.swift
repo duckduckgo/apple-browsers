@@ -62,6 +62,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private enum Constants {
         static let askAiChatButtonHorizontalPadding: CGFloat = 6
         static let askAiChatButtonAnimationDuration: TimeInterval = 0.2
+        static let duckAISidebarOpenImageName = "Sidebar-Open-16"
+        static let duckAISidebarCloseImageName = "Sidebar-Close-16"
     }
 
     /// Struct to keep track of some Toggle conditions to avoid expensive operations like checking user defaults
@@ -304,8 +306,11 @@ final class AddressBarButtonsViewController: NSViewController {
         AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
                                       hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
     }()
+    private var isAddressSidebarFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.addressSidebar)
+    }
     private var isDuckAIEntryPointsFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.toolbarSidebar) || featureFlagger.isFeatureOn(.chromeSidebar)
+        featureFlagger.isFeatureOn(.toolbarSidebar) || featureFlagger.isFeatureOn(.chromeSidebar) || isAddressSidebarFeatureEnabled
     }
 
     private(set) lazy var aiChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating? = {
@@ -1092,6 +1097,19 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBAction func aiChatButtonAction(_ sender: Any) {
         guard let tab = tabViewModel?.tab else { return }
 
+        if isAddressSidebarFeatureEnabled {
+            let isSidebarOpen = aiChatCoordinator.isSidebarOpen(for: tab.uuid)
+            let canToggleSidebar = canToggleAddressSidebar(for: tab)
+            guard isSidebarOpen || canToggleSidebar else {
+                updateAddressSidebarButtonState()
+                return
+            }
+            toggleAIChatSidebar(for: tab)
+            updateAddressSidebarButtonState()
+            delegate?.addressBarButtonsViewControllerAIChatButtonClicked(self)
+            return
+        }
+
         if aiChatCoordinator.isChatFloating(for: tab.uuid) {
             aiChatCoordinator.focusFloatingWindow(for: tab.uuid)
             return
@@ -1110,7 +1128,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let behavior = createAIChatLinkOpenBehavior(for: tab)
 
         if aiChatMenuConfig.shouldOpenAIChatInSidebar,
-           !isTextFieldEditorFirstResponder,
+           (!isTextFieldEditorFirstResponder || isAddressSidebarFeatureEnabled),
            case .url = tab.content,
            behavior == .currentTab {
             // Toggle (open or close) the sidebar only when setting option is enabled and:
@@ -1236,7 +1254,8 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        let isToggleVisible = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isToggleVisible = !isAddressSidebarFeatureEnabled
+        && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         && aiChatSettings.isAIFeaturesEnabled
         && aiChatSettings.showSearchAndDuckAIToggle
         && (isDuckAIEntryPointsFeatureEnabled || isTextFieldEditorFirstResponder)
@@ -1316,6 +1335,11 @@ final class AddressBarButtonsViewController: NSViewController {
         configureContextMenuForAIChatButtons(isSidebarOpen: isShowingSidebar)
         configureAIChatButtonTooltip(isSidebarOpen: isShowingSidebar)
 
+        if isAddressSidebarFeatureEnabled {
+            updateAddressSidebarButtonState()
+            return
+        }
+
         if isShowingSidebar {
             aiChatButton.setButtonType(.toggle)
             aiChatButton.state = .on
@@ -1328,6 +1352,12 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonVisibility() {
+        if isAddressSidebarFeatureEnabled {
+            updateAddressSidebarButtonState()
+            updateAIChatDividerVisibility()
+            return
+        }
+
         aiChatButton.isHidden = !shouldShowAIChatButton()
         updateAIChatDividerVisibility()
 
@@ -1337,10 +1367,56 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
+    private func updateAddressSidebarButtonState() {
+        guard let tab = tabViewModel?.tab else {
+            aiChatButton.isHidden = true
+            return
+        }
+
+        let isSidebarOpen = aiChatCoordinator.isSidebarOpen(for: tab.uuid)
+        let canToggleSidebar = canToggleAddressSidebar(for: tab)
+        let shouldShowSidebarButton = isSidebarOpen || canToggleSidebar
+        aiChatButton.isHidden = !shouldShowSidebarButton
+        guard shouldShowSidebarButton else { return }
+
+        let tooltip = isSidebarOpen ? UserText.aiChatCloseSidebarButton : UserText.aiChatOpenSidebarButton
+        aiChatButton.image = aiChatSidebarIcon(isSidebarOpen: isSidebarOpen)
+        aiChatButton.isEnabled = true
+        aiChatButton.state = isSidebarOpen ? .on : .off
+        aiChatButton.toolTip = tooltip
+        aiChatButton.setAccessibilityTitle(tooltip)
+    }
+
+    private func canToggleAddressSidebar(for tab: Tab) -> Bool {
+        if aiChatCoordinator.isSidebarOpen(for: tab.uuid) {
+            return true
+        }
+
+        guard !aiChatCoordinator.isChatFloating(for: tab.uuid),
+              aiChatMenuConfig.shouldOpenAIChatInSidebar,
+              case .url = tab.content else {
+            return false
+        }
+        return true
+    }
+
+    private func aiChatSidebarIcon(isSidebarOpen: Bool) -> NSImage? {
+        let imageName = isSidebarOpen ? Constants.duckAISidebarCloseImageName : Constants.duckAISidebarOpenImageName
+        return NSImage(named: NSImage.Name(imageName))
+    }
+
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
-        let isToggleFeatureEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        if isAddressSidebarFeatureEnabled && isTextFieldEditorFirstResponder {
+            askAIChatButton.isHidden = true
+            updateAddressSidebarButtonState()
+            updateAIChatDividerVisibility()
+            return
+        }
+
+        let isToggleFeatureEnabled = !isAddressSidebarFeatureEnabled
+        && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         && aiChatSettings.isAIFeaturesEnabled
         && aiChatSettings.showSearchAndDuckAIToggle
         && (isDuckAIEntryPointsFeatureEnabled || isTextFieldEditorFirstResponder)
@@ -1545,7 +1621,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let colorsProvider = theme.colorsProvider
 
         aiChatButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
-        aiChatButton.image = navigationToolbarIconsProvider.aiChatButtonImage
+        aiChatButton.image = isAddressSidebarFeatureEnabled ? aiChatSidebarIcon(isSidebarOpen: false) : navigationToolbarIconsProvider.aiChatButtonImage
         aiChatButton.mouseOverColor = colorsProvider.buttonMouseOverColor
         aiChatButton.normalTintColor = colorsProvider.iconsColor
         aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
@@ -1833,7 +1909,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
         stopAnimationsAfterFocus()
 
-        let isToggleFeatureEnabled = (isDuckAIEntryPointsFeatureEnabled || isTextFieldEditorFirstResponder)
+        let isToggleFeatureEnabled = !isAddressSidebarFeatureEnabled
+        && (isDuckAIEntryPointsFeatureEnabled || isTextFieldEditorFirstResponder)
         && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         && aiChatSettings.isAIFeaturesEnabled
         let shouldShowToggle = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle

@@ -279,6 +279,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Internal-only flag for Duck.ai chrome/sidebar POC
     case chromeSidebar
+
+    /// Internal-only flag for Duck.ai address/sidebar POC
+    case addressSidebar
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -400,7 +403,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .startupMetrics,
                 .privateProcessName,
                 .toolbarSidebar,
-                .chromeSidebar:
+                .chromeSidebar,
+                .addressSidebar:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -575,6 +579,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .toolbarSidebar:
             return .internalOnly()
         case .chromeSidebar:
+            return .internalOnly()
+        case .addressSidebar:
             return .internalOnly()
         }
     }

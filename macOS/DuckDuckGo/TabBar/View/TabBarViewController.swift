@@ -36,7 +36,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private enum Constants {
         static let duckAISidebarOpenImageName = "Sidebar-Open-16"
         static let duckAISidebarCloseImageName = "Sidebar-Close-16"
-        static let duckAIControlSpacingBeforeFireButton: CGFloat = 8
+        static let duckAIControlSpacingBeforeFireButton: CGFloat = 5
     }
 
     private struct DuckAIEntryPointsState: Equatable {
@@ -175,12 +175,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         featureFlagger.isFeatureOn(.toolbarSidebar)
     }
 
+    private var isAddressSidebarFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.addressSidebar)
+    }
+
     private var isChromeSidebarFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.chromeSidebar)
+        featureFlagger.isFeatureOn(.chromeSidebar) && !isAddressSidebarFeatureEnabled
     }
 
     private var isDuckAIEntryPointsEnabled: Bool {
-        isToolbarSidebarFeatureEnabled || isChromeSidebarFeatureEnabled
+        isToolbarSidebarFeatureEnabled || isChromeSidebarFeatureEnabled || isAddressSidebarFeatureEnabled
     }
 
     var footerCurrentWidthDimension: CGFloat {

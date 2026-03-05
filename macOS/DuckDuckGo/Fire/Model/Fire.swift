@@ -866,8 +866,6 @@ final class Fire: FireProtocol {
             assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
             if shouldClose {
                 let startTime = CACurrentMediaTime()
-                let countBeforeBurn = tabCollectionViewModel.tabCollection.tabs.count
-                var expectedCount = countBeforeBurn
 
                 if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
                     let tab = replacementPinnedTab(from: tabViewModel.tab)
@@ -881,7 +879,6 @@ final class Fire: FireProtocol {
                         _=insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
                     }
                     tabCollectionViewModel.removeSelected(forceChange: true)
-                    expectedCount = (countBeforeBurn == 1) ? 1 : countBeforeBurn - 1
                 }
                 dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
             }

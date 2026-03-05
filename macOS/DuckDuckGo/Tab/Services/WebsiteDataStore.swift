@@ -154,8 +154,6 @@ internal class WebCacheManager {
             // Subdomains or root domains should be excluded.
             !URL.duckduckgoDomain.contains(record.displayName) && !URL.duckAiDomain.contains(record.displayName) && !fireproofDomains.fireproofDomains.contains(record.displayName)
         }
-        let removedDisplayNames = Set(removableRecords.map { $0.displayName })
-
         await websiteDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypesExceptCookies, for: removableRecords)
     }
 
@@ -163,7 +161,6 @@ internal class WebCacheManager {
     private func removeCookies(for baseDomains: Set<String>? = nil) async {
         guard let cookieStore = websiteDataStore.cookieStore else { return }
         var cookies = await cookieStore.allCookies()
-        let beforeClearingCookieCount = cookies.count
 
         if let baseDomains = baseDomains {
             // If domains are specified, clear just their cookies

@@ -109,7 +109,7 @@ public struct AppVersion: OSVersionProviding {
             }
         }
 
-        /// Whether Onboarding is allowed, or not.
+        /// Whether Onboarding is allowed or not.
         public var allowsOnboarding: Bool {
             switch self {
             case .normal, .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
@@ -163,9 +163,9 @@ public struct AppVersion: OSVersionProviding {
             }
         } else if ProcessInfo().environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
             return .xcPreviews
-        } else if ProcessInfo.processInfo.environment["UITEST_MODE_ONBOARDING"] == "1"{
+        } else if ProcessInfo.processInfo.environment["UITEST_MODE_ONBOARDING"] == "1" {
             return .uiTestsOnboarding
-        } else if ProcessInfo.processInfo.environment["UITEST_MODE_PERFORMANCE"] == "1"{
+        } else if ProcessInfo.processInfo.environment["UITEST_MODE_PERFORMANCE"] == "1" {
             return .uiTestsPerformance
         } else if ProcessInfo.processInfo.environment["UITEST_MODE"] == "1" || isCI {
             return .uiTests

@@ -111,7 +111,7 @@ final class MainWindowController: NSWindowController {
         let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
         return !onboardingIsComplete
  #elseif REVIEW
-        if AppVersion.runType.allowsOnboarding == false {
+        if !AppVersion.runType.allowsOnboarding {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             OnboardingActionsManager.isOnboardingFinished = true
             return false

@@ -74,8 +74,8 @@ private extension StartupPerformanceTests {
         XCUIApplication.setUp(environment: ["UITEST_MODE_PERFORMANCE": "1"])
     }
 
-    func setupInitialState(shouldRestoreSession: Bool, _ work: ((XCUIApplication) -> Void)? = nil) {
-        let application = XCUIApplication.setUp()
+    func setupInitialState(shouldRestoreSession: Bool, _ configurationClosure: ((XCUIApplication) -> Void)? = nil) {
+        let application = buildApplicationForPerformanceTesting()
 
         /// Enable session restoration
         application.openPreferencesWindow()
@@ -86,7 +86,7 @@ private extension StartupPerformanceTests {
         application.disableWarnBeforeQuitting()
 
         /// Create state to restore: 2 windows with multiple tabs
-        work?(application)
+        configurationClosure?(application)
 
         /// Quit properly to save state, then relaunch to trigger restoration
         application.typeKey("q", modifierFlags: [.command])

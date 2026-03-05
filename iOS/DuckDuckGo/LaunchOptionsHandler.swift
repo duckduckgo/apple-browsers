@@ -125,7 +125,7 @@ public final class LaunchOptionsHandler {
         arguments.contains("isRunningUITests")
     }
 
-#if DEBUG || ALPHA
+#if DEBUG || REVIEW
     public func overrideOnboardingCompleted() {
         userDefaults.set("true", forKey: Self.isOnboardingCompleted)
     }

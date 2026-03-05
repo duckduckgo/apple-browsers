@@ -49,7 +49,7 @@ struct OnboardingView: View {
                 landingView
             case let .onboarding(viewState):
                 onboardingDialogView(state: viewState)
-#if DEBUG || ALPHA
+#if DEBUG || REVIEW
                     .safeAreaInset(edge: .bottom) {
                         Button {
                             model.overrideOnboardingCompleted()

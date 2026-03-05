@@ -21,6 +21,7 @@ import Common
 
 /// Handles launch options and user defaults for automation and testing scenarios
 public final class LaunchOptionsHandler {
+    public static let isOnboardingCompleted = "isOnboardingCompleted"
     private static let automationPortKey = "automationPort"
     private let userDefaults: UserDefaults
 
@@ -66,7 +67,7 @@ public final class LaunchOptionsHandler {
         // Override onboarding settings permanently to keep state consistency across app launches.
         // This applies to both UI Tests and WebDriver automation sessions.
         // Launch Arguments can be read via userDefaults for easy value access.
-        if let uiTestingOnboardingOverride = userDefaults.string(forKey: UserDefaults.Key.onboardingFinished.rawValue) {
+        if let uiTestingOnboardingOverride = userDefaults.string(forKey: Self.isOnboardingCompleted) {
             return .overridden(.uiTests(completed: uiTestingOnboardingOverride == "true"))
         }
 

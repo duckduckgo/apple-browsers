@@ -407,6 +407,22 @@ class OmniBarCell: UICollectionViewCell {
         }
     }
 
+    /// Forwards an overflow point to the omnibar view for hit testing.
+    /// Supports the iPad expanded search area which extends below the cell's bounds.
+    private func omniBarOverflowHitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard point.y >= bounds.maxY, let omniBarView = omniBar?.barView else { return nil }
+        let localPoint = omniBarView.convert(point, from: self)
+        return omniBarView.hitTest(localPoint, with: event)
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        super.point(inside: point, with: event) || omniBarOverflowHitTest(point, with: event) != nil
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        super.hitTest(point, with: event) ?? omniBarOverflowHitTest(point, with: event)
+    }
+
     deinit {
         controller?.removeFromParent()
         controller = nil

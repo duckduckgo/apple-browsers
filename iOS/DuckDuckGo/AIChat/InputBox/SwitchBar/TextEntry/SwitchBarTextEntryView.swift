@@ -119,6 +119,11 @@ class SwitchBarTextEntryView: UIView {
         set { textView.selectedTextRange = newValue }
     }
 
+    var placeholderTextColor: UIColor {
+        get { placeholderLabel.textColor }
+        set { placeholderLabel.textColor = newValue }
+    }
+
     override var isFirstResponder: Bool {
         textView.isFirstResponder
     }

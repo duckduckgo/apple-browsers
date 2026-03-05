@@ -42,6 +42,9 @@ final class ContinueSetUpModelTests: XCTestCase {
     var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
     var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
     var cardActionsHandler: MockNewTabPageNextStepsCardsActionHandler!
+    private var nonAppStoreFeatureTypes: [HomePage.Models.FeatureType] {
+        [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+    }
 
     @MainActor override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
@@ -66,7 +69,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            applicationBuildType: makeBuildType(isAppStoreBuild: false)
         )
     }
 
@@ -116,7 +120,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            applicationBuildType: makeBuildType(isAppStoreBuild: false)
         )
 
         XCTAssertFalse(vm.isMoreOrLessButtonNeeded)
@@ -134,7 +139,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            applicationBuildType: makeBuildType(isAppStoreBuild: false)
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, expectedMatrix)
@@ -152,7 +158,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         vm.shouldShowAllFeatures = true
 
         XCTAssertEqual(vm.visibleFeaturesMatrix[0][0], HomePage.Models.FeatureType.defaultBrowser)
-        XCTAssertEqual(vm.visibleFeaturesMatrix.reduce([], +).count, HomePage.Models.FeatureType.allCases.count)
+        XCTAssertEqual(vm.visibleFeaturesMatrix.reduce([], +).count, nonAppStoreFeatureTypes.count)
     }
 
     func testWhenTogglingShowAllFeatureThenCorrectElementsAreVisible() {
@@ -301,7 +307,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            applicationBuildType: makeBuildType(isAppStoreBuild: false)
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, [[]])
@@ -318,7 +325,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            applicationBuildType: makeBuildType(isAppStoreBuild: false)
         )
         vm.shouldShowAllFeatures = true
         let expectedMatrix = expectedFeatureMatrixWithout(types: [])
@@ -339,10 +347,8 @@ final class ContinueSetUpModelTests: XCTestCase {
         vm.removeItem(for: .subscription)
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.subscription))
 
-#if !APPSTORE
         vm.removeItem(for: .dock)
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.dock))
-#endif
 
         let vm2 = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, subscriptionCardVisibilityManager: subscriptionCardVisibilityManager)
         XCTAssertTrue(vm2.visibleFeaturesMatrix.flatMap { $0 }.isEmpty)
@@ -359,8 +365,15 @@ final class ContinueSetUpModelTests: XCTestCase {
     private func doTheyContainTheSameElements(matrix1: [[HomePage.Models.FeatureType]], matrix2: [[HomePage.Models.FeatureType]]) -> Bool {
         Set(matrix1.flatMap { $0 }) == Set(matrix2.flatMap { $0 })
     }
+
+    private func makeBuildType(isAppStoreBuild: Bool) -> MockApplicationBuildType {
+        let buildType = MockApplicationBuildType()
+        buildType.isAppStoreBuild = isAppStoreBuild
+        return buildType
+    }
+
     private func expectedFeatureMatrixWithout(types: [HomePage.Models.FeatureType]) -> [[HomePage.Models.FeatureType]] {
-        var features = HomePage.Models.FeatureType.allCases
+        var features = nonAppStoreFeatureTypes
         var indexesToRemove: [Int] = []
         for type in types {
             indexesToRemove.append(features.firstIndex(of: type)!)
@@ -373,15 +386,30 @@ final class ContinueSetUpModelTests: XCTestCase {
         return features.chunked(into: HomePage.Models.ContinueSetUpModel.Const.featuresPerRow)
     }
 
-    @MainActor func test_WhenUserDoesntHaveApplicationInTheDock_ThenAddToDockCardIsDisplayed() {
-#if !APPSTORE
+    @MainActor func test_WhenUserDoesntHaveApplicationInTheDockAndNotAppStore_ThenAddToDockCardIsDisplayed() {
         let dockCustomizer = DockCustomizerMock()
 
-        let vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, dockCustomizer: dockCustomizer)
+        let vm = HomePage.Models.ContinueSetUpModel.fixture(
+            persistor: homePageContinueSetUpModelPersisting,
+            dockCustomizer: dockCustomizer,
+            applicationBuildType: makeBuildType(isAppStoreBuild: false)
+        )
         vm.shouldShowAllFeatures = true
 
         XCTAssert(vm.visibleFeaturesMatrix.reduce([], +).contains(HomePage.Models.FeatureType.dock))
-#endif
+    }
+
+    @MainActor func test_WhenUserDoesntHaveApplicationInTheDockAndAppStore_ThenAddToDockCardIsNotDisplayed() {
+        let dockCustomizer = DockCustomizerMock()
+
+        let vm = HomePage.Models.ContinueSetUpModel.fixture(
+            persistor: homePageContinueSetUpModelPersisting,
+            dockCustomizer: dockCustomizer,
+            applicationBuildType: makeBuildType(isAppStoreBuild: true)
+        )
+        vm.shouldShowAllFeatures = true
+
+        XCTAssertFalse(vm.visibleFeaturesMatrix.reduce([], +).contains(HomePage.Models.FeatureType.dock))
     }
 
     @MainActor func test_WhenUserHasApplicationInTheDock_ThenAddToDockCardIsNotDisplayed() {
@@ -409,7 +437,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     }
 
     @MainActor func testWhenAskedToPerformActionForImportPromptThrowsThenItHandlesCardActionAndRefreshesMatrix() {
-        let numberOfFeatures = HomePage.Models.FeatureType.allCases.count
+        let numberOfFeatures = nonAppStoreFeatureTypes.count
 
         vm.shouldShowAllFeatures = true
         XCTAssertEqual(vm.visibleFeaturesMatrix.flatMap { $0 }.count, numberOfFeatures)
@@ -489,7 +517,8 @@ extension HomePage.Models.ContinueSetUpModel {
         dockCustomizer: DockCustomization = DockCustomizerMock(),
         subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging = MockHomePageSubscriptionCardVisibilityManaging(),
         pixelHandler: NewTabPageNextStepsCardsPixelHandling = MockNewTabPageNextStepsCardsPixelHandler(),
-        cardActionsHandler: NewTabPageNextStepsCardsActionHandling = MockNewTabPageNextStepsCardsActionHandler()
+        cardActionsHandler: NewTabPageNextStepsCardsActionHandling = MockNewTabPageNextStepsCardsActionHandler(),
+        applicationBuildType: ApplicationBuildType = MockApplicationBuildType()
     ) -> HomePage.Models.ContinueSetUpModel {
         HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: defaultBrowserProvider,
@@ -500,7 +529,8 @@ extension HomePage.Models.ContinueSetUpModel {
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: persistor,
             pixelHandler: pixelHandler,
-            cardActionsHandler: cardActionsHandler
+            cardActionsHandler: cardActionsHandler,
+            applicationBuildType: applicationBuildType
         )
     }
 }

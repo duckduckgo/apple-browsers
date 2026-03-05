@@ -139,7 +139,7 @@ final class SubscriptionRestoreViewModel: ObservableObject {
         
         let data = SubscriptionRestoreWideEventData(
             restorePlatform: .appleAccount,
-            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
+            funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
         )
         
         Task {

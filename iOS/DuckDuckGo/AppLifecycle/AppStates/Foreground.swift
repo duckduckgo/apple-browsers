@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import Persistence
 
 private extension BoolFileMarker.Name {
     static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
@@ -43,40 +44,51 @@ struct Foreground: ForegroundHandling {
     private let launchAction: LaunchAction
     private let launchActionHandler: LaunchActionHandler
     private let interactionManager: UIInteractionManager
+    private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
 
-    init(stateContext: Connected.StateContext, actionToHandle: AppAction?) {
+    init(stateContext: Connected.StateContext, actionToHandle: AppAction?,
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.init(
             appDependencies: stateContext.appDependencies,
             sceneDependencies: stateContext.sceneDependencies,
-            lastBackgroundDate: nil,
             isFirstForeground: true,
-            actionToHandle: actionToHandle
+            actionToHandle: actionToHandle,
+            lastBackgroundDateStorage: lastBackgroundDateStorage
         )
     }
 
-    init(stateContext: Background.StateContext, actionToHandle: AppAction?) {
+    init(stateContext: Background.StateContext, actionToHandle: AppAction?,
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.init(
             appDependencies: stateContext.appDependencies,
             sceneDependencies: stateContext.sceneDependencies,
-            lastBackgroundDate: stateContext.lastBackgroundDate,
             isFirstForeground: stateContext.didTransitionFromLaunching,
-            actionToHandle: actionToHandle
+            actionToHandle: actionToHandle,
+            lastBackgroundDateStorage: lastBackgroundDateStorage
         )
     }
 
     private init(appDependencies: AppDependencies,
                  sceneDependencies: SceneDependencies,
-                 lastBackgroundDate: Date?,
                  isFirstForeground: Bool,
-                 actionToHandle: AppAction?) {
+                 actionToHandle: AppAction?,
+                 lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         self.appDependencies = appDependencies
         self.sceneDependencies = sceneDependencies
         self.isFirstForeground = isFirstForeground
+        self.lastBackgroundDateStorage = lastBackgroundDateStorage
         launchAction = LaunchAction(actionToHandle: actionToHandle,
-                                    lastBackgroundDate: lastBackgroundDate)
+                                    lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
+                                    isFirstForeground: isFirstForeground)
+        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
+            featureFlagger: appDependencies.featureFlagger,
+            keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore,
+            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager
+        )
         let idleReturnEvaluator = IdleReturnEvaluator(
             featureFlagger: appDependencies.featureFlagger,
-            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager
+            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
+            idleReturnEligibilityManager: idleReturnEligibilityManager
         )
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
@@ -213,7 +225,8 @@ extension Foreground {
 
     func makeBackgroundState() -> any BackgroundHandling {
         Background(stateContext: StateContext(appDependencies: appDependencies,
-                                              sceneDependencies: sceneDependencies))
+                                              sceneDependencies: sceneDependencies),
+                   lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
@@ -223,7 +236,8 @@ extension Foreground {
         Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
                                                        appDependencies: appDependencies),
                   actionToHandle: actionToHandle,
-                  window: window)
+                  window: window,
+                  lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
 }

@@ -35,6 +35,7 @@ public class SubscriptionRestoreWideEventData: WideEventData {
     public var appData: WideEventAppData
 
     public let restorePlatform: RestorePlatform
+    public var funnelName: String?
     public var appleAccountRestoreDuration: WideEvent.MeasuredInterval?
     public var emailAddressRestoreDuration: WideEvent.MeasuredInterval?
     public var emailAddressRestoreLastURL: EmailAddressRestoreURL?
@@ -42,14 +43,16 @@ public class SubscriptionRestoreWideEventData: WideEventData {
     public var errorData: WideEventErrorData?
 
     public init(restorePlatform: RestorePlatform,
+                funnelName: String? = nil,
                 appleAccountRestoreDuration: WideEvent.MeasuredInterval? = nil,
                 emailAddressRestoreDuration: WideEvent.MeasuredInterval? = nil,
                 emailAddressRestoreLastURL: EmailAddressRestoreURL? = nil,
                 errorData: WideEventErrorData? = nil,
-                contextData: WideEventContextData,
+                contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
                 globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.restorePlatform = restorePlatform
+        self.funnelName = funnelName
         self.appleAccountRestoreDuration = appleAccountRestoreDuration
         self.emailAddressRestoreDuration = emailAddressRestoreDuration
         self.emailAddressRestoreLastURL = emailAddressRestoreLastURL
@@ -127,6 +130,7 @@ extension SubscriptionRestoreWideEventData {
     public func pixelParameters() -> [String: String] {
         Dictionary(compacting: [
             (WideEventParameter.SubscriptionRestoreFeature.restorePlatform, restorePlatform.rawValue),
+            (WideEventParameter.SubscriptionRestoreFeature.funnelName, funnelName),
             (WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLastURL, emailAddressRestoreLastURL?.rawValue),
             (WideEventParameter.SubscriptionRestoreFeature.appleAccountRestoreLatency, appleAccountRestoreDuration?.stringValue(.bucketed(Self.appleAccountBucket))),
             (WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLatency, emailAddressRestoreDuration?.stringValue(.bucketed(Self.emailAddressBucket))),
@@ -168,6 +172,7 @@ extension WideEventParameter {
 
     public enum SubscriptionRestoreFeature {
         static let restorePlatform = "feature.data.ext.restore_platform"
+        static let funnelName = "feature.data.ext.funnel_name"
         static let appleAccountRestoreLatency = "feature.data.ext.apple_account_restore_latency_ms_bucketed"
         static let emailAddressRestoreLatency = "feature.data.ext.email_address_restore_latency_ms_bucketed"
         static let emailAddressRestoreLastURL = "feature.data.ext.email_address_restore_last_url"

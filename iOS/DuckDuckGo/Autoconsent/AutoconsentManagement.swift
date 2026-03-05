@@ -23,8 +23,18 @@ import PixelKit
 import os.log
 
 @MainActor
-final class AutoconsentManagement {
-    static let shared = AutoconsentManagement()
+protocol AutoconsentManaging: AnyObject {
+    var sitesNotifiedCache: Set<String> { get set }
+    var detectedByPatternsCache: Set<String> { get set }
+    var detectedByBothCache: Set<String> { get set }
+    var detectedOnlyRulesCache: Set<String> { get set }
+    func firePixel(pixel: AutoconsentPixel, additionalParameters: [String: String])
+    func clearCache()
+    func clearCache(forDomains domains: [String])
+}
+
+@MainActor
+final class AutoconsentManagement: AutoconsentManaging {
 
     var sitesNotifiedCache = Set<String>()
 
@@ -38,7 +48,7 @@ final class AutoconsentManagement {
     private var pendingSummaryTask: DispatchWorkItem?
     private var pendingAdditionalParams: [String: String] = [:]
 
-    private init() {
+    init() {
         setupNotificationObservers()
     }
 

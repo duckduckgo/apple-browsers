@@ -2120,6 +2120,18 @@
         }
       }
     },
+    "aichat.address-bar.show-button" : {
+      "comment" : "Button to bring detached Duck.ai window to front",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai"
+          }
+        }
+      }
+    },
     "aichat.address-bar.toggle-sidebar-button" : {
       "comment" : "Button to toggle Duck.ai sidebar",
       "extractionState" : "extracted_with_value",
@@ -2302,7 +2314,7 @@
     },
     "aichat.customize-button.tooltip" : {
       "comment" : "Tooltip for the customize button in AI chat omnibar",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2356,6 +2368,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настрой ответы"
+          }
+        }
+      }
+    },
+    "aichat.floating.close-confirmation.action" : {
+      "comment" : "Action text shown in Cmd+W confirmation overlay when closing a tab that has detached Duck.ai window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold or press again to close tab and Duck.ai chat"
+          }
+        }
+      }
+    },
+    "aichat.floating.close-warning.subtitle" : {
+      "comment" : "Subtitle shown in popover warning when closing a tab that has detached Duck.ai window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This will also close the detached sidebar."
+          }
+        }
+      }
+    },
+    "aichat.floating.close-warning.title" : {
+      "comment" : "Title shown in popover warning when closing a tab that has detached Duck.ai window.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close tab and Duck.ai chat"
           }
         }
       }
@@ -2480,6 +2528,18 @@
         }
       }
     },
+    "aichat.model-picker.advanced-section-header" : {
+      "comment" : "Section header in the model picker menu for premium models that require a subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Advanced Models - DuckDuckGo subscription"
+          }
+        }
+      }
+    },
     "aichat.omnibar.placeholder" : {
       "comment" : "Placeholder text shown in the Duck.ai chat input field",
       "extractionState" : "extracted_with_value",
@@ -2536,6 +2596,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Задать вопрос (конфиденциально)"
+          }
+        }
+      }
+    },
+    "aichat.remove-attachment-button.accessibility" : {
+      "comment" : "Accessibility label for the remove attachment button on image thumbnails in AI chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anhang entfernen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove attachment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar archivo adjunto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la pièce jointe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi allegato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bijlage verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń załącznik"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover anexo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить вложение"
+          }
+        }
+      }
+    },
+    "aichat.remove-attachment-button.tooltip" : {
+      "comment" : "Tooltip for the remove attachment button on image thumbnails in AI chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anhang entfernen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove attachment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar archivo adjunto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la pièce jointe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi allegato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bijlage verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń załącznik"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover anexo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить вложение"
           }
         }
       }
@@ -2720,6 +2900,18 @@
         }
       }
     },
+    "aichat.sidebar.attach-button.tooltip" : {
+      "comment" : "Tooltip for button to dock the floating duck.ai window back into the sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Move to sidebar"
+          }
+        }
+      }
+    },
     "aichat.sidebar.close-button.tooltip" : {
       "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
       "extractionState" : "extracted_with_value",
@@ -2776,6 +2968,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрыть"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.detach-button.tooltip" : {
+      "comment" : "Tooltip for button to detach the duck.ai sidebar into a floating window",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Move to window"
           }
         }
       }
@@ -2896,6 +3100,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.title-button.tooltip" : {
+      "comment" : "Tooltip for the title button in the floating duck.ai window that brings the associated tab to front",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show tab"
           }
         }
       }
@@ -43591,7 +43807,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importer les signets"
+            "value" : "Importer des favoris"
           }
         },
         "it" : {
@@ -95583,7 +95799,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De planwijziging wordt afgerond …\n"
+            "value" : "De planwijziging wordt afgerond …"
           }
         },
         "pl" : {
@@ -95673,7 +95889,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Planänderung in Bearbeitung•…"
+            "value" : "Planänderung in Bearbeitung …"
           }
         },
         "en" : {

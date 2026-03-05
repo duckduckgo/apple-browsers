@@ -1874,7 +1874,8 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
                                                                  withBrokerURL: nil,
                                                                  version: nil,
                                                                  stepType: nil,
-                                                                 dataBrokerParent: nil)
+                                                                 dataBrokerParent: nil,
+                                                                 isFreeScan: nil)
         }
 
         finish()
@@ -1923,7 +1924,8 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
                                             withBrokerURL brokerURL: String?,
                                             version: String?,
                                             stepType: StepType?,
-                                            dataBrokerParent: String?) {
+                                            dataBrokerParent: String?,
+                                            isFreeScan: Bool?) {
         dataBrokerOperationDidErrorCalled = true
         operationErrors.append(error)
     }

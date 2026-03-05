@@ -57,7 +57,7 @@ final class TabViewModelTests: XCTestCase {
         sut.captureWebviewDidCommit(testURL)
         
         XCTAssertEqual(mockHistoryManager.addVisitCalls.count, 1)
-        XCTAssertEqual(mockHistoryManager.addVisitCalls.first, testURL)
+        XCTAssertEqual(mockHistoryManager.addVisitCalls.first?.url, testURL)
     }
 
     func testWhenCaptureTitleDidChange_ThenDelegatesToHistoryManager() async throws {
@@ -221,5 +221,37 @@ final class TabViewModelTests: XCTestCase {
 
         // Then
         XCTAssertNil(sut.currentContextualChatId)
+    }
+    
+    // MARK: - Fire Tab History Tests
+    
+    func testWhenFireTab_ThenAddVisitIsCalledWithFireTabTrue() {
+        // Given - Fire tab
+        let fireTab = Tab(fireTab: true)
+        let fireTabViewModel = TabViewModel(tab: fireTab, historyManager: mockHistoryManager)
+        let testURL = URL(string: "https://example.com")!
+        
+        // When
+        fireTabViewModel.captureWebviewDidCommit(testURL)
+        
+        // Then - Should call addVisit with fireTab: true and matching URL
+        XCTAssertEqual(mockHistoryManager.addVisitCalls.count, 1)
+        XCTAssertEqual(mockHistoryManager.addVisitCalls.first?.url, testURL)
+        XCTAssertEqual(mockHistoryManager.addVisitCalls.first?.fireTab, true)
+    }
+    
+    func testWhenFireTab_ThenTitleChangesAreSkipped() {
+        // Given - Fire tab
+        let fireTab = Tab(fireTab: true)
+        let fireTabViewModel = TabViewModel(tab: fireTab, historyManager: mockHistoryManager)
+        let testURL = URL(string: "https://example.com")!
+        let testTitle = "Example Title"
+        
+        // When
+        fireTabViewModel.captureWebviewDidCommit(testURL)
+        fireTabViewModel.captureTitleDidChange(testTitle, for: testURL)
+        
+        // Then - Title updates should be skipped for fire tabs
+        XCTAssertTrue(mockHistoryManager.updateTitleIfNeededCalls.isEmpty)
     }
 }

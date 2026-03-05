@@ -100,6 +100,12 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false,
                                       freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
+        setupMoreOptionsMenu(isFireWindowDefault: isFireWindowDefault, dockCustomizer: self.dockCustomizer, freeTrialBadgePersistor: freeTrialBadgePersistor)
+    }
+    @MainActor
+    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false,
+                                      dockCustomizer: DockCustomization?,
+                                      freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
         let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
         aiChatPreferencesStorage.showShortcutInApplicationMenu = true
 
@@ -472,7 +478,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     // MARK: - Default Browser Action and Add To Dock
 
-#if SPARKLE
     @MainActor
     func testWhenBrowserIsNotAddedToDockThenMenuItemIsVisible() {
         dockCustomizer.dockStatus = false
@@ -494,7 +499,17 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
         XCTAssertEqual(moreOptionsMenu.items[2].title, UserText.setAsDefaultBrowser)
     }
-#endif
+
+    @MainActor
+    func testWhenDockCustomizerIsNotAvailableThenAddToDockMenuItemIsNotVisible() {
+        defaultBrowserProvider.isDefault = false
+
+        setupMoreOptionsMenu(dockCustomizer: nil)
+        moreOptionsMenu.update()
+
+        XCTAssertNotEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
+        XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.setAsDefaultBrowser)
+    }
 
     @MainActor
     func testWhenBrowserIsAddedToDockThenMenuItemIsNotVisible() {

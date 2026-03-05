@@ -480,7 +480,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(started.purchasePlatform, .appStore)
         XCTAssertEqual(started.subscriptionIdentifier, "yearly")
         XCTAssertEqual(started.freeTrialEligible, true)
-        XCTAssertEqual(started.contextData.name, "funnel_appsettings_ios")
+        XCTAssertEqual(started.funnelName, "funnel_appsettings_ios")
 
         let updated = try XCTUnwrap(mockWideEvent.updates.last as? SubscriptionPurchaseWideEventData)
         XCTAssertNotNil(updated.activateAccountDuration?.start)
@@ -566,7 +566,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
 
         let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
-        XCTAssertEqual(started.contextData.name, SubscriptionFunnelOrigin.appSettings.rawValue)
+        XCTAssertEqual(started.funnelName, SubscriptionFunnelOrigin.appSettings.rawValue)
     }
 
     // MARK: - SubscriptionChangeSelected Tests

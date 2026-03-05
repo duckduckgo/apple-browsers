@@ -80,8 +80,8 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
             changeType: resolvedChangeType,
             fromPlan: fromPlan,
             toPlan: productId,
-            paymentDuration: WideEvent.MeasuredInterval.startingNow(),
-            contextData: WideEventContextData(name: contextName)
+            funnelName: contextName,
+            paymentDuration: WideEvent.MeasuredInterval.startingNow()
         )
         wideEvent.startFlow(wideData)
 

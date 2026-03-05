@@ -99,11 +99,32 @@ public struct AppVersion: OSVersionProviding {
         case uiTestsPerformance
         case xcPreviews
 
+        /// Whether the Sparkle Updater should be allowed or not.
         public var allowsUpdates: Bool {
             switch self {
             case .normal, .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
                 return true
             case .uiTests, .uiTestsPerformance:
+                return false
+            }
+        }
+
+        /// Whether Onboarding is allowed, or not.
+        public var allowsOnboarding: Bool {
+            switch self {
+            case .normal, .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
+                return false
+            case .uiTests, .uiTestsPerformance:
+                return true
+            }
+        }
+
+        /// Whether the app should open a fallback window on launch when no window was restored or opened by a URL event.
+        public var opensWindowOnStartupIfNeeded: Bool {
+            switch self {
+            case .normal, .uiTestsPerformance:
+                return true
+            case .integrationTests, .unitTests, .uiTests, .uiTestsOnboarding, .xcPreviews:
                 return false
             }
         }
@@ -124,16 +145,6 @@ public struct AppVersion: OSVersionProviding {
             case .normal, .uiTests, .uiTestsPerformance:
                 return true
             case .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
-                return false
-            }
-        }
-
-        /// Whether the app should open a fallback window on launch when no window was restored or opened by a URL event.
-        public var opensWindowOnStartupIfNeeded: Bool {
-            switch self {
-            case .normal, .uiTestsPerformance:
-                return true
-            case .integrationTests, .unitTests, .uiTests, .uiTestsOnboarding, .xcPreviews:
                 return false
             }
         }

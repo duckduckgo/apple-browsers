@@ -949,7 +949,7 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             tier: .pro,
             pendingPlans: [pendingPlan]
         ))
-        
+
         // Wait for async subscription update
         let expectation = expectation(description: "Subscription details updated with renewal copy")
         sut.$subscriptionDetails
@@ -958,9 +958,9 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             .first()
             .sink { _ in expectation.fulfill() }
             .store(in: &cancellables)
-        
+
         wait(for: [expectation], timeout: 2.0)
-        
+
         // Then - Should show normal renewal copy, not pending downgrade; banner should be nil
         XCTAssertNotNil(sut.subscriptionDetails)
         XCTAssertTrue(sut.subscriptionDetails?.contains("renews") == true,

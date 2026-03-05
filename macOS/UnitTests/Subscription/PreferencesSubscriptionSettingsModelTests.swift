@@ -796,7 +796,7 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             platform: .apple,
             tier: .plus
         ),
-                      purchasePlatform: .appStore)
+        purchasePlatform: .appStore)
 
         // Wait for async subscription update
         let expectation = expectation(description: "Subscription status updated")
@@ -830,7 +830,7 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             platform: .stripe,
             tier: .plus
         ),
-                      purchasePlatform: .stripe)
+        purchasePlatform: .stripe)
 
         // Wait for async subscription update
         let expectation = expectation(description: "Subscription status updated")
@@ -949,7 +949,7 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             tier: .pro,
             pendingPlans: [pendingPlan]
         ))
-
+        
         // Wait for async subscription update
         let expectation = expectation(description: "Subscription details updated with renewal copy")
         sut.$subscriptionDetails
@@ -958,9 +958,9 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             .first()
             .sink { _ in expectation.fulfill() }
             .store(in: &cancellables)
-
+        
         wait(for: [expectation], timeout: 2.0)
-
+        
         // Then - Should show normal renewal copy, not pending downgrade; banner should be nil
         XCTAssertNotNil(sut.subscriptionDetails)
         XCTAssertTrue(sut.subscriptionDetails?.contains("renews") == true,

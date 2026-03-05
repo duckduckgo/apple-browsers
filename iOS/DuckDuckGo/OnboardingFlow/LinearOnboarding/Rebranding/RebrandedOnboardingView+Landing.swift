@@ -237,6 +237,7 @@ extension OnboardingRebranding.OnboardingView {
                     loopMode: .playOnce
                 )))
                 .resizable()
+                .id(backgroundLottieAssetName)
                 .clipped()
                 .frame(
                     width: Metrics.illustrationWidth * illustrationScale,

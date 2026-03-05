@@ -99,6 +99,15 @@ public struct AppVersion: OSVersionProviding {
         case uiTestsPerformance
         case xcPreviews
 
+        public var allowsUpdates: Bool {
+            switch self {
+            case .normal, .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
+                return true
+            case .uiTests, .uiTestsPerformance:
+                return false
+            }
+        }
+
         /// Defines if app run type requires loading full environment, i.e. databases, saved state, keychain etc.
         public var requiresEnvironment: Bool {
             switch self {

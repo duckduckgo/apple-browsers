@@ -26,7 +26,7 @@ public class FreeTrialConversionWideEventData: WideEventData {
         featureName: "free-trial-conversion",
         mobileMetaType: "ios-free-trial-conversion",
         desktopMetaType: "macos-free-trial-conversion",
-        version: "1.0.0"
+        version: "1.0.1"
     )
 
     /// 8 days = 7-day trial + 1-day buffer

@@ -44,8 +44,8 @@ struct PromoServiceFactory {
     private static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
         var promos: [Promo] = [
             remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),
-            remoteMessageTabBar(model: dependencies.activeRemoteMessageModel)
-        ]
+            remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
+        ] + makeNextStepsPromos()
 
         if includeTestPromos {
             promos.append(contentsOf: testPromos)

@@ -203,7 +203,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
         duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
         syncService: syncService,
-        pinningManager: pinningManager
+        pinningManager: pinningManager,
+        promoService: promoService
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -1369,6 +1370,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
+        // Touch coordinator so Next Steps delegate is registered before promo service starts (1s fallback).
+        _ = newTabPageCoordinator
         promoService?.applicationDidBecomeActive()
 
         // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
@@ -2087,7 +2090,8 @@ extension AppDelegate: UserScriptDependenciesProviding {
             subscriptionCardPersistor: homePageSetUpDependencies.subscriptionCardPersistor,
             duckPlayerPreferences: DuckPlayerPreferencesUserDefaultsPersistor(),
             syncService: syncService,
-            pinningManager: pinningManager
+            pinningManager: pinningManager,
+            promoService: promoService
         )
     }
 

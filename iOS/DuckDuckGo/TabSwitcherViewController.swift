@@ -696,11 +696,12 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func dismiss() {
-        ViewHighlighter.hideAll()
         dismiss(animated: true, completion: nil)
     }
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
+        guard canDismissOnEmpty || !tabsModel.tabs.isEmpty else { return }
+        ViewHighlighter.hideAll()
         canUpdateCollection = false
         tabManager.allTabsModel.tabs.forEach { $0.removeObserver(self) }
         super.dismiss(animated: animated) {

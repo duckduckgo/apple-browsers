@@ -638,7 +638,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let isSidebarOpen = aiChatCoordinator?.isSidebarOpen(for: tab.uuid) ?? false
         let isChatFloating = aiChatCoordinator?.isChatFloating(for: tab.uuid) ?? false
         let canToggleSidebar = canToggleDuckAISidebar(for: tab)
-        let tooltip = isSidebarOpen ? UserText.aiChatCloseSidebarButton : UserText.aiChatOpenSidebarButton
+        let tooltip: String
+        if isChatFloating {
+            tooltip = UserText.aiChatShowButton
+        } else if isSidebarOpen {
+            tooltip = UserText.aiChatCloseSidebarButton
+        } else {
+            tooltip = UserText.aiChatOpenSidebarButton
+        }
         duckAIChromeSidebarButton.image = duckAISidebarIcon(isSidebarOpen: isSidebarOpen)
         duckAIChromeSidebarButton.isNotificationVisible = isChatFloating
         duckAIChromeSidebarButton.isEnabled = canToggleSidebar

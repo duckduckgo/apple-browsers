@@ -401,7 +401,6 @@ private class TabBarViewModelMock: TabBarViewModel {
         $progress
     }
 
-    var loadedPageDOMPublisher: PassthroughSubject<Void, Never>
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never>
 
     init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, pinned: Bool = false, loading: Bool = false, error: WKError? = nil) {
@@ -415,7 +414,6 @@ private class TabBarViewModelMock: TabBarViewModel {
         self.isPinned = pinned
         self.isLoading = loading
         self.error = error
-        self.loadedPageDOMPublisher = .init()
         self.renderingProgressDidChangePublisher = .init()
     }
 }

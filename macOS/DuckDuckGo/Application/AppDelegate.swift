@@ -1634,6 +1634,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             storage: keyValueStore.throwingKeyedStoring(),
+            currentThemeProvider: appearancePreferences,
             pixelFiring: PixelKit.shared
         )
         self.darkReaderFeatureSettings = darkReaderSettings

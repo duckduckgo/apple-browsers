@@ -25,6 +25,10 @@ import PixelKit
 import PrivacyConfig
 import WebExtensions
 
+protocol DarkReaderCurrentThemeProviding: AnyObject {
+    var isLightTheme: Bool { get }
+}
+
 protocol DarkReaderFeatureSettings: DarkReaderExcludedDomainsProviding {
 
     var isFeatureEnabled: Bool { get }
@@ -46,6 +50,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private var storage: any ThrowingKeyedStoring<DarkReaderSettings>
     private let pixelFiring: PixelFiring?
+    private weak var currentThemeProvider: DarkReaderCurrentThemeProviding?
     private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
     private let excludedDomainsChangedSubject = PassthroughSubject<Void, Never>()
     private var cancellables = Set<AnyCancellable>()
@@ -61,10 +66,12 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          storage: (any ThrowingKeyedStoring<DarkReaderSettings>),
+         currentThemeProvider: DarkReaderCurrentThemeProviding? = nil,
          pixelFiring: PixelFiring? = nil) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.storage = storage
+        self.currentThemeProvider = currentThemeProvider
         self.pixelFiring = pixelFiring
 
         privacyConfigurationManager.updatesPublisher
@@ -85,7 +92,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     var isFeatureEnabled: Bool {
         guard #available(macOS 15.4, *) else { return false }
-        guard featureFlagger.isFeatureOn(.webExtensions) else { return false }
+        guard featureFlagger.isFeatureOn(.webExtensions), currentThemeProvider?.isLightTheme != true else { return false }
 
         return featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
     }
@@ -109,5 +116,12 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     func themeDidChange() {
         forceDarkModeChangedSubject.send(isForceDarkModeEnabled)
+    }
+}
+
+extension AppearancePreferences: DarkReaderCurrentThemeProviding {
+
+    var isLightTheme: Bool {
+        return themeAppearance == .light
     }
 }

@@ -31,6 +31,7 @@ final class DarkReaderFeatureSettingsTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockStore: MockThrowingKeyValueStore!
     private var mockPrivacyConfigManager: MockPrivacyConfigurationManager!
+    private var mockThemeProvider: MockDarkReaderCurrentThemeProvider!
     private var sut: AppDarkReaderFeatureSettings!
 
     override func setUp() {
@@ -38,21 +39,24 @@ final class DarkReaderFeatureSettingsTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockStore = MockThrowingKeyValueStore()
         mockPrivacyConfigManager = MockPrivacyConfigurationManager()
+        mockThemeProvider = MockDarkReaderCurrentThemeProvider()
     }
 
     override func tearDown() {
         mockFeatureFlagger = nil
         mockStore = nil
         mockPrivacyConfigManager = nil
+        mockThemeProvider = nil
         sut = nil
         super.tearDown()
     }
 
-    private func makeSUT(pixelFiring: PixelFiring? = nil) -> AppDarkReaderFeatureSettings {
+    private func makeSUT(currentThemeProvider: DarkReaderCurrentThemeProviding? = nil, pixelFiring: PixelFiring? = nil) -> AppDarkReaderFeatureSettings {
         AppDarkReaderFeatureSettings(
             featureFlagger: mockFeatureFlagger,
             privacyConfigurationManager: mockPrivacyConfigManager,
             storage: mockStore.throwingKeyedStoring(),
+            currentThemeProvider: currentThemeProvider ?? mockThemeProvider,
             pixelFiring: pixelFiring
         )
     }
@@ -60,11 +64,21 @@ final class DarkReaderFeatureSettingsTests: XCTestCase {
     // MARK: - isFeatureEnabled
 
     @available(macOS 15.4, *)
-    func testIsFeatureEnabled_WhenBothFlagsAreOn_ReturnsTrue() {
+    func testIsFeatureEnabled_WhenBothFlagsAreOnAndDarkTheme_ReturnsTrue() {
         mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockThemeProvider.isLightTheme = false
         sut = makeSUT()
 
         XCTAssertTrue(sut.isFeatureEnabled)
+    }
+
+    @available(macOS 15.4, *)
+    func testIsFeatureEnabled_WhenBothFlagsAreOnAndLightTheme_ReturnsFalse() {
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockThemeProvider.isLightTheme = true
+        sut = makeSUT()
+
+        XCTAssertFalse(sut.isFeatureEnabled)
     }
 
     func testIsFeatureEnabled_WhenFlagsAreOff_ReturnsFalse() {
@@ -301,4 +315,8 @@ final class DarkReaderFeatureSettingsTests: XCTestCase {
 
         pixelMock.verifyExpectations(file: #file, line: #line)
     }
+}
+
+final class MockDarkReaderCurrentThemeProvider: DarkReaderCurrentThemeProviding {
+    var isLightTheme: Bool = false
 }

@@ -257,8 +257,6 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
     ) -> any NavigationResponder & AnyObject
 
     func makeReleaseNotesUserScript(
-        pixelFiring: PixelFiring?,
-        keyValueStore: ThrowingKeyValueStoring,
         releaseNotesURL: URL
     ) -> Subfeature
 }

@@ -63,13 +63,6 @@
             "pixelSource"
         ]
     },
-    "m_mac_release_notes_empty": {
-        "description": "Fires when the release notes page is accessed but no update is available, resulting in empty release notes. Used to measure how often users encounter this anomaly case.",
-        "owners": ["diegoreymendez"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
-    },
     "m_mac_wide_sparkle_update_cycle": {
         "description": "Wide pixel tracking the complete Sparkle update cycle from check to installation",
         "owners": ["diegoreymendez"],

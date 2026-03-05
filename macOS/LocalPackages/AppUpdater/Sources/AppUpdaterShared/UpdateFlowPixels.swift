@@ -119,9 +119,6 @@ public enum UpdateFlowPixels: PixelKitEvent {
     case updaterDidDownloadUpdate
     case updaterProgressStateMismatch(phase: String)
 
-    // Release notes pixel
-    case releaseNotesLoadingError
-
     public var name: String {
         switch self {
         case .checkForUpdate:
@@ -152,8 +149,6 @@ public enum UpdateFlowPixels: PixelKitEvent {
             return "updater_did_download_update"
         case .updaterProgressStateMismatch:
             return "updater_progress_state_mismatch"
-        case .releaseNotesLoadingError:
-            return "m_mac_release_notes_loading_error"
         }
     }
 
@@ -206,8 +201,7 @@ public enum UpdateFlowPixels: PixelKitEvent {
                 .updaterDidRunUpdate,
                 .updaterAttemptToRestartWithoutResumeBlock,
                 .updaterDidFindUpdate,
-                .updaterDidDownloadUpdate,
-                .releaseNotesLoadingError:
+                .updaterDidDownloadUpdate:
             return nil
         }
     }
@@ -241,8 +235,7 @@ public enum UpdateFlowPixels: PixelKitEvent {
                 .updaterAborted,
                 .updaterDidFindUpdate,
                 .updaterDidDownloadUpdate,
-                .updaterProgressStateMismatch,
-                .releaseNotesLoadingError:
+                .updaterProgressStateMismatch:
             return [.pixelSource]
         }
     }

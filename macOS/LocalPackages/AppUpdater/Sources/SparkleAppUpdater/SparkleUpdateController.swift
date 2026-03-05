@@ -174,15 +174,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
-    private var pendingUpdateInfo: PendingUpdateInfo? {
-        get {
-            try? settings.pendingUpdateInfo
-        }
-        set {
-            try? settings.set(newValue, for: \.pendingUpdateInfo)
-        }
-    }
-
     public var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
     public var lastUpdateNotificationShownDate: Date = .distantPast
 
@@ -519,12 +510,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     // MARK: - Private
 
-    private func cachePendingUpdate(from item: SUAppcastItem) {
-        let info = PendingUpdateInfo(from: item)
-        pendingUpdateInfo = info
-        Logger.updates.log("Cached pending update info for version \(info.version) build \(info.build)")
-    }
-
     @discardableResult
     private func configureUpdater() throws -> SPUUpdater? {
         guard updater == nil else {
@@ -694,8 +679,6 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
         pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
 
-        cachePendingUpdate(from: item)
-
         updateWideEvent.didFindUpdate(
             version: item.displayVersionString,
             build: item.versionString,
@@ -717,8 +700,6 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
             return reason == Int(Sparkle.SPUNoUpdateFoundReason.onNewerThanLatestVersion.rawValue)
         }()
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true, needsLatestReleaseNote: needsLatestReleaseNote)
-
-        cachePendingUpdate(from: item)
 
         updateWideEvent.didFindNoUpdate()
     }

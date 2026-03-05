@@ -21,7 +21,6 @@ import Combine
 import Common
 import Navigation
 import Persistence
-import PersistenceTestingUtils
 import PixelKit
 import UserScript
 import WebKit
@@ -42,11 +41,8 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
         try XCTSkipIf(AppVersion.runType == .uiTests, "onUpdate() is disabled in UI test environments")
 
         let controller = StubSparkleUpdateController()
-        let store = InMemoryThrowingKeyValueStore()
         let script = ReleaseNotesUserScript(
             updateController: controller,
-            pixelFiring: nil,
-            keyValueStore: store,
             releaseNotesURL: releaseNotesURL
         )
 
@@ -67,82 +63,6 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
         wait(for: [jsExpectation], timeout: 2.0)
     }
 
-    // MARK: - releaseNotesEmpty pixel debounce tests
-
-    /// The pixel must NOT fire when `loadingError` resolves to `loaded` within 1 second.
-    @MainActor
-    func testReleaseNotesEmptyPixelDoesNotFireWhenNotesLoadWithinDebounce() throws {
-        try XCTSkipIf(AppVersion.runType == .uiTests, "onUpdate() is disabled in UI test environments")
-
-        let controller = StubSparkleUpdateController()
-        let pixelMock = CapturingPixelFiring()
-        let store = InMemoryThrowingKeyValueStore()
-        let script = ReleaseNotesUserScript(
-            updateController: controller,
-            pixelFiring: pixelMock,
-            keyValueStore: store,
-            releaseNotesURL: releaseNotesURL
-        )
-
-        let broker = UserScriptMessageBroker(context: "releaseNotes", requiresRunInPageContentWorld: true)
-        script.with(broker: broker)
-
-        let mockWebView = MockURLWebView(url: releaseNotesURL)
-        script.webView = mockWebView
-
-        // First call: no latestUpdate, no cache → loadingError, starts 1s timer
-        script.onUpdate()
-        XCTAssertTrue(pixelMock.firedEvents.isEmpty, "Pixel should not fire immediately")
-
-        // Simulate notes loading before the 1s timer fires
-        controller.latestUpdate = Update.stub()
-        script.onUpdate()
-
-        // Wait longer than the debounce interval to confirm it was cancelled
-        let waitExpectation = expectation(description: "wait for debounce window to pass")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            waitExpectation.fulfill()
-        }
-        wait(for: [waitExpectation], timeout: 2.0)
-
-        XCTAssertTrue(pixelMock.firedEvents.isEmpty, "Pixel should not fire when notes load within debounce window")
-    }
-
-    /// The pixel MUST fire when `loadingError` persists past the 1-second debounce.
-    @MainActor
-    func testReleaseNotesEmptyPixelFiresWhenErrorPersists() throws {
-        try XCTSkipIf(AppVersion.runType == .uiTests, "onUpdate() is disabled in UI test environments")
-
-        let controller = StubSparkleUpdateController()
-        let pixelMock = CapturingPixelFiring()
-        let store = InMemoryThrowingKeyValueStore()
-        let script = ReleaseNotesUserScript(
-            updateController: controller,
-            pixelFiring: pixelMock,
-            keyValueStore: store,
-            releaseNotesURL: releaseNotesURL
-        )
-
-        let broker = UserScriptMessageBroker(context: "releaseNotes", requiresRunInPageContentWorld: true)
-        script.with(broker: broker)
-
-        let mockWebView = MockURLWebView(url: releaseNotesURL)
-        script.webView = mockWebView
-
-        // Call with no latestUpdate, no cache → loadingError
-        script.onUpdate()
-        XCTAssertTrue(pixelMock.firedEvents.isEmpty, "Pixel should not fire immediately")
-
-        // Wait for debounce to elapse
-        let fireExpectation = expectation(description: "pixel should fire after debounce")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            fireExpectation.fulfill()
-        }
-        wait(for: [fireExpectation], timeout: 2.0)
-
-        XCTAssertEqual(pixelMock.firedEvents.count, 1, "Pixel should fire once after debounce")
-        XCTAssertEqual(pixelMock.firedEvents.first?.name, UpdateFlowPixels.releaseNotesLoadingError.name)
-    }
 }
 
 // MARK: - Test Helpers
@@ -193,8 +113,6 @@ private final class StubSparkleUpdateController: NSObject, SparkleUpdateControll
     }
 
     func makeReleaseNotesUserScript(
-        pixelFiring: PixelFiring?,
-        keyValueStore: ThrowingKeyValueStoring,
         releaseNotesURL: URL
     ) -> Subfeature {
         fatalError("Not expected")
@@ -225,30 +143,6 @@ private final class StubSparkleUpdateController: NSObject, SparkleUpdateControll
     func checkForUpdateSkippingRollout() {}
     func openUpdatesPage() {}
     func handleAppTermination() {}
-}
-
-private final class CapturingPixelFiring: PixelFiring {
-    var firedEvents: [PixelKitEvent] = []
-
-    func fire(_ event: PixelKitEvent,
-              frequency: PixelKit.Frequency,
-              withAdditionalParameters: [String: String]?,
-              onComplete: @escaping PixelKit.CompletionBlock) {
-        firedEvents.append(event)
-    }
-}
-
-private extension Update {
-    static func stub() -> Update {
-        Update(isInstalled: true,
-               type: .regular,
-               version: "1.0.0",
-               build: "100",
-               date: Date(),
-               releaseNotes: ["Some notes"],
-               releaseNotesSubscription: [],
-               needsLatestReleaseNote: false)
-    }
 }
 
 private final class StubUpdateNotificationPresenter: UpdateNotificationPresenting {

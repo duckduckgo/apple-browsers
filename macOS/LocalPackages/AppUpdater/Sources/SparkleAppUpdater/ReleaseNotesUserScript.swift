@@ -20,8 +20,6 @@ import AppUpdaterShared
 import Combine
 import Common
 import Foundation
-import Persistence
-import PixelKit
 import UserScript
 import WebKit
 
@@ -32,8 +30,6 @@ import WebKit
 public final class ReleaseNotesUserScript: NSObject, Subfeature {
 
     private let updateController: any SparkleUpdateControlling
-    private let pixelFiring: PixelFiring?
-    private let keyValueStore: ThrowingKeyValueStoring
     private let releaseNotesURL: URL
 
     public var messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "release-notes")])
@@ -45,7 +41,6 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         }
     }
     private var cancellables = Set<AnyCancellable>()
-    private var emptyNotesPixelWorkItem: DispatchWorkItem?
 
     // MARK: - MessageNames
     enum MessageNames: String, CaseIterable {
@@ -58,12 +53,8 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
     }
 
     public init(updateController: any SparkleUpdateControlling,
-                pixelFiring: PixelFiring?,
-                keyValueStore: ThrowingKeyValueStoring,
                 releaseNotesURL: URL) {
         self.updateController = updateController
-        self.pixelFiring = pixelFiring
-        self.keyValueStore = keyValueStore
         self.releaseNotesURL = releaseNotesURL
         super.init()
     }
@@ -87,27 +78,12 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         return methodHandlers[messageName]
     }
 
-    deinit {
-        emptyNotesPixelWorkItem?.cancel()
-    }
-
     public func onUpdate() {
         guard AppVersion.runType != .uiTests,
               let webView, webView.url == releaseNotesURL else { return }
 
-        emptyNotesPixelWorkItem?.cancel()
-        emptyNotesPixelWorkItem = nil
-
-        let values = ReleaseNotesValues(from: updateController, keyValueStore: keyValueStore)
+        let values = ReleaseNotesValues(from: updateController)
         broker?.push(method: "onUpdate", params: values, for: self, into: webView)
-
-        if values.status == ReleaseNotesValues.Status.loadingError.rawValue {
-            let workItem = DispatchWorkItem { [weak self] in
-                self?.pixelFiring?.fire(UpdateFlowPixels.releaseNotesLoadingError, frequency: .dailyAndCount)
-            }
-            emptyNotesPixelWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
-        }
     }
 
 }

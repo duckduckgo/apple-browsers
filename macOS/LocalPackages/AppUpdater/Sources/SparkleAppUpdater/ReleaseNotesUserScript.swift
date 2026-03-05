@@ -103,7 +103,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
 
         if values.status == ReleaseNotesValues.Status.loadingError.rawValue {
             let workItem = DispatchWorkItem { [weak self] in
-                self?.pixelFiring?.fire(UpdateFlowPixels.releaseNotesEmpty, frequency: .dailyAndCount)
+                self?.pixelFiring?.fire(UpdateFlowPixels.releaseNotesLoadingError, frequency: .dailyAndCount)
             }
             emptyNotesPixelWorkItem = workItem
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)

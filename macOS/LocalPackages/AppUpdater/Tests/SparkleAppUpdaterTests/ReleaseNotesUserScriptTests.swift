@@ -141,7 +141,7 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
         wait(for: [fireExpectation], timeout: 2.0)
 
         XCTAssertEqual(pixelMock.firedEvents.count, 1, "Pixel should fire once after debounce")
-        XCTAssertEqual(pixelMock.firedEvents.first?.name, UpdateFlowPixels.releaseNotesEmpty.name)
+        XCTAssertEqual(pixelMock.firedEvents.first?.name, UpdateFlowPixels.releaseNotesLoadingError.name)
     }
 }
 

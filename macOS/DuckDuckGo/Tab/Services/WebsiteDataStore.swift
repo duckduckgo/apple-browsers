@@ -42,15 +42,6 @@ internal class WebCacheManager {
     private let websiteDataStore: WebsiteDataStore
     private let dataClearingPixelsReporter: DataClearingPixelsReporter
 
-    enum ClearSteps: String {
-        case clearFileCache = "clear_file_cache"
-        case clearDeviceHashSalts = "clear_device_hash_salts"
-        case clearSafelyRemovableDataTypes = "clear_safely_removable_data_types"
-        case clearLocalStorageAndIndexedDBForNonFireproofDomains = "clear_local_storage_and_indexed_db_for_non_fireproof_domains"
-        case clearCookies = "clear_cookies"
-        case clearResourceLoadStatisticsDatabase = "clear_resource_load_statistics_database"
-    }
-
     init(fireproofDomains: FireproofDomains, websiteDataStore: WebsiteDataStore = WKWebsiteDataStore.default(), dataClearingPixelsReporter: DataClearingPixelsReporter = .init()) {
         self.fireproofDomains = fireproofDomains
         self.websiteDataStore = websiteDataStore

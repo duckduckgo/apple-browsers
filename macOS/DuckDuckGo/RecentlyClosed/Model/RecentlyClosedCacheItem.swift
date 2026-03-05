@@ -54,20 +54,4 @@ extension Array where Element == RecentlyClosedCacheItem {
     mutating func burn(for baseDomains: Set<String>, tld: TLD) {
         self = compactMap { $0.burned(for: baseDomains, tld: tld) }
     }
-
-    func hasResidues(for baseDomains: Set<String>, tld: TLD) -> Bool {
-        contains { item in
-
-            // Tabs that should have been burned are left
-            if let tab = item as? RecentlyClosedTab {
-                return tab.contentContainsDomains(baseDomains, tld: tld)
-            }
-
-            // Windows that should have been burned are left
-            if let window = item as? RecentlyClosedWindow {
-                return window.tabs.contains { $0.contentContainsDomains(baseDomains, tld: tld) }
-            }
-            return false
-        }
-    }
 }

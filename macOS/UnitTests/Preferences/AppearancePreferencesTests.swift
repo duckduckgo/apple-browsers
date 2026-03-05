@@ -17,6 +17,7 @@
 //
 
 import Bookmarks
+import Combine
 import PersistenceTestingUtils
 import PixelKitTestingUtilities
 import PrivacyConfig
@@ -654,4 +655,157 @@ final class AppearancePreferencesTests: XCTestCase {
         model.isOmnibarVisible = false
         XCTAssertFalse(model.isOmnibarVisible, "Value should change to false")
     }
+
+    // MARK: - Force Dark Mode
+
+    func testWhenDarkReaderFeatureSettingsIsNilThenForceDarkModeIsNotVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        XCTAssertFalse(model.isForceDarkModeVisible)
+    }
+
+    func testWhenDarkReaderFeatureIsDisabledThenForceDarkModeIsNotVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isFeatureEnabled = false
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertFalse(model.isForceDarkModeVisible)
+    }
+
+    func testWhenDarkReaderFeatureIsEnabledAndThemeIsLightThenForceDarkModeIsNotVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.light.rawValue),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isFeatureEnabled = true
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertFalse(model.isForceDarkModeVisible)
+    }
+
+    func testWhenDarkReaderFeatureIsEnabledAndThemeIsDarkThenForceDarkModeIsVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.dark.rawValue),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isFeatureEnabled = true
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertTrue(model.isForceDarkModeVisible)
+    }
+
+    func testWhenDarkReaderFeatureIsEnabledAndThemeIsSystemDefaultThenForceDarkModeIsVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.systemDefault.rawValue),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isFeatureEnabled = true
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertTrue(model.isForceDarkModeVisible)
+    }
+
+    func testWhenDarkReaderSettingsIsNilThenForceDarkModeEnabledReturnsFalse() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+
+        XCTAssertFalse(model.forceDarkModeEnabled)
+    }
+
+    func testForceDarkModeEnabledReturnsValueFromDarkReaderSettings() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isForceDarkModeEnabled = true
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertTrue(model.forceDarkModeEnabled)
+    }
+
+    func testSettingForceDarkModeEnabledCallsDarkReaderSettings() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        model.darkReaderFeatureSettings = mockSettings
+
+        model.forceDarkModeEnabled = true
+
+        XCTAssertTrue(mockSettings.setForceDarkModeEnabledCalledWith ?? false)
+    }
+
+    func testWhenThemeChangesFromDarkToLightThenForceDarkModeBecomesNotVisible() {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(themeAppearance: ThemeAppearance.dark.rawValue),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let mockSettings = MockDarkReaderFeatureSettings()
+        mockSettings.isFeatureEnabled = true
+        model.darkReaderFeatureSettings = mockSettings
+
+        XCTAssertTrue(model.isForceDarkModeVisible)
+
+        model.themeAppearance = .light
+        XCTAssertFalse(model.isForceDarkModeVisible)
+    }
+}
+
+// MARK: - MockDarkReaderFeatureSettings
+
+private final class MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
+    var isFeatureEnabled: Bool = false
+    var isForceDarkModeEnabled: Bool = false
+    var excludedDomains: [String] = []
+
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> {
+        forceDarkModeChangedSubject.eraseToAnyPublisher()
+    }
+
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> {
+        excludedDomainsChangedSubject.eraseToAnyPublisher()
+    }
+
+    private let forceDarkModeChangedSubject = PassthroughSubject<Bool, Never>()
+    private let excludedDomainsChangedSubject = PassthroughSubject<Void, Never>()
+
+    var setForceDarkModeEnabledCalledWith: Bool?
+
+    func setForceDarkModeEnabled(_ enabled: Bool) {
+        setForceDarkModeEnabledCalledWith = enabled
+    }
+
+    func themeDidChange() {}
 }

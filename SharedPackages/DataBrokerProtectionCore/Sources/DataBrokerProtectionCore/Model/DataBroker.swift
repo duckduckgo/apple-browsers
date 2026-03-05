@@ -128,6 +128,22 @@ public enum DataBrokerHierarchy: Int {
     case child = 0
 }
 
+public struct BrokerResource {
+    public let broker: DataBroker
+    public let rawJSON: Data
+
+    public init(broker: DataBroker, rawJSON: Data) {
+        self.broker = broker
+        self.rawJSON = rawJSON
+    }
+
+    func with(eTag: String) -> BrokerResource {
+        var brokerWithETag = broker
+        brokerWithETag.setETag(eTag)
+        return BrokerResource(broker: brokerWithETag, rawJSON: rawJSON)
+    }
+}
+
 public struct DataBroker: Codable, Sendable {
     public let id: Int64?
     public let name: String
@@ -262,13 +278,13 @@ public struct DataBroker: Codable, Sendable {
         return optOutType == .parentSiteOptOut
     }
 
-    static func initFromResource(_ url: URL) throws -> DataBroker {
+    static func initFromResource(_ url: URL) throws -> BrokerResource {
         do {
             let data = try Data(contentsOf: url)
             let jsonDecoder = JSONDecoder()
             jsonDecoder.dateDecodingStrategy = .millisecondsSince1970
             let broker = try jsonDecoder.decode(DataBroker.self, from: data)
-            return broker
+            return BrokerResource(broker: broker, rawJSON: data)
         } catch {
             Logger.dataBrokerProtection.error("DataBroker error: initFromResource, error: \(error.localizedDescription, privacy: .public)")
             throw error
@@ -304,7 +320,6 @@ extension DataBroker: Hashable {
 }
 
 extension DataBroker {
-
     var type: DataBrokerHierarchy {
         parent == nil ? .parent : .child
     }

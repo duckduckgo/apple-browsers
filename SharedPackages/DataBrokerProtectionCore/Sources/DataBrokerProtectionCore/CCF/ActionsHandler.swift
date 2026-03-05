@@ -110,7 +110,7 @@ public class ActionsHandler {
         }
 
         let afterIndex = step.actions.index(after: emailConfirmIndex)
-        var actions: [Action] = [NavigateAction(id: emailConfirmationAction.id, actionType: .navigate, url: confirmationURL.absoluteString, ageRange: nil, dataSource: nil)]
+        var actions: [Action] = [NavigateAction(id: emailConfirmationAction.id, actionType: .navigate, url: confirmationURL.absoluteString)]
         actions.append(contentsOf: Array(step.actions.suffix(from: afterIndex)))
 
         return ActionsHandler(stepType: .optOut, actions: actions)

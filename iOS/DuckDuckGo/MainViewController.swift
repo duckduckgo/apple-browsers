@@ -1611,7 +1611,8 @@ class MainViewController: UIViewController {
         }
     }
 
-    fileprivate func select(tab: TabViewController, tabSwitchedFromIndex passedFromIndex: Int? = nil) {
+    fileprivate func select(tab: TabViewController?, tabSwitchedFromIndex passedFromIndex: Int? = nil) {
+        guard let tab else { return }
         let previousTab = currentTab
 
         hideNotificationBarIfBrokenSitePromptShown()

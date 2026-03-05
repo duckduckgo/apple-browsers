@@ -319,12 +319,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func select(tabAt index: Int) -> TabViewController {
+    func select(tabAt index: Int) -> TabViewController? {
         current()?.dismiss()
         currentTabsModel.select(tabAt: index)
 
         save()
-        return current(createIfNeeded: true)!
+        return current(createIfNeeded: true)
     }
 
     @MainActor
@@ -488,8 +488,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     func replaceTab(at index: Int, withNewTab newTab: Tab, clearTabHistory: Bool = true) {
-        // Removing a Tab automatically inserts a new one if tabs are empty. Hence add a new one only if needed
-        if currentTabsModel.tabs.count == 1 {
+        // In normal mode, removing the last tab auto-inserts a blank tab, so we skip
+        // inserting newTab (the auto-created tab serves the same purpose).
+        // In fire mode (allowsEmpty), no auto-insert happens, so we must always insert newTab.
+        if currentTabsModel.tabs.count == 1 && !currentTabsModel.allowsEmpty {
             // Since we're not re-inserting we should use the proper removal to ensure
             //  things are cleaned up properly.
             remove(at: index, clearTabHistory: clearTabHistory)

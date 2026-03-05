@@ -50,6 +50,7 @@ final class PopupHandlingUITests: UITestCase {
                 "POPUP_TIMEOUT_OVERRIDE": String(PopupTimeout.testingThreshold)  // Reduce from 6s to 2s for faster tests
             ],
             featureFlags: [
+                "newPermissionView": false,
                 "popupBlocking": true,
             ]
         )

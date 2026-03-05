@@ -66,7 +66,6 @@ final class SettingsViewModel: ObservableObject {
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
-    var browsingMenuSheetCapability: BrowsingMenuSheetCapable
     private let onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver
     
     private lazy var newBadgeVisibilityManager: NewBadgeVisibilityManaging = {
@@ -79,6 +78,12 @@ final class SettingsViewModel: ObservableObject {
             currentAppVersionProvider: { AppVersion.shared.versionNumber }
         )
     }()
+
+    private var afterInactivityStorage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> {
+        keyValueStore.throwingKeyedStoring()
+    }
+
+    private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
 
     // What's New Dependencies
     private let whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider
@@ -299,24 +304,6 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var showMenuInSheetBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: {
-                self.state.showMenuInSheet
-            },
-            set: {
-                if $0 {
-                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuEnabled)
-                } else {
-                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuDisabled)
-                }
-                
-                self.browsingMenuSheetCapability.setEnabled($0)
-                self.state.showMenuInSheet = self.browsingMenuSheetCapability.isEnabled
-            }
-        )
-    }
-
     var addressBarShowsFullURL: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.showsFullURL },
@@ -346,6 +333,26 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.privacyStore.authenticationEnabled = $0
                 self.state.applicationLock = $0
+            }
+        )
+    }
+
+    var shouldShowNTPAfterIdleSetting: Bool {
+        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+    }
+
+    var idleTimeInterval: String {
+        formattedIdleThreshold(from: idleReturnEligibilityManager.idleThresholdSeconds())
+    }
+
+    var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
+        Binding<AfterInactivityOption>(
+            get: {
+                self.idleReturnEligibilityManager.effectiveAfterInactivityOption()
+            },
+            set: {
+                try? self.afterInactivityStorage.set($0.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+                self.objectWillChange.send()
             }
         )
     }
@@ -687,13 +694,13 @@ final class SettingsViewModel: ObservableObject {
          urlOpener: URLOpener = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         browsingMenuSheetCapability: BrowsingMenuSheetCapable,
          onboardingSearchExperienceSettingsResolver: OnboardingSearchExperienceSettingsResolver? = nil,
          whatsNewCoordinator: ModalPromptProvider & OnDemandModalPromptProvider,
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
@@ -722,13 +729,13 @@ final class SettingsViewModel: ObservableObject {
         self.urlOpener = urlOpener
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
-        self.browsingMenuSheetCapability = browsingMenuSheetCapability
         self.onboardingSearchExperienceSettingsResolver = onboardingSearchExperienceSettingsResolver ?? OnboardingSearchExperienceSettingsResolver(
             featureFlagger: AppDependencyProvider.shared.featureFlagger,
             onboardingProvider: OnboardingSearchExperience(),
@@ -767,7 +774,6 @@ extension SettingsViewModel {
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
-            showMenuInSheet: browsingMenuSheetCapability.isEnabled,
             forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
@@ -933,6 +939,28 @@ extension SettingsViewModel {
         try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
         shouldShowSetAsDefaultBrowser = false
         shouldShowImportPasswords = false
+    }
+
+    private func formattedIdleThreshold(from seconds: Int) -> String {
+        let oneHour = 3600
+        if seconds >= oneHour {
+            let hours = seconds / oneHour
+            if hours == 1 {
+                return UserText.settingsAfterInactivityIdleIntervalHourSingular
+            }
+            return String(format: UserText.settingsAfterInactivityIdleIntervalHoursFormat, hours)
+        }
+        let minutes = seconds / 60
+        if minutes >= 1 {
+            if minutes == 1 {
+                return UserText.settingsAfterInactivityIdleIntervalPlaceholder
+            }
+            return String(format: UserText.settingsAfterInactivityIdleIntervalMinutesFormat, minutes)
+        }
+        if seconds == 1 {
+            return UserText.settingsAfterInactivityIdleIntervalSecondSingular
+        }
+        return String(format: UserText.settingsAfterInactivityIdleIntervalSecondsFormat, seconds)
     }
 }
 

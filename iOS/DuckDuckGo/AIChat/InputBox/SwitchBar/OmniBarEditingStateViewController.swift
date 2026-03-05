@@ -546,7 +546,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
 
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
+        let hasEscapeHatchWithoutFavorites = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false)
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && (!shouldDisplayFavoritesOverlay || hasEscapeHatchWithoutFavorites) && !isHorizontallyCompactLayoutEnabled
 
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
@@ -556,14 +557,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
-
-        // When the escape hatch card is visible in the chat history list, offset the logo down so it sits below the escape hatch card
-        if escapeHatchModel != nil, isAIDaxVisible {
-            setLogoYOffset(Constants.escapeHatchLogoZoneHeight)
-        } else {
-            setLogoYOffset(0)
-        }
+        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchModel != nil ? Constants.escapeHatchLogoZoneHeight : 0)
     }
+
 }
 
 // MARK: - NavigationActionBarViewAnimationDelegate

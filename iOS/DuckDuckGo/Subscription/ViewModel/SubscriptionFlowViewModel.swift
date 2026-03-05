@@ -386,7 +386,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     func restoreAppstoreTransaction() {
         let data = SubscriptionRestoreWideEventData(
             restorePlatform: .purchaseBackgroundTask,
-            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.prePurchaseCheck.rawValue)
+            funnelName: SubscriptionRestoreFunnelOrigin.prePurchaseCheck.rawValue
         )
         
         clearTransactionError()

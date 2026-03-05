@@ -1363,9 +1363,7 @@ extension BrowserTabViewController: TabDelegate {
     }
 
     func tabPageDOMLoaded(_ tab: Tab) {
-        if tabViewModel?.tab === tab {
-            tabViewModel?.isLoading = false
-        }
+        // NO-OP
     }
 
     func tabDidStartNavigation(_ tab: Tab) {

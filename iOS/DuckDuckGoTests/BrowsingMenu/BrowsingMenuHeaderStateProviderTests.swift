@@ -42,7 +42,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
     func testWhenRegularWebPageThenHeaderIsVisible() {
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
@@ -57,7 +56,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
     func testWhenRegularWebPageThenIconTypeIsGlobe() {
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
@@ -67,23 +65,9 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         XCTAssertEqual(dataSource.iconType, .globe)
     }
 
-    func testWhenFeatureDisabledThenHeaderIsNotVisible() {
-        sut.update(
-            dataSource: dataSource,
-            isFeatureEnabled: false,
-            isError: false,
-            hasLink: true,
-            url: URL(string: "https://example.com"),
-            title: "Example"
-        )
-
-        XCTAssertFalse(dataSource.isHeaderVisible)
-    }
-
     func testWhenNewTabPageThenHeaderIsNotVisible() {
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isNewTabPage: true,
             isError: false,
             hasLink: true,
@@ -97,7 +81,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
     func testWhenAITabThenHeaderIsVisible() {
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isAITab: true,
             isError: false,
             hasLink: true,
@@ -112,7 +95,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
     func testWhenAITabThenIconTypeIsAIChat() {
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isAITab: true,
             isError: false,
             hasLink: true
@@ -124,7 +106,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
     func testWhenAITabThenDisplayURLIsNil() {
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isAITab: true,
             isError: false,
             hasLink: true,
@@ -137,7 +118,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
     func testWhenNoLinkThenHeaderIsNotVisible() {
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isError: false,
             hasLink: false
         )
@@ -149,7 +129,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         // First show the header
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
@@ -160,7 +139,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
         // Then hide it
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isNewTabPage: true,
             isError: false,
             hasLink: true,
@@ -178,7 +156,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
 
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isError: false,
             hasLink: true,
             url: URL(string: "https://example.com"),
@@ -194,7 +171,6 @@ final class BrowsingMenuHeaderStateProviderTests: XCTestCase {
     func testWhenErrorPageThenTitleIsNil() {
         sut.update(
             dataSource: dataSource,
-            isFeatureEnabled: true,
             isError: true,
             hasLink: true,
             url: URL(string: "https://example.com"),

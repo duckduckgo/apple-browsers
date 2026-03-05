@@ -291,7 +291,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
         guard state.currentFlow == .restoreFlow else { return }
         let data = SubscriptionRestoreWideEventData(
             restorePlatform: .emailAddress,
-            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
+            funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
         )
         self.restoreWideEventData = data
         if let subFeatureV2 = subFeature as? DefaultSubscriptionPagesUseSubscriptionFeature {

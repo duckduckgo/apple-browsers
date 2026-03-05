@@ -39,6 +39,7 @@ public class SubscriptionPlanChangeWideEventData: WideEventData {
     public let changeType: ChangeType?
     public let fromPlan: String
     public let toPlan: String
+    public var funnelName: String?
 
     public var paymentDuration: WideEvent.MeasuredInterval?
     public var confirmationDuration: WideEvent.MeasuredInterval?
@@ -50,7 +51,7 @@ public class SubscriptionPlanChangeWideEventData: WideEventData {
 
     private enum CodingKeys: String, CodingKey {
         case globalData, contextData, appData
-        case purchasePlatform, changeType, fromPlan, toPlan
+        case purchasePlatform, changeType, fromPlan, toPlan, funnelName
         case paymentDuration, confirmationDuration
         case failingStep, errorData
     }
@@ -59,17 +60,19 @@ public class SubscriptionPlanChangeWideEventData: WideEventData {
                 changeType: ChangeType?,
                 fromPlan: String,
                 toPlan: String,
+                funnelName: String? = nil,
                 failingStep: FailingStep? = nil,
                 paymentDuration: WideEvent.MeasuredInterval? = nil,
                 confirmationDuration: WideEvent.MeasuredInterval? = nil,
                 errorData: WideEventErrorData? = nil,
-                contextData: WideEventContextData,
+                contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
                 globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.purchasePlatform = purchasePlatform
         self.changeType = changeType
         self.fromPlan = fromPlan
         self.toPlan = toPlan
+        self.funnelName = funnelName
         self.failingStep = failingStep
         self.paymentDuration = paymentDuration
         self.confirmationDuration = confirmationDuration
@@ -139,6 +142,7 @@ extension SubscriptionPlanChangeWideEventData {
             (WideEventParameter.PlanChangeFeature.toPlan, toPlan),
             (WideEventParameter.PlanChangeFeature.subscriptionIdentifier, toPlan),
             (WideEventParameter.PlanChangeFeature.changeType, changeType?.rawValue),
+            (WideEventParameter.PlanChangeFeature.funnelName, funnelName),
             (WideEventParameter.PlanChangeFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.PlanChangeFeature.paymentLatency, paymentDuration?.stringValue(bucket)),
             (WideEventParameter.PlanChangeFeature.confirmationLatency, confirmationDuration?.stringValue(bucket)),
@@ -171,6 +175,7 @@ extension WideEventParameter {
         public static let fromPlan = "feature.data.ext.from_plan"
         public static let toPlan = "feature.data.ext.to_plan"
         public static let subscriptionIdentifier = "feature.data.ext.subscription_identifier"
+        public static let funnelName = "feature.data.ext.funnel_name"
         public static let failingStep = "feature.data.ext.failing_step"
         public static let paymentLatency = "feature.data.ext.payment_latency_ms_bucketed"
         public static let confirmationLatency = "feature.data.ext.confirmation_latency_ms_bucketed"

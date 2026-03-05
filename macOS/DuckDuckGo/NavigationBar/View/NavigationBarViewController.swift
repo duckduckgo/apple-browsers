@@ -39,8 +39,8 @@ final class NavigationBarViewController: NSViewController {
         static let downloadsButtonAutoHidingInterval: TimeInterval = 5 * 60
         static let maxDragDistanceToExpandHoveredFolder: CGFloat = 4
         static let dragOverFolderExpandDelay: TimeInterval = 0.3
-        static let duckAISidebarOpenImageName = "Sidebar-Open-16"
-        static let duckAISidebarCloseImageName = "Sidebar-Close-16"
+        static let duckAISidebarOpenImageName = NSImage.Name("Sidebar-Open-16")
+        static let duckAISidebarCloseImageName = NSImage.Name("Sidebar-Close-16")
     }
 
 #if DEBUG
@@ -1271,7 +1271,7 @@ final class NavigationBarViewController: NSViewController {
 
     private func duckAISidebarIcon(isSidebarOpen: Bool) -> NSImage? {
         let imageName = isSidebarOpen ? Constants.duckAISidebarCloseImageName : Constants.duckAISidebarOpenImageName
-        return NSImage(named: NSImage.Name(imageName))
+        return NSImage(named: imageName)
     }
 
     private func updateDuckAISidebarButtonState() {

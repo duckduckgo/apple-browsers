@@ -34,8 +34,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private enum Constants {
-        static let duckAISidebarOpenImageName = "Sidebar-Open-16"
-        static let duckAISidebarCloseImageName = "Sidebar-Close-16"
+        static let duckAISidebarOpenImageName = NSImage.Name("Sidebar-Open-16")
+        static let duckAISidebarCloseImageName = NSImage.Name("Sidebar-Close-16")
         static let duckAIControlSpacingBeforeFireButton: CGFloat = 5
     }
 
@@ -604,24 +604,23 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func canToggleDuckAISidebar(for tab: Tab) -> Bool {
-        if aiChatCoordinator?.isSidebarOpen(for: tab.uuid) == true {
-            return true
+        let tabID = tab.uuid
+        let isSidebarOpen = aiChatCoordinator?.isSidebarOpen(for: tabID) ?? false
+        let isChatFloating = aiChatCoordinator?.isChatFloating(for: tabID) ?? false
+
+        var canToggleSidebar = false
+        if isSidebarOpen || isChatFloating {
+            canToggleSidebar = true
+        } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .url = tab.content {
+            canToggleSidebar = true
         }
 
-        if aiChatCoordinator?.isChatFloating(for: tab.uuid) == true {
-            return true
-        }
-
-        guard aiChatMenuConfig.shouldOpenAIChatInSidebar,
-              case .url = tab.content else {
-            return false
-        }
-        return true
+        return canToggleSidebar
     }
 
     private func duckAISidebarIcon(isSidebarOpen: Bool) -> NSImage? {
         let imageName = isSidebarOpen ? Constants.duckAISidebarCloseImageName : Constants.duckAISidebarOpenImageName
-        return NSImage(named: NSImage.Name(imageName))
+        return NSImage(named: imageName)
     }
 
     private func updateDuckAIChromeSegmentedControlState() {

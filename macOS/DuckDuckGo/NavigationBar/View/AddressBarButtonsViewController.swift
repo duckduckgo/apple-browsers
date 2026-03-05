@@ -303,6 +303,7 @@ final class AddressBarButtonsViewController: NSViewController {
         AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
                                       hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
     }()
+
     private(set) lazy var aiChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating? = {
         AIChatTogglePopoverCoordinator(windowControllersManager: NSApp.delegateTyped.windowControllersManager)
     }()
@@ -1217,11 +1218,7 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        let isToggleVisible = isTextFieldEditorFirstResponder
-        && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        && aiChatSettings.isAIFeaturesEnabled
-        && aiChatSettings.showSearchAndDuckAIToggle
-        if isToggleVisible {
+        if isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
             bookmarkButton.isShown = false
             updateAIChatDividerVisibility()
             return
@@ -1321,10 +1318,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
-        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder
-        && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        && aiChatSettings.isAIFeaturesEnabled
-        && aiChatSettings.showSearchAndDuckAIToggle
+        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
 
         if isTextFieldEditorFirstResponder {
             if isToggleFeatureEnabled {
@@ -1814,9 +1808,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         stopAnimationsAfterFocus()
 
-        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder
-        && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        && aiChatSettings.isAIFeaturesEnabled
+        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
         let shouldShowToggle = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
 
         // Update key view chain when toggle visibility changes

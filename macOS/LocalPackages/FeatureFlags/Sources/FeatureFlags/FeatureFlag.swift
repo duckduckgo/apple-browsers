@@ -274,14 +274,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
     case privateProcessName
 
-    /// Internal-only flag for Duck.ai toolbar/sidebar POC
-    case toolbarSidebar
-
     /// Internal-only flag for Duck.ai chrome/sidebar POC
     case chromeSidebar
-
-    /// Internal-only flag for Duck.ai address/sidebar POC
-    case addressSidebar
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -402,9 +396,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarFloating,
                 .startupMetrics,
                 .privateProcessName,
-                .toolbarSidebar,
-                .chromeSidebar,
-                .addressSidebar:
+                .chromeSidebar:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -576,11 +568,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privateProcessName:
             return .disabled
-        case .toolbarSidebar:
-            return .internalOnly()
         case .chromeSidebar:
-            return .internalOnly()
-        case .addressSidebar:
             return .internalOnly()
         }
     }

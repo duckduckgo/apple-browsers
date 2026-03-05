@@ -187,7 +187,6 @@ final class NavigationBarViewController: NSViewController {
     private var downloadsButtonHidingTimer: Timer?
     private var aiChatSidebarPresenceCancellable: AnyCancellable?
     private var aiChatMenuConfigCancellable: AnyCancellable?
-    private var toolbarSidebarFeatureFlagCancellable: AnyCancellable?
 
     @UserDefaultsWrapper(key: .homeButtonPosition, defaultValue: .right)
     static private var homeButtonPosition: HomeButtonPosition
@@ -219,18 +218,6 @@ final class NavigationBarViewController: NSViewController {
                 addressBarViewController?.addressBarButtonsViewController?.bookmarkButton,
                 duckAISidebarButton
         ]
-    }
-
-    private var isChromeSidebarFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.chromeSidebar) && !isAddressSidebarFeatureEnabled
-    }
-
-    private var isAddressSidebarFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.addressSidebar)
-    }
-
-    private var isToolbarSidebarVariantEnabled: Bool {
-        featureFlagger.isFeatureOn(.toolbarSidebar) && !isChromeSidebarFeatureEnabled && !isAddressSidebarFeatureEnabled
     }
 
     // MARK: View Lifecycle
@@ -478,7 +465,6 @@ final class NavigationBarViewController: NSViewController {
         menuButtons.spacing = theme.navigationToolbarButtonsSpacing
 
         setupNavigationButtons()
-        subscribeToToolbarSidebarFeatureFlag()
         setupOverflowMenu()
         setupNetworkProtectionButton()
 
@@ -1101,33 +1087,6 @@ final class NavigationBarViewController: NSViewController {
         self.duckAISidebarButton = nil
         duckAISidebarButtonWidthConstraint = nil
         duckAISidebarButtonHeightConstraint = nil
-    }
-
-    private func subscribeToToolbarSidebarFeatureFlag() {
-        toolbarSidebarFeatureFlagCancellable = featureFlagger.updatesPublisher
-            .map { [weak self] in
-                self?.isToolbarSidebarVariantEnabled ?? false
-            }
-            .prepend(isToolbarSidebarVariantEnabled)
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isEnabled in
-                self?.applyToolbarSidebarFeatureFlagState(isEnabled: isEnabled)
-            }
-    }
-
-    private func applyToolbarSidebarFeatureFlagState(isEnabled: Bool) {
-        if isEnabled {
-            setupDuckAISidebarButton()
-            subscribeToAIChatSidebarChanges()
-            subscribeToAIChatMenuConfigChanges()
-            updateDuckAISidebarButtonState()
-            return
-        }
-
-        aiChatSidebarPresenceCancellable = nil
-        aiChatMenuConfigCancellable = nil
-        removeDuckAISidebarButton()
     }
 
     private func setupNavigationButtonIcons() {

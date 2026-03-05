@@ -307,7 +307,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarResizable,
                 .aiChatSidebarFloating,
                 .nextStepsListWidget,
-                .webViewLookUpAction:
+                .webViewLookUpAction,
+                .startupMetrics:
             true
         default:
             false
@@ -567,7 +568,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSidebarFloating:
             return .internalOnly()
         case .startupMetrics:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
             return .disabled
         case .webViewLookUpAction:

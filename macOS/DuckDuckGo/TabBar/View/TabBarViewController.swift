@@ -661,23 +661,23 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        if aiChatCoordinator?.isChatFloating(for: tab.uuid) == true {
-            aiChatCoordinator?.focusFloatingWindow(for: tab.uuid)
-            updateDuckAIChromeSegmentedControlState()
-            return
-        }
+        let tabID = tab.uuid
+        let isChatFloating = aiChatCoordinator?.isChatFloating(for: tabID) ?? false
+        let canToggleSidebar = canToggleDuckAISidebar(for: tab)
 
-        let isSidebarOpen = aiChatCoordinator?.isSidebarOpen(for: tab.uuid) ?? false
-        if !isSidebarOpen && !canToggleDuckAISidebar(for: tab) {
-            updateDuckAIChromeSegmentedControlState()
-            return
-        }
-
-        if let mainViewController = parent as? MainViewController {
-            mainViewController.toggleDuckAISidebar()
+        if isChatFloating {
+            aiChatCoordinator?.focusFloatingWindow(for: tabID)
+        } else if canToggleSidebar {
+            if let mainViewController = parent as? MainViewController {
+                mainViewController.toggleDuckAISidebar()
+            } else {
+                aiChatCoordinator?.toggleSidebar()
+            }
         } else {
-            aiChatCoordinator?.toggleSidebar()
+            updateDuckAIChromeSegmentedControlState()
+            return
         }
+
         updateDuckAIChromeSegmentedControlState()
     }
 

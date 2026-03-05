@@ -215,11 +215,7 @@ extension NewTabPageActionsManager {
             syncService: syncService
         )
         if let promoService {
-            let nextStepsDelegate = NextStepsCardsPromoDelegate(
-                cardsProvider: nextStepsCardsFacade,
-                appearancePreferences: appearancePreferences,
-                promoService: promoService
-            )
+            let nextStepsDelegate = NextStepsCardsPromoDelegate(cardsProvider: nextStepsCardsFacade)
             promoService.setDelegate(for: "next-steps-cards", delegate: nextStepsDelegate)
         }
 

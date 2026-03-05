@@ -21,18 +21,15 @@ import Foundation
 extension PromoServiceFactory {
 
     /// Next Steps promo (nextStepsList and nextSteps widgets). Delegate is set when NTP is built.
-    @MainActor
-    static func makeNextStepsPromos() -> [Promo] {
-        [
-            Promo(
-                id: "next-steps-cards",
-                triggers: [.newTabPageAppeared],
-                initiated: .app,
-                promoType: PromoType(.nextSteps),
-                context: .newTabPage,
-                coexistingPromoIDs: ["remote-message-ntp", "remote-message-tabbar"],
-                delegate: nil
-            )
-        ]
-    }
+    static var nextSteps = Promo(
+        id: "next-steps-cards",
+        triggers: [], // External promo (RemoteMessage) so no internal triggers
+        initiated: .app,
+        promoType: PromoType(.nextSteps),
+        context: .newTabPage,
+        coexistingPromoIDs: [], // Coexistence between external promos is handled externally
+        respectsGlobalCooldown: false,
+        setsGlobalCooldown: true,
+        delegate: nil
+    )
 }

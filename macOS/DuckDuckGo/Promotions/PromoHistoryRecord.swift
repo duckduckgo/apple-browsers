@@ -37,6 +37,7 @@ struct PromoHistoryRecord: Codable, Equatable {
 
     /// Debug: Whether the promo is eligible as of a specified (simulated) date.
     func isEligible(asOf date: Date) -> Bool {
+        guard !actioned else { return false }
         guard let nextEligibleDate else { return true }
         return nextEligibleDate <= date
     }

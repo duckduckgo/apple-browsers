@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import Combine
 
 protocol Previewable {
     var shouldShowPreview: Bool { get }
@@ -80,7 +81,6 @@ final class TabPreviewViewController: NSViewController {
         urlTextField.backgroundColor = .clear
         urlTextField.font = .systemFont(ofSize: 13)
         urlTextField.lineBreakMode = .byTruncatingTail
-        urlTextField.textColor = .tabPreviewSecondaryTint
         urlTextField.cell?.setAccessibilityEnabled(false)
         urlTextField.cell?.setAccessibilityElement(false)
 

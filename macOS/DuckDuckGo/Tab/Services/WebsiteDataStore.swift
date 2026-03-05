@@ -100,13 +100,6 @@ internal class WebCacheManager {
             }
         }
 
-        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnWebCacheHasResidue(steps: ClearSteps.clearFileCache.rawValue)) {
-            let currentContents = try? FileManager.default.contentsOfDirectory(atPath: cachesDir.path)
-            return currentContents?.contains { name in
-                ["WebKit", "fsCachedData"].contains(name) || name.hasPrefix("Cache.")
-            } ?? false
-        }
-
         do {
             try fm.createDirectory(at: cachesDir.appendingPathComponent("WebKit"),
                                     withIntermediateDirectories: false,
@@ -142,11 +135,6 @@ internal class WebCacheManager {
             dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnWebCacheError(error))
         }
 
-        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnWebCacheHasResidue(steps: ClearSteps.clearDeviceHashSalts.rawValue)) {
-            guard let content = try? FileManager.default.contentsOfDirectory(atPath: libraryURL.path) else { return false }
-            return !content.isEmpty
-        }
-
         do {
             try fm.createDirectory(at: libraryURL,
                                     withIntermediateDirectories: false,
@@ -164,13 +152,6 @@ internal class WebCacheManager {
 
         // Remove all data except cookies, local storage, and IndexedDB for all domains, and then filter cookies to preserve those allowed by Fireproofing.
         await websiteDataStore.removeData(ofTypes: safelyRemovableTypes, modifiedSince: Date.distantPast)
-
-        Task {
-            let records = await websiteDataStore.dataRecords(ofTypes: safelyRemovableTypes)
-            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnWebCacheHasResidue(steps: ClearSteps.clearSafelyRemovableDataTypes.rawValue)) {
-                return !records.isEmpty
-            }
-        }
     }
 
     @MainActor
@@ -185,15 +166,6 @@ internal class WebCacheManager {
         let removedDisplayNames = Set(removableRecords.map { $0.displayName })
 
         await websiteDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypesExceptCookies, for: removableRecords)
-
-        Task {
-            let remainingRecords = await websiteDataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypesExceptCookies)
-            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnWebCacheHasResidue(steps: ClearSteps.clearLocalStorageAndIndexedDBForNonFireproofDomains.rawValue)) {
-                remainingRecords.contains { record in
-                    removedDisplayNames.contains(record.displayName)
-                }
-            }
-        }
     }
 
     @MainActor
@@ -219,13 +191,6 @@ internal class WebCacheManager {
         for cookie in cookiesToRemove {
             Logger.fire.debug("Deleting cookie for \(cookie.domain) named \(cookie.name)")
             await cookieStore.deleteCookie(cookie)
-        }
-
-        Task {
-            let postClearingCookieCount = await cookieStore.allCookies().count
-            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnWebCacheHasResidue(steps: ClearSteps.clearCookies.rawValue)) {
-                postClearingCookieCount != beforeClearingCookieCount - cookiesToRemove.count
-            }
         }
     }
 

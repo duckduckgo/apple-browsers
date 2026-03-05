@@ -884,9 +884,6 @@ final class Fire: FireProtocol {
                     expectedCount = (countBeforeBurn == 1) ? 1 : countBeforeBurn - 1
                 }
                 dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
-                dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)){
-                    tabCollectionViewModel.tabCollection.tabs.count != expectedCount
-                }
             }
 
         case .window(tabCollectionViewModel: let tabCollectionViewModel,
@@ -904,10 +901,6 @@ final class Fire: FireProtocol {
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
 
                 dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
-                // A new tab was inserted
-                dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)) {
-                    tabCollectionViewModel.tabCollection.tabs.count > 1
-                }
             }
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
@@ -925,10 +918,6 @@ final class Fire: FireProtocol {
             }
 
             dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
-            // A new tab was inserted
-            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)) {
-                mainWindowControllers.contains { $0.mainViewController.tabCollectionViewModel.tabCollection.tabs.count > 1 }
-            }
         }
     }
 

@@ -86,16 +86,6 @@ final class DataClearingPixelsReporter {
         )
     }
 
-    func fireResiduePixelIfNeeded(_ residuePixel: DataClearingPixels, check: () -> Bool) {
-        if check() {
-            pixelFiring?.fire(residuePixel, frequency: .standard)
-        }
-    }
-
-    func fireResiduePixel(_ residuePixel: DataClearingPixels) {
-        pixelFiring?.fire(residuePixel, frequency: .standard)
-    }
-
     func fireErrorPixel(_ errorPixel: DataClearingPixels) {
         pixelFiring?.fire(errorPixel, frequency: .dailyAndStandard)
     }

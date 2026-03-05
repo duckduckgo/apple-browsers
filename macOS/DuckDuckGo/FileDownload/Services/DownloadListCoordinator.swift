@@ -559,10 +559,6 @@ final class DownloadListCoordinator {
             itemsToRemove.insert(id)
             remove(downloadWithIdentifier: id)
         }
-
-        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnDownloadsHasResidue) {
-            itemsToRemove.contains { self.items[$0] != nil }
-        }
     }
 
     @MainActor
@@ -589,10 +585,6 @@ final class DownloadListCoordinator {
                 itemsToRemove.insert(id)
                 remove(downloadWithIdentifier: id)
             }
-        }
-
-        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnDownloadsHasResidue) {
-            itemsToRemove.contains { self.items[$0] != nil }
         }
     }
 

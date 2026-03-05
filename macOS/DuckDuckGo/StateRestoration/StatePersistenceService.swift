@@ -104,10 +104,6 @@ final class StatePersistenceService {
         } catch {
             dataClearingPixelsReporter.fireErrorPixel(DataClearingPixels.burnLastSessionStateError(error))
         }
-
-        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnLastSessionStateHasResidue) {
-            check(at: location, fileStore: fileStore)
-        }
     }
 
     /// rename `persistentState` to `persistentState.1` after the state was loaded

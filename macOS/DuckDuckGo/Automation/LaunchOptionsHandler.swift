@@ -64,6 +64,7 @@ public final class LaunchOptionsHandler {
     }
 
     public var onboardingStatus: OnboardingStatus {
+        #if DEBUG || REVIEW
         // Override onboarding settings permanently to keep state consistency across app launches.
         // This applies to both UI Tests and WebDriver automation sessions.
         // Launch Arguments can be read via userDefaults for easy value access.
@@ -75,6 +76,7 @@ public final class LaunchOptionsHandler {
         if let developerOnboardingOverride = ProcessInfo.processInfo.environment["ONBOARDING"] {
             return .overridden(.developer(completed: developerOnboardingOverride == "false"))
         }
+        #endif
 
         return .notOverridden
     }

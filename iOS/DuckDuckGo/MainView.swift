@@ -126,20 +126,43 @@ extension MainViewFactory {
     }
     
     final class NavigationBarCollectionView: UICollectionView {
-        
+
         var hitTestInsets = UIEdgeInsets.zero
-        
+        var allowsOverflowHitTesting = false
+
         override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-            return bounds.inset(by: hitTestInsets).contains(point)
+            if bounds.inset(by: hitTestInsets).contains(point) {
+                return true
+            }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return false }
+            return visibleCells.contains { cell in
+                let cellPoint = cell.convert(point, from: self)
+                return cell.point(inside: cellPoint, with: event)
+            }
         }
-        
-        // Don't allow the use to drag the scrollbar or the UI will glitch.
+
+        // Don't allow the user to drag the scrollbar or the UI will glitch.
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
             let view = super.hitTest(point, with: event)
             if view == self.subviews.first(where: { $0 is UIImageView }) {
                 return nil
             }
-            return view
+            if let view { return view }
+
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
+            return overflowHitTest(point, with: event)
+        }
+
+        /// Forwards an overflow point to visible cells for hit testing.
+        /// Supports the iPad expanded search area which extends below the collection view's bounds.
+        private func overflowHitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            for cell in visibleCells.reversed() {
+                let cellPoint = cell.convert(point, from: self)
+                if let result = cell.hitTest(cellPoint, with: event) {
+                    return result
+                }
+            }
+            return nil
         }
     }
     
@@ -187,13 +210,9 @@ extension MainViewFactory {
                 return result
             }
             guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
-            // Return self so the overflow tap gesture recognizer receives the touch.
-            // Returning the deep target directly doesn't work because UIKit can't deliver
-            // touches to views whose intermediate ancestors don't claim the point.
-            if Self.deepHitTest(in: self, point: point, event: event) is UIControl {
-                return self
-            }
-            return Self.deepHitTest(in: self, point: point, event: event)
+            guard let target = Self.deepHitTest(in: self, point: point, event: event) else { return nil }
+            // Return self for controls so the overflow tap gesture recognizer can activate them.
+            return target is UIControl ? self : target
         }
 
         override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {

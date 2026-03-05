@@ -34,7 +34,7 @@ enum StartupStep: String, Codable, CaseIterable {
 
 // MARK: - StartupMetrics
 
-struct StartupMetrics: Codable {
+struct StartupMetrics {
 
     private(set) var intervals = [StartupStep: Interval]()
 

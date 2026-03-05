@@ -27,8 +27,11 @@ extension OnboardingRebranding.OnboardingView {
 
     struct LandingView: View {
 
+        @Environment(\.colorScheme) private var colorScheme
+
         private enum Assets {
             static let backgroundLottieFileName = "OnboardingLandingIllustrationAnimation"
+            static let backgroundLottieDarkFileName = "OnboardingLandingIllustrationAnimation_dark"
             static let logoLottieFileName = "OnboardingLandingLogoAnimation"
         }
 
@@ -194,7 +197,9 @@ extension OnboardingRebranding.OnboardingView {
 
             return VStack(alignment: .center, spacing: Metrics.welcomeBottomPadding) {
                 // Logo Lottie (internal animation plays the Dax entrance; no opacity fade)
-                Lottie.LottieView(animation: .asset(Assets.logoLottieFileName))
+                Lottie.LottieView {
+                    try await DotLottieFile.asset(named: Assets.logoLottieFileName)
+                }
                     .playing(loopMode: .playOnce)
                     .resizable()
                     .matchedGeometryEffect(id: OnboardingView.daxGeometryEffectID, in: animationNamespace)
@@ -218,16 +223,21 @@ extension OnboardingRebranding.OnboardingView {
 
         // MARK: - Background
 
+        private var backgroundLottieAssetName: String {
+            colorScheme == .dark ? Assets.backgroundLottieDarkFileName : Assets.backgroundLottieFileName
+        }
+
         private var backgroundView: some View {
-            // Illustration Lottie — entrance animation is internal (NULL parent scales/slides up).
-            // Start from frame 22 to match the reference's st=-22 time offset.
-            Lottie.LottieView(animation: .asset(Assets.backgroundLottieFileName))
+            Lottie.LottieView {
+                try await DotLottieFile.asset(named: backgroundLottieAssetName)
+            }
                 .playbackMode(.playing(.fromProgress(
                     LandingAnimationTiming.illustrationLottieStartFrame / LandingAnimationTiming.illustrationLottieTotalFrames,
                     toProgress: 1.0,
                     loopMode: .playOnce
                 )))
                 .resizable()
+                .id(backgroundLottieAssetName)
                 .clipped()
                 .frame(
                     width: Metrics.illustrationWidth * illustrationScale,

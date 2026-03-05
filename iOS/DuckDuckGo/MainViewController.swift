@@ -242,10 +242,7 @@ class MainViewController: UIViewController {
         return manager
     }()
 
-    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(
-        using: featureFlagger,
-        keyValueStore: keyValueStore
-    )
+    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create()
 
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
@@ -494,6 +491,7 @@ class MainViewController: UIViewController {
 
         if featureFlagger.isFeatureOn(.iPadAIToggle) {
             viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
+            viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
         }
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
@@ -1765,7 +1763,6 @@ class MainViewController: UIViewController {
 
         browsingMenuHeaderStateProvider.update(
             dataSource: browsingMenuHeaderDataSource,
-            isFeatureEnabled: browsingMenuSheetCapability.isWebsiteHeaderEnabled,
             isNewTabPage: newTabPageViewController != nil,
             isAITab: currentTab?.isAITab ?? false,
             isError: currentTab?.isError ?? false,
@@ -3005,25 +3002,14 @@ extension MainViewController: OmniBarDelegate {
         switch context {
         case .newTabPage:
             Pixel.fire(pixel: .browsingMenuOpenedNewTabPage)
-            if browsingMenuSheetCapability.isEnabled {
-                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedNTP)
-            }
         case .aiChatTab:
             Pixel.fire(pixel: .browsingMenuOpened)
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened)
-            if browsingMenuSheetCapability.isEnabled {
-                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedAIChat)
-            }
         case .website:
             Pixel.fire(pixel: .browsingMenuOpened)
 
             if tab.isError {
                 Pixel.fire(pixel: .browsingMenuOpenedError)
-                if browsingMenuSheetCapability.isEnabled {
-                    Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedError)
-                }
-            } else if browsingMenuSheetCapability.isEnabled {
-                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayed)
             }
         }
     }
@@ -3099,7 +3085,7 @@ extension MainViewController: OmniBarDelegate {
                                              self.showMenuHighlighterIfNeeded()
                                              self.viewCoordinator.menuToolbarButton.isEnabled = true
                                              if !wasActionSelected {
-                                                 Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
+                                                 Pixel.fire(pixel: .browsingMenuDismissed)
                                              }
                                          })
 
@@ -3141,8 +3127,6 @@ extension MainViewController: OmniBarDelegate {
         }
 
         self.present(controller, animated: true)
-
-        DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuUsed)
     }
 
     @objc func onBookmarksPressed() {
@@ -3458,7 +3442,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func useNewOmnibarTransitionBehaviour() -> Bool {
-        idleReturnEligibilityManager.isEligibleForNTPAfterIdle()
+        escapeHatchForEditingState() != nil
     }
 
     func onSwitchTabToIndex(_ index: Int) {

@@ -46,7 +46,6 @@ protocol TabBarViewModel {
     var crashIndicatorModel: TabCrashIndicatorModel { get }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> { get }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { get }
-    var loadedPageDOMPublisher: PassthroughSubject<Void, Never> { get }
 }
 
 extension TabViewModel: TabBarViewModel {
@@ -72,9 +71,6 @@ extension TabViewModel: TabBarViewModel {
             .eraseToAnyPublisher()
     }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { tab.webViewRenderingProgressDidChangePublisher }
-    var loadedPageDOMPublisher: PassthroughSubject<Void, Never> {
-        tab.loadedPageDOMPublisher
-    }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -973,13 +969,6 @@ final class TabBarViewItem: NSCollectionViewItem {
                 self?.refreshProgressColors(rendered: true)
             }
             .store(in: &cancellables)
-
-        tabViewModel.loadedPageDOMPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.stopSpinner()
-            }
-            .store(in: &cancellables)
     }
 
     func clear() {
@@ -1232,10 +1221,6 @@ final class TabBarViewItem: NSCollectionViewItem {
     private func startSpinnerIfNeeded(isLoading: Bool, error: WKError?) {
         let url = tabViewModel?.url
         cell.startSpinnerIfNeeded(isLoading: isLoading, error: error, url: url)
-    }
-
-    private func stopSpinner() {
-        cell.faviconView.stopSpinner()
     }
 
     private func refreshProgressColors(rendered: Bool) {
@@ -1660,7 +1645,6 @@ extension TabBarViewItem {
             let crashIndicatorModel: TabCrashIndicatorModel = TabCrashIndicatorModel()
             var canKillWebContentProcess: Bool = false
 
-            var loadedPageDOMPublisher = PassthroughSubject<Void, Never>()
             @Published var isLoading: Bool
             @Published var error: WKError?
             var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {

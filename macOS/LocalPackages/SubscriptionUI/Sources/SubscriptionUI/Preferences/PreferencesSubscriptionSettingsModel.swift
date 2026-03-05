@@ -498,8 +498,10 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     func updateDescription(for subscription: DuckDuckGoSubscription) {
         // Clear downgrade banner unless we have a pending plan
         self.cancelPendingDowngradeDetails = nil
-        // Check for pending plan first (downgrade scheduled)
-        if let pendingPlan = subscription.firstPendingPlan {
+        // Check for pending plan first (downgrade scheduled) — only show downgrade copy when pending tier differs from current
+        if let pendingPlan = subscription.firstPendingPlan,
+           let currentTier = subscription.tier,
+           pendingPlan.tier != currentTier {
             let effectiveDate = dateFormatter.string(from: pendingPlan.effectiveAt)
             let tierName = pendingPlan.tier.rawValue.capitalized
             self.subscriptionDetails = UserText.preferencesSubscriptionPendingDowngradeCaption(tierName: tierName, billingPeriod: pendingPlan.billingPeriod, formattedDate: effectiveDate)

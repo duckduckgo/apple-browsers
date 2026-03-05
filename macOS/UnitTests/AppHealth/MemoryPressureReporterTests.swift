@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-import Combine
-import PrivacyConfig
 import PixelKit
 import PixelKitTestingUtilities
 import XCTest
@@ -26,7 +24,6 @@ import XCTest
 final class MemoryPressureReporterTests: XCTestCase {
 
     private var sut: MemoryPressureReporter!
-    private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPixelFiring: PixelKitMock!
     private var mockMemoryUsageMonitor: MockPressureMemoryMonitor!
     private var mockAllocationStats: MockPressureAllocationStatsProvider!
@@ -34,7 +31,6 @@ final class MemoryPressureReporterTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockPixelFiring = PixelKitMock()
         mockMemoryUsageMonitor = MockPressureMemoryMonitor()
         mockAllocationStats = MockPressureAllocationStatsProvider()
@@ -43,7 +39,6 @@ final class MemoryPressureReporterTests: XCTestCase {
 
     override func tearDown() {
         sut = nil
-        mockFeatureFlagger = nil
         mockPixelFiring = nil
         mockMemoryUsageMonitor = nil
         mockAllocationStats = nil
@@ -55,7 +50,6 @@ final class MemoryPressureReporterTests: XCTestCase {
 
     private func makeSUT() -> MemoryPressureReporter {
         MemoryPressureReporter(
-            featureFlagger: mockFeatureFlagger,
             pixelFiring: mockPixelFiring,
             memoryUsageMonitor: mockMemoryUsageMonitor,
             windowContext: nil,
@@ -152,7 +146,6 @@ final class MemoryPressureReporterTests: XCTestCase {
     func testWhenCriticalEventProcessed_ThenPostsCriticalNotificationAndFiresCriticalPixel() {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 1024
-        mockFeatureFlagger.enabledFeatureFlags = [.memoryPressureReporting]
         sut = makeSUT()
 
         let notificationExpectation = expectation(forNotification: .memoryPressureCritical, object: nil, notificationCenter: notificationCenter) { notification in
@@ -173,7 +166,6 @@ final class MemoryPressureReporterTests: XCTestCase {
     func testWhenCriticalEventProcessed_ThenPixelIncludesContextParameters() {
         // Given
         mockMemoryUsageMonitor.currentPhysFootprintMB = 5000
-        mockFeatureFlagger.enabledFeatureFlags = [.memoryPressureReporting]
         sut = makeSUT()
 
         // When
@@ -192,7 +184,6 @@ final class MemoryPressureReporterTests: XCTestCase {
     @MainActor
     func testWhenNormalEventProcessed_ThenDoesNotPostNotificationsOrFirePixels() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.memoryPressureReporting]
         sut = makeSUT()
 
         let criticalNotificationExpectation = expectation(forNotification: .memoryPressureCritical, object: nil, notificationCenter: notificationCenter, handler: nil)

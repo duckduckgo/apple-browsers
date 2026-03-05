@@ -76,6 +76,12 @@ extension URL {
         return url
     }
 
+    /// Returns true when address bar text should be treated as a direct URL navigation input.
+    /// This intentionally rejects whitespace-containing input to avoid converting search-like text into URLs.
+    public static func isValidAddressBarURLInput(_ text: String) -> Bool {
+        !text.contains(where: { $0.isWhitespace }) && webUrl(from: text) != nil
+    }
+
     public static func decode(query: String) -> String? {
         return query.removingPercentEncoding
     }

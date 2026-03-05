@@ -29,23 +29,26 @@ public class HistoryCapture {
 
     let historyManager: HistoryManaging
     let tabID: String?
+    let fireTab: Bool
 
     var url: URL?
 
-    public init(historyManager: HistoryManaging, tabID: String?) {
+    public init(historyManager: HistoryManaging, tabID: String?, fireTab: Bool = false) {
         self.historyManager = historyManager
         self.tabID = tabID
+        self.fireTab = fireTab
     }
 
     @MainActor
     public func webViewDidCommit(url: URL) {
         let url = url.urlOrDuckDuckGoCleanQuery
         self.url = url
-        historyManager.addVisit(of: url, tabID: tabID)
+        historyManager.addVisit(of: url, tabID: tabID, fireTab: fireTab)
     }
 
     @MainActor
     public func titleDidChange(_ title: String?, forURL url: URL?) {
+        guard !fireTab else { return } // Skip for fire tabs
         guard let url = url?.urlOrDuckDuckGoCleanQuery, self.url == url else {
             return
         }

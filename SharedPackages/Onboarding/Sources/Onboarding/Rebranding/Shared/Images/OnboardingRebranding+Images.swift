@@ -20,6 +20,15 @@ import SwiftUI
 
 public enum OnboardingRebrandingImages {
 
+    public enum Linear {
+        public static let introBackground = Image("Rebranding/linear-bg-intro", bundle: .module)
+        public static let browsersComparisonBackground = Image("Rebranding/linear-bg-browsers-comparison", bundle: .module)
+        public static let addToDockBackground = Image("Rebranding/linear-bg-add-to-dock", bundle: .module)
+        public static let appIconColorSelectionBackground = Image("Rebranding/linear-bg-app-icon-color", bundle: .module)
+        public static let addressBarPositionBackground = Image("Rebranding/linear-bg-address-bar-position", bundle: .module)
+        public static let addressBarSearchPreferenceBackground = Image("Rebranding/linear-bg-address-bar-preference", bundle: .module)
+    }
+
     public enum Contextual {
         public static let tryASearchBackground = Image("Rebranding/contextual-bg-try-search", bundle: .module)
         public static let tryASiteBackground = Image("Rebranding/contextual-bg-try-site", bundle: .module)

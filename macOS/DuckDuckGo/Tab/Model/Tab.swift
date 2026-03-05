@@ -64,7 +64,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
         var newTabPageShownPixelSender: NewTabPageShownPixelSender
-        var aiChatSidebarProvider: AIChatSidebarProviding
+        var aiChatSessionStore: AIChatSessionStoring
         var tabCrashAggregator: TabCrashAggregator
         var tabsPreferences: TabsPreferences
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
@@ -149,7 +149,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
-                     aiChatSidebarProvider: AIChatSidebarProviding? = nil,
+                     aiChatSessionStore: AIChatSessionStoring? = nil,
                      newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
                      themeManager: ThemeManaging? = nil
@@ -215,7 +215,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
-                  aiChatSidebarProvider: aiChatSidebarProvider ?? NSApp.delegateTyped.aiChatSidebarProvider,
+                  aiChatSessionStore: aiChatSessionStore ?? NSApp.delegateTyped.aiChatSessionStore,
                   newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
                   themeManager: themeManager ?? NSApp.delegateTyped.themeManager
@@ -266,7 +266,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
-         aiChatSidebarProvider: AIChatSidebarProviding,
+         aiChatSessionStore: AIChatSessionStoring,
          newTabPageShownPixelSender: NewTabPageShownPixelSender,
          tabCrashAggregator: TabCrashAggregator,
          themeManager: ThemeManaging
@@ -311,8 +311,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         webView = WebView(frame: CGRect(origin: .zero, size: webViewSize),
                           configuration: configuration,
+                          featureFlagger: featureFlagger,
                           privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig)
-        webView.allowsLinkPreview = false
+        // The feature flag enables private API based control over quick actions to allow all actions (e.g. lookup)
+        // other than link preview. To be on a safe side, disable quick actions here entirely if the feature flag is disabled.
+        webView.allowsLinkPreview = featureFlagger.isFeatureOn(.webViewLookUpAction)
         webView.addsVisitedLinks = true
         webView.setAccessibilityIdentifier("WebView")
 
@@ -348,7 +351,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                           aiChatMenuConfiguration: aiChatMenuConfiguration,
                                                           newTabPageShownPixelSender: newTabPageShownPixelSender,
-                                                          aiChatSidebarProvider: aiChatSidebarProvider,
+                                                          aiChatSessionStore: aiChatSessionStore,
                                                           tabCrashAggregator: tabCrashAggregator,
                                                           tabsPreferences: tabsPreferences,
                                                           webTrackingProtectionPreferences: webTrackingProtectionPreferences)

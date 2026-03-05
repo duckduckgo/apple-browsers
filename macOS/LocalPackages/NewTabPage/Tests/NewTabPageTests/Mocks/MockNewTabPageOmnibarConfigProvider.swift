@@ -22,7 +22,14 @@ import NewTabPage
 final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     @MainActor
-    var mode: NewTabPageDataModel.OmnibarMode = .search
+    var mode: NewTabPageDataModel.OmnibarMode = .search {
+        didSet { modeSubject.send(mode) }
+    }
+
+    private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
+    var modePublisher: AnyPublisher<NewTabPageDataModel.OmnibarMode, Never> {
+        modeSubject.eraseToAnyPublisher()
+    }
 
     @Published var isAIChatShortcutEnabled: Bool = true
 
@@ -37,4 +44,6 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     }
 
     @Published  var showCustomizePopover: Bool = false
+
+    var isAIChatRecentChatsEnabled: Bool = false
 }

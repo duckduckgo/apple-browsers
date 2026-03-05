@@ -129,7 +129,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
             let mainViewController = MainViewController(
                 tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)),
                 autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
-                aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
+                aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
                 fireCoordinator: fireCoordinator
             )
             let mainWindowController = MainWindowController(

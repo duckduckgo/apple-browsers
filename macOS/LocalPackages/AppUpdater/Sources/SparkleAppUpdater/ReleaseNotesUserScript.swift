@@ -31,7 +31,7 @@ import WebKit
 /// providing update status, progress, and triggering update actions.
 public final class ReleaseNotesUserScript: NSObject, Subfeature {
 
-    private let updateController: any SparkleUpdateController
+    private let updateController: any SparkleUpdateControlling
     private let pixelFiring: PixelFiring?
     private let keyValueStore: ThrowingKeyValueStoring
     private let releaseNotesURL: URL
@@ -56,7 +56,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         case retryFetchReleaseNotes
     }
 
-    public init(updateController: any SparkleUpdateController,
+    public init(updateController: any SparkleUpdateControlling,
                 pixelFiring: PixelFiring?,
                 keyValueStore: ThrowingKeyValueStoring,
                 releaseNotesURL: URL) {

@@ -33,13 +33,16 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         @State private var showAddToDockTutorial = false
+        @Binding var showContent: Bool
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
 
         init(
+            showContent: Binding<Bool>,
             showTutorialAction: @escaping () -> Void,
             dismissAction: @escaping (_ fromAddToDock: Bool) -> Void
         ) {
+            self._showContent = showContent
             self.showTutorialAction = showTutorialAction
             self.dismissAction = dismissAction
         }
@@ -49,7 +52,6 @@ extension OnboardingRebranding.OnboardingView {
                 RebrandedOnboardingView.AddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
                     dismissAction(true)
                 }
-                .onboardingViewVisibleAfterDelay(OnboardingBubbleAnimationMetrics.contentFadeInDelay) // OnboardingViewState does not change in this case so we need to manually fade in the content after bubble resizes.
             } else {
                 promoContent
             }
@@ -80,12 +82,9 @@ extension OnboardingRebranding.OnboardingView {
                 },
                 actions: {
                     VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
-                        Button(action: {
-                            showTutorialAction()
-                            withAnimation {
-                                showAddToDockTutorial = true
-                            }
-                        }) { Text(UserText.AddToDockOnboarding.Buttons.tutorial) }
+                        Button(action: showTutorial) {
+                            Text(UserText.AddToDockOnboarding.Buttons.tutorial)
+                        }
                         .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
                         Button(action: { dismissAction(false) }) {
@@ -101,6 +100,46 @@ extension OnboardingRebranding.OnboardingView {
             RebrandedOnboardingView.AddToDockPromoView()
                 .aspectRatio(contentMode: .fit)
                 .padding(.vertical)
+        }
+
+        /// Handles the transition from promo to tutorial with proper animation timing.
+        ///
+        /// This function orchestrates a three-phase animation sequence:
+        /// 1. Hide current content (sets opacity to 0 via parent's showContent binding)
+        /// 2. Switch to tutorial view and animate bubble resize
+        /// 3. Show new content after bubble finishes resizing
+        ///
+        /// Note: The bubble resize is triggered by the withAnimation wrapping showAddToDockTutorial.
+        /// Unlike state.type changes which trigger the parent's .animation() modifier, this internal
+        /// view switch requires an explicit animation context to smoothly resize the bubble.
+        private func showTutorial() {
+            // Phase 1: Hide current content
+            showContent = false
+            showTutorialAction()
+
+            if #available(iOS 17.0, *) {
+                // Phase 2: Animate view switch and bubble resize
+                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                    showAddToDockTutorial = true
+                } completion: {
+                    // Phase 3: Show new content after bubble finishes resizing
+                    withAnimation {
+                        showContent = true
+                    }
+                }
+            } else {
+                // Phase 2: Animate view switch and bubble resize
+                withAnimation(.linear(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                    showAddToDockTutorial = true
+                }
+
+                // Phase 3: Show new content after bubble finishes resizing (timing-based fallback)
+                DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                    withAnimation {
+                        showContent = true
+                    }
+                }
+            }
         }
     }
 

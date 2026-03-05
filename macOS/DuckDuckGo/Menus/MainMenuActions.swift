@@ -540,6 +540,17 @@ extension AppDelegate {
         }
     }
 
+    @MainActor
+    @objc func exportStartupStats(_ sender: Any?) {
+        do {
+            let windowContext = WindowContext(windowControllersManager: windowControllersManager)
+            let exporter = StartupMetricsExporter(profiler: startupProfiler, previousSessionRestored: startupPreferences.restorePreviousSession, windowContext: windowContext)
+            try exporter.exportMetricsToTemporaryURL()
+        } catch {
+            Logger.general.error("Failed to export Startup Metrics: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @objc func resetRemoteMessages(_ sender: Any?) {
         Task {
             await remoteMessagingClient.store?.resetRemoteMessages()
@@ -796,10 +807,7 @@ extension AppDelegate {
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
-#if SPARKLE
-        guard let dockCustomizer = Application.appDelegate.dockCustomization else { return }
-        dockCustomizer.resetData()
-#endif
+        Application.appDelegate.dockCustomization?.resetData()
     }
 
     @objc func resetLaunchDateToToday(_ sender: Any?) {
@@ -1019,67 +1027,134 @@ extension MainViewController {
         makeKeyIfNeeded()
         let currentEvent = NSApp.currentEvent
 
-        // Handle Cmd+W on pinned tabs
-        if case .pinned(let pinnedIndex) = index,
-           sender is NSMenuItem,
-           let currentEvent, currentEvent.keyEquivalent == [.command, "w"] {
-            // Show confirmation warning if enabled
-            if featureFlagger.isFeatureOn(.warnBeforeQuit) {
-                // If warning is disabled in preferences, close immediately
-                if !tabsPreferences.warnBeforeClosingPinnedTabs {
-                    tabCollectionViewModel.remove(at: index)
-                    return
-                }
-
-                // Show confirmation overlay
-                showPinnedTabCloseConfirmation(for: tab, atPinnedIndex: pinnedIndex, currentEvent: currentEvent) { [weak self] shouldProceed in
-                    guard let self, shouldProceed else { return }
-                    self.tabCollectionViewModel.remove(at: .pinned(pinnedIndex))
+        if sender is NSMenuItem,
+           let currentEvent,
+           currentEvent.keyEquivalent == [.command, "w"] {
+            if featureFlagger.isFeatureOn(.warnBeforeQuit),
+               aiChatCoordinator.isChatFloating(for: tab.uuid) {
+                showFloatingAIChatShortcutCloseConfirmation(at: index, currentEvent: currentEvent) { [weak self] in
+                    guard let self else { return }
+                    self.aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
+                    self.tabCollectionViewModel.remove(at: index)
                 }
                 return
             }
 
-            // Original behavior: switch to first regular tab or close window
-            if tabCollectionViewModel.tabCollection.tabs.isEmpty {
-                view.window?.performClose(sender)
-            } else {
-                tab.stopAllMediaAndLoading()
-                tabCollectionViewModel.select(at: .unpinned(0))
+            if case .pinned(let pinnedIndex) = index {
+                if featureFlagger.isFeatureOn(.warnBeforeQuit) {
+                    if tabsPreferences.warnBeforeClosingPinnedTabs {
+                        showPinnedTabCloseConfirmation(atPinnedIndex: pinnedIndex, currentEvent: currentEvent) { [weak self] in
+                            guard let self else { return }
+                            self.aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
+                            self.tabCollectionViewModel.remove(at: .pinned(pinnedIndex))
+                        }
+                        return
+                    }
+
+                    aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
+                    tabCollectionViewModel.remove(at: index)
+                    return
+                }
+
+                if tabCollectionViewModel.tabCollection.tabs.isEmpty {
+                    view.window?.performClose(sender)
+                } else {
+                    tab.stopAllMediaAndLoading()
+                    tabCollectionViewModel.select(at: .unpinned(0))
+                }
+                return
             }
+        }
+
+        // Reuse tab-bar warn-before flow for keyboard/menu close paths.
+        if tabBarViewController.tryPresentWarnBeforeCloseForFloatingAIChatIfNeeded(for: index) {
             return
         }
 
+        aiChatCoordinator.closeFloatingWindow(for: tab.uuid)
         tabCollectionViewModel.remove(at: index)
+    }
+
+    @MainActor
+    private func showFloatingAIChatShortcutCloseConfirmation(
+        at index: TabIndex,
+        currentEvent: NSEvent,
+        onProceed: @escaping () -> Void
+    ) {
+        let shouldShowDontShowAgainForPinnedTab: Bool
+        switch index {
+        case .pinned:
+            shouldShowDontShowAgainForPinnedTab = tabsPreferences.warnBeforeClosingPinnedTabs
+        case .unpinned:
+            shouldShowDontShowAgainForPinnedTab = false
+        }
+
+        let isWarningEnabled: () -> Bool = shouldShowDontShowAgainForPinnedTab
+            ? { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs }
+            : { true }
+
+        guard let manager = WarnBeforeQuitManager(
+            currentEvent: currentEvent,
+            action: .closeTabWithFloatingAIChat,
+            isWarningEnabled: isWarningEnabled,
+            isPhysicalKeyPress: WarnBeforeQuitManager.makePhysicalKeyPressCheck(for: currentEvent)
+        ) else {
+            return
+        }
+
+        let buttonHandlers: [WarnBeforeButtonRole: () -> Void]
+        if shouldShowDontShowAgainForPinnedTab {
+            buttonHandlers = [.dontShowAgain: { [tabsPreferences] in
+                tabsPreferences.warnBeforeClosingPinnedTabs = false
+            }]
+        } else {
+            buttonHandlers = [:]
+        }
+
+        let presenter = WarnBeforeQuitOverlayPresenter(
+            action: .closeTabWithFloatingAIChat,
+            buttonHandlers: buttonHandlers,
+            onHoverChange: { [weak manager] isHovering in
+                manager?.setMouseHovering(isHovering)
+            },
+            anchorViewProvider: { [weak self] in
+                guard let self else { return nil }
+                switch index {
+                case .pinned(let pinnedIndex):
+                    return self.tabBarViewController.cell(forPinnedTabAt: pinnedIndex)
+                case .unpinned(let unpinnedIndex):
+                    return self.tabBarViewController.cell(forTabAt: unpinnedIndex)
+                }
+            }
+        )
+        runKeyboardWarnBeforeConfirmationFlow(manager: manager, presenter: presenter, onProceed: onProceed)
     }
 
     /// Shows the pinned tab close confirmation overlay
     /// - Parameters:
-    ///   - tab: The tab to close
     ///   - pinnedIndex: The index of the pinned tab
     ///   - currentEvent: The current keyboard event
-    ///   - completion: Callback invoked when a decision is made (async or sync). Called with whether to proceed.
+    ///   - onProceed: Callback invoked only when user confirmation resolves to proceed.
     @MainActor
     private func showPinnedTabCloseConfirmation(
-        for tab: Tab,
         atPinnedIndex pinnedIndex: Int,
         currentEvent: NSEvent,
-        completion: @escaping (Bool) -> Void
+        onProceed: @escaping () -> Void
     ) {
         guard let manager = WarnBeforeQuitManager(
             currentEvent: currentEvent,
-            action: .close,
+            action: .closePinnedTab,
             isWarningEnabled: { [tabsPreferences] in tabsPreferences.warnBeforeClosingPinnedTabs },
             isPhysicalKeyPress: WarnBeforeQuitManager.makePhysicalKeyPressCheck(for: currentEvent)
         ) else {
-            completion(false)
             return
         }
 
         let presenter = WarnBeforeQuitOverlayPresenter(
-            action: .close,
-            onDontAskAgain: { [tabsPreferences] in
+            action: .closePinnedTab,
+            buttonHandlers: [.dontShowAgain: { [tabsPreferences] in
                 tabsPreferences.warnBeforeClosingPinnedTabs = false
-            },
+            }],
             onHoverChange: { [weak manager] isHovering in
                 manager?.setMouseHovering(isHovering)
             },
@@ -1087,25 +1162,32 @@ extension MainViewController {
                 self?.tabBarViewController.cell(forPinnedTabAt: pinnedIndex)
             }
         )
-        // Subscribe to the manager's state stream. Keeps the presenter alive as long as the stream is active.
-        presenter.subscribe(to: manager.stateStream)
+        runKeyboardWarnBeforeConfirmationFlow(manager: manager, presenter: presenter, onProceed: onProceed)
+    }
 
-        // Wait for the manager to complete the hold phase or release the key.
-        let query = manager.shouldTerminate(isAsync: false)
-        switch query {
+    /// Executes the keyboard-initiated WarnBefore flow using the legacy ordering
+    /// (subscribe -> shouldTerminate -> onProceed -> deciderSequenceCompleted),
+    /// which keeps Cmd+W key-repeat handling behavior stable.
+    private func runKeyboardWarnBeforeConfirmationFlow(
+        manager: WarnBeforeQuitManager,
+        presenter: WarnBeforeQuitOverlayPresenter,
+        onProceed: @escaping @MainActor () -> Void
+    ) {
+        presenter.subscribe(to: manager.stateStream)
+        switch manager.shouldTerminate(isAsync: false) {
         case .sync(let decision):
             let shouldProceed = decision == .next
-            // Close the Tab
-            completion(shouldProceed)
+            if shouldProceed {
+                onProceed()
+            }
             manager.deciderSequenceCompleted(shouldProceed: shouldProceed)
         case .async(let task):
-            // Wait for the shortcut to be repeated, "Don't Show Again" button clicked, or the warning is dismissed.
             Task { @MainActor in
                 let decision = await task.value
                 let shouldProceed = decision == .next
-                // Close the Tab
-                completion(shouldProceed)
-                // Let the event loop process the UI update
+                if shouldProceed {
+                    onProceed()
+                }
                 await Task.yield()
                 manager.deciderSequenceCompleted(shouldProceed: shouldProceed)
             }

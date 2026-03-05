@@ -45,6 +45,7 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         }
     }
     private var cancellables = Set<AnyCancellable>()
+    private var emptyNotesPixelWorkItem: DispatchWorkItem?
 
     // MARK: - MessageNames
     enum MessageNames: String, CaseIterable {
@@ -86,12 +87,27 @@ public final class ReleaseNotesUserScript: NSObject, Subfeature {
         return methodHandlers[messageName]
     }
 
+    deinit {
+        emptyNotesPixelWorkItem?.cancel()
+    }
+
     public func onUpdate() {
         guard AppVersion.runType != .uiTests,
               let webView, webView.url == releaseNotesURL else { return }
 
-        let values = ReleaseNotesValues(from: updateController, pixelFiring: pixelFiring, keyValueStore: keyValueStore)
+        emptyNotesPixelWorkItem?.cancel()
+        emptyNotesPixelWorkItem = nil
+
+        let values = ReleaseNotesValues(from: updateController, keyValueStore: keyValueStore)
         broker?.push(method: "onUpdate", params: values, for: self, into: webView)
+
+        if values.status == ReleaseNotesValues.Status.loadingError.rawValue {
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.pixelFiring?.fire(UpdateFlowPixels.releaseNotesEmpty, frequency: .dailyAndCount)
+            }
+            emptyNotesPixelWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
+        }
     }
 
 }

@@ -71,7 +71,7 @@ final class StartupPerformanceTests: XCTestCase {
 private extension StartupPerformanceTests {
 
     func buildApplicationForPerformanceTesting() -> XCUIApplication {
-        XCUIApplication.setUp(environment: ["UITEST_MODE_PERFORMANCE": "1"])
+        XCUIApplication.setUp(environment: ["UITEST_MODE_STARTUP_PERFORMANCE": "1"])
     }
 
     func setupInitialState(shouldRestoreSession: Bool, _ configurationClosure: ((XCUIApplication) -> Void)? = nil) {

@@ -96,7 +96,7 @@ public struct AppVersion: OSVersionProviding {
         case integrationTests
         case uiTests
         case uiTestsOnboarding
-        case uiTestsPerformance
+        case uiTestsStartupPerformance
         case xcPreviews
 
         /// Whether the Sparkle Updater should be allowed or not.
@@ -104,7 +104,7 @@ public struct AppVersion: OSVersionProviding {
             switch self {
             case .normal, .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
                 return true
-            case .uiTests, .uiTestsPerformance:
+            case .uiTests, .uiTestsStartupPerformance:
                 return false
             }
         }
@@ -114,7 +114,7 @@ public struct AppVersion: OSVersionProviding {
             switch self {
             case .normal, .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
                 return true
-            case .uiTests, .uiTestsPerformance:
+            case .uiTests, .uiTestsStartupPerformance:
                 return false
             }
         }
@@ -122,7 +122,7 @@ public struct AppVersion: OSVersionProviding {
         /// Whether the app should open a fallback window on launch when no window was restored or opened by a URL event.
         public var opensWindowOnStartupIfNeeded: Bool {
             switch self {
-            case .normal, .uiTestsPerformance:
+            case .normal, .uiTestsStartupPerformance:
                 return true
             case .integrationTests, .unitTests, .uiTests, .uiTestsOnboarding, .xcPreviews:
                 return false
@@ -132,7 +132,7 @@ public struct AppVersion: OSVersionProviding {
         /// Defines if app run type requires loading full environment, i.e. databases, saved state, keychain etc.
         public var requiresEnvironment: Bool {
             switch self {
-            case .normal, .integrationTests, .uiTests, .uiTestsOnboarding, .uiTestsPerformance:
+            case .normal, .integrationTests, .uiTests, .uiTestsOnboarding, .uiTestsStartupPerformance:
                 return true
             case .unitTests, .xcPreviews:
                 return false
@@ -142,7 +142,7 @@ public struct AppVersion: OSVersionProviding {
         /// Whether the app should attempt to restore windows and tabs from the previous session on launch.
         public var stateRestorationAllowed: Bool {
             switch self {
-            case .normal, .uiTests, .uiTestsPerformance:
+            case .normal, .uiTests, .uiTestsStartupPerformance:
                 return true
             case .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
                 return false
@@ -165,8 +165,8 @@ public struct AppVersion: OSVersionProviding {
             return .xcPreviews
         } else if ProcessInfo.processInfo.environment["UITEST_MODE_ONBOARDING"] == "1" {
             return .uiTestsOnboarding
-        } else if ProcessInfo.processInfo.environment["UITEST_MODE_PERFORMANCE"] == "1" {
-            return .uiTestsPerformance
+        } else if ProcessInfo.processInfo.environment["UITEST_MODE_STARTUP_PERFORMANCE"] == "1" {
+            return .uiTestsStartupPerformance
         } else if ProcessInfo.processInfo.environment["UITEST_MODE"] == "1" || isCI {
             return .uiTests
         } else {

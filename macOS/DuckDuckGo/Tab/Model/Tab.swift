@@ -277,7 +277,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.fireproofDomains = fireproofDomains
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.featureFlagger = featureFlagger
-        self.navigationDelegate = DistributedNavigationDelegate(isPerformanceReportingEnabled: featureFlagger.isFeatureOn(.webKitPerformanceReporting))
+        self.navigationDelegate = DistributedNavigationDelegate()
         self.statisticsLoader = statisticsLoader
         self.internalUserDecider = internalUserDecider
         self.privacyFeatures = privacyFeatures

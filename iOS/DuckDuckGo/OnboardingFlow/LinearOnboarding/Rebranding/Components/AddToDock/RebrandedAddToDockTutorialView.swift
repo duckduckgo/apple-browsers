@@ -26,8 +26,8 @@ extension OnboardingRebranding.OnboardingView {
     struct AddToDockTutorialView: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
-        private static let videoSize = CGSize(width: 898.0, height: 680.0)
-        private static let videoURL = Bundle.main.url(forResource: "add-to-dock-demo", withExtension: "mp4")!
+        private static let videoSize = CGSize(width: 900.0, height: 696.0)
+        private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock", withExtension: "mp4")!
 
         private let title: String
         private let message: String
@@ -61,16 +61,15 @@ extension OnboardingRebranding.OnboardingView {
                         .multilineTextAlignment(.center)
                 ),
                 content: AnyView(
-                    ZStack(alignment: .center) {
+                    ZStack(alignment: .top) {
                         OnboardingRebrandingImages.AddToDock.tutorialBorder
                             .resizable()
-                            .scaledToFit()
                             .padding(.horizontal, -11)
+                            .padding(.vertical, -1)
+                            .frame(width: 321.0, height: 237.0)
                         videoPlayer
-                            .tempPlaceholder()
                             .onFirstAppear {
                                 videoPlayerModel.loadAsset(url: Self.videoURL, shouldLoopVideo: true)
-                                // Need to delay playing a video. If calling play too early the video won't play.
                                 DispatchQueue.main.async {
                                     videoPlayerModel.play()
                                 }
@@ -98,6 +97,8 @@ extension OnboardingRebranding.OnboardingView {
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
                     videoPlayerModel.pause()
                 }
+                .frame(width: 300.0, height: 231.0)
+                .clipShape(BottomRoundedRectangle(radius: 34))
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                     videoPlayerModel.play()
                 }
@@ -105,4 +106,34 @@ extension OnboardingRebranding.OnboardingView {
 
     }
 
+}
+
+// MARK: - Bottom Rounded Rectangle
+
+private struct BottomRoundedRectangle: Shape {
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: .init(x: rect.minX, y: rect.minY))
+        path.addLine(to: .init(x: rect.maxX, y: rect.minY))
+        path.addLine(to: .init(x: rect.maxX, y: rect.maxY - radius))
+        path.addArc(
+            center: .init(x: rect.maxX - radius, y: rect.maxY - radius),
+            radius: radius,
+            startAngle: .zero,
+            endAngle: .degrees(90),
+            clockwise: false
+        )
+        path.addLine(to: .init(x: rect.minX + radius, y: rect.maxY))
+        path.addArc(
+            center: .init(x: rect.minX + radius, y: rect.maxY - radius),
+            radius: radius,
+            startAngle: .degrees(90),
+            endAngle: .degrees(180),
+            clockwise: false
+        )
+        path.closeSubpath()
+        return path
+    }
 }

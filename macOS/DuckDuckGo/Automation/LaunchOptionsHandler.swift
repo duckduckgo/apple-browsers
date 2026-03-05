@@ -21,11 +21,6 @@ import Common
 
 /// Handles launch options and user defaults for automation and testing scenarios
 public final class LaunchOptionsHandler {
-
-    /// Launch argument key used by UI tests to override onboarding completion state.
-    /// Matches UserDefaultsWrapper.Key.onboardingFinished
-    private static let onboardingOverrideCompletedKey = "onboarding.finished"
-
     private static let automationPortKey = "automationPort"
     private let userDefaults: UserDefaults
 
@@ -71,7 +66,7 @@ public final class LaunchOptionsHandler {
         // If we're running UI Tests override onboarding settings permanently to keep state consistency across app launches. Some test re-launch the app within the same tests.
         // Launch Arguments can be read via userDefaults for easy value access.
         if isUITesting,
-           let uiTestingOnboardingOverride = userDefaults.string(forKey: Self.onboardingOverrideCompletedKey) {
+           let uiTestingOnboardingOverride = userDefaults.string(forKey: UserDefaults.Key.onboardingFinished.rawValue) {
             return .overridden(.uiTests(completed: uiTestingOnboardingOverride == "true"))
         }
 
@@ -95,17 +90,6 @@ extension LaunchOptionsHandler {
         public enum OverrideType: Equatable {
             case developer(completed: Bool)
             case uiTests(completed: Bool)
-        }
-
-        public var isOverriddenCompleted: Bool {
-            switch self {
-            case .notOverridden:
-                return false
-            case .overridden(.developer(let completed)):
-                return completed
-            case .overridden(.uiTests(let completed)):
-                return completed
-            }
         }
     }
 

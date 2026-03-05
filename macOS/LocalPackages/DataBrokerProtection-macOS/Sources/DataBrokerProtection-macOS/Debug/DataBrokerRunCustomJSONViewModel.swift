@@ -745,6 +745,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator, DebugEventRepo
 
     var attemptId: UUID = UUID()
     var isImmediateOperation: Bool = false
+    var isFreeScan: Bool?
     var tries = 1
     private let onDebugEvent: ((DebugEventKind, ActionType?, String) -> Void)?
 

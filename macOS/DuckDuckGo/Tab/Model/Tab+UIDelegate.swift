@@ -118,10 +118,11 @@ extension Tab: WKUIDelegate {
     // https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L126
     @objc(_webView:requestUserMediaAuthorizationForDevices:url:mainFrameURL:decisionHandler:)
     func webView(_ webView: WKWebView,
-                 requestUserMediaAuthorizationFor devices: _WKCaptureDevices,
+                 requestUserMediaAuthorizationFor devices: UInt,
                  url: URL,
                  mainFrameURL: URL,
                  decisionHandler: @escaping (Bool) -> Void) {
+        let devices = _WKCaptureDevices(rawValue: devices)
         guard let permissions = [PermissionType](devices: devices),
               let host = url.isFileURL ? .localhost : url.host,
               !host.isEmpty else {
@@ -133,7 +134,7 @@ extension Tab: WKUIDelegate {
     }
 
     @objc(_webView:mediaCaptureStateDidChange:)
-    func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: _WKMediaCaptureStateDeprecated) {
+    func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: UInt /*_WKMediaCaptureStateDeprecated*/) {
         self.permissions.mediaCaptureStateDidChange()
     }
 

@@ -23,6 +23,7 @@ import PrivacyDashboard
 import Suggestions
 import Bookmarks
 import AIChat
+import Core
 
 final class DefaultOmniBarViewController: OmniBarViewController {
 
@@ -45,6 +46,27 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         view = omniBarView
     }
 
+    // MARK: - Key Commands
+
+    override var keyCommands: [UIKeyCommand]? {
+        guard dependencies.aiChatAddressBarExperience.shouldShowModeToggle,
+              omniBarView.textField.isFirstResponder || omniBarView.aiChatTextView.isFirstResponder else {
+            return super.keyCommands
+        }
+
+        let shiftEnter = UIKeyCommand(action: #selector(handleShiftEnter), input: "\r", modifierFlags: .shift)
+        shiftEnter.wantsPriorityOverSystemBehavior = true
+        return (super.keyCommands ?? []) + [shiftEnter]
+    }
+
+    @objc private func handleShiftEnter() {
+        if selectedTextEntryMode == .aiChat {
+            omniBarView.aiChatTextView.insertText("\n")
+        } else {
+            setSelectedTextEntryMode(.aiChat)
+        }
+    }
+
     // MARK: - Initialization
 
     override func viewDidLoad() {
@@ -60,6 +82,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                                                selector: #selector(addressBarPositionChanged),
                                                name: AppUserDefaults.Notifications.addressBarPositionChanged,
                                                object: nil)
+    }
+
+    override func onAIChatSendPressed() {
+        submitIPadDuckAIText(from: omniBarView.aiChatTextView)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -311,10 +337,34 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
 extension DefaultOmniBarViewController {
 
+    fileprivate func submitIPadDuckAIText(from textView: UITextView) {
+        let query = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !query.isEmpty else { return }
+
+        if selectedTextEntryMode == .aiChat {
+            textView.text = ""
+            omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
+            omniBarView.updateAIChatSendButton(hasText: false)
+
+            if URL.isValidAddressBarURLInput(query) {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadToggleURLSubmitted)
+                dismissIPadDuckAIMode()
+                omniDelegate?.onOmniQuerySubmitted(query)
+            } else {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted)
+                omniDelegate?.onPromptSubmitted(query, tools: nil)
+            }
+        } else {
+            omniDelegate?.onOmniQuerySubmitted(query)
+        }
+    }
+
     /// Dismisses the duck.ai mode without bringing the keyboard back.
     /// Used after prompt submission where we want the bar fully unfocused.
     fileprivate func dismissIPadDuckAIMode() {
         isSuppressingKeyboardTransfer = true
+        // Collapse instantly to avoid a visual flash when navigation starts.
+        omniBarView.setSearchAreaExpanded(false, animated: false)
         setSelectedTextEntryMode(.search)
         endEditing()
         isSuppressingKeyboardTransfer = false
@@ -331,13 +381,14 @@ extension DefaultOmniBarViewController {
             return
         }
 
-        // When switching to duck.ai without prior address bar interaction, the text field
-        // may contain the current page URL. Clear it so the expanded view starts empty.
-        if mode == .aiChat && !omniBarView.textField.isEditing {
+        // When switching to duck.ai without editing the auto-selected URL, clear it so
+        // the expanded view starts empty.
+        if mode == .aiChat && shouldClearTextWhenSwitchingToDuckAI() {
             omniBarView.textField.text = ""
         }
 
-        let shouldTransferKeyboard = transition.needsKeyboardTransfer && !isSuppressingKeyboardTransfer
+        let isKeyboardActive = omniBarView.aiChatTextView.isFirstResponder || omniBarView.textField.isFirstResponder
+        let shouldTransferKeyboard = transition.needsKeyboardTransfer && !isSuppressingKeyboardTransfer && isKeyboardActive
 
         if shouldTransferKeyboard {
             modeToggleTextModel.beginTransition()
@@ -345,7 +396,7 @@ extension DefaultOmniBarViewController {
             omniBarView.onCollapseAnimationCompleted = { [weak self] in
                 guard let self else { return }
                 self.beginEditing(animated: false, forTextEntryMode: .search)
-                self.omniBarView.textField.text = transition.text
+                self.updateQuery(transition.text)
                 self.modeToggleTextModel.endTransition()
             }
         }
@@ -357,15 +408,35 @@ extension DefaultOmniBarViewController {
         }
     }
 
-    /// Replicates the super's textFieldDidBeginEditing logic but deliberately skips
-    /// `selectAll` so text isn't highlighted when transferring from duck.ai mode.
     fileprivate func handleIPadTextFieldDidBeginEditingDuringTransfer() {
-        DispatchQueue.main.async {
-            _ = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView)
-            self.refreshState(self.state.onEditingStartedState)
-            self.omniDelegate?.onDidBeginEditing()
-        }
+        _ = omniDelegate?.onTextFieldDidBeginEditing(barView)
+        refreshState(state.onEditingStartedState)
+        omniDelegate?.onDidBeginEditing()
     }
+
+    private func shouldClearTextWhenSwitchingToDuckAI() -> Bool {
+        guard let textField = omniBarView.textField else {
+            return false
+        }
+
+        // Preserve non-URL user input when switching to duck.ai.
+        guard let text = textField.text,
+              URL(trimmedAddressBarString: text.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) != nil else {
+            return false
+        }
+
+        // If we're not editing, this is page URL display text.
+        guard textField.isEditing else { return true }
+
+        // If full URL text remains selected, user hasn't interacted with it yet.
+        guard let selectedTextRange = textField.selectedTextRange,
+              let selectedText = textField.text(in: selectedTextRange) else {
+            return false
+        }
+
+        return selectedText == text
+    }
+
 }
 
 // MARK: - OmniBarEditingStateViewControllerDelegate
@@ -438,15 +509,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            let query = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            guard !query.isEmpty else { return false }
-
-            if selectedTextEntryMode == .aiChat {
-                dismissIPadDuckAIMode()
-                omniDelegate?.onPromptSubmitted(query, tools: nil)
-            } else {
-                omniDelegate?.onOmniQuerySubmitted(query)
-            }
+            submitIPadDuckAIText(from: textView)
             return false
         }
         return true
@@ -456,7 +519,6 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         let newQuery = textView.text ?? ""
 
         modeToggleTextModel.updateText(newQuery)
-        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
 
         if modeToggleTextModel.isTransitioning, !omniBarView.isSearchAreaExpanded {
             omniBarView.textField.text = newQuery
@@ -464,12 +526,17 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
         if selectedTextEntryMode != .aiChat {
             omniDelegate?.onOmniQueryUpdated(newQuery)
+        } else {
+            omniDelegate?.onAIChatQueryUpdated(newQuery)
         }
         if newQuery.isEmpty {
             refreshState(state.onTextClearedState)
         } else {
             refreshState(state.onTextEnteredState)
         }
+
+        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
+        omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -493,17 +560,11 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) {
-        DispatchQueue.main.async {
-            _ = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView)
-            self.refreshState(self.state.onEditingStartedState)
-            self.omniDelegate?.onDidBeginEditing()
-        }
+        _ = omniDelegate?.onTextFieldDidBeginEditing(barView)
+        refreshState(state.onEditingStartedState)
+        omniDelegate?.onDidBeginEditing()
 
         omniBarView.layoutIfNeeded()
-        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
-            self.omniBarView.isActiveState = true
-            self.omniBarView.layoutIfNeeded()
-        }
     }
 }
 

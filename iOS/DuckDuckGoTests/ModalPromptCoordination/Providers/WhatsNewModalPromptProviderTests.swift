@@ -484,7 +484,7 @@ struct WhatsNewCoordinatorPixelTrackingTests {
     }
 
     @Test("Check URL Item Action Callback Dismisses Modal With Item Action Type")
-    func whenURLItemActionCallbackInvokedThenDismissPixelFiresWithItemActionType() async {
+    func whenURLItemActionCallbackInvokedThenDismissPixelFiresWithItemActionType() async throws {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
         let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
@@ -507,10 +507,18 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         _ = coordinator.provideModalPrompt()
 
         let testAction = RemoteAction.url(value: "https://example.com")
+        let onItemAction = try #require(mockMapper.capturedOnItemAction)
 
-        // WHEN
-        await mockMapper.capturedOnItemAction?(testAction, "card-123")
-        await Task.yield()
+        // WHEN — handleAction is deferred to an unstructured Task inside
+        // dismiss(onComplete:); bridge via continuation so we wait for it.
+        await withCheckedContinuation { continuation in
+            mockHandler.onHandleActionCalled = {
+                continuation.resume()
+            }
+            Task { @MainActor in
+                await onItemAction(testAction, "card-123")
+            }
+        }
 
         // THEN
         #expect(mockHandler.didCallHandleAction)
@@ -520,6 +528,51 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         #expect(mockPixelReporter.capturedCardClickedCardId == "card-123")
         #expect(mockPixelReporter.didCallMeasureRemoteMessageDismissed)
         #expect(mockPixelReporter.capturedDismissedMessage?.id == "test-message")
+        #expect(mockPixelReporter.capturedDismissType == .itemAction)
+    }
+
+    @available(iOS 16, *) // TimeLimitTrait is only available since iOS 16+
+    @Test("Check URL Item Action Callback Handles Action For On-Demand Context", .timeLimit(.minutes(1)))
+    func whenURLItemActionCallbackInvokedInOnDemandContextThenActionHandledAndDismissPixelFires() async throws {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
+        let mockRepository = MockWhatsNewMessageRepository(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let mockPixelReporter = MockRemoteMessagingPixelReporter()
+        let mockMapper = MockWhatsNewDisplayModelMapper()
+        mockMapper.displayModelToReturn = .mock
+
+        let coordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: mockRepository,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: mockPixelReporter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            imageLoader: MockRemoteMessagingImageLoader(),
+            displayModelMapper: mockMapper,
+            featureFlagger: MockFeatureFlagger()
+        )
+        _ = coordinator.provideModalPrompt()
+
+        let testAction = RemoteAction.url(value: "https://example.com")
+        let onItemAction = try #require(mockMapper.capturedOnItemAction)
+
+        // WHEN — handleAction is deferred to an unstructured Task inside
+        // dismiss(onComplete:); bridge via continuation so we wait for it.
+        await withCheckedContinuation { continuation in
+            mockHandler.onHandleActionCalled = {
+                continuation.resume()
+            }
+            Task { @MainActor in
+                await onItemAction(testAction, "card-123")
+            }
+        }
+
+        // THEN
+        #expect(mockHandler.didCallHandleAction)
+        #expect(mockHandler.capturedRemoteAction == testAction)
+        #expect(mockPixelReporter.didCallMeasureRemoteMessageDismissed)
         #expect(mockPixelReporter.capturedDismissType == .itemAction)
     }
 

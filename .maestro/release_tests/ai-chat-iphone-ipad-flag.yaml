@@ -38,6 +38,9 @@ tags:
 - assertVisible: "Duck.ai"
 - assertVisible: "Search Only"
 - assertVisible: "Search & Duck.ai"
+- scrollUntilVisible:
+    element: "Manage Duck.ai Shortcuts"
+    direction: DOWN
 - tapOn: "Manage Duck.ai Shortcuts"
 - assertVisible: "Address Bar"
 - tapOn: "AI Features"

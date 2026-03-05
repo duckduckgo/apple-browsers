@@ -64,6 +64,8 @@ class DefaultMessageNavigator: MessageNavigator {
             delegate?.segueToSettingsAppearance(presentationStyle: presentationStyle)
         case .personalInformationRemoval:
             delegate?.segueToPIR(presentationStyle: presentationStyle)
+        case .softwareUpdate:
+            break // iOS has no public API to open Settings > Software Update
         }
     }
 

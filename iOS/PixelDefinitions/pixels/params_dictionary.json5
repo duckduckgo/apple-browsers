@@ -198,6 +198,12 @@
         "description": "Whether the user is authenticated",
         "enum": ["true", "false"]
     },
+    "dbpIsFreeScan": {
+        "key": "free_scan",
+        "type": "string",
+        "description": "Whether this is a free (unauthenticated) scan",
+        "enum": ["true", "false"]
+    },
     "dbpStageDuration": {
         "key": "duration",
         "type": "integer",
@@ -255,14 +261,8 @@
         "type": "string",
         "description": "Version of the broker JSON file reported via wide pixels"
     },
-    "vpnAuthVersion": {
-        "key": "authVersion",
-        "type": "string",
-        "description": "Version of the VPN authentication flow",
-        "enum": ["v1", "v2"]
-    },
     "vpnSubscriptionActive": {
-        "key": "isSubscriptionActive",
+        "key": "vpnSubscriptionActive",
         "type": "string",
         "description": "Whether the VPN subscription is active",
         "enum": ["true", "false", "no_subscription"]

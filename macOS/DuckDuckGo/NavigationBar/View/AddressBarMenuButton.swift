@@ -25,4 +25,30 @@ import Cocoa
 ///
 /// For more details, see the [Asana Task](https://app.asana.com/1/137249556945/project/1177771139624306/task/1203899219213416?focus=true).
 ///
-internal class AddressBarMenuButton: AddressBarButton { }
+internal class AddressBarMenuButton: AddressBarButton, NotificationDotProviding {
+
+    var notificationLayer: CALayer?
+
+    var notificationColor: NSColor = .updateIndicator {
+        didSet {
+            updateNotificationLayer()
+        }
+    }
+
+    var isNotificationVisible: Bool = false {
+        didSet {
+            updateNotificationVisibility()
+            needsDisplay = isNotificationVisible != oldValue
+        }
+    }
+
+    override func updateLayer() {
+        super.updateLayer()
+        setupNotificationLayerIfNeeded()
+    }
+
+    override func layout() {
+        super.layout()
+        layoutNotification(notificationLayer: notificationLayer)
+    }
+}

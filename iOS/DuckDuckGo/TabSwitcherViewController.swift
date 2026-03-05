@@ -31,6 +31,7 @@ import DesignResourcesKit
 import BrowserServicesKit
 import PrivacyConfig
 import AIChat
+import DesignResourcesKitIcons
 
 class TabSwitcherViewController: UIViewController {
 
@@ -79,9 +80,9 @@ class TabSwitcherViewController: UIViewController {
         var image: UIImage {
             switch self {
             case .list:
-                return UIImage(resource: .tabsToggleList)
+                return DesignSystemImages.Glyphs.Size24.viewList
             case .grid:
-                return UIImage(resource: .tabsToggleGrid)
+                return DesignSystemImages.Glyphs.Size24.viewGrid
             }
         }
 
@@ -102,8 +103,6 @@ class TabSwitcherViewController: UIViewController {
 
     private(set) var bookmarksDatabase: CoreDataDatabase
     let syncService: DDGSyncing
-
-    override var canBecomeFirstResponder: Bool { return true }
 
     var currentSelection: Int?
 
@@ -129,7 +128,7 @@ class TabSwitcherViewController: UIViewController {
         tabManager.model
     }
 
-    let barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
+    var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
 
     private var tabObserverCancellable: AnyCancellable?
     private let appSettings: AppSettings
@@ -195,12 +194,24 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition() {
+        guard let view = self.view else {
+            assertionFailure()
+            return
+        }
         let isBottomBar = appSettings.currentAddressBarPosition.isBottom
 
-        // Potentially for these 3 we could do thing better for 'normal' on iPad
-        let topOffset = -6.0
+        let isiOS26: Bool
+        if #available(iOS 26, *) {
+            isiOS26 = true
+        } else {
+            isiOS26 = false
+        }
+
+        // Changing this?  Best change MainView too
+        let topOffset = isiOS26 ? 4.0 : -6.0
         let bottomOffset = 8.0
-        let navHPadding = 10.0
+        let navHPadding = isiOS26 ? -6.0 : -2.0
+        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
 
         // The constants here are to force the ai button to align between the tab switcher and this view
         NSLayoutConstraint.activate([
@@ -225,8 +236,8 @@ class TabSwitcherViewController: UIViewController {
                 borderView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
 
             // Always at the bottom
-            toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            toolbar.constrainView(view, by: .width, constant: toolbarWidthMod),
+            toolbar.constrainView(view, by: .centerX),
             toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ].compactMap { $0 })
     }
@@ -286,7 +297,55 @@ class TabSwitcherViewController: UIViewController {
         collectionView.allowsMultipleSelectionDuringEditing = true
         bindTrackerCount()
         trackerCountViewModel?.refresh()
+        setupBarButtonActions()
 
+    }
+
+    private func setupBarButtonActions() {
+        barsHandler.onPlusButtonTapped = { [weak self] in
+            self?.addNewTab()
+        }
+
+        barsHandler.onFireButtonTapped = { [weak self] in
+            self?.burn(sender: self!.barsHandler.fireButton)
+        }
+
+        barsHandler.onDoneButtonTapped = { [weak self] in
+            self?.onDonePressed(self!.barsHandler.doneButton)
+        }
+
+        barsHandler.onEditButtonTapped = { [weak self] in
+            return self?.createEditMenu()
+        }
+
+        barsHandler.onTabStyleButtonTapped = { [weak self] in
+            self?.onTabStyleChange()
+        }
+
+        barsHandler.onSelectAllTapped = { [weak self] in
+            self?.selectAllTabs()
+        }
+
+        barsHandler.onDeselectAllTapped = { [weak self] in
+            self?.deselectAllTabs()
+        }
+
+        barsHandler.onMenuButtonTapped = { [weak self] in
+            return self?.createMultiSelectionMenu()
+        }
+
+        barsHandler.onCloseTabsTapped = { [weak self] in
+            self?.closeSelectedTabs()
+        }
+
+        barsHandler.onDuckChatTapped = { [weak self] in
+            guard let self else { return }
+            if self.aichatFullModeFeature.isAvailable || self.aichatIPadTabFeature.isAvailable {
+                self.addNewAIChatTab()
+            } else {
+                self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)
+            }
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -764,10 +823,15 @@ extension TabSwitcherViewController {
         refreshDisplayModeButton()
         
         titleBarView.tintColor = theme.barTintColor
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            titleBarView.backItem?.rightBarButtonItem?.hidesSharedBackground = true
+        }
+        #endif
 
         toolbar.barTintColor = theme.barBackgroundColor
-        toolbar.tintColor = theme.barTintColor
-                
+        toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
+
         collectionView.reloadData()
     }
 
@@ -815,7 +879,7 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
             if self.isEditing {
                 collectionView.reloadData() // Clears the selection
                 collectionView.selectItem(at: destination, animated: true, scrollPosition: [])
-                self.refreshBarButtons()
+                self.barsHandler.configureButtonActions(tabsStyle: self.tabsStyle, canShowSelectionMenu: self.canShowSelectionMenu)
             } else {
                 collectionView.reloadItems(at: [IndexPath(row: self.currentSelection ?? 0, section: 0)])
             }

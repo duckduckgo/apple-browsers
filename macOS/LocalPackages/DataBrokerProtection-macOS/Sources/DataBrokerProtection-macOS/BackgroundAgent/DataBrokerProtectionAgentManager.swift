@@ -218,6 +218,16 @@ public final class DataBrokerProtectionAgentManager {
     private lazy var browserWindowManager = BrowserWindowManager()
 
     private var didStartActivityScheduler = false
+    private var currentRunIsFreeScan: Bool?
+
+    /// Snapshots the current authentication state and caches whether this is a free scan run.
+    /// Returns the current `isAuthenticated` value for callers that need it.
+    @discardableResult
+    private func refreshIsAuthenticatedState() async -> Bool {
+        let isAuthenticated = await authenticationManager.isUserAuthenticated
+        currentRunIsFreeScan = !isAuthenticated
+        return isAuthenticated
+    }
 
     init(eventsHandler: EventMapping<JobEvent>,
          activityScheduler: DataBrokerProtectionBackgroundActivityScheduler,
@@ -336,7 +346,8 @@ private extension DataBrokerProtectionAgentManager {
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
         Task {
-            if await authenticationManager.isUserAuthenticated {
+            let isAuthenticated = await refreshIsAuthenticatedState()
+            if isAuthenticated {
                 queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
             } else {
                 queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
@@ -402,7 +413,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
             let hasCompletedInitialScans = try database.haveAllScansRunAtLeastOnce()
             if hasCompletedInitialScans {
                 let profile = try database.fetchProfile()
-                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0)
+                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0, isFreeScan: currentRunIsFreeScan)
             }
         } catch {
             Logger.dataBrokerProtection.error("Error when calculating if we should send the initial scans duration pixel, error: \(error.localizedDescription, privacy: .public)")
@@ -417,6 +428,8 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
         let database = jobDependencies.database
         let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
         eventPixels.markInitialScansStarted()
+
+        await refreshIsAuthenticatedState()
 
         eventsHandler.fire(.profileSaved)
         await fireMonitoringPixels()

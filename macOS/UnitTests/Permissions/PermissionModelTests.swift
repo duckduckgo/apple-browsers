@@ -1558,10 +1558,11 @@ extension PermissionModelTests: WebViewPermissionsDelegate {
 
     @objc(_webView:requestUserMediaAuthorizationForDevices:url:mainFrameURL:decisionHandler:)
     func webView(_ webView: WKWebView,
-                 requestUserMediaAuthorizationFor devices: _WKCaptureDevices,
+                 requestUserMediaAuthorizationFor devices: UInt /*_WKCaptureDevices*/,
                  url: URL,
                  mainFrameURL: URL,
                  decisionHandler: @escaping (Bool) -> Void) {
+        let devices = _WKCaptureDevices(rawValue: devices)
         guard let permissions = [PermissionType](devices: devices) else {
             fatalError()
         }
@@ -1569,8 +1570,20 @@ extension PermissionModelTests: WebViewPermissionsDelegate {
         self.model.permissions(permissions, requestedForDomain: url.host ?? "", decisionHandler: decisionHandler)
     }
 
+    func webView(_ webView: WKWebView,
+                 requestUserMediaAuthorizationFor devices: _WKCaptureDevices,
+                 url: URL,
+                 mainFrameURL: URL,
+                 decisionHandler: @escaping (Bool) -> Void) {
+        self.webView(webView,
+                     requestUserMediaAuthorizationFor: devices.rawValue,
+                     url: url,
+                     mainFrameURL: mainFrameURL,
+                     decisionHandler: decisionHandler)
+    }
+
     @objc(_webView:mediaCaptureStateDidChange:)
-    func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: _WKMediaCaptureStateDeprecated) {
+    func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: UInt /*_WKMediaCaptureStateDeprecated*/) {
         self.model.mediaCaptureStateDidChange()
     }
 

@@ -212,7 +212,9 @@ struct FireConfirmationPresenter {
             sheet.detents = [.large()]
         }
         sheet.prefersGrabberVisible = false
-        sheet.preferredCornerRadius = Constants.sheetCornerRadius
+        if #unavailable(iOS 26) {
+            sheet.preferredCornerRadius = Constants.sheetCornerRadius
+        }
     }
     
     private func calculateSheetHeight<Content: View>(for hostingController: UIHostingController<Content>,
@@ -258,7 +260,11 @@ struct FireConfirmationPresenter {
             }
             viewController.present(alert, animated: true)
         } else if let button = source as? UIBarButtonItem {
-            viewController.present(controller: alert, fromButtonItem: button)
+            if let customView = button.customView {
+                viewController.present(controller: alert, fromView: customView)
+            } else {
+                viewController.present(controller: alert, fromButtonItem: button)
+            }
         } else {
             assertionFailure("Unexpected sender")
         }

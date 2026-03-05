@@ -59,7 +59,6 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
     }
 
     var shouldShowDuckAIAddressBarButton: Bool {
-        guard !isIPadAIToggleExperienceEnabled else { return false }
         return aiChatSettings.isAIChatAddressBarUserSettingsEnabled
     }
 

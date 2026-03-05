@@ -214,6 +214,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: MockDataBrokerProtectionPixelsHandler(),
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -276,6 +277,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -310,6 +312,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -345,6 +348,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())
@@ -369,6 +373,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     isFreeScan: false,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status",
                                                                      featureFlagger: MockDBPFeatureFlagger())

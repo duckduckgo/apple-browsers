@@ -75,6 +75,7 @@ public final class DefaultFreeTrialConversionInstrumentationService: FreeTrialCo
     private let wideEvent: WideEventManaging
     private let notificationCenter: NotificationCenter
     private let pixelHandler: FreeTrialPixelHandling?
+    private let subscriptionFetcher: () async -> DuckDuckGoSubscription?
     private let isFeatureEnabled: () -> Bool
     private var subscriptionObserver: NSObjectProtocol?
 
@@ -82,11 +83,13 @@ public final class DefaultFreeTrialConversionInstrumentationService: FreeTrialCo
         wideEvent: WideEventManaging,
         notificationCenter: NotificationCenter = .default,
         pixelHandler: FreeTrialPixelHandling? = nil,
+        subscriptionFetcher: @escaping () async -> DuckDuckGoSubscription?,
         isFeatureEnabled: @escaping () -> Bool = { true }
     ) {
         self.wideEvent = wideEvent
         self.notificationCenter = notificationCenter
         self.pixelHandler = pixelHandler
+        self.subscriptionFetcher = subscriptionFetcher
         self.isFeatureEnabled = isFeatureEnabled
     }
 
@@ -106,12 +109,17 @@ public final class DefaultFreeTrialConversionInstrumentationService: FreeTrialCo
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let self,
-                  let subscription = notification.userInfo?[UserDefaultsCacheKey.subscription] as? DuckDuckGoSubscription else {
-                return
-            }
-
             Task {
+                guard let self else { return }
+                // Attempt to fetch subscription snapshot from notification payload. Fallback to cache-first fetch when payload is missing.
+                let subscription: DuckDuckGoSubscription
+                if let subscriptionFromPayload = notification.userInfo?[UserDefaultsCacheKey.subscription] as? DuckDuckGoSubscription {
+                    subscription = subscriptionFromPayload
+                } else if let fetched = await self.subscriptionFetcher() {
+                    subscription = fetched
+                } else {
+                    return
+                }
                 await self.handleSubscriptionChange(subscription)
             }
         }

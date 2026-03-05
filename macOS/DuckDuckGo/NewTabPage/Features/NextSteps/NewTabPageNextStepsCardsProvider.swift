@@ -18,6 +18,8 @@
 
 import Common
 import Combine
+import CombineSchedulers
+import Foundation
 import NewTabPage
 import PixelKit
 import UserScript
@@ -26,13 +28,16 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
     let continueSetUpModel: HomePage.Models.ContinueSetUpModel
     let appearancePreferences: AppearancePreferences
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
+    private let scheduler: AnySchedulerOf<DispatchQueue>
 
     init(continueSetUpModel: HomePage.Models.ContinueSetUpModel,
          appearancePreferences: AppearancePreferences,
-         pixelHandler: NewTabPageNextStepsCardsPixelHandling) {
+         pixelHandler: NewTabPageNextStepsCardsPixelHandling,
+         scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         self.continueSetUpModel = continueSetUpModel
         self.appearancePreferences = appearancePreferences
         self.pixelHandler = pixelHandler
+        self.scheduler = scheduler
     }
 
     var isViewExpanded: Bool {
@@ -60,6 +65,7 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
         let cardsDidBecomeOutdated = appearancePreferences.$isContinueSetUpCardsViewOutdated.removeDuplicates()
 
         return Publishers.CombineLatest(features, cardsDidBecomeOutdated)
+            .subscribe(on: scheduler)
             .map { features, isOutdated -> [NewTabPageDataModel.CardID] in
                 guard !isOutdated else {
                     return []

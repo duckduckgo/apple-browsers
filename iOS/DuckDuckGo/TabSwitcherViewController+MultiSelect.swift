@@ -256,22 +256,31 @@ extension TabSwitcherViewController {
         } else {
             interfaceMode = isEditing ? .editingRegularSize : .regularSize
         }
-        
-        let showAIChatButton = aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled
 
-        barsHandler.update(interfaceMode,
-                           selectedTabsCount: selectedTabs.count,
-                           totalTabsCount: tabsModel.count,
-                           containsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
-                           showAIChatButton: showAIChatButton)
+        let showAIChatButton = aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled
+        let containsWebPages = tabsModel.tabs.contains(where: { $0.link != nil })
+
+        let state: TabSwitcherToolbarState
+        if isEditing {
+            state = AppWidthObserver.shared.isLargeWidth
+                ? .editingLargeSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count)
+                : .editingRegularSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count)
+        } else {
+            state = AppWidthObserver.shared.isLargeWidth
+                ? .largeSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
+                             containsWebPages: containsWebPages, showAIChat: showAIChatButton)
+                : .regularSize(selectedCount: selectedTabs.count, totalCount: tabsModel.count,
+                               containsWebPages: containsWebPages, showAIChat: showAIChatButton)
+        }
+
+        barsHandler.update(state)
+        barsHandler.configureButtonActions(tabsStyle: tabsStyle, canShowSelectionMenu: canShowSelectionMenu)
 
         titleBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
         titleBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
         toolbar.items = barsHandler.bottomBarItems
         toolbar.isHidden = barsHandler.isBottomBarHidden
         collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height
-
-        refreshBarButtons()
     }
     
     func createMultiSelectionMenu() -> UIMenu {
@@ -425,91 +434,8 @@ extension TabSwitcherViewController {
 
 // MARK: Button configuration
 extension TabSwitcherViewController {
-
-    func refreshBarButtons() {
-        barsHandler.tabSwitcherStyleButton.accessibilityLabel = tabsStyle.accessibilityLabel
-        barsHandler.tabSwitcherStyleButton.primaryAction = action(image: tabsStyle.image, { [weak self] in
-            guard let self else { return }
-            self.onTabStyleChange()
-        })
-        barsHandler.tabSwitcherStyleButton.tintColor = UIColor(designSystemColor: .icons)
-
-        barsHandler.addAllBookmarksButton.accessibilityLabel = UserText.bookmarkAllTabs
-        barsHandler.addAllBookmarksButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.bookmarkNew) { [weak self] in
-            self?.bookmarkTabs(withIndexPaths: self!.tabsModel.tabs.indices.map { IndexPath(row: $0, section: 0) },
-                               title: UserText.alertTitleBookmarkAll(withCount: self!.tabsModel.count),
-                               message: UserText.alertBookmarkAllMessage,
-                               pixel: .tabSwitcherSelectModeMenuBookmarkAllTabs,
-                               dailyPixel: .tabSwitcherSelectModeMenuBookmarkAllTabsDaily)
-        }
-
-        barsHandler.plusButton.accessibilityLabel = UserText.keyCommandNewTab
-        barsHandler.plusButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.add, { [weak self] in
-            self?.addNewTab()
-        })
-
-        configureFireButton()
-
-        if interfaceMode == .largeSize {
-            barsHandler.doneButton.primaryAction = action(UserText.navigationTitleDone) { [weak self] in
-                self?.onDonePressed(self!.barsHandler.doneButton)
-            }
-        } else {
-            barsHandler.doneButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.arrowLeft) { [weak self] in
-                self?.onDonePressed(self!.barsHandler.doneButton)
-            }
-            barsHandler.doneButton.accessibilityLabel = UserText.navigationTitleDone
-        }
-
-        barsHandler.editButton.image = DesignSystemImages.Glyphs.Size24.menuDotsVertical
-        barsHandler.editButton.title = nil
-
-        barsHandler.editButton.accessibilityLabel = UserText.actionGenericEdit
-        barsHandler.editButton.menu = createEditMenu()
-
-        barsHandler.selectAllButton.primaryAction = action(UserText.selectAllTabs) { [weak self] in
-            self?.selectAllTabs()
-        }
-
-        barsHandler.deselectAllButton.primaryAction = action(UserText.deselectAllTabs) { [weak self] in
-            self?.deselectAllTabs()
-        }
-
-        barsHandler.menuButton.accessibilityLabel = "More Menu"
-        barsHandler.menuButton.image = DesignSystemImages.Glyphs.Size24.moreApple
-        barsHandler.menuButton.tintColor = UIColor(designSystemColor: .icons)
-        barsHandler.menuButton.menu = createMultiSelectionMenu()
-        barsHandler.menuButton.isEnabled = canShowSelectionMenu
-
-        barsHandler.closeTabsButton.isEnabled = selectedTabs.count > 0
-        barsHandler.closeTabsButton.primaryAction = action(UserText.closeTabs(withCount: selectedTabs.count)) { [weak self] in
-            self?.closeSelectedTabs()
-        }
-
-        barsHandler.duckChatButton.tintColor = UIColor(designSystemColor: .icons)
-        barsHandler.duckChatButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.aiChat, { [weak self] in
-            guard let self else { return }
-            if self.aichatFullModeFeature.isAvailable || self.aichatIPadTabFeature.isAvailable {
-                addNewAIChatTab()
-            } else {
-                self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)
-            }
-        })
-    }
-
-    private func configureFireButton() {
-        guard barsHandler.fireButton.customView == nil else { return }
-        let button = BrowserChromeButton(.primary)
-        button.addAction(action(image: DesignSystemImages.Glyphs.Size24.fireSolid) { [weak self] in
-            self?.burn(sender: self!.barsHandler.fireButton)
-        }, for: .touchUpInside)
-        button.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
-        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
-        button.accessibilityIdentifier = "Browser.TabSwitcher.Toolbar.Button.Fire"
-        barsHandler.fireButton.customView = button
-        barsHandler.fireButton.accessibilityLabel = "Close all tabs and clear data"
-    }
-
+    // Button configuration is now handled in TabSwitcherBarsStateHandler
+    // via the setupBarButtonActions() method called in viewDidLoad()
 }
 
 // MARK: Edit menu actions

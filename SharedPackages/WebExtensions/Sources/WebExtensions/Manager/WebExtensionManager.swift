@@ -79,7 +79,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging {
         self.windowTabProvider = windowTabProvider
         self.storageProvider = storageProvider
         self.installationStore = installationStore
-        self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider)
+        self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider, isInspectable: configuration.isInspectable)
         self.eventsListener = eventsListener
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler

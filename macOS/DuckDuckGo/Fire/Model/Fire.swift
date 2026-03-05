@@ -165,7 +165,7 @@ final class Fire: FireProtocol {
     let bookmarkManager: BookmarkManager
     let syncService: DDGSyncing?
     let syncDataProviders: SyncDataProvidersSource?
-    let tabCleanupPreparer = TabCleanupPreparer()
+    let tabCleanupPreparer: TabCleanupPreparing
     let secureVaultFactory: AutofillVaultFactory
     let tld: TLD
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
@@ -279,7 +279,8 @@ final class Fire: FireProtocol {
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
          isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive },
          aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
-         dataClearingPixelsReporter: DataClearingPixelsReporter = .init()
+         dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
+         tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer()
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -312,6 +313,7 @@ final class Fire: FireProtocol {
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
                                                                                  privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
         self.dataClearingPixelsReporter = dataClearingPixelsReporter
+        self.tabCleanupPreparer = tabCleanupPreparer
         self.historyCoordinating.dataClearingPixelsHandling = DataClearingPixelsBurnHistoryHandler(dataClearingPixelsReporter)
     }
 

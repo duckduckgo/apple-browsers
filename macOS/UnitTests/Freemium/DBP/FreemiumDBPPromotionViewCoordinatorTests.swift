@@ -389,6 +389,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isHomePagePromotionVisible)
     }
 
+    @MainActor
     func testViewModelRefreshes_whenContextualOnboardingCompletes() async throws {
         // Given
         mockUserStateManager.didDismissHomePagePromotion = false

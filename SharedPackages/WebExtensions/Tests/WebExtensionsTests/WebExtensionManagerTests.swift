@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import WebKit
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -336,6 +337,83 @@ final class WebExtensionManagerTests: XCTestCase {
         let version = manager.extensionVersion(for: "ext-1")
 
         XCTAssertNil(version)
+    }
+
+    // MARK: - Configuration Tests
+
+    @MainActor
+    func testWhenManagerCreatedWithoutLoader_ThenLoaderReceivesIsInspectableFromConfiguration() async throws {
+        configurationMock.isInspectable = true
+
+        let extensionURL = try createTestWebExtension()
+        storageProvidingMock.resolvedExtensionURL = extensionURL
+        storageProvidingMock.mockCopyResult = extensionURL
+
+        let manager = makeManagerWithRealLoader()
+
+        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
+        try await manager.installExtension(from: sourceURL)
+
+        let context = manager.contexts.first
+        XCTAssertNotNil(context)
+        XCTAssertTrue(context?.isInspectable == true)
+    }
+
+    @MainActor
+    func testWhenManagerCreatedWithIsInspectableFalse_ThenContextIsNotInspectable() async throws {
+        configurationMock.isInspectable = false
+
+        let extensionURL = try createTestWebExtension()
+        storageProvidingMock.resolvedExtensionURL = extensionURL
+        storageProvidingMock.mockCopyResult = extensionURL
+
+        let manager = makeManagerWithRealLoader()
+
+        let sourceURL = URL(fileURLWithPath: "/source/extension.zip")
+        try await manager.installExtension(from: sourceURL)
+
+        let context = manager.contexts.first
+        XCTAssertNotNil(context)
+        XCTAssertFalse(context?.isInspectable == true)
+    }
+
+    // MARK: - Additional Helpers
+
+    @MainActor
+    private func makeManagerWithRealLoader() -> WebExtensionManager {
+        WebExtensionManager(
+            configuration: configurationMock,
+            windowTabProvider: windowTabProviderMock,
+            storageProvider: storageProvidingMock,
+            installationStore: installedExtensionStoringMock,
+            loader: nil,
+            eventsListener: eventsListenerMock,
+            lifecycleDelegate: lifecycleDelegateMock
+        )
+    }
+
+    private func createTestWebExtension() throws -> URL {
+        let tempDir = FileManager.default.temporaryDirectory
+        let extensionDir = tempDir.appendingPathComponent("TestExtension-\(UUID().uuidString)")
+
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Test Extension",
+            "version": "1.0.0",
+            "description": "Minimal test extension for unit tests"
+        }
+        """
+
+        try FileManager.default.createDirectory(at: extensionDir, withIntermediateDirectories: true)
+        try manifest.write(to: extensionDir.appendingPathComponent("manifest.json"),
+                          atomically: true, encoding: .utf8)
+
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: extensionDir)
+        }
+
+        return extensionDir
     }
 
 }

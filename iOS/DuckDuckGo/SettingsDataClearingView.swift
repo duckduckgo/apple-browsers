@@ -93,9 +93,7 @@ struct SettingsDataClearingView: View {
                     }
                 )
                 .onPreferenceChange(ClearButtonFrameKey.self) { newFrame in
-                    if UIDevice.current.userInterfaceIdiom == .pad {
                         self.clearButtonFrame = newFrame
-                    }
                 }
                 .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
             } footer: {

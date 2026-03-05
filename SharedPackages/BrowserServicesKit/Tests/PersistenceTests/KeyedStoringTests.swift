@@ -195,7 +195,8 @@ final class KeyedStoringTests {
 
     // MARK: - Basic Functionality Tests
 
-    @Test("KeyedStoring property behavior")
+    @available(iOS 16, macOS 13, *)
+    @Test("KeyedStoring property behavior", .timeLimit(.minutes(1)))
     func keyedStoringPropertyBehavior() {
         let storage: any KeyedStoring<AppSettingsKeys> = defaults.keyedStoring()
 
@@ -227,7 +228,8 @@ final class KeyedStoringTests {
         #expect(afterSet == true, "Getter should return true after storage set")
     }
 
-    @Test("KeyedStoring properties support read and write")
+    @available(iOS 16, macOS 13, *)
+    @Test("KeyedStoring properties support read and write", .timeLimit(.minutes(1)))
     func keyedStoringPropertiesReadWrite() {
         let storage: any KeyedStoring<AppSettingsKeys> = defaults.keyedStoring()
 
@@ -244,7 +246,8 @@ final class KeyedStoringTests {
         #expect(storage.refreshInterval == 30.0)
     }
 
-    @Test("KeyedStoring properties work with custom keys")
+    @available(iOS 16, macOS 13, *)
+    @Test("KeyedStoring properties work with custom keys", .timeLimit(.minutes(1)))
     func keyedStoringPropertiesWithCustomKeys() {
         let storage: any KeyedStoring<AppSettingsKeys> = defaults.keyedStoring()
 
@@ -261,7 +264,8 @@ final class KeyedStoringTests {
         #expect(storage.isFirstLaunch == true)
     }
 
-    @Test("KeyedStoring publishers emit changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("KeyedStoring publishers emit changes", .timeLimit(.minutes(1)))
     func keyedStoringPublishers() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Bool?] = []
@@ -280,7 +284,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, true, false, nil])
     }
 
-    @Test("Publisher emits on direct key changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher emits on direct key changes", .timeLimit(.minutes(1)))
     func publisherEmitsOnDirectKeyChanges() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Bool?] = []
@@ -299,7 +304,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, true, false, nil])
     }
 
-    @Test("Publisher works with KeyPath")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher works with KeyPath", .timeLimit(.minutes(1)))
     func publisherWithKeyPath() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Double?] = []
@@ -316,7 +322,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, 60.0])
     }
 
-    @Test("Publisher works with custom key")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher works with custom key", .timeLimit(.minutes(1)))
     func publisherWithCustomKey() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Bool?] = []
@@ -333,7 +340,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, true])
     }
 
-    @Test("Wrapper can be observed through publisher")
+    @available(iOS 16, macOS 13, *)
+    @Test("Wrapper can be observed through publisher", .timeLimit(.minutes(1)))
     func wrapperCanBeObservedThroughPublisher() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Bool?] = []
@@ -352,7 +360,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, true, false])
     }
 
-    @Test("Protocol usage with dependency injection")
+    @available(iOS 16, macOS 13, *)
+    @Test("Protocol usage with dependency injection", .timeLimit(.minutes(1)))
     func protocolUsageWithInjection() {
         let storage: any KeyedStoring<AppSettingsKeys> = defaults.keyedStoring()
 
@@ -365,7 +374,8 @@ final class KeyedStoringTests {
         #expect(storage.isFirstLaunch == false)
     }
 
-    @Test("Publisher supports multiple subscribers")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher supports multiple subscribers", .timeLimit(.minutes(1)))
     func publisherWithMultipleSubscribers() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var values1: [Double?] = []
@@ -388,7 +398,8 @@ final class KeyedStoringTests {
         #expect(values2 == [nil, 30.0])
     }
 
-    @Test("Publisher isolation between protocols")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher isolation between protocols", .timeLimit(.minutes(1)))
     func publisherIsolationBetweenProtocols() {
         let storage1: any ObservableKeyedStoring<AutoObservationKeys1> = defaults.observableKeyedStoring()
         let storage2: any ObservableKeyedStoring<AutoObservationKeys2> = defaults.observableKeyedStoring()
@@ -420,7 +431,8 @@ final class KeyedStoringTests {
         #expect(config1Changes == 2) // initial + change
     }
 
-    @Test("Publisher works with enum types")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher works with enum types", .timeLimit(.minutes(1)))
     func publisherWithEnumType() {
         let storage: any ObservableKeyedStoring<EnumKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Theme?] = []
@@ -437,7 +449,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, Theme.dark])
     }
 
-    @Test("Nil values are handled correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Nil values are handled correctly", .timeLimit(.minutes(1)))
     func nilValues() {
         let storage: any KeyedStoring<AppSettingsKeys> = defaults.keyedStoring()
 
@@ -452,7 +465,8 @@ final class KeyedStoringTests {
         #expect(storage.isFirstLaunch == nil)
     }
 
-    @Test("Multiple properties work independently")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple properties work independently", .timeLimit(.minutes(1)))
     func multiplePropertiesIndependence() {
         let storage: any KeyedStoring<AppSettingsKeys> = defaults.keyedStoring()
 
@@ -468,7 +482,8 @@ final class KeyedStoringTests {
         #expect(storage.refreshInterval == 120.0)
     }
 
-    @Test("Publisher only emits for relevant property")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher only emits for relevant property", .timeLimit(.minutes(1)))
     func publisherOnlyEmitsForRelevantProperty() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var emitCount = 0
@@ -490,7 +505,8 @@ final class KeyedStoringTests {
 
     // MARK: - Mock Store Tests
 
-    @Test("MockKeyValueStore works with KeyedStoring")
+    @available(iOS 16, macOS 13, *)
+    @Test("MockKeyValueStore works with KeyedStoring", .timeLimit(.minutes(1)))
     func mockKeyValueStoreWithKeyedStoring() {
         let mockStore = MockKeyValueStore()
         let storage: any KeyedStoring<AppSettingsKeys> = mockStore.keyedStoring()
@@ -505,7 +521,8 @@ final class KeyedStoringTests {
 
     // MARK: - Nested Protocol Tests
 
-    @Test("Nested protocol works with MockKeyValueStore")
+    @available(iOS 16, macOS 13, *)
+    @Test("Nested protocol works with MockKeyValueStore", .timeLimit(.minutes(1)))
     func nestedProtocolWorksWithMockKeyValueStore() {
         let mockStore = MockKeyValueStore()
         let storage: any KeyedStoring<NestedKeys> = mockStore.keyedStoring()
@@ -521,7 +538,8 @@ final class KeyedStoringTests {
 
     // MARK: - Enum RawRepresentable Tests
 
-    @Test("Enum with String raw value supports read/write")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum with String raw value supports read/write", .timeLimit(.minutes(1)))
     func enumStringRawValueReadWrite() {
         let storage: any KeyedStoring<EnumKeys> = defaults.keyedStoring()
 
@@ -537,7 +555,8 @@ final class KeyedStoringTests {
         #expect(storage.theme == Theme.light)
     }
 
-    @Test("Enum with Int raw value supports read/write")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum with Int raw value supports read/write", .timeLimit(.minutes(1)))
     func enumIntRawValueReadWrite() {
         let storage: any KeyedStoring<EnumKeys> = defaults.keyedStoring()
 
@@ -553,7 +572,8 @@ final class KeyedStoringTests {
         #expect(storage.priority == Priority.low)
     }
 
-    @Test("Enum handles nil value")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum handles nil value", .timeLimit(.minutes(1)))
     func enumNilValue() {
         let storage: any KeyedStoring<EnumKeys> = defaults.keyedStoring()
 
@@ -568,7 +588,8 @@ final class KeyedStoringTests {
         #expect(storage.theme == nil)
     }
 
-    @Test("Enum publisher emits changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum publisher emits changes", .timeLimit(.minutes(1)))
     func enumPublisherEmitsChanges() {
         let storage: any ObservableKeyedStoring<EnumKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Theme?] = []
@@ -586,7 +607,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, Theme.dark, Theme.light])
     }
 
-    @Test("Enum publisher with KeyPath")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum publisher with KeyPath", .timeLimit(.minutes(1)))
     func enumPublisherWithKeyPath() {
         let storage: any ObservableKeyedStoring<EnumKeys> = defaults.observableKeyedStoring()
         var receivedValue: Priority?
@@ -603,7 +625,8 @@ final class KeyedStoringTests {
         #expect(receivedValue == Priority.medium)
     }
 
-    @Test("String enum publisher emits all changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("String enum publisher emits all changes", .timeLimit(.minutes(1)))
     func stringEnumPublisherEmitsAllChanges() {
         let storage: any ObservableKeyedStoring<EnumKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Theme?] = []
@@ -624,7 +647,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, Theme.light, Theme.dark, Theme.system, nil, Theme.light])
     }
 
-    @Test("Int enum publisher emits all changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("Int enum publisher emits all changes", .timeLimit(.minutes(1)))
     func intEnumPublisherEmitsAllChanges() {
         let storage: any ObservableKeyedStoring<EnumKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Priority?] = []
@@ -645,7 +669,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, .low, .high, .medium, nil, .low])
     }
 
-    @Test("Negative Int enum publisher works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Negative Int enum publisher works correctly", .timeLimit(.minutes(1)))
     func negativeIntEnumPublisherWorks() {
         enum Status: Int {
             case error = -1
@@ -669,7 +694,8 @@ final class KeyedStoringTests {
         #expect(defaults.integer(forKey: "status") == 1)
     }
 
-    @Test("Enum publisher with KeyPath emits all changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum publisher with KeyPath emits all changes", .timeLimit(.minutes(1)))
     func enumPublisherWithKeyPathEmitsAllChanges() {
         let storage: any ObservableKeyedStoring<EnumKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Priority?] = []
@@ -688,7 +714,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, Priority.low, Priority.medium, Priority.high])
     }
 
-    @Test("Enum updatesPublisher(forKey:) emits for both String and Int enums")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum updatesPublisher(forKey:) emits for both String and Int enums", .timeLimit(.minutes(1)))
     func enumUpdatesPublisherForKeyWorks() {
         let storage: any ObservableKeyedStoring<EnumKeys> = defaults.observableKeyedStoring()
         var themeCount = 0
@@ -715,7 +742,8 @@ final class KeyedStoringTests {
 
     // MARK: - Date Type Tests
 
-    @Test("Date type supports read and write")
+    @available(iOS 16, macOS 13, *)
+    @Test("Date type supports read and write", .timeLimit(.minutes(1)))
     func dateTypeReadWrite() {
         let storage: any KeyedStoring<DateKeys> = defaults.keyedStoring()
         let testDate = Date(timeIntervalSince1970: 1_700_000_000) // 2023-11-14
@@ -728,7 +756,8 @@ final class KeyedStoringTests {
         #expect(defaults.object(forKey: "lastModified") as? Date == testDate)
     }
 
-    @Test("Date type handles nil values")
+    @available(iOS 16, macOS 13, *)
+    @Test("Date type handles nil values", .timeLimit(.minutes(1)))
     func dateTypeNilValue() {
         let storage: any KeyedStoring<DateKeys> = defaults.keyedStoring()
 
@@ -749,7 +778,8 @@ final class KeyedStoringTests {
         #expect(storage.optionalDate.flatMap { $0 } == nil)
     }
 
-    @Test("Date type publisher emits changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("Date type publisher emits changes", .timeLimit(.minutes(1)))
     func dateTypePublisherEmitsChanges() {
         let storage: any ObservableKeyedStoring<DateKeys> = defaults.observableKeyedStoring()
         var cancellables = Set<AnyCancellable>()
@@ -776,7 +806,8 @@ final class KeyedStoringTests {
         #expect(receivedDates[3] == nil)
     }
 
-    @Test("Date type with observable objectWillChange")
+    @available(iOS 16, macOS 13, *)
+    @Test("Date type with observable objectWillChange", .timeLimit(.minutes(1)))
     @MainActor
     func dateTypeObservableObjectWillChange() {
         let storage: any ObservableKeyedStoring<DateKeys> = defaults.observableKeyedStoring()
@@ -801,7 +832,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 4)
     }
 
-    @Test("Multiple Date properties work independently")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple Date properties work independently", .timeLimit(.minutes(1)))
     func multipleDatePropertiesIndependent() {
         let storage: any KeyedStoring<DateKeys> = defaults.keyedStoring()
 
@@ -828,7 +860,8 @@ final class KeyedStoringTests {
         #expect(storage.createdAt == date3)
     }
 
-    @Test("Date type persists across storage instances")
+    @available(iOS 16, macOS 13, *)
+    @Test("Date type persists across storage instances", .timeLimit(.minutes(1)))
     func dateTypePersistsAcrossInstances() {
         let testDate = Date(timeIntervalSince1970: 1_700_000_000)
 
@@ -843,7 +876,8 @@ final class KeyedStoringTests {
         #expect(storage2.lastModified == testDate)
     }
 
-    @Test("Date type with very recent dates")
+    @available(iOS 16, macOS 13, *)
+    @Test("Date type with very recent dates", .timeLimit(.minutes(1)))
     func dateTypeVeryRecentDates() {
         let storage: any KeyedStoring<DateKeys> = defaults.keyedStoring()
         let now = Date()
@@ -860,7 +894,8 @@ final class KeyedStoringTests {
 
     // MARK: - Enum-Based Keys (StorageKeyDescribing) Tests
 
-    @Test("Enum-based keys work with String values")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum-based keys work with String values", .timeLimit(.minutes(1)))
     func enumBasedKeysStringValues() {
         let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
 
@@ -873,7 +908,8 @@ final class KeyedStoringTests {
         #expect(defaults.string(forKey: "testUserName") == "Alice")
     }
 
-    @Test("Enum-based keys work with Int values")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum-based keys work with Int values", .timeLimit(.minutes(1)))
     func enumBasedKeysIntValues() {
         let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
 
@@ -885,7 +921,8 @@ final class KeyedStoringTests {
         #expect(defaults.integer(forKey: TestKeys.userAge.rawValue) == 25)
     }
 
-    @Test("Enum-based keys work with Bool values")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum-based keys work with Bool values", .timeLimit(.minutes(1)))
     func enumBasedKeysBoolValues() {
         let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
 
@@ -897,7 +934,8 @@ final class KeyedStoringTests {
         #expect(defaults.bool(forKey: TestKeys.isActive.rawValue) == true)
     }
 
-    @Test("Enum-based keys work with Date values")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum-based keys work with Date values", .timeLimit(.minutes(1)))
     func enumBasedKeysDateValues() {
         let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
         let testDate = Date(timeIntervalSince1970: 1_700_000_000)
@@ -910,7 +948,8 @@ final class KeyedStoringTests {
         #expect(defaults.object(forKey: TestKeys.lastLogin.rawValue) as? Date == testDate)
     }
 
-    @Test("Enum-based keys work with InMemoryKeyValueStore")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum-based keys work with InMemoryKeyValueStore", .timeLimit(.minutes(1)))
     func enumBasedKeysWithInMemoryStore() {
         let storage: any KeyedStoring<EnumBasedKeys> = InMemoryKeyValueStore().keyedStoring()
 
@@ -925,7 +964,8 @@ final class KeyedStoringTests {
         #expect(storage.isActive == false)
     }
 
-    @Test("Enum-based keys work with observable storage")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum-based keys work with observable storage", .timeLimit(.minutes(1)))
     @MainActor
     func enumBasedKeysWithObservableStorage() {
         let storage: any ObservableKeyedStoring<EnumBasedKeys> = defaults.observableKeyedStoring()
@@ -948,7 +988,8 @@ final class KeyedStoringTests {
         #expect(receivedNames[2] == "David")
     }
 
-    @Test("Enum-based keys prevent typos via type safety")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum-based keys prevent typos via type safety", .timeLimit(.minutes(1)))
     func enumBasedKeysTypeSafety() {
         let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
 
@@ -963,7 +1004,8 @@ final class KeyedStoringTests {
         // storage.userName = 123   // ❌ Compile error (wrong type)
     }
 
-    @Test("Enum-based keys with nil values")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum-based keys with nil values", .timeLimit(.minutes(1)))
     func enumBasedKeysNilValues() {
         let storage: any KeyedStoring<EnumBasedKeys> = defaults.keyedStoring()
 
@@ -981,7 +1023,8 @@ final class KeyedStoringTests {
 
     // MARK: - Auto-Observation Tests
 
-    @Test("Auto-observation triggers objectWillChange for property changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("Auto-observation triggers objectWillChange for property changes", .timeLimit(.minutes(1)))
     @MainActor
     func autoObservationTriggersObjectWillChangeForPropertyChanges() async throws {
         let storage: any ObservableKeyedStoring<AutoObservationKeys1> = defaults.observableKeyedStoring()
@@ -1002,7 +1045,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 1)
     }
 
-    @Test("Auto-observation triggers for direct key changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("Auto-observation triggers for direct key changes", .timeLimit(.minutes(1)))
     @MainActor
     func autoObservationTriggersForDirectKeyChanges() async throws {
         let storage: any ObservableKeyedStoring<AutoObservationKeys1> = defaults.observableKeyedStoring()
@@ -1023,7 +1067,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 1)
     }
 
-    @Test("Auto-observation isolation between protocols")
+    @available(iOS 16, macOS 13, *)
+    @Test("Auto-observation isolation between protocols", .timeLimit(.minutes(1)))
     @MainActor
     func autoObservationIsolationBetweenProtocols() async throws {
         let storage1: any ObservableKeyedStoring<AutoObservationKeys1> = defaults.observableKeyedStoring()
@@ -1060,7 +1105,8 @@ final class KeyedStoringTests {
         #expect(settings2ChangeCount == 1)
     }
 
-    @Test("Auto-observation with multiple properties")
+    @available(iOS 16, macOS 13, *)
+    @Test("Auto-observation with multiple properties", .timeLimit(.minutes(1)))
     @MainActor
     func autoObservationWithMultipleProperties() async throws {
         let storage: any ObservableKeyedStoring<AutoObservationKeys1> = defaults.observableKeyedStoring()
@@ -1082,7 +1128,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 2)
     }
 
-    @Test("Auto-observation isolation between different UserDefaults instances")
+    @available(iOS 16, macOS 13, *)
+    @Test("Auto-observation isolation between different UserDefaults instances", .timeLimit(.minutes(1)))
     @MainActor
     func autoObservationIsolationBetweenDifferentUserDefaultsInstances() {
         let suite1 = "test-\(UUID().uuidString)"
@@ -1128,7 +1175,8 @@ final class KeyedStoringTests {
         #expect(settings1bChangeCount == 1)
     }
 
-    @Test("Property publishers emit initial value on subscription")
+    @available(iOS 16, macOS 13, *)
+    @Test("Property publishers emit initial value on subscription", .timeLimit(.minutes(1)))
     func propertyPublishersEmitInitialValueOnSubscription() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Bool?] = []
@@ -1151,7 +1199,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [true, false])
     }
 
-    @Test("KeyPath publishers emit initial value on subscription")
+    @available(iOS 16, macOS 13, *)
+    @Test("KeyPath publishers emit initial value on subscription", .timeLimit(.minutes(1)))
     func keyPathPublishersEmitInitialValueOnSubscription() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Double?] = []
@@ -1174,7 +1223,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [30.0, 60.0])
     }
 
-    @Test("objectWillChange does NOT emit on subscription")
+    @available(iOS 16, macOS 13, *)
+    @Test("objectWillChange does NOT emit on subscription", .timeLimit(.minutes(1)))
     @MainActor
     func objectWillChangeDoesNotEmitOnSubscription() {
         let storage: any ObservableKeyedStoring<AutoObservationKeys1> = defaults.observableKeyedStoring()
@@ -1201,7 +1251,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 1)
     }
 
-    @Test("Auto-observation comprehensive isolation")
+    @available(iOS 16, macOS 13, *)
+    @Test("Auto-observation comprehensive isolation", .timeLimit(.minutes(1)))
     @MainActor
     func autoObservationComprehensiveIsolation() {
         // Create 4 different UserDefaults instances
@@ -1282,7 +1333,8 @@ final class KeyedStoringTests {
     }
 
     // MARK: - Edge Case Tests
-    @Test("Publisher emits rapidly for many changes")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher emits rapidly for many changes", .timeLimit(.minutes(1)))
     func publisherHandlesRapidChanges() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var receivedCount = 0
@@ -1301,7 +1353,8 @@ final class KeyedStoringTests {
         #expect(receivedCount == 51)
     }
 
-    @Test("Nil to value to nil cycle works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Nil to value to nil cycle works correctly", .timeLimit(.minutes(1)))
     func nilToValueToNilCycle() {
         let storage: any KeyedStoring<AppSettingsKeys> = defaults.keyedStoring()
 
@@ -1324,7 +1377,8 @@ final class KeyedStoringTests {
         #expect(defaults.object(forKey: "refreshInterval") == nil)
     }
 
-    @Test("Multiple subscribers receive all updates")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple subscribers receive all updates", .timeLimit(.minutes(1)))
     func multipleSubscribersReceiveAllUpdates() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var subscriber1Values: [Bool?] = []
@@ -1354,7 +1408,8 @@ final class KeyedStoringTests {
         #expect(subscriber3Values == [nil, true, false])
     }
 
-    @Test("Thread safety: Concurrent reads work correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Thread safety: Concurrent reads work correctly", .timeLimit(.minutes(1)))
     func concurrentReadsWorkCorrectly() async {
         let storage: any KeyedStoring<AppSettingsKeys> = defaults.keyedStoring()
 
@@ -1376,7 +1431,8 @@ final class KeyedStoringTests {
         }
     }
 
-    @Test("Thread safety: Concurrent writes to different keys")
+    @available(iOS 16, macOS 13, *)
+    @Test("Thread safety: Concurrent writes to different keys", .timeLimit(.minutes(1)))
     func concurrentWritesToDifferentKeys() async {
         let storage: any KeyedStoring<AppSettingsKeys> = defaults.keyedStoring()
 
@@ -1399,7 +1455,8 @@ final class KeyedStoringTests {
         #expect(storage.isFirstLaunch != nil || storage.refreshInterval != nil)
     }
 
-    @Test("Large string value persists correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Large string value persists correctly", .timeLimit(.minutes(1)))
     func largeStringValuePersistsCorrectly() {
         // Given - a large string (1MB)
         let largeString = String(repeating: "A", count: 1_000_000)
@@ -1416,7 +1473,8 @@ final class KeyedStoringTests {
         defaults.removeObject(forKey: "largeString")
     }
 
-    @Test("Large data value persists correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Large data value persists correctly", .timeLimit(.minutes(1)))
     func largeDataValuePersistsCorrectly() {
         // Given - large data (5MB)
         let largeData = Data(repeating: 0xFF, count: 5_000_000)
@@ -1433,7 +1491,8 @@ final class KeyedStoringTests {
         defaults.removeObject(forKey: "largeData")
     }
 
-    @Test("Very long key name works")
+    @available(iOS 16, macOS 13, *)
+    @Test("Very long key name works", .timeLimit(.minutes(1)))
     func veryLongKeyNameWorks() {
         // Given - a very long key (1000 chars)
         let longKey = String(repeating: "k", count: 1000)
@@ -1449,7 +1508,8 @@ final class KeyedStoringTests {
         defaults.removeObject(forKey: longKey)
     }
 
-    @Test("Enum with negative Int raw value")
+    @available(iOS 16, macOS 13, *)
+    @Test("Enum with negative Int raw value", .timeLimit(.minutes(1)))
     func enumWithNegativeIntRawValue() {
         // Given - enum with negative raw values
         enum Status: Int {
@@ -1470,7 +1530,8 @@ final class KeyedStoringTests {
         defaults.removeObject(forKey: "status")
     }
 
-    @Test("UserDefaults suite cleanup verifies no persistent domain remains")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults suite cleanup verifies no persistent domain remains", .timeLimit(.minutes(1)))
     func userDefaultsSuiteCleanupVerification() {
         let testSuiteName = "test-cleanup-\(UUID().uuidString)"
 
@@ -1491,7 +1552,8 @@ final class KeyedStoringTests {
         newDefaults.removePersistentDomain(forName: testSuiteName)
     }
 
-    @Test("Property observation setup is idempotent")
+    @available(iOS 16, macOS 13, *)
+    @Test("Property observation setup is idempotent", .timeLimit(.minutes(1)))
     @MainActor
     func propertyObservationSetupIsIdempotent() {
         let storage: any ObservableKeyedStoring<AutoObservationKeys1> = defaults.observableKeyedStoring()
@@ -1514,7 +1576,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 1)
     }
 
-    @Test("Publisher subscription after value changes emits current value")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher subscription after value changes emits current value", .timeLimit(.minutes(1)))
     func publisherSubscriptionAfterValueChangesEmitsCurrentValue() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
         var receivedValues: [Bool?] = []
@@ -1532,7 +1595,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [false])
     }
 
-    @Test("InMemoryKeyValueStore publisher emits initial value on subscription")
+    @available(iOS 16, macOS 13, *)
+    @Test("InMemoryKeyValueStore publisher emits initial value on subscription", .timeLimit(.minutes(1)))
     @MainActor
     func inMemoryKeyValueStorePublisherEmitsInitialValue() {
         struct MockStoreKeys: StoringKeys {
@@ -1561,7 +1625,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == ["initialValue", "newValue"])
     }
 
-    @Test("UserDefaults publisher with dotted legacy key emits initial value on subscription")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults publisher with dotted legacy key emits initial value on subscription", .timeLimit(.minutes(1)))
     @MainActor
     func userDefaultsPublisherWithDottedLegacyKeyEmitsInitialValue() {
         struct LegacyDottedKeys: StoringKeys {
@@ -1604,7 +1669,8 @@ final class KeyedStoringTests {
         #expect(testDefaults.string(forKey: "userName") == "NewValue")
     }
 
-    @Test("Publisher emits initial nil value on subscription")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher emits initial nil value on subscription", .timeLimit(.minutes(1)))
     @MainActor
     func publisherEmitsInitialNilValueOnSubscription() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
@@ -1629,7 +1695,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, true])
     }
 
-    @Test("Publisher observes value removal")
+    @available(iOS 16, macOS 13, *)
+    @Test("Publisher observes value removal", .timeLimit(.minutes(1)))
     @MainActor
     func publisherObservesValueRemoval() {
         let storage: any ObservableKeyedStoring<AppSettingsKeys> = defaults.observableKeyedStoring()
@@ -1659,7 +1726,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [30.0, nil, 60.0])
     }
 
-    @Test("InMemoryKeyValueStore publisher emits initial nil value")
+    @available(iOS 16, macOS 13, *)
+    @Test("InMemoryKeyValueStore publisher emits initial nil value", .timeLimit(.minutes(1)))
     @MainActor
     func inMemoryKeyValueStorePublisherEmitsInitialNilValue() {
         struct MockStoreKeys: StoringKeys {
@@ -1689,7 +1757,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [nil, "nowExists"])
     }
 
-    @Test("InMemoryKeyValueStore publisher observes value removal")
+    @available(iOS 16, macOS 13, *)
+    @Test("InMemoryKeyValueStore publisher observes value removal", .timeLimit(.minutes(1)))
     @MainActor
     func inMemoryKeyValueStorePublisherObservesValueRemoval() {
         struct MockStoreKeys: StoringKeys {
@@ -1724,7 +1793,8 @@ final class KeyedStoringTests {
         #expect(receivedValues == [42, nil, 100])
     }
 
-    @Test("UserDefaults with dotted key publisher observes value removal")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults with dotted key publisher observes value removal", .timeLimit(.minutes(1)))
     @MainActor
     func userDefaultsWithDottedKeyPublisherObservesValueRemoval() {
         let suiteName = "test-dotted-removal-\(UUID().uuidString)"
@@ -1762,7 +1832,8 @@ final class KeyedStoringTests {
         #expect(lastReceivedValue == "afterRemoval")
     }
 
-    @Test("Removing persistent domain while observing does not crash")
+    @available(iOS 16, macOS 13, *)
+    @Test("Removing persistent domain while observing does not crash", .timeLimit(.minutes(1)))
     func removingPersistentDomainWhileObservingDoesNotCrash() {
         let tempSuiteName = "test-removal-\(UUID().uuidString)"
         let tempDefaults = UserDefaults(suiteName: tempSuiteName)!
@@ -1785,7 +1856,8 @@ final class KeyedStoringTests {
 
     // MARK: - ThrowingValue Tests
 
-    @Test("ThrowingValue getter returns value")
+    @available(iOS 16, macOS 13, *)
+    @Test("ThrowingValue getter returns value", .timeLimit(.minutes(1)))
     func throwingValueGetterReturnsValue() throws {
         let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
@@ -1799,7 +1871,8 @@ final class KeyedStoringTests {
         #expect(value == 42)
     }
 
-    @Test("ThrowingValue getter returns nil for missing value")
+    @available(iOS 16, macOS 13, *)
+    @Test("ThrowingValue getter returns nil for missing value", .timeLimit(.minutes(1)))
     func throwingValueGetterReturnsNilForMissingValue() throws {
         let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
@@ -1813,7 +1886,8 @@ final class KeyedStoringTests {
         #expect(value == nil)
     }
 
-    @Test("ThrowingValue setter sets value")
+    @available(iOS 16, macOS 13, *)
+    @Test("ThrowingValue setter sets value", .timeLimit(.minutes(1)))
     func throwingValueSetterSetsValue() throws {
         let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
@@ -1825,7 +1899,8 @@ final class KeyedStoringTests {
         #expect(retrieved == 100)
     }
 
-    @Test("ThrowingValue setter sets nil")
+    @available(iOS 16, macOS 13, *)
+    @Test("ThrowingValue setter sets nil", .timeLimit(.minutes(1)))
     func throwingValueSetterSetsNil() throws {
         let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
@@ -1840,7 +1915,8 @@ final class KeyedStoringTests {
         #expect(retrieved == nil)
     }
 
-    @Test("ThrowingValue with mock store that throws on get")
+    @available(iOS 16, macOS 13, *)
+    @Test("ThrowingValue with mock store that throws on get", .timeLimit(.minutes(1)))
     func throwingValueWithMockStoreThatThrowsOnGet() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
         let storage: any ThrowingKeyedStoring<ThrowingKeys> = mockStore.throwingKeyedStoring()
@@ -1857,7 +1933,8 @@ final class KeyedStoringTests {
         }
     }
 
-    @Test("ThrowingValue with mock store that throws on set")
+    @available(iOS 16, macOS 13, *)
+    @Test("ThrowingValue with mock store that throws on set", .timeLimit(.minutes(1)))
     func throwingValueWithMockStoreThatThrowsOnSet() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
         let storage: any ThrowingKeyedStoring<ThrowingKeys> = mockStore.throwingKeyedStoring()
@@ -1874,7 +1951,8 @@ final class KeyedStoringTests {
         }
     }
 
-    @Test("ThrowingValue can set then get same value")
+    @available(iOS 16, macOS 13, *)
+    @Test("ThrowingValue can set then get same value", .timeLimit(.minutes(1)))
     func throwingValueCanSetThenGetSameValue() throws {
         let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
@@ -1886,7 +1964,8 @@ final class KeyedStoringTests {
         #expect(retrieved == 999)
     }
 
-    @Test("ThrowingValue with String type")
+    @available(iOS 16, macOS 13, *)
+    @Test("ThrowingValue with String type", .timeLimit(.minutes(1)))
     func throwingValueWithStringType() throws {
         let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
@@ -1898,7 +1977,8 @@ final class KeyedStoringTests {
         #expect(retrieved == "test")
     }
 
-    @Test("ThrowingValue multiple properties are independent")
+    @available(iOS 16, macOS 13, *)
+    @Test("ThrowingValue multiple properties are independent", .timeLimit(.minutes(1)))
     func throwingValueMultiplePropertiesAreIndependent() throws {
         let storage: any ThrowingKeyedStoring<ThrowingKeys> = defaults.throwingKeyedStoring()
 
@@ -1920,7 +2000,8 @@ final class KeyedStoringTests {
 
     // MARK: - ObservableThrowingKeyValueStoring Tests
 
-    @Test("ObservableThrowingKeyValueStoring getter returns value")
+    @available(iOS 16, macOS 13, *)
+    @Test("ObservableThrowingKeyValueStoring getter returns value", .timeLimit(.minutes(1)))
     func observableThrowingValueGetterReturnsValue() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
@@ -1935,7 +2016,8 @@ final class KeyedStoringTests {
         #expect(value == 42)
     }
 
-    @Test("ObservableThrowingKeyValueStoring setter sets value")
+    @available(iOS 16, macOS 13, *)
+    @Test("ObservableThrowingKeyValueStoring setter sets value", .timeLimit(.minutes(1)))
     func observableThrowingValueSetterSetsValue() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
@@ -1948,7 +2030,8 @@ final class KeyedStoringTests {
         #expect(retrieved == 100)
     }
 
-    @Test("ObservableThrowingKeyValueStoring objectWillChange fires on set")
+    @available(iOS 16, macOS 13, *)
+    @Test("ObservableThrowingKeyValueStoring objectWillChange fires on set", .timeLimit(.minutes(1)))
     @MainActor
     func observableThrowingValueObjectWillChangeFires() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
@@ -1967,7 +2050,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 1)
     }
 
-    @Test("ObservableThrowingKeyValueStoring objectWillChange fires on removal")
+    @available(iOS 16, macOS 13, *)
+    @Test("ObservableThrowingKeyValueStoring objectWillChange fires on removal", .timeLimit(.minutes(1)))
     @MainActor
     func observableThrowingValueObjectWillChangeFiresOnRemoval() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
@@ -1988,7 +2072,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 1)
     }
 
-    @Test("ObservableThrowingKeyValueStoring objectWillChange fires for any key")
+    @available(iOS 16, macOS 13, *)
+    @Test("ObservableThrowingKeyValueStoring objectWillChange fires for any key", .timeLimit(.minutes(1)))
     @MainActor
     func observableThrowingValueObjectWillChangeFiresForAnyKey() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
@@ -2008,7 +2093,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 2)
     }
 
-    @Test("ObservableThrowingKeyValueStoring doesn't fire when get throws")
+    @available(iOS 16, macOS 13, *)
+    @Test("ObservableThrowingKeyValueStoring doesn't fire when get throws", .timeLimit(.minutes(1)))
     func observableThrowingValueDoesntFireWhenGetThrows() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
@@ -2031,7 +2117,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 0)
     }
 
-    @Test("ObservableThrowingKeyValueStoring doesn't fire when set throws")
+    @available(iOS 16, macOS 13, *)
+    @Test("ObservableThrowingKeyValueStoring doesn't fire when set throws", .timeLimit(.minutes(1)))
     func observableThrowingValueDoesntFireWhenSetThrows() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
@@ -2054,7 +2141,8 @@ final class KeyedStoringTests {
         #expect(changeCount == 0)
     }
 
-    @Test("ObservableThrowingKeyValueStoring updatesPublisher emits on change")
+    @available(iOS 16, macOS 13, *)
+    @Test("ObservableThrowingKeyValueStoring updatesPublisher emits on change", .timeLimit(.minutes(1)))
     func observableThrowingValueUpdatesPublisherEmitsOnChange() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         let storage: any ObservableThrowingKeyedStoring<ThrowingObservableKeys> = mockStore.observableThrowingKeyedStoring()
@@ -2072,7 +2160,8 @@ final class KeyedStoringTests {
         #expect(emissionCount == 1)
     }
 
-    @Test("ObservableThrowingKeyValueStoring multiple subscribers work")
+    @available(iOS 16, macOS 13, *)
+    @Test("ObservableThrowingKeyValueStoring multiple subscribers work", .timeLimit(.minutes(1)))
     @MainActor
     func observableThrowingValueMultipleSubscribers() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
@@ -2103,7 +2192,8 @@ final class KeyedStoringTests {
         #expect(subscriber3Count == 1)
     }
 
-    @Test("ThrowingValue works with different mock stores")
+    @available(iOS 16, macOS 13, *)
+    @Test("ThrowingValue works with different mock stores", .timeLimit(.minutes(1)))
     func throwingValueWorksWithDifferentMockStores() throws {
         let throwingStore = InMemoryThrowingKeyValueStore()
         let throwingStorage: any ThrowingKeyedStoring<ThrowingKeys> = throwingStore.throwingKeyedStoring()
@@ -2121,7 +2211,8 @@ final class KeyedStoringTests {
 
     // MARK: - Dependency Injection Tests
 
-    @Test("UserDefaults subclass conforms to KeyedStoring")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults subclass conforms to KeyedStoring", .timeLimit(.minutes(1)))
     func userDefaultsSubclassConformsToKeyedStoring() {
         // Given - custom UserDefaults subclass
         let suiteName = "test-\(UUID())"
@@ -2138,7 +2229,8 @@ final class KeyedStoringTests {
         #expect(storage.injectionTestCount == 42)
     }
 
-    @Test("UserDefaults subclass can be injected into services")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults subclass can be injected into services", .timeLimit(.minutes(1)))
     func userDefaultsSubclassCanBeInjectedIntoServices() {
         // Given - service with storage wrapper
         let suiteName = "test-\(UUID())"
@@ -2154,7 +2246,8 @@ final class KeyedStoringTests {
         #expect(service.storage.injectionTestValue == "injected")
     }
 
-    @Test("Standard UserDefaults can be injected into services")
+    @available(iOS 16, macOS 13, *)
+    @Test("Standard UserDefaults can be injected into services", .timeLimit(.minutes(1)))
     func standardUserDefaultsCanBeInjectedIntoServices() {
         // Given - service with AppUserDefaults subclass
         let suiteName = "test-\(UUID())"
@@ -2170,7 +2263,8 @@ final class KeyedStoringTests {
         #expect(service.storage.injectionTestCount == 99)
     }
 
-    @Test("Custom file store subclass conforms to KeyedStoring")
+    @available(iOS 16, macOS 13, *)
+    @Test("Custom file store subclass conforms to KeyedStoring", .timeLimit(.minutes(1)))
     func customFileStoreSubclassConformsToKeyedStoring() {
         // Given - custom file store
         let fileStore = AppFileStore()
@@ -2185,7 +2279,8 @@ final class KeyedStoringTests {
         #expect(storage.injectionTestCount == 100)
     }
 
-    @Test("Custom file store can be injected into services")
+    @available(iOS 16, macOS 13, *)
+    @Test("Custom file store can be injected into services", .timeLimit(.minutes(1)))
     func customFileStoreCanBeInjectedIntoServices() {
         // Given - service with file store
         let fileStore = AppFileStore()
@@ -2199,7 +2294,8 @@ final class KeyedStoringTests {
         #expect(service.storage.injectionTestValue == "file-injected")
     }
 
-    @Test("UserDefaults can be injected when throwing protocol is required")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults can be injected when throwing protocol is required", .timeLimit(.minutes(1)))
     func userDefaultsCanBeInjectedWhenThrowingProtocolRequired() throws {
         // Given - UserDefaults with throwing storage wrapper
         let suiteName = "test-\(UUID())"
@@ -2216,7 +2312,8 @@ final class KeyedStoringTests {
         #expect(retrieved == "throws-ok")
     }
 
-    @Test("Protocol constrains injection to specific types")
+    @available(iOS 16, macOS 13, *)
+    @Test("Protocol constrains injection to specific types", .timeLimit(.minutes(1)))
     func protocolConstrainsInjectionToSpecificTypes() {
         // Given - type-constrained service
         let suiteName = "test-\(UUID())"
@@ -2236,7 +2333,8 @@ final class KeyedStoringTests {
         #expect(service.storage.injectionTestValue == "constrained")
     }
 
-    @Test("Multiple services can share same storage instance")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple services can share same storage instance", .timeLimit(.minutes(1)))
     func multipleServicesCanShareSameStorageInstance() {
         // Given - shared storage instance
         let suiteName = "test-\(UUID())"
@@ -2253,7 +2351,8 @@ final class KeyedStoringTests {
         #expect(service2.storage.injectionTestCount == 123)
     }
 
-    @Test("Observable protocols work with injected subclasses")
+    @available(iOS 16, macOS 13, *)
+    @Test("Observable protocols work with injected subclasses", .timeLimit(.minutes(1)))
     func observableProtocolsWorkWithInjectedSubclasses() {
         // Given - observable storage wrapper
         let suiteName = "test-\(UUID())"
@@ -2278,7 +2377,8 @@ final class KeyedStoringTests {
 
     // MARK: - Test Isolation with UserDefaults Subclasses
 
-    @Test("UserDefaults subclass constrains injection to specific type")
+    @available(iOS 16, macOS 13, *)
+    @Test("UserDefaults subclass constrains injection to specific type", .timeLimit(.minutes(1)))
     func userDefaultsSubclassConstrainsInjectionToSpecificType() {
         // Given - service that requires specific subclass
         let suiteName = "test-\(UUID())"
@@ -2302,7 +2402,8 @@ final class KeyedStoringTests {
         // let invalid = ServiceWithConstrainedUserDefaults(settings: baseDefaults)  // ❌ Compile error
     }
 
-    @Test("Isolated test UserDefaults instances don't interfere")
+    @available(iOS 16, macOS 13, *)
+    @Test("Isolated test UserDefaults instances don't interfere", .timeLimit(.minutes(1)))
     func isolatedTestUserDefaultsInstancesDontInterfere() {
         // Given - two isolated test instances (each with unique suite)
         let instance1 = IsolatedTestUserDefaults()
@@ -2325,7 +2426,8 @@ final class KeyedStoringTests {
         #expect(storage2.injectionTestCount == 222)
     }
 
-    @Test("Isolated UserDefaults subclass provides clean state per test")
+    @available(iOS 16, macOS 13, *)
+    @Test("Isolated UserDefaults subclass provides clean state per test", .timeLimit(.minutes(1)))
     func isolatedUserDefaultsSubclassProvidesCleanStatePerTest() {
         // Given - isolated instance
         let isolated = IsolatedTestUserDefaults()
@@ -2352,7 +2454,8 @@ final class KeyedStoringTests {
         #expect(newStorage.injectionTestCount == nil)
     }
 
-    @Test("Multiple tests using subclass-constrained services remain isolated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple tests using subclass-constrained services remain isolated", .timeLimit(.minutes(1)))
     func multipleTestsUsingSubclassConstrainedServicesRemainIsolated() {
         // Simulating multiple test runs with same pattern
 
@@ -2386,7 +2489,8 @@ final class KeyedStoringTests {
 
     // MARK: - Legacy Key Migration Tests
 
-    @Test("Legacy key migration reads from old key when new key is empty")
+    @available(iOS 16, macOS 13, *)
+    @Test("Legacy key migration reads from old key when new key is empty", .timeLimit(.minutes(1)))
     func legacyKeyMigrationReadsFromOldKey() {
         struct LegacyKeys: StoringKeys {
             let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "com.app.legacy.username")
@@ -2421,7 +2525,8 @@ final class KeyedStoringTests {
         #expect(storage.userAge == 25)
     }
 
-    @Test("Legacy key migration prefers new key over legacy key")
+    @available(iOS 16, macOS 13, *)
+    @Test("Legacy key migration prefers new key over legacy key", .timeLimit(.minutes(1)))
     func legacyKeyMigrationPrefersNewKey() {
         struct LegacyKeys: StoringKeys {
             let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "com.app.legacy.username")
@@ -2443,7 +2548,8 @@ final class KeyedStoringTests {
         #expect(defaults.string(forKey: "com.app.legacy.username") == "LegacyValue")
     }
 
-    @Test("Legacy key migration works with setting new values")
+    @available(iOS 16, macOS 13, *)
+    @Test("Legacy key migration works with setting new values", .timeLimit(.minutes(1)))
     func legacyKeyMigrationWritesToNewKey() {
         struct LegacyKeys: StoringKeys {
             let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "com.app.legacy.username")
@@ -2463,7 +2569,8 @@ final class KeyedStoringTests {
         #expect(defaults.string(forKey: "com.app.legacy.username") == "OldValue")
     }
 
-    @Test("Legacy key is removed after first read")
+    @available(iOS 16, macOS 13, *)
+    @Test("Legacy key is removed after first read", .timeLimit(.minutes(1)))
     func legacyKeyRemovedAfterFirstRead() {
         struct LegacyKeys: StoringKeys {
             let username = StorageKey<String>(TestKeys.newUserName, migrateLegacyKey: "com.app.legacy.username")
@@ -2493,7 +2600,8 @@ final class KeyedStoringTests {
         #expect(secondRead == "MigrateMe")
     }
 
-    @Test("Legacy key migration works with observable storage")
+    @available(iOS 16, macOS 13, *)
+    @Test("Legacy key migration works with observable storage", .timeLimit(.minutes(1)))
     @MainActor
     func legacyKeyMigrationWithObservableStorage() {
         struct LegacyKeys: StoringKeys {
@@ -2528,7 +2636,8 @@ final class KeyedStoringTests {
 
     // MARK: - Dot Assertion Tests
 
-    @Test("Keys with dots trigger assertion failure")
+    @available(iOS 16, macOS 13, *)
+    @Test("Keys with dots trigger assertion failure", .timeLimit(.minutes(1)))
     func keysWithDotsAssertionFailure() {
         var assertionTriggered = false
         var assertionMessage = ""
@@ -2543,7 +2652,8 @@ final class KeyedStoringTests {
         #expect(assertionMessage.contains("user.name.invalid"))
     }
 
-    @Test("Keys without dots do not trigger assertion")
+    @available(iOS 16, macOS 13, *)
+    @Test("Keys without dots do not trigger assertion", .timeLimit(.minutes(1)))
     func keysWithoutDotsDoNotTriggerAssertion() {
         var assertionTriggered = false
 
@@ -2559,7 +2669,8 @@ final class KeyedStoringTests {
         #expect(!assertionTriggered)
     }
 
-    @Test("Legacy keys with dots are allowed for migration")
+    @available(iOS 16, macOS 13, *)
+    @Test("Legacy keys with dots are allowed for migration", .timeLimit(.minutes(1)))
     func legacyKeysWithDotsAreAllowed() {
         var assertionHandlerCalled = false
 

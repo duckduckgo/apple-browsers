@@ -297,7 +297,7 @@ public extension SubJobWebRunning {
         if stageCalculator.isImmediateOperation {
             let dataBrokerURL = self.context.dataBroker.url
             let durationInMs = (Date().timeIntervalSince(startTime) * 1000).rounded(.towardZero)
-            pixelHandler.fire(.initialScanSiteLoadDuration(duration: durationInMs, hasError: hasError, brokerURL: dataBrokerURL))
+            pixelHandler.fire(.initialScanSiteLoadDuration(duration: durationInMs, hasError: hasError, brokerURL: dataBrokerURL, isFreeScan: stageCalculator.isFreeScan))
         }
     }
 
@@ -305,7 +305,7 @@ public extension SubJobWebRunning {
         if stageCalculator.isImmediateOperation, let postLoadingSiteStartTime = self.postLoadingSiteStartTime {
             let dataBrokerURL = self.context.dataBroker.url
             let durationInMs = (Date().timeIntervalSince(postLoadingSiteStartTime) * 1000).rounded(.towardZero)
-            pixelHandler.fire(.initialScanPostLoadingDuration(duration: durationInMs, hasError: hasError, brokerURL: dataBrokerURL))
+            pixelHandler.fire(.initialScanPostLoadingDuration(duration: durationInMs, hasError: hasError, brokerURL: dataBrokerURL, isFreeScan: stageCalculator.isFreeScan))
         }
     }
 
@@ -462,7 +462,8 @@ public extension SubJobWebRunning {
                                      tries: stageCalculator.tries,
                                      parent: context.dataBroker.parent ?? "",
                                      actionId: action.id,
-                                     actionType: action.actionType.rawValue))
+                                     actionType: action.actionType.rawValue,
+                                     isFreeScan: stageCalculator.isFreeScan))
     }
 
     private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {

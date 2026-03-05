@@ -218,9 +218,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213313932650457
     case iPadAIToggle
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039
-    case fadeOutOnToggle
-
     /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
     case attributedMetrics
@@ -239,9 +236,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203542?focus=true
     case allowProTierPurchase
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212835969125260?focus=true
-    case browsingMenuSheetEnabledByDefault
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
     case autofillExtensionSettings
@@ -277,6 +271,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
     case aiChatAutoAttachContextByDefault
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
+    case multiplePageContexts
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
 
@@ -292,8 +289,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212556727029805
     case enhancedDataClearingSettings
 
-    // https://app.asana.com/1/137249556945/project/392891325557410/task/1211597475706631?focus=true
-    case webViewFlashPrevention
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
+    case unifiedToggleInput
 
     /// Whether the wide event POST endpoint is enabled
     /// https://app.asana.com/1/137249556945/project/1199333091098016/task/1212738953909168?focus=true
@@ -373,7 +370,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
              .showWhatsNewPromptOnDemand,
-             .webViewFlashPrevention,
              .wideEventPostEndpoint,
              .dataImportSummarySyncPromotion,
              .crashCollectionDisableKeysSorting,
@@ -449,14 +445,13 @@ extension FeatureFlag: FeatureFlagDescribing {
              .fullDuckAIMode,
              .iPadDuckaiOnTab,
              .iPadAIToggle,
-             .fadeOutOnToggle,
+             .unifiedToggleInput,
              .attributedMetrics,
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
              .standaloneMigration,
              .blackFridayCampaign,
              .allowProTierPurchase,
-             .browsingMenuSheetEnabledByDefault,
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
@@ -467,6 +462,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .pageContextFeature,
              .aiChatAutoAttachContextByDefault,
              .aiChatSync,
+             .multiplePageContexts,
              .aiChatSuggestions,
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
@@ -474,7 +470,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .aiChatAtb,
              .enhancedDataClearingSettings,
              .genericBackgroundTask,
-             .webViewFlashPrevention,
              .tabSwitcherTrackerCount,
              .burnSingleTab,
              .uiTestFeatureFlag,
@@ -663,8 +658,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.iPadDuckaiOnTab))
         case .iPadAIToggle:
             return .internalOnly()
-        case .fadeOutOnToggle:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
+        case .unifiedToggleInput:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.unifiedToggleInput))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .onboardingSearchExperience:
@@ -677,8 +672,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         case .allowProTierPurchase:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
-        case .browsingMenuSheetEnabledByDefault:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.browsingMenuSheetEnabledByDefault))
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -703,6 +696,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.pageContext))
         case .aiChatAutoAttachContextByDefault:
             return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
+        case .multiplePageContexts:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
         case .aiChatSync:
             return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
@@ -713,8 +708,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.aiChatAtb))
         case .enhancedDataClearingSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.enhancedDataClearingSettings))
-        case .webViewFlashPrevention:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.webViewFlashPrevention))
         case .wideEventPostEndpoint:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint))
         case .uiTestFeatureFlag:
@@ -736,11 +729,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingRebranding:
             return .disabled
         case .webExtensions:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:
-            return .remoteReleasable(.feature(.forceDarkModeOnWebsites))
+            return .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout))
         case .autofillOnboardingExperiment:
             return .remoteReleasable(.subfeature(AutofillSubfeature.onboardingExperiment))
         case .supportsSyncChatsDeletion:

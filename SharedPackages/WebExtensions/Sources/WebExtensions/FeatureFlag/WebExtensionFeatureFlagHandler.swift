@@ -125,7 +125,7 @@ public final class WebExtensionFeatureFlagHandler {
         isWebExtensionsFlagEnabled = true
         webExtensionsEnableTask?.cancel()
         webExtensionsEnableTask = Task { @MainActor [weak self] in
-            guard self?.isWebExtensionsFlagEnabled == true else { return }
+            guard !Task.isCancelled, self?.isWebExtensionsFlagEnabled == true else { return }
             await onFeatureFlagEnabled()
         }
     }
@@ -143,7 +143,7 @@ public final class WebExtensionFeatureFlagHandler {
         isEmbeddedExtensionFlagEnabled = true
         embeddedExtensionEnableTask?.cancel()
         embeddedExtensionEnableTask = Task { @MainActor [weak self] in
-            guard self?.isEmbeddedExtensionFlagEnabled == true else { return }
+            guard !Task.isCancelled, self?.isEmbeddedExtensionFlagEnabled == true else { return }
             await onEmbeddedExtensionFlagEnabled()
         }
     }

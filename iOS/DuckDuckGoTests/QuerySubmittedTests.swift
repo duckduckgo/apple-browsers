@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import UIKit
 import Suggestions
 import Bookmarks
 import AIChat
@@ -94,6 +95,40 @@ class QuerySubmittedTests: XCTestCase {
         XCTAssertFalse(mock.wasOnOmniSuggestionSelectedCalled)
     }
 
+    func testWhenSubmittingValidURLInIPadDuckAIModeThenSubmitsAsQuery() {
+        sut.loadViewIfNeeded()
+        sut.setSelectedTextEntryMode(.aiChat)
+
+        let textView = UITextView()
+        textView.text = "https://example.com/path"
+
+        let shouldChange = sut.textView(textView,
+                                        shouldChangeTextIn: NSRange(location: textView.text.count, length: 0),
+                                        replacementText: "\n")
+
+        XCTAssertFalse(shouldChange)
+        XCTAssertTrue(mock.wasOnOmniQuerySubmittedCalled)
+        XCTAssertEqual(mock.query, "https://example.com/path")
+        XCTAssertFalse(mock.wasOnPromptSubmittedCalled)
+    }
+
+    func testWhenSubmittingTextInIPadDuckAIModeThenSubmitsAsPrompt() {
+        sut.loadViewIfNeeded()
+        sut.setSelectedTextEntryMode(.aiChat)
+
+        let textView = UITextView()
+        textView.text = "best places to visit in japan"
+
+        let shouldChange = sut.textView(textView,
+                                        shouldChangeTextIn: NSRange(location: textView.text.count, length: 0),
+                                        replacementText: "\n")
+
+        XCTAssertFalse(shouldChange)
+        XCTAssertTrue(mock.wasOnPromptSubmittedCalled)
+        XCTAssertEqual(mock.promptQuery, "best places to visit in japan")
+        XCTAssertFalse(mock.wasOnOmniQuerySubmittedCalled)
+    }
+
     // MARK: - Helper Methods
 
     private func assertQuerySubmission(query: String, expected: String) {
@@ -108,8 +143,10 @@ class QuerySubmittedTests: XCTestCase {
 final class MockOmniBarDelegate: OmniBarDelegate {
 
     var query: String = ""
+    var promptQuery: String = ""
     var suggestion: Suggestion?
     var wasOnOmniQuerySubmittedCalled = false
+    var wasOnPromptSubmittedCalled = false
     var wasOnOmniSuggestionSelectedCalled = false
 
     func onOmniQuerySubmitted(_ query: String) {
@@ -123,8 +160,10 @@ final class MockOmniBarDelegate: OmniBarDelegate {
 
     func clear() {
         query = ""
+        promptQuery = ""
         suggestion = nil
         wasOnOmniQuerySubmittedCalled = false
+        wasOnPromptSubmittedCalled = false
         wasOnOmniSuggestionSelectedCalled = false
     }
 
@@ -146,6 +185,8 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     }
 
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
+        wasOnPromptSubmittedCalled = true
+        promptQuery = query
     }
 
     func onAbortPressed() {

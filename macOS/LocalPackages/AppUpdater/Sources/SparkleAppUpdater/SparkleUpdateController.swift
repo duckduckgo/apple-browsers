@@ -650,6 +650,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
         pixelFiring?.fire(DebugEvent(UpdateFlowPixels.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
+        userDriver.currentUpdate = latestUpdate
 
         cachePendingUpdate(from: item)
 
@@ -661,6 +662,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
     }
 
     public func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: any Error) {
+        userDriver.currentUpdate = nil
         // Sparkle background checks bypass our check methods, so ensure tracking exists
         updateWideEvent.ensureFlowExists(initiationType: .automatic)
 
@@ -682,7 +684,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
     public func updater(_ updater: SPUUpdater, willDownloadUpdate item: SUAppcastItem, with request: NSMutableURLRequest) {
         Logger.updates.log("Downloading update: \(item.displayVersionString, privacy: .public)")
-        progressState.transition(to: .downloadDidStart)
+        progressState.transition(to: .downloadDidStart(latestUpdate!))
         updateWideEvent.didStartDownload()
     }
 
@@ -694,7 +696,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
     public func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {
         Logger.updates.debug("Extracting update: \(item.displayVersionString, privacy: .public)")
-        progressState.transition(to: .extractionDidStart)
+        progressState.transition(to: .extractionDidStart(latestUpdate!))
         updateWideEvent.didStartExtraction()
     }
 

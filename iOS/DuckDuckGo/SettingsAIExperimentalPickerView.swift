@@ -36,7 +36,6 @@ struct SettingsAIExperimentalPickerView: View {
     var body: some View {
         HStack(alignment: .top, spacing: SettingsAIExperimentalPickerViewLayout.optionsHorizontalSpacing) {
             PickerOptionView(
-                optionID: 0,
                 isSelected: !isDuckAISelected,
                 selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAIActive : .searchExperimentalOn,
                 unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAI : .searchExperimentalOff,
@@ -49,7 +48,6 @@ struct SettingsAIExperimentalPickerView: View {
             .frame(maxWidth: .infinity, alignment: .top)
 
             PickerOptionView(
-                optionID: 1,
                 isSelected: isDuckAISelected,
                 selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAIActive : .aiExperimentalOn,
                 unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAI : .aiExperimentalOff,
@@ -62,8 +60,8 @@ struct SettingsAIExperimentalPickerView: View {
             .frame(maxWidth: .infinity, alignment: .top)
         }
         // Collect per-option measured title heights and apply the maximum to both.
-        .onPreferenceChange(OptionTitleHeightsPreferenceKey.self) { heights in
-            maxOptionTitleHeight = heights.values.max() ?? 0
+        .onPreferenceChange(OptionTitleHeightPreferenceKey.self) { height in
+            maxOptionTitleHeight = height
         }
         .frame(height: SettingsAIExperimentalPickerViewLayout.viewHeight)
         .frame(maxWidth: SettingsAIExperimentalPickerViewLayout.maxViewWidth)
@@ -79,7 +77,6 @@ struct SettingsAIExperimentalPickerView: View {
 }
 
 private struct PickerOptionView: View {
-    let optionID: Int
     let isSelected: Bool
     let selectedImage: ImageResource
     let unselectedImage: ImageResource
@@ -153,8 +150,8 @@ private struct PickerOptionView: View {
                 GeometryReader { geometry in
                     // Report measured title block height to parent for equalization.
                     Color.clear.preference(
-                        key: OptionTitleHeightsPreferenceKey.self,
-                        value: [optionID: geometry.size.height]
+                        key: OptionTitleHeightPreferenceKey.self,
+                        value: geometry.size.height
                     )
                 }
             )
@@ -183,12 +180,11 @@ private struct CheckmarkView: View {
     }
 }
 
-private struct OptionTitleHeightsPreferenceKey: PreferenceKey {
-    static var defaultValue: [Int: CGFloat] = [:]
+private struct OptionTitleHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
-    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
-        // Last value for a given option ID wins during this render pass.
-        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 

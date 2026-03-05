@@ -32,7 +32,6 @@ extension OnboardingRebranding.OnboardingView {
         var body: some View {
             HStack(alignment: .top, spacing: PickerMetrics.optionsSpacing) {
                 PickerOption(
-                    optionID: 0,
                     isSelected: !viewModel.isSearchAndAIChatEnabled.wrappedValue,
                     selectedImage: OnboardingRebrandingImages.SearchExperience.searchOn,
                     unselectedImage: OnboardingRebrandingImages.SearchExperience.searchOff,
@@ -44,7 +43,6 @@ extension OnboardingRebranding.OnboardingView {
                 }
 
                 PickerOption(
-                    optionID: 1,
                     isSelected: viewModel.isSearchAndAIChatEnabled.wrappedValue,
                     selectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOn,
                     unselectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOff,
@@ -55,9 +53,9 @@ extension OnboardingRebranding.OnboardingView {
                     viewModel.isSearchAndAIChatEnabled.wrappedValue = true
                 }
             }
-        // Collect per-option measured title heights and apply the maximum to both.
-            .onPreferenceChange(RebrandedOptionTitleHeightsPreferenceKey.self) { heights in
-                maxOptionTitleHeight = heights.values.max() ?? 0
+            // Collect per-option measured title heights and apply the maximum to both.
+            .onPreferenceChange(RebrandedOptionTitleHeightPreferenceKey.self) { height in
+                maxOptionTitleHeight = height
             }
         }
     }
@@ -65,7 +63,6 @@ extension OnboardingRebranding.OnboardingView {
 }
 
 private struct PickerOption: View {
-    let optionID: Int
     let isSelected: Bool
     let selectedImage: Image
     let unselectedImage: Image
@@ -112,8 +109,8 @@ private struct PickerOption: View {
                 GeometryReader { geometry in
                     // Report measured title block height to parent for equalization.
                     Color.clear.preference(
-                        key: RebrandedOptionTitleHeightsPreferenceKey.self,
-                        value: [optionID: geometry.size.height]
+                        key: RebrandedOptionTitleHeightPreferenceKey.self,
+                        value: geometry.size.height
                     )
                 }
             )
@@ -160,11 +157,10 @@ private enum PickerMetrics {
     static let radioCheckmarkColor: Color = .white
 }
 
-private struct RebrandedOptionTitleHeightsPreferenceKey: PreferenceKey {
-    static var defaultValue: [Int: CGFloat] = [:]
+private struct RebrandedOptionTitleHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
 
-    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
-        // Last value for a given option ID wins during this render pass.
-        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }

@@ -1261,7 +1261,7 @@ class MainViewController: UIViewController {
         return makeEscapeHatchModel(from: tab, targetTabIndex: targetIndex)
     }
 
-    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, tabSwitchedFromIndex: Int? = nil) {
+    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, tabSwitchedFromIndex: Int? = nil, openedAfterIdle: Bool = false) {
         guard !autoClearInProgress else { return }
         
         viewCoordinator.logoContainer.isHidden = false
@@ -1280,6 +1280,7 @@ class MainViewController: UIViewController {
         // Attaching HomeScreen means it's going to be displayed immediately.
         // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
         tabModel.viewed = true
+        tabModel.openedAfterIdle = openedAfterIdle
 
         let newTabDaxDialogFactory = NewTabDaxDialogsProvider(featureFlagger: featureFlagger, delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
@@ -1592,7 +1593,8 @@ class MainViewController: UIViewController {
         }
 
         guard let tab = currentTab else { fatalError("no tab") }
-        
+
+        tab.tabModel.openedAfterIdle = false
         request()
         dismissOmniBar()
         select(tab: tab)
@@ -1628,6 +1630,7 @@ class MainViewController: UIViewController {
 
     fileprivate func select(tab: TabViewController, tabSwitchedFromIndex passedFromIndex: Int? = nil) {
         let previousTab = currentTab
+        previousTab?.tabModel.openedAfterIdle = false
 
         hideNotificationBarIfBrokenSitePromptShown()
         if tab.link == nil {
@@ -2138,7 +2141,7 @@ class MainViewController: UIViewController {
     }
 
     // TODO: - Make fire tab required to force correct usage when applied app wide
-    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, fireTab: Bool = false) {
+    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, fireTab: Bool = false, openedAfterIdle: Bool = false) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -2154,7 +2157,7 @@ class MainViewController: UIViewController {
         } else {
             tabManager.addHomeTab(fireTab: fireTab)
         }
-        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex)
+        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex, openedAfterIdle: openedAfterIdle)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         themeColorManager.updateThemeColor()
@@ -4089,6 +4092,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         guard currentTab ?? tabManager.current(createIfNeeded: true) != nil else {
             fatalError("Unable to get current tab")
         }
+        currentTab?.tabModel.openedAfterIdle = false
         hideNotificationBarIfBrokenSitePromptShown()
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()

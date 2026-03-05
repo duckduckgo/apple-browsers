@@ -100,6 +100,9 @@ public class Tab: NSObject, NSCoding {
     /// URL of the contextual AI chat session for this tab, used to restore chat state across app restarts.
     var contextualChatURL: String?
 
+    /// Whether this NTP was shown by the idle-return flow. One-shot: cleared when the user leaves the NTP.
+    var openedAfterIdle: Bool = false
+
     /// Indicates whether this tab was created after tab history tracking was implemented.
     /// Legacy tabs (created before this feature) will have incomplete history and should not support tab burning.
     /// - `true`: Tab was created with history tracking enabled (supports tab burning)

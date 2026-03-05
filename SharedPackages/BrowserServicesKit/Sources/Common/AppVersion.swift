@@ -113,9 +113,9 @@ public struct AppVersion: OSVersionProviding {
         public var allowsOnboarding: Bool {
             switch self {
             case .normal, .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
-                return false
-            case .uiTests, .uiTestsPerformance:
                 return true
+            case .uiTests, .uiTestsPerformance:
+                return false
             }
         }
 

@@ -210,4 +210,40 @@ class TabsModelTests: XCTestCase {
         XCTAssertNil(model.get(tabAt: 0).link)
     }
 
+    // MARK: - Fire Mode (allowsEmpty)
+
+    func testWhenFireModeModelCreatedWithEmptyTabsThenTabsAreEmpty() throws {
+        let model = TabsModel(tabs: [], desktop: false, mode: .fire)
+        XCTAssertEqual(model.count, 0)
+        XCTAssertEqual(model.mode, .fire)
+        XCTAssertNil(model.currentIndex)
+    }
+
+    func testWhenFireModeModelCreatedWithTabsThenTabsArePreserved() {
+        let model = TabsModel(tabs: [
+            Tab(link: exampleLink),
+            Tab(link: exampleLink)
+        ], desktop: false, mode: .fire)
+        XCTAssertEqual(model.count, 2)
+    }
+
+    func testWhenFireModeLastTabRemovedThenNoHomeTabInserted() throws {
+        let model = TabsModel(tabs: [Tab(link: exampleLink)], desktop: false, mode: .fire)
+        model.remove(at: 0)
+        XCTAssertEqual(model.count, 0)
+        XCTAssertTrue(model.tabs.isEmpty)
+        XCTAssertNil(model.currentIndex)
+    }
+
+    func testWhenFireModeClearAllThenTabsAreCompletelyEmpty() throws {
+        let model = TabsModel(tabs: [
+            Tab(link: exampleLink),
+            Tab(link: exampleLink)
+        ], desktop: false, mode: .fire)
+        model.clearAll()
+        XCTAssertEqual(model.count, 0)
+        XCTAssertTrue(model.tabs.isEmpty)
+        XCTAssertNil(model.currentIndex)
+    }
+
 }

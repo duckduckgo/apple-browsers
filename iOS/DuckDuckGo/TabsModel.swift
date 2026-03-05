@@ -32,11 +32,23 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
 
     let mode: BrowsingMode
-    private(set) var currentIndex: Int
+    
+    var currentIndex: Int? {
+        if tabs.indices.contains(_currentIndex) {
+            return _currentIndex
+        }
+        return nil
+    }
+    
+    private var _currentIndex: Int
     @Published private(set) var tabs: [Tab]
     
     var shouldCreateFireTabs: Bool {
         mode == .fire
+    }
+
+    var allowsEmpty: Bool {
+        mode.allowsEmpty
     }
 
     var tabsPublisher: AnyPublisher<[Tab], Never> {
@@ -50,8 +62,12 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     public init(tabs: [Tab] = [], currentIndex: Int = 0, desktop: Bool, mode: BrowsingMode = .normal) {
         self.mode = mode
         let shouldCreateFireTabs = mode == .fire
-        self.tabs = tabs.isEmpty ? [Tab(desktop: desktop, fireTab: shouldCreateFireTabs)] : tabs
-        self.currentIndex = currentIndex
+        if tabs.isEmpty && !mode.allowsEmpty {
+            self.tabs = [Tab(desktop: desktop, fireTab: shouldCreateFireTabs)]
+        } else {
+            self.tabs = tabs
+        }
+        self._currentIndex = currentIndex
     }
 
     public convenience required init?(coder decoder: NSCoder) {
@@ -89,12 +105,14 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
     public func encode(with coder: NSCoder) {
         coder.encode(tabs, forKey: NSCodingKeys.tabs)
-        coder.encode(currentIndex, forKey: NSCodingKeys.currentIndex)
+        coder.encode(_currentIndex, forKey: NSCodingKeys.currentIndex)
         coder.encode(mode.rawValue, forKey: NSCodingKeys.mode)
     }
 
     var currentTab: Tab? {
-        let index = currentIndex
+        guard let index = currentIndex else {
+            return nil
+        }
         return tabs.indices.contains(index) ? tabs[index] : nil
     }
 
@@ -103,11 +121,12 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     }
 
     var hasActiveTabs: Bool {
+        guard !tabs.isEmpty else { return false }
         return tabs.count > 1 || tabs.last?.link != nil
     }
 
     func select(tabAt index: Int) {
-        currentIndex = index
+        _currentIndex = index
     }
 
     func get(tabAt index: Int) -> Tab {
@@ -120,7 +139,7 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
             return
         }
         tabs.append(tab)
-        currentIndex = tabs.count - 1
+        _currentIndex = tabs.count - 1
     }
 
     func insert(tab: Tab, at index: Int) {
@@ -142,14 +161,14 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
         tabs.insert(tab, at: destIndex)
         
         if let reselectTab = previouslyCurrentTab {
-            currentIndex = indexOf(tab: reselectTab) ?? 0
+            _currentIndex = indexOf(tab: reselectTab) ?? 0
         }
     }
 
     func remove(at index: Int) {
         let selectedTab = safeGetTabAt(currentIndex)
         tabs.remove(at: index)
-        if tabs.isEmpty {
+        if tabs.isEmpty && !allowsEmpty {
             tabs.append(Tab(fireTab: shouldCreateFireTabs))
         }
         setCurrentTab(selectedTab)
@@ -165,11 +184,13 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
     private func setCurrentTab(_ tab: Tab?) {
         if let tab, let index = indexOf(tab: tab) {
-            currentIndex = index
-        } else if currentIndex >= tabs.count {
-            currentIndex = tabs.count - 1
-        } else if currentIndex > 0 {
-            currentIndex -= 1
+            _currentIndex = index
+        } else if tabs.isEmpty {
+            _currentIndex = 0
+        } else if _currentIndex >= tabs.count {
+            _currentIndex = tabs.count - 1
+        } else if _currentIndex > 0 {
+            _currentIndex -= 1
         }
         // Else: don't adjust the index as it'll be the 'next' tab
     }
@@ -182,8 +203,10 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
     func clearAll() {
         tabs.removeAll()
-        tabs.append(Tab(fireTab: shouldCreateFireTabs))
-        currentIndex = 0
+        if !allowsEmpty {
+            tabs.append(Tab(fireTab: shouldCreateFireTabs))
+        }
+        _currentIndex = 0
     }
     
     func tabExists(withHost host: String) -> Bool {

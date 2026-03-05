@@ -347,8 +347,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         } else {
             tab = Tab(fireTab: shouldCreateFireTab)
         }
-        currentTabsModel.insert(tab: tab, at: currentTabsModel.currentIndex + 1)
-        currentTabsModel.select(tabAt: currentTabsModel.currentIndex + 1)
+        var newIndex = 0
+        if let currentIndex = currentTabsModel.currentIndex {
+            newIndex = currentIndex + 1
+        }
+        currentTabsModel.insert(tab: tab, at: newIndex)
+        currentTabsModel.select(tabAt: newIndex)
 
         let specialErrorPageNavigationHandler = SpecialErrorPageNavigationHandler(
             maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
@@ -450,11 +454,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let controller = buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: nil)
         tabControllerCache.append(controller)
 
-        let index = currentTabsModel.currentIndex
-        currentTabsModel.insert(tab: tab, at: index + 1)
+        var newIndex = 0
+        if let currentIndex = currentTabsModel.currentIndex {
+            newIndex = currentIndex + 1
+        }
+        currentTabsModel.insert(tab: tab, at: newIndex)
 
         if !inBackground {
-            currentTabsModel.select(tabAt: index + 1)
+            currentTabsModel.select(tabAt: newIndex)
         }
 
         cacheDelegate?.tabManager(self, didCreateController: controller)

@@ -1229,7 +1229,9 @@ class MainViewController: UIViewController {
             return nil
         }
         let tabs = tabManager.currentTabsModel.tabs
-        let currentIndex = tabManager.currentTabsModel.currentIndex
+        guard let currentIndex = tabManager.currentTabsModel.currentIndex else {
+            return nil
+        }
         let targetIndex: Int?
         if let fromIndex = tabSwitchedFromIndex,
            tabs.indices.contains(fromIndex),

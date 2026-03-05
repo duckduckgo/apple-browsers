@@ -33,9 +33,10 @@ extension TabsModelReading {
 
 protocol TabsModelManaging: AnyObject, TabsModelReading {
     var shouldCreateFireTabs: Bool { get }
+    var allowsEmpty: Bool { get }
     var tabsPublisher: AnyPublisher<[Tab], Never> { get }
     var currentTab: Tab? { get }
-    var currentIndex: Int { get }
+    var currentIndex: Int? { get }
     var hasUnread: Bool { get }
     var hasActiveTabs: Bool { get }
     func select(tabAt index: Int)

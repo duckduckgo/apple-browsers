@@ -20,4 +20,13 @@
 public enum BrowsingMode: Int, CaseIterable {
     case fire = 0
     case normal = 1
+    
+    var allowsEmpty: Bool {
+        switch self {
+        case .fire:
+            return true
+        case .normal:
+            return false
+        }
+    }
 }

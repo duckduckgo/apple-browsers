@@ -1266,7 +1266,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setUpAutoClearHandler()
         BWManager.shared.initCommunication()
 
-        if case .normal = AppVersion.runType,
+        if [AppVersion.AppRunType.normal, .uiTestsPerformance].contains(AppVersion.runType),
            !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {

@@ -199,7 +199,7 @@ private extension UpdateCycleProgress {
     }
 
     var toDownloadProgress: Double? {
-        guard case .downloading(_, let percentage) = self else { return nil }
+        guard case .downloading(let percentage) = self else { return nil }
         return percentage
     }
 }

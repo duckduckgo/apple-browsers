@@ -32,13 +32,13 @@ public enum UpdateCycleProgress: CustomStringConvertible {
     case updateCycleNotStarted
     case updateCycleDidStart
     case updateCycleDone(DoneReason)
-    case downloadDidStart(Update)
-    case downloading(Update, Double)
-    case extractionDidStart(Update)
-    case extracting(Update, Double)
-    case readyToInstallAndRelaunch(Update)
-    case installationDidStart(Update)
-    case installing(Update)
+    case downloadDidStart
+    case downloading(Double)
+    case extractionDidStart
+    case extracting(Double)
+    case readyToInstallAndRelaunch
+    case installationDidStart
+    case installing
     case updaterError(Error)
 
     public static var `default` = UpdateCycleProgress.updateCycleNotStarted
@@ -70,12 +70,13 @@ public enum UpdateCycleProgress: CustomStringConvertible {
         case .updateCycleDidStart: return "updateCycleDidStart"
         case .updateCycleDone(let reason): return "updateCycleDone(\(reason.rawValue))"
         case .downloadDidStart: return "downloadDidStart"
-        case .downloading(_, let percentage): return "downloading(\(percentage))"
+        case .downloading(let percentage): return "downloading(\(percentage))"
         case .extractionDidStart: return "extractionDidStart"
-        case .extracting(_, let percentage): return "extracting(\(percentage))"
+        case .extracting(let percentage): return "extracting(\(percentage))"
         case .readyToInstallAndRelaunch: return "readyToInstallAndRelaunch"
         case .installationDidStart: return "installationDidStart"
         case .installing: return "installing"
         case .updaterError(let error): return "updaterError(\(error.localizedDescription))(\(error.pixelParameters))"
         }
-    }}
+    }
+}

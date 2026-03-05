@@ -36,16 +36,16 @@ public final class SparkleUpdateUserDriver: NSObject, SPUUserDriver {
     private var bytesToDownload: UInt64 = 0
     private var bytesDownloaded: UInt64 = 0
 
-    var onProgressChange: (DriverProgress, (() -> Void)?) -> Void
+    var onProgressChange: (UpdateCycleProgress, (() -> Void)?) -> Void
 
     public private(set) var sparkleUpdateState: SPUUserUpdateState?
 
     // MARK: - Initializers
 
-    init(internalUserDecider: InternalUserDecider,
+    public init(internalUserDecider: InternalUserDecider,
                 areAutomaticUpdatesEnabled: Bool,
                 settings: (any ThrowingKeyedStoring<UpdateControllerSettings>),
-                onProgressChange: @escaping (DriverProgress, (() -> Void)?) -> Void) {
+                onProgressChange: @escaping (UpdateCycleProgress, (() -> Void)?) -> Void) {
 
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled

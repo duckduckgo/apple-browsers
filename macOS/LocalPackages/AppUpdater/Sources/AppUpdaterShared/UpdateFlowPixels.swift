@@ -117,7 +117,6 @@ public enum UpdateFlowPixels: PixelKitEvent {
     case updaterAborted(reason: String)
     case updaterDidFindUpdate
     case updaterDidDownloadUpdate
-    case updaterProgressStateMismatch(phase: String)
 
     public var name: String {
         switch self {
@@ -147,8 +146,6 @@ public enum UpdateFlowPixels: PixelKitEvent {
             return "updater_did_find_update"
         case .updaterDidDownloadUpdate:
             return "updater_did_download_update"
-        case .updaterProgressStateMismatch:
-            return "updater_progress_state_mismatch"
         }
     }
 
@@ -192,8 +189,6 @@ public enum UpdateFlowPixels: PixelKitEvent {
             ]
         case .updaterAborted(let reason):
             return ["reason": reason]
-        case .updaterProgressStateMismatch(let phase):
-            return ["phase": phase]
         case .updateNotificationShown,
                 .updateNotificationTapped,
                 .updateDuckDuckGoButtonTapped,
@@ -234,8 +229,7 @@ public enum UpdateFlowPixels: PixelKitEvent {
                 .updaterAttemptToRestartWithoutResumeBlock,
                 .updaterAborted,
                 .updaterDidFindUpdate,
-                .updaterDidDownloadUpdate,
-                .updaterProgressStateMismatch:
+                .updaterDidDownloadUpdate:
             return [.pixelSource]
         }
     }

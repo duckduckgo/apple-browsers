@@ -226,36 +226,27 @@ extension TabViewController {
         })
     }
     
-    private func buildAutoFillEntry(useSmallIcon: Bool = true, isSheetMenu: Bool = false) -> BrowsingMenuEntry {
+    private func buildAutoFillEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAutofillLogins,
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.keyLogin : DesignSystemImages.Glyphs.Size24.key,
                  action: { [weak self] in
-            if isSheetMenu {
-                Pixel.fire(pixel: .sheetBrowsingMenuPasswords)
-            }
             self?.onOpenAutofillLoginsAction()
         })
     }
 
-    private func buildChatEntry(withSmallIcon smallIcon: Bool, isSheetMenu: Bool = false) -> BrowsingMenuEntry {
+    private func buildChatEntry(withSmallIcon smallIcon: Bool) -> BrowsingMenuEntry {
         .regular(name: UserText.actionOpenAIChat,
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChat : DesignSystemImages.Glyphs.Size24.aiChat,
                  action: { [weak self] in
             self?.openAIChat()
             Pixel.fire(pixel: .browsingMenuAIChat)
-            if isSheetMenu {
-                Pixel.fire(pixel: .sheetBrowsingMenuAIChat)
-            }
         })
     }
     
-    private func buildSettingsEntry(useSmallIcon: Bool = true, isSheetMenu: Bool = false) -> BrowsingMenuEntry {
+    private func buildSettingsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionSettings,
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.settings : DesignSystemImages.Glyphs.Size24.settings,
                  action: { [weak self] in
-            if isSheetMenu {
-                Pixel.fire(pixel: .sheetBrowsingMenuSettings)
-            }
             self?.onBrowsingSettingsAction()
         })
     }
@@ -506,16 +497,13 @@ extension TabViewController {
         })
     }
     
-    private func buildNewAIChatEntry(withSmallIcon smallIcon: Bool = false, isSheetMenu: Bool = false) -> BrowsingMenuEntry {
+    private func buildNewAIChatEntry(withSmallIcon smallIcon: Bool = false) -> BrowsingMenuEntry {
         .regular(name: UserText.actionNewAIChat,
                  accessibilityLabel: UserText.actionNewAIChat,
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChatAdd : DesignSystemImages.Glyphs.Size24.aiChatAdd,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             Pixel.fire(pixel: .browsingMenuAIChat)
-            if isSheetMenu {
-                Pixel.fire(pixel: .sheetBrowsingMenuAIChat)
-            }
             self?.openNewChatInNewTab()
         })
     }
@@ -613,7 +601,7 @@ extension TabViewController {
         })
     }
 
-    private func buildUseNewDuckAddressEntry(useSmallIcon: Bool = true, isSheetMenu: Bool = false) -> BrowsingMenuEntry? {
+    private func buildUseNewDuckAddressEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
         guard delegate?.isEmailProtectionSignedIn == true else { return nil }
 
         let title = UserText.emailBrowsingMenuUseNewDuckAddress
@@ -624,9 +612,6 @@ extension TabViewController {
 
             delegate.tabDidRequestNewPrivateEmailAddress(tab: self)
             Pixel.fire(pixel: .browsingMenuNewDuckAddress)
-            if isSheetMenu {
-                Pixel.fire(pixel: .sheetBrowsingMenuNewDuckAddress)
-            }
         }
     }
 
@@ -804,7 +789,7 @@ extension TabViewController {
         })
     }
 
-    private func buildVPNEntry(useSmallIcon: Bool = true, showStatusStringInDetail: Bool = false, isSheetMenu: Bool = false) -> BrowsingMenuEntry {
+    private func buildVPNEntry(useSmallIcon: Bool = true, showStatusStringInDetail: Bool = false) -> BrowsingMenuEntry {
         let vpnPromoHelper = VPNSubscriptionPromotionHelper()
         var image: UIImage = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOff : DesignSystemImages.Glyphs.Size24.vpnUnlocked
         var showNotificationDot: Bool = true
@@ -838,9 +823,6 @@ extension TabViewController {
                                          detailText: showStatusStringInDetail ? detailText : nil) { [weak self] in
             self?.onOpenVPNAction(with: vpnPromoHelper)
             Pixel.fire(pixel: .browsingMenuVPN)
-            if isSheetMenu {
-                Pixel.fire(pixel: .sheetBrowsingMenuVPN)
-            }
         }
     }
 
@@ -911,14 +893,14 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         guard settings.isAIChatBrowsingMenuUserSettingsEnabled else { return nil }
         
         if aiChatFullModeFeature.isAvailable {
-            return buildNewAIChatEntry(withSmallIcon: false, isSheetMenu: true)
+            return buildNewAIChatEntry(withSmallIcon: false)
         } else {
-            return buildChatEntry(withSmallIcon: false, isSheetMenu: true)
+            return buildChatEntry(withSmallIcon: false)
         }
     }
     
     func makeSettingsEntry() -> BrowsingMenuEntry {
-        buildSettingsEntry(useSmallIcon: false, isSheetMenu: true)
+        buildSettingsEntry(useSmallIcon: false)
     }
     
     func makeShareEntry() -> BrowsingMenuEntry {
@@ -945,7 +927,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     
     func makeAutoFillEntry() -> BrowsingMenuEntry? {
         guard featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) else { return nil }
-        return buildAutoFillEntry(useSmallIcon: false, isSheetMenu: true)
+        return buildAutoFillEntry(useSmallIcon: false)
     }
     
     func makeVPNEntry() -> BrowsingMenuEntry? {
@@ -953,7 +935,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
               AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable else {
             return nil
         }
-        return buildVPNEntry(useSmallIcon: false, showStatusStringInDetail: true, isSheetMenu: true)
+        return buildVPNEntry(useSmallIcon: false, showStatusStringInDetail: true)
     }
     
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? {
@@ -992,7 +974,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry? {
-        return buildUseNewDuckAddressEntry(useSmallIcon: false, isSheetMenu: true)
+        return buildUseNewDuckAddressEntry(useSmallIcon: false)
     }
     
     func makeKeepSignInEntry() -> BrowsingMenuEntry? {

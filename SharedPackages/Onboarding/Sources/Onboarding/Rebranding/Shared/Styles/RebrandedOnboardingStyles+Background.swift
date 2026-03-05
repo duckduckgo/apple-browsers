@@ -98,7 +98,7 @@ extension OnboardingRebranding.OnboardingStyles {
 
         #if os(iOS)
         private static let maxHeightMetricsBuilder = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200)
-        // iPhone excludes .bottom to prevent background from being covered by keyboard when address bar is at bottom position
+        // iPhone excludes .bottom to prevent background from being covered by the address bar when it is positioned at the bottom
         private static let ignoreSafeAreaEdgesBuilder = MetricBuilder<Edge.Set>(default: [.horizontal]).iPad([.bottom, .horizontal])
         #endif
 

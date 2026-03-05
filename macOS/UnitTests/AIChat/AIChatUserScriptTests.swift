@@ -149,6 +149,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var didSubmitAIChatNativePrompt = false
     var aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
+    var submitNewChatActionSubject = PassthroughSubject<Void, Never>()
 
     var didGetAIChatPageContext = false
     var didSubmitAIChatPageContext = false
@@ -233,6 +234,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         aiChatNativePromptSubject.eraseToAnyPublisher()
     }
 
+    var submitNewChatActionPublisher: AnyPublisher<Void, Never> {
+        submitNewChatActionSubject.eraseToAnyPublisher()
+    }
+
     func openSummarizationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         didOpenSummarizationSourceLink = true
         return nil
@@ -271,6 +276,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         didSubmitAIChatPageContext = true
+    }
+
+    func submitNewChatAction() {
+        submitNewChatActionSubject.send(())
     }
 
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {

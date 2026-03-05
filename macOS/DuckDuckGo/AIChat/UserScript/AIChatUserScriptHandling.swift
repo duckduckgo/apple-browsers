@@ -47,6 +47,7 @@ protocol AIChatUserScriptHandling {
     @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable?
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
+    var submitNewChatActionPublisher: AnyPublisher<Void, Never> { get }
 
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
@@ -56,6 +57,7 @@ protocol AIChatUserScriptHandling {
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
+    func submitNewChatAction()
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
@@ -78,12 +80,14 @@ protocol AIChatUserScriptHandling {
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
+    public let submitNewChatActionPublisher: AnyPublisher<Void, Never>
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
     public let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
     public let syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
+    private let submitNewChatActionSubject = PassthroughSubject<Void, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
@@ -123,6 +127,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
+        self.submitNewChatActionPublisher = submitNewChatActionSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
@@ -268,6 +273,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
         aiChatNativePromptSubject.send(prompt)
+    }
+
+    func submitNewChatAction() {
+        submitNewChatActionSubject.send(())
     }
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {

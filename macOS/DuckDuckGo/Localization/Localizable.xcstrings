@@ -3380,6 +3380,30 @@
         }
       }
     },
+    "aichat.sidebar.new-chat-button.tooltip" : {
+      "comment" : "Tooltip for button to reset the current duck.ai sidebar chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New chat"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.open-in-tab-button.title" : {
+      "comment" : "Title of docked sidebar button to open duck.ai in a full browser tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai in Tab"
+          }
+        }
+      }
+    },
     "aichat.sidebar.title" : {
       "comment" : "Title for the Duck.ai sidebar",
       "extractionState" : "extracted_with_value",

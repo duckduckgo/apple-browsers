@@ -604,6 +604,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func canToggleDuckAISidebar(for tab: Tab) -> Bool {
+        if isChromeSidebarFeatureEnabled {
+            return true
+        }
+
         let tabID = tab.uuid
         let isSidebarOpen = aiChatCoordinator?.isSidebarOpen(for: tabID) ?? false
         let isChatFloating = aiChatCoordinator?.isChatFloating(for: tabID) ?? false

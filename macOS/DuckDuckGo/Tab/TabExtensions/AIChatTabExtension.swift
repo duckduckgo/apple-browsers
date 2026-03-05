@@ -77,6 +77,11 @@ final class AIChatTabExtension {
                     self?.temporaryAIChatNativePrompt = nil
                 }
 
+                if self?.shouldSubmitNewChatActionWhenUserScriptLoads == true {
+                    self?.aiChatUserScript?.handler.submitNewChatAction()
+                    self?.shouldSubmitNewChatActionWhenUserScriptLoads = false
+                }
+
                 if let pageContext = self?.temporaryPageContext {
                     /// See the comment in `self.submitAIChatPageContext` for the explanation of why we're calling user script twice.
                     self?.aiChatUserScript?.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
@@ -145,6 +150,16 @@ final class AIChatTabExtension {
         aiChatUserScript.handler.submitAIChatNativePrompt(prompt)
     }
 
+    private var shouldSubmitNewChatActionWhenUserScriptLoads = false
+    func submitNewChatAction() {
+        guard let aiChatUserScript else {
+            shouldSubmitNewChatActionWhenUserScriptLoads = true
+            return
+        }
+
+        aiChatUserScript.handler.submitNewChatAction()
+    }
+
     private var temporaryPageContext: AIChatPageContextData?
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         // Page Context functionality is only for the sidebar.
@@ -210,6 +225,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func setAIChatNativeHandoffData(payload: AIChatPayload)
     func setAIChatRestorationData(_ data: AIChatRestorationData?)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
+    func submitNewChatAction()
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }

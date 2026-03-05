@@ -269,6 +269,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1213356927349370?focus=true
     case aiChatNtpRecentChats
 
+    /// Internal-only flag for AI Chat accessible entry points.
+    case aiChatAccessibleEntryPoints = "aiChat.accessibleEntryPoints"
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
 
@@ -314,6 +317,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .crashCollectionLimitCallStackTreeDepth,
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
+                .aiChatAccessibleEntryPoints,
                 .aiChatSidebarFloating,
                 .nextStepsListWidget,
                 .webViewLookUpAction:
@@ -406,6 +410,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .supportsSyncChatsDeletion,
                 .aiChatSidebarResizable,
                 .aiChatNtpRecentChats,
+                .aiChatAccessibleEntryPoints,
                 .aiChatSidebarFloating,
                 .startupMetrics,
                 .privateProcessName,
@@ -580,6 +585,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .aiChatNtpRecentChats:
             return .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats))
+        case .aiChatAccessibleEntryPoints:
+            return .internalOnly()
         case .aiChatSidebarFloating:
             return .internalOnly()
         case .startupMetrics:

@@ -25,6 +25,7 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case openAIChat
     case getAIChatNativeHandoffData
     case submitAIChatNativePrompt
+    case submitNewChatAction
     case responseState
     case showChatInput
     case hideChatInput

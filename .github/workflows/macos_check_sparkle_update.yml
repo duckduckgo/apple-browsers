@@ -1,12 +1,9 @@
 name: Check Sparkle Update
 
 on:
-  # schedule:
-  #   - cron: '0 9 * * 1'  # Every Monday at 9:00 UTC
+  schedule:
+    - cron: '0 1 * * 5'  # Every Friday at 01:00 UTC
   workflow_dispatch:
-  push:  # Temporary: remove after testing
-    branches:
-      - diego/automate-sparkle-updates-pr
 
 permissions:
   contents: write

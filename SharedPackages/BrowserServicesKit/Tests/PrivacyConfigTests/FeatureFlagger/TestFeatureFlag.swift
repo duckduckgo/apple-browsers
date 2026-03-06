@@ -19,8 +19,13 @@
 import PrivacyConfig
 
 enum TestFeatureFlag: String, FeatureFlagDescribing {
-    var defaultValue: Bool {
-        false
+    var defaultValue: FeatureFlagDefaultValue {
+        switch self {
+        case .overridableExperimentFlagWithCohortBByDefault:
+            .internalOnly(FakeExperimentCohort.cohortB)
+        default:
+            .disabled
+        }
     }
 
     var cohortType: (any FeatureFlagCohortDescribing.Type)? {
@@ -49,13 +54,13 @@ enum TestFeatureFlag: String, FeatureFlagDescribing {
     var source: FeatureFlagSource {
         switch self {
         case .nonOverridableFlag:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .overridableFlagDisabledByDefault:
             return .disabled
         case .overridableFlagEnabledByDefault:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .overridableExperimentFlagWithCohortBByDefault:
-            return .internalOnly(FakeExperimentCohort.cohortB)
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         }
     }
 

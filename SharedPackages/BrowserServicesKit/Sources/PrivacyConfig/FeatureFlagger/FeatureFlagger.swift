@@ -31,7 +31,7 @@ public protocol FeatureFlagDescribing: CaseIterable {
 
     /// To be used to determine what the state of the feature flag should be when no remote definition exists
     /// This is NOT to be used by the apps themselves, only the internal FeatureFlagger logic.
-    var defaultValue: Bool { get }
+    var defaultValue: FeatureFlagDefaultValue { get }
 
     /// Return `true` here if a flag can be locally overridden.
     ///
@@ -58,10 +58,6 @@ public protocol FeatureFlagDescribing: CaseIterable {
     ///    var source: FeatureFlagSource {
     ///        case .sync:
     ///            return .disabled
-    ///        case .cookieConsent:
-    ///            return .internalOnly()
-    ///        case .credentialsAutofill:
-    ///            return .remoteDevelopment(.subfeature(AutofillSubfeature.credentialsAutofill))
     ///        case .duckPlayer:
     ///            return .remoteReleasable(.feature(.duckPlayer))
     ///    }
@@ -150,15 +146,23 @@ public extension FeatureFlagCohortDescribing {
     }
 }
 
+/// Defines the default value of a feature flag when no remote definition exists.
+///
+/// This decouples "who sees the flag by default" from "where the flag value comes from" (its source),
+/// allowing a flag to ship with `.internalOnly` default while being promotable via remote config
+/// without a code change.
+public enum FeatureFlagDefaultValue {
+    /// Feature is disabled by default
+    case disabled
+    /// Feature is enabled by default only for internal users, with an optional cohort
+    case internalOnly((any FeatureFlagCohortDescribing)? = nil)
+    /// Feature is enabled by default for all users
+    case enabled
+}
+
 public enum FeatureFlagSource {
     /// Completely disabled in all configurations
     case disabled
-
-    /// Enabled for internal users only. Cannot be toggled remotely
-    case internalOnly((any FeatureFlagCohortDescribing)? = nil)
-
-    /// Toggled remotely using PrivacyConfiguration but only for internal users. Otherwise, disabled.
-    case remoteDevelopment(PrivacyConfigFeatureLevel)
 
     /// Toggled remotely using PrivacyConfiguration for all users
     case remoteReleasable(PrivacyConfigFeatureLevel)
@@ -223,10 +227,10 @@ public protocol FeatureFlagger: AnyObject {
     ///
     /// ## Behavior:
     /// - **For `.disabled` flags**: Returns `nil`.
-    /// - **For `.internalOnly` flags**: Returns the predefined cohort if the user is an internal user.
-    /// - **For `.remoteDevelopment` and `.remoteReleasable` flags**:
+    /// - **For `.remoteReleasable` flags**:
     ///   - If the feature is a subfeature, resolves its cohort using `resolveCohort(_ subfeature:)`.
     ///   - If no cohort is assigned yet, attempts to assign one from the available cohorts.
+    ///   - Falls back to `defaultValue` cohort for `.internalOnly` defaults when feature is missing from config.
     ///
     /// > **Note**: If `allowOverride` is `false`, local overrides are ignored.
     ///
@@ -389,15 +393,8 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         switch featureFlag.source {
         case .disabled:
             return false
-        case .internalOnly:
-            return internalUserDecider.isInternalUser
-        case .remoteDevelopment(let featureType):
-            guard internalUserDecider.isInternalUser else {
-                return false
-            }
-            return isEnabled(featureType, defaultValue: featureFlag.defaultValue)
         case .remoteReleasable(let featureType):
-            return isEnabled(featureType, defaultValue: featureFlag.defaultValue)
+            return isEnabled(featureType, defaultValue: resolveDefault(featureFlag.defaultValue))
         }
     }
 
@@ -430,21 +427,20 @@ public class DefaultFeatureFlagger: FeatureFlagger {
     }
 
     private func handleCohortResolutionBasedOnSources<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowCohortAssignment: Bool) -> (any FeatureFlagCohortDescribing)? {
-        // Handle feature cohort sources
         switch featureFlag.source {
         case .disabled:
             return nil
-        case .internalOnly(let cohort):
-            return cohort
-        case .remoteReleasable(let featureType),
-             .remoteDevelopment(let featureType) where internalUserDecider.isInternalUser:
+        case .remoteReleasable(let featureType):
             if case .subfeature(let subfeature) = featureType {
                 if let resolvedCohortID = resolveCohort(subfeature.rawValue, parentID: subfeature.parent.rawValue, allowCohortAssignment: allowCohortAssignment) {
                     return featureFlag.cohortType?.cohort(for: resolvedCohortID)
                 }
             }
-            return nil
-        default:
+            // Fall back to defaultValue cohort if feature is missing from config
+            if case .internalOnly(let cohort) = featureFlag.defaultValue,
+               internalUserDecider.isInternalUser {
+                return cohort
+            }
             return nil
         }
     }
@@ -461,6 +457,17 @@ public class DefaultFeatureFlagger: FeatureFlagger {
             return experimentManager?.resolveCohort(for: experiment, allowCohortAssignment: false)
         default:
             return nil
+        }
+    }
+
+    private func resolveDefault(_ defaultValue: FeatureFlagDefaultValue) -> Bool {
+        switch defaultValue {
+        case .disabled:
+            return false
+        case .internalOnly:
+            return internalUserDecider.isInternalUser
+        case .enabled:
+            return true
         }
     }
 

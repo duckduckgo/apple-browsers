@@ -349,7 +349,7 @@ public enum FeatureFlag: String {
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
-    public var defaultValue: Bool {
+    public var defaultValue: FeatureFlagDefaultValue {
         switch self {
         case .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,
@@ -375,9 +375,13 @@ extension FeatureFlag: FeatureFlagDescribing {
              .tabSwitcherTrackerCount,
              .iPadDuckaiOnTab,
              .suppressTrackerAnimationOnColdStart:
-            true
+            .enabled
+        case .crashReportOptInStatusResetting,
+             .iPadAIToggle,
+             .webExtensions:
+            .internalOnly()
         default:
-            false
+            .disabled
         }
     }
 
@@ -589,7 +593,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dbpClickActionDelayReductionOptimization:
             return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
         case .crashReportOptInStatusResetting:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.crashReportOptInStatusResetting))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .maliciousSiteProtection:
@@ -653,7 +657,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .iPadDuckaiOnTab:
             return .remoteReleasable(.subfeature(AIChatSubfeature.iPadDuckaiOnTab))
         case .iPadAIToggle:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.iPadAIToggle))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .onboardingSearchExperience:
@@ -723,7 +727,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingRebranding:
             return .disabled
         case .webExtensions:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:

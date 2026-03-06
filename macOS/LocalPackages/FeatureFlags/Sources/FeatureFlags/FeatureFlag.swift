@@ -283,7 +283,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    public var defaultValue: Bool {
+    public var defaultValue: FeatureFlagDefaultValue {
         switch self {
         case .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
@@ -303,9 +303,12 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
                 .nextStepsListWidget:
-            true
+            .enabled
+        case .autofillPasswordsStatusBar,
+                .startupMetrics:
+            .internalOnly()
         default:
-            false
+            .disabled
         }
     }
 
@@ -529,7 +532,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .autofillPasswordsStatusBar:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.autofillPasswordsStatusBar))
         case .warnBeforeQuit:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
         case .dataImportWideEventMeasurement:
@@ -561,7 +564,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
         case .startupMetrics:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.startupMetrics))
         case .privateProcessName:
             return .disabled
         }

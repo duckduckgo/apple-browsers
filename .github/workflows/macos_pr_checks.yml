@@ -159,7 +159,7 @@ jobs:
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
-    timeout-minutes: 60
+    timeout-minutes: 45
 
     env:
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
@@ -388,6 +388,17 @@ jobs:
       with:
         name: ${{ matrix.flavor }}-integrationtests.xcresult
         path: macOS/${{ matrix.flavor }}-integrationtests.xcresult
+        retention-days: 7
+
+    - name: Upload crash reports
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: ${{ matrix.flavor }}-crash-reports
+        path: |
+          ~/Library/Logs/DiagnosticReports/*.crash
+          ~/Library/Logs/DiagnosticReports/*.ips
+        if-no-files-found: ignore
         retention-days: 7
 
     - name: Fetch latest commit author and PR reviewers

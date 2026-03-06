@@ -451,7 +451,9 @@ class TabSwitcherViewController: UIViewController {
         guard fireModeCapability.isFireModeEnabled else {
             return
         }
-        let hostingController = UIHostingController(rootView: FireModeEmptyStateView())
+        let hostingController = UIHostingController(rootView: FireModeEmptyStateView(onNewFireTab: { [weak self] in
+            self?.addNewTab()
+        }))
         hostingController.view.backgroundColor = .clear
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
@@ -463,8 +465,9 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func updateFireModeEmptyStateVisibility() {
-        let shouldShow = tabManager.currentBrowsingMode == .fire && tabsModel.tabs.isEmpty
-        fireModeEmptyStateHostingController?.view.isHidden = !shouldShow
+        let shouldShowEmptyState = tabManager.currentBrowsingMode == .fire && tabsModel.tabs.isEmpty
+        fireModeEmptyStateHostingController?.view.isHidden = !shouldShowEmptyState
+        collectionView.isHidden = shouldShowEmptyState
     }
 
     func refreshDisplayModeButton() {

@@ -1696,17 +1696,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &darkReaderCancellables)
 
-        let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
-            .flagDidChangePublisher
-
-        let webExtensionsPublisher = flagPublisher?
-            .filter { $0.0 == .webExtensions }
-            .map { $0.1 }
+        let webExtensionsPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.webExtensions)
+            }
+            .removeDuplicates()
             .eraseToAnyPublisher()
 
-        let embeddedExtensionPublisher = flagPublisher?
-            .filter { $0.0 == .embeddedExtension }
-            .map { $0.1 }
+        let embeddedExtensionPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.embeddedExtension)
+            }
+            .removeDuplicates()
             .eraseToAnyPublisher()
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(

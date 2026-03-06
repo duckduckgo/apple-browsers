@@ -163,6 +163,11 @@ class TabViewController: UIViewController {
     let adClickAttributionLogic = ContentBlocking.shared.makeAdClickAttributionLogic(tld: tld)
 
     private var httpsForced: Bool = false
+    private(set) lazy var safariRedirectHandler: SafariRedirectHandler = {
+        let handler = SafariRedirectHandler(tld: AppDependencyProvider.shared.storageCache.tld, featureFlagger: featureFlagger)
+        handler.delegate = self
+        return handler
+    }()
     private var lastUpgradedURL: URL?
     private var lastError: Error?
     private var lastHttpStatusCode: Int?
@@ -960,6 +965,7 @@ class TabViewController: UIViewController {
         wasLoadingStoppedExternally = false
         webView.stopLoading()
         dismissJSAlertIfNeeded()
+        safariRedirectHandler.reset()
 
         load(url: url, didUpgradeURL: false)
     }
@@ -1419,11 +1425,13 @@ class TabViewController: UIViewController {
     }
     
     func presentOpenInExternalAppAlert(url: URL) {
+        if safariRedirectHandler.handleRedirect(to: url) { return }
+
         let title = UserText.customUrlSchemeTitle
         let message = UserText.customUrlSchemeMessage
         let open = UserText.customUrlSchemeOpen
         let dontOpen = UserText.customUrlSchemeDontOpen
-        
+
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: dontOpen, style: .cancel, handler: { _ in
             if self.webView.url == nil {
@@ -1474,7 +1482,8 @@ class TabViewController: UIViewController {
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
                                                                      breakageReportingSubfeature: breakageReportingSubfeature,
-                                                                     isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled)
+                                                                     isForceDarkModeEnabled: darkReaderFeatureSettings.isForceDarkModeEnabled,
+                                                                     isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL))
     }
 
     public func print() {
@@ -2347,11 +2356,17 @@ extension TabViewController: WKNavigationDelegate {
 
         let schemeType = SchemeHandler.schemeType(for: url)
         self.blobDownloadTargetFrame = nil
+
+        if safariRedirectHandler.handleRedirect(to: url) {
+            completion(.cancel)
+            return
+        }
+
         switch schemeType {
         case .allow:
             completion(.allow)
             return
-            
+
         case .navigational:
             performNavigationFor(url: url,
                                  navigationAction: navigationAction,
@@ -4178,5 +4193,26 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
         PixelKit.fire(SERPSettingsPixel.openDuckAIButtonClick, frequency: .dailyAndStandard)
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: true)
+    }
+}
+
+// MARK: - SafariRedirectHandlerDelegate
+
+extension TabViewController: SafariRedirectHandlerDelegate {
+
+    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestLoadURL url: URL) {
+        load(url: url, didUpgradeURL: false)
+    }
+
+    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestOpenExternallyURL url: URL) {
+        openExternally(url: url)
+    }
+
+    func safariRedirectHandlerDidRequestGoBack(_ handler: SafariRedirectHandling) {
+        goBack()
+    }
+
+    func safariRedirectHandler(_ handler: SafariRedirectHandling, didRequestPresentAlert alert: UIAlertController) {
+        delegate?.tab(self, didRequestPresentingAlert: alert)
     }
 }

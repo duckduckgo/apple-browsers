@@ -66,6 +66,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncErrorHandler: CapturingAdapterErrorHandler())
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.syncSeamlessAccountSwitching])
         syncAutoRestoreHandler = MockSyncAutoRestoreHandler()
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
         vc = SyncSettingsViewController(
             syncService: ddgSyncing,
             syncBookmarksAdapter: bookmarksAdapter,
@@ -223,6 +224,128 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.viewWillAppear(false)
 
         XCTAssertEqual(vc.viewModel?.isAutoRestoreEnabled, true)
+    }
+
+    @MainActor
+    func testWhenAutoRestoreIsEligibleThenHasPreservedSyncAccountConflictForSetupIsTrue() {
+        syncAutoRestoreHandler.isEligibleForAutoRestoreValue = true
+
+        XCTAssertTrue(vc.isPreservedAccountPromptNeeded())
+    }
+
+    @MainActor
+    func testWhenAutoRestoreIsNotEligibleThenHasPreservedSyncAccountConflictForSetupIsFalse() {
+        syncAutoRestoreHandler.isEligibleForAutoRestoreValue = false
+
+        XCTAssertFalse(vc.isPreservedAccountPromptNeeded())
+    }
+
+    @MainActor
+    func testWhenContinueSyncSetupAfterPreservedAccountRemovalAndDisconnectSucceedsThenLocalRemovalRunsAndBackupContinues() async {
+        let localRemovalCalled = expectation(description: "Local preserved account removal called")
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+        ddgSyncing.onRemovePreservedSyncAccount = {
+            localRemovalCalled.fulfill()
+        }
+
+        vc.continueAfterPreservedAccountRemoval(.setup(.backup))
+
+        await fulfillment(of: [localRemovalCalled], timeout: 1.0)
+        await Task.yield()
+
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 1)
+        XCTAssertEqual(vc.viewModel?.isSyncWithSetUpSheetVisible, true)
+    }
+
+    @MainActor
+    func testWhenContinueSyncSetupAfterPreservedAccountRemovalAndDisconnectFailsThenLocalRemovalStillRunsAndBackupContinues() async {
+        let localRemovalCalled = expectation(description: "Local preserved account removal called")
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+        ddgSyncing.disconnectDeviceError = NSError(domain: "test.disconnect", code: 1)
+        ddgSyncing.onRemovePreservedSyncAccount = {
+            localRemovalCalled.fulfill()
+        }
+
+        vc.continueAfterPreservedAccountRemoval(.setup(.backup))
+
+        await fulfillment(of: [localRemovalCalled], timeout: 1.0)
+        await Task.yield()
+
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 1)
+        XCTAssertEqual(vc.viewModel?.isSyncWithSetUpSheetVisible, true)
+    }
+
+    @MainActor
+    func testWhenContinueAfterPreservedAccountRemovalAndLocalRemovalFailsThenBackupFlowDoesNotContinue() async {
+        let localRemovalCalled = expectation(description: "Local preserved account removal attempted")
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+        ddgSyncing.onRemovePreservedSyncAccount = {
+            localRemovalCalled.fulfill()
+        }
+        ddgSyncing.removePreservedSyncAccountError = NSError(domain: "test.local-remove", code: 1)
+
+        vc.continueAfterPreservedAccountRemoval(.setup(.backup))
+
+        await fulfillment(of: [localRemovalCalled], timeout: 1.0)
+        await Task.yield()
+
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 1)
+        XCTAssertEqual(vc.viewModel?.isSyncWithSetUpSheetVisible, false)
+    }
+
+    @MainActor
+    func testWhenContinueAfterPreservedAccountRemovalForRecoverThenStartFreshRunsWithoutShowingBackupSheet() async {
+        let localRemovalCalled = expectation(description: "Local preserved account removal called")
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+        ddgSyncing.onRemovePreservedSyncAccount = {
+            localRemovalCalled.fulfill()
+        }
+
+        vc.continueAfterPreservedAccountRemoval(.recover)
+
+        await fulfillment(of: [localRemovalCalled], timeout: 1.0)
+        await Task.yield()
+
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 1)
+        XCTAssertEqual(vc.viewModel?.isSyncWithSetUpSheetVisible, false)
     }
 
     func x_test_syncCodeEntered_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async {

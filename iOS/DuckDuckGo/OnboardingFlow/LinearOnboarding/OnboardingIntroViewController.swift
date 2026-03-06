@@ -70,7 +70,10 @@ extension OnboardingIntroViewController where Content == OnboardingView {
             pixelReporter: onboardingPixelReporter,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             daxDialogsManager: daxDialogsManager,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            restorePromptHandler: OnboardingRestorePromptHandler(
+                configuration: .enabled,
+                syncAutoRestoreHandler: syncAutoRestoreHandler
+            )
         )
         let rootView = OnboardingView(model: viewModel)
         return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)
@@ -90,7 +93,10 @@ extension OnboardingIntroViewController where Content == RebrandedOnboardingView
             pixelReporter: onboardingPixelReporter,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             daxDialogsManager: daxDialogsManager,
-            syncAutoRestoreHandler: syncAutoRestoreHandler
+            restorePromptHandler: OnboardingRestorePromptHandler(
+                configuration: .disabled,
+                syncAutoRestoreHandler: syncAutoRestoreHandler
+            )
         )
         let rootView = RebrandedOnboardingView(model: viewModel)
         return OnboardingIntroViewController(rootView: rootView, viewModel: viewModel)

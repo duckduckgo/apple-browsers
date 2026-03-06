@@ -118,7 +118,7 @@ public struct SaveRecoveryKeyView: View {
             : nil
         )
         .frame(maxWidth: 360)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 30)
         .padding(.bottom, 8)
     }
 

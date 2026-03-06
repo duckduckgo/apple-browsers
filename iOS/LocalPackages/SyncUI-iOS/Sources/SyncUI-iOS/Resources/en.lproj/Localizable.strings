@@ -7,26 +7,17 @@
 /* Auto-Restore - Description + Learn More, with markdown link */
 "auto.restore.learn.more.full" = "Automatically restore your data on this device if you reinstall the app. [Learn More](sync-auto-restore://learn-more)";
 
-/* Auto-Restore Ready Sheet - Description with authentication method placeholder */
-"auto.restore.ready.description" = "Use %@ to Auto-Restore, or scan the Recovery Code you saved when you set up Sync & Backup.";
-
-/* Auto-Restore Ready Sheet - Face ID authentication label */
-"auto.restore.ready.description.parameter.face-id" = "Face ID or passcode";
-
-/* Auto-Restore Ready Sheet - passcode authentication label */
-"auto.restore.ready.description.parameter.passcode" = "passcode";
-
-/* Auto-Restore Ready Sheet - Touch ID authentication label */
-"auto.restore.ready.description.parameter.touch-id" = "Touch ID or passcode";
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Resume your Sync & Backup session to restore your bookmarks, passwords, and more, or start fresh with a new setup.";
 
 /* Auto-Restore Ready Sheet - Restore Button */
-"auto.restore.ready.restore.button" = "Restore My Data";
+"auto.restore.ready.restore.button" = "Resume Sync & Backup";
 
 /* Auto-Restore Ready Sheet - Scan Code Link */
-"auto.restore.ready.scan.code.link" = "Scan Recovery Code";
+"auto.restore.ready.scan.code.link" = "Continue Setup";
 
 /* Auto-Restore Ready Sheet - Title */
-"auto.restore.ready.title" = "Your synced data is ready to restore";
+"auto.restore.ready.title" = "Your previous Sync & Backup session is ready.";
 
 /* Auto-Restore Screen - Description */
 "auto.restore.screen.description" = "Automatically restore your data on this device if you reinstall the app.";
@@ -200,7 +191,7 @@
 "recover.synced.data.sheet.title" = "Recover your synced data";
 
 /* Recovering Data Sheet - Description */
-"recovering.data.description" = "Reconnecting to sync your bookmarks, saved logins, and other device.";
+"recovering.data.description" = "Reconnecting to sync your bookmarks, saved logins, and other devices.";
 
 /* Recovering Data Sheet - Status */
 "recovering.data.status" = "Connecting...";
@@ -312,6 +303,15 @@
 
 /* Sync Menu Path */
 "sync.menu.path" = "Settings > Sync & Backup > Sync With Another Device";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Go to Settings";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "A device password is required to use Sync & Backup.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Secure Your Device to Use Sync & Backup";
 
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Recovery";

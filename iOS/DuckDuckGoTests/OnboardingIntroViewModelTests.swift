@@ -108,32 +108,32 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(result, .landing)
     }
 
-    func testWhenRestoreActionProvided_PerformRestoreInvokesAction() async {
+    func testWhenRestoreActionProvided_PerformRestoreInvokesAction() {
         // GIVEN
-        let syncAutoRestoreHandlerMock = SyncAutoRestoreHandlerMock()
-        syncAutoRestoreHandlerMock.isEligibleForAutoRestoreValue = true
-        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true), syncAutoRestoreHandler: syncAutoRestoreHandlerMock)
-        XCTAssertFalse(syncAutoRestoreHandlerMock.didCallRestoreFromPreservedAccount)
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        let sut = makeSUT(
+            currentOnboardingStep: .introDialog(isReturningUser: true),
+            restorePromptHandler: restorePromptHandlerMock
+        )
+        XCTAssertFalse(restorePromptHandlerMock.didCallRestoreSyncAccount)
         XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
 
         // WHEN
         sut.restoreSyncAccountAction()
-        await Task.yield()
 
         // THEN
-        XCTAssertTrue(syncAutoRestoreHandlerMock.didCallRestoreFromPreservedAccount)
+        XCTAssertTrue(restorePromptHandlerMock.didCallRestoreSyncAccount)
         XCTAssertTrue(contextualDaxDialogs.didCallDisableDaxDialogs)
     }
 
-    func testWhenReturningUserHasAutoRestoreEligibilityAndDeviceSecurityEnabledThenShowsRestorePrompt() {
+    func testWhenReturningUserAndRestorePromptEligibilityIsTrueThenShowsRestorePrompt() {
         // GIVEN
-        let syncAutoRestoreHandlerMock = SyncAutoRestoreHandlerMock()
-        syncAutoRestoreHandlerMock.isEligibleForAutoRestoreValue = true
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        restorePromptHandlerMock.isEligibleForRestorePromptValue = true
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
         let sut = makeSUT(
             currentOnboardingStep: .introDialog(isReturningUser: true),
-            syncAutoRestoreHandler: syncAutoRestoreHandlerMock,
-            isDeviceSecurityEnabledProvider: { true }
+            restorePromptHandler: restorePromptHandlerMock
         )
 
         // WHEN
@@ -143,15 +143,31 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(sut.shouldShowRestorePrompt)
     }
 
-    func testWhenReturningUserHasAutoRestoreEligibilityAndDeviceSecurityDisabledThenDoesNotShowRestorePrompt() {
+    func testWhenReturningUserAndRestorePromptEligibilityIsFalseThenDoesNotShowRestorePrompt() {
         // GIVEN
-        let syncAutoRestoreHandlerMock = SyncAutoRestoreHandlerMock()
-        syncAutoRestoreHandlerMock.isEligibleForAutoRestoreValue = true
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        restorePromptHandlerMock.isEligibleForRestorePromptValue = false
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
         let sut = makeSUT(
             currentOnboardingStep: .introDialog(isReturningUser: true),
-            syncAutoRestoreHandler: syncAutoRestoreHandlerMock,
-            isDeviceSecurityEnabledProvider: { false }
+            restorePromptHandler: restorePromptHandlerMock
+        )
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertFalse(sut.shouldShowRestorePrompt)
+    }
+
+    func testWhenUserIsNotReturningAndRestorePromptEligibilityIsTrueThenDoesNotShowRestorePrompt() {
+        // GIVEN
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        restorePromptHandlerMock.isEligibleForRestorePromptValue = true
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(
+            currentOnboardingStep: .introDialog(isReturningUser: false),
+            restorePromptHandler: restorePromptHandlerMock
         )
 
         // WHEN
@@ -823,8 +839,7 @@ extension OnboardingIntroViewModelTests {
     func makeSUT(
         currentOnboardingStep: OnboardingIntroStep = .introDialog(isReturningUser: false),
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider(),
-        syncAutoRestoreHandler: SyncAutoRestoreHandling = SyncAutoRestoreHandlerMock(),
-        isDeviceSecurityEnabledProvider: @escaping () -> Bool = { true }
+        restorePromptHandler: OnboardingRestorePromptHandling = MockRestorePromptHandler()
     ) -> OnboardingIntroViewModel {
         OnboardingIntroViewModel(
             defaultBrowserManager: defaultBrowserManagerMock,
@@ -836,34 +851,20 @@ extension OnboardingIntroViewModelTests {
             onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: appIconProvider,
             addressBarPositionProvider: addressBarPositionProvider,
-            syncAutoRestoreHandler: syncAutoRestoreHandler,
-            isDeviceSecurityEnabledProvider: isDeviceSecurityEnabledProvider
+            restorePromptHandler: restorePromptHandler
         )
     }
-    
 }
 
-private final class SyncAutoRestoreHandlerMock: SyncAutoRestoreHandling {
-    var isEligibleForAutoRestoreValue = false
-    private(set) var didCallRestoreFromPreservedAccount = false
+private final class MockRestorePromptHandler: OnboardingRestorePromptHandling {
+    var isEligibleForRestorePromptValue = false
+    private(set) var didCallRestoreSyncAccount = false
 
-    var isAutoRestoreFeatureEnabled: Bool {
-        false
+    func isEligibleForRestorePrompt() -> Bool {
+        isEligibleForRestorePromptValue
     }
 
-    func existingDecision() -> Bool? {
-        nil
-    }
-
-    func persistDecision(_ decision: Bool) throws {}
-
-    func clearDecision() {}
-
-    func isEligibleForAutoRestore() -> Bool {
-        isEligibleForAutoRestoreValue
-    }
-
-    func restoreFromPreservedAccount() async {
-        didCallRestoreFromPreservedAccount = true
+    func restoreSyncAccount() {
+        didCallRestoreSyncAccount = true
     }
 }

@@ -1304,6 +1304,7 @@
 		9F23B8012C2BC94400950875 /* OnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F23B8002C2BC94400950875 /* OnboardingBackground.swift */; };
 		9F23B8032C2BCD0000950875 /* DaxDialogStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F23B8022C2BCD0000950875 /* DaxDialogStyles.swift */; };
 		9F23B8062C2BE22700950875 /* OnboardingIntroViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F23B8052C2BE22700950875 /* OnboardingIntroViewModelTests.swift */; };
+		C1D9D8E82F6CD61100B8A123 /* OnboardingRestorePromptHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D9D8E72F6CD61100B8A123 /* OnboardingRestorePromptHandlerTests.swift */; };
 		9F254AAB2CF47DD50063B308 /* MaliciousSiteProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F254AAA2CF47DD50063B308 /* MaliciousSiteProtectionManager.swift */; };
 		9F254AAD2CF480170063B308 /* SpecialErrorPageNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F254AAC2CF480170063B308 /* SpecialErrorPageNavigationHandler.swift */; };
 		9F254AB12CF48A6B0063B308 /* SpecialErrorPageNavigationHandler+SSL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F254AB02CF48A6B0063B308 /* SpecialErrorPageNavigationHandler+SSL.swift */; };
@@ -1486,6 +1487,7 @@
 		9FB027142C252E0C009EA190 /* OnboardingView+BrowsersComparisonContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB027132C252E0C009EA190 /* OnboardingView+BrowsersComparisonContent.swift */; };
 		9FB0271B2C2927D0009EA190 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB0271A2C2927D0009EA190 /* OnboardingView.swift */; };
 		9FB0271D2C293619009EA190 /* OnboardingIntroViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB0271C2C293619009EA190 /* OnboardingIntroViewModel.swift */; };
+		C1A1B9CD2F6BC7A400B12345 /* OnboardingRestorePromptHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A1B9CC2F6BC7A400B12345 /* OnboardingRestorePromptHandler.swift */; };
 		9FB099162EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB099152EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift */; };
 		9FB19C7E2E94A28700B651B1 /* RemoteMessagingTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 9FB19C7D2E94A28700B651B1 /* RemoteMessagingTestsUtils */; };
 		9FB19C802E94BE8600B651B1 /* DefaultRemoteMessagingSurfacesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB19C7F2E94BE8000B651B1 /* DefaultRemoteMessagingSurfacesProvider.swift */; };
@@ -3849,6 +3851,7 @@
 		9F23B8002C2BC94400950875 /* OnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBackground.swift; sourceTree = "<group>"; };
 		9F23B8022C2BCD0000950875 /* DaxDialogStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxDialogStyles.swift; sourceTree = "<group>"; };
 		9F23B8052C2BE22700950875 /* OnboardingIntroViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroViewModelTests.swift; sourceTree = "<group>"; };
+		C1D9D8E72F6CD61100B8A123 /* OnboardingRestorePromptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRestorePromptHandlerTests.swift; sourceTree = "<group>"; };
 		9F254AAA2CF47DD50063B308 /* MaliciousSiteProtectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionManager.swift; sourceTree = "<group>"; };
 		9F254AAC2CF480170063B308 /* SpecialErrorPageNavigationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageNavigationHandler.swift; sourceTree = "<group>"; };
 		9F254AB02CF48A6B0063B308 /* SpecialErrorPageNavigationHandler+SSL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SpecialErrorPageNavigationHandler+SSL.swift"; sourceTree = "<group>"; };
@@ -3972,6 +3975,7 @@
 		9FB027132C252E0C009EA190 /* OnboardingView+BrowsersComparisonContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView+BrowsersComparisonContent.swift"; sourceTree = "<group>"; };
 		9FB0271A2C2927D0009EA190 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		9FB0271C2C293619009EA190 /* OnboardingIntroViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroViewModel.swift; sourceTree = "<group>"; };
+		C1A1B9CC2F6BC7A400B12345 /* OnboardingRestorePromptHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRestorePromptHandler.swift; sourceTree = "<group>"; };
 		9FB099152EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewRepositoryTests.swift; sourceTree = "<group>"; };
 		9FB19C7F2E94BE8000B651B1 /* DefaultRemoteMessagingSurfacesProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultRemoteMessagingSurfacesProvider.swift; sourceTree = "<group>"; };
 		9FB19C882E94CF4100B651B1 /* RemoteMessagingSurfacesProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingSurfacesProviderTests.swift; sourceTree = "<group>"; };
@@ -7634,6 +7638,7 @@
 				9F0369F52F231EA000A00DCA /* Rebranding */,
 				9FE08BDB2C2A88FA001D5EBC /* OnboardingIntroViewController.swift */,
 				9FB0271C2C293619009EA190 /* OnboardingIntroViewModel.swift */,
+				C1A1B9CC2F6BC7A400B12345 /* OnboardingRestorePromptHandler.swift */,
 				9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */,
 				9FB0271A2C2927D0009EA190 /* OnboardingView.swift */,
 				9F9EE4D32C37BB1300D4118E /* OnboardingView+Landing.swift */,
@@ -7654,6 +7659,7 @@
 			children = (
 				9FD6E6072DF9025500C2B032 /* VideoPlayer */,
 				9F23B8052C2BE22700950875 /* OnboardingIntroViewModelTests.swift */,
+				C1D9D8E72F6CD61100B8A123 /* OnboardingRestorePromptHandlerTests.swift */,
 				56D0602C2C383FD2003BAEB5 /* OnboardingSuggestedSearchesProviderTests.swift */,
 				9FE05CEF2C3642F900D9046B /* OnboardingPixelReporterTests.swift */,
 				9795B2142EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift */,
@@ -11734,6 +11740,7 @@
 				8586A10D24CBA7070049720E /* FindInPageActivity.swift in Sources */,
 				9F0B19B42EA5E4FA001FA867 /* DefaultBrowserModalPromptProvider.swift in Sources */,
 				9FB0271D2C293619009EA190 /* OnboardingIntroViewModel.swift in Sources */,
+				C1A1B9CD2F6BC7A400B12345 /* OnboardingRestorePromptHandler.swift in Sources */,
 				C1F9D9172EEF8BFB00E35AD5 /* AIChatContextualSheetCoordinator.swift in Sources */,
 				1E1626072968413B0004127F /* ViewExtension.swift in Sources */,
 				31A42566285A0A6300049386 /* FaviconViewModel.swift in Sources */,
@@ -12857,6 +12864,7 @@
 				F14E491F1E391CE900DC037C /* URLExtensionTests.swift in Sources */,
 				9FBC76672CFE33B5008B21E7 /* MaliciousSiteProtectionNavigationHandlerTests.swift in Sources */,
 				9F23B8062C2BE22700950875 /* OnboardingIntroViewModelTests.swift in Sources */,
+				C1D9D8E82F6CD61100B8A123 /* OnboardingRestorePromptHandlerTests.swift in Sources */,
 				85C298562E9699C200C35DD0 /* SERPSettingsViewPageTests.swift in Sources */,
 				85D2187424BF25CD004373D2 /* FaviconsTests.swift in Sources */,
 				80437D6D2EFB3BDA00D3E896 /* AutoClearSettingsViewModelTests.swift in Sources */,

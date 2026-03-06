@@ -98,7 +98,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         onboardingManager.onboardingSteps
     }
     private var currentIntroStep: OnboardingIntroStep
-    private(set) var shouldShowRestorePrompt = false
+    @Published private(set) var shouldShowRestorePrompt = false
 
     private let defaultBrowserManager: DefaultBrowserManaging
     private let contextualDaxDialogs: ContextualDaxDialogDisabling
@@ -108,14 +108,12 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
-    private let syncAutoRestoreHandler: SyncAutoRestoreHandling
-    private let isDeviceSecurityEnabledProvider: () -> Bool
+    private let restorePromptHandler: OnboardingRestorePromptHandling
 
     convenience init(pixelReporter: LinearOnboardingPixelReporting,
                      systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
                      daxDialogsManager: ContextualDaxDialogDisabling,
-                     syncAutoRestoreHandler: SyncAutoRestoreHandling,
-                     isDeviceSecurityEnabledProvider: @escaping () -> Bool = { UserAuthenticator(reason: "", cancelTitle: "").canAuthenticate() }) {
+                     restorePromptHandler: OnboardingRestorePromptHandling) {
         let onboardingManager = OnboardingManager()
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
@@ -131,8 +129,7 @@ final class OnboardingIntroViewModel: ObservableObject {
             onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: { AppIconManager.shared.appIcon },
             addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition },
-            syncAutoRestoreHandler: syncAutoRestoreHandler,
-            isDeviceSecurityEnabledProvider: isDeviceSecurityEnabledProvider
+            restorePromptHandler: restorePromptHandler
         )
     }
 
@@ -146,8 +143,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider,
         appIconProvider: @escaping () -> AppIcon,
         addressBarPositionProvider: @escaping () -> AddressBarPosition,
-        syncAutoRestoreHandler: SyncAutoRestoreHandling,
-        isDeviceSecurityEnabledProvider: @escaping () -> Bool = { UserAuthenticator(reason: "", cancelTitle: "").canAuthenticate() }
+        restorePromptHandler: OnboardingRestorePromptHandling
     ) {
         self.defaultBrowserManager = defaultBrowserManager
         self.contextualDaxDialogs = contextualDaxDialogs
@@ -157,8 +153,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         self.appIconProvider = appIconProvider
         self.addressBarPositionProvider = addressBarPositionProvider
-        self.syncAutoRestoreHandler = syncAutoRestoreHandler
-        self.isDeviceSecurityEnabledProvider = isDeviceSecurityEnabledProvider
+        self.restorePromptHandler = restorePromptHandler
 
         currentIntroStep = currentOnboardingStep
         copy = .default
@@ -245,9 +240,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func restoreSyncAccountAction() {
-        Task {
-            await syncAutoRestoreHandler.restoreFromPreservedAccount()
-        }
+        restorePromptHandler.restoreSyncAccount()
         contextualDaxDialogs.disableContextualDaxDialogs()
     }
 
@@ -279,9 +272,7 @@ private extension OnboardingIntroViewModel {
         let viewState: OnboardingView.ViewState
         switch introStep {
         case .introDialog(let isReturningUser):
-            shouldShowRestorePrompt = isReturningUser
-                && syncAutoRestoreHandler.isEligibleForAutoRestore()
-                && isDeviceSecurityEnabledProvider()
+            shouldShowRestorePrompt = isReturningUser && restorePromptHandler.isEligibleForRestorePrompt()
             viewState = .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: isReturningUser), step: .hidden))
         case .browserComparison:
             shouldShowRestorePrompt = false

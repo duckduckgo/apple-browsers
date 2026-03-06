@@ -310,12 +310,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     func refreshForState(_ authState: SyncAuthState) {
         rootView.model.isSyncEnabled = authState != .inactive
-        // Sync recovery completion is inferred when auth transitions away from `.inactive`,
-        // so dismiss the recovering sheet if it is still visible at that point.
         if authState != .inactive {
+            // Sync auto restore completion is inferred when auth transitions away from `.inactive`,
+            // so dismiss the recovering sheet if it is still visible at that point.
             dismissRecoveringDataViewIfPresented()
-        }
-        if authState != .inactive {
             rootView.model.syncEnabled(recoveryCode: recoveryCode)
             refreshDevices()
         }
@@ -367,28 +365,19 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     private func startSyncWithAnotherDeviceIfNecessary() {
         guard source == SourceConstants.startSyncFlow,
-              syncService.account == nil else {
+              syncService.authState == .inactive else {
             return
         }
-
-        Task { @MainActor in
-            do {
-                try await authenticateUser()
-                showSyncWithAnotherDevice()
-            }
-        }
+        rootView.model.beginPairingFlow()
     }
 
     private func startSyncBackupIfNecessary() {
         let autoShowSources = [SourceConstants.startBackupFlow, SourceConstants.dataImportSummarySyncPromotion]
         guard let source = source, autoShowSources.contains(source),
-              syncService.account == nil else {
+              syncService.authState == .inactive else {
             return
         }
-
-        Task { @MainActor in
-            await rootView.model.presentSyncWithSetUpSheetIfNeeded()
-        }
+        rootView.model.beginBackupFlow()
     }
 
     private func askForAuthThenStartPairing() {

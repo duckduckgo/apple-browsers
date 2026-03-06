@@ -45,7 +45,7 @@ public final class UpdateWideEventData: WideEventData {
         featureName: "sparkle-update",
         mobileMetaType: "ios-sparkle-update",
         desktopMetaType: "macos-sparkle-update",
-        version: "1.0.0"
+        version: "1.0.1"
     )
 
     // Required protocol properties

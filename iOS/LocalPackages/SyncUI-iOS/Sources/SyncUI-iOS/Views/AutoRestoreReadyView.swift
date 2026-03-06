@@ -84,7 +84,7 @@ public struct AutoRestoreReadyView: View {
                         .padding(1)
                 )
                 .frame(maxWidth: 360)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 30)
                 .padding(.bottom, 8)
             }
         }

@@ -49,8 +49,6 @@ extension MainViewController {
 
         setUpAIChatTabChatHeader()
         setUpUnifiedInputContentViewController()
-        viewCoordinator.hideTopHeaderView()
-        viewCoordinator.hideUnifiedInputSectionTitle()
 
         subscribeToIntentPublisher(coordinator)
         subscribeToModeChanges(coordinator)
@@ -257,7 +255,7 @@ extension MainViewController {
                 logUTI("refreshUnifiedToggleInput:forcedShowBarsForAITab", coordinator: coordinator)
             }
             tab.webView.scrollView.contentInset = .zero
-            coordinator.deactivateInlineEditingIfNeeded()
+            coordinator.deactivateInlineEditing()
             if case .aiTab = coordinator.displayState {
                 logUTI("refreshUnifiedToggleInput:preserveAIState", coordinator: coordinator)
             } else {
@@ -270,7 +268,7 @@ extension MainViewController {
             tab.borderView.isTopVisible = false
             tab.borderView.isBottomVisible = false
         } else {
-            coordinator.deactivateInlineEditingIfNeeded()
+            coordinator.deactivateInlineEditing()
             coordinator.hide()
             coordinator.unbind()
             viewCoordinator.hideAITabChrome()
@@ -423,8 +421,6 @@ extension MainViewController {
             unifiedInputContentViewController?.setInlineHeaderDisplayMode(.hidden)
             viewCoordinator.hideUnifiedToggleInputInline()
             viewCoordinator.hideUnifiedInputContent()
-            suggestionTrayController?.view.isHidden = false
-            suggestionTrayController?.view.backgroundColor = nil
             hideSuggestionTray()
             viewCoordinator.suggestionTrayContainer.isHidden = false
         case .hide:
@@ -482,9 +478,6 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
 extension MainViewController: UnifiedInputContentContainerViewControllerDelegate {
 
-    func unifiedInputEditingStateDidUpdateQuery(_ query: String) {
-    }
-
     func unifiedInputEditingStateDidSubmitQuery(_ query: String) {
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalQuerySubmission()
@@ -503,6 +496,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidEditFavorite(_ favorite: BookmarkEntity) {
+        segueToEditBookmark(favorite)
     }
 
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion) {

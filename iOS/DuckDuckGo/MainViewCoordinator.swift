@@ -44,8 +44,6 @@ class MainViewCoordinator {
     var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
     var unifiedInputContentContainer: UIView!
-    var unifiedInputTopHeaderView: UnifiedInputTopHeaderView!
-    var unifiedInputSectionTitleView: UnifiedInputSectionTitleView!
     var toolbar: UIToolbar!
     var toolbarSpacer: UIView!
     var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
@@ -332,39 +330,6 @@ class MainViewCoordinator {
         }
     }
 
-    @MainActor
-    func showTopHeaderView(title: String?, active: Bool = true) {
-        guard addressBarPosition.isBottom else { return }
-        unifiedInputTopHeaderView.configure(title: title)
-        unifiedInputTopHeaderView.setActive(active)
-        unifiedInputTopHeaderView.isHidden = false
-    }
-
-    @MainActor
-    func updateTopHeaderTitle(_ title: String?) {
-        guard addressBarPosition.isBottom else { return }
-        unifiedInputTopHeaderView.configure(title: title)
-    }
-
-    @MainActor
-    func hideTopHeaderView() {
-        unifiedInputTopHeaderView.isHidden = true
-    }
-
-    @MainActor
-    func showUnifiedInputSectionTitle(title: String?) {
-        guard !addressBarPosition.isBottom, let title, !title.isEmpty else {
-            unifiedInputSectionTitleView.isHidden = true
-            return
-        }
-        unifiedInputSectionTitleView.configure(title: title)
-        unifiedInputSectionTitleView.isHidden = false
-    }
-
-    @MainActor
-    func hideUnifiedInputSectionTitle() {
-        unifiedInputSectionTitleView.isHidden = true
-    }
 
     @MainActor
     func showUnifiedInputContent() {

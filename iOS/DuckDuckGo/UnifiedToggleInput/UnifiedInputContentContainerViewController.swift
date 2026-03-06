@@ -31,7 +31,6 @@ import AIChat
 import RemoteMessaging
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
-    func unifiedInputEditingStateDidUpdateQuery(_ query: String)
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
     func unifiedInputEditingStateDidSubmitPrompt(_ query: String, tools: [AIChatRAGTool]?)
     func unifiedInputEditingStateDidSelectFavorite(_ favorite: BookmarkEntity)
@@ -56,7 +55,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     weak var delegate: UnifiedInputContentContainerViewControllerDelegate?
-    var onSectionTitleUpdated: ((String?) -> Void)?
     var onDismissRequested: (() -> Void)?
 
     private let switchBarHandler: SwitchBarHandling
@@ -95,7 +93,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     // MARK: - Manager Components
 
     private var swipeContainerManager: SwipeContainerManager?
-    private var keyboardSubmitViewController: KeyboardSubmitViewController?
     private var suggestionTrayManager: SuggestionTrayManager?
     private var aiChatHistoryManager: AIChatHistoryManager?
     private let daxLogoManager: DaxLogoManager
@@ -280,7 +277,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let text = computedSectionTitleText()
         currentSectionTitle = text.isEmpty ? nil : text
         swipeContainerManager?.containerViewController.additionalSafeAreaInsets.top = Metrics.contentTopInset
-        onSectionTitleUpdated?(currentSectionTitle)
         renderInlineHeader()
     }
 
@@ -363,31 +359,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         daxLogoManager.installInViewController(self, asSubviewOf: contentContainerView, barView: contentContainerView, isTopBarPosition: false)
     }
 
-    private func installKeyboardSubmitButton() {
-        guard isUsingTopBarPosition else { return }
-        let vc = KeyboardSubmitViewController()
-        vc.onMicTapped = { [weak self] in
-            self?.handleMicrophoneButtonTapped()
-        }
-        vc.onSubmitTapped = { [weak self] in
-            guard let self else { return }
-            let text = self.switchBarHandler.currentText
-            guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-            self.switchBarHandler.submitText(text)
-        }
-        addChild(vc)
-        vc.view.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(vc.view)
-        NSLayoutConstraint.activate([
-            vc.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            vc.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            vc.view.topAnchor.constraint(equalTo: view.topAnchor),
-            vc.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
-        vc.didMove(toParent: self)
-        keyboardSubmitViewController = vc
-    }
-
     private func setupSubscriptions() {
         setupSwitchBarSubscriptions()
     }
@@ -398,8 +369,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .sink { [weak self] currentText in
                 guard let self else { return }
 
-                self.delegate?.unifiedInputEditingStateDidUpdateQuery(currentText)
-
                 scheduleAnimation {
                     self.updateDaxVisibility()
                     self.view.layoutIfNeeded()
@@ -407,7 +376,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
                 self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
                 self.updateSectionTitle()
-                self.keyboardSubmitViewController?.updateText(currentText)
             }
             .store(in: &cancellables)
     }
@@ -423,7 +391,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             if let currentSectionTitle, !currentSectionTitle.isEmpty {
                 inlineHeaderView.isHidden = false
                 inlineHeaderView.setTitleLayoutPosition(.topBarSection)
-                inlineHeaderView.setActive(true)
                 inlineHeaderView.configure(title: currentSectionTitle)
                 inlineHeaderView.setDismissButtonHidden(true)
                 contentContainerViewTopConstraint?.constant = Metrics.topBarSectionHeaderHeight
@@ -440,17 +407,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
             inlineHeaderView.setDismissButtonHidden(false)
             contentContainerViewTopConstraint?.constant = 0
-        case .active:
+        case .active, .inactive:
             inlineHeaderView.isHidden = false
             inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
-            inlineHeaderView.setActive(true)
-            inlineHeaderView.configure(title: currentSectionTitle)
-            inlineHeaderView.setDismissButtonHidden(false)
-            contentContainerViewTopConstraint?.constant = Metrics.inlineHeaderHeight
-        case .inactive:
-            inlineHeaderView.isHidden = false
-            inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
-            inlineHeaderView.setActive(true)
             inlineHeaderView.configure(title: currentSectionTitle)
             inlineHeaderView.setDismissButtonHidden(false)
             contentContainerViewTopConstraint?.constant = Metrics.inlineHeaderHeight

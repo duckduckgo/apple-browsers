@@ -339,10 +339,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         logUTI("deactivateInlineEditing:end")
     }
 
-    func deactivateInlineEditingIfNeeded() {
-        guard isInlineEditingActive else { return }
-        deactivateInlineEditing()
-    }
 
     func updateToggleEnabled(_ enabled: Bool) {
         guard enabled != isToggleEnabled else { return }

@@ -110,8 +110,6 @@ extension MainViewFactory {
         createNavigationBarContainer()
         createNavigationBarCollectionView()
         createUnifiedToggleInputContainer()
-        createUnifiedInputTopHeaderView()
-        createUnifiedInputSectionTitleView()
         createAIChatTabChatHeaderContainer()
         createProgressView()
     }
@@ -322,21 +320,7 @@ extension MainViewFactory {
         coordinator.navigationBarContainer.addSubview(coordinator.unifiedToggleInputContainer)
     }
 
-    private func createUnifiedInputTopHeaderView() {
-        let headerView = UnifiedInputTopHeaderView()
-        headerView.translatesAutoresizingMaskIntoConstraints = false
-        headerView.isHidden = true
-        superview.addSubview(headerView)
-        coordinator.unifiedInputTopHeaderView = headerView
-    }
 
-    private func createUnifiedInputSectionTitleView() {
-        let view = UnifiedInputSectionTitleView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.isHidden = true
-        superview.addSubview(view)
-        coordinator.unifiedInputSectionTitleView = view
-    }
 
     final class AIChatTabChatHeaderContainer: UIView {}
     private func createAIChatTabChatHeaderContainer() {
@@ -362,8 +346,6 @@ extension MainViewFactory {
         constrainNavigationBarContainer()
         constrainToolbar()
         constrainUnifiedToggleInputContainer()
-        constrainUnifiedInputTopHeaderView()
-        constrainUnifiedInputSectionTitleView()
         constrainAIChatTabChatHeaderContainer()
     }
     
@@ -480,27 +462,6 @@ extension MainViewFactory {
             container.leadingAnchor.constraint(equalTo: navigationBarContainer.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: navigationBarContainer.trailingAnchor),
             container.bottomAnchor.constraint(equalTo: navigationBarContainer.bottomAnchor),
-        ])
-    }
-
-    private func constrainUnifiedInputTopHeaderView() {
-        let headerView = coordinator.unifiedInputTopHeaderView!
-
-        NSLayoutConstraint.activate([
-            headerView.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
-            headerView.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
-            headerView.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
-            headerView.heightAnchor.constraint(equalToConstant: 60),
-        ])
-    }
-
-    private func constrainUnifiedInputSectionTitleView() {
-        let view = coordinator.unifiedInputSectionTitleView!
-        let navBar = coordinator.navigationBarContainer!
-        NSLayoutConstraint.activate([
-            view.topAnchor.constraint(equalTo: navBar.bottomAnchor),
-            view.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
-            view.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])
     }
 

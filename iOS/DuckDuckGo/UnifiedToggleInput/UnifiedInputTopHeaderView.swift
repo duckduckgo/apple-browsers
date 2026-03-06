@@ -72,12 +72,6 @@ final class UnifiedInputTopHeaderView: UIView {
         titleLabel.isHidden = title?.isEmpty != false
     }
 
-    func setActive(_ active: Bool) {
-        // Kept for API compatibility; layout now uses explicit positioning rules
-        // and always renders the title leading-aligned.
-        titleLabel.textAlignment = .left
-    }
-
     func setDismissButtonHidden(_ hidden: Bool) {
         dismissButton.isHidden = hidden
     }

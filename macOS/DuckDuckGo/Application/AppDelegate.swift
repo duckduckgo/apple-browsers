@@ -1226,6 +1226,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here
         }
+        AttributionXattrCanaryValidator().validateAndReport()
 
         #if SPARKLE
         dockCustomization = DockCustomizer()

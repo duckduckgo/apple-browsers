@@ -167,7 +167,10 @@ final class CampaignVariant {
     private let loadFromFile: () -> String?
 
     init(statisticsStore: StatisticsStore = LocalStatisticsStore(), loadFromFile: @escaping () -> String? = {
-        getXattr(named: "com.duckduckgo.variant", from: Bundle.main.bundlePath)
+        if let url = Bundle.main.url(forResource: "variant", withExtension: "txt") {
+            return try? String(contentsOf: url)
+        }
+        return nil
     }) {
         self.statisticsStore = statisticsStore
         self.loadFromFile = loadFromFile

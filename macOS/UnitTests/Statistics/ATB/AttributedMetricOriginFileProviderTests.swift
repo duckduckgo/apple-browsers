@@ -22,33 +22,25 @@ import XCTest
 
 final class AttributedMetricOriginFileProviderTests: XCTestCase {
     private var sut: AttributedMetricOriginProvider!
-    private let testBundle = Bundle(for: AttributedMetricOriginFileProviderTests.self)
-    private let xattrName = "com.duckduckgo.origin.test"
 
     override func tearDown() {
-        // Clean up any xattr we set during tests
-        removexattr(testBundle.bundlePath, xattrName, 0)
         sut = nil
     }
 
-    func testWhenXattrExistsThenReturnOriginValue() {
+    func testWhenFileAndValueExistThenReturnOriginValue() {
         // GIVEN
-        let expected = "app_search"
-        expected.withCString { value in
-            setxattr(testBundle.bundlePath, xattrName, value, strlen(value), 0, 0)
-        }
-        sut = AttributedMetricOriginFileProvider(xattrName: xattrName, bundle: testBundle)
+        sut = AttributedMetricOriginFileProvider(bundle: .test)
 
         // WHEN
         let result = sut.origin
 
         // THEN
-        XCTAssertEqual(result, expected)
+        XCTAssertEqual(result, "app_search")
     }
 
-    func testWhenXattrDoesNotExistThenReturnNil() {
+    func testWhenFileDoesNotExistThenReturnNil() {
         // GIVEN
-        sut = AttributedMetricOriginFileProvider(xattrName: xattrName, bundle: testBundle)
+        sut = AttributedMetricOriginFileProvider(resourceName: #function, bundle: .test)
 
         // WHEN
         let result = sut.origin
@@ -56,4 +48,19 @@ final class AttributedMetricOriginFileProviderTests: XCTestCase {
         // THEN
         XCTAssertNil(result)
     }
+
+    func testWhenFileExistAndIsEmptyThenReturnNil() {
+        // GIVEN
+        sut = AttributedMetricOriginFileProvider(resourceName: "Origin-empty", bundle: .test)
+
+        // WHEN
+        let result = sut.origin
+
+        // THEN
+        XCTAssertNil(result)
+    }
+}
+
+private extension Bundle {
+    static let test = Bundle(for: AttributedMetricOriginFileProviderTests.self)
 }

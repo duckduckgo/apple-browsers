@@ -16,19 +16,7 @@
 //  limitations under the License.
 //
 
-import Darwin
 import Foundation
-
-func getXattr(named name: String, from path: String) -> String? {
-    let length = getxattr(path, name, nil, 0, 0, 0)
-    guard length > 0 else { return nil }
-    var data = Data(count: length)
-    let result = data.withUnsafeMutableBytes {
-        getxattr(path, name, $0.baseAddress, length, 0, 0)
-    }
-    guard result >= 0 else { return nil }
-    return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-}
 
 /// A type that provides the `origin` used to anonymously track installations without tracking retention.
 public protocol AttributedMetricOriginProvider: AnyObject {
@@ -40,12 +28,22 @@ public protocol AttributedMetricOriginProvider: AnyObject {
 public final class AttributedMetricOriginFileProvider: AttributedMetricOriginProvider {
     public let origin: String?
 
-    /// Creates an instance that reads the origin from an xattr on the bundle path.
+    /// Creates an instance with the given file name and `Bundle`.
     /// - Parameters:
-    ///   - xattrName: The xattr name to read (set by the variant DMG pipeline).
-    ///   - bundle: The bundle whose path is checked for the xattr.
-    public init(xattrName: String = "com.duckduckgo.origin", bundle: Bundle = .main) {
-        origin = getXattr(named: xattrName, from: bundle.bundlePath)
+    ///   - name: The name of the Txt file to extract the origin from.
+    ///   - bundle: The bundle where the file is located. In tests pass replace this with the test bundle.
+    public init(resourceName name: String = "Origin", bundle: Bundle = .main) {
+        let url = bundle.url(forResource: name, withExtension: "txt")
+        origin = try? url
+            .flatMap(String.init(contentsOf:))?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .nilIfEmpty
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        return isEmpty ? nil : self
     }
 }
 #endif

@@ -111,7 +111,7 @@ public final class ReleaseNotesNavigationResponder: NavigationResponder {
     public func navigationDidFinish(_ navigation: Navigation) {
         guard AppVersion.runType != .uiTests, navigation.url == releaseNotesURL else { return }
         if updateController.needsLatestReleaseNote {
-            updateController.checkForUpdateRespectingRollout()
+            updateController.checkForUpdateSkippingRollout()
         }
     }
 }

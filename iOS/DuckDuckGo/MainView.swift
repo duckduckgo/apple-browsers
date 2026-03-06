@@ -308,19 +308,7 @@ extension MainViewFactory {
         coordinator.unifiedToggleInputContainer = UnifiedToggleInputContainer()
         coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
         coordinator.unifiedToggleInputContainer.isHidden = true
-        superview.addSubview(coordinator.unifiedToggleInputContainer)
-
-        coordinator.keyboardSeamView = UIView()
-        coordinator.keyboardSeamView.translatesAutoresizingMaskIntoConstraints = false
-        coordinator.keyboardSeamView.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
-        coordinator.keyboardSeamView.isHidden = true
-        superview.addSubview(coordinator.keyboardSeamView)
-        NSLayoutConstraint.activate([
-            coordinator.keyboardSeamView.topAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor),
-            coordinator.keyboardSeamView.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
-            coordinator.keyboardSeamView.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
-            coordinator.keyboardSeamView.heightAnchor.constraint(equalToConstant: 44),
-        ])
+        coordinator.navigationBarContainer.addSubview(coordinator.unifiedToggleInputContainer)
     }
 
     final class AIChatTabChatHeaderContainer: UIView {}
@@ -455,19 +443,16 @@ extension MainViewFactory {
 
     private func constrainUnifiedToggleInputContainer() {
         let container = coordinator.unifiedToggleInputContainer!
-        let toolbar = coordinator.toolbar!
+        let navigationBarContainer = coordinator.navigationBarContainer!
 
-        coordinator.constraints.unifiedToggleInputBottom = container.bottomAnchor.constraint(equalTo: toolbar.topAnchor)
-
-        // Ceiling constraint: input bar must never fall below the toolbar,
-        // even when UIKeyboardLayoutGuide contracts (keyboard hides temporarily).
-        let ceilingConstraint = container.bottomAnchor.constraint(lessThanOrEqualTo: toolbar.topAnchor)
+        let bottom = container.bottomAnchor.constraint(equalTo: navigationBarContainer.bottomAnchor)
+        bottom.priority = .defaultHigh
 
         NSLayoutConstraint.activate([
-            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
-            coordinator.constraints.unifiedToggleInputBottom,
-            ceilingConstraint,
+            container.topAnchor.constraint(equalTo: navigationBarContainer.topAnchor),
+            container.leadingAnchor.constraint(equalTo: navigationBarContainer.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: navigationBarContainer.trailingAnchor),
+            bottom,
         ])
     }
 

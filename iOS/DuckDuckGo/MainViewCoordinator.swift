@@ -234,6 +234,7 @@ class MainViewCoordinator {
     func showUnifiedToggleInputInline(expandedHeight: CGFloat) {
         navigationBarCollectionView.layer.removeAllAnimations()
         unifiedToggleInputContainer.layer.removeAllAnimations()
+        navigationBarCollectionView.layer.removeAllAnimations()
         navigationBarCollectionView.isUserInteractionEnabled = false
         unifiedToggleInputContainer.alpha = 0
         unifiedToggleInputContainer.isHidden = false
@@ -265,14 +266,16 @@ class MainViewCoordinator {
             setNavBarContainerBottomToToolbar()
         }
 
+        let savedColor = inlineEditingStatusBackgroundColor
+        inlineEditingStatusBackgroundColor = nil
+
         UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut) {
             self.navigationBarCollectionView.alpha = 1
             self.unifiedToggleInputContainer.alpha = 0
             self.constraints.navigationBarContainerHeight.constant = self.standardNavigationBarContainerHeight
             self.superview.layoutIfNeeded()
         } completion: { _ in
-            self.statusBackground.backgroundColor = self.inlineEditingStatusBackgroundColor
-            self.inlineEditingStatusBackgroundColor = nil
+            self.statusBackground.backgroundColor = savedColor
             self.navigationBarContainer.backgroundColor = nil
             self.suggestionTrayContainer.backgroundColor = .clear
             if self.isNavigationChromeHidden {

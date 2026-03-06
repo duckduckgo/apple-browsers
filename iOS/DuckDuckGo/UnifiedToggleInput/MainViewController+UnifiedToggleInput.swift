@@ -220,6 +220,7 @@ extension MainViewController {
             viewCoordinator.suggestionTrayContainer.isHidden = false
         case .hide:
             viewCoordinator.hideUnifiedToggleInput()
+            viewCoordinator.suggestionTrayContainer.isHidden = false
         }
     }
 

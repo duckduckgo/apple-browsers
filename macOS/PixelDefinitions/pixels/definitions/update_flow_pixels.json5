@@ -155,12 +155,7 @@
                     "restartingToUpdate"
                 ]
             },
-            {
-                "key": "app.internal_user",
-                "type": "string",
-                "description": "Whether the event was sent by an internal user",
-                "enum": ["true"]
-            },
+            "wideEventInternalUser",
             {
                 "key": "feature.data.ext.os_version",
                 "type": "string",

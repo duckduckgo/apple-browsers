@@ -52,7 +52,7 @@ final class AIChatHistoryManagerTests: XCTestCase {
 
     // MARK: - Text Subscription Tests
 
-    func testSubscribeToTextChanges_FetchesSuggestionsOnTextChange() async {
+    func testSubscribeToTextChanges_FetchesSuggestionsOnTextChange() {
         let textSubject = PassthroughSubject<String, Never>()
         sut.subscribeToTextChanges(textSubject)
 
@@ -63,21 +63,27 @@ final class AIChatHistoryManagerTests: XCTestCase {
 
         textSubject.send("test query")
 
-        // Wait for debounce (150ms) plus processing time
-        try? await Task.sleep(nanoseconds: 200_000_000)
+        let predicate = NSPredicate { _, _ in
+            self.mockSuggestionsReader.fetchSuggestionsCallCount == 1
+        }
+        let expectation = expectation(for: predicate, evaluatedWith: nil)
+        wait(for: [expectation], timeout: 5.0)
 
         XCTAssertEqual(mockSuggestionsReader.fetchSuggestionsCallCount, 1)
         XCTAssertEqual(mockSuggestionsReader.lastQuery, "test query")
     }
 
-    func testSubscribeToTextChanges_EmptyQueryFetchesRecentChats() async {
+    func testSubscribeToTextChanges_EmptyQueryFetchesRecentChats() {
         let textSubject = PassthroughSubject<String, Never>()
         sut.subscribeToTextChanges(textSubject)
 
         textSubject.send("")
 
-        // Wait for debounce
-        try? await Task.sleep(nanoseconds: 200_000_000)
+        let predicate = NSPredicate { _, _ in
+            self.mockSuggestionsReader.fetchSuggestionsCallCount == 1
+        }
+        let expectation = expectation(for: predicate, evaluatedWith: nil)
+        wait(for: [expectation], timeout: 5.0)
 
         XCTAssertNil(mockSuggestionsReader.lastQuery)
     }
@@ -202,17 +208,20 @@ final class AIChatHistoryManagerTests: XCTestCase {
         XCTAssertEqual(parentVC.children.count, 1)
     }
 
-    func testInstallInContainerView_FetchesSuggestionsImmediately() async {
+    func testInstallInContainerView_FetchesSuggestionsImmediately() {
         let containerView = UIView()
         let parentVC = UIViewController()
 
         sut.installInContainerView(containerView, parentViewController: parentVC)
 
-        // Allow async fetch to complete
-        try? await Task.sleep(nanoseconds: 50_000_000)
+        let predicate = NSPredicate { _, _ in
+            self.mockSuggestionsReader.fetchSuggestionsCallCount == 1
+        }
+        let expectation = expectation(for: predicate, evaluatedWith: nil)
+        wait(for: [expectation], timeout: 5.0)
 
         XCTAssertEqual(mockSuggestionsReader.fetchSuggestionsCallCount, 1)
-        XCTAssertNil(mockSuggestionsReader.lastQuery) // Empty query for initial fetch
+        XCTAssertNil(mockSuggestionsReader.lastQuery)
     }
 }
 

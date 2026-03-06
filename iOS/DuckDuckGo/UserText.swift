@@ -142,7 +142,7 @@ public struct UserText {
     public static let customUrlSchemeOpen = NSLocalizedString("prompt.custom.url.scheme.open", value: "Open", comment: "Confirm action")
     public static let customUrlSchemeDontOpen = NSLocalizedString("prompt.custom.url.scheme.dontopen", value: "Cancel", comment: "Deny action")
 
-    public static let xSafariHTTPSTryOpenTitle = NSLocalizedString("prompt.x-safari-https.try-open.title", value: "This site wants to open Safari", comment: "Alert title when a site tries to redirect to Safari via x-safari-https scheme")
+    public static let xSafariHTTPSTryOpenTitle = NSLocalizedString("prompt.x-safari-https.try-open.title", value: "This site wants to open in Safari.", comment: "Alert title when a site tries to redirect to Safari via x-safari-https scheme")
     public static let xSafariHTTPSTryOpenMessage = NSLocalizedString("prompt.x-safari-https.try-open.message", value: "Some website features may not be compatible in this browser.", comment: "Alert message when a site tries to redirect to Safari via x-safari-https scheme")
     public static let xSafariHTTPSStayInDDG = NSLocalizedString("prompt.x-safari-https.stay", value: "Stay in DuckDuckGo", comment: "Button to stay in DuckDuckGo instead of opening Safari")
     public static let xSafariHTTPSOpenInSafari = NSLocalizedString("prompt.x-safari-https.open-in-safari", value: "Open in Safari", comment: "Button to open the page in Safari")

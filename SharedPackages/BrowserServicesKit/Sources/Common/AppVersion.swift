@@ -96,14 +96,55 @@ public struct AppVersion: OSVersionProviding {
         case integrationTests
         case uiTests
         case uiTestsOnboarding
+        case uiTestsStartupPerformance
         case xcPreviews
+
+        /// Whether the Sparkle Updater should be allowed or not.
+        public var allowsUpdates: Bool {
+            switch self {
+            case .normal, .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
+                return true
+            case .uiTests, .uiTestsStartupPerformance:
+                return false
+            }
+        }
+
+        /// Whether Onboarding is allowed or not.
+        public var allowsOnboarding: Bool {
+            switch self {
+            case .normal, .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
+                return true
+            case .uiTests, .uiTestsStartupPerformance:
+                return false
+            }
+        }
+
+        /// Whether the app should open a fallback window on launch when no window was restored or opened by a URL event.
+        public var opensWindowOnStartupIfNeeded: Bool {
+            switch self {
+            case .normal, .uiTestsStartupPerformance:
+                return true
+            case .integrationTests, .unitTests, .uiTests, .uiTestsOnboarding, .xcPreviews:
+                return false
+            }
+        }
 
         /// Defines if app run type requires loading full environment, i.e. databases, saved state, keychain etc.
         public var requiresEnvironment: Bool {
             switch self {
-            case .normal, .integrationTests, .uiTests, .uiTestsOnboarding:
+            case .normal, .integrationTests, .uiTests, .uiTestsOnboarding, .uiTestsStartupPerformance:
                 return true
             case .unitTests, .xcPreviews:
+                return false
+            }
+        }
+
+        /// Whether the app should attempt to restore windows and tabs from the previous session on launch.
+        public var stateRestorationAllowed: Bool {
+            switch self {
+            case .normal, .uiTests, .uiTestsStartupPerformance:
+                return true
+            case .integrationTests, .unitTests, .uiTestsOnboarding, .xcPreviews:
                 return false
             }
         }
@@ -122,8 +163,10 @@ public struct AppVersion: OSVersionProviding {
             }
         } else if ProcessInfo().environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
             return .xcPreviews
-        } else if ProcessInfo.processInfo.environment["UITEST_MODE_ONBOARDING"] == "1"{
+        } else if ProcessInfo.processInfo.environment["UITEST_MODE_ONBOARDING"] == "1" {
             return .uiTestsOnboarding
+        } else if ProcessInfo.processInfo.environment["UITEST_MODE_STARTUP_PERFORMANCE"] == "1" {
+            return .uiTestsStartupPerformance
         } else if ProcessInfo.processInfo.environment["UITEST_MODE"] == "1" || isCI {
             return .uiTests
         } else {

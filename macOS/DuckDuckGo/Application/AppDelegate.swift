@@ -1272,7 +1272,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         profilerToken.advance(to: .appStateRestoration)
 
-        if [.normal, .uiTests].contains(AppVersion.runType) {
+        if AppVersion.runType.stateRestorationAllowed {
             stateRestorationManager.applicationDidFinishLaunching()
         }
 
@@ -1283,7 +1283,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setUpAutoClearHandler()
         BWManager.shared.initCommunication()
 
-        if case .normal = AppVersion.runType,
+        if AppVersion.runType.opensWindowOnStartupIfNeeded,
            !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {
@@ -1455,7 +1455,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func initializeUpdateController() {
-        guard AppVersion.runType != .uiTests else { return }
+        guard AppVersion.runType.allowsUpdates else { return }
 
         let buildType = StandardApplicationBuildType()
         let notificationPresenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
@@ -1962,7 +1962,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func subscribeToUpdateControllerChanges() {
-        guard AppVersion.runType != .uiTests,
+        guard AppVersion.runType.allowsUpdates,
               let sparkleUpdateController = updateController as? any SparkleUpdateControlling else { return }
 
         updateProgressCancellable = sparkleUpdateController.updateProgressPublisher

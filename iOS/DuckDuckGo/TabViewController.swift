@@ -1036,7 +1036,7 @@ class TabViewController: UIViewController {
         switch keyPath {
 
         case #keyPath(WKWebView.isLoading):
-            if webView.isLoading {
+            if webView.isLoading, isTabCurrentlyPresented() {
                 delegate?.showBars()
             }
             if #available(iOS 18.4, *) {

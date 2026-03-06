@@ -186,6 +186,7 @@ class MainViewController: UIViewController {
     let bookmarksCachingSearch: BookmarksCachingSearch
 
     lazy var tabSwitcherTransition = TabSwitcherTransitionDelegate()
+    private weak var displayedTabController: TabViewController?
     var currentTab: TabViewController? {
         return tabManager.current(createIfNeeded: false)
     }
@@ -1269,7 +1270,8 @@ class MainViewController: UIViewController {
         findInPageView?.isHidden = true
         chromeManager.detach()
         
-        currentTab?.dismiss()
+        displayedTabController?.dismiss()
+        displayedTabController = nil
         removeHomeScreen()
         homePageConfiguration.refresh()
 
@@ -1657,8 +1659,8 @@ class MainViewController: UIViewController {
         removeHomeScreen()
         updateFindInPage()
         hideNotificationBarIfBrokenSitePromptShown()
-        currentTab?.progressWorker.progressBar = nil
-        currentTab?.chromeDelegate = nil
+        displayedTabController?.progressWorker.progressBar = nil
+        displayedTabController?.chromeDelegate = nil
             
         addToContentContainer(controller: tab)
 
@@ -1669,6 +1671,7 @@ class MainViewController: UIViewController {
         themeColorManager.attach(to: tab)
         tab.chromeDelegate = self
         tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
+        displayedTabController = tab
 
         refreshControls()
     }

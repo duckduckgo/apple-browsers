@@ -1,5 +1,7 @@
 name: macOS - PR Checks
 
+# Test commit to force PR checks
+
 defaults:
   run:
     working-directory: macOS

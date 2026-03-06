@@ -21,8 +21,6 @@ import Foundation
 import OpenSSL
 import XCTest
 
-@testable import DuckDuckGo_Privacy_Browser
-
 /**
  * BWEncryption Test Suite
  *

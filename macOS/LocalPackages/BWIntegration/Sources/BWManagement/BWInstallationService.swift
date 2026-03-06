@@ -18,24 +18,8 @@
 
 import Foundation
 import AppKit
-
-enum BWInstallationState {
-
-    case notInstalled
-    case oldVersion
-    case incompatible
-    case installed
-
-}
-
-protocol BWInstallationService {
-
-    var installationState: BWInstallationState { get }
-    var isIntegrationWithDuckDuckGoEnabled: Bool { get }
-
-    func openBitwarden()
-
-}
+import AppKitExtensions
+import BWManagementShared
 
 final class LocalBitwardenInstallationService: BWInstallationService {
 

@@ -27,7 +27,7 @@ protocol NativeMessagingCommunicatorDelegate: AnyObject {
 
 }
 
-protocol NativeMessagingCommunication {
+protocol NativeMessagingCommunication: AnyObject {
 
     func runProxyProcess() throws
     func terminateProxyProcess()

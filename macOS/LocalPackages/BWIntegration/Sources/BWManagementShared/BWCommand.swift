@@ -1,5 +1,5 @@
 //
-//  BWError.swift
+//  BWCommand.swift
 //
 //  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
@@ -18,27 +18,23 @@
 
 import Foundation
 
-enum BWError: Error {
+public enum BWCommand: String, Codable {
 
-    // Blocking errors (further communication not possible)
-    case handshakeFailed
-    case runningOfProxyProcessFailed
-    case decryptionOfSharedKeyFailed
+    // Received after the proxy process conects to Bitwarden app successfully
+    case connected
 
-    case parsingFailed
-    case statusParsingFailed
-    case decryptionOfDataFailed
-    case noActiveVault
-    case storingOfTheSharedKeyFailed
-    case sendingOfMessageFailed
-    case sharedKeyInjectionFailed
+    // Received when the conection from the proxy process to Bitwarden is canceled
+    case disconnected
 
-    case credentialCreationFailed
-    case credentialUpdateFailed
-    case credentialRetrievalFailed
+    //  Handshake message that initiates communication. Sent during the onboarding only
+    case handshake = "bw-handshake"
 
-    // Errors received from Bitwarden
-    case bitwardenCannotDecrypt
-    case bitwardenRespondedWithError
+    // Status message
+    case status = "bw-status"
+
+    // Credentials
+    case credentialRetrieval = "bw-credential-retrieval"
+    case credentialCreate = "bw-credential-create"
+    case credentialUpdate = "bw-credential-update"
 
 }

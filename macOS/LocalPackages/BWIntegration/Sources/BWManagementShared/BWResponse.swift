@@ -17,45 +17,44 @@
 //
 
 import Foundation
-import os.log
 
-typealias Base64EncodedString = String
-typealias MessageId = String
+public typealias Base64EncodedString = String
+public typealias MessageId = String
 
-struct BWResponse: Codable {
+public struct BWResponse: Codable {
 
-    let messageId: MessageId?
-    let version: Int?
-    let payload: Payload?
-    let command: BWCommand?
-    let encryptedCommand: Base64EncodedString?
-    let encryptedPayload: EncryptedPayload?
+    public let messageId: MessageId?
+    public let version: Int?
+    public let payload: Payload?
+    public let command: BWCommand?
+    public let encryptedCommand: Base64EncodedString?
+    public let encryptedPayload: EncryptedPayload?
 
-    struct PayloadItem: Codable {
-        let error: String?
+    public struct PayloadItem: Codable {
+        public let error: String?
 
         // Handshake responce
-        let sharedKey: Base64EncodedString?
+        public let sharedKey: Base64EncodedString?
 
         // Status
-        let id: String?
-        let email: String?
-        let status: String?
-        let active: Bool?
+        public let id: String?
+        public let email: String?
+        public let status: String?
+        public let active: Bool?
 
         // Credential Retrieval
-        let userId: String?
-        let credentialId: String?
-        let userName: String?
-        let password: String?
-        let name: String?
+        public let userId: String?
+        public let credentialId: String?
+        public let userName: String?
+        public let password: String?
+        public let name: String?
     }
 
-    enum Payload: Codable {
+    public enum Payload: Codable {
         case array([PayloadItem])
         case item(PayloadItem)
 
-        init(from decoder: Decoder) throws {
+        public init(from decoder: Decoder) throws {
             let container = try decoder.singleValueContainer()
             do {
                 self = try .array(container.decode(Array<PayloadItem>.self))
@@ -70,7 +69,7 @@ struct BWResponse: Codable {
             }
         }
 
-        func encode(to encoder: Encoder) throws {
+        public func encode(to encoder: Encoder) throws {
             var container = encoder.singleValueContainer()
             switch self {
             case .array(let array):
@@ -81,21 +80,20 @@ struct BWResponse: Codable {
         }
     }
 
-    struct EncryptedPayload: Codable {
+    public struct EncryptedPayload: Codable {
 
-        let encryptedString: String?
-        let encryptionType: Int?
-        let data: String?
-        let iv: String?
-        let mac: String?
+        public let encryptedString: String?
+        public let encryptionType: Int?
+        public let data: String?
+        public let iv: String?
+        public let mac: String?
 
     }
 
-    init?(from messageData: Data) {
+    public init?(from messageData: Data) {
         do {
             self = try JSONDecoder().decode(BWResponse.self, from: messageData)
         } catch {
-            Logger.general.fault("Decoding the message failed")
             assertionFailure("Decoding the message failed")
             return nil
         }

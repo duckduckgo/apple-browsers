@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import BWManagementShared
 import SwiftUI
 import SwiftUIExtensions
 import Combine
@@ -37,7 +38,7 @@ final class PreferencesViewController: NSViewController {
     private var selectedTabContentCancellable: AnyCancellable?
     private var selectedPreferencePaneCancellable: AnyCancellable?
 
-    private var bitwardenManager: BWManagement = BWManager.shared
+    private var bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager
     private let featureFlagger: FeatureFlagger
     private let pinningManager: PinningManager
 
@@ -112,7 +113,7 @@ final class PreferencesViewController: NSViewController {
     override func viewWillAppear() {
         super.viewWillAppear()
         model.refreshSections()
-        bitwardenManager.refreshStatusIfNeeded()
+        bitwardenManager?.refreshStatusIfNeeded()
     }
 
     override func viewDidAppear() {

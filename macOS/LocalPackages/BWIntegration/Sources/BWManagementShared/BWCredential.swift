@@ -18,25 +18,33 @@
 
 import Foundation
 
-struct BWCredential {
+public struct BWCredential {
 
-    var userId: String
-    var credentialId: String?
-    var credentialName: String
+    public var userId: String
+    public var credentialId: String?
+    public var credentialName: String
 
-    var username: String?
-    var password: String?
+    public var username: String?
+    public var password: String?
 
-    var domain: String
+    public var domain: String
 
-    var url: String? {
+    public var url: String? {
         guard !domain.isEmpty else { return nil }
-        return "\(URL.NavigationalScheme.https.separated())\(domain)"
+        return "https://\(domain)"
     }
 
+    public init(userId: String, credentialId: String?, credentialName: String, username: String?, password: String?, domain: String) {
+        self.userId = userId
+        self.credentialId = credentialId
+        self.credentialName = credentialName
+        self.username = username
+        self.password = password
+        self.domain = domain
+    }
 }
 
-extension BWCredential {
+public extension BWCredential {
 
     init?(from payloadItem: BWResponse.PayloadItem, domain: String) {
         guard let userId = payloadItem.userId,

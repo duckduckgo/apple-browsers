@@ -18,7 +18,7 @@
 
 import Foundation
 
-enum BWStatus: Equatable {
+public enum BWStatus: Equatable {
 
     // Bitwarden disabled in settings
     case disabled
@@ -57,7 +57,7 @@ enum BWStatus: Equatable {
     case connected(vault: BWVault)
     case error(error: BWError)
 
-    var isConnected: Bool {
+    public var isConnected: Bool {
         switch self {
         case .connected: return true
         default: return false

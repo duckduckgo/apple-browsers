@@ -16,49 +16,30 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Combine
+import Foundation
 
-protocol BWManagement {
-
+public protocol BWManagement: AnyObject {
     var status: BWStatus { get }
     var statusPublisher: Published<BWStatus>.Publisher { get }
+    var installationService: BWInstallationService { get }
 
     func initCommunication()
+    func cancelCommunication()
+    func openBitwarden()
     func sendHandshake()
     func refreshStatusIfNeeded()
-    func cancelCommunication()
-
-    func openBitwarden()
 
     func retrieveCredentials(for url: URL, completion: @escaping ([BWCredential], BWError?) -> Void)
     func create(credential: BWCredential, completion: @escaping (BWError?) -> Void)
     func update(credential: BWCredential, completion: @escaping (BWError?) -> Void)
-
 }
 
-#if APPSTORE
-
-final class BWManager: BWManagement, ObservableObject {
-
-    static let shared = BWManager()
-
-    init() {}
-
-    @Published var status: BWStatus = .disabled
-    var statusPublisher: Published<BWStatus>.Publisher { $status }
-
-    func initCommunication() {}
-    func sendHandshake() {}
-    func refreshStatusIfNeeded() {}
-    func cancelCommunication() {}
-
-    func openBitwarden() {}
-
-    func retrieveCredentials(for url: URL, completion: @escaping ([BWCredential], BWError?) -> Void) {}
-    func create(credential: BWCredential, completion: @escaping (BWError?) -> Void) {}
-    func update(credential: BWCredential, completion: @escaping (BWError?) -> Void) {}
-
+public protocol BWManagementFactory {
+    static func makeManager(isBitwardenPasswordManagerProvider: @escaping () -> Bool,
+                            showRestartBitwardenAlert: @escaping (/*restartConfirmed:*/ @escaping () -> Void) -> Void) -> BWManagement
 }
 
-#endif
+/// Shared factory namespace implemented by the concrete BWManagement target.
+/// App code references this symbol via `BWManagementFactory` to avoid importing `BWManager` directly.
+public enum BWIntegrationFactory {}

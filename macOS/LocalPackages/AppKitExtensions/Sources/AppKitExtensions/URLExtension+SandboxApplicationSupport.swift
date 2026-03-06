@@ -1,7 +1,7 @@
 //
-//  BWNotRespondingAlert.swift
+//  URLExtension+SandboxApplicationSupport.swift
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,24 +16,17 @@
 //  limitations under the License.
 //
 
-import AppKit
 import Foundation
 
-final class BWNotRespondingAlert: NSAlert {
+public extension URL {
 
-    override init() {
-        super.init()
-
-        messageText = UserText.restartBitwardenInfo
-        alertStyle = .warning
-        addButton(withTitle: UserText.restartBitwarden)
-        addButton(withTitle: UserText.cancel)
-    }
-
-    func present(restartBitwarden: @escaping () -> Void) {
-        if runModal() == .alertFirstButtonReturn {
-            restartBitwarden()
+    static var sandboxApplicationSupportURL: URL {
+        if NSApp.isSandboxed {
+            return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         }
+        let sandboxPathComponent = "Containers/\(Bundle.main.bundleIdentifier!)/Data/Library/Application Support/"
+        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
+        return libraryURL.appendingPathComponent(sandboxPathComponent)
     }
 
 }

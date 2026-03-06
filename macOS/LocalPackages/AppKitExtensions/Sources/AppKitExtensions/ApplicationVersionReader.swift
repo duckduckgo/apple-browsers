@@ -17,12 +17,13 @@
 //
 
 import Foundation
+import Common
 
-internal class ApplicationVersionReader {
+public enum ApplicationVersionReader {
 
     static let plistRelativePath = "Contents/Info.plist"
 
-    static func getVersion(of appPath: String) -> String? {
+    public static func getVersion(of appPath: String) -> String? {
         guard let plist = NSDictionary(contentsOfFile: appPath + "/" + plistRelativePath),
               let versionNumber = plist.object(forKey: Bundle.Key.versionNumber) as? String else {
             return nil
@@ -31,13 +32,13 @@ internal class ApplicationVersionReader {
         return versionNumber
     }
 
-    static func getMajorVersion(of appPath: String) -> Int? {
-        if let versionString = Self.getVersion(of: appPath),
-           let majorVersion = versionString.components(separatedBy: ".")[safe: 0] {
-            return Int(majorVersion)
-        } else {
+    public static func getMajorVersion(of appPath: String) -> Int? {
+        guard let versionString = getVersion(of: appPath),
+              let majorVersion = versionString.components(separatedBy: ".").first else {
             return nil
         }
+
+        return Int(majorVersion)
     }
 
 }

@@ -1,5 +1,5 @@
 //
-//  BWVault.swift
+//  BWError.swift
 //
 //  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
@@ -18,19 +18,27 @@
 
 import Foundation
 
-struct BWVault: Equatable {
-    let id: String
-    let email: String
-    let status: Status
-    let active: Bool
+public enum BWError: Error {
 
-    enum Status: String {
-        case locked
-        case unlocked
-    }
+    // Blocking errors (further communication not possible)
+    case handshakeFailed
+    case runningOfProxyProcessFailed
+    case decryptionOfSharedKeyFailed
 
-    var locked: BWVault {
-        return BWVault(id: id, email: email, status: .locked, active: active)
-    }
+    case parsingFailed
+    case statusParsingFailed
+    case decryptionOfDataFailed
+    case noActiveVault
+    case storingOfTheSharedKeyFailed
+    case sendingOfMessageFailed
+    case sharedKeyInjectionFailed
+
+    case credentialCreationFailed
+    case credentialUpdateFailed
+    case credentialRetrievalFailed
+
+    // Errors received from Bitwarden
+    case bitwardenCannotDecrypt
+    case bitwardenRespondedWithError
 
 }

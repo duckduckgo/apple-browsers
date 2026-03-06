@@ -1,5 +1,5 @@
 //
-//  BWCommand.swift
+//  BWInstallationService.swift
 //
 //  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
@@ -16,25 +16,21 @@
 //  limitations under the License.
 //
 
-import Foundation
+public enum BWInstallationState {
 
-enum BWCommand: String, Codable {
+    case notInstalled
+    case oldVersion
+    case incompatible
+    case installed
 
-    // Received after the proxy process conects to Bitwarden app successfully
-    case connected
+}
 
-    // Received when the conection from the proxy process to Bitwarden is canceled
-    case disconnected
+public protocol BWInstallationService {
 
-    //  Handshake message that initiates communication. Sent during the onboarding only
-    case handshake = "bw-handshake"
+    var installationState: BWInstallationState { get }
+    var isSandboxContainerAccessApproved: Bool { get }
+    var isIntegrationWithDuckDuckGoEnabled: Bool { get }
 
-    // Status message
-    case status = "bw-status"
-
-    // Credentials
-    case credentialRetrieval = "bw-credential-retrieval"
-    case credentialCreate = "bw-credential-create"
-    case credentialUpdate = "bw-credential-update"
+    func openBitwarden()
 
 }

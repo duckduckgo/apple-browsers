@@ -1,5 +1,5 @@
 //
-//  BWMessageIdGenerator.swift
+//  BWVault.swift
 //
 //  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
@@ -18,23 +18,26 @@
 
 import Foundation
 
-final class BWMessageIdGenerator {
+public struct BWVault: Equatable {
+    public let id: String
+    public let email: String
+    public let status: Status
+    public let active: Bool
 
-    private(set) var cache = Set<String>()
-
-    func generateMessageId() -> String {
-        let id = UUID().uuidString
-        cache.insert(id)
-        return id
+    public enum Status: String {
+        case locked
+        case unlocked
     }
 
-    func verify(messageId: String) -> Bool {
-        if cache.contains(messageId) {
-            cache.remove(messageId)
-            return true
-        }
+    public init(id: String, email: String, status: Status, active: Bool) {
+        self.id = id
+        self.email = email
+        self.status = status
+        self.active = active
+    }
 
-        return false
+    public var locked: BWVault {
+        BWVault(id: id, email: email, status: .locked, active: active)
     }
 
 }

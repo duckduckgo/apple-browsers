@@ -19,17 +19,19 @@
 import Common
 import Foundation
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
+@testable import BWManagementShared
 
 final class BWRequestTests: XCTestCase {
 
     func testWhenHandshakeRequestIsMade_ThenItMustContainPublicKeyAndMessageId() {
         let publicKey = "12345"
         let messageId = "54321"
-        let request = BWRequest.makeHandshakeRequest(with: publicKey, messageId: messageId).data
+        let applicationName = "Bitwarden"
+        let request = BWRequest.makeHandshakeRequest(with: publicKey, messageId: messageId, applicationName: applicationName).data
 
         XCTAssert(request!.utf8String()!.contains(publicKey))
         XCTAssert(request!.utf8String()!.contains(messageId))
+        XCTAssert(request!.utf8String()!.contains(applicationName))
     }
 
     func testWhenEncryptedCommandRequestIsMade_ThenItMustContainEncryptedCommandAndMessageId() {

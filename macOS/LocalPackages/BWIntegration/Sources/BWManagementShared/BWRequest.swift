@@ -17,39 +17,38 @@
 //
 
 import Foundation
-import os.log
 
-struct BWRequest: Codable {
+public struct BWRequest: Codable {
 
     static let version = 1
 
-    static func makeHandshakeRequest(with publicKey: String, messageId: String) -> BWRequest {
+    public static func makeHandshakeRequest(with publicKey: String, messageId: String, applicationName: String) -> BWRequest {
         let payload = Payload(publicKey: publicKey,
-                                      applicationName: Bundle.main.displayName)
+                              applicationName: applicationName)
 
         return BWRequest(messageId: messageId,
-                                version: version,
-                                command: .handshake,
-                                payload: payload)
+                         version: version,
+                         command: .handshake,
+                         payload: payload)
     }
 
-    static func makeEncryptedCommandRequest(encryptedCommand: String, messageId: String) -> BWRequest {
+    public static func makeEncryptedCommandRequest(encryptedCommand: String, messageId: String) -> BWRequest {
         return BWRequest(messageId: messageId,
-                                version: version,
-                                encryptedCommand: encryptedCommand)
+                         version: version,
+                         encryptedCommand: encryptedCommand)
     }
 
-    let messageId: MessageId?
-    let version: Int?
-    let command: BWCommand?
-    let payload: Payload?
-    let encryptedCommand: Base64EncodedString?
+    public let messageId: MessageId?
+    public let version: Int?
+    public let command: BWCommand?
+    public let payload: Payload?
+    public let encryptedCommand: Base64EncodedString?
 
-    init(messageId: String? = nil,
-         version: Int? = nil,
-         command: BWCommand? = nil,
-         payload: BWRequest.Payload? = nil,
-         encryptedCommand: String? = nil) {
+    public init(messageId: String? = nil,
+                version: Int? = nil,
+                command: BWCommand? = nil,
+                payload: BWRequest.Payload? = nil,
+                encryptedCommand: String? = nil) {
         self.messageId = messageId
         self.version = version
         self.command = command
@@ -57,33 +56,38 @@ struct BWRequest: Codable {
         self.encryptedCommand = encryptedCommand
     }
 
-    struct Payload: Codable {
+    public struct Payload: Codable {
 
-        init(publicKey: Base64EncodedString? = nil,
-             applicationName: String? = nil
+        public init(publicKey: Base64EncodedString? = nil,
+                    applicationName: String? = nil
         ) {
             self.publicKey = publicKey
             self.applicationName = applicationName
         }
 
         // Handshake request
-        let publicKey: Base64EncodedString?
-        let applicationName: String?
+        public let publicKey: Base64EncodedString?
+        public let applicationName: String?
     }
 
     // Need encryption before inserting into encryptedCommand
-    struct EncryptedCommand: Codable {
+    public struct EncryptedCommand: Codable {
 
-        let command: BWCommand?
-        let payload: Payload?
+        public let command: BWCommand?
+        public let payload: Payload?
 
-        struct Payload: Codable {
-            internal init(uri: String? = nil,
-                          userId: String? = nil,
-                          userName: String? = nil,
-                          password: String? = nil,
-                          name: String? = nil,
-                          credentialId: String? = nil) {
+        public init(command: BWCommand?, payload: Payload?) {
+            self.command = command
+            self.payload = payload
+        }
+
+        public struct Payload: Codable {
+            public init(uri: String? = nil,
+                        userId: String? = nil,
+                        userName: String? = nil,
+                        password: String? = nil,
+                        name: String? = nil,
+                        credentialId: String? = nil) {
                 self.uri = uri
                 self.userId = userId
                 self.userName = userName
@@ -93,24 +97,23 @@ struct BWRequest: Codable {
             }
 
             // Credential Retrieval
-            let uri: String?
+            public let uri: String?
 
             // Credential Creation
-            let userId: String?
-            let userName: String?
-            let password: String?
-            let name: String?
+            public let userId: String?
+            public let userName: String?
+            public let password: String?
+            public let name: String?
 
             // Credential Update
-            let credentialId: String?
+            public let credentialId: String?
         }
 
-        var data: Data? {
+        public var data: Data? {
             let jsonData: Data
             do {
                 jsonData = try JSONEncoder().encode(self)
             } catch {
-                Logger.general.fault("BWRequest: Can't encode the message")
                 assertionFailure("BWRequest: Can't encode the message")
                 return nil
             }
@@ -119,12 +122,11 @@ struct BWRequest: Codable {
 
     }
 
-    var data: Data? {
+    public var data: Data? {
         let jsonData: Data
         do {
             jsonData = try JSONEncoder().encode(self)
         } catch {
-            Logger.general.fault("BWRequest: Can't encode the message")
             assertionFailure("BWRequest: Can't encode the message")
             return nil
         }

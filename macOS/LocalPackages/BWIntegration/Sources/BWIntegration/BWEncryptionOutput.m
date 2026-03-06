@@ -1,7 +1,7 @@
 //
-//  BWNotRespondingAlert.swift
+//  BWEncryptionOutput.m
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,24 +16,8 @@
 //  limitations under the License.
 //
 
-import AppKit
-import Foundation
+#import "BWEncryptionOutput.h"
 
-final class BWNotRespondingAlert: NSAlert {
+@implementation BWEncryptionOutput
 
-    override init() {
-        super.init()
-
-        messageText = UserText.restartBitwardenInfo
-        alertStyle = .warning
-        addButton(withTitle: UserText.restartBitwarden)
-        addButton(withTitle: UserText.cancel)
-    }
-
-    func present(restartBitwarden: @escaping () -> Void) {
-        if runModal() == .alertFirstButtonReturn {
-            restartBitwarden()
-        }
-    }
-
-}
+@end

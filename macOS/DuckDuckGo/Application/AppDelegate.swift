@@ -17,9 +17,11 @@
 //
 
 import AIChat
+import AppKitExtensions
 import AppUpdaterShared
 import AttributedMetric
 import AutoconsentStats
+import BWManagementShared
 import Bookmarks
 import BrokenSitePrompt
 import BrowserServicesKit
@@ -146,6 +148,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let bookmarkDragDropManager: BookmarkDragDropManager
     let historyCoordinator: HistoryCoordinator
     let fireproofDomains: FireproofDomains
+    let bitwardenManager: BWManagement?
+    let passwordManagerCoordinator: PasswordManagerCoordinator
     let webCacheManager: WebCacheManager
     let tld = TLD()
     let privacyFeatures: AnyPrivacyFeatures
@@ -1094,6 +1098,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             atbProvider: { LocalStatisticsStore().atb }
         )
 
+        bitwardenManager = BWManagerProvider.makeManager()
+        passwordManagerCoordinator = PasswordManagerCoordinator(bitwardenManagement: bitwardenManager)
+
         // AttributedMetric initialisation
 
         let errorHandler = AttributedMetricErrorHandler(pixelKit: PixelKit.shared)
@@ -1281,7 +1288,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
-        BWManager.shared.initCommunication()
+        bitwardenManager?.initCommunication()
 
         if AppVersion.runType.opensWindowOnStartupIfNeeded,
            !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
@@ -2032,7 +2039,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     PixelKit.fire(GeneralPixel.autofillIdentitiesStacked, withAdditionalParameters: params)
                 }
             },
-            passwordManager: PasswordManagerCoordinator.shared,
+            passwordManager: passwordManagerCoordinator,
             installDate: AppDelegate.firstLaunchDate)
 
         _ = NotificationCenter.default.addObserver(forName: .autofillUserSettingsDidChange,

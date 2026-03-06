@@ -154,8 +154,10 @@ public extension FeatureFlagCohortDescribing {
 public enum FeatureFlagDefaultValue {
     /// Feature is disabled by default
     case disabled
-    /// Feature is enabled by default only for internal users, with an optional cohort
-    case internalOnly((any FeatureFlagCohortDescribing)? = nil)
+    /// Feature is enabled by default only for internal users
+    case internalOnly
+    /// Feature is enabled by default only for internal users, with a cohort
+    case internalOnlyWithCohort(any FeatureFlagCohortDescribing)
     /// Feature is enabled by default for all users
     case enabled
 }
@@ -437,7 +439,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
                 }
             }
             // Fall back to defaultValue cohort if feature is missing from config
-            if case .internalOnly(let cohort) = featureFlag.defaultValue,
+            if case .internalOnlyWithCohort(let cohort) = featureFlag.defaultValue,
                internalUserDecider.isInternalUser {
                 return cohort
             }
@@ -464,7 +466,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         switch defaultValue {
         case .disabled:
             return false
-        case .internalOnly:
+        case .internalOnly, .internalOnlyWithCohort:
             return internalUserDecider.isInternalUser
         case .enabled:
             return true

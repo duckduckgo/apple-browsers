@@ -22,7 +22,7 @@ enum TestFeatureFlag: String, FeatureFlagDescribing {
     var defaultValue: FeatureFlagDefaultValue {
         switch self {
         case .overridableExperimentFlagWithCohortBByDefault:
-            .internalOnly(FakeExperimentCohort.cohortB)
+            .internalOnlyWithCohort(FakeExperimentCohort.cohortB)
         default:
             .disabled
         }

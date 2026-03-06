@@ -311,13 +311,13 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .crashCollectionLimitCallStackTreeDepth,
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
-                .aiChatSidebarFloating,
                 .nextStepsListWidget,
                 .webViewLookUpAction,
                 .startupMetrics:
             .enabled
-        case .autofillPasswordsStatusBar:
-            .internalOnly()
+        case .autofillPasswordsStatusBar,
+             .aiChatSidebarFloating:
+            .internalOnly
         default:
             .disabled
         }
@@ -580,7 +580,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNtpRecentChats:
             return .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats))
         case .aiChatSidebarFloating:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarFloating))
         case .startupMetrics:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:

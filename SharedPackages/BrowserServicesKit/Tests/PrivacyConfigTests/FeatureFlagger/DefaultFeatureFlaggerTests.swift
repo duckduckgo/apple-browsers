@@ -500,7 +500,7 @@ extension FakeExperimentFlags: FeatureFlagDescribing {
     var defaultValue: FeatureFlagDefaultValue {
         switch self {
         case .internalFlag:
-            .internalOnly(FakeExperimentFlagsCohort.blue)
+            .internalOnlyWithCohort(FakeExperimentFlagsCohort.blue)
         default:
             .disabled
         }

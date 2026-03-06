@@ -382,7 +382,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .crashReportOptInStatusResetting,
              .iPadAIToggle,
              .webExtensions:
-            .internalOnly()
+            .internalOnly
         default:
             .disabled
         }

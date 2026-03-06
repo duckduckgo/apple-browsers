@@ -23,9 +23,13 @@ import XCTest
 
 // MARK: - Test Notification Center
 
+#if os(macOS)
 private final class TestNotificationCenter: NotificationCenter, NetworkProtectionNotificationPosting {
     func post(_ networkProtectionNotification: NetworkProtectionNotification, object: String?, userInfo: [AnyHashable: Any]?) {}
 }
+#else
+private final class TestNotificationCenter: NotificationCenter {}
+#endif
 
 // MARK: - Test Doubles
 

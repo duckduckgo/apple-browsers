@@ -1700,12 +1700,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .compactMap { [weak featureFlagger] in
                 featureFlagger?.isFeatureOn(.webExtensions)
             }
+            .removeDuplicates()
             .eraseToAnyPublisher()
 
         let embeddedExtensionPublisher = featureFlagger.updatesPublisher
             .compactMap { [weak featureFlagger] in
                 featureFlagger?.isFeatureOn(.embeddedExtension)
             }
+            .removeDuplicates()
             .eraseToAnyPublisher()
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(

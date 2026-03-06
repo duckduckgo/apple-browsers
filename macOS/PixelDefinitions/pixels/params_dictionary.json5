@@ -81,9 +81,8 @@
     },
     "wideEventInternalUser": {
         "key": "app.internal_user",
-        "type": "string",
-        "description": "Whether the event was sent by an internal user. Only included when true.",
-        "enum": ["true"]
+        "type": "boolean",
+        "description": "Whether the event was sent by an internal user. Only included when true."
     },
     "wideEventPlatform": {
         "key": "global.platform",

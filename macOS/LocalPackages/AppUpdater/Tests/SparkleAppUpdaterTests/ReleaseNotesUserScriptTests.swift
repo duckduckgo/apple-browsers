@@ -104,6 +104,38 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
         XCTAssertTrue(pixelMock.firedEvents.isEmpty, "Pixel should not fire when notes load within debounce window")
     }
 
+    /// The pixel must NOT fire when status is `.loading` (update cycle active but no update yet).
+    @MainActor
+    func testReleaseNotesEmptyPixelDoesNotFireWhenUpdateCycleIsActive() throws {
+        try XCTSkipIf(AppVersion.runType == .uiTests, "onUpdate() is disabled in UI test environments")
+
+        let controller = StubSparkleUpdateController()
+        controller.updateProgress = .updateCycleDidStart
+        // latestUpdate remains nil → status will be .loading (not .loadingError)
+
+        let pixelMock = CapturingPixelFiring()
+        let script = ReleaseNotesUserScript(
+            updateController: controller,
+            pixelFiring: pixelMock,
+            releaseNotesURL: releaseNotesURL
+        )
+
+        let broker = UserScriptMessageBroker(context: "releaseNotes", requiresRunInPageContentWorld: true)
+        script.with(broker: broker)
+
+        let mockWebView = MockURLWebView(url: releaseNotesURL)
+        script.webView = mockWebView
+
+        // Wait past the 1s debounce window
+        let waitExpectation = expectation(description: "wait for debounce window to pass")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            waitExpectation.fulfill()
+        }
+        wait(for: [waitExpectation], timeout: 2.0)
+
+        XCTAssertTrue(pixelMock.firedEvents.isEmpty, "Pixel should not fire when status is .loading (update cycle active)")
+    }
+
     /// The pixel MUST fire when `loadingError` persists past the 1-second debounce.
     @MainActor
     func testReleaseNotesEmptyPixelFiresWhenErrorPersists() throws {

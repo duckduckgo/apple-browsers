@@ -356,7 +356,7 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
                     domains: ["<all>"]
                 )
             ]
-        ])
+        ], state: PrivacyConfigurationData.State.enabled)
 
         let (manager, _) = makeManager(trackerAllowlist: allowlist)
         let dataSource = MockTrackerProtectionDataSource()
@@ -367,7 +367,8 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         )
 
         guard let features = generatedFeatures(from: generator),
-              let settings = features["trackerProtection"]?["settings"] as? [String: Any],
+              let tp = features["trackerProtection"] as? [String: Any],
+              let settings = tp["settings"] as? [String: Any],
               let allowlistDict = settings["allowlist"] as? [String: [[String: Any]]],
               let entries = allowlistDict["example.com"],
               let firstEntry = entries.first,

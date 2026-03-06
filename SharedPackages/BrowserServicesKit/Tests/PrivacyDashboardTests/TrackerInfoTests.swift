@@ -77,6 +77,14 @@ final class TrackerInfoTests: XCTestCase {
         )
     }
 
+    func testIsAssociatedWithPage_differentQuery_returnsFalse() {
+        let url = URL(string: "https://example.com/search?q=cats")!
+        XCTAssertFalse(
+            TrackerInfo.isAssociatedWithPage("https://example.com/search?q=dogs", tabURL: url),
+            "Different query parameters should not be associated to prevent cross-query leakage"
+        )
+    }
+
     func testIsAssociatedWithPage_invalidPageUrl_returnsFalse() {
         let url = URL(string: "https://example.com/page")!
         XCTAssertFalse(TrackerInfo.isAssociatedWithPage("not a url", tabURL: url))
@@ -114,6 +122,16 @@ final class TrackerInfoTests: XCTestCase {
         let url = URL(string: "https://example.com/page")!
         info.addDetectedTracker(makeRequest(pageUrl: "https://other-site.com/page"), onPageWithURL: url)
         XCTAssertEqual(info.trackers.count, 0)
+    }
+
+    func testAddDetectedTracker_differentQuery_dropsEvent() {
+        var info = TrackerInfo()
+        let url = URL(string: "https://example.com/search?q=dogs")!
+        info.addDetectedTracker(makeRequest(pageUrl: "https://example.com/search?q=cats"), onPageWithURL: url)
+        XCTAssertEqual(
+            info.trackers.count, 0,
+            "Event with different query parameters should be dropped to prevent cross-query leakage"
+        )
     }
 
     // MARK: - addInstalledSurrogateHost with page association

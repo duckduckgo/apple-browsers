@@ -65,6 +65,7 @@ public struct TrackerInfo: Encodable {
             && eventURL.host == tabURL.host
             && eventURL.port == tabURL.port
             && normalizedPath(eventURL.path) == normalizedPath(tabURL.path)
+            && eventURL.query == tabURL.query
     }
 
     private static func normalizedPath(_ path: String) -> String {

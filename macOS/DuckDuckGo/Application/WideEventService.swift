@@ -19,20 +19,17 @@
 import Foundation
 import BrowserServicesKit
 import PixelKit
-import PrivacyConfig
 import Subscription
 import VPN
 
 actor WideEventService {
     private let wideEvent: WideEventManaging
-    private let featureFlagger: FeatureFlagger
     private let subscriptionManager: SubscriptionManager
 
     private var isProcessing = false
 
-    init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionManager: SubscriptionManager) {
+    init(wideEvent: WideEventManaging, subscriptionManager: SubscriptionManager) {
         self.wideEvent = wideEvent
-        self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager
     }
 

@@ -1582,7 +1582,11 @@ class MainViewController: UIViewController {
     ///   - tools: Optional RAG tools available in AI Chat. Defaults to `nil`.
     func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
         guard let currentTab else { fatalError("no tab") }
-        
+
+        if currentTab.tabModel.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
+        }
+
         prepareTabForRequest {
             currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools)
         }
@@ -1612,9 +1616,6 @@ class MainViewController: UIViewController {
 
         guard let tab = currentTab else { fatalError("no tab") }
 
-        if tab.tabModel.link == nil {
-            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.tabModel.openedAfterIdle)
-        }
         tab.tabModel.openedAfterIdle = false
         request()
         dismissOmniBar()
@@ -2849,6 +2850,9 @@ extension MainViewController: BrowserChromeDelegate {
 
 
     private func handleSuggestionSelected(_ suggestion: Suggestion) {
+        if let tab = tabManager.model.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()

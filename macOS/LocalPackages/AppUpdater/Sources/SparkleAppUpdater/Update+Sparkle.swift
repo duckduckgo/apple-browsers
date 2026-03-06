@@ -21,7 +21,7 @@ import Foundation
 import Sparkle
 
 extension Update {
-    convenience init(appcastItem: SUAppcastItem, isInstalled: Bool, needsLatestReleaseNote: Bool, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
+    convenience init(appcastItem: SUAppcastItem, isInstalled: Bool, dateFormatterProvider: @autoclosure @escaping () -> DateFormatter = Update.releaseDateFormatter()) {
         let isCritical = appcastItem.isCriticalUpdate
         let version = appcastItem.displayVersionString
         let build = appcastItem.versionString
@@ -35,7 +35,6 @@ extension Update {
                   date: date,
                   releaseNotes: releaseNotes,
                   releaseNotesSubscription: releaseNotesSubscription,
-                  needsLatestReleaseNote: needsLatestReleaseNote,
                   dateFormatterProvider: dateFormatterProvider())
     }
 

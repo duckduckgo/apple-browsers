@@ -110,8 +110,8 @@ public final class ReleaseNotesNavigationResponder: NavigationResponder {
     @MainActor
     public func navigationDidFinish(_ navigation: Navigation) {
         guard AppVersion.runType != .uiTests, navigation.url == releaseNotesURL else { return }
-        if updateController.latestUpdate?.needsLatestReleaseNote == true {
-            updateController.checkForUpdateSkippingRollout()
+        if updateController.needsLatestReleaseNote {
+            updateController.checkForUpdateRespectingRollout()
         }
     }
 }

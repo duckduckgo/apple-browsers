@@ -77,13 +77,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     struct UpdateCheckResult {
         let item: SUAppcastItem
         let isInstalled: Bool
-        let needsLatestReleaseNote: Bool
-
-        init(item: SUAppcastItem, isInstalled: Bool, needsLatestReleaseNote: Bool = false) {
-            self.item = item
-            self.isInstalled = isInstalled
-            self.needsLatestReleaseNote = needsLatestReleaseNote
-        }
     }
 
     private var cachedUpdateResult: UpdateCheckResult? {
@@ -99,7 +92,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     private func refreshUpdateFromCache(_ cachedUpdateResult: UpdateCheckResult, progress: UpdateCycleProgress? = nil) {
-        latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled, needsLatestReleaseNote: cachedUpdateResult.needsLatestReleaseNote)
+        latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled)
         let isInstalled = latestUpdate?.isInstalled == false
         // Use passed progress if available (avoids @Published willSet timing issue)
         let currentProgress = progress ?? progressState.updateProgress
@@ -652,11 +645,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
         Logger.updates.log("Already up to date: \(item.displayVersionString, privacy: .public) (\(item.versionString, privacy: .public))")
 
-        let needsLatestReleaseNote = {
-            guard let reason = nsError.userInfo[SPUNoUpdateFoundReasonKey] as? Int else { return false }
-            return reason == Int(Sparkle.SPUNoUpdateFoundReason.onNewerThanLatestVersion.rawValue)
-        }()
-        cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true, needsLatestReleaseNote: needsLatestReleaseNote)
+        cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true)
 
         updateWideEvent.didFindNoUpdate()
     }

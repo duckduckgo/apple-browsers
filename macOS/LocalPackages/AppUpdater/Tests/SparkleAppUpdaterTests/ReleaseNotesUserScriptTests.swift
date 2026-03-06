@@ -33,6 +33,26 @@ final class ReleaseNotesUserScriptTests: XCTestCase {
 
     private let releaseNotesURL = URL(string: "duck://release-notes")!
 
+    // MARK: - needsLatestReleaseNote tests
+
+    /// The controller should need a release note fetch when no update data exists yet.
+    @MainActor
+    func testNeedsLatestReleaseNoteIsTrueWhenLatestUpdateIsNil() {
+        let controller = StubSparkleUpdateController()
+        XCTAssertNil(controller.latestUpdate)
+        XCTAssertTrue(controller.needsLatestReleaseNote)
+    }
+
+    /// Once an update is available, no additional fetch is needed.
+    @MainActor
+    func testNeedsLatestReleaseNoteIsFalseWhenLatestUpdateIsSet() {
+        let controller = StubSparkleUpdateController()
+        controller.latestUpdate = Update.stub()
+        XCTAssertFalse(controller.needsLatestReleaseNote)
+    }
+
+    // MARK: - ReleaseNotesUserScript tests
+
     /// Regression test: `onUpdate()` must push state to the page even when the script
     /// has never received `initialSetup`. This simulates the race where
     /// `contentBlockingAssets` replaces the script instance after page init.
@@ -271,8 +291,7 @@ private extension Update {
                build: "100",
                date: Date(),
                releaseNotes: ["Some notes"],
-               releaseNotesSubscription: [],
-               needsLatestReleaseNote: false)
+               releaseNotesSubscription: [])
     }
 }
 

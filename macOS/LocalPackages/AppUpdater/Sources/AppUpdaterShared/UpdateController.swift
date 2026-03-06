@@ -282,6 +282,14 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
 
 extension UpdateController {
 
+    /// Whether release notes need a fresh update check to populate data.
+    ///
+    /// After removing cached release notes, this is true when no update data
+    /// has been fetched yet (e.g. release notes opened before startup check completes).
+    public var needsLatestReleaseNote: Bool {
+        latestUpdate == nil
+    }
+
     private var isUpdateNotificationAllowed: Bool {
         Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
     }

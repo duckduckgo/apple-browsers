@@ -27,8 +27,6 @@ public struct SyncSettingsView: View {
     @ObservedObject public var model: SyncSettingsViewModel
 
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    @State var isSyncWithSetUpSheetVisible = false
-    @State var isRecoverSyncedDataSheetVisible = false
     @State var isEnvironmentSwitcherInstructionsVisible = false
     @State var isDeviceAuthenticationSetupAlertVisible = false
 

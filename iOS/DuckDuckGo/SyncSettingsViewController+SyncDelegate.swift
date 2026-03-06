@@ -282,18 +282,36 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    func isEligibleForAutoRestore() -> Bool {
+    func isPreservedAccountPromptNeeded() -> Bool {
+        // Only route through the preserved-account prompt when auto-restore is eligible.
+        // If auto-restore is disabled, keep the existing setup behavior.
         syncAutoRestoreHandler.isEligibleForAutoRestore()
     }
 
     @MainActor
-    func showAutoRestoreReady() {
+    func showAutoRestoreReady(for _: SyncSettingsViewModel.PreservedAccountContinuation) {
         dismissPresentedViewController { [weak self] in
             guard let self else { return }
             let readyView = AutoRestoreReadyView(model: self.rootView.model, onCancel: { [weak self] in
+                self?.rootView.model.clearPendingPreservedAccountContinuation()
                 self?.dismissPresentedViewController()
             })
-            self.navigationController?.present(UIHostingController(rootView: readyView), animated: true)
+            let controller = DismissibleHostingController(rootView: readyView, onDismiss: { [weak self] in
+                self?.rootView.model.clearPendingPreservedAccountContinuation()
+            })
+            self.navigationController?.present(controller, animated: true)
+        }
+    }
+
+    @MainActor
+    func continueAfterPreservedAccountRemoval(_ continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        switch continuation {
+        case .setup(let entryPoint):
+            clearPreservedAccountAndContinueSyncSetup(entryPoint: entryPoint)
+        case .recover:
+            startFreshFromPreservedAccount { [weak self] in
+                self?.presentRecoveryCodeScan()
+            }
         }
     }
 
@@ -329,11 +347,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showRecoveryCodeEntry() {
-        authenticateUser { [weak self] error in
-            guard error == nil, let self else { return }
-
-            self.dismissPresentedViewController()
-            self.collectCode(showQRCode: false)
+        dismissPresentedViewController { [weak self] in
+            self?.presentRecoveryCodeScan()
         }
     }
 
@@ -421,6 +436,55 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         ? PortraitNavigationController(rootViewController: controller)
         : UINavigationController(rootViewController: controller)
         presenter.present(navigationController, animated: true)
+    }
+
+    @MainActor
+    private func startFreshFromPreservedAccount(then continuation: @escaping @MainActor () -> Void) {
+        dismissPresentedViewController { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                if let preservedDeviceId = self.syncService.account?.deviceId {
+                    do {
+                        try await self.syncService.disconnect(deviceId: preservedDeviceId)
+                    } catch {
+                        // Best-effort remote cleanup.
+                    }
+                }
+
+                // Always fall back to local preserved-account removal.
+                do {
+                    try self.syncService.removePreservedSyncAccount()
+                } catch {
+                    await self.handleError(.unableToSyncToServer, error: error, event: nil)
+                    return
+                }
+
+                continuation()
+            }
+        }
+    }
+
+    @MainActor
+    private func clearPreservedAccountAndContinueSyncSetup(entryPoint: SyncSettingsViewModel.SyncSetupEntryPoint) {
+        startFreshFromPreservedAccount { [weak self] in
+            self?.continueSyncSetupFlow(entryPoint: entryPoint)
+        }
+    }
+
+    @MainActor
+    private func continueSyncSetupFlow(entryPoint: SyncSettingsViewModel.SyncSetupEntryPoint) {
+        switch entryPoint {
+        case .backup:
+            rootView.model.isSyncWithSetUpSheetVisible = true
+        case .pairing:
+            showSyncWithAnotherDevice()
+        }
+    }
+
+    @MainActor
+    private func presentRecoveryCodeScan() {
+        rootView.model.isRecoverSyncedDataSheetVisible = false
+        collectCode(showQRCode: false)
     }
 
     private func collectCode(showQRCode: Bool) {

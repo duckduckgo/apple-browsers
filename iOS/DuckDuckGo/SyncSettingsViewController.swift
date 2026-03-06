@@ -365,28 +365,19 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     private func startSyncWithAnotherDeviceIfNecessary() {
         guard source == SourceConstants.startSyncFlow,
-              syncService.account == nil else {
+              syncService.authState == .inactive else {
             return
         }
-
-        Task { @MainActor in
-            do {
-                try await authenticateUser()
-                showSyncWithAnotherDevice()
-            }
-        }
+        rootView.model.beginPairingFlow()
     }
 
     private func startSyncBackupIfNecessary() {
         let autoShowSources = [SourceConstants.startBackupFlow, SourceConstants.dataImportSummarySyncPromotion]
         guard let source = source, autoShowSources.contains(source),
-              syncService.account == nil else {
+              syncService.authState == .inactive else {
             return
         }
-
-        Task { @MainActor in
-            await rootView.model.presentSyncWithSetUpSheetIfNeeded()
-        }
+        rootView.model.beginBackupFlow()
     }
 
     private func askForAuthThenStartPairing() {

@@ -266,6 +266,10 @@ class SuggestionTrayViewController: UIViewController {
         favoritesModel.favorites.count > 0
     }
 
+    var hasFavorites: Bool {
+        canDisplayFavorites
+    }
+
     var hasRemoteMessages: Bool {
         return !newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
     }

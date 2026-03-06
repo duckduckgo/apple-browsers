@@ -446,10 +446,6 @@ extension MainViewController {
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
-                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(
-                                                      using: featureFlagger,
-                                                      keyValueStore: keyValueStore
-                                                  ),
                                                   whatsNewCoordinator: whatsNewCoordinator,
                                                   darkReaderFeatureSettings: darkReaderFeatureSettings)
 

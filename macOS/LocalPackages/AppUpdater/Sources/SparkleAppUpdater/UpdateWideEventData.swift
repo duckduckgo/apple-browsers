@@ -45,7 +45,7 @@ public final class UpdateWideEventData: WideEventData {
         featureName: "sparkle-update",
         mobileMetaType: "ios-sparkle-update",
         desktopMetaType: "macos-sparkle-update",
-        version: "1.0.0"
+        version: "1.0.1"
     )
 
     // Required protocol properties
@@ -211,7 +211,7 @@ public final class UpdateWideEventData: WideEventData {
         self.globalData = globalData
     }
 
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         Dictionary(compacting: [
             ("feature.data.ext.from_version", fromVersion),
             ("feature.data.ext.from_build", fromBuild),
@@ -221,15 +221,15 @@ public final class UpdateWideEventData: WideEventData {
             ("feature.data.ext.initiation_type", initiationType.rawValue),
             ("feature.data.ext.update_configuration", updateConfiguration.rawValue),
             ("feature.data.ext.last_known_step", lastKnownStep?.rawValue),
-            ("feature.data.ext.is_internal_user", isInternalUser ? "true" : "false"),
+            ("feature.data.ext.is_internal_user", isInternalUser),
             ("feature.data.ext.os_version", osVersion),
             ("feature.data.ext.cancellation_reason", cancellationReason?.rawValue),
-            ("feature.data.ext.disk_space_remaining_bytes", diskSpaceRemainingBytes.map { String($0) }),
+            ("feature.data.ext.disk_space_remaining_bytes", diskSpaceRemainingBytes),
             ("feature.data.ext.time_since_last_update", timeSinceLastUpdateBucket?.rawValue),
-            ("feature.data.ext.update_check_duration_ms", updateCheckDuration?.stringValue(.noBucketing)),
-            ("feature.data.ext.download_duration_ms", downloadDuration?.stringValue(.noBucketing)),
-            ("feature.data.ext.extraction_duration_ms", extractionDuration?.stringValue(.noBucketing)),
-            ("feature.data.ext.total_duration_ms", totalDuration?.stringValue(.noBucketing)),
+            ("feature.data.ext.update_check_duration_ms", updateCheckDuration?.intValue(.noBucketing)),
+            ("feature.data.ext.download_duration_ms", downloadDuration?.intValue(.noBucketing)),
+            ("feature.data.ext.extraction_duration_ms", extractionDuration?.intValue(.noBucketing)),
+            ("feature.data.ext.total_duration_ms", totalDuration?.intValue(.noBucketing)),
         ])
     }
 

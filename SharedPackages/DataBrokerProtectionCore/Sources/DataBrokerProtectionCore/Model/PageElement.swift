@@ -15,23 +15,9 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+
 import Foundation
 
 struct PageElement: Codable, Sendable {
     let type: String
-    let selector: String
-    let parent: ParentElement?
-    let multiple: Bool?
-    let min: String?
-    let max: String?
-    let failSilently: Bool?
-}
-
-struct ProfileMatch: Codable, Sendable {
-    let selector: String
-    let profile: ExtractProfileSelectors
-}
-
-struct ParentElement: Codable, Sendable {
-    let profileMatch: ProfileMatch
 }

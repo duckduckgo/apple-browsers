@@ -56,4 +56,57 @@ public enum DebugHelper {
 
         return djb2Hash(fallbackComponents.joined(separator: "|"))
     }
+
+    public static func prettyJSONString(from data: Data) -> String? {
+        guard let object = try? JSONSerialization.jsonObject(with: data),
+              JSONSerialization.isValidJSONObject(object),
+              let formattedData = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]) else {
+            return nil
+        }
+
+        return String(data: formattedData, encoding: .utf8)
+    }
+
+    static func prettyPrintedJSON(from value: Any) -> String {
+        let encoder = JSONEncoder()
+        let fallback = String(describing: value)
+
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        if let encodable = value as? Encodable,
+           let data = try? encoder.encode(AnyEncodable(encodable)) {
+            return String(data: data, encoding: .utf8) ?? fallback
+        }
+
+        if JSONSerialization.isValidJSONObject(value),
+           let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted, .sortedKeys]) {
+            return String(data: data, encoding: .utf8) ?? fallback
+        }
+
+        return fallback
+    }
+
+    static func prettyPrintedJSON(from profiles: [ExtractedProfile], meta: [String: Any]?) -> String {
+        let profiles = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(profiles)))
+
+        return prettyPrintedJSON(from: [
+            "profiles": profiles ?? "unknown",
+            "meta": meta ?? [:]
+        ])
+    }
+
+    static func prettyPrintedActionPayload(action: Action, data: CCFRequestData) -> String {
+        prettyPrintedJSON(from: Params(state: ActionRequest(action: action, data: data)))
+    }
+}
+
+private struct AnyEncodable: Encodable {
+    private let encode: (Encoder) throws -> Void
+
+    init<T: Encodable>(_ value: T) {
+        self.encode = value.encode(to:)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        try encode(encoder)
+    }
 }

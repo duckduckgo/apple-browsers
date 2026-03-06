@@ -337,17 +337,9 @@ extension OnboardingRebranding {
             stepInfo: ViewState.Intro.StepInfo,
             @ViewBuilder content: @escaping () -> Content
         ) -> some View {
-            let tailPosition: OnboardingBubbleView<Content>.TailPosition = switch configuration.tailDirection {
-            case .leading:
-                .bottom(offset: configuration.tailOffset, direction: .leading)
-            case .trailing:
-                .bottom(offset: configuration.tailOffset, direction: .trailing)
-            }
-
             // Always use withStepProgressIndicator to maintain consistent view identity
             // Use isVisible to control whether the counter is shown
             OnboardingBubbleView.withStepProgressIndicator(
-                tailPosition: tailPosition,
                 currentStep: stepInfo.currentStep,
                 totalSteps: stepInfo.totalSteps,
                 isVisible: configuration.showsStepCounter

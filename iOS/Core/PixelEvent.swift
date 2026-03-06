@@ -142,22 +142,6 @@ extension Pixel {
         case settingsAutoconsentOn
         case settingsAutoconsentOff
 
-        case experimentalBrowsingMenuEnabled
-        case experimentalBrowsingMenuDisabled
-        case experimentalBrowsingMenuUsed
-        case experimentalBrowsingMenuDisplayed
-        case experimentalBrowsingMenuDisplayedNTP
-        case experimentalBrowsingMenuDisplayedAIChat
-        case experimentalBrowsingMenuDisplayedError
-        case experimentalBrowsingMenuDismissed
-
-        // Used to compare engagement vs old menu
-        case sheetBrowsingMenuSettings
-        case sheetBrowsingMenuAIChat
-        case sheetBrowsingMenuVPN
-        case sheetBrowsingMenuPasswords
-        case sheetBrowsingMenuNewDuckAddress
-
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuOpenedError
@@ -1751,21 +1735,6 @@ extension Pixel.Event {
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
-
-        case .experimentalBrowsingMenuEnabled: return "m_experimental-browsing-menu_enabled"
-        case .experimentalBrowsingMenuDisabled: return "m_experimental-browsing-menu_disabled"
-        case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"
-        case .experimentalBrowsingMenuDisplayed: return "m_experimental-browsing-menu_displayed"
-        case .experimentalBrowsingMenuDisplayedNTP: return "m_experimental-browsing-menu_displayed_ntp"
-        case .experimentalBrowsingMenuDisplayedAIChat: return "m_experimental-browsing-menu_displayed_aichat"
-        case .experimentalBrowsingMenuDisplayedError: return "m_experimental-browsing-menu_displayed_error"
-        case .experimentalBrowsingMenuDismissed: return "m_experimental-browsing-menu_dismissed"
-
-        case .sheetBrowsingMenuSettings: return "m_sheet-menu_settings"
-        case .sheetBrowsingMenuAIChat: return "m_sheet-menu_aichat"
-        case .sheetBrowsingMenuVPN: return "m_sheet-menu_vpn"
-        case .sheetBrowsingMenuPasswords: return "m_sheet-menu_passwords"
-        case .sheetBrowsingMenuNewDuckAddress: return "m_sheet-menu_new-duck-address"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"

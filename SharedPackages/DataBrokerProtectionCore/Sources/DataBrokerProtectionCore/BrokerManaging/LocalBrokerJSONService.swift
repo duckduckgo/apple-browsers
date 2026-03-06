@@ -22,7 +22,7 @@ import SecureStorage
 import os.log
 
 public protocol ResourcesRepository {
-    func fetchBrokerFromResourceFiles() throws -> [DataBroker]?
+    func fetchBrokerResourcesFromFiles() throws -> [BrokerResource]?
 }
 
 public final class FileResources: ResourcesRepository {
@@ -39,7 +39,7 @@ public final class FileResources: ResourcesRepository {
         self.runTypeProvider = runTypeProvider
     }
 
-    public func fetchBrokerFromResourceFiles() throws -> [DataBroker]? {
+    public func fetchBrokerResourcesFromFiles() throws -> [BrokerResource]? {
         guard AppVersion.runType != .unitTests && AppVersion.runType != .uiTests else {
             /*
              There's a bug with the bundle resources in tests:
@@ -157,31 +157,32 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
 
         Logger.dataBrokerProtection.error("🧩 LocalBrokerJSONService updateBrokers beginning")
 
-        let brokers: [DataBroker]?
+        let brokerResources: [BrokerResource]?
         do {
-            brokers = try resources.fetchBrokerFromResourceFiles()
+            brokerResources = try resources.fetchBrokerResourcesFromFiles()
         } catch {
             Logger.dataBrokerProtection.error("🧩 FallbackBrokerJSONService updateBrokers, error: \(error.localizedDescription, privacy: .public)")
             pixelHandler.fire(.cocoaError(error: error, functionOccurredIn: "DataBrokerProtectionBrokerUpdater.updateBrokers"))
             return
         }
-        guard let brokers = brokers else { return }
+        guard let brokerResources = brokerResources else { return }
 
-        for broker in brokers {
+        for brokerResource in brokerResources {
             do {
-                try upsertBroker(broker)
-                let brokerFileName = "\(broker.url).json"
-                pixelHandler.fire(.updateDataBrokersSuccess(dataBrokerFileName: brokerFileName, removedAt: broker.removedAtTimestamp))
+                try upsertBroker(brokerResource)
+                let brokerFileName = "\(brokerResource.broker.url).json"
+                pixelHandler.fire(.updateDataBrokersSuccess(dataBrokerFileName: brokerFileName, removedAt: brokerResource.broker.removedAtTimestamp))
             } catch {
-                Logger.dataBrokerProtection.log("🧩 Error updating broker: \(broker.name, privacy: .public), with version: \(broker.version, privacy: .public)")
+                let broker = brokerResource.broker
                 let brokerFileName = "\(broker.url).json"
+                Logger.dataBrokerProtection.log("🧩 Error updating broker: \(broker.name, privacy: .public), with version: \(broker.version, privacy: .public)")
                 pixelHandler.fire(.updateDataBrokersFailure(dataBrokerFileName: brokerFileName, removedAt: broker.removedAtTimestamp, error: error))
             }
         }
     }
 
-    public func bundledBrokers() throws -> [DataBroker]? {
-        try resources.fetchBrokerFromResourceFiles()
+    public func bundledBrokers() throws -> [BrokerResource]? {
+        try resources.fetchBrokerResourcesFromFiles()
     }
 
     public func checkForUpdates() async throws {

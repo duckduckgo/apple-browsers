@@ -69,14 +69,14 @@ public final class ScanWideEventData: WideEventData {
 }
 
 extension ScanWideEventData {
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         Dictionary(compacting: [
             (DBPWideEventParameter.ScanFeature.dataBrokerURL, dataBrokerURL),
             (DBPWideEventParameter.ScanFeature.dataBrokerVersion, dataBrokerVersion),
             (DBPWideEventParameter.ScanFeature.attemptType, attemptType.rawValue),
-            (DBPWideEventParameter.ScanFeature.attemptNumber, String(attemptNumber)),
-            (DBPWideEventParameter.ScanFeature.isFreeScan, String(isFreeScan)),
-            (DBPWideEventParameter.ScanFeature.scanLatency, scanInterval?.stringValue(.noBucketing)),
+            (DBPWideEventParameter.ScanFeature.attemptNumber, attemptNumber),
+            (DBPWideEventParameter.ScanFeature.isFreeScan, isFreeScan),
+            (DBPWideEventParameter.ScanFeature.scanLatency, scanInterval?.intValue(.noBucketing)),
         ])
     }
 }

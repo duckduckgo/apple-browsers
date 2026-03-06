@@ -306,18 +306,16 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
         let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider, isAuthenticatedUser: { true })
         repository.lastCheckedVersion = nil
-        resources.brokersList = [
-            .init(id: 1,
-                  name: "Broker",
-                  url: "broker.com",
-                  steps: [Step](),
-                  version: "1.0.0",
-                  schedulingConfig: .mock,
-                  optOutUrl: "",
-                  eTag: "",
-                  removedAt: nil
-                 )
-        ]
+        let broker = DataBroker(id: 1,
+                                name: "Broker",
+                                url: "broker.com",
+                                steps: [Step](),
+                                version: "1.0.0",
+                                schedulingConfig: .mock,
+                                optOutUrl: "",
+                                eTag: "",
+                                removedAt: nil)
+        resources.brokerResourcesList = [BrokerResource(broker: broker, rawJSON: Data())]
         vault.profileQueries = [.mock]
 
         try await sut.checkForUpdates()
@@ -337,18 +335,16 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
         let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler, runTypeProvider: runTypeProvider, isAuthenticatedUser: { false })
         repository.lastCheckedVersion = nil
-        resources.brokersList = [
-            .init(id: 1,
-                  name: "Broker",
-                  url: "broker.com",
-                  steps: [Step](),
-                  version: "1.0.0",
-                  schedulingConfig: .mock,
-                  optOutUrl: "",
-                  eTag: "",
-                  removedAt: nil
-                 )
-        ]
+        let broker = DataBroker(id: 1,
+                                name: "Broker",
+                                url: "broker.com",
+                                steps: [Step](),
+                                version: "1.0.0",
+                                schedulingConfig: .mock,
+                                optOutUrl: "",
+                                eTag: "",
+                                removedAt: nil)
+        resources.brokerResourcesList = [BrokerResource(broker: broker, rawJSON: Data())]
         vault.profileQueries = [.mock]
 
         try await sut.checkForUpdates()

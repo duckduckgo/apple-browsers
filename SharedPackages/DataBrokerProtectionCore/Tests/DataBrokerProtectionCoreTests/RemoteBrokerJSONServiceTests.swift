@@ -331,7 +331,8 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             fileNames: ["\(fixtureFileName).json"],
             eTagMapping: ["\(fixtureFileName).json": "etag-raw"],
             activeBrokers: ["\(fixtureFileName).json"],
-            testBrokers: []
+            testBrokers: [],
+            isFreeScan: false
         )
 
         // Then: vault update is used and raw bytes are forwarded as-is.

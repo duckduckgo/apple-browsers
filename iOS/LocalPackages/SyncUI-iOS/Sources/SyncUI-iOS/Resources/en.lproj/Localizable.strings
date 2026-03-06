@@ -313,6 +313,9 @@
 /* Sync passcode required alert - title */
 "sync.passcode.required.alert.title" = "Secure Your Device to Use Sync & Backup";
 
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Recovery";
+
 /* Sync & Backup Title */
 "sync.title" = "Sync & Backup";
 

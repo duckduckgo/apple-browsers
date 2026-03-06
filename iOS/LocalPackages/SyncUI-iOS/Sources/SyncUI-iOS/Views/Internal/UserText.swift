@@ -108,6 +108,9 @@ public struct UserText {
     static let saveRecoveryCodeSaveAsPdfButton = NSLocalizedString("save.recovery.code.save.as.pdf.button", bundle: Bundle.module, value: "Download as PDF", comment: "Save Recovery Code Sheet - Save as PDF Button")
     static let saveRecoveryCodeSaveCodeCopiedToast = NSLocalizedString("save.recovery.code.code.copied.button", bundle: Bundle.module, value: "Recovery code copied to clipboard", comment: "Save Recovery Code Sheet - Copy Code Toast")
 
+    // Recovery Section
+    static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
+
     // Auto-Restore
     static let autoRestoreSettingsRowLabel = NSLocalizedString("auto.restore.settings.row.label", bundle: Bundle.module, value: "Auto-Restore on This Device", comment: "Auto-Restore Settings Row - Label")
     static let autoRestoreStatusOn = NSLocalizedString("auto.restore.settings.row.on", bundle: Bundle.module, value: "On", comment: "Auto-Restore Settings Row - On")

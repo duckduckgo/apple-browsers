@@ -187,6 +187,7 @@ public extension DesignSystemImages {
             public static var importLeft: DesignSystemImage { .init(resource: .importLeft16) }
             public static var info: DesignSystemImage { .init(resource: .info16) }
             public static var infoRecolorable: DesignSystemImage { .init(resource: .infoRecolorable16) }
+            public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid16) }
             public static var jump: DesignSystemImage { .init(resource: .jump16) }
             public static var jumpRecolorable: DesignSystemImage { .init(resource: .jumpRecolorable16) }
             public static var keyLogin: DesignSystemImage { .init(resource: .keyLogin16) }

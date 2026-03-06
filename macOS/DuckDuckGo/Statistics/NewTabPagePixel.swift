@@ -156,6 +156,10 @@ enum NewTabPagePixel: PixelKitEvent {
     case omnibarModeChanged(mode: OmnibarMode)
     case omnibarHidden
     case omnibarShown
+    case aiChatRecentChatSelectedPinnedMouse
+    case aiChatRecentChatSelectedPinnedKeyboard
+    case aiChatRecentChatSelectedMouse
+    case aiChatRecentChatSelectedKeyboard
 
     // Parameter duration: Load time in **seconds** (will be converted to milliseconds in pixel).
     case newTabPageLoadingTime(duration: TimeInterval, osMajorVersion: Int)
@@ -191,6 +195,10 @@ enum NewTabPagePixel: PixelKitEvent {
         case .omnibarModeChanged: return "new-tab-page_omnibar_mode_changed"
         case .omnibarHidden: return "new-tab-page_omnibar_hidden"
         case .omnibarShown: return "new-tab-page_omnibar_shown"
+        case .aiChatRecentChatSelectedPinnedMouse: return "new-tab-page_aichat_recent_chat_selected_pinned_mouse"
+        case .aiChatRecentChatSelectedPinnedKeyboard: return "new-tab-page_aichat_recent_chat_selected_pinned_keyboard"
+        case .aiChatRecentChatSelectedMouse: return "new-tab-page_aichat_recent_chat_selected_mouse"
+        case .aiChatRecentChatSelectedKeyboard: return "new-tab-page_aichat_recent_chat_selected_keyboard"
         case .newTabPageLoadingTime: return "new-tab-page_loading_time"
         case .nextStepsCardClicked(let card): return "new-tab-page_next-steps_\(card)_clicked"
         case .nextStepsCardDismissed(let card): return "new-tab-page_next-steps_\(card)_dismissed"
@@ -233,6 +241,10 @@ enum NewTabPagePixel: PixelKitEvent {
                 .promptSubmitted,
                 .omnibarHidden,
                 .omnibarShown,
+                .aiChatRecentChatSelectedPinnedMouse,
+                .aiChatRecentChatSelectedPinnedKeyboard,
+                .aiChatRecentChatSelectedMouse,
+                .aiChatRecentChatSelectedKeyboard,
                 .nextStepsCardClicked,
                 .nextStepsCardDismissed,
                 .nextStepsCardShown:
@@ -263,6 +275,10 @@ enum NewTabPagePixel: PixelKitEvent {
                 .omnibarModeChanged,
                 .omnibarHidden,
                 .omnibarShown,
+                .aiChatRecentChatSelectedPinnedMouse,
+                .aiChatRecentChatSelectedPinnedKeyboard,
+                .aiChatRecentChatSelectedMouse,
+                .aiChatRecentChatSelectedKeyboard,
                 .newTabPageLoadingTime:
             return [.pixelSource]
         case .nextStepsCardClicked,

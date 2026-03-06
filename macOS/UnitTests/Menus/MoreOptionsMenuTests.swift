@@ -58,7 +58,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         super.setUp()
         tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
         fireproofDomains = MockFireproofDomains(domains: [])
-        passwordManagerCoordinator = PasswordManagerCoordinator()
+        passwordManagerCoordinator = PasswordManagerCoordinator(bitwardenManagement: nil)
         networkProtectionVisibilityMock = NetworkProtectionVisibilityMock(isInstalled: false, visible: false)
         capturingActionDelegate = CapturingOptionsButtonMenuDelegate()
         internalUserDecider = MockInternalUserDecider()

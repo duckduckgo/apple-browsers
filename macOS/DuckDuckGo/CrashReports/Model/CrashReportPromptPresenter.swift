@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import CrashReportingShared
 
 final class CrashReportPromptPresenter: NSObject {
     enum Response: Equatable {

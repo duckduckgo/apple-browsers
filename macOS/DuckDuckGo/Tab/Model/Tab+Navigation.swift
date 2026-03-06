@@ -120,7 +120,7 @@ extension Tab: NavigationResponder {
     }
 
     private func makeReleaseNotesNavigationResponder(args: TabExtensionsBuilderArguments) -> (any NavigationResponder & AnyObject)? {
-        guard let updateController = args.updateController as? any SparkleUpdateController else { return nil }
+        guard let updateController = args.updateController as? any SparkleUpdateControlling else { return nil }
 
         let scriptsPublisher = args.userScriptsPublisher
             .compactMap { $0 as (any ReleaseNotesUserScriptProvider)? }

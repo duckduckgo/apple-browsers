@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import UIKit
 
 class MainViewCoordinator {
@@ -37,6 +38,9 @@ class MainViewCoordinator {
     var statusBackground: UIView!
     var suggestionTrayContainer: UIView!
     var tabBarContainer: UIView!
+    var aiChatTabChatHeaderContainer: UIView!
+    var unifiedToggleInputContainer: UIView!
+    var keyboardSeamView: UIView!
     var toolbar: UIToolbar!
     var toolbarSpacer: UIView!
     var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
@@ -49,6 +53,8 @@ class MainViewCoordinator {
 
     let constraints = Constraints()
     var toolbarHandler: ToolbarStateHandling!
+    private var savedStatusBackgroundColor: UIColor?
+    private(set) var isNavigationChromeHidden = false
 
     // The default after creating the hiearchy is top
     var addressBarPosition: AddressBarPosition = .top
@@ -84,6 +90,10 @@ class MainViewCoordinator {
         var topSlideContainerTopToStatusBackground: NSLayoutConstraint!
         var topSlideContainerHeight: NSLayoutConstraint!
         var toolbarSpacerHeight: NSLayoutConstraint!
+        var unifiedToggleInputBottom: NSLayoutConstraint!
+        var contentContainerBottomToUnifiedToggleInputTop: NSLayoutConstraint!
+        var contentContainerTopToSafeArea: NSLayoutConstraint!
+        var contentContainerTopToAIChatHeader: NSLayoutConstraint!
 
     }
 
@@ -164,6 +174,95 @@ class MainViewCoordinator {
 
     func updateToolbarWithState(_ state: ToolbarContentState) {
         toolbarHandler.updateToolbarWithState(state)
+    }
+
+    // MARK: - Native Input Layout
+
+    func showUnifiedToggleInput(aboveKeyboard: Bool) {
+        constraints.unifiedToggleInputBottom.isActive = false
+
+        if aboveKeyboard {
+            constraints.unifiedToggleInputBottom = unifiedToggleInputContainer.bottomAnchor
+                .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
+        } else {
+            constraints.unifiedToggleInputBottom = unifiedToggleInputContainer.bottomAnchor
+                .constraint(equalTo: toolbar.topAnchor)
+        }
+        constraints.contentContainerBottomToUnifiedToggleInputTop.constant = aboveKeyboard ? 30 : 0
+
+        constraints.unifiedToggleInputBottom.isActive = true
+        unifiedToggleInputContainer.isHidden = false
+        keyboardSeamView.isHidden = !aboveKeyboard
+    }
+
+    func hideUnifiedToggleInput() {
+        unifiedToggleInputContainer.isHidden = true
+        keyboardSeamView.isHidden = true
+        constraints.contentContainerBottomToUnifiedToggleInputTop.constant = 0
+    }
+
+    func showAITabChrome() {
+        showAIChatTabChatHeader()
+        setNavigationChromeHidden(true)
+    }
+
+    func hideAITabChrome() {
+        hideAIChatTabChatHeader()
+        setNavigationChromeHidden(false)
+    }
+
+    func showAIChatTabChatHeader() {
+        aiChatTabChatHeaderContainer.isHidden = false
+    }
+
+    func hideAIChatTabChatHeader() {
+        aiChatTabChatHeaderContainer.isHidden = true
+    }
+
+    /// Uses alpha + interaction instead of isHidden so the collection view stays laid out
+    /// and its pan gesture can be relocated to drive tab swiping.
+    func setNavigationChromeHidden(_ hidden: Bool) {
+        if hidden {
+            if !isNavigationChromeHidden {
+                savedStatusBackgroundColor = statusBackground.backgroundColor
+            }
+            isNavigationChromeHidden = true
+            statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            navigationBarContainer.alpha = 0
+            navigationBarContainer.isUserInteractionEnabled = false
+            constraints.contentContainerTop.isActive = false
+            if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
+                constraints.contentContainerTopToSafeArea.isActive = false
+                constraints.contentContainerTopToAIChatHeader.isActive = true
+            } else {
+                constraints.contentContainerTopToSafeArea.isActive = true
+            }
+            if !addressBarPosition.isBottom {
+                constraints.statusBackgroundToNavigationBarContainerBottom.isActive = false
+                constraints.statusBackgroundBottomToSafeAreaTop.isActive = true
+            }
+            constraints.contentContainerBottomToToolbarTop.isActive = false
+            constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = true
+        } else {
+            if isNavigationChromeHidden {
+                statusBackground.backgroundColor = savedStatusBackgroundColor
+                savedStatusBackgroundColor = nil
+            }
+            isNavigationChromeHidden = false
+            navigationBarContainer.alpha = 1
+            navigationBarContainer.isUserInteractionEnabled = true
+            constraints.contentContainerTopToSafeArea.isActive = false
+            constraints.contentContainerTopToAIChatHeader?.isActive = false
+            constraints.contentContainerTop.isActive = true
+            if !addressBarPosition.isBottom {
+                constraints.statusBackgroundBottomToSafeAreaTop.isActive = false
+                constraints.statusBackgroundToNavigationBarContainerBottom.isActive = true
+            } else {
+                constraints.navigationBarContainerBottom.constant = 0
+            }
+            constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = false
+            constraints.contentContainerBottomToToolbarTop.isActive = true
+        }
     }
 
 }

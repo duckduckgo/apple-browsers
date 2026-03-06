@@ -161,7 +161,8 @@ final class MainCoordinator {
                                 sharedSecureVault: sharedSecureVault,
                                 privacyStats: privacyStats,
                                 voiceSearchHelper: voiceSearchHelper,
-                                launchSourceManager: launchSourceManager)
+                                launchSourceManager: launchSourceManager,
+                                darkReaderFeatureSettings: darkReaderFeatureSettings)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -177,6 +178,11 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner)
         let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
+        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
+            featureFlagger: featureFlagger,
+            keyValueStore: keyValueStore,
+            privacyConfigurationManager: privacyConfigurationManager
+        )
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -195,6 +201,7 @@ final class MainCoordinator {
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
                                         voiceSearchHelper: voiceSearchHelper,
                                         featureFlagger: featureFlagger,
+                                        idleReturnEligibilityManager: idleReturnEligibilityManager,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
                                         textZoomCoordinatorProvider: textZoomCoordinatorProvider,

@@ -233,27 +233,6 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         onHoverChange?(isHovering) ?? { self.isHovering = isHovering }()
     }
 
-    /// Resolves warning flow and runs `onProceed` only when user confirms.
-    func performOnProceed(_ onProceed: @escaping @MainActor () -> Void) {
-        let finish: @MainActor (Bool) -> Void = { shouldProceed in
-            guard shouldProceed else {
-                self.deciderSequenceCompleted(shouldProceed: false)
-                return
-            }
-            onProceed()
-            self.deciderSequenceCompleted(shouldProceed: true)
-        }
-
-        switch shouldTerminate(isAsync: false) {
-        case .sync(let decision):
-            finish(decision == .next)
-        case .async(let task):
-            Task { @MainActor in
-                finish(await task.value == .next)
-            }
-        }
-    }
-
     /// Runs confirmation flow for manually presented overlays (non-keyboard trigger).
     func performOnProceedForManualPresentation(_ onProceed: @escaping @MainActor () -> Void) {
         guard isWarningEnabled() else {
@@ -608,10 +587,11 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
         // Wait for shortcut key release if it was still held when decision was made
         if shouldProceed && isShortcutKeyHeld {
             waitForKeyRelease(keyEquivalent: shortcutKeyEquivalent)
-            isShortcutKeyHeld = false
         }
-        // Reset event interceptor set to prevent beeps for repeated shortcut key events
-        // Done on the next pass to let the event loop process any queued repeated key events before resetting the interceptor
+        isShortcutKeyHeld = false
+
+        // Reset event interceptor set to prevent beeps for repeated shortcut key events.
+        // Done on next pass to let event loop process any queued repeated key events before reset.
         DispatchQueue.main.async { [interceptorToken, application] in
             application?.resetEventInterceptor(token: interceptorToken)
         }

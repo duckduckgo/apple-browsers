@@ -265,6 +265,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     // MARK: - iPad Duck.ai Expanded Search Area (stored properties)
 
+    let aiChatSendButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+        button.isHidden = true
+        button.layer.cornerRadius = Metrics.sendButtonSize / 2
+        button.layer.masksToBounds = true
+        return button
+    }()
+
+    var onAIChatSendPressed: (() -> Void)?
+
     let aiChatTextView: UITextView = {
         let textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
@@ -362,6 +374,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
         searchAreaContainerView.addSubview(aiChatTextView)
+        searchAreaContainerView.addSubview(aiChatSendButton)
         searchAreaContainerView.addSubview(aiChatLeftButton)
 
         addSubview(activeOutlineView)
@@ -572,6 +585,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         menuButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(menuButtonLongPress)))
 
         aiChatLeftButton.addTarget(self, action: #selector(aiChatLeftButtonTap), for: .touchUpInside)
+        aiChatSendButton.addTarget(self, action: #selector(aiChatSendButtonTap), for: .primaryActionTriggered)
     }
 
     private func updateShadows() {
@@ -641,6 +655,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         aiChatTextView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).AIChatTextView"
         aiChatTextView.accessibilityLabel = UserText.duckAiFeatureName
+
+        aiChatSendButton.accessibilityLabel = "Send message"
+        aiChatSendButton.accessibilityHint = "Sends your message to DuckDuckGo AI"
+        aiChatSendButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChatSend"
+        aiChatSendButton.accessibilityTraits = .button
     }
 
     private func setUpInitialState() {
@@ -662,6 +681,30 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private func updateVerticalSpacing() {
         textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
         textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
+    }
+
+    /// Returns the expanded-area subview (text view or send button) at the given point.
+    /// When expanded, these views overflow beyond this view's bounds so we must claim them explicitly.
+    private func overflowTarget(at point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard isSearchAreaExpanded else { return nil }
+        let candidates: [UIView] = [aiChatSendButton, aiChatTextView]
+        return candidates.first { candidate in
+            guard !candidate.isHidden else { return false }
+            let localPoint = candidate.convert(point, from: self)
+            return candidate.point(inside: localPoint, with: event)
+        }
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        overflowTarget(at: point, with: event) != nil || super.point(inside: point, with: event)
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let target = overflowTarget(at: point, with: event) {
+            let localPoint = target.convert(point, from: self)
+            return target.hitTest(localPoint, with: event) ?? target
+        }
+        return super.hitTest(point, with: event)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -744,6 +787,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         onAIChatLeftButtonPressed?()
     }
 
+    @objc private func aiChatSendButtonTap() {
+        onAIChatSendPressed?()
+    }
+
     @objc private func aiChatBrandingViewTapped() {
         onAIChatBrandingPressed?()
     }
@@ -769,6 +816,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         static let expandedSearchAreaHeight: CGFloat = 120.0
         static let duckAITextViewBottomPadding: CGFloat = 8.0
+        static let sendButtonSize: CGFloat = 40.0
         static let expansionAnimationDuration: TimeInterval = 0.25
 
         static let expandedSizeSpacing: CGFloat = 24.0
@@ -900,6 +948,11 @@ extension DefaultOmniBarView {
             aiChatTextView.leadingAnchor.constraint(equalTo: searchAreaView.textField.leadingAnchor),
             aiChatTextView.trailingAnchor.constraint(equalTo: searchAreaView.textField.trailingAnchor),
             aiChatTextView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+
+            aiChatSendButton.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+            aiChatSendButton.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+            aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
+            aiChatSendButton.heightAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
         ])
 
         let bottomEqual = searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
@@ -940,6 +993,10 @@ extension DefaultOmniBarView {
 
         guard animated else {
             searchAreaContainerView.applyShadowOpacityMultiplier(1)
+            aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
+            if !isSearchAreaExpanded {
+                aiChatSendButton.isHidden = true
+            }
             applyExpansionConstraints()
             applyExpansionClipping()
             layoutIfNeeded()
@@ -958,14 +1015,17 @@ extension DefaultOmniBarView {
         UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             if self.isSearchAreaExpanded {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.aiChatSendButton.alpha = 1
             } else {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
+                self.aiChatSendButton.alpha = 0
             }
             self.layoutIfNeeded()
         } completion: { _ in
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.aiChatSendButton.isHidden = true
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
             } else {
@@ -986,6 +1046,11 @@ extension DefaultOmniBarView {
             aiChatTextView.text = currentText
             aiChatTextView.isHidden = false
             searchAreaContainerView.bringSubviewToFront(aiChatTextView)
+
+            aiChatSendButton.isHidden = false
+            aiChatSendButton.alpha = 0
+            searchAreaContainerView.bringSubviewToFront(aiChatSendButton)
+            updateAIChatSendButton(hasText: !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         } else {
             let currentText = aiChatTextView.text ?? ""
             aiChatTextView.isHidden = true
@@ -1003,6 +1068,18 @@ extension DefaultOmniBarView {
         textField.alpha = hasText ? 0 : 1
     }
 
+    func updateAIChatSendButton(hasText: Bool) {
+        if hasText {
+            aiChatSendButton.backgroundColor = UIColor(designSystemColor: .accent)
+            aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
+            aiChatSendButton.isEnabled = true
+        } else {
+            aiChatSendButton.backgroundColor = .clear
+            aiChatSendButton.tintColor = UIColor(designSystemColor: .icons)
+            aiChatSendButton.isEnabled = false
+        }
+    }
+
     func updateLeftIconForMode(_ mode: TextEntryMode) {
         switch mode {
         case .aiChat:
@@ -1010,6 +1087,10 @@ extension DefaultOmniBarView {
         case .search:
             searchAreaView.loupeIconView.image = DesignSystemImages.Glyphs.Size24.findSearchSmall
         }
+    }
+
+    func setLeftIconHiddenForModeToggle(_ hidden: Bool) {
+        searchAreaView.setLeftIconAreaHidden(hidden)
     }
 
     private func applyExpansionConstraints() {

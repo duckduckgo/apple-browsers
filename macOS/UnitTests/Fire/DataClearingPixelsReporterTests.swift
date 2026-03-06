@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import OSLog
 import PixelKit
 import PixelKitTestingUtilities
 import XCTest
@@ -24,6 +25,8 @@ import XCTest
 
 final class DataClearingPixelsReporterTests: XCTestCase {
 
+    private static let logger = Logger(subsystem: "DataClearingPixelsReporterTests", category: "Tests")
+
     private var mockPixelFiring: PixelKitMock!
     private var sut: DataClearingPixelsReporter!
     private var currentTime: CFTimeInterval!
@@ -31,10 +34,10 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockPixelFiring = PixelKitMock()
-        currentTime = CACurrentMediaTime()
+        currentTime = 0.0
         sut = DataClearingPixelsReporter(
             pixelFiring: mockPixelFiring,
-            timeProvider: { [weak self] in self?.currentTime ?? CACurrentMediaTime() }
+            timeProvider: { [weak self] in self?.currentTime ?? 0.0 }
         )
     }
 
@@ -75,10 +78,16 @@ final class DataClearingPixelsReporterTests: XCTestCase {
     @MainActor
     func testWhenCalledExactlyAt20SecondsThenRetriggerPixelIsFired() {
         // Given
+        let startTime = currentTime!
+        Self.logger.info("[👀 DIAGNOSTIC] Initial time: \(startTime, format: .fixed(precision: 17))")
         sut.fireRetriggerPixelIfNeeded()
 
-        // When - exactly at 20 seconds (edge case, <= condition)
-        currentTime += 20
+        // When - at 20 seconds
+        currentTime += 20.0
+        let endTime = currentTime!
+        let elapsed = endTime - startTime
+        Self.logger.info("[👀 DIAGNOSTIC] After increment - currentTime: \(endTime, format: .fixed(precision: 17)), elapsed: \(elapsed, format: .fixed(precision: 17))")
+
         sut.fireRetriggerPixelIfNeeded()
 
         // Then

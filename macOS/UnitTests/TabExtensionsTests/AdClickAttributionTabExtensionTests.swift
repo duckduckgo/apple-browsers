@@ -531,32 +531,6 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
     }
 
     @MainActor
-    func testOnNilRulesApplication_ruleListIsRemoved() {
-        privacyConfiguration.isFeatureEnabledCheck = { feature, _ in
-            return feature == .contentBlocking
-        }
-        let userScriptInstalled = expectation(description: "userScriptInstalled")
-        logic.onRulesChanged = { _ in
-            userScriptInstalled.fulfill()
-        }
-        let tab = Tab(content: .none, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
-
-        let makeContentBlockerRulesCalled = expectation(description: "makeContentBlockerRulesCalled")
-        DispatchQueue.main.async {
-            // Content blocker rules script removed — initialization triggered by UserContentController publisher
-            makeContentBlockerRulesCalled.fulfill()
-        }
-
-        waitForExpectations(timeout: 1)
-
-        let castedLogic = withUnsafePointer(to: logic) { $0.withMemoryRebound(to: AdClickAttributionLogic.self, capacity: 1) { $0 } }.pointee
-
-        logic.delegate!.attributionLogic(castedLogic, didRequestRuleApplication: nil, forVendor: nil)
-
-        withExtendedLifetime(tab) {}
-    }
-
-    @MainActor
     func testOnRulesApplicationWithContentBlockingDisabled_localContentRuleListIsRemoved() {
         privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false

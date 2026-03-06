@@ -345,6 +345,41 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         }
         XCTAssertNil(features["trackerProtection"])
     }
+
+    func testAllowlistRules_areEscapedForRegex() {
+        // Allowlist rules are passed to JavaScript's .match() which treats them as regex.
+        // Dots and other special chars must be escaped to prevent wildcards.
+        let allowlist = PrivacyConfigurationData.TrackerAllowlist(entries: [
+            "example.com": [
+                PrivacyConfigurationData.TrackerAllowlist.Entry(
+                    rule: "facebook.com/tracker.js",
+                    domains: ["<all>"]
+                )
+            ]
+        ])
+
+        let (manager, _) = makeManager(trackerAllowlist: allowlist)
+        let dataSource = MockTrackerProtectionDataSource()
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(
+            featureFlagger: MockFeatureFlagger(),
+            privacyConfigurationManager: manager,
+            trackerProtectionDataSource: dataSource
+        )
+
+        guard let features = generatedFeatures(from: generator),
+              let settings = features["trackerProtection"]?["settings"] as? [String: Any],
+              let allowlistDict = settings["allowlist"] as? [String: [[String: Any]]],
+              let entries = allowlistDict["example.com"],
+              let firstEntry = entries.first,
+              let rule = firstEntry["rule"] as? String else {
+            XCTFail("Could not extract allowlist rule")
+            return
+        }
+
+        // Verify dots are escaped
+        XCTAssertEqual(rule, "facebook\\.com/tracker\\.js", "Dots should be escaped for regex matching")
+        XCTAssertFalse(rule.contains("facebook.com"), "Original unescaped dots should not be present")
+    }
 }
 
 // MARK: - Test Helpers

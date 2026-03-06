@@ -42,7 +42,7 @@ public enum TrackerBlockingReason: String {
         switch self {
         case .firstParty, .affiliatedThirdPartyRequest:
             return .ownedByFirstParty
-        case .ruleException:
+        case .ruleException, .defaultIgnore, .matchedRuleIgnore:
             return .ruleException
         case .unprotectedDomain:
             return .protectionDisabled

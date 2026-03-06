@@ -51,18 +51,25 @@ public struct TrackerInfo: Encodable {
 
     /// Check whether a C-S-S–reported `pageUrl` belongs to the same page as the
     /// native tab URL.  Exact string match is tried first (fast path); on mismatch
-    /// we fall back to same-origin (scheme + host + port) comparison.
+    /// we fall back to comparing scheme + host + port + normalized path.
     ///
     /// The fallback is needed because iframe-originated events may report a
     /// top-frame URL whose string representation differs from the native tab URL
-    /// (trailing slash, fragment, percent-encoding).  Same-origin is narrow enough
-    /// to prevent cross-site mis-association while tolerating these shape differences.
+    /// (trailing slash, fragment, percent-encoding).  Including the path prevents
+    /// cross-page mis-association during same-site navigations while still
+    /// tolerating these cosmetic differences.
     static func isAssociatedWithPage(_ pageUrl: String, tabURL: URL) -> Bool {
         if pageUrl == tabURL.absoluteString { return true }
         guard let eventURL = URL(string: pageUrl) else { return false }
         return eventURL.scheme == tabURL.scheme
             && eventURL.host == tabURL.host
             && eventURL.port == tabURL.port
+            && normalizedPath(eventURL.path) == normalizedPath(tabURL.path)
+    }
+
+    private static func normalizedPath(_ path: String) -> String {
+        if path.isEmpty || path == "/" { return "/" }
+        return path.hasSuffix("/") ? String(path.dropLast()) : path
     }
 
     // MARK: - Helper accessors

@@ -83,7 +83,7 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
         var allowlistDict: [String: [[String: Any]]] = [:]
         for (domain, entries) in privacyConfig.trackerAllowlist.entries {
             allowlistDict[domain] = entries.map { entry in
-                ["rule": entry.rule, "domains": entry.domains]
+                ["rule": entry.rule.escapedForRegex(), "domains": entry.domains]
             }
         }
         settings["allowlist"] = allowlistDict
@@ -104,5 +104,24 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
 
         mutableFeatures["trackerProtection"] = trackerProtectionFeature
         return mutableFeatures
+    }
+}
+
+// MARK: - Private Helpers
+
+private extension String {
+    /// Escapes regex special characters for use in JavaScript's String.match().
+    ///
+    /// C-S-S allowlist rules are passed to JavaScript's `.match()` method which treats
+    /// the string as a regex pattern. This function escapes special characters to ensure
+    /// literal matching (e.g., dots match literal dots, not wildcards).
+    func escapedForRegex() -> String {
+        // Regex special characters that need escaping: . \ + * ? [ ] ^ $ ( ) { } = ! < > | : -
+        let specialChars = ["\\", ".", "+", "*", "?", "[", "]", "^", "$", "(", ")", "{", "}", "=", "!", "<", ">", "|", ":", "-"]
+        var escaped = self
+        for char in specialChars {
+            escaped = escaped.replacingOccurrences(of: char, with: "\\\(char)")
+        }
+        return escaped
     }
 }

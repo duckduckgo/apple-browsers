@@ -3174,7 +3174,9 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
 
     func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
                            didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
-        guard let url = url, let surrogateHost = Self.trackerProtectionMapper.surrogateHost(from: surrogate) else { return }
+        guard let url = url,
+              let surrogateHost = Self.trackerProtectionMapper.surrogateHost(from: surrogate),
+              !surrogateHost.isEmpty else { return }
 
         let detectedRequest = Self.trackerProtectionMapper.detectedRequest(from: surrogate)
         privacyInfo?.trackerInfo.addInstalledSurrogateHost(surrogateHost, for: detectedRequest, onPageWithURL: url)

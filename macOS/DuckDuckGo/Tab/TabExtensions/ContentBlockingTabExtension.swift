@@ -169,7 +169,9 @@ extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
 
     func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
                            didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
-        let surrogateHost = trackerProtectionMapper.surrogateHost(from: surrogate) ?? ""
+        guard let surrogateHost = trackerProtectionMapper.surrogateHost(from: surrogate), !surrogateHost.isEmpty else {
+            return
+        }
         let detectedRequest = trackerProtectionMapper.detectedRequest(from: surrogate)
         trackersSubject.send(DetectedTracker(request: detectedRequest, type: .trackerWithSurrogate(host: surrogateHost)))
     }

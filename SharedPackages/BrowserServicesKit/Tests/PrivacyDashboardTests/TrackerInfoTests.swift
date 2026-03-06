@@ -29,11 +29,11 @@ final class TrackerInfoTests: XCTestCase {
         XCTAssertTrue(TrackerInfo.isAssociatedWithPage("https://example.com/page?q=1", tabURL: url))
     }
 
-    func testIsAssociatedWithPage_differentPath_sameOrigin() {
+    func testIsAssociatedWithPage_differentPath_sameOrigin_returnsFalse() {
         let url = URL(string: "https://example.com/page")!
-        XCTAssertTrue(
+        XCTAssertFalse(
             TrackerInfo.isAssociatedWithPage("https://example.com/other", tabURL: url),
-            "Same-origin URLs with different paths should still be associated (iframe case)"
+            "Same-origin URLs with different paths should not be associated to prevent cross-page leakage"
         )
     }
 
@@ -99,13 +99,13 @@ final class TrackerInfoTests: XCTestCase {
         XCTAssertEqual(info.trackers.count, 1)
     }
 
-    func testAddDetectedTracker_sameOriginDifferentPath_succeeds() {
+    func testAddDetectedTracker_sameOriginDifferentPath_dropsEvent() {
         var info = TrackerInfo()
         let url = URL(string: "https://example.com/real-page")!
         info.addDetectedTracker(makeRequest(pageUrl: "https://example.com/iframe-reported-url"), onPageWithURL: url)
         XCTAssertEqual(
-            info.trackers.count, 1,
-            "Same-origin iframe-originated event should not be silently dropped"
+            info.trackers.count, 0,
+            "Same-origin event with different path should be dropped to prevent cross-page leakage"
         )
     }
 
@@ -118,15 +118,15 @@ final class TrackerInfoTests: XCTestCase {
 
     // MARK: - addInstalledSurrogateHost with page association
 
-    func testAddSurrogateHost_sameOriginDifferentPath_succeeds() {
+    func testAddSurrogateHost_sameOriginDifferentPath_dropsEvent() {
         var info = TrackerInfo()
         let url = URL(string: "https://example.com/real-page")!
         let request = makeRequest(trackerUrl: "https://tracker.example/analytics.js",
                                   pageUrl: "https://example.com/iframe-reported-url")
         info.addInstalledSurrogateHost("tracker.example", for: request, onPageWithURL: url)
         XCTAssertEqual(
-            info.installedSurrogates.count, 1,
-            "Same-origin iframe-originated surrogate should not be silently dropped"
+            info.installedSurrogates.count, 0,
+            "Same-origin event with different path should be dropped to prevent cross-page leakage"
         )
     }
 

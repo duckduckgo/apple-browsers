@@ -51,6 +51,8 @@ import UserScript
 import PrivacyConfig
 import WebExtensions
 
+private let utiChromeLog = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "UTI-Constraint")
+
 class MainViewController: UIViewController {
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -268,8 +270,10 @@ class MainViewController: UIViewController {
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
+    var unifiedInputContentViewController: UnifiedInputContentContainerViewController?
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
+    var previousUnifiedToggleKeyboardVisible = false
 
     // MARK: - iPad Tab Mode Chat History
     private lazy var iPadTabChatHistoryCoordinator = IPadTabChatHistoryCoordinator(
@@ -806,13 +810,21 @@ class MainViewController: UIViewController {
 
     private func registerForKeyboardNotifications() {
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(keyboardWillChangeFrame),
+                                               selector: #selector(keyboardWillChangeFrame(_:)),
                                                name: UIResponder.keyboardWillChangeFrameNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(keyboardDidChangeFrame(_:)),
+                                               name: UIResponder.keyboardDidChangeFrameNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(keyboardWillShow(_:)),
+                                               name: UIResponder.keyboardWillShowNotification,
                                                object: nil)
 
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide),
                                                name: UIResponder.keyboardWillHideNotification, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow),
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow(_:)),
                                                name: UIResponder.keyboardDidShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidHide),
                                                name: UIResponder.keyboardDidHideNotification, object: nil)
@@ -823,12 +835,23 @@ class MainViewController: UIViewController {
     private var didSendGestureDismissPixel: Bool = false
 
     @objc
-    private func keyboardDidShow() {
+    private func keyboardWillShow(_ notification: Notification) {
+        adjustUIFromKeyboardNotification(notification)
+    }
+
+    @objc
+    private func keyboardDidShow(_ notification: Notification) {
         keyboardShowing = true
         productSurfaceTelemetry.keyboardActive()
+        adjustUIFromKeyboardNotification(notification)
 
         // Dismiss contextual sheet if keyboard is for background web view
         dismissContextualSheetIfKeyboardIsForBackgroundContent()
+    }
+
+    @objc
+    private func keyboardDidChangeFrame(_ notification: Notification) {
+        adjustUIFromKeyboardNotification(notification)
     }
 
     private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
@@ -986,11 +1009,14 @@ class MainViewController: UIViewController {
     }
 
     func refreshViewsBasedOnAddressBarPosition(_ position: AddressBarPosition) {
+        logUTIChrome("refreshViewsBasedOnAddressBarPosition:start position=\(String(describing: position))")
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
-            viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
-                    
+            if shouldResetNavBarContainerBottomForTopPosition() {
+                viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
+            }
+
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
         }
@@ -998,6 +1024,31 @@ class MainViewController: UIViewController {
         omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
+        logUTIChrome("refreshViewsBasedOnAddressBarPosition:end position=\(String(describing: position))")
+    }
+
+    private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
+        guard let state = unifiedToggleInputCoordinator?.displayState else { return true }
+        if case .hidden = state {
+            logUTIChrome("shouldResetNavBarContainerBottomForTopPosition:true state=hidden")
+            return true
+        }
+        logUTIChrome("shouldResetNavBarContainerBottomForTopPosition:false state=\(String(describing: state))")
+        return false
+    }
+
+    private func logUTIChrome(_ event: String) {
+        let displayState = unifiedToggleInputCoordinator.map { String(describing: $0.displayState) } ?? "nil"
+        let inputMode = unifiedToggleInputCoordinator.map { String(describing: $0.inputMode) } ?? "nil"
+        let navTopActive = viewCoordinator.constraints.navigationBarContainerTop?.isActive ?? false
+        let navBottomActive = viewCoordinator.constraints.navigationBarContainerBottom?.isActive ?? false
+        let navBottomConstant = viewCoordinator.constraints.navigationBarContainerBottom?.constant ?? -9999
+        let navMinY = viewCoordinator.navigationBarContainer.frame.minY
+        let navMaxY = viewCoordinator.navigationBarContainer.frame.maxY
+        let keyboardTop = view.keyboardLayoutGuide.layoutFrame.minY
+        utiChromeLog.debug(
+            "UTILogging | \(event, privacy: .public) | keyboardShowing=\(self.keyboardShowing) displayState=\(displayState, privacy: .public) inputMode=\(inputMode, privacy: .public) addrPos=\(String(describing: self.viewCoordinator.addressBarPosition), privacy: .public) navTopActive=\(navTopActive) navBottomActive=\(navBottomActive) navBottomConstant=\(navBottomConstant) navMinY=\(navMinY) navMaxY=\(navMaxY) keyboardTop=\(keyboardTop) keyboardBased=\(self.viewCoordinator.isNavigationBarContainerBottomKeyboardBased)"
+        )
     }
 
     private func updateChromeForDuckPlayer() {
@@ -1033,16 +1084,18 @@ class MainViewController: UIViewController {
     /// Based on https://stackoverflow.com/a/46117073/73479
     ///  Handles iPhone X devices properly.
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
+        adjustUIFromKeyboardNotification(notification)
+    }
 
+    private func adjustUIFromKeyboardNotification(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
-            let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
+              let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
             return
         }
         let duration: TimeInterval = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
         let animationCurveRawNSN = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber
         let animationCurveRaw = animationCurveRawNSN?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
         let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRaw)
-
         adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
     }
 
@@ -1054,11 +1107,23 @@ class MainViewController: UIViewController {
         let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 0, dy: -additionalSafeAreaInsets.bottom)
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
         keyboardHeight = keyboardFrameInView.height
+        let keyboardVisible = intersection.height > 0
+        handleUnifiedToggleInputKeyboardFrameDidChange(keyboardVisible: keyboardVisible)
+        syncUnifiedToggleInputKeyboardAnchor(keyboardFrameInView: keyboardFrameInView, keyboardVisible: keyboardVisible)
 
         if self.appSettings.currentAddressBarPosition.isBottom {
             let intersection = safeAreaFrame.intersection(keyboardFrameInView)
             let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + omniBarHeight : 0
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
+            let isAITabDisplayState: Bool
+            if let displayState = unifiedToggleInputCoordinator?.displayState, case .aiTab = displayState {
+                isAITabDisplayState = true
+            } else {
+                isAITabDisplayState = false
+            }
+            if unifiedToggleInputCoordinator?.isInlineEditingActive != true,
+               !isAITabDisplayState {
+                self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
+            }
 
             // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
             if let currentTab {
@@ -1827,6 +1892,7 @@ class MainViewController: UIViewController {
             }
 
             ViewHighlighter.updatePositions()
+            self.recomputeInlineEditingHeightIfNeeded()
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
@@ -2784,11 +2850,16 @@ extension MainViewController: BrowserChromeDelegate {
         let multiplier = viewCoordinator.toolbar.isHidden ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
 
-        if viewCoordinator.addressBarPosition.isBottom {
+        if viewCoordinator.addressBarPosition.isBottom, !viewCoordinator.isNavigationBarContainerBottomKeyboardBased {
             // Push the navigation bar down independently so the content container
             // (which is pinned to toolbar.top) doesn't extend past the screen bottom.
             let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
             viewCoordinator.constraints.navigationBarContainerBottom.constant = navBarHeight * (1.0 - ratio)
+            if unifiedToggleInputCoordinator != nil {
+                logUTIChrome("updateToolbarConstant:applied ratio=\(ratio)")
+            }
+        } else if viewCoordinator.addressBarPosition.isBottom, unifiedToggleInputCoordinator != nil {
+            logUTIChrome("updateToolbarConstant:skippedNavBottomUpdate ratio=\(ratio) keyboardBased=\(viewCoordinator.isNavigationBarContainerBottomKeyboardBased)")
         }
     }
 

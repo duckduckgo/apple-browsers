@@ -29,6 +29,11 @@ protocol SwipeContainerViewControllerDelegate: AnyObject {
 final class SwipeContainerViewController: UIViewController {
 
     weak var delegate: SwipeContainerViewControllerDelegate?
+    var animateProgrammaticModeChanges = true
+
+    var isSwipeEnabled: Bool = true {
+        didSet { swipeScrollView?.isScrollEnabled = isSwipeEnabled }
+    }
 
     // MARK: - Scroll Progress
     @Published private(set) var scrollProgress: CGFloat = 0.0
@@ -65,6 +70,12 @@ final class SwipeContainerViewController: UIViewController {
         configureInitialPosition()
     }
 
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        guard swipeScrollView.contentSize.width == 0, view.bounds.width > 0 else { return }
+        updateLayout(viewBounds: view.bounds)
+    }
+
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
@@ -91,7 +102,9 @@ final class SwipeContainerViewController: UIViewController {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard self?.swipeScrollView != nil else { return }
-                self?.updateScrollViewPosition(animated: true)
+                let shouldAnimate = self?.animateProgrammaticModeChanges ?? true
+                self?.updateScrollViewPosition(animated: shouldAnimate)
+                self?.animateProgrammaticModeChanges = true
             }
             .store(in: &cancellables)
     }

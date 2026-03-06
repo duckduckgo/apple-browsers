@@ -1767,6 +1767,11 @@
 		C18390C22F4F712A001939B9 /* AIChatNativeInputViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C12F4F712A001939B9 /* AIChatNativeInputViewController.swift */; };
 		C18390C42F4F73AE001939B9 /* UnifiedToggleInputHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C32F4F73AE001939B9 /* UnifiedToggleInputHandler.swift */; };
 		C18390C72F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C62F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift */; };
+		7A8C0BCA8C2C400C913741FB /* InlineEditingActivating.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6793EE7754AE2B5340566 /* InlineEditingActivating.swift */; };
+		43F7124D0FD24E0AA04468F0 /* UnifiedInputTopHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0B31DDBDD56441AA1908AD3 /* UnifiedInputTopHeaderView.swift */; };
+		010E3416E5014DA4AEE2E8B3 /* UnifiedInputContentContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD3D601AA6154B598D4A3D4E /* UnifiedInputContentContainerViewController.swift */; };
+		AD55CB3AB9E782E824149DA0 /* KeyboardSubmitViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CA09AB7E1B93BD78227909A /* KeyboardSubmitViewController.swift */; };
+		B2F4A1C3D8E94F5A9C123456 /* UnifiedInputSectionTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D9E2B7F3C04D6E8B214789 /* UnifiedInputSectionTitleView.swift */; };
 		C18390CA2F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */; };
 		C18390CC2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */; };
 		C18390CE2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */; };
@@ -4265,6 +4270,11 @@
 		C18390C12F4F712A001939B9 /* AIChatNativeInputViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatNativeInputViewController.swift; sourceTree = "<group>"; };
 		C18390C32F4F73AE001939B9 /* UnifiedToggleInputHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputHandler.swift; sourceTree = "<group>"; };
 		C18390C62F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+UnifiedToggleInput.swift"; sourceTree = "<group>"; };
+		00A6793EE7754AE2B5340566 /* InlineEditingActivating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineEditingActivating.swift; sourceTree = "<group>"; };
+		E0B31DDBDD56441AA1908AD3 /* UnifiedInputTopHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputTopHeaderView.swift; sourceTree = "<group>"; };
+		AD3D601AA6154B598D4A3D4E /* UnifiedInputContentContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputContentContainerViewController.swift; sourceTree = "<group>"; };
+		3CA09AB7E1B93BD78227909A /* KeyboardSubmitViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSubmitViewController.swift; sourceTree = "<group>"; };
+		A1D9E2B7F3C04D6E8B214789 /* UnifiedInputSectionTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputSectionTitleView.swift; sourceTree = "<group>"; };
 		C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputHandlerTests.swift; sourceTree = "<group>"; };
 		C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputCoordinatorTests.swift; sourceTree = "<group>"; };
 		C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputFeatureTests.swift; sourceTree = "<group>"; };
@@ -8728,6 +8738,11 @@
 				C18390BC2F4F6F57001939B9 /* UnifiedToggleInputDelegate.swift */,
 				C18390BE2F4F6F5E001939B9 /* UnifiedToggleInputFeature.swift */,
 				C18390C62F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift */,
+				00A6793EE7754AE2B5340566 /* InlineEditingActivating.swift */,
+				E0B31DDBDD56441AA1908AD3 /* UnifiedInputTopHeaderView.swift */,
+				AD3D601AA6154B598D4A3D4E /* UnifiedInputContentContainerViewController.swift */,
+				3CA09AB7E1B93BD78227909A /* KeyboardSubmitViewController.swift */,
+				A1D9E2B7F3C04D6E8B214789 /* UnifiedInputSectionTitleView.swift */,
 			);
 			path = UnifiedToggleInput;
 			sourceTree = "<group>";
@@ -11869,6 +11884,11 @@
 				D668D9252B693778008E2FF2 /* SubscriptionITPView.swift in Sources */,
 				9F5E5AAC2C3D0FCD00165F54 /* ContextualDaxDialogsFactory.swift in Sources */,
 				C18390C72F5078ED001939B9 /* MainViewController+UnifiedToggleInput.swift in Sources */,
+				7A8C0BCA8C2C400C913741FB /* InlineEditingActivating.swift in Sources */,
+				43F7124D0FD24E0AA04468F0 /* UnifiedInputTopHeaderView.swift in Sources */,
+				010E3416E5014DA4AEE2E8B3 /* UnifiedInputContentContainerViewController.swift in Sources */,
+				AD55CB3AB9E782E824149DA0 /* KeyboardSubmitViewController.swift in Sources */,
+				B2F4A1C3D8E94F5A9C123456 /* UnifiedInputSectionTitleView.swift in Sources */,
 				C10CB5F32A1A5BDF0048E503 /* AutofillViews.swift in Sources */,
 				6FE127382C20492500EB5724 /* NewTabPage.swift in Sources */,
 				982E5630222C3D5B008D861B /* FeedbackPickerViewController.swift in Sources */,

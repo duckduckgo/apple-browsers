@@ -26,7 +26,7 @@ class SwipeTabsCoordinator: NSObject {
     static let tabGap: CGFloat = 10
     
     // Set by refresh function
-    weak var tabsModel: TabsModel!
+    private var tabsModel: TabsModel?
     
     weak var coordinator: MainViewCoordinator!
     weak var tabPreviewsSource: TabPreviewsSource!
@@ -45,7 +45,9 @@ class SwipeTabsCoordinator: NSObject {
     
     var isEnabled = false {
         didSet {
-            collectionView.reloadData()
+            if tabsModel != nil {
+                collectionView.reloadData()
+            }
         }
     }
     
@@ -127,14 +129,14 @@ class SwipeTabsCoordinator: NSObject {
     }
 
     private func scrollToCurrent() {
-        guard isEnabled else { return }
+        guard isEnabled, let tabsModel else { return }
         let targetOffset = collectionView.frame.width * CGFloat(tabsModel.currentIndex)
 
         guard targetOffset != collectionView.contentOffset.x else {
             return
         }
         
-        let indexPath = IndexPath(row: self.tabsModel.currentIndex, section: 0)
+        let indexPath = IndexPath(row: tabsModel.currentIndex, section: 0)
         guard indexPath.row < collectionView.numberOfItems(inSection: 0) else {
             assertionFailure("target row is equal to or greater than the number of items in the collection view")
             return
@@ -201,6 +203,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
     
     private func preparePreview(_ offset: CGFloat) {
+        guard let tabsModel else { return }
         let modifier = (offset > 0 ? -1 : 1)
         let nextIndex = tabsModel.currentIndex + modifier
         
@@ -283,6 +286,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             assertionFailure("invalid index")
             return
         }
+        guard let tabsModel else {
+            assertionFailure("tabsModel is nil")
+            return
+        }
         feedbackGenerator.selectionChanged()
         if index >= tabsModel.count {
             newTab()
@@ -304,9 +311,8 @@ extension SwipeTabsCoordinator {
 
     func refresh(tabsModel: TabsModel, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
-        coordinator.navigationBarCollectionView.reloadData()
-        
         updateLayout()
+        coordinator.navigationBarCollectionView.reloadData()
         
         if scrollToSelected {
             scrollToCurrent()
@@ -332,13 +338,23 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         guard isEnabled else { return 1 }
+        guard let tabsModel else { return 1 }
         let extras = tabsModel.tabs.last?.link != nil ? 1 : 0 // last tab is not a home page, so let's add one
         let count = tabsModel.count + extras
         return count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let isCurrentTab = tabsModel.currentIndex == indexPath.row || !isEnabled
+        guard let tabsModel else {
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Constant.omniBarReuseIdentifier, for: indexPath) as? OmniBarCell else {
+                fatalError("Not \(OmniBarCell.self)")
+            }
+            cell.omniBar = coordinator.omniBar
+            cell.setNeedsUpdateConstraints()
+            return cell
+        }
+
+        let isCurrentTab = tabsModel.currentIndex == indexPath.row || !isEnabled || collectionView.bounds.width <= 0
         let reuseIdentifier = isCurrentTab ? Constant.omniBarReuseIdentifier : Constant.templateReuseIdentifier
 
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as? OmniBarCell else {

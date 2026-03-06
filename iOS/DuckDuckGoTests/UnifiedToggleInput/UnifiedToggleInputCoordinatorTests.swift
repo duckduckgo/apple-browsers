@@ -30,7 +30,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = UnifiedToggleInputCoordinator()
+        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true)
         mockDelegate = MockUnifiedToggleInputDelegate()
         sut.delegate = mockDelegate
     }
@@ -55,7 +55,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_showCollapsed_setsDisplayState() {
         sut.showCollapsed()
-        XCTAssertEqual(sut.displayState, .collapsed)
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
     func test_showCollapsed_emitsIntent() {
@@ -72,7 +72,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_showExpanded_setsDisplayState() {
         sut.showExpanded()
-        XCTAssertEqual(sut.displayState, .expanded)
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
     }
 
     func test_showExpanded_emitsIntent() {
@@ -161,7 +161,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_collapsedTap_setsExpandedState() {
         sut.unifiedToggleInputVCDidTapWhileCollapsed(sut.viewController)
-        XCTAssertEqual(sut.displayState, .expanded)
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
     }
 
     func test_collapsedTap_usesAIChatMode() {
@@ -229,7 +229,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_submitAIChat_noBoundScript_collapses() {
         sut.showExpanded()
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
-        XCTAssertEqual(sut.displayState, .collapsed)
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
     func test_submitAIChat_noBoundScript_clearsTextState() {
@@ -267,7 +267,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.showExpanded()
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
-        XCTAssertEqual(sut.displayState, .collapsed)
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
     // MARK: - VC Delegate: Voice

@@ -66,6 +66,7 @@ final class AIChatHistoryListViewController: UIViewController {
             tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         }
         tableView.sectionFooterHeight = 0
+        tableView.keyboardDismissMode = .interactive
         let topInset = isIPadExperience ? Constants.iPadTopContentInset : Constants.topContentInset
         tableView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
         return tableView
@@ -76,7 +77,9 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     private var currentEscapeHatchModel: EscapeHatchModel?
+    private var renderedEscapeHatchModel: EscapeHatchModel?
     private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
+    private var escapeHatchTapHandler: (() -> Void)?
 
     // MARK: - Initialization
 
@@ -97,6 +100,12 @@ final class AIChatHistoryListViewController: UIViewController {
         super.viewDidLoad()
         setupView()
         subscribeToViewModel()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateEscapeHatchHeaderWidthIfNeeded()
+        applyEscapeHatchIfPossible()
     }
 
     // MARK: - Private Methods
@@ -128,14 +137,21 @@ final class AIChatHistoryListViewController: UIViewController {
             return
         }
         currentEscapeHatchModel = model
+        escapeHatchTapHandler = onTapped
 
-        if let model, let onTapped {
-            if let existingHosting = escapeHatchHostingController {
-                existingHosting.willMove(toParent: nil)
-                existingHosting.view.removeFromSuperview()
-                existingHosting.removeFromParent()
+        applyEscapeHatchIfPossible()
+    }
+
+    private func applyEscapeHatchIfPossible() {
+        if let model = currentEscapeHatchModel, let onTapped = escapeHatchTapHandler {
+            guard tableView.bounds.width > 0, view.bounds.height > 0 else {
+                tearDownEscapeHatchHeader()
+                return
             }
-            escapeHatchHostingController = nil
+            if renderedEscapeHatchModel == model, escapeHatchHostingController != nil, tableView.tableHeaderView != nil {
+                return
+            }
+            tearDownEscapeHatchHeader()
 
             let card = ReturnToTabCard(model: model, onTap: onTapped)
             let hosting = UIHostingController(rootView: card)
@@ -166,19 +182,35 @@ final class AIChatHistoryListViewController: UIViewController {
                 tableView.tableHeaderView = wrapper
                 tableView.contentInset = UIEdgeInsets(top: Constants.escapeHatchTopContentInset, left: 0, bottom: 0, right: 0)
             }
+            renderedEscapeHatchModel = model
         } else {
-            if let hosting = escapeHatchHostingController {
-                hosting.willMove(toParent: nil)
-                hosting.view.removeFromSuperview()
-                hosting.removeFromParent()
-            }
-            escapeHatchHostingController = nil
+            guard escapeHatchHostingController != nil || tableView.tableHeaderView != nil else { return }
+            tearDownEscapeHatchHeader()
             UIView.performWithoutAnimation {
-                tableView.tableHeaderView = nil
                 let topInset = isIPadExperience ? Constants.iPadTopContentInset : Constants.topContentInset
                 tableView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
             }
         }
+    }
+
+    private func tearDownEscapeHatchHeader() {
+        if let hosting = escapeHatchHostingController {
+            hosting.willMove(toParent: nil)
+            hosting.view.removeFromSuperview()
+            hosting.removeFromParent()
+        }
+        escapeHatchHostingController = nil
+        renderedEscapeHatchModel = nil
+        tableView.tableHeaderView = nil
+    }
+
+    private func updateEscapeHatchHeaderWidthIfNeeded() {
+        guard let headerView = tableView.tableHeaderView, tableView.bounds.width > 0 else { return }
+        guard headerView.frame.width != tableView.bounds.width else { return }
+        var frame = headerView.frame
+        frame.size.width = tableView.bounds.width
+        headerView.frame = frame
+        tableView.tableHeaderView = headerView
     }
 
     private func configureCell(_ cell: UITableViewCell, with chat: AIChatSuggestion) {

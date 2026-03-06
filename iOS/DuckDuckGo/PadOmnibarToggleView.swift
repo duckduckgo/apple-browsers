@@ -78,8 +78,8 @@ final class PadOmnibarToggleView: UIView {
                                                                                     constant: Metrics.selectedLeadingLeft)
 
         NSLayoutConstraint.activate([
-            widthAnchor.constraint(equalToConstant: Metrics.outerWidth),
-            heightAnchor.constraint(equalToConstant: Metrics.outerHeight),
+            widthAnchor.constraint(equalToConstant: Metrics.outerWidth).withPriority(.required - 1),
+            heightAnchor.constraint(equalToConstant: Metrics.outerHeight).withPriority(.required - 1),
 
             selectedBackgroundView.topAnchor.constraint(equalTo: topAnchor, constant: (Metrics.outerHeight - Metrics.innerHeight) / 2)
                 .withPriority(.required - 1),

@@ -16,13 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Common
+import Foundation
 
 final class CrashReportReader {
 
     static func validBundleIdentifiers() -> [String] {
-        return [
+        [
             Bundle.main.bundleIdentifier,
             Bundle.main.vpnMenuAgentBundleId,
             Bundle.main.vpnSystemExtensionBundleId,
@@ -75,15 +75,13 @@ final class CrashReportReader {
             return false
         }
 
-        let fileName = path.lastPathComponent.lowercased()
-        return fileName.contains("duckduckgo")
+        return path.lastPathComponent.lowercased().contains("duckduckgo")
     }
 
     private func matchesBundleID(_ crashReport: CrashReport) -> Bool {
         guard let bundleID = crashReport.bundleID else {
             return true
         }
-
         return validBundleIdentifierProvider().contains(bundleID)
     }
 
@@ -99,29 +97,29 @@ final class CrashReportReader {
 
     private func crashReport(from url: URL) -> CrashReport? {
         switch url.pathExtension {
-        case LegacyCrashReport.fileExtension: return LegacyCrashReport(url: url, fileManager: fileManager)
-        case JSONCrashReport.fileExtension: return JSONCrashReport(url: url, fileManager: fileManager)
-        default: return nil
+        case LegacyCrashReport.fileExtension:
+            return LegacyCrashReport(url: url, fileManager: fileManager)
+        case JSONCrashReport.fileExtension:
+            return JSONCrashReport(url: url, fileManager: fileManager)
+        default:
+            return nil
         }
     }
-
 }
 
 extension FileManager {
 
     static let userDiagnosticReports: URL = {
-        let homeDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
-        return homeDirectoryURL
+        FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Logs/DiagnosticReports")
     }()
 
     static let systemDiagnosticReports: URL = {
-        return URL(fileURLWithPath: "/Library/Logs/DiagnosticReports")
+        URL(fileURLWithPath: "/Library/Logs/DiagnosticReports")
     }()
 
     func fileCreationDate(url: URL) -> Date? {
-        let fileAttributes: [FileAttributeKey: Any] = (try? self.attributesOfItem(atPath: url.path)) ?? [:]
+        let fileAttributes: [FileAttributeKey: Any] = (try? attributesOfItem(atPath: url.path)) ?? [:]
         return fileAttributes[.creationDate] as? Date
     }
-
 }

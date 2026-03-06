@@ -31,7 +31,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         featureName: "authv2-token-refresh",
         mobileMetaType: "ios-authv2-token-refresh",
         desktopMetaType: "macos-authv2-token-refresh",
-        version: "1.0.0"
+        version: "1.0.1"
     )
 
     public var globalData: WideEventGlobalData
@@ -79,16 +79,6 @@ extension AuthV2TokenRefreshWideEventData {
             (WideEventParameter.AuthV2RefreshFeature.failingStep, failingStep?.rawValue),
             (WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, refreshTokenDuration?.intValue(bucket)),
             (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.intValue(bucket)),
-        ])
-    }
-
-    public func pixelParameters() -> [String: String] {
-        let bucket: DurationBucket = .bucketed(Self.bucket)
-
-        return Dictionary(compacting: [
-            (WideEventParameter.AuthV2RefreshFeature.failingStep, failingStep?.rawValue),
-            (WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, refreshTokenDuration?.stringValue(bucket)),
-            (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.stringValue(bucket)),
         ])
     }
 

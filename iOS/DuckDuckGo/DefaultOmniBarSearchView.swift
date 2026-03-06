@@ -66,6 +66,7 @@ final class DefaultOmniBarSearchView: UIView {
     }
 
     private let mainStackView = UIStackView()
+    private var mainStackLeadingConstraint: NSLayoutConstraint?
 
     init() {
         super.init(frame: .zero)
@@ -131,8 +132,11 @@ final class DefaultOmniBarSearchView: UIView {
         modeToggleContainer.translatesAutoresizingMaskIntoConstraints = false
         modeToggleView.translatesAutoresizingMaskIntoConstraints = false
 
+        let leadingConstraint = mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor)
+        mainStackLeadingConstraint = leadingConstraint
+
         NSLayoutConstraint.activate([
-            mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            leadingConstraint,
             mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             mainStackView.topAnchor.constraint(equalTo: topAnchor),
             mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -220,5 +224,10 @@ final class DefaultOmniBarSearchView: UIView {
         customIconView.contentMode = .center
         customIconView.isHidden = true
         customIconView.image = nil
+    }
+
+    func setLeftIconAreaHidden(_ hidden: Bool) {
+        leftIconContainerPlaceholder.isHidden = hidden
+        mainStackLeadingConstraint?.constant = hidden ? 16 : 0
     }
 }

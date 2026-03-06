@@ -304,7 +304,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 let data = SubscriptionPurchaseWideEventData(purchasePlatform: .appStore,
                                                              subscriptionIdentifier: subscriptionSelection.id,
                                                              freeTrialEligible: freeTrialEligible,
-                                                             contextData: WideEventContextData(name: origin ?? ""))
+                                                             funnelName: origin)
                 self.purchaseWideEventData = data
                 wideEvent.startFlow(data)
 
@@ -434,7 +434,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let data = SubscriptionPurchaseWideEventData(purchasePlatform: .stripe,
                                                          subscriptionIdentifier: nil, // Not available for Stripe
                                                          freeTrialEligible: true, // Always true for Stripe
-                                                         contextData: WideEventContextData(name: contextName))
+                                                         funnelName: contextName)
 
             wideEvent.startFlow(data)
             self.purchaseWideEventData = data
@@ -529,7 +529,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 changeType: changeType,
                 fromPlan: fromPlan,
                 toPlan: subscriptionSelection.id,
-                contextData: WideEventContextData(name: origin ?? "")
+                funnelName: origin
             )
             self.planChangeWideEventData = wideData
             wideEvent.startFlow(wideData)
@@ -755,7 +755,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         let restorePrePurcahseBackgroundWideEventData = SubscriptionRestoreWideEventData(
             restorePlatform: .purchaseBackgroundTask,
-            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.prePurchaseCheck.rawValue)
+            funnelName: SubscriptionRestoreFunnelOrigin.prePurchaseCheck.rawValue
         )
 
         switch await uiHandler.dismissProgressViewAndShow(alertType: .subscriptionFound, text: nil) {
@@ -852,7 +852,7 @@ extension SubscriptionPagesUseSubscriptionFeature: SubscriptionAccessActionHandl
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
                 let subscriptionRestoreAppleOfferPageWideEventData = SubscriptionRestoreWideEventData(
                     restorePlatform: .appleAccount,
-                    contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.purchaseOffer.rawValue)
+                    funnelName: SubscriptionRestoreFunnelOrigin.purchaseOffer.rawValue
                 )
                 let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: self.subscriptionManager,
                                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
@@ -919,7 +919,7 @@ private extension SubscriptionPagesUseSubscriptionFeature {
     // Attempt to retrieve restoreEmailAppSettingsWideEventData sent from Preferences/View/PreferencesRootView.swift
     func retrieveRestoreEmailAppSettingsWideEventDataIfNeeded() {
         let flows = wideEvent.getAllFlowData(SubscriptionRestoreWideEventData.self)
-        if let data = flows.last(where: { $0.restorePlatform == .emailAddress && $0.emailAddressRestoreDuration?.start != nil && $0.emailAddressRestoreDuration?.end == nil && $0.contextData.name == SubscriptionRestoreFunnelOrigin.appSettings.rawValue }) {
+        if let data = flows.last(where: { $0.restorePlatform == .emailAddress && $0.emailAddressRestoreDuration?.start != nil && $0.emailAddressRestoreDuration?.end == nil && $0.funnelName == SubscriptionRestoreFunnelOrigin.appSettings.rawValue }) {
             self.restoreEmailAppSettingsWideEventData = data
         }
     }
@@ -927,7 +927,7 @@ private extension SubscriptionPagesUseSubscriptionFeature {
     func setupRestoreEmailOfferPageWideEventDataIfNeeded() {
         let restoreEmailOfferPageWideEventData = SubscriptionRestoreWideEventData(
             restorePlatform: .emailAddress,
-            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.purchaseOffer.rawValue)
+            funnelName: SubscriptionRestoreFunnelOrigin.purchaseOffer.rawValue
         )
         self.restoreEmailOfferPageWideEventData = restoreEmailOfferPageWideEventData
         restoreEmailOfferPageWideEventData.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()

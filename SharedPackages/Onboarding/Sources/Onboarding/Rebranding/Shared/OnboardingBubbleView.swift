@@ -70,7 +70,7 @@ public extension OnboardingBubbleView {
 
     #if os(iOS)
     static func withStepProgressIndicator(
-        tailPosition: TailPosition,
+        tailPosition: TailPosition? = nil,
         currentStep: Int,
         totalSteps: Int,
         isVisible: Bool = true,
@@ -99,7 +99,7 @@ public extension OnboardingBubbleView {
 private struct LinearBubbleWrapper<Content: View>: View {
     @Environment(\.onboardingTheme) private var onboardingTheme
 
-    let tailPosition: OnboardingBubbleView<Content>.TailPosition
+    let tailPosition: OnboardingBubbleView<Content>.TailPosition?
     let content: () -> Content
 
     var body: some View {
@@ -107,8 +107,8 @@ private struct LinearBubbleWrapper<Content: View>: View {
         OnboardingBubbleView(
             tailPosition: tailPosition,
             contentInsets: metrics.contentInsets,
-            arrowLength: metrics.arrowLength,
-            arrowWidth: metrics.arrowWidth,
+            arrowLength: tailPosition != nil ? metrics.arrowLength : nil,
+            arrowWidth: tailPosition != nil ? metrics.arrowWidth : nil,
             content: content
         )
     }

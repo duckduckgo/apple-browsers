@@ -61,12 +61,12 @@ public struct MapperToDB {
         .init(phoneNumber: try mechanism(phone.encoded), profileId: profileId)
     }
 
-    func mapToDB(_ broker: DataBroker, id: Int64? = nil) throws -> BrokerDB {
-        let encodedBroker = try jsonEncoder.encode(broker)
+    func mapToDB(_ brokerResource: BrokerResource, id: Int64? = nil) throws -> BrokerDB {
+        let broker = brokerResource.broker
         return .init(
             id: id,
             name: broker.name,
-            json: encodedBroker,
+            json: brokerResource.rawJSON,
             version: broker.version,
             url: broker.url,
             eTag: broker.eTag,
@@ -206,22 +206,28 @@ struct MapperToModel {
         try mechanism(phoneDB.phoneNumber).utf8String()!
     }
 
-    func mapToModel(_ brokerDB: BrokerDB) throws -> DataBroker {
+    func mapToResource(_ brokerDB: BrokerDB) throws -> BrokerResource {
         let decodedBroker = try jsonDecoder.decode(DataBroker.self, from: brokerDB.json)
 
-        return DataBroker(
+        let broker = DataBroker(
             id: brokerDB.id,
-            name: decodedBroker.name,
-            url: decodedBroker.url,
+            name: brokerDB.name,
+            url: brokerDB.url,
             steps: decodedBroker.steps,
-            version: decodedBroker.version,
+            version: brokerDB.version,
             schedulingConfig: decodedBroker.schedulingConfig,
             parent: decodedBroker.parent,
             mirrorSites: decodedBroker.mirrorSites,
             optOutUrl: decodedBroker.optOutUrl,
-            eTag: decodedBroker.eTag,
-            removedAt: decodedBroker.removedAt
+            eTag: brokerDB.eTag,
+            removedAt: brokerDB.removedAt
         )
+
+        return BrokerResource(broker: broker, rawJSON: brokerDB.json)
+    }
+
+    func mapToModel(_ brokerDB: BrokerDB) throws -> DataBroker {
+        try mapToResource(brokerDB).broker
     }
 
     func mapToModel(_ profileQueryDB: ProfileQueryDB) throws -> ProfileQuery {

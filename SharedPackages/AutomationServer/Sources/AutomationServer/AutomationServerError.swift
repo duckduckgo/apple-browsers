@@ -1,5 +1,5 @@
 //
-//  CrashCollectionExtension.swift
+//  AutomationServerError.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,19 +16,21 @@
 //  limitations under the License.
 //
 
-import Crashes
+import Foundation
 
-@available(macOS 12.0, *)
-extension CrashCollection {
-
-    static func removeBuildNumber(from appVersion: String?) -> String? {
-        guard let appVersion else {
-            return nil
-        }
-        let versionComponents = appVersion.split(separator: ".")
-        guard versionComponents.count > 3 else {
-            return appVersion
-        }
-        return versionComponents.prefix(3).joined(separator: ".")
-    }
+public enum AutomationServerError: Error {
+    case noWindow
+    case invalidWindowHandle
+    case tabNotFound
+    case jsonEncodingFailed
+    case unsupportedOSVersion
+    case unknownMethod
+    case invalidURL
+    case scriptExecutionFailed
+    case screenshotFailed
+    case timeout
+    case methodNotAllowed
+    case unauthorized
+    case requestTooLarge
+    case invalidPort
 }

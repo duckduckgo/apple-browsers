@@ -367,18 +367,10 @@
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                "key": "context.name",
+                "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "Context name for the flow",
-                "enum": [
-                    "",
-                    "funnel_app_macos",
-                    "funnel_appsettings_macos",
-                    "funnel_appmenu_macos",
-                    "funnel_freescan_macos",
-                    "funnel_toolbar_macos",
-                    "funnel_appmenu_macos_winback"
-                ]
+                "description": "The funnel that led to the subscription flow",
+                "pattern": "^funnel_"
             }
         ]
     },
@@ -451,15 +443,10 @@
                 "enum": [-1, 10000, 30000, 60000, 300000, 600000, 900000]
             },
             {
-                "key": "context.name",
+                "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "Context name for the flow",
-                "enum": [
-                    "funnel_appsettings_macos",
-                    "funnel_purchaseoffer_macos",
-                    "funnel_prepurchasecheck_macos",
-                    "funnel_onpurchasecheck_multiple"
-                ]
+                "description": "The funnel that led to the restore flow",
+                "pattern": "^funnel_"
             }
         ]
     },
@@ -610,10 +597,10 @@
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                "key": "context.name",
+                "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "Context name for the flow",
-                "enum": ["funnel_appsettings_macos", "funnel_app_macos"]
+                "description": "The funnel that led to the plan change flow",
+                "pattern": "^funnel_"
             }
         ]
     },

@@ -1,0 +1,59 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - unified_toggle_input
+name: test_ai_chat_tab_header
+
+---
+
+# Launch with onboarding skipped and unifiedToggleInput feature flag enabled
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+
+# Step 1: Navigate to Duck.ai tab
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+
+# Dismiss any web modals that appear (onboarding, promo, subscription etc.)
+- runFlow:
+    when:
+        visible: "Agree and Continue"
+    commands:
+        - tapOn: "Agree and Continue"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+- runFlow:
+    when:
+        visible: "×"
+    commands:
+        - tapOn: "×"
+
+# Step 2: Verify Chat Tab Header elements
+- assertVisible:
+    text: "Free Plan"
+- assertVisible:
+    text: "Upgrade"
+- assertVisible:
+    text: "Chat settings"
+- assertVisible:
+    text: "New chat"
+
+# Step 3: Verify omnibar is hidden on Duck.ai tab
+- assertNotVisible:
+    id: "searchEntry"

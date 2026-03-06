@@ -84,14 +84,14 @@
                                     ]
                                 },
                                 "refresh_token_latency_ms_bucketed": {
-                                    "type": "integer",
+                                    "type": "string",
                                     "description": "The latency value of the token refresh call.",
-                                    "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                                    "enum": ["1000", "5000", "10000", "30000", "60000", "300000", "600000"]
                                 },
                                 "fetch_jwks_latency_ms_bucketed": {
-                                    "type": "integer",
+                                    "type": "string",
                                     "description": "The latency value of the JWKS call.",
-                                    "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                                    "enum": ["1000", "5000", "10000", "30000", "60000", "300000", "600000"]
                                 }
                             }
                         },
@@ -101,9 +101,9 @@
                             "additionalProperties": false,
                             "properties": {
                                 "domain": { "type": "string", "description": "The top level error domain" },
-                                "code": { "type": "integer", "description": "The top level error code" },
+                                "code": { "type": "string", "description": "The top level error code" },
                                 "underlying_domain": { "type": "string", "description": "The underlying error domain" },
-                                "underlying_code": { "type": "integer", "description": "The underlying error code" }
+                                "underlying_code": { "type": "string", "description": "The underlying error code" }
                             }
                         }
                     }

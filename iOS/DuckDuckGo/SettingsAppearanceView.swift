@@ -111,13 +111,6 @@ struct SettingsAppearanceView: View {
                 }
             }
 
-            if viewModel.browsingMenuSheetCapability.isSettingsOptionVisible {
-                Section {
-                    SettingsCellView(label: UserText.settingsExperimentalMenu,
-                                     accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
-                }
-            }
-
             Section {
                 showTrackersBlockedAnimationSetting()
 

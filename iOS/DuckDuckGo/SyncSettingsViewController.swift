@@ -58,6 +58,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         syncService.account != nil
     }
 
+    var shouldUsePreservedAccountForConnectionFlow: Bool {
+        isSyncEnabled && !needsPreservedAccountCleanupBeforeServerOperation
+    }
+
     var recoveryCode: String {
         guard let code = syncService.account?.recoveryCode else {
             return ""
@@ -80,6 +84,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     var source: String?
     var pairingInfo: PairingInfo?
+    var needsPreservedAccountCleanupBeforeServerOperation = false
 
     var onConfirmSyncDisable: (() -> Void)?
     var onConfirmAndDeleteAllData: (() -> Void)?
@@ -484,6 +489,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
 
     func codeCollectionCancelled() {
         assert(navigationController?.visibleViewController is UIHostingController<AnyView>)
+        needsPreservedAccountCleanupBeforeServerOperation = false
         dismissPresentedViewController()
         Pixel.fire(pixel: .syncSetupEndedAbandoned)
     }
@@ -536,6 +542,10 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
         dismissPresentedViewController()
         await showPreparingSync()
+    }
+
+    func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {
+        await performDeferredPreservedAccountCleanupIfNeeded()
     }
     
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {

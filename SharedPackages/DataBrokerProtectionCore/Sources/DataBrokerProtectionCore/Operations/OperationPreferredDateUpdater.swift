@@ -98,9 +98,12 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
                                         brokerProfileQuery: BrokerProfileQueryData) throws {
 
         let currentScanPreferredRunDate = brokerProfileQuery.scanJobData.preferredRunDate
+        let scanHistoryEvents = brokerProfileQuery.scanJobData.historyEvents
+        let optOutHistoryEvents = brokerProfileQuery.optOutJobData.compactMap(\.historyEvents)
 
         var newScanPreferredRunDate = try calculator.dateForScanOperation(currentPreferredRunDate: currentScanPreferredRunDate,
-                                                                          historyEvents: brokerProfileQuery.events,
+                                                                          scanHistoryEvents: scanHistoryEvents,
+                                                                          optOutsHistoryEvents: optOutHistoryEvents,
                                                                           extractedProfileID: extractedProfileId,
                                                                           schedulingConfig: schedulingConfig,
                                                                           isDeprecated: brokerProfileQuery.profileQuery.deprecated)
@@ -127,7 +130,7 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
         let currentOptOutPreferredRunDate = optOutJob?.preferredRunDate
 
         var newOptOutPreferredDate = try calculator.dateForOptOutOperation(currentPreferredRunDate: currentOptOutPreferredRunDate,
-                                                                           historyEvents: brokerProfileQuery.events,
+                                                                           optOutHistoryEvents: optOutJob?.historyEvents ?? [],
                                                                            extractedProfileID: extractedProfileId,
                                                                            schedulingConfig: schedulingConfig,
                                                                            attemptCount: optOutJob?.attemptCount)

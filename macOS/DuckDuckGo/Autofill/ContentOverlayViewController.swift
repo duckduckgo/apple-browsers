@@ -43,7 +43,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     }()
 
     lazy var vaultManager: SecureVaultManager = {
-        let manager = SecureVaultManager(passwordManager: PasswordManagerCoordinator.shared,
+        let manager = SecureVaultManager(passwordManager: Application.appDelegate.passwordManagerCoordinator,
                                          shouldAllowPartialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves),
                                          tld: tld)
         manager.delegate = self
@@ -81,7 +81,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         fatalError("init(coder:) has not been implemented")
     }
 
-    lazy var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
+    lazy var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
@@ -403,9 +403,9 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
     }
 
     public func secureVaultManager(_: SecureVaultManager, didRequestPasswordManagerForDomain domain: String) {
-        let mngr = PasswordManagerCoordinator.shared
+        let mngr = Application.appDelegate.passwordManagerCoordinator
         if mngr.isEnabled {
-            mngr.bitwardenManagement.openBitwarden()
+            mngr.bitwardenManagement?.openBitwarden()
         } else {
             autofillPreferencesModel.showAutofillPopover(.logins, source: .manage)
         }

@@ -30,19 +30,15 @@ public enum ActionType: String, Codable, Sendable {
     case condition
 }
 
-public enum DataSource: String, Codable, Sendable {
-    case userProfile
-    case extractedProfile
-}
-
 public protocol Action: Codable, Sendable {
     var id: String { get }
     var actionType: ActionType { get }
     var needsEmail: Bool { get }
-    var dataSource: DataSource { get }
+    var json: Data? { get }
+    func with(json: Data?) -> Self
 }
 
 extension Action {
     public var needsEmail: Bool { false }
-    public var dataSource: DataSource { .userProfile }
+    public var json: Data? { nil }
 }

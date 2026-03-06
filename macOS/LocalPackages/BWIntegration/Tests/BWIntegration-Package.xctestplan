@@ -1,0 +1,32 @@
+{
+  "configurations" : [
+    {
+      "id" : "6FDFD0D8-4F40-4EED-A780-7D5DAA10E3D0",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:LocalPackages\/BWIntegration",
+        "identifier" : "BWManagementSharedTests",
+        "name" : "BWManagementSharedTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:LocalPackages\/BWIntegration",
+        "identifier" : "BWIntegrationTests",
+        "name" : "BWIntegrationTests"
+      }
+    }
+  ],
+  "version" : 1
+}

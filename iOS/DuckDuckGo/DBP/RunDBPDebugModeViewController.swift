@@ -173,14 +173,14 @@ struct RunDBPDebugModeView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 
                                 Button("View JSON") {
-                                    viewModel.selectedBrokerJSON = broker.toJSONString()
+                                    viewModel.selectedBrokerJSON = viewModel.brokerJSONString(for: broker.url)
                                 }
                                 .font(.caption)
                             }
                             .padding(4)
                             .onTapGesture {
                                 viewModel.selectedBroker = broker
-                                viewModel.selectedBrokerJSON = broker.toJSONString()
+                                viewModel.selectedBrokerJSON = viewModel.brokerJSONString(for: broker.url)
                             }
                             .background(viewModel.selectedBroker?.name == broker.name ? Color.blue.opacity(0.2) : Color.clear)
                             .cornerRadius(6)
@@ -351,7 +351,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var city: String = ""
     @Published var state: String = ""
     @Published var birthYear: String = ""
-    @Published var brokers: [DataBroker] = []
+    @Published var brokerResources: [BrokerResource] = []
     @Published var selectedBroker: DataBroker?
     @Published var selectedBrokerJSON: String = ""
     @Published var results: [DebugScanResult] = []
@@ -384,6 +384,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
     var hasValidInput: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !city.isEmpty && !state.isEmpty && !birthYear.isEmpty
+    }
+
+    var brokers: [DataBroker] {
+        brokerResources.map(\.broker)
     }
     
     var isAnyOptOutInProgress: Bool {
@@ -488,11 +492,19 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 
                 let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
                 let vault = try vaultFactory.makeVault(reporter: nil)
-                self.brokers = try vault.fetchAllBrokers()
+                self.brokerResources = try vault.fetchAllBrokerResources()
             } catch {
                 showAlert(title: "Error", message: "Failed to load brokers: \(error.localizedDescription)")
             }
         }
+    }
+
+    func brokerJSONString(for brokerURL: String) -> String {
+        guard let brokerResource = brokerResources.first(where: { $0.broker.url == brokerURL }) else {
+            return ""
+        }
+
+        return DebugHelper.prettyJSONString(from: brokerResource.rawJSON) ?? (String(data: brokerResource.rawJSON, encoding: .utf8) ?? "")
     }
     
     func runSelectedBroker() {
@@ -874,21 +886,6 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
 }
 
 // MARK: - Models
-
-// MARK: - Extensions
-
-extension DataBroker {
-    func toJSONString() -> String {
-        do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
-            let jsonData = try encoder.encode(self)
-            return String(data: jsonData, encoding: .utf8) ?? ""
-        } catch {
-            return "Error encoding broker: \(error.localizedDescription)"
-        }
-    }
-}
 
 // MARK: - Fake Duration Calculator
 

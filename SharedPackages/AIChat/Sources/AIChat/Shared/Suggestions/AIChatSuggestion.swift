@@ -37,18 +37,23 @@ public struct AIChatSuggestion: Identifiable, Equatable, Hashable {
     /// Timestamp of the last interaction with this chat
     public let timestamp: Date?
 
+    /// Content of the first user message in the chat
+    public let firstUserMessageContent: String?
+
     public init(
         id: String,
         title: String,
         isPinned: Bool,
         chatId: String,
-        timestamp: Date? = nil
+        timestamp: Date? = nil,
+        firstUserMessageContent: String? = nil
     ) {
         self.id = id
         self.title = title
         self.isPinned = isPinned
         self.chatId = chatId
         self.timestamp = timestamp
+        self.firstUserMessageContent = firstUserMessageContent
     }
 }
 
@@ -70,6 +75,14 @@ extension AIChatSuggestion {
     public static func parseISO8601Date(_ dateString: String?) -> Date? {
         guard let dateString else { return nil }
         return iso8601Formatter.date(from: dateString)
+    }
+
+    /// Formats a Date into an ISO8601 string with fractional seconds.
+    /// - Parameter date: Date to format.
+    /// - Returns: ISO8601 formatted date string, or nil if date is nil.
+    public static func formatISO8601Date(_ date: Date?) -> String? {
+        guard let date else { return nil }
+        return iso8601Formatter.string(from: date)
     }
 }
 

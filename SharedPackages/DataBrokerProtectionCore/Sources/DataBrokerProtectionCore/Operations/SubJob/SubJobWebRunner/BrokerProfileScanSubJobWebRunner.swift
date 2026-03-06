@@ -140,7 +140,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
         recordDebugEvent(kind: .actionResponse,
                          actionType: .extract,
-                         details: prettyPrintedJSON(from: profiles, meta: meta))
+                         details: DebugHelper.prettyPrintedJSON(from: profiles, meta: meta))
         complete(profiles)
         await executeNextStep()
     }

@@ -29,9 +29,9 @@ protocol TabSwitcherDelegate: AnyObject {
     
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL)
 
-    func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest, dismiss: Bool)
+    func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest)
     
-    func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController, dismiss: Bool)
+    func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController)
 
     func tabSwitcherDidReorderTabs(tabSwitcher: TabSwitcherViewController)
     

@@ -154,7 +154,7 @@ extension TabSwitcherViewController {
                                       style: .destructive) { [weak self] _ in
             guard let self else { return }
             self.fireConfirmCloseTabsPixel()
-            self.delegate?.tabSwitcherDidRequestCloseAll(tabSwitcher: self, dismiss: self.canDismissOnEmpty)
+            self.delegate?.tabSwitcherDidRequestCloseAll(tabSwitcher: self)
         })
 
         alert.addAction(UIAlertAction(title: UserText.actionCancel,

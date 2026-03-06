@@ -91,6 +91,8 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
             currentIndex = decoder.decodeInteger(forKey: NSCodingKeys.currentIndex)
         }
         
+        // When tabs is empty (e.g. fire mode), this resets to 0. The computed
+        // `currentIndex` property guards against out-of-bounds by returning nil.
         if currentIndex < 0 || currentIndex >= tabs.count {
             currentIndex = 0
         }

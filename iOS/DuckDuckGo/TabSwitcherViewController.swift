@@ -694,10 +694,15 @@ class TabSwitcherViewController: UIViewController {
 
     func forgetAll(_ fireRequest: FireRequest) {
         self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self,
-                                                     fireRequest: fireRequest,
-                                                     dismiss: canDismissOnEmpty)
+                                                     fireRequest: fireRequest)
     }
 
+    /// Dismisses the tab switcher unless fire mode requires the empty state to stay visible.
+    ///
+    /// Dismiss is allowed when any of these hold:
+    /// - `forceDismissOnEmpty`: caller explicitly wants dismiss (e.g. after creating a new tab)
+    /// - `canDismissOnEmpty`: normal mode — always safe to dismiss
+    /// - `!tabsModel.isEmpty`: fire mode still has tabs, so the user picked one
     func dismissIfPossible(forceDismissOnEmpty: Bool = false) {
         guard forceDismissOnEmpty
                 || canDismissOnEmpty
@@ -719,7 +724,7 @@ class TabSwitcherViewController: UIViewController {
 extension TabSwitcherViewController: TabViewCellDelegate {
 
     func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
-        let shouldDismiss = tabsModel.count == indexPaths.count
+        let allTabsDeleted = tabsModel.count == indexPaths.count
         let tabsToClose = indexPaths.map { tabsModel.get(tabAt: $0.row) }
         delegate?.tabSwitcher(self, willCloseTabs: tabsToClose)
 
@@ -737,7 +742,7 @@ extension TabSwitcherViewController: TabViewCellDelegate {
             self.refreshTitleViews()
             self.updateUIForSelectionMode()
             self.updateFireModeEmptyStateVisibility()
-            if shouldDismiss {
+            if allTabsDeleted {
                 self.dismissIfPossible()
             }
         }

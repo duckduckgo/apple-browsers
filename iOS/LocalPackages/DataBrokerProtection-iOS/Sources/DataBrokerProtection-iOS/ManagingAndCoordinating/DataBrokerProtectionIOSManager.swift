@@ -168,6 +168,16 @@ public final class DataBrokerProtectionIOSManager {
     private let eventsHandler: EventMapping<JobEvent>
     private let isWebViewInspectable: Bool
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService?
+    private var currentRunIsFreeScan: Bool?
+
+    /// Snapshots the current authentication state and caches whether this is a free scan run.
+    /// Returns the current `isAuthenticated` value for callers that need it.
+    @discardableResult
+    private func refreshFreeScanState() async -> Bool {
+        let isAuthenticated = await authenticationManager.isUserAuthenticated
+        currentRunIsFreeScan = !isAuthenticated
+        return isAuthenticated
+    }
 
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
@@ -182,7 +192,8 @@ public final class DataBrokerProtectionIOSManager {
         let localBrokerService = LocalBrokerJSONService(resources: FileResources(runTypeProvider: settings),
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
-                                                        runTypeProvider: settings)
+                                                        runTypeProvider: settings,
+                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated })
 
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: settings,
@@ -269,7 +280,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         await fireMonitoringPixels()
         await sendGoToMarketFirstScanNotificationIfEligible()
 
-        guard await authenticationManager.isUserAuthenticated else { return }
+        let isAuthenticated = await refreshFreeScanState()
+        guard isAuthenticated else { return }
 
         guard (try? meetsProfileRunPrequisite) == true else {
             Logger.dataBrokerProtection.log("No profile, skipping foreground operations")
@@ -359,6 +371,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
         eventsHandler.fire(.profileSaved)
         freeTrialConversionService?.markPIRActivated()
 
+        await refreshFreeScanState()
         await startImmediateScanOperations()
     }
 
@@ -393,7 +406,7 @@ extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
             let hasCompletedInitialScans = try database.haveAllScansRunAtLeastOnce()
             if hasCompletedInitialScans {
                 let profile = try database.fetchProfile()
-                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0)
+                eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0, isFreeScan: currentRunIsFreeScan)
             }
         } catch {
             Logger.dataBrokerProtection.error("Error when calculating if we should send the initial scans duration pixel, error: \(error.localizedDescription, privacy: .public)")
@@ -689,6 +702,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
                 return
             }
 
+            _ = await self.refreshFreeScanState()
             await checkForEmailConfirmationData()
 
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {

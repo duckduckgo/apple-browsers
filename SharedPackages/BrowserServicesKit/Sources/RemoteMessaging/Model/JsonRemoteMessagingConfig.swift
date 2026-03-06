@@ -169,6 +169,7 @@ public enum RemoteMessageResponse {
         case splitBarMobile = "SplitBarMobile"
         case pir = "PIR"
         case subscription = "Subscription"
+        case veryCriticalUpdate = "VeryCriticalUpdate"
     }
 
     public enum StatusError: Error {

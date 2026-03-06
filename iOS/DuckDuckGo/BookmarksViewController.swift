@@ -67,6 +67,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         button.setImage(DesignSystemImages.Glyphs.Size24.folderAdd, for: .normal)
         button.addTarget(self, action: #selector(onAddFolderPressed), for: .touchUpInside)
         button.accessibilityLabel = UserText.addFolderScreenTitle
+        button.tintColor = UIColor(designSystemColor: .icons)
         return button
     }()
 
@@ -75,6 +76,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.moreApple, for: .normal)
         button.showsMenuAsPrimaryAction = true
+        button.tintColor = UIColor(designSystemColor: .icons)
         return button
     }()
 
@@ -260,6 +262,10 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         decorate()
 
         navigationItem.title = isNested ? viewModel.currentFolder?.title : UserText.sectionTitleBookmarks
+
+        if #available(iOS 26, *) {
+            doneButton.style = .plain
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -359,13 +365,14 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             DesignSystemImages.Glyphs.Size24.favoriteRemove :
             DesignSystemImages.Glyphs.Size24.favorite
 
-        let toggleFavoriteAction = UIContextualAction(style: .normal, title: title) { [weak self] (_, _, completionHandler) in
+        let toggleFavoriteAction = UIContextualAction(style: .normal, title: nil) { [weak self] (_, _, completionHandler) in
             completionHandler(true)
             self?.toggleFavoriteAfterSwipe(bookmark, indexPath)
             tableView.reloadRows(at: [indexPath], with: .automatic)
         }
         toggleFavoriteAction.image = image.withTintColor(.black, renderingMode: .alwaysOriginal)
         toggleFavoriteAction.backgroundColor = UIColor(baseColor: .yellow60)
+        toggleFavoriteAction.accessibilityLabel = title
         return UISwipeActionsConfiguration(actions: [toggleFavoriteAction])
     }
 
@@ -374,11 +381,11 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             return nil
         }
 
-        let deleteAction = UIContextualAction(style: .destructive, title:
-                                                UserText.deleteBookmarkFolderAlertDeleteButton) { _, _, completion in
+        let deleteAction = UIContextualAction(style: .destructive, title: nil) { _, _, completion in
             self.deleteBookmarkAfterSwipe(bookmark, indexPath, completion)
         }
         deleteAction.image = DesignSystemImages.Glyphs.Size24.trash
+        deleteAction.accessibilityLabel = UserText.deleteBookmarkFolderAlertDeleteButton
         return UISwipeActionsConfiguration(actions: [deleteAction])
     }
 

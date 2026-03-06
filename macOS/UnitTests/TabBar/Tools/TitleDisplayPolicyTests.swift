@@ -30,35 +30,48 @@ final class TitleDisplayPolicyTests: XCTestCase {
         let url = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://www.example.com/")
         let title = "example.com"
+        let previousTitle = "example.com"
 
-        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: true))
+        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: true))
     }
 
-    func testTitleIsNotSkippedWhenHostMatchesAndTitleIsPlaceholderAfterLoading() {
+    func testTitleIsNotSkippedWhenHostAndTitlesMatchAfterLoading() {
         let url = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://www.example.com/")
-        let title = "example.com"
+        let title = "example.com page"
+        let previousTitle = title
 
-        XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: false))
+        XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: false))
     }
 
-    func testTitleIsNotSkippedWhenHostDiffers() {
+    func testTitleIsNotSkippedWhenHostDifferAndTitleIsPlaceholderWhileLoading() {
         let url = URL(string: "https://example.com/page")
         let previousURL = URL(string: "https://different.com/")
         let title = "example.com"
+        let previousTitle = "example.com page"
 
-        for isLoading in [true, false] {
-            XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: isLoading))
-        }
+        XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: true))
     }
 
     func testTitleIsNotSkippedWhenLatestTitleIsNotPlaceholder() {
         let url = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://www.example.com/")
         let title = "Custom Page Title"
+        let previousTitle = "example.com"
 
         for isLoading in [true, false] {
-            XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL, isLoading: isLoading))
+            XCTAssertFalse(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: isLoading))
+        }
+    }
+
+    func testTitleIsSkippedWhenHostDiffersButTitlesMatch() {
+        let url = URL(string: "https://www.example.com/")
+        let previousURL = URL(string: "https://www.different.com/")
+        let title = "Custom Page Title"
+        let previousTitle = title
+
+        for isLoading in [true, false] {
+            XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: isLoading))
         }
     }
 
@@ -74,28 +87,5 @@ final class TitleDisplayPolicyTests: XCTestCase {
 
     func testTitleTransitionDoesNotAnimateWhenPreviousTitleWasEmpty() {
         XCTAssertTrue(policy.mustAnimateTitleTransition(title: "New Title", previousTitle: "") == false)
-    }
-
-    // MARK: - New Title Fade In
-
-    func testTitleAnimatesFadeInWhenDomainDiffers() {
-        let targetURL = URL(string: "https://example.com/page")
-        let previousURL = URL(string: "https://different.com/page")
-
-        XCTAssertTrue(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == true)
-    }
-
-    func testTitleDoesNotAnimateFadeInDomainMatches() {
-        let targetURL = URL(string: "https://example.com/page1")
-        let previousURL = URL(string: "https://example.com/page2")
-
-        XCTAssertTrue(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == false)
-    }
-
-    func testTitleDoesNotAnimateFadeInWhenSameDomainDifferentSubdomains() {
-        let targetURL = URL(string: "https://www.example.com/page")
-        let previousURL = URL(string: "https://blog.example.com/page")
-
-        XCTAssertTrue(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == false)
     }
 }

@@ -155,12 +155,7 @@
                     "restartingToUpdate"
                 ]
             },
-            {
-                "key": "feature.data.ext.is_internal_user",
-                "type": "string",
-                "description": "Whether user is internal",
-                "enum": ["true", "false"]
-            },
+            "wideEventInternalUser",
             {
                 "key": "feature.data.ext.os_version",
                 "type": "string",

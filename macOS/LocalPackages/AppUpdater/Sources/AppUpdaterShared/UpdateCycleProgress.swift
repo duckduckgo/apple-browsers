@@ -25,7 +25,6 @@ public enum UpdateCycleProgress: CustomStringConvertible {
         case finishedWithNoUpdateFound = 101
         case pausedAtDownloadCheckpoint = 102
         case pausedAtRestartCheckpoint = 103
-        case proceededToInstallationAtRestartCheckpoint = 104
         case dismissedWithNoError = 105
         case dismissingObsoleteUpdate = 106
     }

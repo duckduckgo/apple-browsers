@@ -30,12 +30,10 @@ final class DefaultBrowserAndDockPromptServiceTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        let featureFlaggerMock = MockFeatureFlagger()
         let privacyConfigManagerMock = MockPrivacyConfigurationManager()
         let storeMock = MockThrowingKeyValueStore()
         notificationPresenterMock = MockDefaultBrowserAndDockPromptNotificationPresenter()
-        sut = DefaultBrowserAndDockPromptService(featureFlagger: featureFlaggerMock,
-                                                 privacyConfigManager: privacyConfigManagerMock,
+        sut = DefaultBrowserAndDockPromptService(privacyConfigManager: privacyConfigManagerMock,
                                                  keyValueStore: storeMock,
                                                  notificationPresenter: notificationPresenterMock,
                                                  isOnboardingCompletedProvider: { true })

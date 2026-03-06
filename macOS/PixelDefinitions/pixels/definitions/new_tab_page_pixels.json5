@@ -1,5 +1,33 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
+    "m_mac_new-tab-page_aichat_recent_chat_selected_pinned_mouse": {
+        "description": "Fires when the user opens a pinned recent AI chat from the New Tab Page omnibar by clicking with the mouse.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_new-tab-page_aichat_recent_chat_selected_pinned_keyboard": {
+        "description": "Fires when the user opens a pinned recent AI chat from the New Tab Page omnibar by pressing enter on the keyboard.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_new-tab-page_aichat_recent_chat_selected_mouse": {
+        "description": "Fires when the user opens a non-pinned recent AI chat from the New Tab Page omnibar by clicking with the mouse.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_new-tab-page_aichat_recent_chat_selected_keyboard": {
+        "description": "Fires when the user opens a non-pinned recent AI chat from the New Tab Page omnibar by pressing enter on the keyboard.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_mac_new-tab-page_search_submitted": {
         "description": "Fires when the user submits a search term via the New Tab Page search box. Used to monitor NTP search engagement.",
         "owners": ["tomasstrba"],

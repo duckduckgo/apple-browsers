@@ -18,7 +18,7 @@ tags:
         ff.browsingMenuSheetEnabledByDefault: "true"
         ff.iPadAIToggle: "true"
 
-# AI Features should not show the Address Bar shortcut on iPad when iPadAIToggle is enabled
+# AI Features should expose shortcut settings and mode options on iPad
 - tapOn:
     id: "Browser.OmniBar.Button.BrowsingMenu"
 - tapOn: "Settings"
@@ -27,14 +27,21 @@ tags:
     direction: DOWN
 - tapOn: "AI Features"
 - assertVisible: "Duck.ai"
-- assertNotVisible: "Address Bar"
 - assertVisible: "Search Only"
 - assertVisible: "Search & Duck.ai"
+- scrollUntilVisible:
+    element: "Manage Duck.ai Shortcuts"
+    direction: DOWN
+- tapOn: "Manage Duck.ai Shortcuts"
+- assertVisible: "Address Bar"
+- tapOn: "AI Features"
 
-# Set mode to "Search & Duck.ai" and verify mode toggle is visible in address bar
+# Set mode to "Search & Duck.ai" and verify mode toggle appears when address bar is selected
 - tapOn: "Search & Duck.ai"
 - tapOn: "Settings"
 - tapOn: "Done"
+- tapOn:
+    id: "searchEntry"
 - assertVisible:
     id: "Browser.OmniBar.Button.ModeToggle.Search"
 - assertVisible:

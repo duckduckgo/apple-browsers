@@ -432,7 +432,6 @@ extension MainViewController {
                                                   historyManager: historyManager,
                                                   syncPausedStateManager: syncPausedStateManager,
                                                   subscriptionDataReporter: subscriptionDataReporter,
-                                                  textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
                                                   serpSettings: serpSettingsProvider,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
@@ -440,17 +439,15 @@ extension MainViewController {
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
                                                   privacyConfigurationManager: privacyConfigurationManager,
                                                   keyValueStore: keyValueStore,
+                                                  idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
-                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(
-                                                      using: featureFlagger,
-                                                      keyValueStore: keyValueStore
-                                                  ),
-                                                  whatsNewCoordinator: whatsNewCoordinator)
+                                                  whatsNewCoordinator: whatsNewCoordinator,
+                                                  darkReaderFeatureSettings: darkReaderFeatureSettings)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)

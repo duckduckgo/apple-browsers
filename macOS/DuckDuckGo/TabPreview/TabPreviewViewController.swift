@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import Combine
 
 protocol Previewable {
     var shouldShowPreview: Bool { get }
@@ -34,10 +35,13 @@ final class TabPreviewViewController: NSViewController {
         case trailingSpace = 12
     }
 
+    private(set) lazy var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
+
     private lazy var viewColorView = ColorView(frame: .zero, backgroundColor: .controlBackgroundColor)
     private lazy var titleTextField = NSTextField()
     private lazy var urlTextField = NSTextField()
-    private lazy var box = NSBox()
+    private lazy var separatorView = ColorView(frame: .zero, backgroundColor: .clear)
     private lazy var snapshotImageView = NSImageView()
 
     private var snapshotImageViewHeightConstraint: NSLayoutConstraint!
@@ -56,7 +60,7 @@ final class TabPreviewViewController: NSViewController {
         view.addSubview(viewColorView)
         view.addSubview(titleTextField)
         view.addSubview(urlTextField)
-        view.addSubview(box)
+        view.addSubview(separatorView)
         view.addSubview(snapshotImageView)
 
         snapshotImageView.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
@@ -66,19 +70,17 @@ final class TabPreviewViewController: NSViewController {
         snapshotImageView.cell?.setAccessibilityEnabled(false)
         snapshotImageView.cell?.setAccessibilityElement(false)
 
-        box.boxType = .separator
-        box.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        box.translatesAutoresizingMaskIntoConstraints = false
+        separatorView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        separatorView.translatesAutoresizingMaskIntoConstraints = false
 
         urlTextField.isEditable = false
         urlTextField.isBordered = false
         urlTextField.setContentHuggingPriority(.defaultHigh, for: .vertical)
         urlTextField.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
         urlTextField.translatesAutoresizingMaskIntoConstraints = false
-        urlTextField.backgroundColor = .textBackgroundColor
+        urlTextField.backgroundColor = .clear
         urlTextField.font = .systemFont(ofSize: 13)
         urlTextField.lineBreakMode = .byTruncatingTail
-        urlTextField.textColor = .tabPreviewSecondaryTint
         urlTextField.cell?.setAccessibilityEnabled(false)
         urlTextField.cell?.setAccessibilityElement(false)
 
@@ -87,9 +89,8 @@ final class TabPreviewViewController: NSViewController {
         titleTextField.setContentHuggingPriority(.defaultHigh, for: .vertical)
         titleTextField.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
         titleTextField.translatesAutoresizingMaskIntoConstraints = false
-        titleTextField.backgroundColor = .textBackgroundColor
+        titleTextField.backgroundColor = .clear
         titleTextField.font = .systemFont(ofSize: 13, weight: .medium)
-        titleTextField.textColor = .tabPreviewTint
         titleTextField.maximumNumberOfLines = 3
         titleTextField.cell?.truncatesLastVisibleLine = true
         titleTextField.cell?.setAccessibilityEnabled(false)
@@ -102,11 +103,17 @@ final class TabPreviewViewController: NSViewController {
         setupLayout()
     }
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        subscribeToThemeChanges()
+        applyThemeStyle()
+    }
+
     private func setupLayout() {
 
         viewColorView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         titleTextField.topAnchor.constraint(equalTo: viewColorView.topAnchor, constant: 10).isActive = true
-        box.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        separatorView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         view.trailingAnchor.constraint(equalTo: snapshotImageView.trailingAnchor).isActive = true
         view.trailingAnchor.constraint(equalTo: viewColorView.trailingAnchor).isActive = true
         urlTextField.topAnchor.constraint(equalTo: titleTextField.bottomAnchor, constant: 4).isActive = true
@@ -116,14 +123,14 @@ final class TabPreviewViewController: NSViewController {
         snapshotImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         urlTextField.bottomAnchor.constraint(equalTo: viewColorView.bottomAnchor, constant: -12).isActive = true
         titleTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16).isActive = true
-        view.trailingAnchor.constraint(equalTo: box.trailingAnchor).isActive = true
+        view.trailingAnchor.constraint(equalTo: separatorView.trailingAnchor).isActive = true
         urlTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16).isActive = true
         view.trailingAnchor.constraint(equalTo: urlTextField.trailingAnchor, constant: 8).isActive = true
         view.trailingAnchor.constraint(equalTo: titleTextField.trailingAnchor, constant: 8).isActive = true
-        box.bottomAnchor.constraint(equalTo: viewColorView.bottomAnchor).isActive = true
+        separatorView.bottomAnchor.constraint(equalTo: viewColorView.bottomAnchor).isActive = true
         snapshotImageView.topAnchor.constraint(equalTo: viewColorView.bottomAnchor).isActive = true
 
-        box.heightAnchor.constraint(equalToConstant: 1).isActive = true
+        separatorView.heightAnchor.constraint(equalToConstant: 1).isActive = true
 
         titleTextField.widthAnchor.constraint(equalToConstant: 256).isActive = true
 
@@ -166,6 +173,20 @@ final class TabPreviewViewController: NSViewController {
         return height
     }
 
+}
+
+// MARK: - ThemeUpdateListening
+
+extension TabPreviewViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        let palette = theme.palette
+
+        titleTextField.textColor = palette.textPrimary
+        urlTextField.textColor = palette.textSecondary
+        separatorView.backgroundColor = palette.surfaceDecorationPrimary
+        viewColorView.backgroundColor = palette.surfaceTertiary
+    }
 }
 
 extension TabViewModel: Previewable {

@@ -27,8 +27,6 @@ import WebKit
 
 struct AppConfiguration {
 
-    private let featureFlagger = AppDependencyProvider.shared.featureFlagger
-
     let atbAndVariantConfiguration = ATBAndVariantConfiguration()
     let persistentStoresConfiguration = PersistentStoresConfiguration()
     let onboardingConfiguration = OnboardingConfiguration()
@@ -40,7 +38,6 @@ struct AppConfiguration {
 
     func start(isBookmarksDBFilePresent: Bool?) throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
-        PixelConfiguration.configure(with: featureFlagger)
 
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 
@@ -154,26 +151,30 @@ struct AppConfiguration {
     @MainActor
     func finalize(reportingService: ReportingService,
                   mainViewController: MainViewController,
-                  launchTaskManager: LaunchTaskManager) {
+                  launchTaskManager: LaunchTaskManager) -> AutomationServer? {
         atbAndVariantConfiguration.cleanUpATBAndAssignVariant {
             onVariantAssigned(reportingService: reportingService)
         }
         CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
-        startAutomationServerIfNeeded(mainViewController: mainViewController)
+        let automationServer = startAutomationServerIfNeeded(mainViewController: mainViewController)
         UserAgentConfiguration(
             store: appKeyValueStore,
             launchTaskManager: launchTaskManager
         ).configure() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
+        return automationServer
     }
 
-    private func startAutomationServerIfNeeded(mainViewController: MainViewController) {
+    @MainActor
+    private func startAutomationServerIfNeeded(mainViewController: MainViewController) -> AutomationServer? {
+#if DEBUG || ALPHA
         let launchOptionsHandler = LaunchOptionsHandler()
         guard launchOptionsHandler.automationPort != nil else {
-            return
+            return nil
         }
-        Task { @MainActor in
-            _ = AutomationServer(main: mainViewController, port: launchOptionsHandler.automationPort)
-        }
+        return AutomationServer(main: mainViewController, port: launchOptionsHandler.automationPort)
+#else
+        return nil
+#endif
     }
 
     // MARK: - Handle ATB and variant assigned logic here

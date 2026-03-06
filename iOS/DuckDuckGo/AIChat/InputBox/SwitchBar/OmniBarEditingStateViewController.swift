@@ -346,6 +346,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             }
             .store(in: &cancellables)
         aiChatHistoryManager = manager
+
+        if let escapeHatchModel {
+            manager.setEscapeHatch(escapeHatchModel, onTapped: { [weak self] in
+                self?.delegate?.onSwitchTabToIndex(escapeHatchModel.targetTabIndex)
+            })
+        }
     }
 
     private func installDaxLogoView() {
@@ -540,7 +546,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
 
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
+        let hasEscapeHatchWithoutFavorites = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false)
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && (!shouldDisplayFavoritesOverlay || hasEscapeHatchWithoutFavorites) && !isHorizontallyCompactLayoutEnabled
 
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
@@ -550,7 +557,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+        daxLogoManager.setEscapeHatchBaseOffset(escapeHatchModel != nil ? Constants.escapeHatchLogoZoneHeight : 0)
     }
+
 }
 
 // MARK: - NavigationActionBarViewAnimationDelegate
@@ -693,5 +702,6 @@ private extension OmniBarEditingStateViewController {
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .background)
         static let animationDuration: TimeInterval = 0.15
+        static let escapeHatchLogoZoneHeight: CGFloat = 70
     }
 }

@@ -69,7 +69,7 @@ struct SettingsState {
     var isExperimentalAIChatEnabled: Bool
     var refreshButtonPosition: RefreshButtonPosition
     var mobileCustomization: MobileCustomization.State
-    var showMenuInSheet: Bool
+    var forceWebsiteDarkMode: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -132,7 +132,7 @@ struct SettingsState {
             isExperimentalAIChatEnabled: false,
             refreshButtonPosition: .addressBar,
             mobileCustomization: .default,
-            showMenuInSheet: false,
+            forceWebsiteDarkMode: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoClearAIChatHistory: false,

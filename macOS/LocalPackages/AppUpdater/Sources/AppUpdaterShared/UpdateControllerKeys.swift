@@ -21,10 +21,6 @@ import Persistence
 
 /// Storage keys for AppUpdater package settings
 public enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
-    // Update check state
-    case pendingUpdateSince = "pending.update.since"
-    case updateValidityStartDate = "update.validity.start.date"
-
     // Update preferences
     case automaticUpdates = "updates.automatic"
     case pendingUpdateShown = "pending.update.shown"
@@ -51,10 +47,6 @@ public enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
 
 /// StoringKeys conforming struct for typed access to UpdateController settings
 public struct UpdateControllerSettings: StoringKeys {
-    // Update check state
-    public let pendingUpdateSince = StorageKey<Date>(UpdateControllerStorageKeys.pendingUpdateSince, assertionHandler: { _ in })
-    public let updateValidityStartDate = StorageKey<Date>(UpdateControllerStorageKeys.updateValidityStartDate, assertionHandler: { _ in })
-
     // Update preferences
     public let automaticUpdates = StorageKey<Bool>(UpdateControllerStorageKeys.automaticUpdates, assertionHandler: { _ in })
     public let pendingUpdateShown = StorageKey<Bool>(UpdateControllerStorageKeys.pendingUpdateShown, assertionHandler: { _ in })

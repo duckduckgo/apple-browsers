@@ -62,6 +62,19 @@ struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
     }
 }
 
+struct AttributedMetricReturningUserProvider: AttributedMetricReturningUserProviding {
+
+    private let reinstallUserDetection: ReinstallingUserDetecting
+
+    init(reinstallUserDetection: ReinstallingUserDetecting) {
+        self.reinstallUserDetection = reinstallUserDetection
+    }
+
+    var isReturningUser: Bool {
+        reinstallUserDetection.isReinstallingUser
+    }
+}
+
 extension AttributedMetricManager {
 
     func addNotificationsObserver() {

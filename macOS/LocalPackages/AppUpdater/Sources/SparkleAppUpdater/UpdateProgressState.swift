@@ -66,7 +66,7 @@ public final class UpdateProgressState: UpdateProgressManaging {
             switch reason {
             case .finishedWithNoError, .finishedWithNoUpdateFound, .dismissedWithNoError, .dismissingObsoleteUpdate:
                 return true
-            case .pausedAtDownloadCheckpoint, .pausedAtRestartCheckpoint, .proceededToInstallationAtRestartCheckpoint:
+            case .pausedAtDownloadCheckpoint, .pausedAtRestartCheckpoint:
                 return false
             }
         case .updateCycleDidStart, .downloadDidStart, .downloading, .extractionDidStart, .extracting,

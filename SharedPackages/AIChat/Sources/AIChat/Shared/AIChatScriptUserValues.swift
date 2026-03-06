@@ -85,6 +85,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsHomePageEntryPoint: Bool
     public let supportsOpenAIChatLink: Bool
     public let supportsAIChatSync: Bool
+    public let supportsMultipleContexts: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -94,15 +95,16 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsNativePrompt: false,
                                         supportsStandaloneMigration: false,
                                         supportsNativeChatInput: false,
-                                        supportsURLChatIDRestoration: false,
-                                        supportsFullChatRestoration: false,
+                                        supportsURLChatIDRestoration: true,
+                                        supportsFullChatRestoration: true,
                                         supportsPageContext: false,
                                         supportsAIChatFullMode: false,
                                         supportsAIChatContextualMode: false,
                                         appVersion: "",
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
-                                        supportsAIChatSync: false)
+                                        supportsAIChatSync: false,
+                                        supportsMultipleContexts: false)
 #endif
 
 #if os(macOS)
@@ -120,7 +122,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         appVersion: "",
                                         supportsHomePageEntryPoint: true,
                                         supportsOpenAIChatLink: true,
-                                        supportsAIChatSync: false)
+                                        supportsAIChatSync: false,
+                                        supportsMultipleContexts: false)
 #endif
     }
 
@@ -138,7 +141,8 @@ public struct AIChatNativeConfigValues: Codable {
                 appVersion: String,
                 supportsHomePageEntryPoint: Bool = true,
                 supportsOpenAIChatLink: Bool = true,
-                supportsAIChatSync: Bool) {
+                supportsAIChatSync: Bool,
+                supportsMultipleContexts: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -155,6 +159,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsHomePageEntryPoint = supportsHomePageEntryPoint
         self.supportsOpenAIChatLink = supportsOpenAIChatLink
         self.supportsAIChatSync = supportsAIChatSync
+        self.supportsMultipleContexts = supportsMultipleContexts
     }
 }
 
@@ -170,11 +175,24 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
     }
 
+    public struct NativePromptImage: Codable, Equatable {
+        public let data: String
+        public let format: String
+
+        public init(data: String, format: String) {
+            self.data = data
+            self.format = format
+        }
+    }
+
     public struct Query: Codable, Equatable {
         public static let tool = "query"
 
         public let prompt: String
         public let autoSubmit: Bool
+        public let toolChoice: [String]?
+        public let images: [NativePromptImage]?
+        public let modelId: String?
     }
 
     public struct TextSummary: Codable, Equatable {
@@ -281,8 +299,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
         try container.encodeIfPresent(pageContext, forKey: .pageContext)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, pageContext: AIChatPageContextData? = nil) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit)), pageContext: pageContext)
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, modelId: String? = nil, pageContext: AIChatPageContextData? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, modelId: modelId)), pageContext: pageContext)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

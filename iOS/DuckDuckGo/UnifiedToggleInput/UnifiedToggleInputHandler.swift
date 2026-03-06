@@ -1,0 +1,138 @@
+//
+//  UnifiedToggleInputHandler.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Combine
+import Foundation
+
+/// Bridges `UnifiedToggleInput` state to `SwitchBarHandling` so `SwitchBarTextEntryView`
+/// can be used directly. Any future improvements to the switchbar text entry are inherited automatically.
+final class UnifiedToggleInputHandler: SwitchBarHandling {
+
+    // MARK: - SwitchBarHandling — Fixed Values
+
+    /// UnifiedToggleInput is always bottom-anchored; no top-position layout variants.
+    let isTopBarPosition: Bool = false
+    let isUsingExpandedBottomBarHeight: Bool = false
+    /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
+    let isUsingFadeOutAnimation: Bool = false
+    let isCurrentTextValidURL: Bool = false
+    let modeParameters: [String: String] = [:]
+
+    // MARK: - SwitchBarHandling — Dynamic State
+
+    @Published private(set) var currentText: String = ""
+    @Published private(set) var currentToggleState: TextEntryMode = .aiChat
+    @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
+    @Published private(set) var hasUserInteractedWithText: Bool = false
+
+    var isVoiceSearchEnabled: Bool {
+        didSet { updateButtonState() }
+    }
+
+    // MARK: - SwitchBarHandling — Publishers
+
+    var currentTextPublisher: AnyPublisher<String, Never> {
+        $currentText.eraseToAnyPublisher()
+    }
+
+    var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> {
+        $currentToggleState.eraseToAnyPublisher()
+    }
+
+    var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> {
+        $hasUserInteractedWithText.eraseToAnyPublisher()
+    }
+
+    var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> {
+        Just(false).eraseToAnyPublisher()
+    }
+
+    var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> {
+        $buttonState.eraseToAnyPublisher()
+    }
+
+    private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> {
+        textSubmissionSubject.eraseToAnyPublisher()
+    }
+
+    private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> {
+        microphoneButtonTappedSubject.eraseToAnyPublisher()
+    }
+
+    private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var clearButtonTappedPublisher: AnyPublisher<Void, Never> {
+        clearButtonTappedSubject.eraseToAnyPublisher()
+    }
+
+    // MARK: - Initialization
+
+    init(isVoiceSearchEnabled: Bool) {
+        self.isVoiceSearchEnabled = isVoiceSearchEnabled
+        updateButtonState()
+    }
+
+    // MARK: - SwitchBarHandling — Methods
+
+    func updateCurrentText(_ text: String) {
+        currentText = text
+        updateButtonState()
+    }
+
+    func submitText(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
+    }
+
+    func setToggleState(_ state: TextEntryMode) {
+        currentToggleState = state
+    }
+
+    func clearText() {
+        updateCurrentText("")
+    }
+
+    func microphoneButtonTapped() {
+        microphoneButtonTappedSubject.send()
+    }
+
+    func markUserInteraction() {
+        hasUserInteractedWithText = true
+    }
+
+    func clearButtonTapped() {
+        clearButtonTappedSubject.send()
+    }
+
+    func updateBarPosition(isTop: Bool) {}
+
+    // MARK: - Private
+
+    private func updateButtonState() {
+        if !currentText.isEmpty {
+            buttonState = .clearOnly
+        } else if isVoiceSearchEnabled {
+            buttonState = .voiceOnly
+        } else {
+            buttonState = .noButtons
+        }
+    }
+}

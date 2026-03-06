@@ -40,7 +40,30 @@ final class WKWebExtensionContextExtensionTests: XCTestCase {
         XCTAssertEqual(DuckDuckGoWebExtensionType.embedded.rawValue, "com.duckduckgo.web-extension.embedded")
     }
 
+    func testWhenDarkReaderRawValue_ThenMatchesManifestId() {
+        XCTAssertEqual(DuckDuckGoWebExtensionType.darkReader.rawValue, "org.duckduckgo.web-extension.darkreader")
+    }
+
     // MARK: - duckDuckGoWebExtensionType with valid manifest
+
+    @MainActor
+    func testWhenManifestHasDarkReaderId_ThenReturnsDarkReader() async throws {
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Dark Reader",
+            "version": "1.0",
+            "browser_specific_settings": {
+                "duckduckgo": {
+                    "id": "org.duckduckgo.web-extension.darkreader"
+                }
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertEqual(context.duckDuckGoWebExtensionType, .darkReader)
+    }
 
     @MainActor
     func testWhenManifestHasDuckDuckGoEmbeddedId_ThenReturnsEmbedded() async throws {

@@ -372,6 +372,8 @@ struct JsonToRemoteMessageModelMapper {
             return .pir
         case .subscription:
             return .subscription
+        case .veryCriticalUpdate:
+            return .veryCriticalUpdate
         case .none:
             return .announce
         }

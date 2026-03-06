@@ -65,7 +65,10 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private var isSyncingEmbeddedExtensions = false
+    private var darkReaderCancellables = Set<AnyCancellable>()
+    private var webExtensionLoadTask: Task<Void, Never>?
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -100,6 +103,8 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
+                                                                      privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
@@ -114,7 +119,8 @@ final class MainCoordinator {
                                                          contextualOnboardingLogic: daxDialogs,
                                                          contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
-        let textZoomCoordinator = Self.makeTextZoomCoordinator()
+        let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
+        let autoconsentManagementProvider = AutoconsentManagementProvider()
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
@@ -142,7 +148,8 @@ final class MainCoordinator {
                                 featureFlagger: featureFlagger,
                                 contentScopeExperimentManager: contentScopeExperimentManager,
                                 appSettings: AppDependencyProvider.shared.appSettings,
-                                textZoomCoordinator: textZoomCoordinator,
+                                textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                autoconsentManagementProvider: autoconsentManagementProvider,
                                 websiteDataManager: websiteDataManager,
                                 fireproofing: fireproofing,
                                 maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
@@ -155,14 +162,16 @@ final class MainCoordinator {
                                 sharedSecureVault: sharedSecureVault,
                                 privacyStats: privacyStats,
                                 voiceSearchHelper: voiceSearchHelper,
-                                launchSourceManager: launchSourceManager)
+                                launchSourceManager: launchSourceManager,
+                                darkReaderFeatureSettings: darkReaderFeatureSettings)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
                                         syncService: syncService.sync,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         fireproofing: fireproofing,
-                                        textZoomCoordinator: textZoomCoordinator,
+                                        textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                        autoconsentManagementProvider: autoconsentManagementProvider,
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: privacyConfigurationManager,
@@ -170,6 +179,11 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner)
         let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
+        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
+            featureFlagger: featureFlagger,
+            keyValueStore: keyValueStore,
+            privacyConfigurationManager: privacyConfigurationManager
+        )
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -188,9 +202,10 @@ final class MainCoordinator {
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
                                         voiceSearchHelper: voiceSearchHelper,
                                         featureFlagger: featureFlagger,
+                                        idleReturnEligibilityManager: idleReturnEligibilityManager,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
-                                        textZoomCoordinator: textZoomCoordinator,
+                                        textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                         websiteDataManager: websiteDataManager,
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
@@ -212,7 +227,9 @@ final class MainCoordinator {
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
-                                        whatsNewRepository: whatsNewRepository)
+                                        whatsNewRepository: whatsNewRepository,
+                                        darkReaderFeatureSettings: darkReaderFeatureSettings)
+
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
         // Apply tracker animation suppression early for cold starts
@@ -220,10 +237,22 @@ final class MainCoordinator {
         if launchSourceManager.source == .standard {
             tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
         }
+
     }
 
     func start() {
         controller.loadViewIfNeeded()
+    }
+
+    private func subscribeToDarkReaderChanges() {
+        darkReaderFeatureSettings.forceDarkModeChangedPublisher
+            .sink { [weak self] _ in
+                guard #available(iOS 18.4, *) else { return }
+                Task { @MainActor in
+                    await self?.syncEmbeddedExtensions()
+                }
+            }
+            .store(in: &darkReaderCancellables)
     }
 
     private func setupWebExtensions(privacyConfigurationManager: PrivacyConfigurationManaging) {
@@ -231,17 +260,18 @@ final class MainCoordinator {
 
         guard #available(iOS 18.4, *) else { return }
 
-        let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
-            .flagDidChangePublisher
-
-        let webExtensionsPublisher = flagPublisher?
-            .filter { $0.0 == .webExtensions }
-            .map { $0.1 }
+        let webExtensionsPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.webExtensions)
+            }
+            .removeDuplicates()
             .eraseToAnyPublisher()
 
-        let embeddedExtensionPublisher = flagPublisher?
-            .filter { $0.0 == .embeddedExtension }
-            .map { $0.1 }
+        let embeddedExtensionPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.embeddedExtension)
+            }
+            .removeDuplicates()
             .eraseToAnyPublisher()
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
@@ -249,7 +279,7 @@ final class MainCoordinator {
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             onFeatureFlagEnabled: { [weak self] in
-                await self?.initializeWebExtensions()
+                self?.initializeWebExtensions()
             },
             onFeatureFlagDisabled: { [weak self] in
                 self?.clearWebExtensionReferences()
@@ -260,22 +290,34 @@ final class MainCoordinator {
         )
 
         if featureFlagger.isFeatureOn(.webExtensions) {
-            Task { @MainActor in
-                await initializeWebExtensions()
-            }
+            initializeWebExtensions()
         } else {
             clearWebExtensionReferences()
         }
     }
 
     @available(iOS 18.4, *)
-    private func initializeWebExtensions() async {
+    private func initializeWebExtensions() {
+        guard webExtensionManager == nil else {
+            // Already initialized, just reload extensions and re-register tabs
+            webExtensionLoadTask?.cancel()
+            webExtensionLoadTask = Task { @MainActor [weak self] in
+                await self?.webExtensionManager?.loadInstalledExtensions()
+                guard !Task.isCancelled else { return }
+                await self?.syncEmbeddedExtensions()
+                guard !Task.isCancelled else { return }
+                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+            }
+            return
+        }
+
         guard let privacyConfigurationManager else { return }
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             mainViewController: controller,
             privacyConfigurationManager: privacyConfigurationManager,
-            autoconsentPreferences: AppUserDefaults()
+            autoconsentPreferences: AppUserDefaults(),
+            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
         )
         self.webExtensionManager = webExtensionManager
 
@@ -287,11 +329,16 @@ final class MainCoordinator {
         tabManager.setWebExtensionManager(webExtensionManager)
         controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
         controller.setWebExtensionManager(webExtensionManager)
+        subscribeToDarkReaderChanges()
 
-        await webExtensionManager.loadInstalledExtensions()
-        await syncEmbeddedExtensions()
-
-        webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+        // Load extensions asynchronously - the controller is already attached to tabs
+        webExtensionLoadTask = Task { @MainActor [weak self] in
+            await webExtensionManager.loadInstalledExtensions()
+            guard !Task.isCancelled else { return }
+            await self?.syncEmbeddedExtensions()
+            guard !Task.isCancelled else { return }
+            self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+        }
     }
 
     @available(iOS 18.4, *)
@@ -306,12 +353,18 @@ final class MainCoordinator {
         if featureFlagger.isFeatureOn(.embeddedExtension) {
             enabledTypes.insert(.embedded)
         }
+        if darkReaderFeatureSettings.isForceDarkModeEnabled == true {
+            enabledTypes.insert(.darkReader)
+        }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
 
     private func clearWebExtensionReferences() {
+        webExtensionLoadTask?.cancel()
+        webExtensionLoadTask = nil
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
+        darkReaderCancellables.removeAll()
         tabManager.setWebExtensionManager(nil)
         controller.setWebExtensionEventsCoordinator(nil)
         controller.setWebExtensionManager(nil)
@@ -350,9 +403,8 @@ final class MainCoordinator {
         return tabsModel
     }
 
-    private static func makeTextZoomCoordinator() -> TextZoomCoordinator {
-        TextZoomCoordinator(appSettings: AppDependencyProvider.shared.appSettings,
-                            storage: TextZoomStorage()  )
+    private static func makeTextZoomCoordinatorProvider() -> TextZoomCoordinatorProvider {
+        TextZoomCoordinatorProvider(appSettings: AppDependencyProvider.shared.appSettings)
     }
 
     private static func makeWebsiteDataManager(fireproofing: Fireproofing,

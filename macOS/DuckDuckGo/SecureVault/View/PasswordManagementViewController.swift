@@ -182,7 +182,7 @@ final class PasswordManagementViewController: NSViewController {
         try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared)
     }
 
-    private let passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
+    private let passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
 
     private let emailManager = EmailManager()
     private let urlMatcher = AutofillDomainNameUrlMatcher()
@@ -1012,7 +1012,7 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private func displayExternalPasswordManagerView() {
-        let passwordManagerView = PasswordManagementBitwardenItemView(manager: PasswordManagerCoordinator.shared) { [weak self] in
+        let passwordManagerView = PasswordManagementBitwardenItemView(manager: Application.appDelegate.passwordManagerCoordinator) { [weak self] in
             self?.dismiss()
         }
 

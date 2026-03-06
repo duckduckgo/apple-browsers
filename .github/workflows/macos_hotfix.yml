@@ -7,6 +7,10 @@ defaults:
 on:
   workflow_dispatch:
 
+concurrency:
+  group: 'macos-release'
+  cancel-in-progress: false
+
 jobs:
 
   create_release_branch:

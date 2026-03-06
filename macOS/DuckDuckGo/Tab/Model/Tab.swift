@@ -64,7 +64,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
         var newTabPageShownPixelSender: NewTabPageShownPixelSender
-        var aiChatSidebarProvider: AIChatSidebarProviding
+        var aiChatSessionStore: AIChatSessionStoring
         var tabCrashAggregator: TabCrashAggregator
         var tabsPreferences: TabsPreferences
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
@@ -149,7 +149,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
-                     aiChatSidebarProvider: AIChatSidebarProviding? = nil,
+                     aiChatSessionStore: AIChatSessionStoring? = nil,
                      newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
                      themeManager: ThemeManaging? = nil
@@ -215,7 +215,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
-                  aiChatSidebarProvider: aiChatSidebarProvider ?? NSApp.delegateTyped.aiChatSidebarProvider,
+                  aiChatSessionStore: aiChatSessionStore ?? NSApp.delegateTyped.aiChatSessionStore,
                   newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
                   themeManager: themeManager ?? NSApp.delegateTyped.themeManager
@@ -266,7 +266,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
-         aiChatSidebarProvider: AIChatSidebarProviding,
+         aiChatSessionStore: AIChatSessionStoring,
          newTabPageShownPixelSender: NewTabPageShownPixelSender,
          tabCrashAggregator: TabCrashAggregator,
          themeManager: ThemeManaging
@@ -300,6 +300,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         let configuration = webViewConfiguration ?? WKWebViewConfiguration()
         configuration.applyStandardConfiguration(contentBlocking: privacyFeatures.contentBlocking,
                                                  burnerMode: burnerMode,
+                                                 privateProcessName: featureFlagger.isFeatureOn(.privateProcessName),
                                                  earlyAccessHandlers: specialPagesUserScript.map { [$0] } ?? [])
         self.webViewConfiguration = configuration
         let userContentController = configuration.userContentController as? UserContentController
@@ -310,8 +311,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         webView = WebView(frame: CGRect(origin: .zero, size: webViewSize),
                           configuration: configuration,
+                          featureFlagger: featureFlagger,
                           privacyConfig: privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig)
-        webView.allowsLinkPreview = false
+        // The feature flag enables private API based control over quick actions to allow all actions (e.g. lookup)
+        // other than link preview. To be on a safe side, disable quick actions here entirely if the feature flag is disabled.
+        webView.allowsLinkPreview = featureFlagger.isFeatureOn(.webViewLookUpAction)
         webView.addsVisitedLinks = true
         webView.setAccessibilityIdentifier("WebView")
 
@@ -347,7 +351,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                           aiChatMenuConfiguration: aiChatMenuConfiguration,
                                                           newTabPageShownPixelSender: newTabPageShownPixelSender,
-                                                          aiChatSidebarProvider: aiChatSidebarProvider,
+                                                          aiChatSessionStore: aiChatSessionStore,
                                                           tabCrashAggregator: tabCrashAggregator,
                                                           tabsPreferences: tabsPreferences,
                                                           webTrackingProtectionPreferences: webTrackingProtectionPreferences)
@@ -621,13 +625,13 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         // reload if content differs or user-entered
         guard newContent != self.content || newContent.isUserEnteredUrl else { return nil }
+
         self.content = newContent
 
-        dismissPresentedAlert()
+        // Set the Title, even if it's nil: prevent stale UI!
+        self.title = newContent.title
 
-        if let title = content.title {
-            self.title = title
-        }
+        dismissPresentedAlert()
 
         if error != nil { error = nil }
 
@@ -656,7 +660,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             // maybe it worths adding another content type like .interruptedLoad(URL) to display a URL in the address bar
             self.content = .none
         }
-        self.updateTitle() // The title might not change if webView doesn't think anything is different so update title here as well
+
+        // We're no longer updating the `title` property here, as we may be end up rendering the `window.title` of the (previous) document.
+        // Such update will take place whenever the `webView.title` property is updated.
     }
 
     var lastSelectedAt: Date?

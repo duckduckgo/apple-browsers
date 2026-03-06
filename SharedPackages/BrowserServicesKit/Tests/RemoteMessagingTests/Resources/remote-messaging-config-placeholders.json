@@ -496,6 +496,17 @@
                   "type": "url_in_context",
                   "value": "https://example.com"
                 }
+              },
+              {
+                "id": "21",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "VeryCriticalUpdate",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
               }
             ],
             "primaryActionText": "Got It",
@@ -530,6 +541,21 @@
                 "titleText": "Here goes a title",
                 "descriptionText": "description",
                 "placeholder": "SplitBarMobile"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "22",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "VeryCriticalUpdate"
             },
             "metrics": {
                 "state": "enabled"

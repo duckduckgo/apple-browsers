@@ -32,7 +32,7 @@ class CrashCollectionTests: XCTestCase {
         // 2 pixels with first = true attached
         XCTAssertTrue(crashCollection.isFirstCrash)
         crashCollection.start { pixelParameters, _, _ in
-            let firstFlags = pixelParameters.compactMap { $0["first"] }
+            let firstFlags = pixelParameters.compactMap { $0[.first] }
             XCTAssertFalse(firstFlags.isEmpty)
         }
         crashCollection.crashHandler.didReceive([
@@ -51,7 +51,7 @@ class CrashCollectionTests: XCTestCase {
         // 2 pixels with no first parameter
         crashCollection.isFirstCrash = false
         crashCollection.start { pixelParameters, _, _ in
-            let firstFlags = pixelParameters.compactMap { $0["first"] }
+            let firstFlags = pixelParameters.compactMap { $0[.first] }
             XCTAssertTrue(firstFlags.isEmpty)
         }
         crashCollection.crashHandler.didReceive([

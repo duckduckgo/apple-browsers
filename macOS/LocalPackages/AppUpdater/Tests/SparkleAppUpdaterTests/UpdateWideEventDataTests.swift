@@ -169,7 +169,7 @@ final class UpdateWideEventDataTests: XCTestCase {
                 fromBuild: "100",
                 initiationType: .automatic,
                 updateConfiguration: .automatic,
-    
+
                 cancellationReason: reason,
                 contextData: WideEventContextData(name: "sparkle_update"),
                 globalData: WideEventGlobalData()
@@ -269,7 +269,7 @@ final class UpdateWideEventDataTests: XCTestCase {
                 initiationType: .automatic,
                 updateConfiguration: .automatic,
                 lastKnownStep: step,
-    
+
                 contextData: WideEventContextData(name: "sparkle_update"),
                 globalData: WideEventGlobalData()
             )

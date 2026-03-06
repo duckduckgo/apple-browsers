@@ -54,8 +54,7 @@ else
 fi
 
 # Find manifest in extracted bundle (may be in a subdirectory)
-CURRENT_MANIFEST="$(find "$CURRENT_DIR" -name manifest.json -maxdepth 2 | head -1)"
-CURRENT_BG_JS="$(find "$CURRENT_DIR" -path "*/background/index.js" -maxdepth 3 | head -1)"
+CURRENT_MANIFEST="$(find "$CURRENT_DIR" -maxdepth 2 -name manifest.json | head -1)"
 
 if [[ -z "$CURRENT_MANIFEST" ]]; then
     echo "Error: manifest.json not found in current bundle" >&2
@@ -78,13 +77,13 @@ fail() { echo "  FAIL: $1"; ((FAIL++)) || true; }
 # Clone and build new version
 # ---------------------------------------------------------------------------
 echo "==> Cloning darkreader@${TAG}..."
-git clone --depth 1 --branch "$TAG" https://github.com/darkreader/darkreader.git "$WORK_DIR/darkreader" 2>/dev/null
+git clone --depth 1 --branch "$TAG" https://github.com/darkreader/darkreader.git "$WORK_DIR/darkreader"
 
 echo "==> Installing dependencies..."
-(cd "$WORK_DIR/darkreader" && npm install --silent 2>/dev/null)
+(cd "$WORK_DIR/darkreader" && npm install --silent)
 
 echo "==> Building Chrome MV3 extension..."
-(cd "$WORK_DIR/darkreader" && npm run build -- --chrome-mv3 2>/dev/null)
+(cd "$WORK_DIR/darkreader" && npm run build -- --chrome-mv3)
 
 BUILD_ZIP="$WORK_DIR/darkreader/build/release/darkreader-chrome-mv3.zip"
 if [[ ! -f "$BUILD_ZIP" ]]; then
@@ -96,8 +95,8 @@ NEW_DIR="$WORK_DIR/new"
 mkdir -p "$NEW_DIR"
 unzip -q "$BUILD_ZIP" -d "$NEW_DIR"
 
-NEW_MANIFEST="$(find "$NEW_DIR" -name manifest.json -maxdepth 2 | head -1)"
-NEW_BG_JS="$(find "$NEW_DIR" -path "*/background/index.js" -maxdepth 3 | head -1)"
+NEW_MANIFEST="$(find "$NEW_DIR" -maxdepth 2 -name manifest.json | head -1)"
+NEW_BG_JS="$(find "$NEW_DIR" -maxdepth 3 -path "*/background/index.js" | head -1)"
 
 echo ""
 
@@ -111,10 +110,12 @@ CURRENT_LICENSE="$BUNDLE_DIR/DarkReader-LICENSE.txt"
 
 if [[ ! -f "$NEW_LICENSE" ]]; then
     fail "LICENSE file not found in upstream repo"
+elif [[ ! -f "$CURRENT_LICENSE" ]]; then
+    fail "Current bundled license file not found: $CURRENT_LICENSE"
 elif ! diff -q "$CURRENT_LICENSE" "$NEW_LICENSE" > /dev/null 2>&1; then
-    fail "License has changed — review diff below and escalate for legal review"
+    fail "License has changed — review diff below and escalate for review"
     echo ""
-    diff --unified "$CURRENT_LICENSE" "$NEW_LICENSE" || true
+    diff -u "$CURRENT_LICENSE" "$NEW_LICENSE" || true
 else
     pass "License unchanged"
 fi
@@ -228,7 +229,8 @@ extract_sites() {
 import sys
 with open(sys.argv[1]) as f:
     content = f.read()
-sections = content.split('=' * 32)
+import re
+sections = re.split(r'={10,}', content)
 for section in sections:
     lines = section.strip().split('\n')
     if lines and lines[0].strip():
@@ -239,8 +241,8 @@ for section in sections:
     done | sort -u
 }
 
-CURRENT_CONFIG_DIR="$(find "$CURRENT_DIR" -type d -name config -maxdepth 3 | head -1)"
-NEW_CONFIG_DIR="$(find "$NEW_DIR" -type d -name config -maxdepth 3 | head -1)"
+CURRENT_CONFIG_DIR="$(find "$CURRENT_DIR" -maxdepth 3 -type d -name config | head -1)"
+NEW_CONFIG_DIR="$(find "$NEW_DIR" -maxdepth 3 -type d -name config | head -1)"
 
 if [[ -n "$CURRENT_CONFIG_DIR" && -n "$NEW_CONFIG_DIR" ]]; then
     CURRENT_SITES="$(extract_sites "$CURRENT_CONFIG_DIR")"

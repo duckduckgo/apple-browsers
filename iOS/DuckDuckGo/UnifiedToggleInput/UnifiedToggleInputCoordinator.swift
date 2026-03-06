@@ -299,9 +299,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         vc.text = ""
         textState = .empty
 
-        let effectiveMode = inputMode
-
-        switch effectiveMode {
+        switch mode {
         case .search:
             if case .aiTab = displayState {
                 hide()

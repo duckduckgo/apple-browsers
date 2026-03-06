@@ -266,8 +266,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
 private extension MainViewController {
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
-        viewCoordinator.hideAITabChrome()
-        refreshStatusBarBackgroundAfterAIChrome()
+        if currentTab?.isAITab == true {
+            viewCoordinator.hideAITabChrome()
+            refreshStatusBarBackgroundAfterAIChrome()
+        }
         loadQuery(query)
     }
 }

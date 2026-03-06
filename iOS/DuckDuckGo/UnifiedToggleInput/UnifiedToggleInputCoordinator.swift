@@ -144,6 +144,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func unbind() {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
+        boundUserScriptIdentifier = nil
         resetSessionState()
     }
 
@@ -223,7 +224,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     func inlineEditingHeight(for mode: TextEntryMode) -> CGFloat {
-        viewController.setInputMode(mode, animated: false)
         let screenWidth = UIScreen.main.bounds.width
         let height = viewController.view.systemLayoutSizeFitting(
             CGSize(width: screenWidth, height: UIView.layoutFittingCompressedSize.height),

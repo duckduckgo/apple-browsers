@@ -153,9 +153,9 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
-          - runs-on: macos-26
+          - runs-on: macos-15
             flavor: Non-Sandbox
-          - runs-on: macos-26-xlarge
+          - runs-on: macos-15-xlarge
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}

@@ -216,7 +216,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         isSkipped = true
     }
 
-#if DEBUG || REVIEW
+#if DEBUG || ALPHA
     public func overrideOnboardingCompleted() {
         LaunchOptionsHandler().overrideOnboardingCompleted()
         onCompletingOnboardingIntro?()

@@ -47,15 +47,10 @@ actor WideEventService {
         guard !isProcessing else { return }
         isProcessing = true
 
-        let shouldSendDataImportWideEvent = featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
-
         await processCompletion(SubscriptionRestoreWideEventData.self, trigger: trigger)
         await processCompletion(VPNConnectionWideEventData.self, trigger: trigger)
         await processSubscriptionPurchaseCompletion(trigger: trigger)
-
-        if shouldSendDataImportWideEvent {
-            await processCompletion(DataImportWideEventData.self, trigger: trigger)
-        }
+        await processCompletion(DataImportWideEventData.self, trigger: trigger)
 
         isProcessing = false
     }

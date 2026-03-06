@@ -372,14 +372,13 @@ final class MainViewController: NSViewController {
     }
 
     override func viewDidAppear() {
+        startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
         initPreloader()
 
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
-
-        startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
     }
 
     var bookmarkBarPromptObserver: Any?

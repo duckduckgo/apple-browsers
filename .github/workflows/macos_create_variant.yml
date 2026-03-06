@@ -145,7 +145,12 @@ jobs:
       run: |
           hdiutil attach duckduckgo.dmg -mountpoint vanilla
           mkdir -p dmg
-          cp -R vanilla/DuckDuckGo.app dmg/DuckDuckGo.app
+          app_path="$(find vanilla -maxdepth 1 -name 'DuckDuckGo*.app' | head -1)"
+          if [ -z "$app_path" ]; then
+            echo "No .app found in DMG"
+            exit 1
+          fi
+          cp -R "$app_path" dmg/DuckDuckGo.app
           hdiutil detach vanilla
           rm -f duckduckgo.dmg
 

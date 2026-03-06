@@ -103,7 +103,9 @@ final class PageContextTabExtension {
         contentPublisher.removeDuplicates()
             .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
             .sink { [weak self] tabContent in
+                let previousContent = self?.content
                 self?.content = tabContent
+                self?.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
             }
             .store(in: &cancellables)
 
@@ -201,6 +203,26 @@ final class PageContextTabExtension {
             return
         }
         pageContextUserScript?.collect()
+    }
+
+    /// When the browser tab navigates to a new URL while the sidebar has an active chat,
+    /// push the new page's context to the frontend so the user can reference multiple pages.
+    private func handleNavigationForMultipleContexts(from previousContent: Tab.TabContent?, to newContent: Tab.TabContent) {
+        guard featureFlagger.isFeatureOn(.multiplePageContexts),
+              case .url(let newURL, _, _) = newContent,
+              case .url(let oldURL, _, _) = previousContent,
+              newURL != oldURL,
+              let session = aiChatSessionStore.sessions[tabID],
+              session.state.presentationMode != .hidden,
+              session.chatViewController != nil else {
+            return
+        }
+
+        if isContextCollectionEnabled {
+            collectPageContextIfNeeded()
+        } else {
+            session.chatViewController?.setPageContext(nil)
+        }
     }
 
     /// Context collection is allowed when it's set to automatic in AI Features Settings

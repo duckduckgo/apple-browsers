@@ -283,6 +283,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "BWManagementSharedTests"
+               BuildableName = "BWManagementSharedTests"
+               BlueprintName = "BWManagementSharedTests"
+               ReferencedContainer = "container:LocalPackages/BWIntegration">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "AppStoreCrashCollectionTests"
                BuildableName = "AppStoreCrashCollectionTests"
                BlueprintName = "AppStoreCrashCollectionTests"

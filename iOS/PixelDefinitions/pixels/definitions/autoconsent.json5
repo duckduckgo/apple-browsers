@@ -98,6 +98,13 @@
         "suffixes": ["form_factor", "daily"],
         "parameters": ["appVersion", "pixelSource", "fromExtension"]
     },
+    "m_autoconsent_error_cache-not-set_ios": {
+        "description": "Fires when the autoconsent management cache is not set when handling a report message.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["form_factor", "daily"],
+        "parameters": ["appVersion"]
+    },
     "m_autoconsent_summary": {
         "description": "Fires periodically with counts of autoconsent metrics.",
         "owners": ["sammacbeth"],

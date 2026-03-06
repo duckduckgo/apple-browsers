@@ -177,6 +177,13 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Ctrl+click compatibility fix to preserve right click behavior
     case controlClickFix
+
+    /// Enable Look Up (three-finger click) while keeping link preview disabled
+    case webViewLookUpAction
+
+    /// Startup Metrics Reporting
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
+    case startupMetrics
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -363,6 +370,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 
+    case unifiedToggleInput
+
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
@@ -375,10 +384,19 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
     case iPadDuckaiOnTab
 
+    /// Signals that the iPad app should display the duck.ai toggle
+    case iPadAIChatToggle
+
     /// Controls deletion of Synced chats
     case supportsSyncChatsDeletion
 
     case sidebarResizable
+
+    /// Enables recent AI chats on the New Tab Page omnibar
+    case ntpRecentChats
+
+    /// Enables support for adding multiple page contexts to a single chat session
+    case multiplePageContexts
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -613,4 +631,10 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .webExtensions }
 
     case embeddedExtension
+}
+
+public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .forceDarkModeOnWebsites }
+
+    case featureRollout
 }

@@ -43,7 +43,7 @@ final class PageContextTabExtension {
     private let tabID: TabIdentifier
     private var content: Tab.TabContent = .none
     private let featureFlagger: FeatureFlagger
-    private let aiChatSidebarProvider: AIChatSidebarProviding
+    private let aiChatSessionStore: AIChatSessionStoring
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let isLoadedInSidebar: Bool
     private let faviconManagement: FaviconManagement
@@ -61,7 +61,7 @@ final class PageContextTabExtension {
             subscribeToCollectionResult()
         }
     }
-    private weak var sidebar: AIChatSidebar? {
+    private weak var session: AIChatSession? {
         didSet {
             subscribeToCollectionRequest()
         }
@@ -73,14 +73,14 @@ final class PageContextTabExtension {
         contentPublisher: some Publisher<Tab.TabContent, Never>,
         tabID: TabIdentifier,
         featureFlagger: FeatureFlagger,
-        aiChatSidebarProvider: AIChatSidebarProviding,
+        aiChatSessionStore: AIChatSessionStoring,
         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
         isLoadedInSidebar: Bool,
         faviconManagement: FaviconManagement
     ) {
         self.tabID = tabID
         self.featureFlagger = featureFlagger
-        self.aiChatSidebarProvider = aiChatSidebarProvider
+        self.aiChatSessionStore = aiChatSessionStore
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.isLoadedInSidebar = isLoadedInSidebar
         self.faviconManagement = faviconManagement
@@ -107,16 +107,16 @@ final class PageContextTabExtension {
             }
             .store(in: &cancellables)
 
-        aiChatSidebarProvider.sidebarsByTabPublisher
+        aiChatSessionStore.sessionsPublisher
             .receive(on: DispatchQueue.main)
             .map { $0[tabID] != nil }
             .removeDuplicates()
             .filter { $0 }
-            .sink { [weak self, weak aiChatSidebarProvider] _ in
+            .sink { [weak self, weak aiChatSessionStore] _ in
                 guard let self else {
                     return
                 }
-                sidebar = aiChatSidebarProvider?.sidebarsByTab[tabID]
+                session = aiChatSessionStore?.sessions[tabID]
 
                 /// This closure is responsible for passing cached page context to the newly displayed sidebar.
                 /// It's only called when sidebar for tabID is non-nil.
@@ -168,11 +168,11 @@ final class PageContextTabExtension {
     /// handle view controller changes when the sidebar is closed and reopened.
     private func subscribeToCollectionRequest() {
         sidebarCancellables.removeAll()
-        guard let sidebar else {
+        guard let session else {
             return
         }
 
-        sidebar.pageContextRequestedPublisher
+        session.pageContextRequestedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.shouldForceContextCollection = true
@@ -191,8 +191,8 @@ final class PageContextTabExtension {
         }
         shouldForceContextCollection = false
         cachedPageContext = replaceFaviconURLWithEncodedData(pageContext)
-        if let sidebarViewController = aiChatSidebarProvider.getSidebarViewController(for: tabID) {
-            sidebarViewController.setPageContext(cachedPageContext)
+        if let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController {
+            chatViewController.setPageContext(cachedPageContext)
         }
     }
 

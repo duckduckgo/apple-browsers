@@ -53,6 +53,7 @@ extension HomePage.Models {
         private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
         private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
         private let cardActionsHandler: NewTabPageNextStepsCardsActionHandling
+        private let isAppStoreBuild: Bool
 
         @UserDefaultsWrapper(key: .homePageShowAllFeatures, defaultValue: false)
         var shouldShowAllFeatures: Bool {
@@ -93,7 +94,8 @@ extension HomePage.Models {
              subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
              persistor: HomePageContinueSetUpModelPersisting,
              pixelHandler: NewTabPageNextStepsCardsPixelHandling,
-             cardActionsHandler: NewTabPageNextStepsCardsActionHandling) {
+             cardActionsHandler: NewTabPageNextStepsCardsActionHandling,
+             applicationBuildType: ApplicationBuildType = StandardApplicationBuildType()) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer
@@ -104,6 +106,7 @@ extension HomePage.Models {
             self.pixelHandler = pixelHandler
             self.cardActionsHandler = cardActionsHandler
             self.persistor = persistor
+            self.isAppStoreBuild = applicationBuildType.isAppStoreBuild
 
             shouldShowAllFeaturesPublisher = shouldShowAllFeaturesSubject.removeDuplicates().eraseToAnyPublisher()
 
@@ -223,16 +226,24 @@ extension HomePage.Models {
 
         var randomisedFeatures: [FeatureType] {
             var features: [FeatureType]  = [.defaultBrowser]
-            var shuffledFeatures = FeatureType.allCases.filter { $0 != .defaultBrowser }
+            var shuffledFeatures = availableFeatures.filter { $0 != .defaultBrowser }
             shuffledFeatures.shuffle()
             features.append(contentsOf: shuffledFeatures)
             return features
         }
 
         var firstRunFeatures: [FeatureType] {
-            var features = FeatureType.allCases.filter { $0 != .duckplayer }
+            var features = availableFeatures.filter { $0 != .duckplayer }
             features.insert(.duckplayer, at: 0)
             return features
+        }
+
+        private var availableFeatures: [FeatureType] {
+            if isAppStoreBuild {
+                return [.duckplayer, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
+            } else {
+                return [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
+            }
         }
 
         private func updateVisibleMatrix() {
@@ -248,11 +259,7 @@ extension HomePage.Models {
         }
 
         private var shouldDockCardBeVisible: Bool {
-#if !APPSTORE
-            persistor.shouldShowAddToDockSetting && !dockCustomizer.isAddedToDock
-#else
-            return false
-#endif
+            !isAppStoreBuild && persistor.shouldShowAddToDockSetting && !dockCustomizer.isAddedToDock
         }
 
         private var shouldImportCardBeVisible: Bool {
@@ -274,18 +281,6 @@ extension HomePage.Models {
 
     // MARK: Feature Type
     enum FeatureType: CaseIterable, Equatable, Hashable {
-
-        // CaseIterable doesn't work with enums that have associated values, so we have to implement it manually.
-        // We ignore the `networkProtectionRemoteMessage` case here to avoid it getting accidentally included - it has special handling and will get
-        // included elsewhere.
-        static var allCases: [HomePage.Models.FeatureType] {
-#if APPSTORE
-            [.duckplayer, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
-#else
-            [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
-#endif
-        }
-
         case duckplayer
         case emailProtection
         case defaultBrowser

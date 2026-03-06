@@ -169,7 +169,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         // Release notes user script - only available for Sparkle builds
-        if let updateController = Application.appDelegate.updateController as? any SparkleUpdateController {
+        if let updateController = Application.appDelegate.updateController as? any SparkleUpdateControlling {
             releaseNotesUserScript = updateController.makeReleaseNotesUserScript(
                 pixelFiring: PixelKit.shared,
                 keyValueStore: UserDefaults.standard,

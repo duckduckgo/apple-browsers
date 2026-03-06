@@ -19,6 +19,20 @@
 import XCTest
 
 extension XCUIElementSnapshot {
+
+    var title: String {
+        ((self as? NSObject)?.value(forKey: "title") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    var trimmedLabel: String {
+        label.trimmingWhitespace()
+    }
+
+    var trimmedStringValue: String {
+        (value as? String)?.trimmingWhitespace() ?? ""
+    }
+
     func toDictionary(keys: [String] = ["elementType",
                                         "identifier",
                                         "label",

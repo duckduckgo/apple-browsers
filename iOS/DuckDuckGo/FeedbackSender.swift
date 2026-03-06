@@ -67,8 +67,8 @@ struct FeedbackSubmitter: FeedbackSender {
                                 url: String?,
                                 comment: String,
                                 model: Feedback.Model? = nil) {
-#if DEBUG || REVIEW
-        Logger.general.debug("FeedbackSender: Skipping feedback submission in DEBUG / REVIEW build")
+#if DEBUG || ALPHA
+        Logger.general.debug("FeedbackSender: Skipping feedback submission in DEBUG / ALPHA build")
 #else
         let normalizedUrlString: String
         if let urlString = url, let normalizedURL = URL(string: urlString)?.normalized() {

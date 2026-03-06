@@ -24,11 +24,11 @@ import XCTest
 // MARK: - Test Notification Center
 
 #if os(macOS)
-private final class TestNotificationCenter: NotificationCenter, NetworkProtectionNotificationPosting {
+private final class TestNotificationCenter: NotificationCenter, @unchecked Sendable, NetworkProtectionNotificationPosting {
     func post(_ networkProtectionNotification: NetworkProtectionNotification, object: String?, userInfo: [AnyHashable: Any]?) {}
 }
 #else
-private final class TestNotificationCenter: NotificationCenter {}
+private final class TestNotificationCenter: NotificationCenter, @unchecked Sendable {}
 #endif
 
 // MARK: - Test Doubles
@@ -57,7 +57,6 @@ private actor MockKeyExpirationTester: KeyExpirationTesting {
     }
 }
 
-@MainActor
 private final class MockAdapter: WireGuardAdapterProtocol {
     var interfaceName: String? = "utun42"
 
@@ -134,10 +133,15 @@ final class PacketTunnelMessageHandlerTests: XCTestCase {
 
         keyStore = NetworkProtectionKeyStoreMock()
         keyExpirationTester = MockKeyExpirationTester()
+        adapter = MockAdapter()
+#if os(macOS)
         let notificationCenter = TestNotificationCenter()
         controllerErrorStore = NetworkProtectionTunnelErrorStore(notificationCenter: notificationCenter)
-        adapter = MockAdapter()
         tunnelHealth = NetworkProtectionTunnelHealthStore(notificationCenter: notificationCenter)
+#else
+        controllerErrorStore = NetworkProtectionTunnelErrorStore()
+        tunnelHealth = NetworkProtectionTunnelHealthStore()
+#endif
         notificationsPresenter = MockNotificationsPresenter()
         connectionTester = MockConnectionTester()
         settings = VPNSettings(defaults: .standard)

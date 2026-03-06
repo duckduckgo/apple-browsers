@@ -82,16 +82,13 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         Self.logger.info("[👀 DIAGNOSTIC] Initial time: \(startTime, format: .fixed(precision: 17))")
         sut.fireRetriggerPixelIfNeeded()
 
-        // When - at 19.99 seconds (near boundary, avoids exact 20.0 floating-point precision issues)
-        currentTime += 19.99
+        // When - at 20 seconds
+        currentTime += 20.0
         let endTime = currentTime!
         let elapsed = endTime - startTime
         Self.logger.info("[👀 DIAGNOSTIC] After increment - currentTime: \(endTime, format: .fixed(precision: 17)), elapsed: \(elapsed, format: .fixed(precision: 17))")
 
         sut.fireRetriggerPixelIfNeeded()
-
-        Self.logger.info("[👀 DIAGNOSTIC] Actual fire calls count: \(self.mockPixelFiring.actualFireCalls.count)")
-        Self.logger.info("[👀 DIAGNOSTIC] Actual fire calls: \(String(describing: self.mockPixelFiring.actualFireCalls))")
 
         // Then
         mockPixelFiring.expectedFireCalls = [

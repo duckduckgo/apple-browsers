@@ -87,7 +87,7 @@ extension MainViewController {
     }
 
     private func handleInlineEditingModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
-        let height = coordinator.inlineEditingHeight(for: mode)
+        let height = coordinator.inlineEditingHeight()
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = height
             self.viewCoordinator.superview.layoutIfNeeded()
@@ -95,7 +95,7 @@ extension MainViewController {
     }
 
     private func handleAITabModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
-        let height = coordinator.inlineEditingHeight(for: mode)
+        let height = coordinator.inlineEditingHeight()
         viewCoordinator.constraints.navigationBarContainerHeight.constant = max(height, viewCoordinator.standardNavigationBarContainerHeight)
     }
 
@@ -208,7 +208,7 @@ extension MainViewController {
         case .showExpanded:
             viewCoordinator.anchorUnifiedToggleInputToKeyboardPreservingHeight()
             if let coordinator = unifiedToggleInputCoordinator {
-                let height = coordinator.inlineEditingHeight(for: coordinator.inputMode)
+                let height = coordinator.inlineEditingHeight()
                 viewCoordinator.constraints.navigationBarContainerHeight.constant = max(height, viewCoordinator.standardNavigationBarContainerHeight)
             }
         case .showInlineEditing(let height):
@@ -226,7 +226,7 @@ extension MainViewController {
     func recomputeInlineEditingHeightIfNeeded() {
         guard let coordinator = unifiedToggleInputCoordinator,
               coordinator.isInlineEditingActive else { return }
-        let height = coordinator.inlineEditingHeight(for: coordinator.inputMode)
+        let height = coordinator.inlineEditingHeight()
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
     }
 }

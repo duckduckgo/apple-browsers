@@ -347,6 +347,7 @@ final class UnifiedToggleInputView: UIView {
             )
         } else {
             changes()
+            layoutIfNeeded()
         }
     }
 
@@ -365,6 +366,7 @@ final class UnifiedToggleInputView: UIView {
 
         guard animated else {
             toolsToolbar.alpha = showToolbar ? 1 : 0
+            layoutIfNeeded()
             return
         }
 

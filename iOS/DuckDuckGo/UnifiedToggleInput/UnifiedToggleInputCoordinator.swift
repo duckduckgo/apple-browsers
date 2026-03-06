@@ -211,7 +211,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         viewController.isToolbarSubmitHidden = (cardPosition == .top)
 
         viewController.setExpanded(true, animated: false)
-        let height = inlineEditingHeight(for: effectiveInputMode)
+        let height = inlineEditingHeight()
         intentSubject.send(.showInlineEditing(expandedHeight: height))
 
         DispatchQueue.main.async { [weak self] in
@@ -223,7 +223,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         }
     }
 
-    func inlineEditingHeight(for mode: TextEntryMode) -> CGFloat {
+    func inlineEditingHeight() -> CGFloat {
         let screenWidth = UIScreen.main.bounds.width
         let height = viewController.view.systemLayoutSizeFitting(
             CGSize(width: screenWidth, height: UIView.layoutFittingCompressedSize.height),

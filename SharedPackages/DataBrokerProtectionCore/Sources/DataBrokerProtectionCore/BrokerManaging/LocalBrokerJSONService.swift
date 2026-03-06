@@ -157,6 +157,7 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
     }
 
     public func checkForUpdates() async throws {
+        let isFreeScan = !(await isAuthenticatedUser())
         if let lastCheckedVersion = repository.getLastCheckedVersion() {
             if Self.shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
                 updateBrokersAndSaveLatestVersion(isFreeScan: isFreeScan)
@@ -205,10 +206,6 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
         }
     }
 
-    private func updateBrokersAndSaveLatestVersion() {
-        repository.saveLatestAppVersionCheck(version: appVersion.versionNumber)
-        updateBrokers()
-    }
 }
 
 fileprivate extension URL {

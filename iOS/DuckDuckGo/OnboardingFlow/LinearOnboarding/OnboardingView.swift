@@ -101,7 +101,11 @@ struct OnboardingView: View {
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.daxDialogVisibilityDelay) {
                     model.introState.showDaxDialogBox = true
-                    model.introState.animateIntroText = true
+                    if model.shouldShowRestorePrompt {
+                        model.restorePromptState.animateTitle = true
+                    } else {
+                        model.introState.animateIntroText = true
+                    }
                 }
             }
         }
@@ -121,34 +125,53 @@ struct OnboardingView: View {
             }
     }
 
+    @ViewBuilder
     private func introView(shouldShowSkipOnboardingButton: Bool) -> some View {
-        let skipOnboardingView: AnyView? = if shouldShowSkipOnboardingButton {
-            AnyView(
-                SkipOnboardingContent(
-                    animateTitle: $model.skipOnboardingState.animateTitle,
-                    animateMessage: $model.skipOnboardingState.animateMessage,
-                    showCTA: $model.skipOnboardingState.showContent,
-                    isSkipped: $model.isSkipped,
-                    startBrowsingAction: model.confirmSkipOnboardingAction,
-                    resumeOnboardingAction: {
-                        animateBrowserComparisonViewState(isResumingOnboarding: true)
-                    }
-                )
+        if model.shouldShowSkipOnboardingDialog {
+            skipOnboardingDialogView
+        } else if model.shouldShowRestorePrompt {
+            RestorePromptDialogContent(
+                animateText: $model.restorePromptState.animateTitle,
+                animateBody: $model.restorePromptState.animateBody,
+                showCTA: $model.restorePromptState.showContent,
+                isSkipped: $model.isSkipped,
+                restoreAction: {
+                    model.restoreSyncAccountAction()
+                    animateBrowserComparisonViewState(isResumingOnboarding: false)
+                },
+                skipAction: {
+                    model.showSkipOnboardingDialog()
+                }
             )
+            .onboardingDaxDialogStyle()
+            .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
         } else {
-            nil
+            IntroDialogContent(
+                title: model.copy.introTitle,
+                shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton,
+                animateText: $model.introState.animateIntroText,
+                showCTA: $model.introState.showIntroButton,
+                isSkipped: $model.isSkipped,
+                continueAction: {
+                    animateBrowserComparisonViewState(isResumingOnboarding: false)
+                },
+                skipAction: model.showSkipOnboardingDialog
+            )
+            .onboardingDaxDialogStyle()
+            .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
         }
+    }
 
-        return IntroDialogContent(
-            title: model.copy.introTitle,
-            skipOnboardingView: skipOnboardingView,
-            animateText: $model.introState.animateIntroText,
-            showCTA: $model.introState.showIntroButton,
+    private var skipOnboardingDialogView: some View {
+        SkipOnboardingContent(
+            animateTitle: $model.skipOnboardingState.animateTitle,
+            animateMessage: $model.skipOnboardingState.animateMessage,
+            showCTA: $model.skipOnboardingState.showContent,
             isSkipped: $model.isSkipped,
-            continueAction: {
-                animateBrowserComparisonViewState(isResumingOnboarding: false)
-            },
-            skipAction: model.skipOnboardingAction
+            startBrowsingAction: model.confirmSkipOnboardingAction,
+            resumeOnboardingAction: {
+                animateBrowserComparisonViewState(isResumingOnboarding: true)
+            }
         )
         .onboardingDaxDialogStyle()
         .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
@@ -320,6 +343,14 @@ struct OnboardingView_Previews: PreviewProvider {
         func disableContextualDaxDialogs() {}
     }
 
+    final class MockRestorePromptHandler: OnboardingRestorePromptHandling {
+        func isEligibleForRestorePrompt() -> Bool {
+            false
+        }
+
+        func restoreSyncAccount() {}
+    }
+
     static var previews: some View {
         ForEach(ColorScheme.allCases, id: \.self) {
             OnboardingView(
@@ -330,7 +361,8 @@ struct OnboardingView_Previews: PreviewProvider {
                         videoPlayer: VideoPlayerCoordinator(configuration: VideoPlayerConfiguration()),
                         eventMapper: SystemSettingsPiPTutorialPixelHandler(),
                     ),
-                    daxDialogsManager: MockDaxDialogDisabling()
+                    daxDialogsManager: MockDaxDialogDisabling(),
+                    restorePromptHandler: MockRestorePromptHandler()
                 )
             )
             .preferredColorScheme($0)

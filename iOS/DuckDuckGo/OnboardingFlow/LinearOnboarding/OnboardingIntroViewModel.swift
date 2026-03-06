@@ -42,6 +42,12 @@ final class OnboardingIntroViewModel: ObservableObject {
         var showContent = false
     }
 
+    struct RestorePromptState {
+        var animateTitle = false
+        var animateBody = false
+        var showContent = false
+    }
+
     struct BrowserComparisonState {
         var showComparisonButton = false
         var animateComparisonText = false
@@ -80,6 +86,8 @@ final class OnboardingIntroViewModel: ObservableObject {
     @Published var addToDockState = AddToDockState()
     @Published var browserComparisonState = BrowserComparisonState()
     @Published var introState = IntroState()
+    @Published var restorePromptState = RestorePromptState()
+    @Published private(set) var shouldShowSkipOnboardingDialog = false
 
     /// Set to true when the view controller is tapped
     @Published var isSkipped = false
@@ -90,6 +98,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         onboardingManager.onboardingSteps
     }
     private var currentIntroStep: OnboardingIntroStep
+    @Published private(set) var shouldShowRestorePrompt = false
 
     private let defaultBrowserManager: DefaultBrowserManaging
     private let contextualDaxDialogs: ContextualDaxDialogDisabling
@@ -99,8 +108,12 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
+    private let restorePromptHandler: OnboardingRestorePromptHandling
 
-    convenience init(pixelReporter: LinearOnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging, daxDialogsManager: ContextualDaxDialogDisabling) {
+    convenience init(pixelReporter: LinearOnboardingPixelReporting,
+                     systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+                     daxDialogsManager: ContextualDaxDialogDisabling,
+                     restorePromptHandler: OnboardingRestorePromptHandling) {
         let onboardingManager = OnboardingManager()
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
@@ -115,7 +128,8 @@ final class OnboardingIntroViewModel: ObservableObject {
             currentOnboardingStep: onboardingManager.onboardingSteps.first ?? .introDialog(isReturningUser: false),
             onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: { AppIconManager.shared.appIcon },
-            addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition }
+            addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition },
+            restorePromptHandler: restorePromptHandler
         )
     }
 
@@ -128,7 +142,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         currentOnboardingStep: OnboardingIntroStep,
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider,
         appIconProvider: @escaping () -> AppIcon,
-        addressBarPositionProvider: @escaping () -> AddressBarPosition
+        addressBarPositionProvider: @escaping () -> AddressBarPosition,
+        restorePromptHandler: OnboardingRestorePromptHandling
     ) {
         self.defaultBrowserManager = defaultBrowserManager
         self.contextualDaxDialogs = contextualDaxDialogs
@@ -138,6 +153,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         self.appIconProvider = appIconProvider
         self.addressBarPositionProvider = addressBarPositionProvider
+        self.restorePromptHandler = restorePromptHandler
 
         currentIntroStep = currentOnboardingStep
         copy = .default
@@ -156,6 +172,13 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     func skipOnboardingAction() {
         pixelReporter.measureSkipOnboardingCTAAction()
+    }
+
+    func showSkipOnboardingDialog() {
+        isSkipped = false
+        skipOnboardingState = .init()
+        skipOnboardingAction()
+        shouldShowSkipOnboardingDialog = true
     }
 
     func confirmSkipOnboardingAction() {
@@ -216,6 +239,11 @@ final class OnboardingIntroViewModel: ObservableObject {
         isSkipped = true
     }
 
+    func restoreSyncAccountAction() {
+        restorePromptHandler.restoreSyncAccount()
+        contextualDaxDialogs.disableContextualDaxDialogs()
+    }
+
 #if DEBUG || ALPHA
     public func overrideOnboardingCompleted() {
         LaunchOptionsHandler().overrideOnboardingCompleted()
@@ -240,19 +268,27 @@ private extension OnboardingIntroViewModel {
             return OnboardingView.ViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: introSteps.count - 1)
         }
 
-        let viewState = switch introStep {
+        shouldShowSkipOnboardingDialog = false
+        let viewState: OnboardingView.ViewState
+        switch introStep {
         case .introDialog(let isReturningUser):
-            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: isReturningUser), step: .hidden))
+            shouldShowRestorePrompt = isReturningUser && restorePromptHandler.isEligibleForRestorePrompt()
+            viewState = .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: isReturningUser), step: .hidden))
         case .browserComparison:
-            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
+            shouldShowRestorePrompt = false
+            viewState = .onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
         case .addToDockPromo:
-            OnboardingView.ViewState.onboarding(.init(type: .addToDockPromoDialog, step: stepInfo()))
+            shouldShowRestorePrompt = false
+            viewState = .onboarding(.init(type: .addToDockPromoDialog, step: stepInfo()))
         case .appIconSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseAppIconDialog, step: stepInfo()))
+            shouldShowRestorePrompt = false
+            viewState = .onboarding(.init(type: .chooseAppIconDialog, step: stepInfo()))
         case .addressBarPositionSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
+            shouldShowRestorePrompt = false
+            viewState = .onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
         case .searchExperienceSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseSearchExperienceDialog, step: stepInfo()))
+            shouldShowRestorePrompt = false
+            viewState = .onboarding(.init(type: .chooseSearchExperienceDialog, step: stepInfo()))
         }
 
         state = viewState

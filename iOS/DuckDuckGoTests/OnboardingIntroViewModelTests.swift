@@ -108,6 +108,75 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(result, .landing)
     }
 
+    func testWhenRestoreActionProvided_PerformRestoreInvokesAction() {
+        // GIVEN
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        let sut = makeSUT(
+            currentOnboardingStep: .introDialog(isReturningUser: true),
+            restorePromptHandler: restorePromptHandlerMock
+        )
+        XCTAssertFalse(restorePromptHandlerMock.didCallRestoreSyncAccount)
+        XCTAssertFalse(contextualDaxDialogs.didCallDisableDaxDialogs)
+
+        // WHEN
+        sut.restoreSyncAccountAction()
+
+        // THEN
+        XCTAssertTrue(restorePromptHandlerMock.didCallRestoreSyncAccount)
+        XCTAssertTrue(contextualDaxDialogs.didCallDisableDaxDialogs)
+    }
+
+    func testWhenReturningUserAndRestorePromptEligibilityIsTrueThenShowsRestorePrompt() {
+        // GIVEN
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        restorePromptHandlerMock.isEligibleForRestorePromptValue = true
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
+        let sut = makeSUT(
+            currentOnboardingStep: .introDialog(isReturningUser: true),
+            restorePromptHandler: restorePromptHandlerMock
+        )
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertTrue(sut.shouldShowRestorePrompt)
+    }
+
+    func testWhenReturningUserAndRestorePromptEligibilityIsFalseThenDoesNotShowRestorePrompt() {
+        // GIVEN
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        restorePromptHandlerMock.isEligibleForRestorePromptValue = false
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
+        let sut = makeSUT(
+            currentOnboardingStep: .introDialog(isReturningUser: true),
+            restorePromptHandler: restorePromptHandlerMock
+        )
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertFalse(sut.shouldShowRestorePrompt)
+    }
+
+    func testWhenUserIsNotReturningAndRestorePromptEligibilityIsTrueThenDoesNotShowRestorePrompt() {
+        // GIVEN
+        let restorePromptHandlerMock = MockRestorePromptHandler()
+        restorePromptHandlerMock.isEligibleForRestorePromptValue = true
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+        let sut = makeSUT(
+            currentOnboardingStep: .introDialog(isReturningUser: false),
+            restorePromptHandler: restorePromptHandlerMock
+        )
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertFalse(sut.shouldShowRestorePrompt)
+    }
+
     func testWhenOnAppearIsCalled_AndIsNewUser_AndAndIsIphoneFlow_ThenViewStateChangesToStartOnboardingDialogAndProgressIsHidden() throws {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
@@ -492,6 +561,29 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureSkipOnboardingCTAAction)
     }
 
+    func testWhenShowSkipOnboardingDialogIsCalledThenShowsSkipDialogAndResetsAnimationState() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
+        sut.onAppear()
+        sut.isSkipped = true
+        sut.skipOnboardingState = .init(animateTitle: false, animateMessage: true, showContent: true)
+        XCTAssertFalse(sut.shouldShowSkipOnboardingDialog)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSkipOnboardingCTAAction)
+
+        // WHEN
+        sut.showSkipOnboardingDialog()
+
+        // THEN
+        XCTAssertFalse(sut.isSkipped)
+        XCTAssertEqual(sut.skipOnboardingState.animateTitle, true)
+        XCTAssertEqual(sut.skipOnboardingState.animateMessage, false)
+        XCTAssertEqual(sut.skipOnboardingState.showContent, false)
+        XCTAssertTrue(sut.shouldShowSkipOnboardingDialog)
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: true), step: .hidden)))
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSkipOnboardingCTAAction)
+    }
+
     func testWhenConfirmSkipOnboardingActionIsCalledThenPixelReporterMeasureConfirmSkipOnboardingCTA() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
@@ -746,7 +838,8 @@ extension OnboardingIntroViewModelTests {
 
     func makeSUT(
         currentOnboardingStep: OnboardingIntroStep = .introDialog(isReturningUser: false),
-        onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider(),
+        restorePromptHandler: OnboardingRestorePromptHandling = MockRestorePromptHandler()
     ) -> OnboardingIntroViewModel {
         OnboardingIntroViewModel(
             defaultBrowserManager: defaultBrowserManagerMock,
@@ -757,8 +850,21 @@ extension OnboardingIntroViewModelTests {
             currentOnboardingStep: currentOnboardingStep,
             onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: appIconProvider,
-            addressBarPositionProvider: addressBarPositionProvider
+            addressBarPositionProvider: addressBarPositionProvider,
+            restorePromptHandler: restorePromptHandler
         )
     }
-    
+}
+
+private final class MockRestorePromptHandler: OnboardingRestorePromptHandling {
+    var isEligibleForRestorePromptValue = false
+    private(set) var didCallRestoreSyncAccount = false
+
+    func isEligibleForRestorePrompt() -> Bool {
+        isEligibleForRestorePromptValue
+    }
+
+    func restoreSyncAccount() {
+        didCallRestoreSyncAccount = true
+    }
 }

@@ -1,5 +1,5 @@
 //
-//  OnboardingView+IntroDialogContent.swift
+//  OnboardingView+RestorePromptDialogContent.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -23,65 +23,71 @@ import Onboarding
 
 extension OnboardingView {
 
-    struct IntroDialogContent: View {
+    struct RestorePromptDialogContent: View {
 
-        private let title: String
-        private let shouldShowSkipOnboardingButton: Bool
+        typealias Copy = UserText.Onboarding.RestorePrompt
+
         private var animateText: Binding<Bool>
+        private var animateBody: Binding<Bool>
         private var showCTA: Binding<Bool>
         private var isSkipped: Binding<Bool>
-        private let continueAction: () -> Void
+        private let restoreAction: () -> Void
         private let skipAction: () -> Void
 
         init(
-            title: String,
-            shouldShowSkipOnboardingButton: Bool,
             animateText: Binding<Bool> = .constant(true),
+            animateBody: Binding<Bool> = .constant(false),
             showCTA: Binding<Bool> = .constant(false),
             isSkipped: Binding<Bool>,
-            continueAction: @escaping () -> Void,
+            restoreAction: @escaping () -> Void,
             skipAction: @escaping () -> Void
         ) {
-            self.title = title
-            self.shouldShowSkipOnboardingButton = shouldShowSkipOnboardingButton
             self.animateText = animateText
+            self.animateBody = animateBody
             self.showCTA = showCTA
             self.isSkipped = isSkipped
-            self.continueAction = continueAction
+            self.restoreAction = restoreAction
             self.skipAction = skipAction
         }
 
         var body: some View {
-            introContent
+            restorePromptContent
         }
 
-        private var introContent: some View {
+        private var restorePromptContent: some View {
             VStack(spacing: 24.0) {
-                AnimatableTypingText(title, startAnimating: animateText, skipAnimation: isSkipped) {
+                AnimatableTypingText(Copy.title, startAnimating: animateText, skipAnimation: isSkipped) {
                     withAnimation {
-                        showCTA.wrappedValue = true
+                        animateBody.wrappedValue = true
                     }
                 }
                 .foregroundColor(.primary)
                 .font(Font.system(size: 20, weight: .bold))
 
-                VStack {
-                    Button(action: continueAction) {
-                        Text(UserText.Onboarding.Intro.continueCTA)
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
-
-                    if shouldShowSkipOnboardingButton {
-                        OnboardingBorderedButton(maxHeight: 50.0, content: {
-                            Text(UserText.Onboarding.Intro.skipCTA)
-                        }, action: {
-                            skipAction()
-                        })
+                AnimatableTypingText(Copy.body, startAnimating: animateBody, skipAnimation: isSkipped) {
+                    withAnimation {
+                        showCTA.wrappedValue = true
                     }
                 }
+                .foregroundColor(.primary)
+                .font(Font.system(size: 16))
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                OnboardingActions(
+                    viewModel: .init(
+                        primaryButtonTitle: Copy.restoreCTA,
+                        secondaryButtonTitle: Copy.skipCTA
+                    ),
+                    primaryAction: restoreAction,
+                    secondaryAction: {
+                        isSkipped.wrappedValue = false
+                        skipAction()
+                    }
+                )
+                .frame(maxWidth: .infinity)
                 .visibility(showCTA.wrappedValue ? .visible : .invisible)
             }
         }
-
     }
 }

@@ -92,7 +92,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var hasActiveChat: Bool { boundUserScript != nil }
 
     var isInlineEditingActive: Bool {
-        if case .inline = displayState { return true }
+        if case .inline(.active) = displayState { return true }
         return false
     }
 

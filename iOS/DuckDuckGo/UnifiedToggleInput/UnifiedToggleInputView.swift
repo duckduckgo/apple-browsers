@@ -555,6 +555,7 @@ extension UnifiedToggleInputView {
     }
 
     private func makeDismissButton() -> UIButton {
+        #if compiler(>=6.2)
         if #available(iOS 26, *) {
             var config = UIButton.Configuration.glass()
             config.image = UIImage(systemName: "xmark")
@@ -563,22 +564,22 @@ extension UnifiedToggleInputView {
             button.translatesAutoresizingMaskIntoConstraints = false
             button.addTarget(self, action: #selector(handleDismissTap), for: .primaryActionTriggered)
             return button
-        } else {
-            let button = UIButton(type: .system)
-            button.translatesAutoresizingMaskIntoConstraints = false
-            let image = UIImage(systemName: "xmark")?
-                .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
-            button.setImage(image, for: .normal)
-            button.tintColor = UIColor(designSystemColor: .textPrimary)
-            button.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
-            button.layer.cornerRadius = Constants.dismissButtonSize / 2
-            button.layer.shadowColor = UIColor.black.cgColor
-            button.layer.shadowOpacity = 0.12
-            button.layer.shadowRadius = 8
-            button.layer.shadowOffset = CGSize(width: 0, height: 4)
-            button.addTarget(self, action: #selector(handleDismissTap), for: .primaryActionTriggered)
-            return button
         }
+        #endif
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        let image = UIImage(systemName: "xmark")?
+            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 12, weight: .medium))
+        button.setImage(image, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.backgroundColor = UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        button.layer.cornerRadius = Constants.dismissButtonSize / 2
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.12
+        button.layer.shadowRadius = 8
+        button.layer.shadowOffset = CGSize(width: 0, height: 4)
+        button.addTarget(self, action: #selector(handleDismissTap), for: .primaryActionTriggered)
+        return button
     }
 
     @objc private func handleDismissTap() {

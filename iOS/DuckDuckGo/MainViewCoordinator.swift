@@ -270,8 +270,11 @@ class MainViewCoordinator {
             self.unifiedToggleInputContainer.alpha = 0
             self.constraints.navigationBarContainerHeight.constant = self.standardNavigationBarContainerHeight
             self.superview.layoutIfNeeded()
-        } completion: { finished in
-            guard finished else { return }
+        } completion: { _ in
+            self.statusBackground.backgroundColor = self.inlineEditingStatusBackgroundColor
+            self.inlineEditingStatusBackgroundColor = nil
+            self.navigationBarContainer.backgroundColor = nil
+            self.suggestionTrayContainer.backgroundColor = .clear
             if self.isNavigationChromeHidden {
                 self.navigationBarCollectionView.alpha = 0
                 self.unifiedToggleInputContainer.isHidden = false
@@ -281,10 +284,6 @@ class MainViewCoordinator {
             self.unifiedToggleInputContainer.isHidden = true
             self.unifiedToggleInputContainer.alpha = 1
             self.navigationBarCollectionView.isUserInteractionEnabled = true
-            self.statusBackground.backgroundColor = self.inlineEditingStatusBackgroundColor
-            self.inlineEditingStatusBackgroundColor = nil
-            self.navigationBarContainer.backgroundColor = nil
-            self.suggestionTrayContainer.backgroundColor = .clear
         }
     }
 

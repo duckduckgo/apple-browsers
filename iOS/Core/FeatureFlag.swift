@@ -657,7 +657,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .iPadDuckaiOnTab:
             return .remoteReleasable(.subfeature(AIChatSubfeature.iPadDuckaiOnTab))
         case .iPadAIToggle:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.iPadAIChatToggle))
         case .unifiedToggleInput:
             return .remoteReleasable(.subfeature(AIChatSubfeature.unifiedToggleInput))
         case .attributedMetrics:

@@ -543,24 +543,24 @@ public final class BrokerUpdaterRepositoryMock: BrokerUpdaterRepository {
 
 public final class ResourcesRepositoryMock: ResourcesRepository {
     public var wasFetchBrokerFromResourcesFilesCalled = false
-    public var brokersList: [DataBroker]?
+    public var brokerResourcesList: [BrokerResource]?
     public var shouldThrowOnFetch = false
 
     public init() {}
 
-    public func fetchBrokerFromResourceFiles() throws -> [DataBroker]? {
+    public func fetchBrokerResourcesFromFiles() throws -> [BrokerResource]? {
         wasFetchBrokerFromResourcesFilesCalled = true
         if shouldThrowOnFetch {
             throw DataBrokerProtectionError.unknown("Mock fetch error")
         }
-        return brokersList
+        return brokerResourcesList
     }
 
     public func reset() {
         wasFetchBrokerFromResourcesFilesCalled = false
         shouldThrowOnFetch = false
-        brokersList?.removeAll()
-        brokersList = nil
+        brokerResourcesList?.removeAll()
+        brokerResourcesList = nil
     }
 }
 
@@ -617,6 +617,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var scanJobData = [ScanJobData]()
     public var optOutJobData = [OptOutJobData]()
     public var lastPreferredRunDateOnScan: Date?
+    public var lastSavedBrokerResource: BrokerResource?
+    public var lastUpdatedBrokerResource: BrokerResource?
+    public var brokerFixturesBundle: Bundle?
 
     public var wasDeleteOptOutEmailConfirmationCalled = false
     public var lastDeletedEmailConfirmationProfileQueryId: Int64?
@@ -646,6 +649,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         scanJobData.removeAll()
         optOutJobData.removeAll()
         lastPreferredRunDateOnScan = nil
+        lastSavedBrokerResource = nil
+        lastUpdatedBrokerResource = nil
+        brokerFixturesBundle = nil
     }
 
     public func save(profile: DataBrokerProtectionProfile) throws -> Int64 {
@@ -660,13 +666,15 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return
     }
 
-    public func save(broker: DataBroker) throws -> Int64 {
+    public func save(brokerResource: BrokerResource) throws -> Int64 {
         wasBrokerSavedCalled = true
+        lastSavedBrokerResource = brokerResource
         return 1
     }
 
-    public func update(_ broker: DataBroker, with id: Int64) throws {
+    public func update(_ brokerResource: BrokerResource, with id: Int64) throws {
         wasBrokerUpdateCalled = true
+        lastUpdatedBrokerResource = brokerResource
         if shouldThrowOnUpdate {
             throw DataBrokerProtectionError.unknown("Mock update error")
         }
@@ -703,6 +711,20 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func fetchAllBrokers() throws -> [DataBroker] {
         return brokers
+    }
+
+    public func fetchAllBrokerResources() throws -> [BrokerResource] {
+        let fileManager = MockFileManager(
+            fixtureBundle: brokerFixturesBundle,
+            fixtureFileNames: [
+            "valid-broker",
+            "valid-broker-1.0.1",
+            "valid-broker-removed-1.0.1"
+        ])
+        fileManager.hasUnzippedContent = true
+        let fileURLs = try fileManager.contentsOfDirectory(at: URL(string: "http://example.com")!, includingPropertiesForKeys: nil)
+
+        return try fileURLs.map(DataBroker.initFromResource(_:))
     }
 
     public func fetchAllNonRemovedBrokers() throws -> [DataBroker] {
@@ -1305,7 +1327,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
     }
 
-    public func saveBroker(dataBroker: DataBroker) throws -> Int64 {
+    public func saveBroker(brokerResource _: BrokerResource) throws -> Int64 {
         1
     }
 
@@ -2082,7 +2104,7 @@ public final class MockBrokerJSONService: BrokerJSONServiceProvider {
         didCallCheckForUpdates = true
     }
 
-    public func bundledBrokers() throws -> [DataBroker]? {
+    public func bundledBrokers() throws -> [BrokerResource]? {
         nil
     }
 
@@ -2094,7 +2116,7 @@ public final class MockBrokerJSONService: BrokerJSONServiceProvider {
 public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
     public init() {}
 
-    public func bundledBrokers() throws -> [DataBroker]? {
+    public func bundledBrokers() throws -> [BrokerResource]? {
         []
     }
 
@@ -2105,8 +2127,27 @@ public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
 public final class MockFileManager: FileManager, @unchecked Sendable {
     public var hasUnzippedContent = false
 
-    let fileNames = ["valid-broker", "invalid-broker-with-unsupported-type", "invalid-broker-with-unsupported-action"]
-    lazy var fileURLs = fileNames.compactMap { Bundle.module.url(forResource: $0, withExtension: "json", subdirectory: "Resources") }
+    public var fixtureBundle: Bundle?
+    public var fixtureFileNames: [String]?
+    private let fileNames = [
+        "valid-child-broker",
+        "valid-broker",
+        "valid-broker-1.0.1",
+        "valid-broker-removed-1.0.1",
+        "invalid-broker-with-unsupported-step",
+        "invalid-broker-with-unsupported-action",
+    ]
+    private var fileURLs: [URL] {
+        return (fixtureFileNames ?? fileNames).compactMap {
+            fixtureBundle?.url(forResource: $0, withExtension: "json", subdirectory: "BundleResources")
+        }
+    }
+
+    public init(fixtureBundle: Bundle? = nil, fixtureFileNames: [String]? = nil) {
+        self.fixtureBundle = fixtureBundle
+        self.fixtureFileNames = fixtureFileNames
+        super.init()
+    }
 
     public override func fileExists(atPath path: String, isDirectory: UnsafeMutablePointer<ObjCBool>?) -> Bool {
         hasUnzippedContent
@@ -2749,8 +2790,7 @@ public extension DataBroker {
                         EmailConfirmationAction(
                             id: "emailConfirmation",
                             actionType: .emailConfirmation,
-                            pollingTime: 30,
-                            dataSource: nil
+                            pollingTime: 30
                         )
                     ]
                 )

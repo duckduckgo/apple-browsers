@@ -150,7 +150,9 @@ jobs:
             echo "No .app found in DMG"
             exit 1
           fi
-          cp -R "$app_path" dmg/DuckDuckGo.app
+          app_name="$(basename "$app_path")"
+          echo "app-name=$app_name" >> "$GITHUB_OUTPUT"
+          cp -R "$app_path" "dmg/$app_name"
           hdiutil detach vanilla
           rm -f duckduckgo.dmg
 
@@ -159,10 +161,12 @@ jobs:
 
     - name: Set up variant
       working-directory: ${{ github.workspace }}/macOS/dmg
+      env:
+        APP_NAME: ${{ steps.extract-app-from-dmg.outputs.app-name }}
       run: |
-        codesign -d --entitlements :- DuckDuckGo.app > entitlements.plist
-        echo "${{ env.ATB_VARIANT_NAME }}" > "DuckDuckGo.app/Contents/Resources/variant.txt"
-        echo "${{ env.ORIGIN_VARIANT_NAME }}" > "DuckDuckGo.app/Contents/Resources/Origin.txt"
+        codesign -d --entitlements :- "$APP_NAME" > entitlements.plist
+        echo "${{ env.ATB_VARIANT_NAME }}" > "$APP_NAME/Contents/Resources/variant.txt"
+        echo "${{ env.ORIGIN_VARIANT_NAME }}" > "$APP_NAME/Contents/Resources/Origin.txt"
         sign_identity="$(security find-certificate -a -c "Developer ID Application" -Z | grep ^SHA-1 | cut -d " " -f3 | uniq)"
 
         /usr/bin/codesign \
@@ -170,7 +174,7 @@ jobs:
           --sign ${sign_identity} \
           --options runtime \
           --entitlements entitlements.plist \
-          --generate-entitlement-der "DuckDuckGo.app"
+          --generate-entitlement-der "$APP_NAME"
         rm -f entitlements.plist
 
     - name: Notarize the app
@@ -178,6 +182,7 @@ jobs:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        APP_NAME: ${{ steps.extract-app-from-dmg.outputs.app-name }}
       working-directory: ${{ github.workspace }}/macOS/dmg
       run: |
         # import API Key from secrets
@@ -186,33 +191,36 @@ jobs:
 
         notarization_zip_path="DuckDuckGo-for-notarization.zip"
 
-        ditto -c -k --keepParent "DuckDuckGo.app" "${notarization_zip_path}"
+        ditto -c -k --keepParent "$APP_NAME" "${notarization_zip_path}"
         xcrun notarytool submit \
           --key "${APPLE_API_KEY_PATH}" \
           --key-id "${{ env.APPLE_API_KEY_ID }}" \
           --issuer "${{ env.APPLE_API_KEY_ISSUER }}" \
           --wait \
           "${notarization_zip_path}"
-        xcrun stapler staple "DuckDuckGo.app"
+        xcrun stapler staple "$APP_NAME"
         rm -rf "${notarization_zip_path}"
 
     - name: Set variant xattrs
       working-directory: ${{ github.workspace }}/macOS/dmg
+      env:
+        APP_NAME: ${{ steps.extract-app-from-dmg.outputs.app-name }}
       run: |
         if [ -n "$ATB_VARIANT_NAME" ]; then
-          xattr -w com.duckduckgo.variant "$ATB_VARIANT_NAME" DuckDuckGo.app
+          xattr -w com.duckduckgo.variant "$ATB_VARIANT_NAME" "$APP_NAME"
         fi
         if [ -n "$ORIGIN_VARIANT_NAME" ]; then
-          xattr -w com.duckduckgo.origin "$ORIGIN_VARIANT_NAME" DuckDuckGo.app
+          xattr -w com.duckduckgo.origin "$ORIGIN_VARIANT_NAME" "$APP_NAME"
         fi
         echo "=== Verifying xattrs ==="
-        xattr -l DuckDuckGo.app
+        xattr -l "$APP_NAME"
         echo "=== Verifying code signature is still valid ==="
-        codesign --verify --deep --strict DuckDuckGo.app
+        codesign --verify --deep --strict "$APP_NAME"
 
     - name: Create variant DMG
       env:
         GH_TOKEN: ${{ github.token }}
+        APP_NAME: ${{ steps.extract-app-from-dmg.outputs.app-name }}
       run: |
         retries=3
 
@@ -221,7 +229,7 @@ jobs:
           if create-dmg --volname "DuckDuckGo" \
             --volicon "scripts/assets/dmg-release.icns" \
             --filesystem APFS \
-            --icon "DuckDuckGo.app" 140 160 \
+            --icon "$APP_NAME" 140 160 \
             --background "scripts/assets/dmg-background.png" \
             --window-size 600 400 \
             --icon-size 120 \

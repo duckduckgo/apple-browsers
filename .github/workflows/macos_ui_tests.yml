@@ -75,7 +75,7 @@ jobs:
   # This job sets up the matrix strategy arguments for the ui-tests job
   setup-tests:
     name: Set up tests list
-    runs-on: macos-15
+    runs-on: macos-26
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'

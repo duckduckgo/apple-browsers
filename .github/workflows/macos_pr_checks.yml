@@ -97,7 +97,7 @@ jobs:
 
     name: Test Shell Scripts
 
-    runs-on: macos-15
+    runs-on: macos-26
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
@@ -153,9 +153,9 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
-          - runs-on: macos-15
+          - runs-on: macos-26
             flavor: Non-Sandbox
-          - runs-on: macos-15-xlarge
+          - runs-on: macos-26-xlarge
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}

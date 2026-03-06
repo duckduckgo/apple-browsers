@@ -51,7 +51,7 @@ jobs:
       ATB_VARIANT_NAME: ${{ inputs.atb-variant || github.event.inputs.atb-variant }}
       ORIGIN_VARIANT_NAME: ${{ inputs.origin-variant || github.event.inputs.origin-variant }}
 
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 15
 
     steps:

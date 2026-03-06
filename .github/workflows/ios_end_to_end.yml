@@ -135,7 +135,11 @@ jobs:
             device-model: iPhone-16
           - test-tag: device_info
             exclude-tags: ipad
-            device-model: iPhone-16 
+            device-model: iPhone-16
+          - test-tag: unified_toggle_input
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
           # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
           - test-tag: device_info
             exclude-tags: iphone

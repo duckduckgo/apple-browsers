@@ -970,6 +970,25 @@
             "dbpIsFreeScan"
         ]
     },
+    "m_mac_dbp_data_broker_action-payload_typed-fallback_unexpected": {
+        "description": "Fired when a broker action is unexpectedly injected using typed fallback payload instead of raw JSON.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count", "count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "dbpActionType",
+            {
+                "key": "stepType",
+                "description": "Step type where typed-fallback payload injection occurred",
+                "type": "string",
+                "enum": ["scan", "optOut", "unknown"]
+            }
+        ]
+    },
     "m_mac_dbp_engagement_dau": {
         "description": "Fired daily for active PIR users",
         "owners": ["quanganhdo", "jozsef-vesza"],

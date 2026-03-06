@@ -217,19 +217,39 @@ jobs:
           --branch "${{ github.ref_name }}" \
           --commit-hash "${{ github.sha }}" \
           --start-time "$START_TIME" \
-          > insert-statements.sql
+          > insert-statements-memory.sql
+
+        ./scripts/build-startup-metrics-sql.sh \
+          --runner "${{ matrix.runner }}" \
+          --xcresult-path "$XCRESULT_PATH" \
+          --suite StartupPerformanceTests \
+          --run-id "${{ github.run_id }}" \
+          --branch "${{ github.ref_name }}" \
+          --commit-hash "${{ github.sha }}" \
+          --start-time "$START_TIME" \
+          > insert-statements-startup-metrics.sql
 
     - name: Debug Insert SQL
       working-directory: macOS
       run: |
-        echo "Generated insert-statements.sql:"
-        cat insert-statements.sql
+        echo "Generated insert-statements-memory.sql:"
+        cat insert-statements-memory.sql
 
+        echo "Generated insert-statements-startup-metrics.sql:"
+        cat insert-statements-startup-metrics.sql
+        
     - name: Upload memory metrics
       uses: actions/upload-artifact@v4
       with:
         name: memory-metrics
-        path: macOS/insert-statements.sql
+        path: macOS/insert-statements-memory.sql
+        retention-days: 1
+    
+    - name: Upload startup metrics
+      uses: actions/upload-artifact@v4
+      with:
+        name: startup-metrics
+        path: macOS/insert-statements-startup-metrics.sql
         retention-days: 1
 
     - name: Stop log stream
@@ -330,18 +350,33 @@ jobs:
     runs-on: [ self-hosted, apple ]
 
     steps:
+      - name: Download startup metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: startup-metrics
+
       - name: Download memory metrics
         uses: actions/download-artifact@v4
         with:
           name: memory-metrics
 
+      - name: Report Startup Metrics to ClickHouse
+        working-directory: .
+        run: |
+          echo "🕰️🕰️🕰️ Reporting Startup Metrics 🕰️🕰️🕰️"
+          cat insert-statements-startup-metrics.sql
+
+          clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements-startup-metrics.sql
+
+          echo "🏁🏁🏁 Report complete 🏁🏁🏁"
+
       - name: Report Memory Metrics to ClickHouse
         working-directory: .
         run: |
-          echo "🏁🏁🏁 Reporting Memory Metrics 🏁"
-          cat insert-statements.sql
+          echo "🧠🧠🧠 Reporting Memory Metrics 🧠🧠🧠"
+          cat insert-statements-memory.sql
 
-          clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements.sql
+          clickhouse-client --no-warnings -m -n --user dev-rw -h clickhouse.duckduckgo.com --queries-file insert-statements-memory.sql
 
           echo "🏁🏁🏁 Report complete 🏁🏁🏁"
 

@@ -251,6 +251,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(pixelFiring: PixelKit.shared)
 
+#if DEBUG || REVIEW
+    // MARK: - Automation Server
+    private var automationServer: AutomationServer?
+    private let launchOptionsHandler = LaunchOptionsHandler()
+#endif
+
     // MARK: - Freemium DBP
     public let freemiumDBPFeature: FreemiumDBPFeature
     public let freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator
@@ -361,6 +367,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
     private var isSyncingEmbeddedExtensions = false
+    private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings?
+    private var darkReaderCancellables = Set<AnyCancellable>()
 
     /// Holder class that allows `WebExtensionAvailability` to be created before `super.init()`,
     /// while still providing access to `webExtensionManager` which is set on `self` after `super.init()`.
@@ -503,11 +511,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let privacyConfigurationManager: PrivacyConfigurationManager
 
-#if DEBUG
+#if DEBUG || REVIEW
+        // When TEST_PRIVACY_CONFIG_PATH is set, skip cached config to use the test config from embedded data provider
+        let useTestConfig = ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
+        let fetchedEtag: String? = useTestConfig ? nil : configurationStore.loadEtag(for: .privacyConfiguration)
+        let fetchedData: Data? = useTestConfig ? nil : configurationStore.loadData(for: .privacyConfiguration)
+
+        if useTestConfig {
+            Logger.general.log("[DDG-TEST-CONFIG] Skipping cached privacy config to use TEST_PRIVACY_CONFIG_PATH")
+        }
+
         if AppVersion.runType.requiresEnvironment {
             privacyConfigurationManager = PrivacyConfigurationManager(
-                fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
-                fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+                fetchedETag: fetchedEtag,
+                fetchedData: fetchedData,
                 embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
                 localProtection: LocalUnprotectedDomains(database: database.db),
                 errorReporting: AppContentBlocking.debugEvents,
@@ -515,8 +532,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         } else {
             privacyConfigurationManager = PrivacyConfigurationManager(
-                fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
-                fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+                fetchedETag: fetchedEtag,
+                fetchedData: fetchedData,
                 embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
                 localProtection: LocalUnprotectedDomains(database: nil),
                 errorReporting: AppContentBlocking.debugEvents,
@@ -1255,7 +1272,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         profilerToken.advance(to: .appStateRestoration)
 
-        if [.normal, .uiTests].contains(AppVersion.runType) {
+        if AppVersion.runType.stateRestorationAllowed {
             stateRestorationManager.applicationDidFinishLaunching()
         }
 
@@ -1266,7 +1283,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setUpAutoClearHandler()
         BWManager.shared.initCommunication()
 
-        if case .normal = AppVersion.runType,
+        if AppVersion.runType.opensWindowOnStartupIfNeeded,
            !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {
@@ -1337,6 +1354,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         userChurnScheduler.start()
 
         memoryUsageMonitor.enableIfNeeded(featureFlagger: featureFlagger)
+
+        startAutomationServerIfNeeded()
 
         PixelKit.fire(GeneralPixel.launch, doNotEnforcePrefix: true)
         profilerToken.stop()
@@ -1436,7 +1455,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func initializeUpdateController() {
-        guard AppVersion.runType != .uiTests else { return }
+        guard AppVersion.runType.allowsUpdates else { return }
 
         let buildType = StandardApplicationBuildType()
         let notificationPresenter = UpdateNotificationPresenter(pixelFiring: PixelKit.shared)
@@ -1603,6 +1622,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return manager
     }
 
+    // MARK: - Automation Server
+
+    private func startAutomationServerIfNeeded() {
+#if DEBUG || REVIEW
+        guard let port = launchOptionsHandler.automationPort else {
+            return
+        }
+        Task { @MainActor in
+            automationServer = AutomationServer(
+                windowControllersManager: windowControllersManager,
+                contentBlockingManager: privacyFeatures.contentBlocking.contentBlockingManager,
+                port: port
+            )
+        }
+#endif
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty,
            case .normal = AppVersion.runType {
@@ -1627,6 +1663,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupWebExtensions() {
         guard #available(macOS 15.4, *) else { return }
+
+        let darkReaderSettings = AppDarkReaderFeatureSettings(
+            featureFlagger: featureFlagger,
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            storage: keyValueStore.throwingKeyedStoring(),
+            currentThemeProvider: appearancePreferences,
+            pixelFiring: PixelKit.shared
+        )
+        self.darkReaderFeatureSettings = darkReaderSettings
+        appearancePreferences.darkReaderFeatureSettings = darkReaderSettings
+
+        darkReaderSettings.forceDarkModeChangedPublisher
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.syncEmbeddedExtensions()
+                }
+            }
+            .store(in: &darkReaderCancellables)
+
+        appearancePreferences.$themeAppearance
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.darkReaderFeatureSettings?.themeDidChange()
+            }
+            .store(in: &darkReaderCancellables)
 
         let flagPublisher = (featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag>)?
             .flagDidChangePublisher
@@ -1661,7 +1722,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Tabs restored before the manager exists won't have webExtensionController attached.
             let webExtensionManager = WebExtensionManagerFactory.makeManager(
                 privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-                autoconsentPreferences: cookiePopupProtectionPreferences
+                autoconsentPreferences: cookiePopupProtectionPreferences,
+                darkReaderExcludedDomainsProvider: darkReaderSettings
             )
             self.webExtensionManager = webExtensionManager
 
@@ -1687,7 +1749,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            autoconsentPreferences: cookiePopupProtectionPreferences
+            autoconsentPreferences: cookiePopupProtectionPreferences,
+            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings
         )
         self.webExtensionManager = webExtensionManager
 
@@ -1707,6 +1770,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
         if featureFlagger.isFeatureOn(.embeddedExtension) {
             enabledTypes.insert(.embedded)
+        }
+        if darkReaderFeatureSettings?.isForceDarkModeEnabled == true {
+            enabledTypes.insert(.darkReader)
         }
         await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
     }
@@ -1896,7 +1962,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func subscribeToUpdateControllerChanges() {
-        guard AppVersion.runType != .uiTests,
+        guard AppVersion.runType.allowsUpdates,
               let sparkleUpdateController = updateController as? any SparkleUpdateControlling else { return }
 
         updateProgressCancellable = sparkleUpdateController.updateProgressPublisher

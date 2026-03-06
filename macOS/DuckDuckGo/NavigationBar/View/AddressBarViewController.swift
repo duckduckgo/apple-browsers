@@ -924,7 +924,7 @@ final class AddressBarViewController: NSViewController {
         self.clickPoint = nil
         guard let window = self.view.window, event.window === window, window.sheets.isEmpty else { return event }
 
-        if beginDraggingSessionIfNeeded(with: event, in: window) {
+        if window.isKeyWindow, beginDraggingSessionIfNeeded(with: event, in: window) {
             return nil
         }
 

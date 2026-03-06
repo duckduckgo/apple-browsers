@@ -30,19 +30,20 @@ final class AIChatHistoryListViewController: UIViewController {
 
     // MARK: - Constants
 
-    fileprivate enum Constants {
+    private enum Constants {
         static let cellIdentifier = "AIChatHistoryCell"
         static let iconSize: CGFloat = 16
         static let iconTextSpacing: CGFloat = 12
         static let cellHeight: CGFloat = 44
         static let horizontalInset: CGFloat = 16
         static let topContentInset: CGFloat = -20
-        static let iPadTopContentInset: CGFloat = 0
         static let escapeHatchTopPadding: CGFloat = 16
         static let escapeHatchHeaderHeight: CGFloat = 72
         static let escapeHatchBottomPadding: CGFloat = 16
         /// Top content inset when escape hatch is shown so the card has visible space below the bar.
         static let escapeHatchTopContentInset: CGFloat = 8
+        static let escapeHatchMaxWidth: CGFloat = HomeMessageCollectionViewCell.maximumWidth
+        static let escapeHatchMaxWidthPad: CGFloat = HomeMessageCollectionViewCell.maximumWidthPad
     }
 
     // MARK: - Properties
@@ -53,22 +54,15 @@ final class AIChatHistoryListViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var tableView: UITableView = {
-        let style: UITableView.Style = isIPadExperience ? .plain : .insetGrouped
-        let tableView = UITableView(frame: .zero, style: style)
+        let tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(AIChatHistoryCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
-        if isIPadExperience {
-            tableView.separatorStyle = .none
-        } else {
-            tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
-        }
+        tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         tableView.sectionFooterHeight = 0
-        tableView.keyboardDismissMode = .interactive
-        let topInset = isIPadExperience ? Constants.iPadTopContentInset : Constants.topContentInset
-        tableView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
         return tableView
     }()
 
@@ -77,9 +71,7 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     private var currentEscapeHatchModel: EscapeHatchModel?
-    private var renderedEscapeHatchModel: EscapeHatchModel?
     private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
-    private var escapeHatchTapHandler: (() -> Void)?
 
     // MARK: - Initialization
 
@@ -102,12 +94,6 @@ final class AIChatHistoryListViewController: UIViewController {
         subscribeToViewModel()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        updateEscapeHatchHeaderWidthIfNeeded()
-        applyEscapeHatchIfPossible()
-    }
-
     // MARK: - Private Methods
 
     private func setupView() {
@@ -126,9 +112,15 @@ final class AIChatHistoryListViewController: UIViewController {
         viewModel.$filteredSuggestions
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.tableView.reloadData()
+                guard let self else { return }
+                self.tableView.reloadData()
+                self.updateScrollEnabled()
             }
             .store(in: &cancellables)
+    }
+
+    private func updateScrollEnabled() {
+        tableView.isScrollEnabled = !chats.isEmpty
     }
 
     /// Shows or hides the escape hatch (Return to tab card) as the table header. Pass nil to hide.
@@ -137,21 +129,14 @@ final class AIChatHistoryListViewController: UIViewController {
             return
         }
         currentEscapeHatchModel = model
-        escapeHatchTapHandler = onTapped
 
-        applyEscapeHatchIfPossible()
-    }
-
-    private func applyEscapeHatchIfPossible() {
-        if let model = currentEscapeHatchModel, let onTapped = escapeHatchTapHandler {
-            guard tableView.bounds.width > 0, view.bounds.height > 0 else {
-                tearDownEscapeHatchHeader()
-                return
+        if let model, let onTapped {
+            if let existingHosting = escapeHatchHostingController {
+                existingHosting.willMove(toParent: nil)
+                existingHosting.view.removeFromSuperview()
+                existingHosting.removeFromParent()
             }
-            if renderedEscapeHatchModel == model, escapeHatchHostingController != nil, tableView.tableHeaderView != nil {
-                return
-            }
-            tearDownEscapeHatchHeader()
+            escapeHatchHostingController = nil
 
             let card = ReturnToTabCard(model: model, onTap: onTapped)
             let hosting = UIHostingController(rootView: card)
@@ -165,10 +150,22 @@ final class AIChatHistoryListViewController: UIViewController {
             hosting.view.translatesAutoresizingMaskIntoConstraints = false
             wrapper.addSubview(hosting.view)
 
-            let horizontalInset: CGFloat = 16
+            let maxWidth = isIPadExperience ? Constants.escapeHatchMaxWidthPad : Constants.escapeHatchMaxWidth
+            let preferredWidth = hosting.view.widthAnchor.constraint(equalToConstant: maxWidth)
+            preferredWidth.priority = .defaultHigh
+
+            let minimumLeading = hosting.view.leadingAnchor.constraint(greaterThanOrEqualTo: wrapper.leadingAnchor, constant: Constants.horizontalInset)
+            minimumLeading.priority = .required - 1
+
+            let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: wrapper.trailingAnchor, constant: -Constants.horizontalInset)
+            minimumTrailing.priority = .required - 1
+
             NSLayoutConstraint.activate([
-                hosting.view.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor, constant: horizontalInset),
-                hosting.view.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor, constant: -horizontalInset),
+                hosting.view.centerXAnchor.constraint(equalTo: wrapper.centerXAnchor),
+                hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
+                preferredWidth,
+                minimumLeading,
+                minimumTrailing,
                 hosting.view.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: Constants.escapeHatchTopPadding),
                 hosting.view.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -Constants.escapeHatchBottomPadding)
             ])
@@ -182,35 +179,20 @@ final class AIChatHistoryListViewController: UIViewController {
                 tableView.tableHeaderView = wrapper
                 tableView.contentInset = UIEdgeInsets(top: Constants.escapeHatchTopContentInset, left: 0, bottom: 0, right: 0)
             }
-            renderedEscapeHatchModel = model
+            updateScrollEnabled()
         } else {
-            guard escapeHatchHostingController != nil || tableView.tableHeaderView != nil else { return }
-            tearDownEscapeHatchHeader()
-            UIView.performWithoutAnimation {
-                let topInset = isIPadExperience ? Constants.iPadTopContentInset : Constants.topContentInset
-                tableView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
+            if let hosting = escapeHatchHostingController {
+                hosting.willMove(toParent: nil)
+                hosting.view.removeFromSuperview()
+                hosting.removeFromParent()
             }
+            escapeHatchHostingController = nil
+            UIView.performWithoutAnimation {
+                tableView.tableHeaderView = nil
+                tableView.contentInset = UIEdgeInsets(top: Constants.topContentInset, left: 0, bottom: 0, right: 0)
+            }
+            updateScrollEnabled()
         }
-    }
-
-    private func tearDownEscapeHatchHeader() {
-        if let hosting = escapeHatchHostingController {
-            hosting.willMove(toParent: nil)
-            hosting.view.removeFromSuperview()
-            hosting.removeFromParent()
-        }
-        escapeHatchHostingController = nil
-        renderedEscapeHatchModel = nil
-        tableView.tableHeaderView = nil
-    }
-
-    private func updateEscapeHatchHeaderWidthIfNeeded() {
-        guard let headerView = tableView.tableHeaderView, tableView.bounds.width > 0 else { return }
-        guard headerView.frame.width != tableView.bounds.width else { return }
-        var frame = headerView.frame
-        frame.size.width = tableView.bounds.width
-        headerView.frame = frame
-        tableView.tableHeaderView = headerView
     }
 
     private func configureCell(_ cell: UITableViewCell, with chat: AIChatSuggestion) {
@@ -260,10 +242,6 @@ extension AIChatHistoryListViewController: UITableViewDataSource {
         let chat = chats[indexPath.row]
         configureCell(cell, with: chat)
 
-        if isIPadExperience, let historyCell = cell as? AIChatHistoryCell {
-            historyCell.showsCustomSeparator = indexPath.row < chats.count - 1
-        }
-
         return cell
     }
 
@@ -303,29 +281,5 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         return 0
-    }
-}
-
-private final class AIChatHistoryCell: UITableViewCell {
-    private static let separatorLeadingInset: CGFloat = AIChatHistoryListViewController.Constants.horizontalInset
-        + AIChatHistoryListViewController.Constants.iconSize
-        + AIChatHistoryListViewController.Constants.iconTextSpacing
-
-    private lazy var customSeparator: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .lines)
-        view.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(view)
-        NSLayoutConstraint.activate([
-            view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Self.separatorLeadingInset),
-            view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            view.heightAnchor.constraint(equalToConstant: 1.0 / max(traitCollection.displayScale, 1)),
-        ])
-        return view
-    }()
-
-    var showsCustomSeparator: Bool = true {
-        didSet { customSeparator.isHidden = !showsCustomSeparator }
     }
 }

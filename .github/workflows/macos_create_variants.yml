@@ -6,28 +6,8 @@ defaults:
 
 on:
   workflow_dispatch:
-    inputs:
-      dmg-url:
-        description: "Custom DMG URL to use instead of the release DMG."
-        required: false
-        type: string
-      dry-run:
-        description: "When true, skip side effects (S3 upload, Mattermost notification)."
-        required: false
-        type: boolean
-        default: false
 
   workflow_call:
-    inputs:
-      dmg-url:
-        description: "Custom DMG URL to use instead of the release DMG."
-        required: false
-        type: string
-      dry-run:
-        description: "When true, skip side effects (S3 upload, Mattermost notification)."
-        required: false
-        type: boolean
-        default: false
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -94,7 +74,7 @@ jobs:
 
       - name: Download release app
         run: |
-          curl -fLSs "${{ inputs.dmg-url || vars.RELEASE_DMG_URL }}" --output duckduckgo.dmg
+          curl -fLSs "${{ vars.RELEASE_DMG_URL }}" --output duckduckgo.dmg
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
@@ -115,7 +95,6 @@ jobs:
     with:
       atb-variant: ${{ matrix.variant }}
       origin-variant: ${{ matrix.origin }}
-      dry-run: ${{ inputs.dry-run }}
     secrets: inherit
 
   create-variants-2:
@@ -130,13 +109,11 @@ jobs:
     with:
       atb-variant: ${{ matrix.variant }}
       origin-variant: ${{ matrix.origin }}
-      dry-run: ${{ inputs.dry-run }}
     secrets: inherit
 
   mattermost:
 
     name: Send Mattermost message
-    if: ${{ !inputs.dry-run }}
     needs: [create-variants-1, create-variants-2]
     runs-on: macos-15
 

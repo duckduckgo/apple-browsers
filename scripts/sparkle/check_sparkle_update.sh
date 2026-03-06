@@ -86,9 +86,10 @@ collect_release_notes() {
         [[ "$ver" == "$current" ]] && break
 
         # Fetch individual release details
-        local name body
-        name=$(gh api "repos/${SPARKLE_REPO}/releases/tags/${tag}" --jq '.name // empty') || true
-        body=$(gh api "repos/${SPARKLE_REPO}/releases/tags/${tag}" --jq '.body // empty') || true
+        local release_json name body
+        release_json=$(gh api "repos/${SPARKLE_REPO}/releases/tags/${tag}") || true
+        name=$(echo "$release_json" | jq -r '.name // empty')
+        body=$(echo "$release_json" | jq -r '.body // empty')
 
         notes+="## ${name:-$tag}"$'\n\n'
         if [[ -n "$body" ]]; then
@@ -154,7 +155,8 @@ main() {
     fi
 
     # Update Package.swift
-    sed -i '' "s|exact: \"${current}\"|exact: \"${latest}\"|" "$PACKAGE_SWIFT"
+    local escaped_current="${current//./\\.}"
+    sed -i '' "s|exact: \"${escaped_current}\"|exact: \"${latest}\"|" "$PACKAGE_SWIFT"
     echo "Updated ${PACKAGE_SWIFT}: ${current} -> ${latest}"
 }
 

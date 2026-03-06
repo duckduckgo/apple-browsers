@@ -430,7 +430,13 @@ main() {
     # Filter to direct dependencies only
     rm -rf "$FILTERED_PKGS_FILE"
     if [[ "$SHOW_ALL" == true ]]; then
-        cp "$RESOLVED_PKGS_FILE" "$FILTERED_PKGS_FILE"
+        while IFS='|' read -r url version; do
+            [[ -z "$url" ]] && continue
+            local repo_id
+            repo_id=$(get_repo_id "$url")
+            is_excluded "$repo_id" && continue
+            echo "${url}|${version}" >> "$FILTERED_PKGS_FILE"
+        done < "$RESOLVED_PKGS_FILE"
     else
         while IFS='|' read -r url version; do
             [[ -z "$url" ]] && continue

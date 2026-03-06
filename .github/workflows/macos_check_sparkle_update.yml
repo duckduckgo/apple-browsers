@@ -56,10 +56,10 @@ jobs:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
           owners=$(grep 'macOS/LocalPackages/AppUpdater/' .github/CODEOWNERS | sed 's|macOS/LocalPackages/AppUpdater/||' | tr ' ' '\n' | grep '^@' | sed 's/@//')
+          mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml")
 
           for handle in $owners; do
             echo "Resolving Asana user for ${handle}..."
-            mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml")
             asana_user_id=$(echo "$mapping" | grep "^${handle}:" | awk '{print $2}' | tr -d '"') || true
 
             assignee_field=""

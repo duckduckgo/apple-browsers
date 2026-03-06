@@ -70,7 +70,7 @@ struct OperationPreferredDateCalculator {
                                 attemptCount: Int64?,
                                 date: DateProtocol = SystemDate()) throws -> Date? {
         guard let lastEvent = optOutHistoryEvents.last else {
-            throw DataBrokerProtectionError.cantCalculatePreferredRunDate
+            return currentPreferredRunDate ?? Date()
         }
 
         switch lastEvent.type {

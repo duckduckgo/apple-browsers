@@ -20,6 +20,7 @@ import AppUpdaterShared
 import Combine
 import Foundation
 import Navigation
+import PixelKit
 import UserScript
 import WebKit
 
@@ -38,10 +39,12 @@ public extension SparkleUpdateControlling {
     }
 
     func makeReleaseNotesUserScript(
+        pixelFiring: PixelFiring?,
         releaseNotesURL: URL
     ) -> Subfeature {
         ReleaseNotesUserScript(
             updateController: self,
+            pixelFiring: pixelFiring,
             releaseNotesURL: releaseNotesURL
         )
     }

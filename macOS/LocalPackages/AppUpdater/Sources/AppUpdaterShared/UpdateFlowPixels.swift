@@ -118,6 +118,9 @@ public enum UpdateFlowPixels: PixelKitEvent {
     case updaterDidFindUpdate
     case updaterDidDownloadUpdate
 
+    // Release notes pixel
+    case releaseNotesLoadingError
+
     public var name: String {
         switch self {
         case .checkForUpdate:
@@ -146,6 +149,8 @@ public enum UpdateFlowPixels: PixelKitEvent {
             return "updater_did_find_update"
         case .updaterDidDownloadUpdate:
             return "updater_did_download_update"
+        case .releaseNotesLoadingError:
+            return "m_mac_release_notes_loading_error"
         }
     }
 
@@ -196,7 +201,8 @@ public enum UpdateFlowPixels: PixelKitEvent {
                 .updaterDidRunUpdate,
                 .updaterAttemptToRestartWithoutResumeBlock,
                 .updaterDidFindUpdate,
-                .updaterDidDownloadUpdate:
+                .updaterDidDownloadUpdate,
+                .releaseNotesLoadingError:
             return nil
         }
     }
@@ -229,7 +235,8 @@ public enum UpdateFlowPixels: PixelKitEvent {
                 .updaterAttemptToRestartWithoutResumeBlock,
                 .updaterAborted,
                 .updaterDidFindUpdate,
-                .updaterDidDownloadUpdate:
+                .updaterDidDownloadUpdate,
+                .releaseNotesLoadingError:
             return [.pixelSource]
         }
     }

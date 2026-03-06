@@ -143,7 +143,10 @@ extension ReleaseNotesValues {
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
         guard let latestUpdate = updateController.latestUpdate else {
-            self.init(status: .loading,
+            // When the update cycle is actively running we're still loading;
+            // otherwise treat missing update info as a loading error.
+            let status: Status = updateController.updateProgress.isIdle ? .loadingError : .loading
+            self.init(status: status,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,
                       automaticUpdate: updateController.areAutomaticUpdatesEnabled)

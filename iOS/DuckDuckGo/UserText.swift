@@ -2061,8 +2061,8 @@ public struct UserText {
         }
 
         public enum RestorePrompt {
-            public static let title = NSLocalizedString("onboarding.restore.prompt.title", value: "Let’s pick up where you left off\non DuckDuckGo.", comment: "Title for the returning-user restore prompt")
-            public static let body = NSLocalizedString("onboarding.restore.prompt.body", value: "Your Sync & Backup bookmarks, passwords, and more are ready.", comment: "Body copy for the returning-user restore prompt")
+            public static let title = NSLocalizedString("onboarding.restore.prompt.title", value: "Let’s pick up where you left off", comment: "Title for the returning-user restore prompt")
+            public static let body = NSLocalizedString("onboarding.restore.prompt.body", value: "Want to restore your bookmarks, passwords, and more from your previous DuckDuckGo sync?", comment: "Body copy for the returning-user restore prompt")
             public static let restoreCTA = NSLocalizedString("onboarding.restore.prompt.restore.cta", value: "Continue", comment: "Primary CTA to start restoring data on returning-user restore prompt")
             public static let skipCTA = NSLocalizedString("onboarding.restore.prompt.skip.cta", value: "Skip", comment: "Secondary CTA to skip restore on returning-user restore prompt")
         }

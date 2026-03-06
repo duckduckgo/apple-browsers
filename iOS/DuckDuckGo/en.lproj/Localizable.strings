@@ -2501,7 +2501,7 @@ https://duckduckgo.com/mac";
 "onboarding.privacypro.promo.title" = "Oh, before I forget...";
 
 /* Body copy for the returning-user restore prompt */
-"onboarding.restore.prompt.body" = "Your Sync & Backup bookmarks, passwords, and more are ready.";
+"onboarding.restore.prompt.body" = "Want to restore your bookmarks, passwords, and more from your previous DuckDuckGo sync?";
 
 /* Primary CTA to start restoring data on returning-user restore prompt */
 "onboarding.restore.prompt.restore.cta" = "Continue";
@@ -2510,7 +2510,7 @@ https://duckduckgo.com/mac";
 "onboarding.restore.prompt.skip.cta" = "Skip";
 
 /* Title for the returning-user restore prompt */
-"onboarding.restore.prompt.title" = "Let’s pick up where you left off\non DuckDuckGo.";
+"onboarding.restore.prompt.title" = "Let’s pick up where you left off";
 
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Start Browsing";

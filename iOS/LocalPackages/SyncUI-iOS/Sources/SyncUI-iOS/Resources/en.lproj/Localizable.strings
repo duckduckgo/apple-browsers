@@ -4,11 +4,11 @@
 /* Auto-Restore - Learn More Link */
 "auto.restore.learn.more" = "Learn More";
 
-/* Auto-Restore - Description + Learn More, with markdown link */
-"auto.restore.learn.more.full" = "Automatically restore your data on this device if you reinstall the app. [Learn More](sync-auto-restore://learn-more)";
+/* Auto-Restore - Description */
+"auto.restore.learn.more.full" = "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.";
 
 /* Auto-Restore Ready Sheet - Description */
-"auto.restore.ready.description" = "Resume your Sync & Backup session to restore your bookmarks, passwords, and more, or start fresh with a new setup.";
+"auto.restore.ready.description" = "Resume your Sync & Backup session to restore your bookmarks, passwords, and more, or continue with a new setup.";
 
 /* Auto-Restore Ready Sheet - Restore Button */
 "auto.restore.ready.restore.button" = "Resume Sync & Backup";
@@ -20,13 +20,13 @@
 "auto.restore.ready.title" = "Your previous Sync & Backup session is ready.";
 
 /* Auto-Restore Screen - Description */
-"auto.restore.screen.description" = "Automatically restore your data on this device if you reinstall the app.";
+"auto.restore.screen.description" = "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.";
 
 /* Auto-Restore Screen - Title */
-"auto.restore.screen.title" = "Auto-Restore";
+"auto.restore.screen.title" = "Restore on App re-install";
 
 /* Auto-Restore Settings Row - Label */
-"auto.restore.settings.row.label" = "Auto-Restore on This Device";
+"auto.restore.settings.row.label" = "Restore on App re-install";
 
 /* Auto-Restore Settings Row - Off */
 "auto.restore.settings.row.off" = "Off";
@@ -35,7 +35,7 @@
 "auto.restore.settings.row.on" = "On";
 
 /* Auto-Restore - Toggle Label */
-"auto.restore.toggle.label" = "Auto-Restore";
+"auto.restore.toggle.label" = "Restore on App re-install";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Back";

@@ -59,7 +59,7 @@ extension AuthV2TokenAdoptionWideEventData {
         case partialData = "partial_data"
     }
 
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         Dictionary(compacting: [
             (WideEventParameter.AuthV2AdoptionFeature.failingStep, failingStep?.rawValue),
         ])

@@ -377,6 +377,111 @@ final class BrokerProfileJobActionTests: XCTestCase {
         XCTAssertTrue(webViewHandler.wasExecuteCalledForUserData)
     }
 
+    func testWhenActionHasNoRawJSON_thenTypedFallbackPixelIsFired() async {
+        // Given: a regular opt-out action has no raw JSON payload, so typed fallback is unexpected.
+        pixelHandler.clear()
+
+        let expectationAction = ExpectationAction(id: "1", actionType: .expectation)
+        XCTAssertNil(expectationAction.json)
+        let step = Step(type: .optOut, actions: [expectationAction])
+        let context = BrokerProfileQueryData.mock(with: [step])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            context: context,
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: MockDBPFeatureFlagger(),
+            operationAwaitTime: 0,
+            stageCalculator: stageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            actionsHandlerMode: .optOut,
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+
+        // When: the action is executed and injected into the web view payload.
+        await sut.runNextAction(expectationAction)
+
+        // Then: the unexpected typed-fallback pixel is fired with the current broker context.
+        guard case .actionPayloadTypedFallbackUnexpected(let dataBroker, let version, let actionType, let stepType) = pixelHandler.lastFiredEvent else {
+            return XCTFail("Expected actionPayloadTypedFallbackUnexpected pixel to fire")
+        }
+        XCTAssertEqual(dataBroker, context.dataBroker.url)
+        XCTAssertEqual(version, context.dataBroker.version)
+        XCTAssertEqual(actionType, ActionType.expectation.rawValue)
+        XCTAssertEqual(stepType, .optOut)
+    }
+
+    func testWhenActionHasRawJSON_thenTypedFallbackPixelIsNotFired() async {
+        // Given: a regular opt-out action has a raw JSON payload, so typed fallback should not be used.
+        pixelHandler.clear()
+
+        let rawJSON = Data("{\"id\":\"1\",\"actionType\":\"expectation\",\"selector\":\"#submit\"}".utf8)
+        let expectationAction = ExpectationAction(id: "1", actionType: .expectation, json: rawJSON)
+        XCTAssertNotNil(expectationAction.json)
+        let step = Step(type: .optOut, actions: [expectationAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            context: BrokerProfileQueryData.mock(with: [step]),
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: MockDBPFeatureFlagger(),
+            operationAwaitTime: 0,
+            stageCalculator: stageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            actionsHandlerMode: .optOut,
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+
+        // When: the action is executed and injected into the web view payload.
+        await sut.runNextAction(expectationAction)
+
+        // Then: no unexpected typed-fallback pixel is fired.
+        XCTAssertNil(pixelHandler.lastFiredEvent)
+    }
+
+    func testWhenActionIsSyntheticEmailConfirmationContinuationNavigate_thenTypedFallbackPixelIsNotFired() async {
+        // Given: continuation mode creates a synthetic navigate action with no raw JSON payload.
+        pixelHandler.clear()
+
+        let emailConfirmationAction = EmailConfirmationAction(id: "email-1", actionType: .emailConfirmation, pollingTime: 1)
+        let step = Step(type: .optOut, actions: [emailConfirmationAction])
+        let actionsHandler = ActionsHandler.forEmailConfirmationContinuation(step, confirmationURL: URL(string: "https://example.com")!)
+        guard let continuationAction = actionsHandler.nextAction() else {
+            return XCTFail("Expected a synthetic continuation action")
+        }
+        XCTAssertNil(continuationAction.json)
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            context: BrokerProfileQueryData.mock(with: [step]),
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: MockDBPFeatureFlagger(),
+            operationAwaitTime: 0,
+            stageCalculator: stageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            actionsHandlerMode: .optOut,
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = actionsHandler
+
+        // When: the synthetic continuation navigate action is executed.
+        await sut.runNextAction(continuationAction)
+
+        // Then: no unexpected typed-fallback pixel is fired for this known synthetic action.
+        XCTAssertNil(pixelHandler.lastFiredEvent)
+    }
+
     func testWhenLoadURLDelegateIsCalled_thenCorrectMethodIsExecutedOnWebViewHandler() async {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),

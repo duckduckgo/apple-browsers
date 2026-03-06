@@ -187,6 +187,12 @@ public extension SubJobWebRunning {
         }
 
         let request: CCFRequestData = .userData(context.profileQuery, self.extractedProfile)
+        if shouldFireTypedFallbackPixel(for: action) {
+            pixelHandler.fire(.actionPayloadTypedFallbackUnexpected(dataBroker: context.dataBroker.url,
+                                                                   version: context.dataBroker.version,
+                                                                   actionType: action.actionType.rawValue,
+                                                                   stepType: stepType))
+        }
         recordDebugEvent(kind: .actionPayload,
                          actionType: action.actionType,
                          details: DebugHelper.prettyPrintedActionPayload(action: action, data: request))
@@ -308,6 +314,14 @@ public extension SubJobWebRunning {
             let durationInMs = (Date().timeIntervalSince(postLoadingSiteStartTime) * 1000).rounded(.towardZero)
             pixelHandler.fire(.initialScanPostLoadingDuration(duration: durationInMs, hasError: hasError, brokerURL: dataBrokerURL, isFreeScan: stageCalculator.isFreeScan))
         }
+    }
+
+    private func shouldFireTypedFallbackPixel(for action: Action) -> Bool {
+        guard action.json == nil else { return false }
+        let isSyntheticEmailContinuationNavigate = actionsHandler?.isEmailConfirmationContinuation == true &&
+            actionsHandler?.syntheticContinuationActionId == action.id &&
+            action is NavigateAction
+        return !isSyntheticEmailContinuationNavigate
     }
 
     func success(actionId: String, actionType: ActionType) async {

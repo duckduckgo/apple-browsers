@@ -10,7 +10,7 @@
             "type": "object",
             "required": ["type", "version"],
             "additionalProperties": false,
-            "properties": { "type": { "const": "ios-authv2-token-refresh" }, "version": { "const": "1.0.0" } }
+            "properties": { "type": { "const": "ios-authv2-token-refresh" }, "version": { "const": "1.0.1" } }
         },
         "app": {
             "type": "object",
@@ -84,14 +84,14 @@
                                     ]
                                 },
                                 "refresh_token_latency_ms_bucketed": {
-                                    "type": "string",
+                                    "type": "integer",
                                     "description": "The latency value of the token refresh call.",
-                                    "enum": ["1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                                    "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
                                 },
                                 "fetch_jwks_latency_ms_bucketed": {
-                                    "type": "string",
+                                    "type": "integer",
                                     "description": "The latency value of the JWKS call.",
-                                    "enum": ["1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                                    "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
                                 }
                             }
                         },
@@ -101,9 +101,9 @@
                             "additionalProperties": false,
                             "properties": {
                                 "domain": { "type": "string", "description": "The top level error domain" },
-                                "code": { "type": "string", "description": "The top level error code" },
+                                "code": { "type": "integer", "description": "The top level error code" },
                                 "underlying_domain": { "type": "string", "description": "The underlying error domain" },
-                                "underlying_code": { "type": "string", "description": "The underlying error code" }
+                                "underlying_code": { "type": "integer", "description": "The underlying error code" }
                             }
                         }
                     }

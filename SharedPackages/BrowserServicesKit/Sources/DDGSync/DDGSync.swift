@@ -437,6 +437,12 @@ public class DDGSync: DDGSyncing {
         dependencies.scheduler.notifyAppLifecycleEvent()
     }
 
+    public func removePreservedSyncAccount() throws {
+        guard authState == .inactive else { return }
+        guard try dependencies.secureStore.account() != nil else { return }
+        try removeAccount(reason: .userStartedFreshSetup)
+    }
+
     private func updateAccount(_ account: SyncAccount) throws {
         guard account.state != .initializing else {
             assertionFailure("Sync has not been initialized properly")

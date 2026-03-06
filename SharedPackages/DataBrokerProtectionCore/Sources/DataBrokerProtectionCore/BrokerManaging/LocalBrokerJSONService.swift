@@ -152,13 +152,11 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
         self.isAuthenticatedUser = isAuthenticatedUser
     }
 
-    public func bundledBrokers() throws -> [DataBroker]? {
-        try resources.fetchBrokerFromResourceFiles()
+    public func bundledBrokers() throws -> [BrokerResource]? {
+        try resources.fetchBrokerResourcesFromFiles()
     }
 
     public func checkForUpdates() async throws {
-        let isFreeScan = !(await isAuthenticatedUser())
-
         if let lastCheckedVersion = repository.getLastCheckedVersion() {
             if Self.shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
                 updateBrokersAndSaveLatestVersion(isFreeScan: isFreeScan)
@@ -204,22 +202,6 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
                 Logger.dataBrokerProtection.log("🧩 Error updating broker: \(broker.name, privacy: .public), with version: \(broker.version, privacy: .public)")
                 pixelHandler.fire(.updateDataBrokersFailure(dataBrokerFileName: brokerFileName, removedAt: broker.removedAtTimestamp, isFreeScan: isFreeScan, error: error))
             }
-        }
-    }
-
-    public func bundledBrokers() throws -> [BrokerResource]? {
-        try resources.fetchBrokerResourcesFromFiles()
-    }
-
-    public func checkForUpdates() async throws {
-        if let lastCheckedVersion = repository.getLastCheckedVersion() {
-            if Self.shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
-                updateBrokersAndSaveLatestVersion()
-            }
-        } else {
-            // There was not a last checked version. Probably new builds or ones without this new implementation
-            // or user deleted user defaults.
-            updateBrokersAndSaveLatestVersion()
         }
     }
 

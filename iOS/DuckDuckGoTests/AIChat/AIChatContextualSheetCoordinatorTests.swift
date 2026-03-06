@@ -90,10 +90,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private final class MockPresentingViewController: UIViewController {
         var presentedVC: UIViewController?
         var presentAnimated: Bool?
+        var presentCallCount = 0
 
         override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
             presentedVC = viewControllerToPresent
             presentAnimated = flag
+            presentCallCount += 1
             completion?()
         }
     }
@@ -420,6 +422,28 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then - no null signal sent (sheet not visible)
         XCTAssertFalse(receivedPush)
+    }
+
+    // MARK: - Double Present Guard Tests
+
+    @MainActor
+    func testPresentSheetSkipsPresentationWhenSheetIsAlreadyPresented() async {
+        // Given
+        let window = UIWindow()
+        let rootVC = UIViewController()
+        window.rootViewController = rootVC
+        window.makeKeyAndVisible()
+
+        await sut.presentSheet(from: rootVC)
+        let sheetVC = sut.sheetViewController!
+        XCTAssertNotNil(sheetVC.presentingViewController)
+
+        // When
+        let secondPresenter = MockPresentingViewController()
+        await sut.presentSheet(from: secondPresenter)
+
+        // Then
+        XCTAssertEqual(secondPresenter.presentCallCount, 0)
     }
 
     // MARK: - Helpers

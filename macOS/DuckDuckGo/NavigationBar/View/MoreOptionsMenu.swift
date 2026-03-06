@@ -116,7 +116,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          recentlyClosedCoordinator: RecentlyClosedCoordinating,
          emailManager: EmailManager = EmailManager(),
          fireproofDomains: FireproofDomains,
-         passwordManagerCoordinator: PasswordManagerCoordinator,
+         passwordManagerCoordinator: PasswordManagerCoordinating,
          vpnFeatureGatekeeper: VPNFeatureGatekeeper,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
          sharingMenu: NSMenu? = nil,

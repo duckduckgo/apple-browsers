@@ -1448,7 +1448,6 @@ public struct UserText {
     public static let settingsRefreshButtonPositionTitle = NSLocalizedString("settings.refreshButton.position.title", value: "Reload Button Position", comment: "Settings screen cell text for setting the refresh button position.")
     public static let settingsRefreshButtonPositionAddressBar = NSLocalizedString("settings.refreshButton.position.addressBar", value: "Address Bar", comment: "Settings screen option to set refresh button in the address bar")
     public static let settingsRefreshButtonPositionMenu = NSLocalizedString("settings.refreshButton.position.menu", value: "Menu", comment: "Settings screen option to set refresh button in the menu")
-    public static let settingsExperimentalMenu = NSLocalizedString("settings.appearance.experimental.menu", value: "Experimental Browser Menu", comment: "Settings screen cell text for experimental menu")
 
     // Tab Switcher tracker count
     private static let tabSwitcherTrackerCountFormatter: NumberFormatter = {

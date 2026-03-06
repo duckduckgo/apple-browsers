@@ -90,7 +90,7 @@ extension OnboardingRebranding.OnboardingStyles {
                 }
                 .frame(maxWidth: .infinity, alignment: backgroundType.alignment)
                 .clipped()
-                .ignoresSafeArea(.container, edges: [.bottom, .horizontal])
+                .ignoresSafeArea(.container, edges: ignoresSafeAreaEdges)
 
                 content
             }
@@ -98,6 +98,8 @@ extension OnboardingRebranding.OnboardingStyles {
 
         #if os(iOS)
         private static let maxHeightMetricsBuilder = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200)
+        // iPhone excludes .bottom to prevent background from being covered by the address bar when it is positioned at the bottom
+        private static let ignoreSafeAreaEdgesBuilder = MetricBuilder<Edge.Set>(default: [.horizontal]).iPad([.bottom, .horizontal])
         #endif
 
         var maxHeightMetrics: CGFloat? {
@@ -107,6 +109,16 @@ extension OnboardingRebranding.OnboardingStyles {
             #else
             // macOS: Fixed value. Customise when implementing macOS contextual onboarding.
             return nil
+            #endif
+        }
+
+        var ignoresSafeAreaEdges: Edge.Set {
+            #if os(iOS)
+            // iOS uses responsive metrics based on device type
+            return Self.ignoreSafeAreaEdgesBuilder.build(v: vSizeClass, h: hSizeClass)
+            #else
+            // macOS: Customise when implementing macOS contextual onboarding.
+            return .all
             #endif
         }
     }

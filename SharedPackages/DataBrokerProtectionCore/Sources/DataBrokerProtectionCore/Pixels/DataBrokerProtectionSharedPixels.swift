@@ -61,6 +61,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let isParent = "is_parent"
         public static let parentKey = "parent"
         public static let actionIDKey = "action_id"
+        public static let stepTypeKey = "stepType"
         public static let environmentKey = "environment"
         public static let httpCode = "http_code"
         public static let backendServiceCallSite = "backend_service_callsite"
@@ -100,6 +101,7 @@ public enum DataBrokerProtectionSharedPixels {
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String, isFreeScan: Bool?)
     case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?, isFreeScan: Bool?)
+    case actionPayloadTypedFallbackUnexpected(dataBroker: String, version: String, actionType: String, stepType: StepType?)
     case otherError(error: Error, dataBroker: String, version: String, isFreeScan: Bool?)
     case databaseError(error: Error, functionOccurredIn: String)
     case cocoaError(error: Error, functionOccurredIn: String)
@@ -236,6 +238,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             // Debug Pixels
         case .httpError: return "dbp_data_broker_http_error"
         case .actionFailedError: return "dbp_data_broker_action-failed_error"
+        case .actionPayloadTypedFallbackUnexpected: return "dbp_data_broker_action-payload_typed-fallback_unexpected"
         case .otherError: return "dbp_data_broker_other_error"
         case .databaseError: return "dbp_data_broker_database_error"
         case .cocoaError: return "dbp_data_broker_cocoa_error"
@@ -318,9 +321,14 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                           "message": message,
                           Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: version,
-                          "stepType": stepType?.rawValue ?? "unknown",
+                          Consts.stepTypeKey: stepType?.rawValue ?? "unknown",
                           Consts.parentKey: dataBrokerParent ?? ""]
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .actionPayloadTypedFallbackUnexpected(let dataBroker, let version, let actionType, let stepType):
+            return [Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: version,
+                    Consts.actionTypeKey: actionType,
+                    Consts.stepTypeKey: stepType?.rawValue ?? "unknown"]
         case .otherError(let error, let dataBroker, let version, let isFreeScan):
             let params = ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
                           Consts.dataBrokerParamKey: dataBroker,
@@ -598,6 +606,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         switch self {
         case .httpError,
                 .actionFailedError,
+                .actionPayloadTypedFallbackUnexpected,
                 .otherError,
                 .databaseError,
                 .cocoaError,
@@ -715,6 +724,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultDatabaseRecreated:
                 self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
+            case .actionPayloadTypedFallbackUnexpected:
+                self.pixelKit.fire(event, frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _, _, _),
                     .actionFailedError(let error, _, _, _, _, _, _, _),
                     .otherError(let error, _, _, _):

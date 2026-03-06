@@ -41,8 +41,6 @@ class MockNavigationDelegate: NSObject, WKNavigationDelegate {
     }
 }
 
-
-
 class WebKitTestHelper {
 
     static func preparePrivacyConfig(locallyUnprotected: [String],

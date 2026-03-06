@@ -103,7 +103,7 @@ public final class LaunchOptionsHandler {
 
     /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
     public var isAutomationSession: Bool {
-#if DEBUG || REVIEW
+#if DEBUG || ALPHA
         isWebDriverAutomationSession || isUITesting
 #else
         isUITesting
@@ -112,7 +112,7 @@ public final class LaunchOptionsHandler {
 
     /// Returns true only when WebDriver automation is active.
     public var isWebDriverAutomationSession: Bool {
-#if DEBUG || REVIEW
+#if DEBUG || ALPHA
         AutomationSession.isWebDriverActive(automationPort: automationPort)
 #else
         false
@@ -125,7 +125,7 @@ public final class LaunchOptionsHandler {
         arguments.contains("isRunningUITests")
     }
 
-#if DEBUG || REVIEW
+#if DEBUG || ALPHA
     public func overrideOnboardingCompleted() {
         userDefaults.set("true", forKey: Self.isOnboardingCompleted)
     }

@@ -69,7 +69,7 @@ class MainViewController: UIViewController {
 
     var chromeManager: BrowserChromeManager!
 
-#if DEBUG || REVIEW
+#if DEBUG || ALPHA
     var automationServer: AutomationServer?
 #endif
 

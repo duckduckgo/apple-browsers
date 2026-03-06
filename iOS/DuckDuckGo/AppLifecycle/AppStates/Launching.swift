@@ -286,7 +286,7 @@ struct Launching: LaunchingHandling {
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
 
-#if DEBUG || REVIEW
+#if DEBUG || ALPHA
         mainCoordinator.controller.automationServer = configuration.finalize(
             reportingService: reportingService,
             mainViewController: mainCoordinator.controller,

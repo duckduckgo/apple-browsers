@@ -228,14 +228,14 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
     @MainActor
     func testWhenAutoRestoreIsEligibleThenHasPreservedSyncAccountConflictForSetupIsTrue() {
-        syncAutoRestoreHandler.isEligibleForAutoRestoreReturnValue = true
+        syncAutoRestoreHandler.isEligibleForAutoRestoreValue = true
 
         XCTAssertTrue(vc.isPreservedAccountPromptNeeded())
     }
 
     @MainActor
     func testWhenAutoRestoreIsNotEligibleThenHasPreservedSyncAccountConflictForSetupIsFalse() {
-        syncAutoRestoreHandler.isEligibleForAutoRestoreReturnValue = false
+        syncAutoRestoreHandler.isEligibleForAutoRestoreValue = false
 
         XCTAssertFalse(vc.isPreservedAccountPromptNeeded())
     }

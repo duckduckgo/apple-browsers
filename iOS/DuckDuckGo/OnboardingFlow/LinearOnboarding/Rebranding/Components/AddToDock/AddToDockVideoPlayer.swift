@@ -52,6 +52,7 @@ extension OnboardingRebranding.OnboardingView {
                 }
         }
 
+        @MainActor
         private func loadVideoAspectRatio() async {
             let asset = AVURLAsset(url: url)
             guard let track = try? await asset.loadTracks(withMediaType: .video).first,

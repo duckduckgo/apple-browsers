@@ -29,6 +29,10 @@ extension TabsModelReading {
     func indexOf(tab: Tab) -> Int? {
         return tabs.firstIndex { $0 === tab }
     }
+    
+    var isEmpty: Bool {
+        tabs.isEmpty
+    }
 }
 
 protocol TabsModelManaging: AnyObject, TabsModelReading {

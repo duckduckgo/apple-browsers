@@ -131,9 +131,9 @@ class TabSwitcherViewController: UIViewController {
     }
 
     var canDismissOnEmpty: Bool {
-        !tabManager.currentBrowsingMode.allowsEmpty
+        !tabsModel.allowsEmpty
     }
-
+    
     var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
 
     private var tabObserverCancellable: AnyCancellable?
@@ -572,7 +572,7 @@ class TabSwitcherViewController: UIViewController {
         if isEditing {
             transitionFromMultiSelect()
         } else {
-            dismiss()
+            dismissIfPossible()
         }
     }
 
@@ -624,7 +624,7 @@ class TabSwitcherViewController: UIViewController {
         canUpdateCollection = false
 
         Pixel.fire(pixel: .tabSwitcherNewTab)
-        dismiss()
+        dismissIfPossible(forceDismissOnEmpty: true)
         // This call needs to be after the dismiss to allow OmniBarEditingStateViewController
         // to present on top of MainVC instead of TabSwitcher.
         // If these calls are switched it'll be immediately dismissed along with this controller.
@@ -635,8 +635,8 @@ class TabSwitcherViewController: UIViewController {
         guard !isProcessingUpdates else { return }
         canUpdateCollection = false
         
-        dismiss()
-        
+        dismissIfPossible(forceDismissOnEmpty: true)
+
         self.delegate.tabSwitcherDidRequestAIChatTab(tabSwitcher: self)
     }
 
@@ -667,7 +667,7 @@ class TabSwitcherViewController: UIViewController {
         if isEditing {
             transitionFromMultiSelect()
         } else {
-            dismiss()
+            dismissIfPossible()
         }
     }
     
@@ -675,7 +675,7 @@ class TabSwitcherViewController: UIViewController {
         if shouldDismiss {
             // Will be dismissed, so no need to process incoming updates
             canUpdateCollection = false
-            dismiss()
+            dismissIfPossible()
         }
         if let current = currentSelection {
             let tab = tabsModel.get(tabAt: current)
@@ -695,13 +695,15 @@ class TabSwitcherViewController: UIViewController {
                                                      dismiss: canDismissOnEmpty)
     }
 
-    func dismiss() {
+    func dismissIfPossible(forceDismissOnEmpty: Bool = false) {
+        guard forceDismissOnEmpty
+                || canDismissOnEmpty
+                || !tabsModel.isEmpty else { return }
+        ViewHighlighter.hideAll()
         dismiss(animated: true, completion: nil)
     }
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
-        guard canDismissOnEmpty || !tabsModel.tabs.isEmpty else { return }
-        ViewHighlighter.hideAll()
         canUpdateCollection = false
         tabManager.allTabsModel.tabs.forEach { $0.removeObserver(self) }
         super.dismiss(animated: animated) {
@@ -714,8 +716,7 @@ class TabSwitcherViewController: UIViewController {
 extension TabSwitcherViewController: TabViewCellDelegate {
 
     func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
-        let isDeletingAll = tabsModel.count == indexPaths.count
-        let shouldDismiss = isDeletingAll && !tabsModel.allowsEmpty
+        let shouldDismiss = tabsModel.count == indexPaths.count
         let tabsToClose = indexPaths.map { tabsModel.get(tabAt: $0.row) }
         delegate?.tabSwitcher(self, willCloseTabs: tabsToClose)
 
@@ -734,7 +735,7 @@ extension TabSwitcherViewController: TabViewCellDelegate {
             self.updateUIForSelectionMode()
             self.updateFireModeEmptyStateVisibility()
             if shouldDismiss {
-                self.dismiss()
+                self.dismissIfPossible()
             }
         }
     }

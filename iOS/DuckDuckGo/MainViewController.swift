@@ -4017,9 +4017,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest, dismiss: Bool) {
         self.forgetAllWithAnimation(request: fireRequest) {
-            if dismiss {
-                tabSwitcher.dismiss(animated: false, completion: nil)
-            }
+            tabSwitcher.dismissIfPossible()
         }
     }
 
@@ -4027,9 +4025,7 @@ extension MainViewController: TabSwitcherDelegate {
         Task {
             let request = FireRequest(options: .tabs, trigger: .manualFire, scope: .all, source: .tabSwitcher)
             await fireExecutor.burn(request: request, applicationState: .unknown)
-            if dismiss {
-                tabSwitcher.dismiss()
-            }
+            tabSwitcher.dismissIfPossible()
         }
     }
 

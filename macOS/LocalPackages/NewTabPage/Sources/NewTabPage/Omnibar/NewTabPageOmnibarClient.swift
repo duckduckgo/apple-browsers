@@ -30,18 +30,23 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case onConfigUpdate = "omnibar_onConfigUpdate"
         case openSuggestion = "omnibar_openSuggestion"
         case submitChat = "omnibar_submitChat"
+        case getAiChats = "omnibar_getAiChats"
+        case openAiChat = "omnibar_openAiChat"
     }
 
     private let configProvider: NewTabPageOmnibarConfigProviding
     private let suggestionsProvider: NewTabPageOmnibarSuggestionsProviding
+    private let aiChatsProvider: NewTabPageOmnibarAiChatsProviding
     private let actionHandler: NewTabPageOmnibarActionsHandling
     private var cancellables = Set<AnyCancellable>()
 
     public init(configProvider: NewTabPageOmnibarConfigProviding,
                 suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
+                aiChatsProvider: NewTabPageOmnibarAiChatsProviding,
                 actionHandler: NewTabPageOmnibarActionsHandling) {
         self.configProvider = configProvider
         self.suggestionsProvider = suggestionsProvider
+        self.aiChatsProvider = aiChatsProvider
         self.actionHandler = actionHandler
         super.init()
 
@@ -64,7 +69,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) },
             MessageName.submitSearch.rawValue: { [weak self] in try await self?.submitSearch(params: $0, original: $1) },
             MessageName.openSuggestion.rawValue: { [weak self] in try await self?.openSuggestion(params: $0, original: $1) },
-            MessageName.submitChat.rawValue: { [weak self] in try await self?.submitChat(params: $0, original: $1) }
+            MessageName.submitChat.rawValue: { [weak self] in try await self?.submitChat(params: $0, original: $1) },
+            MessageName.getAiChats.rawValue: { [weak self] in try await self?.getAiChats(params: $0, original: $1) },
+            MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) }
         ])
     }
 
@@ -74,7 +81,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,
-            showCustomizePopover: configProvider.showCustomizePopover
+            showCustomizePopover: configProvider.showCustomizePopover,
+            enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled
         )
     }
 
@@ -97,7 +105,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,
-            showCustomizePopover: configProvider.showCustomizePopover
+            showCustomizePopover: configProvider.showCustomizePopover,
+            enableRecentAiChats: configProvider.isAIChatRecentChatsEnabled
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -130,6 +139,21 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             return nil
         }
         await actionHandler.submitChat(action.chat, target: action.target)
+        return nil
+    }
+
+    private func getAiChats(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let request: NewTabPageDataModel.OmnibarGetAiChatsRequest = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        return await aiChatsProvider.aiChats(query: request.query)
+    }
+
+    private func openAiChat(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.OpenAiChatAction = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        await actionHandler.openAiChat(action.chatId, isPinned: action.isPinned ?? false, trigger: action.trigger ?? .mouse, target: action.target)
         return nil
     }
 

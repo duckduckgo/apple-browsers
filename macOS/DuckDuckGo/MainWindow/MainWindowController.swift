@@ -104,12 +104,31 @@ final class MainWindowController: NSWindowController {
     }
 
     private var shouldShowOnboarding: Bool {
+
+        /// Check if we override onboarding flag and show/hide onboarding accordingly
+        /// If onboarding is not overridden, show onboarding only if users have not seen it.
+        func shouldShow() -> Bool {
+            switch LaunchOptionsHandler().onboardingStatus {
+            case .notOverridden:
+                let isOnboardingCompleted = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
+                return !isOnboardingCompleted
+            case let .overridden(.developer(isOnboardingCompleted)):
+                return !isOnboardingCompleted
+            case let .overridden(.uiTests(isOnboardingCompleted)):
+                // Set onboarding settings so state is persisted across app re-launches during UI Tests
+                if isOnboardingCompleted {
+                    OnboardingActionsManager.isOnboardingFinished = true
+                }
+                return !isOnboardingCompleted
+            }
+        }
+
  #if DEBUG
         if AppVersion.runType == .unitTests || AppVersion.runType == .integrationTests {
             return false
         }
-        let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
-        return !onboardingIsComplete
+
+        return shouldShow()
  #elseif REVIEW
         if AppVersion.runType == .uiTests {
             Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
@@ -119,12 +138,12 @@ final class MainWindowController: NSWindowController {
             if AppVersion.runType == .uiTestsOnboarding {
                 Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             }
-            let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
-            return !onboardingIsComplete
+
+            return shouldShow()
         }
  #else
-        let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
-        return !onboardingIsComplete
+        // Check if we override onboarding flag and show/hide onboarding accordingly
+        return shouldShow()
  #endif
     }
 

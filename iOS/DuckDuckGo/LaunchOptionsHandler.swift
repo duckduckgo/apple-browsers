@@ -17,11 +17,10 @@
 //  limitations under the License.
 //
 
-import Core
 import Foundation
 import Persistence
 import PrivacyConfig
-import enum Common.DevicePlatform
+import Common
 
 public final class LaunchOptionsHandler {
 
@@ -94,11 +93,39 @@ public final class LaunchOptionsHandler {
         return .notOverridden
     }
 
+    /// Returns the automation port if set, nil otherwise.
+    /// Port must be in the valid UInt16 range (1-65535).
     public var automationPort: Int? {
-        userDefaults.integer(forKey: Self.automationPort)
+        let port = userDefaults.integer(forKey: Self.automationPort)
+        guard UInt16(exactly: port) != nil, port > 0 else { return nil }
+        return port
     }
 
-#if DEBUG || ALPHA
+    /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
+    public var isAutomationSession: Bool {
+#if DEBUG || REVIEW
+        isWebDriverAutomationSession || isUITesting
+#else
+        isUITesting
+#endif
+    }
+
+    /// Returns true only when WebDriver automation is active.
+    public var isWebDriverAutomationSession: Bool {
+#if DEBUG || REVIEW
+        AutomationSession.isWebDriverActive(automationPort: automationPort)
+#else
+        false
+#endif
+    }
+
+    private var isUITesting: Bool {
+        environment["UITEST_MODE"] == "1" ||
+        environment["UITEST_MODE_ONBOARDING"] == "1" ||
+        arguments.contains("isRunningUITests")
+    }
+
+#if DEBUG || REVIEW
     public func overrideOnboardingCompleted() {
         userDefaults.set("true", forKey: Self.isOnboardingCompleted)
     }

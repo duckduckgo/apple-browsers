@@ -455,7 +455,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 do {
                     try self.syncService.removePreservedSyncAccount()
                 } catch {
-                    await self.handleError(.unableToSyncToServer, error: error, event: nil)
+                    await self.handleError(.unknownError, error: error, event: nil)
                     return
                 }
 

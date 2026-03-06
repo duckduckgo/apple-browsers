@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import DuckUI
 import Onboarding
 import SwiftUI
 
@@ -26,15 +25,12 @@ extension OnboardingRebranding.OnboardingView {
     struct AddToDockTutorialView: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
-        private static let videoSize = CGSize(width: 900.0, height: 696.0)
-        private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock", withExtension: "mp4")!
+        private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-tutorial", withExtension: "mp4")
 
         private let title: String
         private let message: String
         private let cta: String
         private let action: () -> Void
-
-        @StateObject private var videoPlayerModel = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
 
         init(title: String,
              message: String,
@@ -64,16 +60,15 @@ extension OnboardingRebranding.OnboardingView {
                     ZStack(alignment: .top) {
                         OnboardingRebrandingImages.AddToDock.tutorialBorder
                             .resizable()
-                            .padding(.horizontal, -11)
+                            .padding(.horizontal, -9)
                             .padding(.vertical, -1)
-                            .frame(width: 321.0, height: 237.0)
-                        videoPlayer
-                            .onFirstAppear {
-                                videoPlayerModel.loadAsset(url: Self.videoURL, shouldLoopVideo: true)
-                                DispatchQueue.main.async {
-                                    videoPlayerModel.play()
-                                }
-                            }
+                            .frame(width: 321.0, height: 235.0)
+                        if let videoURL = Self.videoURL {
+                            AddToDockVideoPlayer(
+                                url: videoURL,
+                                frameSize: CGSize(width: 300.0, height: 231.0)
+                            )
+                        }
                     }
                 ),
                 title: {
@@ -91,49 +86,6 @@ extension OnboardingRebranding.OnboardingView {
             )
         }
 
-        private var videoPlayer: some View {
-            PlayerView(coordinator: videoPlayerModel)
-                .aspectRatio(Self.videoSize.width / Self.videoSize.height, contentMode: .fit)
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-                    videoPlayerModel.pause()
-                }
-                .frame(width: 300.0, height: 231.0)
-                .clipShape(BottomRoundedRectangle(radius: 34))
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                    videoPlayerModel.play()
-                }
-        }
-
     }
 
-}
-
-// MARK: - Bottom Rounded Rectangle
-
-private struct BottomRoundedRectangle: Shape {
-    let radius: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: .init(x: rect.minX, y: rect.minY))
-        path.addLine(to: .init(x: rect.maxX, y: rect.minY))
-        path.addLine(to: .init(x: rect.maxX, y: rect.maxY - radius))
-        path.addArc(
-            center: .init(x: rect.maxX - radius, y: rect.maxY - radius),
-            radius: radius,
-            startAngle: .zero,
-            endAngle: .degrees(90),
-            clockwise: false
-        )
-        path.addLine(to: .init(x: rect.minX + radius, y: rect.maxY))
-        path.addArc(
-            center: .init(x: rect.minX + radius, y: rect.maxY - radius),
-            radius: radius,
-            startAngle: .degrees(90),
-            endAngle: .degrees(180),
-            clockwise: false
-        )
-        path.closeSubpath()
-        return path
-    }
 }

@@ -17,30 +17,26 @@
 //  limitations under the License.
 //
 
-import Lottie
 import Onboarding
 import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockPromoView: View {
-        @State private var isAnimating = false
+        private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-promo", withExtension: "mov")
 
         var body: some View {
-            ZStack(alignment: .center) {
+            ZStack(alignment: .top) {
                 OnboardingRebrandingImages.AddToDock.promoBorder
                     .resizable()
-                    .scaledToFit()
-                    .padding(.horizontal, -11)
-                LottieView(
-                    lottieFile: "add-to-dock-promo",
-                    isAnimating: $isAnimating
-                )
-                .tempPlaceholder()
-                .onFirstAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        isAnimating = true
-                    }
+                    .padding(.horizontal, -6)
+                    .padding(.vertical, -7)
+                    .frame(width: 321.0, height: 118.0)
+                if let videoURL = Self.videoURL {
+                    AddToDockVideoPlayer(
+                        url: videoURL,
+                        frameSize: CGSize(width: 300.0, height: 120.0)
+                    )
                 }
             }
         }

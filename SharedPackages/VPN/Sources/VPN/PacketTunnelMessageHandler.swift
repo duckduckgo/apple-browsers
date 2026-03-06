@@ -229,7 +229,10 @@ final class PacketTunnelMessageHandler {
 
     private func handleSetSelectedServer(_ serverName: String?, completionHandler: ((Data?) -> Void)? = nil) {
         Task { [weak self] in
-            guard let self else { return }
+            guard let self else {
+                completionHandler?(nil)
+                return
+            }
 
             guard let serverName else {
                 if case .endpoint = settings.selectedServer {

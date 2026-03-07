@@ -23,10 +23,10 @@
 "auto.restore.screen.description" = "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.";
 
 /* Auto-Restore Screen - Title */
-"auto.restore.screen.title" = "Restore on App re-install";
+"auto.restore.screen.title" = "Restore on App Reinstall";
 
 /* Auto-Restore Settings Row - Label */
-"auto.restore.settings.row.label" = "Restore on App re-install";
+"auto.restore.settings.row.label" = "Restore on App Reinstall";
 
 /* Auto-Restore Settings Row - Off */
 "auto.restore.settings.row.off" = "Off";
@@ -35,7 +35,7 @@
 "auto.restore.settings.row.on" = "On";
 
 /* Auto-Restore - Toggle Label */
-"auto.restore.toggle.label" = "Restore on App re-install";
+"auto.restore.toggle.label" = "Restore on App Reinstall";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Back";

@@ -112,12 +112,12 @@ public struct UserText {
     static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
 
     // Auto-Restore
-    static let autoRestoreSettingsRowLabel = NSLocalizedString("auto.restore.settings.row.label", bundle: Bundle.module, value: "Restore on App re-install", comment: "Auto-Restore Settings Row - Label")
+    static let autoRestoreSettingsRowLabel = NSLocalizedString("auto.restore.settings.row.label", bundle: Bundle.module, value: "Restore on App Reinstall", comment: "Auto-Restore Settings Row - Label")
     static let autoRestoreStatusOn = NSLocalizedString("auto.restore.settings.row.on", bundle: Bundle.module, value: "On", comment: "Auto-Restore Settings Row - On")
     static let autoRestoreStatusOff = NSLocalizedString("auto.restore.settings.row.off", bundle: Bundle.module, value: "Off", comment: "Auto-Restore Settings Row - Off")
-    static let autoRestoreScreenTitle = NSLocalizedString("auto.restore.screen.title", bundle: Bundle.module, value: "Restore on App re-install", comment: "Auto-Restore Screen - Title")
+    static let autoRestoreScreenTitle = NSLocalizedString("auto.restore.screen.title", bundle: Bundle.module, value: "Restore on App Reinstall", comment: "Auto-Restore Screen - Title")
     static let autoRestoreScreenDescription = NSLocalizedString("auto.restore.screen.description", bundle: Bundle.module, value: "If you reinstall the DuckDuckGo app, we'll ask if you want to restore your data on this device.", comment: "Auto-Restore Screen - Description")
-    static let autoRestoreToggleLabel = NSLocalizedString("auto.restore.toggle.label", bundle: Bundle.module, value: "Restore on App re-install", comment: "Auto-Restore - Toggle Label")
+    static let autoRestoreToggleLabel = NSLocalizedString("auto.restore.toggle.label", bundle: Bundle.module, value: "Restore on App Reinstall", comment: "Auto-Restore - Toggle Label")
     static let autoRestoreDescription = NSLocalizedString("auto.restore.description", bundle: Bundle.module, value: "Automatically restore your data on this device if you reinstall the app.", comment: "Auto-Restore - Description")
     static let autoRestoreLearnMore = NSLocalizedString("auto.restore.learn.more", bundle: Bundle.module, value: "Learn More", comment: "Auto-Restore - Learn More Link")
     static let autoRestoreLearnMoreFull = NSLocalizedString(

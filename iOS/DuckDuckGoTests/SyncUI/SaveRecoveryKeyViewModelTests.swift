@@ -31,8 +31,7 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {}
+            autoRestoreProvider: autoRestoreProvider
         )
 
         XCTAssertEqual(autoRestoreProvider.persistedDecisions, [true])
@@ -48,8 +47,7 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {}
+            autoRestoreProvider: autoRestoreProvider
         )
 
         XCTAssertFalse(sut.isAutoRestoreEnabled)
@@ -65,8 +63,7 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {}
+            autoRestoreProvider: autoRestoreProvider
         )
 
         XCTAssertFalse(sut.isAutoRestoreEnabled)
@@ -82,8 +79,7 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {}
+            autoRestoreProvider: autoRestoreProvider
         )
 
         XCTAssertFalse(sut.isAutoRestoreFeatureEnabled)
@@ -99,8 +95,7 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {}
+            autoRestoreProvider: autoRestoreProvider
         )
 
         sut.autoRestoreToggled(true)
@@ -116,8 +111,7 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {}
+            autoRestoreProvider: autoRestoreProvider
         )
 
         sut.autoRestoreToggled(false)
@@ -135,8 +129,7 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
             key: "test-key",
             showRecoveryPDFAction: {},
             onDismiss: {},
-            autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {}
+            autoRestoreProvider: autoRestoreProvider
         )
 
         sut.autoRestoreToggled(false)
@@ -155,8 +148,7 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
             onDismiss: {
                 onDismissCalled = true
             },
-            autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {}
+            autoRestoreProvider: autoRestoreProvider
         )
 
         sut.nextButtonPressed()
@@ -177,7 +169,6 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
                 onDismissCalled = true
             },
             autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {},
             onAutoRestoreToggleOptedOut: {
                 optedOutCalled = true
             }
@@ -202,7 +193,6 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
                 onDismissCalled = true
             },
             autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {},
             onAutoRestoreToggleOptedOut: {
                 optedOutCalled = true
             }
@@ -214,25 +204,6 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
         XCTAssertTrue(onDismissCalled)
     }
 
-    func testWhenPresentLearnMoreCalledThenForwardsAction() {
-        let autoRestoreProvider = MockSyncAutoRestoreHandler()
-        autoRestoreProvider.isAutoRestoreFeatureEnabled = true
-        autoRestoreProvider.existingAutoRestoreDecision = true
-        var presentLearnMoreCalled = false
-        let sut = SaveRecoveryKeyViewModel(
-            key: "test-key",
-            showRecoveryPDFAction: {},
-            onDismiss: {},
-            autoRestoreProvider: autoRestoreProvider,
-            presentLearnMore: {
-                presentLearnMoreCalled = true
-            }
-        )
-
-        sut.presentLearnMore()
-
-        XCTAssertTrue(presentLearnMoreCalled)
-    }
 }
 
 private enum AutoRestoreProviderTestError: Error {

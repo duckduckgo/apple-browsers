@@ -29,10 +29,8 @@ public class SaveRecoveryKeyViewModel: ObservableObject {
     @Published var isAutoRestoreEnabled = false
 
     private let onDismiss: () -> Void
-    private let presentLearnMoreAction: () -> Void
     private let autoRestoreToggleShownAction: () -> Void
     private let autoRestoreToggleOptedOutAction: () -> Void
-    private let autoRestoreToggleLearnMoreAction: () -> Void
     private let autoRestoreProvider: SyncAutoRestoreProviding
 
     public init(
@@ -40,18 +38,14 @@ public class SaveRecoveryKeyViewModel: ObservableObject {
         showRecoveryPDFAction: @escaping () -> Void,
         onDismiss: @escaping () -> Void,
         autoRestoreProvider: SyncAutoRestoreProviding,
-        presentLearnMore: @escaping () -> Void = {},
         onAutoRestoreToggleShown: @escaping () -> Void = {},
-        onAutoRestoreToggleOptedOut: @escaping () -> Void = {},
-        onAutoRestoreToggleLearnMore: @escaping () -> Void = {}
+        onAutoRestoreToggleOptedOut: @escaping () -> Void = {}
     ) {
         self.key = key
         self.showRecoveryPDFAction = showRecoveryPDFAction
         self.onDismiss = onDismiss
-        self.presentLearnMoreAction = presentLearnMore
         self.autoRestoreToggleShownAction = onAutoRestoreToggleShown
         self.autoRestoreToggleOptedOutAction = onAutoRestoreToggleOptedOut
-        self.autoRestoreToggleLearnMoreAction = onAutoRestoreToggleLearnMore
         self.autoRestoreProvider = autoRestoreProvider
         self.isAutoRestoreFeatureEnabled = autoRestoreProvider.isAutoRestoreFeatureEnabled
 
@@ -94,11 +88,6 @@ public class SaveRecoveryKeyViewModel: ObservableObject {
         } catch {
             return
         }
-    }
-
-    func presentLearnMore() {
-        autoRestoreToggleLearnMoreAction()
-        presentLearnMoreAction()
     }
 
 }

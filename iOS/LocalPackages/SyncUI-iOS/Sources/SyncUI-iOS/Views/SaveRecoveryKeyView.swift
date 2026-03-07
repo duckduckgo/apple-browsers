@@ -92,17 +92,6 @@ public struct SaveRecoveryKeyView: View {
         }
     }
 
-    private var autoRestoreLearnMoreText: AttributedString {
-        var text = (try? AttributedString(markdown: UserText.autoRestoreLearnMoreFull)) ?? AttributedString(UserText.autoRestoreLearnMoreFull)
-        text.foregroundColor = Color(designSystemColor: .textSecondary)
-
-        for run in text.runs where run.link != nil {
-            text[run.range].foregroundColor = Color(designSystemColor: .accent)
-        }
-
-        return text
-    }
-
     @ViewBuilder
     func nextButton() -> some View {
         Button {
@@ -169,17 +158,11 @@ public struct SaveRecoveryKeyView: View {
             .padding(.horizontal, 16)
             .background(RoundedRectangle(cornerRadius: 12).foregroundColor(Color(designSystemColor: .backgroundTertiary)))
 
-            Text(autoRestoreLearnMoreText)
+            Text(UserText.autoRestoreLearnMoreFull)
                 .daxCaption()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
                 .padding(.horizontal, 16)
                 .fixedSize(horizontal: false, vertical: true)
-                .environment(\.openURL, OpenURLAction { url in
-                    guard url.scheme == "sync-auto-restore" else {
-                        return .systemAction
-                    }
-                    model.presentLearnMore()
-                    return .handled
-                })
         }
     }
 

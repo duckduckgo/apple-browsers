@@ -34,13 +34,6 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "sync-auto-restore_toggle_learn_more": {
-        "description": "Fired when the user taps Learn More on Save Recovery Key auto-restore content",
-        "owners": ["amddg44"],
-        "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
     "sync-auto-restore_settings_ready_shown": {
         "description": "Fired when the Auto Restore Ready view is displayed in Sync settings",
         "owners": ["amddg44"],

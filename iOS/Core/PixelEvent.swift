@@ -1001,7 +1001,6 @@ extension Pixel {
 
         case syncAutoRestoreToggleShown
         case syncAutoRestoreToggleOptedOut
-        case syncAutoRestoreToggleLearnMore
 
         case syncAutoRestoreSettingsReadyShown
         case syncAutoRestoreSettingsRestoreTapped
@@ -2618,7 +2617,6 @@ extension Pixel.Event {
 
         case .syncAutoRestoreToggleShown: return "sync-auto-restore_toggle_shown"
         case .syncAutoRestoreToggleOptedOut: return "sync-auto-restore_toggle_opted_out"
-        case .syncAutoRestoreToggleLearnMore: return "sync-auto-restore_toggle_learn_more"
 
         case .syncAutoRestoreSettingsReadyShown: return "sync-auto-restore_settings_ready_shown"
         case .syncAutoRestoreSettingsRestoreTapped: return "sync-auto-restore_settings_restore_tapped"

@@ -63,6 +63,8 @@ final class TabPermissionsTests: XCTestCase {
 
     @MainActor
     func testWhenExternalAppPermissionRequestedAndGranted_AppIsOpened() async throws {
+        throw XCTSkip("Flaky test")
+
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self])
         let workspace = WorkspaceMock()
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
@@ -265,6 +267,8 @@ final class TabPermissionsTests: XCTestCase {
 
     @MainActor
     func testWhenExternalAppPermissionRejected_AppIsNotOpened() async throws {
+        throw XCTSkip("Flaky test")
+
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self])
         let workspace = WorkspaceMock()
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)

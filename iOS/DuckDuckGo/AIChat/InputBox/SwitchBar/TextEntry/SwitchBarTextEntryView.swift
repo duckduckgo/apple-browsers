@@ -268,7 +268,7 @@ class SwitchBarTextEntryView: UIView {
         switch currentMode {
         case .search:
             textView.keyboardType = .webSearch
-            textView.returnKeyType = textView.text.isEmpty ? .default : .go
+            textView.returnKeyType = .search
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
             if handler.isUsingFadeOutAnimation {
@@ -532,9 +532,6 @@ class SwitchBarTextEntryView: UIView {
         updateButtonState()
         updateTextViewHeight()
         handler.updateCurrentText(text)
-        if currentMode == .search {
-            textView.returnKeyType = text.isEmpty ? .default : .go
-        }
     }
 
     private func disableAutoCorrectionAndSpellChecking() {
@@ -568,10 +565,6 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updateTextViewHeight()
         handler.updateCurrentText(textView.text ?? "")
         handler.markUserInteraction()
-
-        if currentMode == .search {
-            textView.returnKeyType = textView.text.isEmpty ? .default : .go
-        }
 
         // On iPad, reload input views on each keystroke (old behavior, without fade-out animation)
         // On iPhone, skip reloadInputViews() as it causes the publisher to deliver

@@ -171,7 +171,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func setInputMode(_ mode: TextEntryMode, animated: Bool = true) {
         if !animated {
             swipeContainerManager?.animateProgrammaticModeChanges = false
-            defer { swipeContainerManager?.animateProgrammaticModeChanges = true }
+        }
+        defer {
+            if !animated {
+                swipeContainerManager?.animateProgrammaticModeChanges = true
+            }
         }
         if switchBarHandler.currentToggleState != mode {
             switchBarHandler.setToggleState(mode)

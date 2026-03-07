@@ -107,7 +107,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         guard featureFlagger.isFeatureOn(.unifiedToggleInput) else {
             return devicePlatform.isIphone
         }
-        return devicePlatform.isIphone
+        return false
     }
 
     var isVoiceSearchEnabled: Bool {

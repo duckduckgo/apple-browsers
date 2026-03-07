@@ -172,11 +172,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if !animated {
             swipeContainerManager?.animateProgrammaticModeChanges = false
         }
-        defer {
-            if !animated {
-                swipeContainerManager?.animateProgrammaticModeChanges = true
-            }
-        }
         if switchBarHandler.currentToggleState != mode {
             switchBarHandler.setToggleState(mode)
         }

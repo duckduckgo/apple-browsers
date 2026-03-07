@@ -104,7 +104,10 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     var isUsingFadeOutAnimation: Bool {
-        devicePlatform.isIphone && featureFlagger.isFeatureOn(.unifiedToggleInput)
+        guard featureFlagger.isFeatureOn(.unifiedToggleInput) else {
+            return devicePlatform.isIphone
+        }
+        return devicePlatform.isIphone
     }
 
     var isVoiceSearchEnabled: Bool {

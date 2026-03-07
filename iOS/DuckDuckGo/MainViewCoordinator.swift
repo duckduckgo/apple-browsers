@@ -266,8 +266,7 @@ class MainViewCoordinator {
             self.unifiedToggleInputContainer.isHidden = true
             self.unifiedToggleInputContainer.alpha = 1
             self.navigationBarCollectionView.isUserInteractionEnabled = true
-            self.statusBackground.backgroundColor = self.inlineEditingStatusBackgroundColor
-            self.inlineEditingStatusBackgroundColor = nil
+            self.statusBackground.backgroundColor = savedColor
             self.navigationBarContainer.backgroundColor = nil
             self.suggestionTrayContainer.backgroundColor = .clear
         }

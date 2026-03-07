@@ -48,7 +48,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     }
 
     let isToggleEnabled: Bool
-    private(set) lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+    lazy var handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
 
     // MARK: - Public API
 

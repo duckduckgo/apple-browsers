@@ -22,6 +22,7 @@ import Combine
 import XCTest
 @testable import DuckDuckGo
 
+@MainActor
 final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     private var sut: UnifiedToggleInputCoordinator!
@@ -30,7 +31,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = UnifiedToggleInputCoordinator()
+        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true)
         mockDelegate = MockUnifiedToggleInputDelegate()
         sut.delegate = mockDelegate
     }
@@ -55,7 +56,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_showCollapsed_setsDisplayState() {
         sut.showCollapsed()
-        XCTAssertEqual(sut.displayState, .collapsed)
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
     func test_showCollapsed_emitsIntent() {
@@ -72,7 +73,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_showExpanded_setsDisplayState() {
         sut.showExpanded()
-        XCTAssertEqual(sut.displayState, .expanded)
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
     }
 
     func test_showExpanded_emitsIntent() {
@@ -161,7 +162,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_collapsedTap_setsExpandedState() {
         sut.unifiedToggleInputVCDidTapWhileCollapsed(sut.viewController)
-        XCTAssertEqual(sut.displayState, .expanded)
+        XCTAssertEqual(sut.displayState, .aiTab(.expanded))
     }
 
     func test_collapsedTap_usesAIChatMode() {
@@ -229,7 +230,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_submitAIChat_noBoundScript_collapses() {
         sut.showExpanded()
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
-        XCTAssertEqual(sut.displayState, .collapsed)
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
     func test_submitAIChat_noBoundScript_clearsTextState() {
@@ -267,7 +268,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.showExpanded()
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
-        XCTAssertEqual(sut.displayState, .collapsed)
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
     }
 
     // MARK: - VC Delegate: Voice
@@ -276,10 +277,158 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVCDidTapVoice(sut.viewController)
         XCTAssertTrue(mockDelegate.didRequestVoiceSearch)
     }
+
+    // MARK: - VC Delegate: Dismiss
+
+    func test_dismissTap_deactivatesInlineEditing() {
+        sut.activateInlineEditing()
+        XCTAssertTrue(sut.isInlineEditingActive)
+
+        sut.unifiedToggleInputVCDidTapDismiss(sut.viewController)
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.isInlineEditingActive)
+    }
+
+    // MARK: - Inline Editing Lifecycle
+
+    func test_activateInlineEditing_setsDisplayState() {
+        sut.activateInlineEditing()
+        XCTAssertEqual(sut.displayState, .inline(.active))
+        XCTAssertTrue(sut.isInlineEditingActive)
+    }
+
+    func test_activateInlineEditing_emitsIntent() {
+        let exp = expectation(description: "showInlineEditing intent emitted")
+        sut.intentPublisher
+            .sink { intent in
+                if case .showInlineEditing = intent { exp.fulfill() }
+            }
+            .store(in: &cancellables)
+
+        sut.activateInlineEditing()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_activateInlineEditing_defaultsToSearchMode() {
+        sut.activateInlineEditing()
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_activateInlineEditing_respectsRequestedMode() {
+        sut.activateInlineEditing(inputMode: .aiChat)
+        XCTAssertEqual(sut.inputMode, .aiChat)
+    }
+
+    func test_activateInlineEditing_withPrefilledText_setsPrefilledState() {
+        sut.activateInlineEditing(prefilledText: "test query")
+        XCTAssertEqual(sut.textState, .prefilledSelected)
+    }
+
+    func test_activateInlineEditing_toggleDisabled_forcesSearchMode() {
+        sut.updateToggleEnabled(false)
+        sut.activateInlineEditing(inputMode: .aiChat)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_deactivateInlineEditing_resetsState() {
+        sut.activateInlineEditing(prefilledText: "test")
+        sut.deactivateInlineEditing()
+
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertEqual(sut.textState, .empty)
+        XCTAssertFalse(sut.isInlineEditingActive)
+    }
+
+    func test_deactivateInlineEditing_emitsIntent() {
+        sut.activateInlineEditing()
+
+        let exp = expectation(description: "hideInlineEditing intent emitted")
+        sut.intentPublisher
+            .sink { if $0 == .hideInlineEditing { exp.fulfill() } }
+            .store(in: &cancellables)
+
+        sut.deactivateInlineEditing()
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_deactivateInlineEditing_guardsWhenNotActive() {
+        let exp = expectation(description: "no intent emitted")
+        exp.isInverted = true
+        sut.intentPublisher
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.deactivateInlineEditing()
+        waitForExpectations(timeout: 0.1)
+    }
+
+    // MARK: - Input Mode Management
+
+    func test_updateInputMode_setsMode() {
+        sut.updateInputMode(.search, animated: false)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_updateInputMode_emitsMode() {
+        let exp = expectation(description: "modeChangePublisher emits")
+        sut.modeChangePublisher
+            .sink { XCTAssertEqual($0, .search); exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.updateInputMode(.search, animated: false)
+        waitForExpectations(timeout: 1)
+    }
+
+    func test_updateInputMode_toggleDisabled_forcesSearch() {
+        sut.updateToggleEnabled(false)
+        sut.updateInputMode(.aiChat, animated: false)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    // MARK: - Toggle Enabled
+
+    func test_updateToggleEnabled_setsFlag() {
+        sut.updateToggleEnabled(false)
+        XCTAssertFalse(sut.isToggleEnabled)
+    }
+
+    func test_updateToggleEnabled_false_forcesSearchModeWhenInline() {
+        sut.activateInlineEditing(inputMode: .aiChat)
+        sut.updateToggleEnabled(false)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_updateToggleEnabled_noChangeIsNoOp() {
+        let exp = expectation(description: "no mode change emitted")
+        exp.isInverted = true
+        sut.modeChangePublisher
+            .sink { _ in exp.fulfill() }
+            .store(in: &cancellables)
+
+        sut.updateToggleEnabled(true)
+        waitForExpectations(timeout: 0.1)
+    }
+
+    // MARK: - Submit From Inline Editing
+
+    func test_submitSearch_fromInlineEditing_deactivates() {
+        sut.activateInlineEditing(inputMode: .search)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .search)
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.isInlineEditingActive)
+    }
+
+    func test_submitAIChat_fromInlineEditing_deactivates() {
+        sut.activateInlineEditing(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.isInlineEditingActive)
+    }
 }
 
 // MARK: - Mock Delegate
 
+@MainActor
 private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedPrompt: String?
     var submittedQuery: String?

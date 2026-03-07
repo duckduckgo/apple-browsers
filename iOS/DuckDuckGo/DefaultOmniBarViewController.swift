@@ -39,6 +39,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private var animateNextEditingTransition = true
     private var isSuppressingKeyboardTransfer = false
 
+    weak var unifiedToggleInputInlineActivating: UnifiedToggleInputInlineActivating?
+
     /// Manages shared text state for the iPad duck.ai ↔ search mode toggle.
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
 
@@ -100,6 +102,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return false
         }
 
+        if unifiedToggleInputInlineActivating?.activateInlineEditingIfNeeded(
+            currentText: extractCurrentTextForEditing(textField)
+        ) == .intercept {
+            return false
+        }
+
         if dependencies.aiChatAddressBarExperience.shouldUseExperimentalEditingState {
             if textFieldTapped {
                 omniDelegate?.onExperimentalAddressBarTapped()
@@ -140,6 +148,14 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             self.omniBarView.isActiveState = false
             self.omniBarView.layoutIfNeeded()
         }
+    }
+
+    private func extractCurrentTextForEditing(_ textField: UITextField) -> String? {
+        guard let text = textField.text, !text.isEmpty else { return nil }
+        if let url = URL(string: text), url.host != nil {
+            return url.absoluteString
+        }
+        return text
     }
 
     // MARK: - Editing Lifecycle Overrides

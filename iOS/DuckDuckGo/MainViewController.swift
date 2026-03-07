@@ -994,8 +994,10 @@ class MainViewController: UIViewController {
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
-            viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
-                    
+            if shouldResetNavBarContainerBottomForTopPosition() {
+                viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
+            }
+
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
         }
@@ -1003,6 +1005,12 @@ class MainViewController: UIViewController {
         omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
+    }
+
+    private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
+        guard let state = unifiedToggleInputCoordinator?.displayState else { return true }
+        if case .hidden = state { return true }
+        return false
     }
 
     private func updateChromeForDuckPlayer() {
@@ -1063,7 +1071,16 @@ class MainViewController: UIViewController {
         if self.appSettings.currentAddressBarPosition.isBottom {
             let intersection = safeAreaFrame.intersection(keyboardFrameInView)
             let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + omniBarHeight : 0
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
+            let isAITabDisplayState: Bool
+            if let displayState = unifiedToggleInputCoordinator?.displayState, case .aiTab = displayState {
+                isAITabDisplayState = true
+            } else {
+                isAITabDisplayState = false
+            }
+            if unifiedToggleInputCoordinator?.isInlineEditingActive != true,
+               !isAITabDisplayState {
+                self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
+            }
 
             // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
             if let currentTab {
@@ -1831,6 +1848,7 @@ class MainViewController: UIViewController {
             }
 
             ViewHighlighter.updatePositions()
+            self.recomputeInlineEditingHeightIfNeeded()
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
@@ -2785,7 +2803,7 @@ extension MainViewController: BrowserChromeDelegate {
         let multiplier = viewCoordinator.toolbar.isHidden ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
 
-        if viewCoordinator.addressBarPosition.isBottom {
+        if viewCoordinator.addressBarPosition.isBottom, !viewCoordinator.isNavigationBarContainerBottomKeyboardBased {
             // Push the navigation bar down independently so the content container
             // (which is pinned to toolbar.top) doesn't extend past the screen bottom.
             let navBarHeight = viewCoordinator.navigationBarContainer.frame.height

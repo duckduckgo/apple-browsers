@@ -373,7 +373,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 }
 
                 self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
-                self.updateSectionTitle()
             }
             .store(in: &cancellables)
 

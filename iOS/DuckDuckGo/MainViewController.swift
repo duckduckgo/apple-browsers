@@ -3974,24 +3974,6 @@ extension MainViewController: TabSwitcherDelegate {
         }
     }
 
-    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {
-        if tabManager.currentTabsModel.count == 1 { // TODO: - Customize based on browsing mode
-            // Make sure UI updates finish before dimissing the view.
-            // However, as a result, viewDidAppear on the home controller thinks the tab 
-            //  switcher is still presented.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                tabSwitcher.dismiss(animated: true) {
-                    self.newTabPageViewController?.viewDidAppear(true)
-                }
-            }
-        }
-        closeTab(tab)
-        
-        if daxDialogsManager.shouldShowFireButtonPulse {
-            showFireButtonPulse()
-        }
-    }
-
     func closeTab(_ tab: Tab,
                   behavior: TabClosingBehavior = .onlyClose,
                   clearTabHistory: Bool = true) {

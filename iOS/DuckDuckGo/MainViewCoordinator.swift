@@ -222,9 +222,7 @@ class MainViewCoordinator {
         unifiedToggleInputContainer.alpha = 0
         unifiedToggleInputContainer.isHidden = false
         unifiedToggleInputContainer.backgroundColor = .clear
-        if inlineEditingStatusBackgroundColor == nil {
-            inlineEditingStatusBackgroundColor = statusBackground.backgroundColor
-        }
+        inlineEditingStatusBackgroundColor = statusBackground.backgroundColor
         let inlineBackground = UIColor(designSystemColor: .panel)
         statusBackground.backgroundColor = inlineBackground
         navigationBarContainer.backgroundColor = inlineBackground
@@ -261,7 +259,7 @@ class MainViewCoordinator {
             self.statusBackground.backgroundColor = savedColor
             self.navigationBarContainer.backgroundColor = nil
             self.suggestionTrayContainer.backgroundColor = .clear
-            
+
             guard finished else { return }
             if self.isNavigationChromeHidden {
                 self.navigationBarCollectionView.alpha = 0
@@ -272,6 +270,10 @@ class MainViewCoordinator {
             self.unifiedToggleInputContainer.isHidden = true
             self.unifiedToggleInputContainer.alpha = 1
             self.navigationBarCollectionView.isUserInteractionEnabled = true
+            self.statusBackground.backgroundColor = self.inlineEditingStatusBackgroundColor
+            self.inlineEditingStatusBackgroundColor = nil
+            self.navigationBarContainer.backgroundColor = nil
+            self.suggestionTrayContainer.backgroundColor = .clear
         }
     }
 

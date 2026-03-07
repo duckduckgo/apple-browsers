@@ -42,7 +42,6 @@ final class UnifiedInputTopHeaderView: UIView {
     private var titleTrailingToContainerConstraint: NSLayoutConstraint!
 
     private lazy var dismissButton: UIButton = {
-        #if compiler(>=6.2)
         if #available(iOS 26, *) {
             var config = UIButton.Configuration.glass()
             config.image = UIImage(systemName: "xmark")
@@ -50,9 +49,9 @@ final class UnifiedInputTopHeaderView: UIView {
             let button = UIButton(configuration: config)
             button.translatesAutoresizingMaskIntoConstraints = false
             return button
+        } else {
+            return makePreiOS26DismissButton()
         }
-        #endif
-        return makePreiOS26DismissButton()
     }()
 
     override init(frame: CGRect) {

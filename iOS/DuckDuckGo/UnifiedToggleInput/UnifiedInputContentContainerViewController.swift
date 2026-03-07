@@ -171,12 +171,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func setInputMode(_ mode: TextEntryMode, animated: Bool = true) {
         if !animated {
             swipeContainerManager?.animateProgrammaticModeChanges = false
+            defer { swipeContainerManager?.animateProgrammaticModeChanges = true }
         }
         if switchBarHandler.currentToggleState != mode {
             switchBarHandler.setToggleState(mode)
         }
         swipeContainerManager?.syncVisibleMode(animated: animated)
-        swipeContainerManager?.animateProgrammaticModeChanges = true
         updateSectionTitle()
     }
 
@@ -373,6 +373,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 }
 
                 self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
+                self.updateSectionTitle()
             }
             .store(in: &cancellables)
 

@@ -299,12 +299,10 @@ jobs:
 
         for attempt in $(seq 1 $max_attempts); do
           echo "Attempt $attempt of $max_attempts"
-          xcodebuild -resolvePackageDependencies \
+          if xcodebuild -resolvePackageDependencies \
             -scheme "macOS UI Tests CI" \
             -derivedDataPath DerivedData \
-            2>&1 | tee resolve.log || true
-
-          if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
+            2>&1 | tee resolve.log; then
             echo "Package resolution succeeded"
             exit 0
           fi

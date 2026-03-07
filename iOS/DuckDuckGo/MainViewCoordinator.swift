@@ -258,6 +258,10 @@ class MainViewCoordinator {
             self.constraints.navigationBarContainerHeight.constant = self.standardNavigationBarContainerHeight
             self.superview.layoutIfNeeded()
         } completion: { finished in
+            self.statusBackground.backgroundColor = savedColor
+            self.navigationBarContainer.backgroundColor = nil
+            self.suggestionTrayContainer.backgroundColor = .clear
+            
             guard finished else { return }
             if self.isNavigationChromeHidden {
                 self.navigationBarCollectionView.alpha = 0
@@ -268,9 +272,6 @@ class MainViewCoordinator {
             self.unifiedToggleInputContainer.isHidden = true
             self.unifiedToggleInputContainer.alpha = 1
             self.navigationBarCollectionView.isUserInteractionEnabled = true
-            self.statusBackground.backgroundColor = savedColor
-            self.navigationBarContainer.backgroundColor = nil
-            self.suggestionTrayContainer.backgroundColor = .clear
         }
     }
 

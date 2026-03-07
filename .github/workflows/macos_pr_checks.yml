@@ -360,7 +360,7 @@ jobs:
 
     - name: Upload failed unit tests log
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-unittests-xcodebuild.log
         path: macOS/${{ matrix.flavor }}-unittests-xcodebuild.log
@@ -368,7 +368,7 @@ jobs:
 
     - name: Upload failed unit tests xcresult
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-unittests.xcresult
         path: macOS/${{ matrix.flavor }}-unittests.xcresult
@@ -376,7 +376,7 @@ jobs:
 
     - name: Upload failed integration tests log
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
         path: macOS/${{ matrix.flavor }}-integrationtests-xcodebuild.log
@@ -384,7 +384,7 @@ jobs:
 
     - name: Upload failed integration tests xcresult
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-integrationtests.xcresult
         path: macOS/${{ matrix.flavor }}-integrationtests.xcresult

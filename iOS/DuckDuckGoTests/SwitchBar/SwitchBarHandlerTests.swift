@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import PrivacyConfig
 @testable import Core
 @testable import DuckDuckGo
 import Combine

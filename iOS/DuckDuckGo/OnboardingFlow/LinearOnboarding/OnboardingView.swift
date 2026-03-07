@@ -140,7 +140,7 @@ struct OnboardingView: View {
                     animateBrowserComparisonViewState(isResumingOnboarding: false)
                 },
                 skipAction: {
-                    model.showSkipOnboardingDialog()
+                    model.restorePromptSkipAction()
                 }
             )
             .onboardingDaxDialogStyle()

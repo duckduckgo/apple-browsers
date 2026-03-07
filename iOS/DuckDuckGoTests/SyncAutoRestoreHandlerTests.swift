@@ -110,16 +110,23 @@ final class SyncAutoRestoreHandlerTests: XCTestCase {
         XCTAssertTrue(sut.isEligibleForAutoRestore())
     }
 
-    func testRestoreFromPreservedAccountWhenSyncThrowsSwallowsError() async {
+    func testRestoreFromPreservedAccountWhenSyncThrowsThenThrowsError() async {
         mockSyncService.enableSyncFromPreservedAccountError = HandlerTestError.expected
 
-        await sut.restoreFromPreservedAccount()
-
-        XCTAssertEqual(mockSyncService.enableSyncFromPreservedAccountCallCount, 1)
+        do {
+            try await sut.restoreFromPreservedAccount(source: .settings)
+            XCTFail("Expected restore to throw")
+        } catch {
+            XCTAssertEqual(mockSyncService.enableSyncFromPreservedAccountCallCount, 1)
+        }
     }
 
     func testRestoreFromPreservedAccountWhenSyncSucceedsCallsThrough() async {
-        await sut.restoreFromPreservedAccount()
+        do {
+            try await sut.restoreFromPreservedAccount(source: .settings)
+        } catch {
+            XCTFail("Expected restore to succeed")
+        }
 
         XCTAssertEqual(mockSyncService.enableSyncFromPreservedAccountCallCount, 1)
     }

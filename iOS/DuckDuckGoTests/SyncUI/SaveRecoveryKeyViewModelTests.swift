@@ -145,6 +145,75 @@ final class SaveRecoveryKeyViewModelTests: XCTestCase {
         XCTAssertTrue(autoRestoreProvider.persistedDecisions.isEmpty)
     }
 
+    func testWhenNextButtonPressedThenDismissesFlow() {
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = false
+        var onDismissCalled = false
+        let sut = SaveRecoveryKeyViewModel(
+            key: "test-key",
+            showRecoveryPDFAction: {},
+            onDismiss: {
+                onDismissCalled = true
+            },
+            autoRestoreProvider: autoRestoreProvider,
+            presentLearnMore: {}
+        )
+
+        sut.nextButtonPressed()
+
+        XCTAssertTrue(onDismissCalled)
+    }
+
+    func testWhenNextButtonPressedAndAutoRestoreIsDisabledThenFiresOptOutAndDismissesFlow() {
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = true
+        autoRestoreProvider.existingAutoRestoreDecision = false
+        var onDismissCalled = false
+        var optedOutCalled = false
+        let sut = SaveRecoveryKeyViewModel(
+            key: "test-key",
+            showRecoveryPDFAction: {},
+            onDismiss: {
+                onDismissCalled = true
+            },
+            autoRestoreProvider: autoRestoreProvider,
+            presentLearnMore: {},
+            onAutoRestoreToggleOptedOut: {
+                optedOutCalled = true
+            }
+        )
+
+        sut.nextButtonPressed()
+
+        XCTAssertTrue(optedOutCalled)
+        XCTAssertTrue(onDismissCalled)
+    }
+
+    func testWhenNextButtonPressedAndAutoRestoreIsEnabledThenDoesNotFireOptOutAndDismissesFlow() {
+        let autoRestoreProvider = MockSyncAutoRestoreHandler()
+        autoRestoreProvider.isAutoRestoreFeatureEnabled = true
+        autoRestoreProvider.existingAutoRestoreDecision = true
+        var onDismissCalled = false
+        var optedOutCalled = false
+        let sut = SaveRecoveryKeyViewModel(
+            key: "test-key",
+            showRecoveryPDFAction: {},
+            onDismiss: {
+                onDismissCalled = true
+            },
+            autoRestoreProvider: autoRestoreProvider,
+            presentLearnMore: {},
+            onAutoRestoreToggleOptedOut: {
+                optedOutCalled = true
+            }
+        )
+
+        sut.nextButtonPressed()
+
+        XCTAssertFalse(optedOutCalled)
+        XCTAssertTrue(onDismissCalled)
+    }
+
     func testWhenPresentLearnMoreCalledThenForwardsAction() {
         let autoRestoreProvider = MockSyncAutoRestoreHandler()
         autoRestoreProvider.isAutoRestoreFeatureEnabled = true

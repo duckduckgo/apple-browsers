@@ -53,7 +53,7 @@ struct OnboardingRestorePromptHandler: OnboardingRestorePromptHandling {
             return
         }
         Task {
-            await syncAutoRestoreHandler.restoreFromPreservedAccount()
+            try? await syncAutoRestoreHandler.restoreFromPreservedAccount(source: .onboarding)
         }
     }
 }

@@ -24,12 +24,15 @@ public class SaveRecoveryKeyViewModel: ObservableObject {
 
     let key: String
     let showRecoveryPDFAction: () -> Void
-    let onDismiss: () -> Void
     let isAutoRestoreFeatureEnabled: Bool
 
     @Published var isAutoRestoreEnabled = false
 
+    private let onDismiss: () -> Void
     private let presentLearnMoreAction: () -> Void
+    private let autoRestoreToggleShownAction: () -> Void
+    private let autoRestoreToggleOptedOutAction: () -> Void
+    private let autoRestoreToggleLearnMoreAction: () -> Void
     private let autoRestoreProvider: SyncAutoRestoreProviding
 
     public init(
@@ -37,12 +40,18 @@ public class SaveRecoveryKeyViewModel: ObservableObject {
         showRecoveryPDFAction: @escaping () -> Void,
         onDismiss: @escaping () -> Void,
         autoRestoreProvider: SyncAutoRestoreProviding,
-        presentLearnMore: @escaping () -> Void = {}
+        presentLearnMore: @escaping () -> Void = {},
+        onAutoRestoreToggleShown: @escaping () -> Void = {},
+        onAutoRestoreToggleOptedOut: @escaping () -> Void = {},
+        onAutoRestoreToggleLearnMore: @escaping () -> Void = {}
     ) {
         self.key = key
         self.showRecoveryPDFAction = showRecoveryPDFAction
         self.onDismiss = onDismiss
         self.presentLearnMoreAction = presentLearnMore
+        self.autoRestoreToggleShownAction = onAutoRestoreToggleShown
+        self.autoRestoreToggleOptedOutAction = onAutoRestoreToggleOptedOut
+        self.autoRestoreToggleLearnMoreAction = onAutoRestoreToggleLearnMore
         self.autoRestoreProvider = autoRestoreProvider
         self.isAutoRestoreFeatureEnabled = autoRestoreProvider.isAutoRestoreFeatureEnabled
 
@@ -64,7 +73,15 @@ public class SaveRecoveryKeyViewModel: ObservableObject {
         UIPasteboard.general.string = key
     }
 
-    func dismissed() {
+    func autoRestoreViewShown() {
+        guard isAutoRestoreFeatureEnabled else { return }
+        autoRestoreToggleShownAction()
+    }
+
+    func nextButtonPressed() {
+        if isAutoRestoreFeatureEnabled && !isAutoRestoreEnabled {
+            autoRestoreToggleOptedOutAction()
+        }
         onDismiss()
     }
 
@@ -80,6 +97,7 @@ public class SaveRecoveryKeyViewModel: ObservableObject {
     }
 
     func presentLearnMore() {
+        autoRestoreToggleLearnMoreAction()
         presentLearnMoreAction()
     }
 

@@ -17,8 +17,14 @@
 //  limitations under the License.
 //
 
+import Core
 import DDGSync
 import SyncUI_iOS
+
+enum SyncAutoRestorePixelSource: String {
+    case onboarding
+    case settings
+}
 
 protocol SyncAutoRestoreSyncing {
     var account: SyncAccount? { get }
@@ -31,7 +37,7 @@ extension DDGSync: SyncAutoRestoreSyncing {}
 protocol SyncAutoRestoreHandling: SyncAutoRestoreProviding {
     func clearDecision()
     func isEligibleForAutoRestore() -> Bool
-    func restoreFromPreservedAccount() async
+    func restoreFromPreservedAccount(source: SyncAutoRestorePixelSource) async throws
 }
 
 final class SyncAutoRestoreHandler: SyncAutoRestoreHandling {
@@ -65,8 +71,14 @@ final class SyncAutoRestoreHandler: SyncAutoRestoreHandling {
         evaluateAutoRestoreEligibility()
     }
 
-    func restoreFromPreservedAccount() async {
-        try? await syncService.enableSyncFromPreservedAccount()
+    func restoreFromPreservedAccount(source: SyncAutoRestorePixelSource) async throws {
+        do {
+            try await syncService.enableSyncFromPreservedAccount()
+            Pixel.fire(pixel: .syncAutoRestoreSuccess, withAdditionalParameters: [PixelParameters.source: source.rawValue])
+        } catch {
+            Pixel.fire(pixel: .syncAutoRestoreFailure, error: error, withAdditionalParameters: [PixelParameters.source: source.rawValue])
+            throw error
+        }
     }
 
     private func evaluateAutoRestoreEligibility() -> Bool {

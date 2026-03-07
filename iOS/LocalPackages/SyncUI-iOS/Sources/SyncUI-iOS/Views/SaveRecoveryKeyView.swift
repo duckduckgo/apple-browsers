@@ -106,8 +106,8 @@ public struct SaveRecoveryKeyView: View {
     @ViewBuilder
     func nextButton() -> some View {
         Button {
+            model.nextButtonPressed()
             presentation.wrappedValue.dismiss()
-            model.onDismiss()
         } label: {
             Text(UserText.nextButton)
         }
@@ -203,6 +203,9 @@ public struct SaveRecoveryKeyView: View {
             mainContent()
         } foregroundContent: {
             nextButton()
+        }
+        .onAppear {
+            model.autoRestoreViewShown()
         }
         .background(Color(designSystemColor: .backgroundSheets))
     }

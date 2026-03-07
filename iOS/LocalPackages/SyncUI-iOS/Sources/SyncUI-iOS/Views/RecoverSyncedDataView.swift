@@ -65,6 +65,9 @@ public struct RecoverSyncedDataView: View {
             .padding(.horizontal, 30)
             .padding(.bottom, 8)
         }
+        .onAppear {
+            model.autoRestoreManualRecoveryShown()
+        }
         .background(Color(designSystemColor: .backgroundSheets))
     }
 }

@@ -47,5 +47,8 @@ struct AutoRestoreSettingsView: View {
         .navigationTitle(UserText.autoRestoreScreenTitle)
         .navigationBarTitleDisplayMode(.inline)
         .applyListStyle()
+        .onAppear {
+            model.autoRestoreSettingsPageShown()
+        }
     }
 }

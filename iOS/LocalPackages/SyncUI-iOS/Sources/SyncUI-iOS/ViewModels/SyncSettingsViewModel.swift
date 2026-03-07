@@ -45,6 +45,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func launchAutofillCreditCardsViewController()
     func showOtherPlatformLinks()
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource)
+    func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
 
     var syncBookmarksPausedTitle: String? { get }
@@ -102,6 +103,14 @@ public class SyncSettingsViewModel: ObservableObject {
         case notActivated = "not_activated"
         case activating
         case activated
+    }
+
+    public enum AutoRestorePixelEvent {
+        case settingsPageShown
+        case settingsPageToggleChanged(enabled: Bool)
+        case manualRecoveryShown
+        case readyRestoreTapped
+        case readySkipRestoreTapped
     }
 
     public enum SyncSetupEntryPoint: Equatable {
@@ -217,6 +226,7 @@ public class SyncSettingsViewModel: ObservableObject {
             }
 
             self.isAutoRestoreEnabled = enabled
+            self.delegate?.fireAutoRestorePixel(event: .settingsPageToggleChanged(enabled: enabled))
         }
     }
 
@@ -228,6 +238,14 @@ public class SyncSettingsViewModel: ObservableObject {
         }
 
         isAutoRestoreEnabled = autoRestoreProvider.existingDecision() == true
+    }
+
+    func autoRestoreSettingsPageShown() {
+        delegate?.fireAutoRestorePixel(event: .settingsPageShown)
+    }
+
+    func autoRestoreManualRecoveryShown() {
+        delegate?.fireAutoRestorePixel(event: .manualRecoveryShown)
     }
 
     func disableSync() {
@@ -378,12 +396,14 @@ public class SyncSettingsViewModel: ObservableObject {
             assertionFailure("Secondary action fired without pending continuation")
             return
         }
+        delegate?.fireAutoRestorePixel(event: .readySkipRestoreTapped)
         clearPendingPreservedAccountContinuation()
         delegate?.continueAfterPreservedAccountRemoval(continuation)
     }
 
     public func startAutoRestore() {
         Task { @MainActor in
+            delegate?.fireAutoRestorePixel(event: .readyRestoreTapped)
             guard await commonAuthenticate() else { return }
             clearPendingPreservedAccountContinuation()
             delegate?.showRecoveringDataAutoRestore()
@@ -427,5 +447,8 @@ public class SyncSettingsViewModel: ObservableObject {
     public var syncCreditCardsPausedButtonTitle: String? {
         delegate?.syncCreditCardsPausedButtonTitle
     }
+}
 
+public extension SyncManagementViewModelDelegate {
+    func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
 }

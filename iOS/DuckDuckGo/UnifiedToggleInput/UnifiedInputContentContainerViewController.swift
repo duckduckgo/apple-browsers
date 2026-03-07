@@ -176,6 +176,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             switchBarHandler.setToggleState(mode)
         }
         swipeContainerManager?.syncVisibleMode(animated: animated)
+        swipeContainerManager?.animateProgrammaticModeChanges = true
         updateSectionTitle()
     }
 

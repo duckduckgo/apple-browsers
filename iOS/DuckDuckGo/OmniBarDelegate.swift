@@ -119,7 +119,7 @@ protocol OmniBarDelegate: AnyObject {
 
     // MARK: - Escape Hatch
     func escapeHatchForEditingState() -> EscapeHatchModel?
-    func onSwitchTabToIndex(_ index: Int)
+    func onSwitchToTabPosition(_ position: TabPosition)
 
     /// When true, the omnibar editing-state transition uses the new behaviour (opaque from frame 0, single logo). Gated by showNTPAfterIdleReturn.
     func useNewOmnibarTransitionBehaviour() -> Bool
@@ -203,7 +203,7 @@ extension OmniBarDelegate {
         completion()
     }
 
-    func onSwitchTabToIndex(_ index: Int) {}
+    func onSwitchToTabPosition(_ position: TabPosition) {}
 
     func escapeHatchForEditingState() -> EscapeHatchModel? {
         nil

@@ -135,7 +135,7 @@ private enum Metrics {
             subtitle: "en.wikipedia.org/wiki/Tokamak",
             isAITab: false,
             domain: "en.wikipedia.org",
-            targetTabIndex: 0
+            targetTabPosition: TabPosition(mode: .normal, index: 0)
         ),
         onTap: {}
     )
@@ -150,7 +150,7 @@ private enum Metrics {
             subtitle: "Duck.ai",
             isAITab: true,
             domain: nil,
-            targetTabIndex: 0
+            targetTabPosition: TabPosition(mode: .normal, index: 0)
         ),
         onTap: {}
     )

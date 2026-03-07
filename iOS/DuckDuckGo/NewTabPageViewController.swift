@@ -101,10 +101,10 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         newTabPageViewModel.escapeHatch = model
         if let model {
-            let index = model.targetTabIndex
+            let position = model.targetTabPosition
             newTabPageViewModel.onEscapeHatchTap = { [weak self] in
                 guard let self else { return }
-                self.delegate?.newTabPageDidRequestSwitchToTab(self, index: index)
+                self.delegate?.newTabPageDidRequestSwitchToTab(self, position: position)
             }
         } else {
             newTabPageViewModel.onEscapeHatchTap = nil

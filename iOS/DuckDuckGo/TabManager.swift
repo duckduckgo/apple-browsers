@@ -65,6 +65,11 @@ protocol TrackerAnimationSuppressing {
     @MainActor func applyTrackerAnimationSuppressionBasedOnLaunchSource()
 }
 
+struct TabPosition: Equatable {
+    let mode: BrowsingMode
+    let index: Int
+}
+
 class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     private let tabsModelProvider: TabsModelProviding
@@ -208,6 +213,34 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.webExtensionManager = manager
     }
     
+    var currentPosition: TabPosition {
+        TabPosition(mode: currentBrowsingMode, index: currentTabsModel.currentIndex)
+    }
+
+    func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
+        switch mode {
+        case .fire: return tabsModelProvider.fireModeTabsModel
+        case .normal: return tabsModelProvider.normalTabsModel
+        }
+    }
+    
+    func position(for tab: Tab) -> TabPosition? {
+        let mode: BrowsingMode = tab.fireTab ? .fire : .normal
+        guard let index = tabsModel(for: mode).indexOf(tab: tab) else { return nil }
+        return TabPosition(mode: mode, index: index)
+    }
+    
+    func tabAtPosition(_ position: TabPosition) -> Tab? {
+        return tabsModel(for: position.mode).safeGetTabAt(position.index)
+    }
+
+    @MainActor
+    func apply(_ position: TabPosition) {
+        setBrowsingMode(position.mode)
+        currentTabsModel.select(tabAt: position.index)
+        save()
+    }
+
     @MainActor
     func setBrowsingMode(_ mode: BrowsingMode) {
         guard mode != currentBrowsingMode else {

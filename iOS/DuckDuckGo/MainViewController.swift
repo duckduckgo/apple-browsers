@@ -1218,14 +1218,14 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.omniDelegate = self
     }
     
-    private func makeEscapeHatchModel(from tab: Tab, targetTabIndex: Int) -> EscapeHatchModel? {
+    private func makeEscapeHatchModel(from tab: Tab, targetTabPosition: TabPosition) -> EscapeHatchModel? {
         if tab.isAITab {
             return EscapeHatchModel(
                 title: UserText.omnibarFullAIChatModeDisplayTitle,
                 subtitle: "Duck.ai",
                 isAITab: true,
                 domain: nil,
-                targetTabIndex: targetTabIndex
+                targetTabPosition: targetTabPosition
             )
         }
         if let link = tab.link {
@@ -1235,34 +1235,35 @@ class MainViewController: UIViewController {
                 subtitle: subtitle,
                 isAITab: false,
                 domain: link.url.host,
-                targetTabIndex: targetTabIndex
+                targetTabPosition: targetTabPosition
             )
         }
         return nil
     }
 
-    private func buildEscapeHatch(tabSwitchedFromIndex: Int? = nil) -> EscapeHatchModel? {
+    // TODO: - Adjust this to support cross-mode hatches
+    private func buildEscapeHatch(previousTab: TabViewController? = nil) -> EscapeHatchModel? {
         guard idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else {
             return nil
         }
         let tabs = tabManager.currentTabsModel.tabs
-        let currentIndex = tabManager.currentTabsModel.currentIndex
-        let targetIndex: Int?
-        if let fromIndex = tabSwitchedFromIndex,
-           tabs.indices.contains(fromIndex),
-           fromIndex != currentIndex {
-            targetIndex = fromIndex
-        } else if tabs.count > 1, currentIndex > 0 {
-            targetIndex = currentIndex - 1
+        let currentPosition = tabManager.currentPosition
+        let targetPosition: TabPosition?
+        if let previousTab,
+           let tabSwitchedFromPosition = tabManager.position(for: previousTab.tabModel),
+           tabSwitchedFromPosition != currentPosition {
+            targetPosition = tabSwitchedFromPosition
+        } else if tabs.count > 1, currentPosition.index > 0 {
+            targetPosition = TabPosition(mode: currentPosition.mode, index: currentPosition.index - 1)
         } else {
-            targetIndex = nil
+            targetPosition = nil
         }
-        guard let targetIndex else { return nil }
-        let tab = tabManager.currentTabsModel.get(tabAt: targetIndex)
-        return makeEscapeHatchModel(from: tab, targetTabIndex: targetIndex)
+        guard let targetPosition,
+              let tab = tabManager.tabAtPosition(targetPosition) else { return nil }
+        return makeEscapeHatchModel(from: tab, targetTabPosition: targetPosition)
     }
 
-    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, tabSwitchedFromIndex: Int? = nil) {
+    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, previousTab: TabViewController? = nil) {
         guard !autoClearInProgress else { return }
         
         viewCoordinator.logoContainer.isHidden = false
@@ -1307,7 +1308,7 @@ class MainViewController: UIViewController {
 
         newTabPageViewController = controller
 
-        let hatch = buildEscapeHatch(tabSwitchedFromIndex: tabSwitchedFromIndex)
+        let hatch = buildEscapeHatch(previousTab: previousTab)
         controller.setEscapeHatch(hatch)
         currentNTPEscapeHatch = hatch
 
@@ -1596,7 +1597,7 @@ class MainViewController: UIViewController {
         
         request()
         dismissOmniBar()
-        select(tab: tab)
+        select(tab: tab, replacing: nil)
     }
 
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false) {
@@ -1619,21 +1620,19 @@ class MainViewController: UIViewController {
         allowContentUnderflow = false
         
         if tabManager.currentTabsModel.tabs.indices.contains(index) {
-            let tabSwitchedFromIndex = tabManager.currentTabsModel.currentIndex
+            let previousTab = tabManager.current()
             let tab = tabManager.select(tabAt: index)
-            select(tab: tab, tabSwitchedFromIndex: tabSwitchedFromIndex)
+            select(tab: tab, replacing: previousTab)
         } else {
             assertionFailure("Invalid index selected")
         }
     }
 
-    fileprivate func select(tab: TabViewController, tabSwitchedFromIndex passedFromIndex: Int? = nil) {
-        let previousTab = currentTab
-
+    private func select(tab: TabViewController, replacing previousTab: TabViewController?) {
+        previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
         if tab.link == nil {
-            let tabSwitchedFromIndex = passedFromIndex ?? previousTab.flatMap { tabManager.currentTabsModel.indexOf(tab: $0.tabModel) }
-            attachHomeScreen(tabSwitchedFromIndex: tabSwitchedFromIndex)
+            attachHomeScreen(previousTab: previousTab)
         } else {
             attachTab(tab: tab)
         }
@@ -1687,7 +1686,7 @@ class MainViewController: UIViewController {
     fileprivate func updateCurrentTab() {
         // prepopulate VC for current tab if needed
         if let currentTab = tabManager.current(createIfNeeded: true) {
-            select(tab: currentTab)
+            select(tab: currentTab, replacing: nil)
             viewCoordinator.omniBar.endEditing()
         } else {
             attachHomeScreen()
@@ -2146,14 +2145,14 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.dismiss()
 
-        let tabSwitchedFromIndex = tabManager.currentTabsModel.currentIndex
+        let previousTab = tabManager.current()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.selectTab(existing)
         } else {
             tabManager.addHomeTab()
         }
-        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex)
+        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, previousTab: previousTab)
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         themeColorManager.updateThemeColor()
@@ -3448,13 +3447,15 @@ extension MainViewController: OmniBarDelegate {
         escapeHatchForEditingState() != nil
     }
 
-    func onSwitchTabToIndex(_ index: Int) {
-        guard tabManager.currentTabsModel.tabs.indices.contains(index), index != tabManager.currentTabsModel.currentIndex else {
+    func onSwitchToTabPosition(_ position: TabPosition) {
+        guard tabManager.tabAtPosition(position) != nil,
+              position != tabManager.currentPosition else {
             viewCoordinator.omniBar.endEditing()
             return
         }
         let tabToClose = tabManager.currentTabsModel.currentTab
-        select(tabAt: index)
+        tabManager.apply(position)
+        updateCurrentTab()
         viewCoordinator.omniBar.endEditing()
         if let tabToClose {
             closeTab(tabToClose)
@@ -3557,15 +3558,16 @@ extension MainViewController: NewTabPageControllerDelegate {
         faviconsFetcherOnboarding.presentOnboardingIfNeeded(from: self)
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, index: Int) {
-        guard tabManager.currentTabsModel.tabs.indices.contains(index) else {
+    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, position: TabPosition) {
+        guard tabManager.tabAtPosition(position) != nil else {
             controller.setEscapeHatch(nil)
             currentNTPEscapeHatch = nil
             return
         }
-        guard index != tabManager.currentTabsModel.currentIndex else { return }
+        guard position != tabManager.currentPosition else { return }
         let tabToClose = tabManager.currentTabsModel.currentTab
-        select(tabAt: index)
+        tabManager.apply(position)
+        updateCurrentTab()
         if let tabToClose {
             closeTab(tabToClose)
         }
@@ -3653,7 +3655,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestActivate(_ tab: TabViewController) {
-        select(tab: tab)
+        select(tab: tab, replacing: nil)
     }
 
     func tab(_ tab: TabViewController,
@@ -3898,8 +3900,29 @@ extension MainViewController: TabDelegate {
 
 extension MainViewController: TabSwitcherDelegate {
 
-    func tabSwitcherDidDismiss(tabSwitcher: TabSwitcherViewController) {
-        showMenuHighlighterIfNeeded()
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishAtPosition position: TabPosition?) {
+        defer { showMenuHighlighterIfNeeded() }
+        let previousPosition = tabManager.currentPosition
+        let previousTab = currentTab
+        
+        if let position, let tab = tabManager.tabAtPosition(position) {
+            tab.viewed = true
+            tabManager.apply(position)
+        }
+
+        guard tabManager.currentPosition != previousPosition else {
+            if daxDialogsManager.shouldShowFireButtonPulse {
+                showFireButtonPulse()
+            }
+            themeColorManager.updateThemeColor()
+            return
+        }
+
+        guard let newTab = tabManager.current(createIfNeeded: true) else {
+            assertionFailure("Couldn't create new tab")
+            return
+        }
+        select(tab: newTab, replacing: previousTab)
     }
 
     private func animateLogoAppearance() {
@@ -3928,13 +3951,6 @@ extension MainViewController: TabSwitcherDelegate {
         themeColorManager.updateThemeColor()
     }
 
-    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didSelectTab tab: Tab) {
-        selectTab(tab)
-        if daxDialogsManager.shouldShowFireButtonPulse {
-            showFireButtonPulse()
-        }
-        themeColorManager.updateThemeColor()
-    }
     
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
         guard let bookmark = self.menuBookmarksViewModel.bookmark(for: url) else { return }
@@ -4042,10 +4058,6 @@ extension MainViewController: TabSwitcherDelegate {
         openAIChat()
     }
     
-    func tabSwitcherDidUpdateBrowsingMode(tabSwitcher: TabSwitcherViewController) {
-        tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
-    }
 }
 
 extension MainViewController: BookmarksDelegate {

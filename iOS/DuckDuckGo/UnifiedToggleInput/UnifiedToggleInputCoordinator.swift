@@ -49,6 +49,8 @@ enum UnifiedToggleInputIntent: Equatable {
     case showCollapsed
     case showExpanded
     case showInlineEditing(expandedHeight: CGFloat)
+    case showInlineInactive
+    case showInlineActive
     case hideInlineEditing
     case hide
 }
@@ -81,6 +83,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     /// The managed view controller. Access for installation only — query coordinator properties for state.
     private(set) var viewController: UnifiedToggleInputViewController
+    private(set) var contentViewController: UnifiedInputContentContainerViewController
     weak var delegate: UnifiedToggleInputDelegate?
 
     private(set) var isToggleEnabled: Bool
@@ -93,7 +96,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var switchBarHandler: SwitchBarHandling { viewController.handler }
 
     var isInlineEditingActive: Bool {
-        if case .inline(.active) = displayState { return true }
+        if case .inline = displayState { return true }
         return false
     }
 
@@ -120,6 +123,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     init(isToggleEnabled: Bool) {
         self.isToggleEnabled = isToggleEnabled
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled)
+        contentViewController = UnifiedInputContentContainerViewController(switchBarHandler: viewController.handler)
         viewController.delegate = self
     }
 
@@ -189,6 +193,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         displayState = .hidden
         viewController.deactivateInput()
         viewController.setExpanded(false, animated: false)
+        contentViewController.setInlineHeaderDisplayMode(.hidden)
         intentSubject.send(.hide)
     }
 
@@ -212,6 +217,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         viewController.isToolbarSubmitHidden = (cardPosition == .top)
 
         viewController.setExpanded(true, animated: false)
+        contentViewController.setInlineHeaderDisplayMode(.active)
         let height = inlineEditingHeight()
         intentSubject.send(.showInlineEditing(expandedHeight: height))
 
@@ -295,10 +301,13 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         viewController.usesInlineEditingMargins = false
         viewController.isTopBarPosition = false
         viewController.isToolbarSubmitHidden = false
+        viewController.cardPosition = .bottom
+        viewController.setInactiveCardAppearance(false)
         viewController.text = ""
         textState = .empty
         viewController.deactivateInput()
         viewController.setExpanded(false, animated: false)
+        contentViewController.setInlineHeaderDisplayMode(.hidden)
         intentSubject.send(.hideInlineEditing)
     }
 
@@ -311,6 +320,40 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
             viewController.setInputMode(.search, animated: false)
             modeChangeSubject.send(.search)
         }
+    }
+
+    func updateInlineEditingInputVisibility(_ isInputVisible: Bool) {
+        switch (displayState, isInputVisible) {
+        case (.inline(.active), false):
+            displayState = .inline(.inactive)
+            if viewController.cardPosition == .bottom {
+                viewController.setInactiveCardAppearance(true)
+            }
+            contentViewController.setInlineHeaderDisplayMode(.inactive)
+            intentSubject.send(.showInlineInactive)
+        case (.inline(.inactive), true):
+            displayState = .inline(.active)
+            if viewController.cardPosition == .bottom {
+                viewController.setInactiveCardAppearance(false)
+            }
+            contentViewController.setInlineHeaderDisplayMode(.active)
+            intentSubject.send(.showInlineActive)
+        default:
+            break
+        }
+    }
+
+    func dismissInlineKeyboard() {
+        guard case .inline(.active) = displayState else { return }
+        viewController.deactivateInput()
+    }
+
+    func updateContentHeaderForAITab(shouldOverlay: Bool) {
+        contentViewController.setInlineHeaderDisplayMode(shouldOverlay ? .active : .hidden)
+    }
+
+    func syncContentInputMode(_ mode: TextEntryMode, animated: Bool = true) {
+        contentViewController.setInputMode(mode, animated: animated)
     }
 
     // MARK: - Private

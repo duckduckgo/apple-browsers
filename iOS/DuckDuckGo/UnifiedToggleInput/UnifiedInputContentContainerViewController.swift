@@ -45,6 +45,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     enum InlineHeaderDisplayMode: Equatable {
         case hidden
         case active
+        case inactive
     }
 
     // MARK: - Properties
@@ -52,6 +53,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     weak var delegate: UnifiedInputContentContainerViewControllerDelegate?
     var onDismissRequested: (() -> Void)?
+    var onSwipeDownRequested: (() -> Void)?
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
@@ -237,6 +239,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         view.backgroundColor = Metrics.backgroundColor
         setUpContentContainer()
         setUpInlineHeaderView()
+        setUpSwipeDownGesture()
     }
 
     private func setUpContentContainer() {
@@ -263,6 +266,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             inlineHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             inlineHeaderView.heightAnchor.constraint(equalToConstant: Metrics.inlineHeaderHeight)
         ])
+    }
+
+    private func setUpSwipeDownGesture() {
+        let swipeDownGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeDown))
+        swipeDownGesture.direction = .down
+        swipeDownGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(swipeDownGesture)
     }
 
     private func installComponents() {
@@ -412,7 +422,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
             inlineHeaderView.setDismissButtonHidden(false)
             contentContainerViewTopConstraint?.constant = 0
-        case .active:
+        case .active, .inactive:
             inlineHeaderView.isHidden = false
             inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
             inlineHeaderView.configure(title: currentSectionTitle)
@@ -459,6 +469,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 self.showNoMicrophonePermissionAlert()
             }
         }
+    }
+
+    @objc private func handleSwipeDown() {
+        onSwipeDownRequested?()
     }
 
     private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {

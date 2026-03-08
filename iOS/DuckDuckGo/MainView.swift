@@ -455,14 +455,11 @@ extension MainViewFactory {
         let container = coordinator.unifiedToggleInputContainer!
         let navigationBarContainer = coordinator.navigationBarContainer!
 
-        let bottom = container.bottomAnchor.constraint(equalTo: navigationBarContainer.bottomAnchor)
-        bottom.priority = .defaultHigh
-
         NSLayoutConstraint.activate([
             container.topAnchor.constraint(equalTo: navigationBarContainer.topAnchor),
             container.leadingAnchor.constraint(equalTo: navigationBarContainer.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: navigationBarContainer.trailingAnchor),
-            bottom,
+            container.bottomAnchor.constraint(equalTo: navigationBarContainer.bottomAnchor),
         ])
     }
 

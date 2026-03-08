@@ -128,6 +128,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.updateToggleEnabled(enabled)
     }
 
+    func setInactiveCardAppearance(_ inactive: Bool) {
+        inputBarView.setInactiveCardAppearance(inactive)
+    }
+
     func activateInput() {
         inputBarView.becomeFirstResponder()
     }

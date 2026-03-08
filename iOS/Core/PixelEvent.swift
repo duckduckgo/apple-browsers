@@ -142,22 +142,6 @@ extension Pixel {
         case settingsAutoconsentOn
         case settingsAutoconsentOff
 
-        case experimentalBrowsingMenuEnabled
-        case experimentalBrowsingMenuDisabled
-        case experimentalBrowsingMenuUsed
-        case experimentalBrowsingMenuDisplayed
-        case experimentalBrowsingMenuDisplayedNTP
-        case experimentalBrowsingMenuDisplayedAIChat
-        case experimentalBrowsingMenuDisplayedError
-        case experimentalBrowsingMenuDismissed
-
-        // Used to compare engagement vs old menu
-        case sheetBrowsingMenuSettings
-        case sheetBrowsingMenuAIChat
-        case sheetBrowsingMenuVPN
-        case sheetBrowsingMenuPasswords
-        case sheetBrowsingMenuNewDuckAddress
-
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuOpenedError
@@ -1316,6 +1300,24 @@ extension Pixel {
         case bookmarkLaunchedDaily
         case newTabPageDisplayedDaily
 
+        // MARK: NTP after idle
+        case ntpAfterIdleNTPShownAfterIdle
+        case ntpAfterIdleNTPShownUserInitiated
+        case ntpAfterIdleReturnToPageTappedAfterIdle
+        case ntpAfterIdleReturnToPageTappedUserInitiated
+        case ntpAfterIdleBarUsedAfterIdle
+        case ntpAfterIdleBarUsedUserInitiated
+        case ntpAfterIdleToggleUsedAfterIdle
+        case ntpAfterIdleToggleUsedUserInitiated
+        case ntpAfterIdleBackButtonUsedAfterIdle
+        case ntpAfterIdleBackButtonUsedUserInitiated
+        case ntpAfterIdleAppBackgroundedAfterIdle
+        case ntpAfterIdleAppBackgroundedUserInitiated
+        case ntpAfterIdleTabSwitcherSelectedAfterIdle
+        case ntpAfterIdleTabSwitcherSelectedUserInitiated
+        case ntpAfterIdleSettingChangedToNewTab
+        case ntpAfterIdleSettingChangedToLastUsedTab
+
         // MARK: DuckPlayer
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
@@ -1384,6 +1386,12 @@ extension Pixel {
 
         // MARK: WebView Error Page Shown
         case webViewErrorPageShown
+
+        // MARK: External Scheme Navigation
+        case webViewExternalSchemeNavigationXSafariHTTPSStay
+        case webViewExternalSchemeNavigationXSafariHTTPSOpenInSafari
+        case webViewExternalSchemeNavigationXSafariHTTPSLoopDetected
+        case webViewExternalSchemeNavigationXSafariHTTPSLoopOpenInSafari
 
         // MARK: Browsing
         case stopPageLoad
@@ -1478,6 +1486,15 @@ extension Pixel {
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
         case aiChatLegacyOmnibarBackButtonPressed
+
+        // MARK: iPad Toggle
+        case aiChatIPadTogglePromptSubmitted
+        case aiChatIPadToggleURLSubmitted
+        case aiChatOmnibarQuerySubmittedIPadToggleEnabled
+        case aiChatIPadToggleRecentChatSelectedPinned
+        case aiChatIPadToggleRecentChatSelected
+        case aiChatIPadToggleEnabledOnAppOpen
+        case aiChatIPadToggleDisabledOnAppOpen
         
         // MARK: AI Chat History Deletion
         case aiChatHistoryDeleteSuccessful
@@ -1632,6 +1649,12 @@ extension Pixel {
         case webExtensionEmbeddedInstalled
         case webExtensionEmbeddedUpgraded
         case webExtensionEmbeddedInstallError
+
+        case webExtensionDarkReaderInstalled
+        case webExtensionDarkReaderUpgraded
+        case webExtensionDarkReaderInstallError
+        case webExtensionDarkReaderEnabled
+        case webExtensionDarkReaderDisabled
     }
 
 }
@@ -1736,21 +1759,6 @@ extension Pixel.Event {
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
-
-        case .experimentalBrowsingMenuEnabled: return "m_experimental-browsing-menu_enabled"
-        case .experimentalBrowsingMenuDisabled: return "m_experimental-browsing-menu_disabled"
-        case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"
-        case .experimentalBrowsingMenuDisplayed: return "m_experimental-browsing-menu_displayed"
-        case .experimentalBrowsingMenuDisplayedNTP: return "m_experimental-browsing-menu_displayed_ntp"
-        case .experimentalBrowsingMenuDisplayedAIChat: return "m_experimental-browsing-menu_displayed_aichat"
-        case .experimentalBrowsingMenuDisplayedError: return "m_experimental-browsing-menu_displayed_error"
-        case .experimentalBrowsingMenuDismissed: return "m_experimental-browsing-menu_dismissed"
-
-        case .sheetBrowsingMenuSettings: return "m_sheet-menu_settings"
-        case .sheetBrowsingMenuAIChat: return "m_sheet-menu_aichat"
-        case .sheetBrowsingMenuVPN: return "m_sheet-menu_vpn"
-        case .sheetBrowsingMenuPasswords: return "m_sheet-menu_passwords"
-        case .sheetBrowsingMenuNewDuckAddress: return "m_sheet-menu_new-duck-address"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -2826,6 +2834,24 @@ extension Pixel.Event {
         case .bookmarkLaunchedDaily: return "m_bookmark_launched_daily"
         case .newTabPageDisplayedDaily: return "m_new_tab_page_displayed_daily"
 
+        // MARK: NTP after idle
+        case .ntpAfterIdleNTPShownAfterIdle: return "m_ntp_after_idle_ntp_shown_after_idle"
+        case .ntpAfterIdleNTPShownUserInitiated: return "m_ntp_after_idle_ntp_shown_user_initiated"
+        case .ntpAfterIdleReturnToPageTappedAfterIdle: return "m_ntp_after_idle_return_to_page_tapped_after_idle"
+        case .ntpAfterIdleReturnToPageTappedUserInitiated: return "m_ntp_after_idle_return_to_page_tapped_user_initiated"
+        case .ntpAfterIdleBarUsedAfterIdle: return "m_ntp_after_idle_bar_used_from_ntp_after_idle"
+        case .ntpAfterIdleBarUsedUserInitiated: return "m_ntp_after_idle_bar_used_from_ntp_user_initiated"
+        case .ntpAfterIdleToggleUsedAfterIdle: return "m_ntp_after_idle_toggle_used_from_ntp_after_idle"
+        case .ntpAfterIdleToggleUsedUserInitiated: return "m_ntp_after_idle_toggle_used_from_ntp_user_initiated"
+        case .ntpAfterIdleBackButtonUsedAfterIdle: return "m_ntp_after_idle_back_button_used_from_ntp_after_idle"
+        case .ntpAfterIdleBackButtonUsedUserInitiated: return "m_ntp_after_idle_back_button_used_from_ntp_user_initiated"
+        case .ntpAfterIdleAppBackgroundedAfterIdle: return "m_ntp_after_idle_app_backgrounded_from_ntp_after_idle"
+        case .ntpAfterIdleAppBackgroundedUserInitiated: return "m_ntp_after_idle_app_backgrounded_from_ntp_user_initiated"
+        case .ntpAfterIdleTabSwitcherSelectedAfterIdle: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_after_idle"
+        case .ntpAfterIdleTabSwitcherSelectedUserInitiated: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_user_initiated"
+        case .ntpAfterIdleSettingChangedToNewTab: return "m_ntp_after_idle_setting_changed_to_new_tab"
+        case .ntpAfterIdleSettingChangedToLastUsedTab: return "m_ntp_after_idle_setting_changed_to_last_used_tab"
+
         // MARK: DuckPlayer
         case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"
         case .duckPlayerDailyUniqueView: return "duckplayer_daily-unique-view"
@@ -2891,6 +2917,12 @@ extension Pixel.Event {
             
         // MARK: - WebView Error Page shown
         case .webViewErrorPageShown: return "m_errorpageshown"
+
+        // MARK: - External Scheme Navigation
+        case .webViewExternalSchemeNavigationXSafariHTTPSStay: return "m_webview_external-scheme-navigation_x-safari-https_stay_daily"
+        case .webViewExternalSchemeNavigationXSafariHTTPSOpenInSafari: return "m_webview_external-scheme-navigation_x-safari-https_open-in-safari_daily"
+        case .webViewExternalSchemeNavigationXSafariHTTPSLoopDetected: return "m_webview_external-scheme-navigation_x-safari-https_loop-detected"
+        case .webViewExternalSchemeNavigationXSafariHTTPSLoopOpenInSafari: return "m_webview_external-scheme-navigation_x-safari-https_loop-open-in-safari_daily"
 
         // MARK: - DuckPlayer FE Application Telemetry
         case .duckPlayerLandscapeLayoutImpressions: return "duckplayer_landscape_layout_impressions"
@@ -2983,6 +3015,15 @@ extension Pixel.Event {
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
         case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
+
+        // MARK: iPad Toggle
+        case .aiChatIPadTogglePromptSubmitted: return "m_aichat_ipad_toggle_prompt_submitted"
+        case .aiChatIPadToggleURLSubmitted: return "m_aichat_ipad_toggle_url_submitted"
+        case .aiChatOmnibarQuerySubmittedIPadToggleEnabled: return "m_aichat_omnibar_query_submitted_ipad_toggle_enabled"
+        case .aiChatIPadToggleRecentChatSelectedPinned: return "m_aichat_ipad_toggle_recent_chat_selected_pinned"
+        case .aiChatIPadToggleRecentChatSelected: return "m_aichat_ipad_toggle_recent_chat_selected"
+        case .aiChatIPadToggleEnabledOnAppOpen: return "m_aichat_ipad_toggle_enabled_on_app_open"
+        case .aiChatIPadToggleDisabledOnAppOpen: return "m_aichat_ipad_toggle_disabled_on_app_open"
         
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
@@ -3196,6 +3237,12 @@ extension Pixel.Event {
         case .webExtensionEmbeddedInstalled: return "m_web_extension_embedded_installed"
         case .webExtensionEmbeddedUpgraded: return "m_web_extension_embedded_upgraded"
         case .webExtensionEmbeddedInstallError: return "m_web_extension_embedded_install_error"
+
+        case .webExtensionDarkReaderInstalled: return "m_web_extension_dark_reader_installed"
+        case .webExtensionDarkReaderUpgraded: return "m_web_extension_dark_reader_upgraded"
+        case .webExtensionDarkReaderInstallError: return "m_web_extension_dark_reader_install_error"
+        case .webExtensionDarkReaderEnabled: return "m_web_extension_dark_reader_enabled"
+        case .webExtensionDarkReaderDisabled: return "m_web_extension_dark_reader_disabled"
         }
     }
 }

@@ -46,11 +46,11 @@ public protocol SparkleUpdateControllerFactory {
                             allowCustomUpdateFeed: Bool,
                             wideEvent: WideEventManaging,
                             isOnboardingFinished: @escaping () -> Bool,
-                            openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateController
+                            openUpdatesPage: @escaping () -> Void) -> any SparkleUpdateControlling
 }
 
 /// Marker type extended by updater packages with concrete `instantiate(...)` implementations.
-/// See AppStoreUpdateController.swift and SimplifiedSparkleUpdateController.swift for concrete implementations.
+/// See AppStoreUpdateController.swift and SparkleUpdateController.swift for concrete implementations.
 public struct UpdateControllerFactory {}
 
 public protocol UpdateController: UpdateControllerObjC {
@@ -213,7 +213,7 @@ public protocol UpdateController: UpdateControllerObjC {
 }
 
 /// Sparkle-specific updater contract that extends the shared `UpdateController`.
-public protocol SparkleUpdateController: UpdateController, SparkleUpdateControllerObjC {
+public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControllerObjC {
     /// Indicates whether the app is paused at a restart checkpoint waiting for user action.
     ///
     /// **Sparkle Behavior**: Returns `true` when update is downloaded and ready to install,

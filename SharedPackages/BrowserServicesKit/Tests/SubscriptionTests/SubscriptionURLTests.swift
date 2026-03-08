@@ -55,6 +55,8 @@ final class SubscriptionURLTests: XCTestCase {
                                               .manageEmail,
                                               .identityTheftRestoration,
                                               .plans,
+                                              .addEmail,
+                                              .addEmailSuccess,
                                               .upgradeToTier("pro")]
 
         for urlType in allURLTypes {
@@ -78,6 +80,8 @@ final class SubscriptionURLTests: XCTestCase {
                                               .manageEmail,
                                               .identityTheftRestoration,
                                               .plans,
+                                              .addEmail,
+                                              .addEmailSuccess,
                                               .upgradeToTier("pro")]
 
         for urlType in allURLTypes {

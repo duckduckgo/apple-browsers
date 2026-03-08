@@ -17,10 +17,7 @@
 //
 
 import AppKit
-
-#if !APPSTORE
 import LetsMove
-#endif
 
 @main
 struct AppMain {
@@ -28,10 +25,11 @@ struct AppMain {
     static func main() {
         _=Application.shared
 
-#if !APPSTORE && !DEBUG
-        // this should be run after NSApplication.shared is set
-        PFMoveToApplicationsFolderIfNecessary(true)
-#endif
+        let buildType = StandardApplicationBuildType()
+        if !buildType.isAppStoreBuild && !buildType.isDebugBuild {
+            // this should be run after NSApplication.shared is set
+            PFMoveToApplicationsFolderIfNecessary(/*allowAlertSilencing:*/ true)
+        }
 
         Application.shared.run()
     }

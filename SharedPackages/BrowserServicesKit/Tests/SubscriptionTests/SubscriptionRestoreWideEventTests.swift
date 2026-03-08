@@ -25,10 +25,9 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
     // MARK: - Pixel Parameters
 
     func testPixelParameters_withAppleAccountFlows() {
-        let contextData = WideEventContextData(name: "test-context")
         let eventData = SubscriptionRestoreWideEventData(
             restorePlatform: .appleAccount,
-            contextData: contextData
+            funnelName: "test-context"
         )
 
         let base = Date()
@@ -46,10 +45,9 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
     }
 
     func testPixelParameters_withEmailAddressFlows() {
-        let contextData = WideEventContextData(name: "test-context")
         let eventData = SubscriptionRestoreWideEventData(
             restorePlatform: .emailAddress,
-            contextData: contextData
+            funnelName: "test-context"
         )
 
         let base = Date()
@@ -70,7 +68,6 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
     // MARK: - Interval Bucketing
 
     func testPixelParameters_withAppleAccountDuration_bucketing() {
-        let contextData = WideEventContextData(name: "test-context")
         let cases: [(ms: Int, expected: String)] = [
             (500, "1000"), // normal
             (4999, "5000"), // higher edge
@@ -81,7 +78,7 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
         let base = Date()
 
         for (ms, expected) in cases {
-            let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount, contextData: contextData)
+            let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount, funnelName: "test-context")
             eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(
                 start: base,
                 end: base.addingTimeInterval(Double(ms) / 1000.0)
@@ -95,7 +92,6 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
     // MARK: - Interval Bucketing
 
     func testPixelParameters_withEmailAddressDuration_bucketing() {
-        let contextData = WideEventContextData(name: "test-context")
         let base = Date()
         let cases: [(ms: Int, expected: String)] = [
             (5000, "10000"), // normal
@@ -106,7 +102,7 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
         ]
 
         for (ms, expected) in cases {
-            let eventData = SubscriptionRestoreWideEventData(restorePlatform: .emailAddress, contextData: contextData)
+            let eventData = SubscriptionRestoreWideEventData(restorePlatform: .emailAddress, funnelName: "test-context")
             eventData.emailAddressRestoreDuration = WideEvent.MeasuredInterval(
                 start: base,
                 end: base.addingTimeInterval(Double(ms) / 1000.0)
@@ -141,9 +137,8 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
     // MARK: - Abandoned & Delayed Flows
 
     func testPixelParameters_withAbandonedFlows() {
-        let contextData = WideEventContextData(name: "test-context")
         let base = Date()
-        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount, contextData: contextData)
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount, funnelName: "test-context")
 
         // no started interval
         var parameters = eventData.pixelParameters()
@@ -156,9 +151,8 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
     }
 
     func testPixelParameters_withDelayedFlows() {
-        let contextData = WideEventContextData(name: "test-context")
         let base = Date()
-        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .emailAddress, contextData: contextData)
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .emailAddress, funnelName: "test-context")
 
         // start only
         eventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval(start: base, end: nil)

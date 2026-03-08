@@ -74,9 +74,11 @@ protocol AIChatSidebarHosting: AnyObject  {
     /// The layout constraint controlling the width of the sidebar container.
     var sidebarContainerWidthConstraint: NSLayoutConstraint? { get }
 
-    /// Embeds the provided view controller as the sidebar content.
-    /// - Parameter vc: The view controller to embed as the sidebar content.
-    func embedSidebarViewController(_ vc: NSViewController)
+    /// Switches to the given tab and embeds the provided view controller as the sidebar content.
+    /// - Parameters:
+    ///   - vc: The view controller to embed as the sidebar content.
+    ///   - tabID: If provided, the host switches to this tab before embedding.
+    func embedChatViewController(_ vc: NSViewController, for tabID: TabIdentifier?)
 
     /// The burner mode status of the current tab (private browsing mode).
     var burnerMode: BurnerMode { get }
@@ -90,6 +92,11 @@ protocol AIChatSidebarHosting: AnyObject  {
 
     /// The total width available for both the webview and sidebar.
     var availableWidth: CGFloat { get }
+    /// The sidebar container's frame in screen coordinates, used for "pop off in place" positioning.
+    var sidebarContainerScreenFrame: NSRect? { get }
+
+    /// Switches the active tab to the one identified by `tabID`.
+    func selectTab(with tabID: TabIdentifier)
 }
 
 extension BrowserTabViewController: AIChatSidebarHosting {
@@ -102,8 +109,19 @@ extension BrowserTabViewController: AIChatSidebarHosting {
         tabViewModel?.tab.uuid
     }
 
-    func embedSidebarViewController(_ sidebarViewController: NSViewController) {
-        addAndLayoutChild(sidebarViewController, into: sidebarContainer)
+    func embedChatViewController(_ chatViewController: NSViewController, for tabID: TabIdentifier?) {
+        if let tabID {
+            selectTab(with: tabID)
+        }
+
+        if chatViewController.parent === self,
+           chatViewController.view.superview === sidebarContainer {
+            return
+        }
+
+        chatViewController.removeFromParent()
+        chatViewController.view.removeFromSuperview()
+        addAndLayoutChild(chatViewController, into: sidebarContainer)
     }
 
     var burnerMode: BurnerMode {
@@ -121,5 +139,10 @@ extension BrowserTabViewController: AIChatSidebarHosting {
 
     var availableWidth: CGFloat {
         view.bounds.width
+    }
+    var sidebarContainerScreenFrame: NSRect? {
+        guard let window = view.window else { return nil }
+        let frameInWindow = sidebarContainer.convert(sidebarContainer.bounds, to: nil)
+        return window.convertToScreen(frameInWindow)
     }
 }

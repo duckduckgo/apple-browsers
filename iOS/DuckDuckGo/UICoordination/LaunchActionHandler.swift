@@ -24,16 +24,16 @@ enum LaunchAction {
 
     case openURL(URL)
     case handleShortcutItem(UIApplicationShortcutItem)
-    case standardLaunch(Date?)
+    case standardLaunch(lastBackgroundDate: Date?, isFirstForeground: Bool)
 
-    init(actionToHandle: AppAction?, lastBackgroundDate: Date?) {
+    init(actionToHandle: AppAction?, lastBackgroundDate: Date?, isFirstForeground: Bool = false) {
         switch actionToHandle {
         case .openURL(let url)?:
             self = .openURL(url)
         case .handleShortcutItem(let shortcutItem)?:
             self = .handleShortcutItem(shortcutItem)
         case nil:
-            self = .standardLaunch(lastBackgroundDate)
+            self = .standardLaunch(lastBackgroundDate: lastBackgroundDate, isFirstForeground: isFirstForeground)
         }
     }
 
@@ -86,12 +86,12 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .handleShortcutItem(let shortcutItem):
             launchSourceManager.setSource(.shortcut)
             shortcutItemHandler.handleShortcutItem(shortcutItem)
-        case .standardLaunch(let lastBackgroundDate):
+        case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
             if idleReturnEvaluator.shouldShowNTPAfterIdle(lastBackgroundDate: lastBackgroundDate) {
                 idleReturnDelegate?.showNewTabPageAfterIdleReturn()
             } else {
-                keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: lastBackgroundDate)
+                keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
             }
         }
     }

@@ -31,6 +31,7 @@ public extension NewTabPageDataModel {
         let enableAi: Bool
         let showAiSetting: Bool?
         let showCustomizePopover: Bool?
+        let enableRecentAiChats: Bool?
     }
 
     // MARK: - omnibar_getSuggestions
@@ -188,6 +189,52 @@ public extension NewTabPageDataModel {
     struct SubmitChatAction: Codable, Equatable {
         let chat: String
         let target: OpenTarget
+    }
+
+    // MARK: - omnibar_openAiChat
+
+    enum OpenAiChatTrigger: String, Codable {
+        case mouse
+        case keyboard
+    }
+
+    struct OpenAiChatAction: Codable, Equatable {
+        let chatId: String
+        let target: OpenTarget
+        let trigger: OpenAiChatTrigger?
+        let isPinned: Bool?
+    }
+
+    // MARK: - omnibar_getAiChats
+
+    struct OmnibarGetAiChatsRequest: Codable, Equatable {
+        let query: String?
+    }
+
+    struct AiChat: Codable, Equatable {
+        let chatId: String
+        let title: String
+        let pinned: Bool?
+        let lastEdit: String?
+        let firstUserMessageContent: String?
+
+        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil, firstUserMessageContent: String? = nil) {
+            self.chatId = chatId
+            self.title = title
+            self.pinned = pinned
+            self.lastEdit = lastEdit
+            self.firstUserMessageContent = firstUserMessageContent
+        }
+    }
+
+    struct AiChatsData: Codable, Equatable {
+        let chats: [AiChat]
+
+        public init(chats: [AiChat]) {
+            self.chats = chats
+        }
+
+        public static let empty = Self(chats: [])
     }
 
 }

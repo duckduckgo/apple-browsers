@@ -99,15 +99,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     // MARK: - Initialization Tests
 
-    func testWhenInitializedThenCardListIsRefreshed() {
+    func testWhenInitializedThenCardListIsRefreshed_ForNonAppStore() {
         featureFlagger.enabledFeatureFlags = []
-        let testProvider = createProvider()
-
-#if !APPSTORE
+        let testProvider = createProvider(isAppStoreBuild: false)
         let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultStandardCards
-#else
-        let expectedCards =  NewTabPageNextStepsSingleCardProvider.defaultStandardCards.filter { $0 != .addAppToDockMac }
-#endif
+
+        XCTAssertEqual(testProvider.cards, expectedCards)
+    }
+
+    func testWhenInitializedThenCardListIsRefreshed_ForAppStore() {
+        featureFlagger.enabledFeatureFlags = []
+        let testProvider = createProvider(isAppStoreBuild: true)
+        let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultStandardCards.filter { $0 != .addAppToDockMac }
 
         XCTAssertEqual(testProvider.cards, expectedCards)
     }
@@ -349,15 +352,18 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
     }
 
     // Add App to Dock Card
-    func testWhenAppNotAddedToDockThenAddAppToDockCardIsVisible() {
-        let testProvider = createProvider(dockStatus: false)
+    func testWhenAppNotAddedToDockAndNotAppStoreThenAddAppToDockCardIsVisible() {
+        let testProvider = createProvider(dockStatus: false, isAppStoreBuild: false)
 
         let cards = testProvider.cards
-        #if !APPSTORE
         XCTAssertTrue(cards.contains(.addAppToDockMac))
-        #else
+    }
+
+    func testWhenAppNotAddedToDockAndAppStoreThenAddAppToDockCardIsNotVisible() {
+        let testProvider = createProvider(dockStatus: false, isAppStoreBuild: true)
+
+        let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.addAppToDockMac))
-        #endif
     }
 
     func testWhenAppAddedToDockThenAddAppToDockCardIsNotVisible() {
@@ -508,15 +514,12 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         testLegacyPersistor.shouldShowAddToDockSetting = false
         let testProvider = createProvider(
             dockStatus: false,
-            legacyPersistor: testLegacyPersistor
+            legacyPersistor: testLegacyPersistor,
+            isAppStoreBuild: false
         )
 
         let cards = testProvider.cards
-        #if !APPSTORE
         XCTAssertFalse(cards.contains(.addAppToDockMac))
-        #else
-        XCTAssertFalse(cards.contains(.addAppToDockMac))
-        #endif
     }
 
     func testWhenDuckPlayerCardLegacySettingIsFalseThenCardIsPermanentlyDismissed() {
@@ -686,35 +689,48 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     // MARK: - Card Ordering Tests (nextStepsListAdvancedCardOrdering enabled)
 
-    func testWhenNoPersistedOrder_WithAdvancedOrderingEnabled_ThenDefaultOrderIsUsed() {
+    func testWhenNoPersistedOrder_WithAdvancedOrderingEnabled_ThenDefaultOrderIsUsed_ForNonAppStore() {
         let testFeatureFlagger = MockFeatureFlagger()
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
         testPersistor.orderedCardIDs = nil
-        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
-
-#if !APPSTORE
+        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger, isAppStoreBuild: false)
         let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards
-#else
-        let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards.filter { $0 != .addAppToDockMac }
-#endif
 
         XCTAssertEqual(testProvider.cards, expectedCards)
     }
 
-    func testWhenPersistedOrderExists_WithAdvancedOrderingEnabled_ThenPersistedOrderIsUsed() {
+    func testWhenNoPersistedOrder_WithAdvancedOrderingEnabled_ThenDefaultOrderIsUsed_ForAppStore() {
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        testPersistor.orderedCardIDs = nil
+        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger, isAppStoreBuild: true)
+        let expectedCards = NewTabPageNextStepsSingleCardProvider.defaultAdvancedCards.filter { $0 != .addAppToDockMac }
+
+        XCTAssertEqual(testProvider.cards, expectedCards)
+    }
+
+    func testWhenPersistedOrderExists_WithAdvancedOrderingEnabled_ThenPersistedOrderIsUsed_ForNonAppStore() {
         let testFeatureFlagger = MockFeatureFlagger()
         testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         let testPersistor = MockNewTabPageNextStepsCardsPersistor()
         let persistedOrder: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync]
         testPersistor.orderedCardIDs = persistedOrder
-        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger)
-
-#if !APPSTORE
+        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger, isAppStoreBuild: false)
         let expectedCards = persistedOrder
-#else
+
+        XCTAssertEqual(testProvider.cards, expectedCards)
+    }
+
+    func testWhenPersistedOrderExists_WithAdvancedOrderingEnabled_ThenPersistedOrderIsUsed_ForAppStore() {
+        let testFeatureFlagger = MockFeatureFlagger()
+        testFeatureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        let testPersistor = MockNewTabPageNextStepsCardsPersistor()
+        let persistedOrder: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .duckplayer, .bringStuff, .subscription, .personalizeBrowser, .sync]
+        testPersistor.orderedCardIDs = persistedOrder
+        let testProvider = createProvider(persistor: testPersistor, featureFlagger: testFeatureFlagger, isAppStoreBuild: true)
         let expectedCards = persistedOrder.filter { $0 != .addAppToDockMac }
-#endif
 
         XCTAssertEqual(testProvider.cards, expectedCards)
     }
@@ -943,7 +959,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         legacyPersistor: MockHomePageContinueSetUpModelPersisting? = nil,
         legacySubscriptionCardPersistor: MockHomePageSubscriptionCardPersisting? = nil,
         featureFlagger: MockFeatureFlagger? = nil,
-        isFirstSession: Bool? = nil
+        isFirstSession: Bool? = nil,
+        isAppStoreBuild: Bool? = nil
     ) -> NewTabPageNextStepsSingleCardProvider {
         let testDefaultBrowserProvider: CapturingDefaultBrowserProvider = {
             if let value = defaultBrowserIsDefault {
@@ -1017,6 +1034,13 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testLegacyPersistor = legacyPersistor ?? self.legacyPersistor!
         let testLegacySubscriptionCardPersistor = legacySubscriptionCardPersistor ?? self.legacySubscriptionCardPersistor!
         let testFeatureFlagger = featureFlagger ?? self.featureFlagger!
+        let testApplicationBuildType: MockApplicationBuildType = {
+            let buildType = MockApplicationBuildType()
+            if let isAppStoreBuild {
+                buildType.isAppStoreBuild = isAppStoreBuild
+            }
+            return buildType
+        }()
 
         if let isFirstSession = isFirstSession {
             testPersistor.isFirstSession = isFirstSession
@@ -1037,6 +1061,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             duckPlayerPreferences: testDuckPlayerPreferences,
             subscriptionCardVisibilityManager: testSubscriptionCardVisibilityManager,
             syncService: testSyncService,
+            applicationBuildType: testApplicationBuildType,
             scheduler: .immediate
         )
     }

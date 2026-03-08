@@ -408,7 +408,7 @@ final class SparkleUpdateWideEventTests: XCTestCase {
 
         // Then
         let startedData = mockWideEventManager.started.first as? UpdateWideEventData
-        XCTAssertEqual(startedData?.isInternalUser, true)
+        XCTAssertEqual(startedData?.appData.internalUser, true)
     }
 
     func test_startFlow_externalUser_doesNotSetInternalUserFlag() {
@@ -420,7 +420,7 @@ final class SparkleUpdateWideEventTests: XCTestCase {
 
         // Then
         let startedData = mockWideEventManager.started.first as? UpdateWideEventData
-        XCTAssertEqual(startedData?.isInternalUser, false)
+        XCTAssertEqual(startedData?.appData.internalUser, false)
     }
 
     func test_updateFlow_tracksLastKnownStep() {
@@ -507,7 +507,6 @@ final class SparkleUpdateWideEventTests: XCTestCase {
             fromBuild: "100",
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            isInternalUser: false,
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData(id: "abandoned-flow-1")
         )
@@ -534,7 +533,6 @@ final class SparkleUpdateWideEventTests: XCTestCase {
                 fromBuild: "100",
                 initiationType: .automatic,
                 updateConfiguration: .automatic,
-                isInternalUser: false,
                 contextData: WideEventContextData(name: "sparkle_update"),
                 globalData: WideEventGlobalData(id: "abandoned-flow-\(i)")
             )

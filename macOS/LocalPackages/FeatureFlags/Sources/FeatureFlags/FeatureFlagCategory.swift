@@ -58,7 +58,9 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatOmnibarTools,
                 .aiChatOmnibarOnboarding,
                 .standaloneMigration,
-                .aiChatSidebarResizable:
+                .aiChatSidebarResizable,
+                .aiChatNtpRecentChats,
+                .aiChatSidebarFloating:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
@@ -91,6 +93,7 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .webNotifications:
             return .webNotifications
         case .webExtensions,
+                .forceDarkModeOnWebsites,
                 .embeddedExtension:
             return .webExtensions
         default:

@@ -610,6 +610,30 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("getScopedSyncAuthToken returns sync off when token rescope returns unauthenticated while logged in", .timeLimit(.minutes(1)))
+    func testThatGetScopedSyncAuthTokenReturnsSyncOffWhenRescopeReturnsUnauthenticatedWhileLoggedIn() async throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let syncService = makeSyncService(authState: .active, account: SyncAccount(deviceId: "id",
+                                                                                   deviceName: "name",
+                                                                                   deviceType: "desktop",
+                                                                                   userId: "user",
+                                                                                   primaryKey: Data(),
+                                                                                   secretKey: Data(),
+                                                                                   token: nil,
+                                                                                   state: .active))
+        syncService.mainTokenRescopeError = SyncError.unauthenticatedWhileLoggedIn
+
+        let testHandler = await MainActor.run {
+            makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+        }
+
+        let response = await testHandler.getScopedSyncAuthToken(params: [String: Any](), message: WKScriptMessage.mock())
+        let errorResponse = try #require(response as? AIChatErrorResponse)
+        #expect(errorResponse.reason == "sync off")
+        #expect(syncService.mainTokenRescopeScopes == ["ai_chats"])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("encryptWithSyncMasterKey returns payload when sync is on and params are valid", .timeLimit(.minutes(1)))
     @MainActor
     func testThatEncryptWithSyncMasterKeyReturnsPayloadWhenSyncIsOn() throws {

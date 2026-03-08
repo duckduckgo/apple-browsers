@@ -173,6 +173,24 @@ final class SyncErrorHandlerSyncPausedAlertsTests: XCTestCase {
         XCTAssertEqual(alertPresenter.capturedError, .invalidLoginCredentials)
     }
 
+    func test_WhenHandleAiChatsUnexpectedStatus401_ThenAlertNotShown() async {
+        let error = SyncError.unexpectedStatusCode(401)
+
+        handler.handleAiChatsError(error)
+
+        XCTAssertFalse(alertPresenter.showAlertCalled)
+        XCTAssertNil(alertPresenter.capturedError)
+    }
+
+    func test_WhenHandleAiChatsUnauthenticatedWhileLoggedIn_ThenInvalidLoginAlertShown() async {
+        let error = SyncError.unauthenticatedWhileLoggedIn
+
+        handler.handleAiChatsError(error)
+
+        XCTAssertTrue(alertPresenter.showAlertCalled)
+        XCTAssertEqual(alertPresenter.capturedError, .invalidLoginCredentials)
+    }
+
     func test_WhenHandleCredentialsError400ForTheFirstTime_ThenAlertShown() async {
         let error = SyncError.unexpectedStatusCode(400)
 

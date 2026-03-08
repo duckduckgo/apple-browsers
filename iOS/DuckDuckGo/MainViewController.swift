@@ -138,6 +138,7 @@ class MainViewController: UIViewController {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -380,6 +381,7 @@ class MainViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.fireproofing = fireproofing
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
@@ -533,6 +535,7 @@ class MainViewController: UIViewController {
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
         registerForWebExtensionNotifications()
+        registerForAppBackgroundNotification()
 
         decorate()
 
@@ -973,6 +976,19 @@ class MainViewController: UIViewController {
         currentTab?.privacyInfo?.cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
+    private func registerForAppBackgroundNotification() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onAppDidEnterBackground),
+                                               name: UIApplication.didEnterBackgroundNotification,
+                                               object: nil)
+    }
+
+    @objc private func onAppDidEnterBackground() {
+        if let tab = tabManager.model.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+    }
+
     @objc func onAddressBarPositionChanged() {
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
@@ -1279,7 +1295,7 @@ class MainViewController: UIViewController {
         return makeEscapeHatchModel(from: tab, targetTabIndex: targetIndex)
     }
 
-    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, tabSwitchedFromIndex: Int? = nil) {
+    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, tabSwitchedFromIndex: Int? = nil, openedAfterIdle: Bool = false) {
         guard !autoClearInProgress else { return }
         
         viewCoordinator.logoContainer.isHidden = false
@@ -1298,6 +1314,7 @@ class MainViewController: UIViewController {
         // Attaching HomeScreen means it's going to be displayed immediately.
         // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
         tabModel.viewed = true
+        tabModel.openedAfterIdle = openedAfterIdle
 
         let newTabDaxDialogFactory = NewTabDaxDialogsProvider(featureFlagger: featureFlagger, delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
@@ -1337,18 +1354,19 @@ class MainViewController: UIViewController {
         // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
 
-        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
-            omniBar.beginEditing(animated: true)
-        }
-
-        syncService.scheduler.requestSyncImmediately()
-
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
+            ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
         }
+
+        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
+            omniBar.beginEditing(animated: true)
+        }
+
+        syncService.scheduler.requestSyncImmediately()
     }
 
     func fireNewTabPixels() {
@@ -1581,7 +1599,11 @@ class MainViewController: UIViewController {
     ///   - tools: Optional RAG tools available in AI Chat. Defaults to `nil`.
     func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
         guard let currentTab else { fatalError("no tab") }
-        
+
+        if currentTab.tabModel.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
+        }
+
         prepareTabForRequest {
             currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools)
         }
@@ -1610,7 +1632,8 @@ class MainViewController: UIViewController {
         }
 
         guard let tab = currentTab else { fatalError("no tab") }
-        
+
+        tab.tabModel.openedAfterIdle = false
         request()
         dismissOmniBar()
         select(tab: tab)
@@ -1646,6 +1669,7 @@ class MainViewController: UIViewController {
 
     fileprivate func select(tab: TabViewController, tabSwitchedFromIndex passedFromIndex: Int? = nil) {
         let previousTab = currentTab
+        previousTab?.tabModel.openedAfterIdle = false
 
         hideNotificationBarIfBrokenSitePromptShown()
         if tab.link == nil {
@@ -2156,7 +2180,7 @@ class MainViewController: UIViewController {
     }
 
     // TODO: - Make fire tab required to force correct usage when applied app wide
-    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, fireTab: Bool = false) {
+    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, fireTab: Bool = false, openedAfterIdle: Bool = false) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -2172,7 +2196,7 @@ class MainViewController: UIViewController {
         } else {
             tabManager.addHomeTab(fireTab: fireTab)
         }
-        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex)
+        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, tabSwitchedFromIndex: tabSwitchedFromIndex, openedAfterIdle: openedAfterIdle)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         themeColorManager.updateThemeColor()
@@ -2844,6 +2868,9 @@ extension MainViewController: BrowserChromeDelegate {
 
 
     private func handleSuggestionSelected(_ suggestion: Suggestion) {
+        if let tab = tabManager.model.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()
@@ -3228,6 +3255,9 @@ extension MainViewController: OmniBarDelegate {
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite,
                                  aiChat: .addressBarCancelPressedOnAIChat)
+        if let tab = tabManager.model.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
         performCancel()
     }
 
@@ -3441,6 +3471,9 @@ extension MainViewController: OmniBarDelegate {
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite,
                                  aiChat: .addressBarCancelPressedOnAIChat)
+        if let tab = tabManager.model.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
     }
 
     /// Delegate method called when the AI Chat left button is tapped
@@ -3472,11 +3505,19 @@ extension MainViewController: OmniBarDelegate {
             viewCoordinator.omniBar.endEditing()
             return
         }
+        let wasAfterIdle = tabManager.model.currentTab?.openedAfterIdle ?? false
+        ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
         let tabToClose = tabManager.model.currentTab
         select(tabAt: index)
         viewCoordinator.omniBar.endEditing()
         if let tabToClose {
             closeTab(tabToClose)
+        }
+    }
+
+    func onToggleModeSwitched() {
+        if let tab = tabManager.model.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
     }
 }
@@ -3583,6 +3624,8 @@ extension MainViewController: NewTabPageControllerDelegate {
             return
         }
         guard index != tabManager.model.currentIndex else { return }
+        let wasAfterIdle = tabManager.model.currentTab?.openedAfterIdle ?? false
+        ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
         let tabToClose = tabManager.model.currentTab
         select(tabAt: index)
         if let tabToClose {
@@ -4094,6 +4137,10 @@ extension MainViewController: TabSwitcherButtonDelegate {
         guard currentTab ?? tabManager.current(createIfNeeded: true) != nil else {
             fatalError("Unable to get current tab")
         }
+        if let tab = tabManager.model.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.tabSwitcherSelectedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        tabManager.model.currentTab?.openedAfterIdle = false
         hideNotificationBarIfBrokenSitePromptShown()
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()

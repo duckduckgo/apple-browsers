@@ -601,7 +601,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
     func showNewTabPageAfterIdleReturn() {
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: true)
+            self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
         }
     }
 

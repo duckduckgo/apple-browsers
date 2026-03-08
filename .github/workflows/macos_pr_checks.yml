@@ -11,7 +11,7 @@ on:
       - 'SharedPackages/**'
       - 'macOS/**'
   pull_request:
-    # opened, synchronize, reopened are the default trigger events for a pull request
+    # opened, synchronize, reopened are the default triggering events for a pull request
     # We're adding ready_for_review to run checks when a draft PR becomes ready for review.
     types: [opened, synchronize, reopened, ready_for_review]
     paths:

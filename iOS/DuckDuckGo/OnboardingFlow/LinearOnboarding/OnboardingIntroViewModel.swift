@@ -160,6 +160,7 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     func confirmSkipOnboardingAction() {
         pixelReporter.measureConfirmSkipOnboardingCTAAction()
+        onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: true)
         contextualDaxDialogs.disableContextualDaxDialogs()
         onCompletingOnboardingIntro?()
     }
@@ -216,7 +217,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         isSkipped = true
     }
 
-#if DEBUG || REVIEW
+#if DEBUG || ALPHA
     public func overrideOnboardingCompleted() {
         LaunchOptionsHandler().overrideOnboardingCompleted()
         onCompletingOnboardingIntro?()

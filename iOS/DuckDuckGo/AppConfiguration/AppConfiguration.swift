@@ -166,7 +166,7 @@ struct AppConfiguration {
 
     @MainActor
     private func startAutomationServerIfNeeded(mainViewController: MainViewController) -> AutomationServer? {
-#if DEBUG || REVIEW
+#if DEBUG || ALPHA
         let launchOptionsHandler = LaunchOptionsHandler()
         guard launchOptionsHandler.automationPort != nil else {
             return nil

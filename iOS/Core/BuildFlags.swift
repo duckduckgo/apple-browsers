@@ -20,7 +20,7 @@
 public enum BuildFlags {
 
     public static var isProductionBuild: Bool {
-#if DEBUG || REVIEW || ALPHA || EXPERIMENTAL
+#if DEBUG || ALPHA || EXPERIMENTAL
         return false
 #else
         return true

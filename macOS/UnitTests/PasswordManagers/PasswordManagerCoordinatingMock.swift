@@ -19,6 +19,7 @@
 import Foundation
 import XCTest
 import BrowserServicesKit
+import BWManagementShared
 @testable import DuckDuckGo_Privacy_Browser
 
 final class PasswordManagerCoordinatingMock: PasswordManagerCoordinating {
@@ -28,6 +29,9 @@ final class PasswordManagerCoordinatingMock: PasswordManagerCoordinating {
 
     var name: String = ""
     var displayName: String = ""
+    var username: String?
+    var activeVaultEmail: String?
+    var bitwardenManagement: BWManagement?
 
     func accountsFor(domain: String, completion: @escaping ([BrowserServicesKit.SecureVaultModels.WebsiteAccount], Error?) -> Void) {}
 
@@ -44,6 +48,13 @@ final class PasswordManagerCoordinatingMock: PasswordManagerCoordinating {
     func websiteCredentialsFor(domain: String, completion: @escaping ([BrowserServicesKit.SecureVaultModels.WebsiteCredentials], Error?) -> Void) {}
 
     func askToUnlock(completionHandler: @escaping () -> Void) {}
+
+    func openPasswordManager() {}
+
+    func storeWebsiteCredentials(_ credentials: SecureVaultModels.WebsiteCredentials,
+                                 completion: @escaping (Error?) -> Void) {
+        completion(nil)
+    }
 
     func reportPasswordAutofill() {}
 

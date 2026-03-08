@@ -183,11 +183,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         outerStack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(outerStack)
 
+        let top = outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.verticalPadding)
+        top.priority = .defaultHigh
+        let bottom = outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.verticalPadding)
+        bottom.priority = .defaultHigh
         NSLayoutConstraint.activate([
-            outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.verticalPadding),
+            top,
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.verticalPadding),
+            bottom,
         ])
 
         updateSubmitButtonState()

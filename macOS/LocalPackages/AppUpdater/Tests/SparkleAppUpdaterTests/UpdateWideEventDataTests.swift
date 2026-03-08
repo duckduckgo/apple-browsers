@@ -35,7 +35,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             initiationType: .automatic,
             updateConfiguration: .automatic,
             lastKnownStep: .restartingToUpdate,
-            isInternalUser: false,
+
             osVersion: "macOS 14.0",
             timeSinceLastUpdateBucket: .lessThan1Month,
             contextData: WideEventContextData(name: "sparkle_update"),
@@ -58,7 +58,6 @@ final class UpdateWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.initiation_type"], "automatic")
         XCTAssertEqual(params["feature.data.ext.update_configuration"], "automatic")
         XCTAssertEqual(params["feature.data.ext.last_known_step"], "restartingToUpdate")
-        XCTAssertEqual(params["feature.data.ext.is_internal_user"], "false")
         XCTAssertEqual(params["feature.data.ext.os_version"], "macOS 14.0")
         XCTAssertEqual(params["feature.data.ext.time_since_last_update"], "<1M")
         XCTAssertEqual(params["feature.data.ext.update_check_duration_ms"], "1500")
@@ -78,7 +77,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromBuild: "100",
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            isInternalUser: false,
+
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
         )
@@ -91,7 +90,6 @@ final class UpdateWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.from_build"], "100")
         XCTAssertEqual(params["feature.data.ext.initiation_type"], "automatic")
         XCTAssertEqual(params["feature.data.ext.update_configuration"], "automatic")
-        XCTAssertEqual(params["feature.data.ext.is_internal_user"], "false")
         XCTAssertNotNil(params["feature.data.ext.os_version"])
 
         // Verify optional fields excluded
@@ -120,7 +118,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             updateType: .critical,
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            isInternalUser: false,
+
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
         )
@@ -140,7 +138,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             updateType: .regular,
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            isInternalUser: false,
+
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
         )
@@ -171,7 +169,7 @@ final class UpdateWideEventDataTests: XCTestCase {
                 fromBuild: "100",
                 initiationType: .automatic,
                 updateConfiguration: .automatic,
-                isInternalUser: false,
+
                 cancellationReason: reason,
                 contextData: WideEventContextData(name: "sparkle_update"),
                 globalData: WideEventGlobalData()
@@ -194,7 +192,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromBuild: "100",
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            isInternalUser: false,
+
             diskSpaceRemainingBytes: diskSpace,
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
@@ -214,7 +212,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromBuild: "100",
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            isInternalUser: false,
+
             timeSinceLastUpdateBucket: .lessThan1Month,
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
@@ -236,7 +234,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromBuild: "100",
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            isInternalUser: false,
+
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
         )
@@ -271,7 +269,7 @@ final class UpdateWideEventDataTests: XCTestCase {
                 initiationType: .automatic,
                 updateConfiguration: .automatic,
                 lastKnownStep: step,
-                isInternalUser: false,
+
                 contextData: WideEventContextData(name: "sparkle_update"),
                 globalData: WideEventGlobalData()
             )
@@ -286,22 +284,22 @@ final class UpdateWideEventDataTests: XCTestCase {
     }
 
     func test_pixelParameters_internalUser_formatsAsString() {
-        // Given - internal user
+        // Given - internal user via standard WideEventAppData infra
         let internalData = UpdateWideEventData(
             fromVersion: "1.0.0",
             fromBuild: "100",
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            isInternalUser: true,
             contextData: WideEventContextData(name: "sparkle_update"),
+            appData: WideEventAppData(internalUser: true),
             globalData: WideEventGlobalData()
         )
 
         // When
-        let internalParams = internalData.pixelParameters()
+        let internalParams = internalData.appData.pixelParameters()
 
         // Then
-        XCTAssertEqual(internalParams["feature.data.ext.is_internal_user"], "true")
+        XCTAssertEqual(internalParams["app.internal_user"], "true")
 
         // Given - external user
         let externalData = UpdateWideEventData(
@@ -309,16 +307,16 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromBuild: "100",
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            isInternalUser: false,
             contextData: WideEventContextData(name: "sparkle_update"),
+            appData: WideEventAppData(internalUser: false),
             globalData: WideEventGlobalData()
         )
 
         // When
-        let externalParams = externalData.pixelParameters()
+        let externalParams = externalData.appData.pixelParameters()
 
         // Then
-        XCTAssertEqual(externalParams["feature.data.ext.is_internal_user"], "false")
+        XCTAssertNil(externalParams["app.internal_user"])
     }
 
     func test_pixelParameters_manualInitiation_serializesCorrectly() {
@@ -328,7 +326,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromBuild: "100",
             initiationType: .manual,
             updateConfiguration: .manual,
-            isInternalUser: false,
+
             contextData: WideEventContextData(name: "sparkle_update"),
             globalData: WideEventGlobalData()
         )
@@ -414,7 +412,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             fromBuild: "100",
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            isInternalUser: false,
+
             timeSinceLastUpdateBucket: .lessThan1Week,
             contextData: contextData
         )

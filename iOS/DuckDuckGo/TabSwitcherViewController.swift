@@ -664,7 +664,7 @@ extension TabSwitcherViewController: TabViewCellDelegate {
 
         collectionView.performBatchUpdates {
             isProcessingUpdates = true
-            tabManager.bulkRemoveTabs(indexPaths) // TODO: - This needs fixing
+            tabManager.bulkRemoveTabs(indexPaths, in: tabsModel)
             collectionView.deleteItems(at: indexPaths)
         } completion: { _ in
             self.currentSelection = self.tabsModel.currentIndex
@@ -714,6 +714,7 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
         
         if indexPath.row < tabsModel.count {
             let tab = tabsModel.get(tabAt: indexPath.row)
+            tab.removeObserver(self)
             tab.addObserver(self)
             cell.update(withTab: tab,
                         isSelectionModeEnabled: self.isEditing,

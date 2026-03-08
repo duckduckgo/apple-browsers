@@ -156,7 +156,7 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
         XCTAssertEqual(request.state, .blocked)
     }
 
-    func testUnaffiliatedTracker_ignored_mapsToOtherThirdPartyRequest() {
+    func testUnaffiliatedTracker_ignored_mapsToRuleException() {
         let tracker = makeTracker(
             url: "https://tracker.example/pixel.js",
             blocked: false,
@@ -166,7 +166,23 @@ final class TrackerProtectionEventMapperTests: XCTestCase {
         let request = mapper.detectedRequest(from: tracker)
         XCTAssertFalse(request.isBlocked)
         if case .allowed(let reason) = request.state {
-            XCTAssertEqual(reason, .otherThirdPartyRequest)
+            XCTAssertEqual(reason, .ruleException)
+        } else {
+            XCTFail("Expected allowed state")
+        }
+    }
+
+    func testUnaffiliatedTracker_matchedRuleIgnore_mapsToRuleException() {
+        let tracker = makeTracker(
+            url: "https://tracker.example/pixel.js",
+            blocked: false,
+            reason: "matched rule - ignore",
+            pageUrl: "https://mysite.com"
+        )
+        let request = mapper.detectedRequest(from: tracker)
+        XCTAssertFalse(request.isBlocked)
+        if case .allowed(let reason) = request.state {
+            XCTAssertEqual(reason, .ruleException)
         } else {
             XCTFail("Expected allowed state")
         }

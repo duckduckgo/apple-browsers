@@ -159,7 +159,7 @@ jobs:
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     env:
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
@@ -256,6 +256,9 @@ jobs:
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
           -skipPackagePluginValidation -skipMacroValidation \
+          -test-timeouts-enabled YES \
+          -default-test-execution-time-allowance 60 \
+          -maximum-test-execution-time-allowance 120 \
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
@@ -271,6 +274,9 @@ jobs:
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
           -skipPackagePluginValidation -skipMacroValidation \
+          -test-timeouts-enabled YES \
+          -default-test-execution-time-allowance 60 \
+          -maximum-test-execution-time-allowance 120 \
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           "-only-testing:${{ matrix.integration-tests-target }}" \

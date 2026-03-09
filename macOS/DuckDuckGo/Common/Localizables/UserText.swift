@@ -1264,6 +1264,8 @@ struct UserText {
     static let themeSystem = NSLocalizedString("preferences.appearance.theme.system", value: "System", comment: "In the preferences for themes, the option to select for use the change the mode based on the system preferences.")
     static let themeReset = NSLocalizedString("preferences.appearance.theme.reset", value: "Reset Theme", comment: "In the preferences for themes, the option to reset to the Default Theme Colors.")
     static let syncAppIconWithTheme = NSLocalizedString("preferences.appearance.sync-app-icon-with-theme", value: "Change app icon to match theme", comment: "Checkbox option to sync the app icon with the selected theme")
+    static let forceDarkModeOnWebsites = NSLocalizedString("preferences.appearance.force-dark-mode-on-websites", value: "Force dark mode for websites", comment: "Toggle to force dark mode on websites using DarkReader")
+    static let forceDarkModeOnWebsitesFooter = NSLocalizedString("preferences.appearance.force-dark-mode-on-websites.footer", value: "Gives websites a dark appearance if you're using dark theme.", comment: "Footer shown below the force dark mode toggle explaining its behavior")
     static let addressBar = NSLocalizedString("preferences.appearance.address-bar", value: "Address Bar", comment: "Theme preferences")
     static let showAIChatInAddress = NSLocalizedString("preferences.appearance.show-aichat", value: "Duck.ai", comment: "Option to show AI Chat the address bar")
     static let showAIChatShortcutInAddress = NSLocalizedString("preferences.appearance.show-aichat-shortcut", value: "Duck.ai Shortcut", comment: "Option to show AI Chat shortcut in the address bar")

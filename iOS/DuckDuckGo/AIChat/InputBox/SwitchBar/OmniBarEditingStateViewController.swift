@@ -41,6 +41,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onChatHistorySelected(url: URL)
     func onDismissRequested()
     func onSwitchTabToIndex(_ index: Int)
+    func onToggleModeSwitched()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -373,7 +374,20 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         navigationActionBarManager = manager
     }
 
+    private var lastKnownToggleState: TextEntryMode?
+
     private func setupSubscriptions() {
+        lastKnownToggleState = switchBarHandler.currentToggleState
+
+        switchBarHandler.toggleStatePublisher
+            .dropFirst()
+            .sink { [weak self] newState in
+                guard let self, newState != self.lastKnownToggleState else { return }
+                self.lastKnownToggleState = newState
+                self.delegate?.onToggleModeSwitched()
+            }
+            .store(in: &cancellables)
+
         switchBarVC.textEntryViewController.textHeightChangePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in

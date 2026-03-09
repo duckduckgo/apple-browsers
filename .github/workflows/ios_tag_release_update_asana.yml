@@ -88,7 +88,7 @@ jobs:
     outputs:
       stop_workflow: ${{ steps.download-stop-workflow.outcome == 'success' }}
 
-    runs-on: macos-15
+    runs-on: macos-26
 
     steps:
       - name: Check out the code
@@ -119,7 +119,7 @@ jobs:
     # by the stop_workflow flag.
     if: needs.stop-workflow-if-needed.outputs.stop_workflow != 'true'
 
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     timeout-minutes: 10
 
     steps:

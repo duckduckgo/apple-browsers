@@ -22,6 +22,7 @@ import XCTest
 final class NewTabPageOmnibarClientTests: XCTestCase {
 
     private var suggestionsProvider: MockNewTabPageOmnibarSuggestionsProvider!
+    private var aiChatsProvider: MockNewTabPageOmnibarAiChatsProvider!
     private var configProvider: MockNewTabPageOmnibarConfigProvider!
     private var actionHandler: NewTabPageOmnibarActionsHandling!
     private var client: NewTabPageOmnibarClient!
@@ -32,10 +33,12 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         try await super.setUp()
 
         suggestionsProvider = MockNewTabPageOmnibarSuggestionsProvider()
+        aiChatsProvider = MockNewTabPageOmnibarAiChatsProvider()
         configProvider = MockNewTabPageOmnibarConfigProvider()
         actionHandler = MockNewTabPageOmnibarActionsHandler()
         client = NewTabPageOmnibarClient(configProvider: configProvider,
                                          suggestionsProvider: suggestionsProvider,
+                                         aiChatsProvider: aiChatsProvider,
                                          actionHandler: actionHandler)
 
         userScript = NewTabPageUserScript()
@@ -62,7 +65,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testSetConfigUpdatesModeAndSettings() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.mode, .ai)
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)
@@ -125,6 +128,76 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
         let action = NewTabPageDataModel.OpenSuggestionAction(suggestion: suggestion, target: .newTab)
         try await messageHelper.handleMessageExpectingNilResponse(named: .openSuggestion, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    // MARK: - getAiChats
+
+    func testGetAiChatsReturnsChatsFromProvider() async throws {
+        let expectedChats = NewTabPageDataModel.AiChatsData(chats: [
+            NewTabPageDataModel.AiChat(chatId: "1", title: "Chat 1"),
+            NewTabPageDataModel.AiChat(chatId: "2", title: "Chat 2")
+        ])
+        aiChatsProvider.aiChatsHandler = { _ in expectedChats }
+
+        let request = NewTabPageDataModel.OmnibarGetAiChatsRequest(query: "test")
+        let response: NewTabPageDataModel.AiChatsData = try await messageHelper.handleMessage(named: .getAiChats, parameters: request)
+
+        XCTAssertEqual(response, expectedChats)
+    }
+
+    func testGetAiChatsPassesQueryToProvider() async throws {
+        var receivedQuery: String?
+        aiChatsProvider.aiChatsHandler = { query in
+            receivedQuery = query
+            return .empty
+        }
+
+        let request = NewTabPageDataModel.OmnibarGetAiChatsRequest(query: "swift concurrency")
+        try await messageHelper.handleMessageIgnoringResponse(named: .getAiChats, parameters: request)
+
+        XCTAssertEqual(receivedQuery, "swift concurrency")
+    }
+
+    func testGetAiChatsWithNilQueryCallsProviderWithNil() async throws {
+        var receivedQuery: String? = "not nil"
+        aiChatsProvider.aiChatsHandler = { query in
+            receivedQuery = query
+            return .empty
+        }
+
+        let request = NewTabPageDataModel.OmnibarGetAiChatsRequest(query: nil)
+        try await messageHelper.handleMessageIgnoringResponse(named: .getAiChats, parameters: request)
+
+        XCTAssertNil(receivedQuery)
+    }
+
+    // MARK: - openAiChat
+
+    func testOpenAiChatIsForwardedToHandler() async throws {
+        let expectation = expectation(description: "openAiChatCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAiChatHandler = { chatId, isPinned, trigger, target in
+            XCTAssertEqual(chatId, "abc-123")
+            XCTAssertEqual(isPinned, true)
+            XCTAssertEqual(trigger, .keyboard)
+            XCTAssertEqual(target, .newTab)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.OpenAiChatAction(chatId: "abc-123", target: .newTab, trigger: .keyboard, isPinned: true)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAiChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testOpenAiChatWithMissingTriggerDefaultsToMouse() async throws {
+        let expectation = expectation(description: "openAiChatCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAiChatHandler = { _, _, trigger, _ in
+            XCTAssertEqual(trigger, .mouse)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.OpenAiChatAction(chatId: "abc-123", target: .sameTab, trigger: nil, isPinned: nil)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAiChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
     }
 

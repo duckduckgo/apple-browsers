@@ -24,11 +24,13 @@ public protocol WideEventParameterProviding {
 }
 
 public extension WideEventParameterProviding {
-    func jsonParameters() -> [String: Encodable] {
-        // Allows all event types to get JSON endpoint support for free.
-        // This only needs to be overriden by objects that don't want to return string values in their JSON
-        // bodies, such as the sample_rate value for global data objects.
-        return pixelParameters()
+    func pixelParameters() -> [String: String] {
+        jsonParameters().mapValues { value in
+            if let string = value as? String {
+                return string
+            }
+            return String(describing: value)
+        }
     }
 }
 

@@ -149,13 +149,6 @@ public protocol UpdateController: UpdateControllerObjC {
 
     // MARK: - Update Configuration
 
-    /// Whether automatic updates are enabled for this installation.
-    ///
-    /// **App Store vs Sparkle Behavior:**
-    /// - **App Store**: Always `false` - automatic updates controlled by macOS System Settings
-    /// - **Sparkle**: Always `true` - automatic updates are always enabled
-    var areAutomaticUpdatesEnabled: Bool { get }
-
     /// Handles displaying update notifications to the user.
     ///
     /// **Notification Types:**

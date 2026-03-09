@@ -35,7 +35,11 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
     }
 
     func showUpdateNotification(for updateType: Update.UpdateType) {
+        #if APPSTORE
+        let action = UserText.manualUpdateAppStoreAction
+        #else
         let action = UserText.autoUpdateAction
+        #endif
 
         switch updateType {
         case .critical:

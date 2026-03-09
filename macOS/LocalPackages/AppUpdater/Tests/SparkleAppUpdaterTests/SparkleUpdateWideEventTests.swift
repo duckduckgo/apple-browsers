@@ -276,18 +276,6 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         }
     }
 
-    func test_cancelFlow_settingsChanged_recordsCancellationReason() {
-        // Given
-        sut.startFlow(initiationType: .automatic)
-
-        // When
-        sut.cancelFlow(reason: .settingsChanged)
-
-        // Then
-        let (completedData, _) = mockWideEventManager.completions[0]
-        XCTAssertEqual((completedData as? UpdateWideEventData)?.cancellationReason, .settingsChanged)
-    }
-
     func test_cancelFlow_buildExpired_recordsCancellationReason() {
         // Given
         sut.startFlow(initiationType: .automatic)
@@ -320,7 +308,7 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         sut.didStartExtraction()
 
         // When
-        sut.cancelFlow(reason: .settingsChanged)
+        sut.cancelFlow(reason: .appQuit)
 
         // Then - verify all durations are present (completed by cancelFlow)
         let (completedData, _) = mockWideEventManager.completions[0]

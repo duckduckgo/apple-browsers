@@ -157,7 +157,6 @@ final class UpdateWideEventDataTests: XCTestCase {
     func test_pixelParameters_cancelledUpdate_includesAllCancellationReasons() {
         let cancellationReasons: [UpdateWideEventData.CancellationReason] = [
             .appQuit,
-            .settingsChanged,
             .buildExpired,
             .newCheckStarted
         ]

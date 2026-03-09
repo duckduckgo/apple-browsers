@@ -160,8 +160,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         }
     }
 
-    public var areAutomaticUpdatesEnabled: Bool { true }
-
     public var isAtRestartCheckpoint: Bool { progressState.isAtRestartCheckpoint }
 
     /// Updates Sparkle auto-download settings based on current feature flags.
@@ -483,7 +481,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     public func log() {
-        Logger.updates.log("areAutomaticUpdatesEnabled: \(self.areAutomaticUpdatesEnabled, privacy: .public)")
         Logger.updates.log("updateProgress: \(self.updateProgress, privacy: .public)")
         if let cachedUpdateResult {
             Logger.updates.log("cachedUpdateResult: \(cachedUpdateResult.item.displayVersionString, privacy: .public)(\(cachedUpdateResult.item.versionString, privacy: .public))")

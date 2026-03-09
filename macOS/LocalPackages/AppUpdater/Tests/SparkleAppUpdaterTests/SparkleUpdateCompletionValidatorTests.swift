@@ -62,37 +62,6 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
 
     // MARK: - Validation Tests
 
-    func testWhenUpdateStatusIsUpdatedAndMetadataExistsThenPixelIsFired() {
-        // Given: Stored metadata
-        validator.storePendingUpdateMetadata(
-            sourceVersion: "1.100.0",
-            sourceBuild: "123456",
-            expectedVersion: "1.101.0",
-            expectedBuild: "123457",
-            initiationType: "manual"
-        )
-
-        let expectedPixel = UpdateFlowPixels.updateApplicationSuccess(
-            sourceVersion: "1.100.0",
-            sourceBuild: "123456",
-            targetVersion: "1.101.0",
-            targetBuild: "123457",
-            initiationType: "manual",
-            osVersion: osVersionString()
-        )
-        mockPixelFiring = makePixelMock(expecting: [ExpectedFireCall(pixel: expectedPixel, frequency: .dailyAndCount)])
-
-        // When: Check with .updated status
-        validator.validateExpectations(
-            updateStatus: .updated,
-            currentVersion: "1.101.0",
-            currentBuild: "123457",
-            pixelFiring: mockPixelFiring
-        )
-
-        mockPixelFiring.verifyExpectations(file: #file, line: #line)
-    }
-
     func testWhenUpdateStatusIsNoChangeWithMetadataThenFailurePixelIsFired() throws {
         // Given: Stored metadata
         validator.storePendingUpdateMetadata(

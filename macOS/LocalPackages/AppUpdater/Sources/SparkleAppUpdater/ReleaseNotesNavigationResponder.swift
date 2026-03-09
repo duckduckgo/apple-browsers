@@ -171,7 +171,7 @@ extension ReleaseNotesValues {
                           releaseNotes: cached.releaseNotes,
                           releaseNotesSubscription: cached.releaseNotesSubscription,
                           downloadProgress: 0.00,
-                          automaticUpdate: updateController.areAutomaticUpdatesEnabled)
+                          automaticUpdate: true)
                 return
             }
 
@@ -180,7 +180,7 @@ extension ReleaseNotesValues {
             self.init(status: .loadingError,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,
-                      automaticUpdate: updateController.areAutomaticUpdatesEnabled)
+                      automaticUpdate: true)
             return
         }
 

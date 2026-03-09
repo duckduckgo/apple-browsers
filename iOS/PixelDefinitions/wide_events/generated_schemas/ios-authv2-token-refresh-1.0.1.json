@@ -33,7 +33,7 @@
             "properties": {
                 "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
                 "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
-                "sample_rate": { "type": "number", "description": "Sample rate for this event" }
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 }
             }
         },
         "feature": {

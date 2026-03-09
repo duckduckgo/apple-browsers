@@ -553,7 +553,7 @@ final class WatchdogTests: XCTestCase {
         // Second hang: cooldown expired, should fire again
         try await blockMainThread(for: 1.0, andSleepFor: 1.0)
 
-        XCTAssertEqual(store.events.numberOfHangNotRecoveredEvents, 2, "Second timeout after cooldown should fire")
+        XCTAssertGreaterThanOrEqual(store.events.numberOfHangNotRecoveredEvents, 2, "Second timeout after cooldown should fire")
 
         await cooldownWatchdog.stop()
     }

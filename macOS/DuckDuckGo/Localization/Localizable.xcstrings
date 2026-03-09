@@ -3440,30 +3440,6 @@
         }
       }
     },
-    "aichat.sidebar.new-chat-button.tooltip" : {
-      "comment" : "Tooltip for button to reset the current duck.ai sidebar chat",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "New chat"
-          }
-        }
-      }
-    },
-    "aichat.sidebar.open-in-tab-button.title" : {
-      "comment" : "Title of docked sidebar button to open duck.ai in a full browser tab",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Open new Duck.ai tab"
-          }
-        }
-      }
-    },
     "aichat.sidebar.title" : {
       "comment" : "Title for the Duck.ai sidebar",
       "extractionState" : "extracted_with_value",
@@ -26335,6 +26311,18 @@
         }
       }
     },
+    "duckai.show-duckai-button-in-tab-bar.label" : {
+      "comment" : "Label for showing Duck.ai button in tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai button in the tab bar"
+          }
+        }
+      }
+    },
     "duckai.show-in-address-bar-when-typing.label" : {
       "comment" : "Label for showing 'Ask Duck.ai' option when typing in address bar",
       "extractionState" : "extracted_with_value",
@@ -26871,6 +26859,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать ярлык Duck.ai в адресной строке"
+          }
+        }
+      }
+    },
+    "duckai.show-sidebar-button-in-tab-bar.label" : {
+      "comment" : "Label for showing Duck.ai sidebar button in tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show sidebar button in the tab bar"
           }
         }
       }

@@ -106,31 +106,41 @@ extension Preferences {
                         }
                     }
 
-                    ToggleMenuItem(UserText.aiChatShowShortcutInAddressBarLabel,
-                                   isOn: $model.showShortcutInAddressBar)
-                    .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
-                    .onChange(of: model.showShortcutInAddressBar) { newValue in
-                        if newValue {
-                            PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
-                                          frequency: .dailyAndCount,
-                                          includeAppVersionParameter: true)
-                        } else {
-                            PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
-                                          frequency: .dailyAndCount,
+                    if model.shouldShowTabBarButtonVisibilityOptions {
+                        ToggleMenuItem(UserText.aiChatShowDuckAIButtonInTabBarLabel,
+                                       isOn: $model.showDuckAIButtonInTabBar)
+                        .accessibilityIdentifier("Preferences.AIChat.showDuckAIButtonInTabBarToggle")
+
+                        ToggleMenuItem(UserText.aiChatShowSidebarButtonInTabBarLabel,
+                                       isOn: $model.showSidebarButtonInTabBar)
+                        .accessibilityIdentifier("Preferences.AIChat.showSidebarButtonInTabBarToggle")
+                    } else {
+                        ToggleMenuItem(UserText.aiChatShowShortcutInAddressBarLabel,
+                                       isOn: $model.showShortcutInAddressBar)
+                        .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
+                        .onChange(of: model.showShortcutInAddressBar) { newValue in
+                            if newValue {
+                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
+                                              frequency: .dailyAndCount,
+                                              includeAppVersionParameter: true)
+                            } else {
+                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
+                                              frequency: .dailyAndCount,
+                                              includeAppVersionParameter: true)
+                            }
+                        }
+
+                        ToggleMenuItem(UserText.aiChatOpenSidebarWhenViewingWebsitesToggle,
+                                       isOn: $model.openAIChatInSidebar)
+                        .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
+                        .onChange(of: model.openAIChatInSidebar) { _ in
+                            PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
+                                          frequency: .uniqueByName,
                                           includeAppVersionParameter: true)
                         }
+                        .disabled(!model.showShortcutInAddressBar)
+                        .padding(.leading, 19)
                     }
-
-                    ToggleMenuItem(UserText.aiChatOpenSidebarWhenViewingWebsitesToggle,
-                                   isOn: $model.openAIChatInSidebar)
-                    .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
-                    .onChange(of: model.openAIChatInSidebar) { _ in
-                        PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
-                                      frequency: .uniqueByName,
-                                      includeAppVersionParameter: true)
-                    }
-                    .disabled(!model.showShortcutInAddressBar)
-                    .padding(.leading, 19)
 
                     if model.shouldShowPageContextToggle {
                         ToggleMenuItem(UserText.aiChatAutomaticallySendPageContentToggle,

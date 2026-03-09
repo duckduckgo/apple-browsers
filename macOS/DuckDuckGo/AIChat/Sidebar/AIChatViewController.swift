@@ -20,7 +20,6 @@ import AppKit
 import BrowserServicesKit
 import AIChat
 import Combine
-import PrivacyConfig
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
@@ -58,8 +57,6 @@ final class AIChatViewController: NSViewController {
         static let webViewContainerPadding: CGFloat = 4
         static let webViewTopCornerRadius: CGFloat = 16
         static let webViewBottomCornerRadius: CGFloat = 6
-        static let composeButtonImageName = NSImage.Name("AIChatCompose-16")
-        static let openInTabArrowImageName = NSImage.Name("AIChatExpand-12")
     }
 
     weak var delegate: AIChatViewControllerDelegate?
@@ -77,10 +74,8 @@ final class AIChatViewController: NSViewController {
     var themeUpdateCancellable: AnyCancellable?
 
     private let burnerMode: BurnerMode
-    private let featureFlagger: FeatureFlagger
 
     private var openInNewTabButton: MouseOverButton!
-    private var openInTabButton: MouseOverButton!
     private var detachButton: MouseOverButton!
     private var attachButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -88,8 +83,6 @@ final class AIChatViewController: NSViewController {
     private var titleFaviconView: NSImageView!
     private var titleTextLabel: NSTextField!
     private var titleArrowView: NSImageView!
-    private var openInTabTextLabel: NSTextField!
-    private var openInTabArrowView: NSImageView!
     private var titleLabel: NSTextField!
     private var webViewContainer: WebViewContainerView!
     private var separator: NSView!
@@ -98,16 +91,13 @@ final class AIChatViewController: NSViewController {
     private lazy var aiTab: Tab = Tab(content: .url(currentAIChatURL, source: .ui), burnerMode: burnerMode, isLoadedInSidebar: true)
 
     private var cancellables = Set<AnyCancellable>()
-    private var featureFlagCancellable: AnyCancellable?
 
     init(currentAIChatURL: URL,
          burnerMode: BurnerMode,
-         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.currentAIChatURL = currentAIChatURL
         self.burnerMode = burnerMode
         self.themeManager = themeManager
-        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -133,10 +123,6 @@ final class AIChatViewController: NSViewController {
 
     public var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>? {
         aiTab.aiChat?.chatRestorationDataPublisher
-    }
-
-    private var isAccessibleEntryPointsFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatAccessibleEntryPoints)
     }
 
     override func loadView() {
@@ -169,7 +155,6 @@ final class AIChatViewController: NSViewController {
         updateWebViewMask()
         subscribeToURLChanges()
         subscribeToUserInteractionDialogChanges()
-        subscribeToFeatureFlagChanges()
         subscribeToThemeChanges()
     }
 
@@ -197,9 +182,6 @@ final class AIChatViewController: NSViewController {
                                            toolTip: UserText.aiChatSidebarExpandButtonTooltip)
         topBar.addSubview(openInNewTabButton)
 
-        openInTabButton = makeOpenInTabButton()
-        topBar.addSubview(openInTabButton)
-
         attachButton = makeBarButton(image: .aiChatAttach, action: #selector(attachButtonClicked),
                                      toolTip: UserText.aiChatSidebarAttachButtonTooltip)
         attachButton.isHidden = true
@@ -210,6 +192,7 @@ final class AIChatViewController: NSViewController {
         titleLabel.alignment = .center
         titleLabel.font = .systemFont(ofSize: 13, weight: .medium)
         titleLabel.textColor = .labelColor
+        titleLabel.isHidden = true
         topBar.addSubview(titleLabel)
 
         titleButton = makeTitleButton()
@@ -242,12 +225,6 @@ final class AIChatViewController: NSViewController {
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: openInNewTabButton.trailingAnchor, constant: Constants.titleLabelSideMargin),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: detachButton.leadingAnchor, constant: -Constants.titleLabelSideMargin),
 
-            openInTabButton.centerXAnchor.constraint(equalTo: topBar.centerXAnchor),
-            openInTabButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
-            openInTabButton.heightAnchor.constraint(equalToConstant: Constants.titleButtonHeight),
-            openInTabButton.leadingAnchor.constraint(greaterThanOrEqualTo: openInNewTabButton.trailingAnchor, constant: Constants.titleLabelSideMargin),
-            openInTabButton.trailingAnchor.constraint(lessThanOrEqualTo: detachButton.leadingAnchor, constant: -Constants.titleLabelSideMargin),
-
             titleButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
             titleButton.heightAnchor.constraint(equalToConstant: Constants.titleButtonHeight),
             titleButton.leadingAnchor.constraint(greaterThanOrEqualTo: openInNewTabButton.trailingAnchor, constant: Constants.titleButtonGutter),
@@ -265,58 +242,6 @@ final class AIChatViewController: NSViewController {
             detachButton.heightAnchor.constraint(equalToConstant: Constants.barButtonHeight),
             detachButton.widthAnchor.constraint(equalToConstant: Constants.barButtonWidth),
         ])
-        updateDockedEntryPointsAppearance()
-    }
-
-    private func makeOpenInTabButton() -> MouseOverButton {
-        let button = MouseOverButton(frame: .zero)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.bezelStyle = .shadowlessSquare
-        button.isBordered = false
-        button.title = ""
-        button.imagePosition = .noImage
-        button.cornerRadius = 9
-        button.mouseOverColor = .buttonMouseOver
-        button.mouseDownColor = .buttonMouseDown
-        button.clipsToBounds = false
-        button.refusesFirstResponder = true
-        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        button.backgroundInset = .zero
-        button.target = self
-        button.action = #selector(openInTabButtonClicked)
-        button.toolTip = UserText.aiChatSidebarOpenInTabButtonTitle
-        button.setAccessibilityTitle(UserText.aiChatSidebarOpenInTabButtonTitle)
-
-        openInTabTextLabel = NSTextField(labelWithString: UserText.aiChatSidebarOpenInTabButtonTitle)
-        openInTabTextLabel.translatesAutoresizingMaskIntoConstraints = false
-        openInTabTextLabel.font = .systemFont(ofSize: 13)
-        openInTabTextLabel.textColor = .labelColor
-        openInTabTextLabel.lineBreakMode = .byTruncatingTail
-        openInTabTextLabel.setContentCompressionResistancePriority(.init(rawValue: 500), for: .horizontal)
-
-        openInTabArrowView = NSImageView(image: NSImage(named: Constants.openInTabArrowImageName) ?? .arrowUpRight12)
-        openInTabArrowView.translatesAutoresizingMaskIntoConstraints = false
-        openInTabArrowView.contentTintColor = themeManager.theme.colorsProvider.iconsColor
-        openInTabArrowView.setContentCompressionResistancePriority(.required, for: .horizontal)
-        openInTabArrowView.setContentHuggingPriority(.required, for: .horizontal)
-
-        let stackView = NSStackView(views: [openInTabTextLabel, openInTabArrowView])
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.orientation = .horizontal
-        stackView.alignment = .centerY
-        stackView.distribution = .fill
-        stackView.spacing = 0
-        stackView.setCustomSpacing(6, after: openInTabTextLabel)
-        stackView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-
-        button.addSubview(stackView)
-        NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: Constants.titleButtonHorizontalPadding),
-            stackView.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -Constants.titleButtonHorizontalPadding),
-            stackView.centerYAnchor.constraint(equalTo: button.centerYAnchor)
-        ])
-
-        return button
     }
 
     private func makeTitleButton() -> MouseOverButton {
@@ -406,39 +331,12 @@ final class AIChatViewController: NSViewController {
     private func updateTopBarForHostingContext() {
         let isFloating = view.window is AIChatFloatingWindow
         openInNewTabButton.isHidden = isFloating
-        openInTabButton.isHidden = isFloating || !isAccessibleEntryPointsFeatureEnabled
         detachButton.isHidden = isFloating || !isChatFloatingEnabled
         attachButton.isHidden = !isFloating
         closeButton.isHidden = isFloating
-        titleLabel.isHidden = isFloating || isAccessibleEntryPointsFeatureEnabled
+        titleLabel.isHidden = true
         titleButton.isHidden = !isFloating
         titleArrowView?.isHidden = !isFloating
-        updateDockedEntryPointsAppearance()
-    }
-
-    private func updateDockedEntryPointsAppearance() {
-        let colorsProvider = themeManager.theme.colorsProvider
-        let usesAccessibleEntryPoints = isAccessibleEntryPointsFeatureEnabled
-
-        openInNewTabButton.image = usesAccessibleEntryPoints ? (NSImage(named: Constants.composeButtonImageName) ?? .expand) : .expand
-        openInNewTabButton.toolTip = usesAccessibleEntryPoints ? UserText.aiChatSidebarNewChatButtonTooltip : UserText.aiChatSidebarExpandButtonTooltip
-        openInNewTabButton.setAccessibilityTitle(openInNewTabButton.toolTip ?? "")
-        openInTabTextLabel?.textColor = colorsProvider.textPrimaryColor
-        openInTabArrowView?.image = NSImage(named: Constants.openInTabArrowImageName) ?? .arrowUpRight12
-        openInTabArrowView?.contentTintColor = colorsProvider.iconsColor
-    }
-
-    private func subscribeToFeatureFlagChanges() {
-        featureFlagCancellable = featureFlagger.updatesPublisher
-            .map { [weak self] in
-                self?.isAccessibleEntryPointsFeatureEnabled ?? false
-            }
-            .prepend(isAccessibleEntryPointsFeatureEnabled)
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateTopBarForHostingContext()
-            }
     }
 
     private func createAndSetupWebViewContainer(in container: NSView) {
@@ -535,15 +433,6 @@ final class AIChatViewController: NSViewController {
     }
 
     @objc private func openInNewTabButtonClicked() {
-        let isFloating = view.window is AIChatFloatingWindow
-        if !isFloating && isAccessibleEntryPointsFeatureEnabled {
-            aiTab.aiChat?.submitNewChatAction()
-            return
-        }
-        delegate?.didClickOpenInNewTabButton()
-    }
-
-    @objc private func openInTabButtonClicked() {
         delegate?.didClickOpenInNewTabButton()
     }
 
@@ -590,12 +479,10 @@ extension AIChatViewController: ThemeUpdateListening {
 
         let iconsPrimary = theme.colorsProvider.iconsColor
         openInNewTabButton?.normalTintColor = iconsPrimary
-        openInTabButton?.normalTintColor = iconsPrimary
         detachButton?.normalTintColor = iconsPrimary
         attachButton?.normalTintColor = iconsPrimary
         closeButton?.normalTintColor = iconsPrimary
         titleArrowView?.contentTintColor = iconsPrimary
-        updateDockedEntryPointsAppearance()
     }
 }
 

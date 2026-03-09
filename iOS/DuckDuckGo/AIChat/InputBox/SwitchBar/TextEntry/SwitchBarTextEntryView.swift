@@ -268,27 +268,19 @@ class SwitchBarTextEntryView: UIView {
         switch currentMode {
         case .search:
             textView.keyboardType = .webSearch
-            textView.returnKeyType = .search
+            textView.returnKeyType = .go
             disableAutoCorrectionAndSpellChecking()
         case .aiChat:
-            if handler.isUsingFadeOutAnimation {
-                textView.keyboardType = .webSearch
-                textView.returnKeyType = .go
-                if textView.text.isEmpty {
-                    disableAutoCorrectionAndSpellChecking()
-                } else {
-                    enableAutoCorrectionAndSpellChecking()
-                }
+            textView.keyboardType = .default
+            textView.returnKeyType = .default
+            if handler.isUsingFadeOutAnimation && textView.text.isEmpty {
+                disableAutoCorrectionAndSpellChecking()
             } else {
-                textView.keyboardType = .webSearch
-                textView.returnKeyType = .go
                 enableAutoCorrectionAndSpellChecking()
             }
         }
 
-        if handler.isUsingFadeOutAnimation {
-            textView.reloadInputViews()
-        }
+        textView.reloadInputViews()
     }
 
     private func updatePlaceholderVisibility() {
@@ -503,8 +495,8 @@ class SwitchBarTextEntryView: UIView {
         if isTextEmpty {
             disableAutoCorrectionAndSpellChecking()
         } else {
-            textView.keyboardType = .webSearch
-            textView.returnKeyType = .go
+            textView.keyboardType = .default
+            textView.returnKeyType = .default
             enableAutoCorrectionAndSpellChecking()
         }
 
@@ -577,14 +569,14 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            if currentMode == .aiChat {
+                return true
+            }
             fireKeyboardGoPressedPixel()
-            /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
             let currentText = textView.text ?? ""
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 handler.submitText(currentText)
             }
-            /// Prevent adding newline when there's no content or just whitespace
-            /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210989002857245?focus=true
             return false
         }
         return true

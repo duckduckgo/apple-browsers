@@ -874,6 +874,7 @@ class MainViewController: UIViewController {
         }
 
         if #available(iOS 26, *) {
+            latestKeyboardFrame = .zero
             adjustUI(withKeyboardFrame: .zero)
         }
     }

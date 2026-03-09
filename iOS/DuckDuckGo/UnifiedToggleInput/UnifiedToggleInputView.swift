@@ -366,6 +366,8 @@ final class UnifiedToggleInputView: UIView {
                 self.cardLeadingConstraint.constant = Constants.cardHorizontalMargin
                 self.cardTrailingConstraint.constant = -Constants.cardHorizontalMargin
                 self.cardBottomConstraint.constant = -Constants.cardVerticalMargin
+                self.toolbarHeightConstraint.constant = 0
+                self.toolsToolbar.alpha = 0
             } else {
                 self.cardView.layer.maskedCorners = self.usesInlineEditingMargins ? allCorners : topOnlyCorners
                 let shadowGoesDown = self.cardPosition == .top || self.usesInlineEditingMargins

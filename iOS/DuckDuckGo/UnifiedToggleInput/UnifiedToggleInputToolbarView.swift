@@ -79,6 +79,19 @@ final class UnifiedToggleInputToolbarView: UIView {
         set { modelChipButton.isHidden = newValue }
     }
 
+    var modelPickerMenu: UIMenu? {
+        get { modelChipButton.menu }
+        set {
+            modelChipButton.menu = newValue
+            modelChipButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
+    var isModelChipHidden: Bool {
+        get { modelChipButton.isHidden }
+        set { modelChipButton.isHidden = newValue }
+    }
+
     // MARK: - UI Components
 
     private lazy var globeButton: UIButton = makeToolButton(

@@ -18,7 +18,6 @@
 
 import XCTest
 import AIChat
-@testable import DuckDuckGo_Privacy_Browser
 
 final class AIChatModelsServiceTests: XCTestCase {
 

@@ -2360,6 +2360,66 @@
         }
       }
     },
+    "aichat.chrome.hide-duckai-button" : {
+      "comment" : "Context menu item to hide the Duck.ai title button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Duck.ai Button"
+          }
+        }
+      }
+    },
+    "aichat.chrome.hide-sidebar-button" : {
+      "comment" : "Context menu item to hide the Duck.ai sidebar toggle button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Sidebar Button"
+          }
+        }
+      }
+    },
+    "aichat.chrome.open-ai-settings" : {
+      "comment" : "Context menu item to open AI Features settings pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open AI Settings"
+          }
+        }
+      }
+    },
+    "aichat.chrome.show-duckai-button" : {
+      "comment" : "Context menu item to show the Duck.ai title button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai Button"
+          }
+        }
+      }
+    },
+    "aichat.chrome.show-sidebar-button" : {
+      "comment" : "Context menu item to show the Duck.ai sidebar toggle button in the tab bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Sidebar Button"
+          }
+        }
+      }
+    },
     "aichat.customize-button.tooltip" : {
       "comment" : "Tooltip for the customize button in AI chat omnibar",
       "extractionState" : "stale",
@@ -3399,7 +3459,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open Duck.ai in Tab"
+            "value" : "Open new Duck.ai tab"
           }
         }
       }

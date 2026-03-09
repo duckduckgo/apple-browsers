@@ -86,11 +86,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var aiChatFloatingStateCancellable: AnyCancellable?
     private var aiChatMenuConfigCancellable: AnyCancellable?
     private var aiChatButtonHoverCancellable: AnyCancellable?
+    private var duckAIChromeButtonsVisibilityCancellable: AnyCancellable?
     private var duckAIChromeDividerInsetConstraint: NSLayoutConstraint?
     private var duckAIChromeDividerFullConstraint: NSLayoutConstraint?
     private var currentAIChatPresentationMode: AIChatPresentationMode = .hidden
     private var selectedTabViewModelCancellable: AnyCancellable?
     private var tabContentCancellable: AnyCancellable?
+    private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
+    private lazy var duckAIChromeContextMenu: NSMenu = {
+        let menu = NSMenu()
+        menu.delegate = self
+        return menu
+    }()
 
     private var addNewTabButtonFooter: TabBarFooter? {
         guard let indexPath = collectionView.indexPathsForVisibleSupplementaryElements(ofKind: NSCollectionView.elementKindSectionFooter).first,
@@ -196,6 +203,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         featureFlagger: FeatureFlagger,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
+        duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
         tabDragAndDropManager: TabDragAndDropManager,
         autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil
     ) -> TabBarViewController {
@@ -208,6 +216,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 featureFlagger: featureFlagger,
                 aiChatMenuConfig: aiChatMenuConfig,
+                duckAIChromeButtonsVisibilityManager: duckAIChromeButtonsVisibilityManager,
                 tabDragAndDropManager: tabDragAndDropManager,
                 autoconsentStatsPopoverCoordinator: autoconsentStatsPopoverCoordinator
             )
@@ -225,6 +234,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           activeRemoteMessageModel: ActiveRemoteMessageModel,
           featureFlagger: FeatureFlagger,
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging,
           themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
           tabDragAndDropManager: TabDragAndDropManager,
           autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil) {
@@ -233,6 +243,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         self.fireproofDomains = fireproofDomains
         self.featureFlagger = featureFlagger
         self.aiChatMenuConfig = aiChatMenuConfig
+        self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(
             activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
@@ -292,6 +303,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         setupConstraints()
         setupFireButton()
         subscribeToChromeSidebarFeatureFlag()
+        subscribeToDuckAIChromeButtonsVisibilityChanges()
         setupPinnedTabsView()
         subscribeToTabModeChanges()
         setupAddTabButton()
@@ -322,6 +334,29 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         enableScrollButtons()
         subscribeToChildWindows()
         setupAccessibility()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if showDuckAIChromeContextMenuIfNeeded(for: event) { return }
+        super.mouseDown(with: event)
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        if showDuckAIChromeContextMenuIfNeeded(for: event) { return }
+        super.rightMouseDown(with: event)
+    }
+
+    private func showDuckAIChromeContextMenuIfNeeded(for event: NSEvent) -> Bool {
+        guard isChromeSidebarFeatureEnabled,
+              aiChatMenuConfig.shouldDisplayAnyAIChatFeature,
+              let container = duckAIChromeControlContainer,
+              !container.isHidden else { return false }
+        let clickInContainer = container.bounds.contains(container.convert(event.locationInWindow, from: nil))
+        let isContextEvent = event.isContextClick || event.type == .rightMouseDown
+
+        guard clickInContainer, isContextEvent else { return false }
+        NSMenu.popUpContextMenu(duckAIChromeContextMenu, with: event, for: container)
+        return true
     }
 
     override func viewWillDisappear() {
@@ -448,6 +483,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func setupDuckAIChromeSegmentedControl() {
         guard duckAIChromeControlContainer == nil else { return }
 
+        enableDuckAIChromeContextMenuOnTabBar()
+
         let container = ColorView(frame: .zero)
         container.translatesAutoresizingMaskIntoConstraints = false
         container.setAccessibilityIdentifier("TabBarViewController.duckAIChromeControlContainer")
@@ -527,8 +564,64 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         .receive(on: DispatchQueue.main)
         .sink { [weak self] _ in self?.updateDuckAIChromeDividerState() }
 
+        container.menu = duckAIChromeContextMenu
+
         updateDuckAIChromeSegmentedControlAppearance()
+        applyDuckAIChromeButtonVisibility()
         updateDuckAIChromeSegmentedControlState()
+    }
+
+    private func applyDuckAIChromeButtonVisibility() {
+        guard let container = duckAIChromeControlContainer,
+              let titleButton = duckAIChromeTitleButton,
+              let sidebarButton = duckAIChromeSidebarButton,
+              let divider = duckAIChromeDivider else { return }
+
+        guard aiChatMenuConfig.shouldDisplayAnyAIChatFeature else {
+            disableDuckAIChromeContextMenuOnTabBar()
+            container.menu = nil
+            titleButton.isHidden = true
+            sidebarButton.isHidden = true
+            divider.isHidden = true
+            container.isHidden = true
+            return
+        }
+
+        enableDuckAIChromeContextMenuOnTabBar()
+        container.menu = duckAIChromeContextMenu
+
+        let duckAIHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
+        let sidebarHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
+
+        titleButton.isHidden = duckAIHidden
+        sidebarButton.isHidden = sidebarHidden
+        divider.isHidden = duckAIHidden || sidebarHidden
+        container.isHidden = duckAIHidden && sidebarHidden
+
+        if !duckAIHidden && !sidebarHidden {
+            titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
+            sidebarButton.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+            container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
+        } else if !duckAIHidden {
+            titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+            container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
+        } else if !sidebarHidden {
+            sidebarButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+            container.backgroundColor = .clear
+        }
+    }
+
+    func refreshDuckAIChromeButtonsVisibility() {
+        applyDuckAIChromeButtonVisibility()
+        updateDuckAIChromeSegmentedControlState()
+    }
+
+    private func subscribeToDuckAIChromeButtonsVisibilityChanges() {
+        duckAIChromeButtonsVisibilityCancellable = NotificationCenter.default.publisher(for: .duckAIChromeButtonsVisibilityChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshDuckAIChromeButtonsVisibility()
+            }
     }
 
     private func updateDuckAIChromeSegmentedControlAppearance() {
@@ -560,6 +653,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         duckAIChromeSidebarButton.mouseDownTintColor = colorsProvider.iconsColor
         duckAIChromeSidebarButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
         duckAIChromeSidebarButton.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+        applyDuckAIChromeButtonVisibility()
         updateDuckAIChromeDividerState()
     }
 
@@ -586,6 +680,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         guard let duckAIChromeControlContainer else { return }
         rightSideStackView.removeArrangedSubview(duckAIChromeControlContainer)
         duckAIChromeControlContainer.removeFromSuperview()
+        disableDuckAIChromeContextMenuOnTabBar()
         self.duckAIChromeControlContainer = nil
         self.duckAIChromeTitleButton = nil
         self.duckAIChromeSidebarButton = nil
@@ -593,6 +688,28 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         self.aiChatButtonHoverCancellable = nil
         self.duckAIChromeDividerInsetConstraint = nil
         self.duckAIChromeDividerFullConstraint = nil
+    }
+
+    private func enableDuckAIChromeContextMenuOnTabBar() {
+        view.menu = duckAIChromeContextMenu
+        visualEffectBackgroundView.menu = duckAIChromeContextMenu
+        backgroundColorView.menu = duckAIChromeContextMenu
+        scrollView.menu = duckAIChromeContextMenu
+        collectionView.menu = duckAIChromeContextMenu
+        pinnedTabsContainerView.menu = duckAIChromeContextMenu
+        pinnedTabsCollectionView?.menu = duckAIChromeContextMenu
+        rightSideStackView.menu = duckAIChromeContextMenu
+    }
+
+    private func disableDuckAIChromeContextMenuOnTabBar() {
+        view.menu = nil
+        visualEffectBackgroundView.menu = nil
+        backgroundColorView.menu = nil
+        scrollView.menu = nil
+        collectionView.menu = nil
+        pinnedTabsContainerView.menu = nil
+        pinnedTabsCollectionView?.menu = nil
+        rightSideStackView.menu = nil
     }
 
     private func subscribeToChromeSidebarFeatureFlag() {
@@ -642,7 +759,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         aiChatMenuConfigCancellable = aiChatMenuConfig.valuesChangedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.updateDuckAIChromeSegmentedControlState()
+                self?.refreshDuckAIChromeButtonsVisibility()
             }
     }
 
@@ -751,6 +868,26 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
 
         updateDuckAIChromeSegmentedControlState()
+    }
+
+    @objc private func hideDuckAITitleButtonAction() {
+        duckAIChromeButtonsVisibilityManager.setHidden(true, for: .duckAI)
+    }
+
+    @objc private func showDuckAITitleButtonAction() {
+        duckAIChromeButtonsVisibilityManager.setHidden(false, for: .duckAI)
+    }
+
+    @objc private func hideDuckAISidebarButtonAction() {
+        duckAIChromeButtonsVisibilityManager.setHidden(true, for: .sidebar)
+    }
+
+    @objc private func showDuckAISidebarButtonAction() {
+        duckAIChromeButtonsVisibilityManager.setHidden(false, for: .sidebar)
+    }
+
+    @objc private func openAISettingsAction() {
+        NSApp.delegateTyped.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat)
     }
 
     private func setupScrollButtons() {
@@ -2362,6 +2499,50 @@ extension TabBarViewController {
 
     func stopFireButtonPulseAnimation() {
         ViewHighlighter.stopHighlighting(view: fireButton)
+    }
+
+}
+
+// MARK: - Duck.ai Chrome Context Menu
+
+extension TabBarViewController: NSMenuDelegate {
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard menu === duckAIChromeContextMenu else { return }
+        menu.removeAllItems()
+
+        guard isChromeSidebarFeatureEnabled, aiChatMenuConfig.shouldDisplayAnyAIChatFeature else {
+            return
+        }
+
+        let duckAIHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
+        let sidebarHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
+
+        let duckAIItem = NSMenuItem(
+            title: duckAIHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton,
+            action: duckAIHidden ? #selector(showDuckAITitleButtonAction) : #selector(hideDuckAITitleButtonAction),
+            keyEquivalent: "Y"
+        )
+        duckAIItem.target = self
+        menu.addItem(duckAIItem)
+
+        let sidebarItem = NSMenuItem(
+            title: sidebarHidden ? UserText.aiChatChromeShowSidebarButton : UserText.aiChatChromeHideSidebarButton,
+            action: sidebarHidden ? #selector(showDuckAISidebarButtonAction) : #selector(hideDuckAISidebarButtonAction),
+            keyEquivalent: "U"
+        )
+        sidebarItem.target = self
+        menu.addItem(sidebarItem)
+
+        menu.addItem(.separator())
+
+        let settingsItem = NSMenuItem(
+            title: UserText.aiChatChromeOpenAISettings,
+            action: #selector(openAISettingsAction),
+            keyEquivalent: ""
+        )
+        settingsItem.target = self
+        menu.addItem(settingsItem)
     }
 
 }

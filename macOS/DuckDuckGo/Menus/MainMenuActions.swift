@@ -1272,6 +1272,18 @@ extension MainViewController {
         }
     }
 
+    @objc func toggleDuckAIChromeButtonVisibility(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.chromeSidebar) else { return }
+        let duckAIChromeButtonsVisibilityManager = LocalDuckAIChromeButtonsVisibilityManager()
+        duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .duckAI)
+    }
+
+    @objc func toggleDuckAIChromeSidebarButtonVisibility(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.chromeSidebar) else { return }
+        let duckAIChromeButtonsVisibilityManager = LocalDuckAIChromeButtonsVisibilityManager()
+        duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .sidebar)
+    }
+
     @objc func toggleAutofillShortcut(_ sender: Any) {
         pinningManager.togglePinning(for: .autofill)
     }

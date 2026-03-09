@@ -79,7 +79,6 @@ public enum UpdateFlowPixels: PixelKitEvent {
      * - targetVersion: App version after update
      * - targetBuild: Build number after update
      * - initiationType: How update was initiated (automatic, manual)
-     * - updateConfiguration: User's automatic update setting (automatic, manual)
      * - osVersion: macOS version
      */
     case updateApplicationSuccess(
@@ -88,7 +87,6 @@ public enum UpdateFlowPixels: PixelKitEvent {
         targetVersion: String,
         targetBuild: String,
         initiationType: String,
-        updateConfiguration: String,
         osVersion: String
     )
 
@@ -101,7 +99,6 @@ public enum UpdateFlowPixels: PixelKitEvent {
         actualBuild: String,
         failureStatus: String,
         initiationType: String,
-        updateConfiguration: String,
         osVersion: String
     )
 
@@ -159,7 +156,7 @@ public enum UpdateFlowPixels: PixelKitEvent {
         case .checkForUpdate(let source):
             return ["source": source.rawValue]
         case .updateApplicationSuccess(let sourceVersion, let sourceBuild, let targetVersion,
-                                        let targetBuild, let initiationType, let updateConfiguration,
+                                        let targetBuild, let initiationType,
                                         let osVersion):
             return [
                 "sourceVersion": sourceVersion,
@@ -167,12 +164,11 @@ public enum UpdateFlowPixels: PixelKitEvent {
                 "targetVersion": targetVersion,
                 "targetBuild": targetBuild,
                 "initiationType": initiationType,
-                "updateConfiguration": updateConfiguration,
                 "osVersion": osVersion
             ]
         case .updateApplicationFailure(let sourceVersion, let sourceBuild, let expectedVersion,
                                         let expectedBuild, let actualVersion, let actualBuild,
-                                        let failureStatus, let initiationType, let updateConfiguration,
+                                        let failureStatus, let initiationType,
                                         let osVersion):
             return [
                 "sourceVersion": sourceVersion,
@@ -183,7 +179,6 @@ public enum UpdateFlowPixels: PixelKitEvent {
                 "actualBuild": actualBuild,
                 "failureStatus": failureStatus,
                 "initiationType": initiationType,
-                "updateConfiguration": updateConfiguration,
                 "osVersion": osVersion
             ]
         case .updateApplicationUnexpected(let targetVersion, let targetBuild, let osVersion):

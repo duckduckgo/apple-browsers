@@ -153,13 +153,8 @@ public protocol UpdateController: UpdateControllerObjC {
     ///
     /// **App Store vs Sparkle Behavior:**
     /// - **App Store**: Always `false` - automatic updates controlled by macOS System Settings
-    /// - **Sparkle**: User-configurable in Settings, controls download and restart behavior
-    ///
-    /// **Usage**:
-    /// - Controls update notification text ("Restart to update" vs "Click here to update")
-    /// - For Sparkle: determines if updates download automatically and restart behavior
-    /// - For App Store: cosmetic only, actual automatic updates handled by macOS
-    var areAutomaticUpdatesEnabled: Bool { get set }
+    /// - **Sparkle**: Always `true` - automatic updates are always enabled
+    var areAutomaticUpdatesEnabled: Bool { get }
 
     /// Handles displaying update notifications to the user.
     ///
@@ -290,7 +285,7 @@ extension UpdateController {
     public func showUpdateNotificationIfNeeded(isOnboardingFinished: () -> Bool) {
         guard let latestUpdate, hasPendingUpdate, isOnboardingFinished(), isUpdateNotificationAllowed else { return }
 
-        notificationPresenter.showUpdateNotification(for: latestUpdate.type, areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
+        notificationPresenter.showUpdateNotification(for: latestUpdate.type)
 
         lastUpdateNotificationShownDate = Date()
     }

@@ -37,27 +37,23 @@ final class SparkleUpdateControllerTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Custom Feed Enabled
+    // MARK: - Custom Feed Enabled (DEBUG/REVIEW builds)
 
-    func testResolveAutoDownload_customFeedEnabled_flagOff_preferenceOn_returnsFalse() {
-        // Flag OFF = not in enabledUpdateFeatureFlags array
-
+    func testResolveAutoDownload_customFeedEnabled_flagOff_returnsFalse() {
         let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: true
+            featureFlagger: mockFeatureFlagger
         )
 
         XCTAssertFalse(result)
     }
 
-    func testResolveAutoDownload_customFeedEnabled_debugFlagOn_preferenceOn_returnsTrue() {
+    func testResolveAutoDownload_customFeedEnabled_debugFlagOn_matchesBuild() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInDEBUG]
 
         let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: true
+            featureFlagger: mockFeatureFlagger
         )
 
 #if DEBUG
@@ -67,39 +63,12 @@ final class SparkleUpdateControllerTests: XCTestCase {
 #endif
     }
 
-    func testResolveAutoDownload_customFeedEnabled_debugFlagOn_preferenceOff_returnsFalse() {
-        mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInDEBUG]
-
-        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: false
-        )
-
-        XCTAssertFalse(result)
-    }
-
-    // MARK: - Non-Debug Flag Handling
-
-    func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOff_preferenceOn_returnsFalse() {
-        // Flag OFF = not in enabledUpdateFeatureFlags array.
-
-        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: true
-        )
-
-        XCTAssertFalse(result)
-    }
-
-    func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOn_preferenceOn_matchesBuild() {
+    func testResolveAutoDownload_customFeedEnabled_reviewFlagOn_matchesBuild() {
         mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInREVIEW]
 
         let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: true
+            featureFlagger: mockFeatureFlagger
         )
 
 #if DEBUG
@@ -109,37 +78,14 @@ final class SparkleUpdateControllerTests: XCTestCase {
 #endif
     }
 
-    func testResolveAutoDownload_customFeedEnabled_nonDebugFlagOn_preferenceOff_returnsFalse() {
-        mockFeatureFlagger.enabledUpdateFeatureFlags = [.autoUpdateInREVIEW]
+    // MARK: - Custom Feed Disabled (production builds)
 
-        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: true,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: false
-        )
-
-        XCTAssertFalse(result)
-    }
-
-    // MARK: - Custom Feed Disabled
-
-    func testResolveAutoDownload_customFeedDisabled_preferenceOn_returnsTrue() {
+    func testResolveAutoDownload_customFeedDisabled_alwaysReturnsTrue() {
         let result = SparkleUpdateController.resolveAutoDownloadEnabled(
             allowCustomUpdateFeed: false,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: true
+            featureFlagger: mockFeatureFlagger
         )
 
         XCTAssertTrue(result)
-    }
-
-    func testResolveAutoDownload_customFeedDisabled_preferenceOff_returnsFalse() {
-        let result = SparkleUpdateController.resolveAutoDownloadEnabled(
-            allowCustomUpdateFeed: false,
-            featureFlagger: mockFeatureFlagger,
-            userPreference: false
-        )
-
-        XCTAssertFalse(result)
     }
 }

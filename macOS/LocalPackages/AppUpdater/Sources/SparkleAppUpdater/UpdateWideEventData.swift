@@ -61,7 +61,6 @@ public final class UpdateWideEventData: WideEventData {
     public var toBuild: String?
     public var updateType: UpdateType?
     public var initiationType: InitiationType
-    public var updateConfiguration: UpdateConfiguration
     public var lastKnownStep: UpdateStep?
     public var osVersion: String
 
@@ -87,12 +86,6 @@ public final class UpdateWideEventData: WideEventData {
     public enum InitiationType: String, Codable {
         case automatic  // Background check
         case manual     // User-triggered check
-    }
-
-    /// User's automatic update preference setting.
-    public enum UpdateConfiguration: String, Codable {
-        case automatic
-        case manual
     }
 
     /// Reason an update flow was cancelled.
@@ -172,7 +165,6 @@ public final class UpdateWideEventData: WideEventData {
                 toBuild: String? = nil,
                 updateType: UpdateType? = nil,
                 initiationType: InitiationType,
-                updateConfiguration: UpdateConfiguration,
                 lastKnownStep: UpdateStep? = nil,
                 osVersion: String = ProcessInfo.processInfo.operatingSystemVersionString,
                 cancellationReason: CancellationReason? = nil,
@@ -192,7 +184,6 @@ public final class UpdateWideEventData: WideEventData {
         self.toBuild = toBuild
         self.updateType = updateType
         self.initiationType = initiationType
-        self.updateConfiguration = updateConfiguration
         self.lastKnownStep = lastKnownStep
         self.osVersion = osVersion
         self.cancellationReason = cancellationReason
@@ -216,7 +207,6 @@ public final class UpdateWideEventData: WideEventData {
             ("feature.data.ext.to_build", toBuild),
             ("feature.data.ext.update_type", updateType?.rawValue),
             ("feature.data.ext.initiation_type", initiationType.rawValue),
-            ("feature.data.ext.update_configuration", updateConfiguration.rawValue),
             ("feature.data.ext.last_known_step", lastKnownStep?.rawValue),
             ("feature.data.ext.os_version", osVersion),
             ("feature.data.ext.cancellation_reason", cancellationReason?.rawValue),

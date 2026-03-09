@@ -152,7 +152,7 @@ private final class StubSparkleUpdateController: NSObject, SparkleUpdateControll
 
 private final class StubUpdateNotificationPresenter: UpdateNotificationPresenting {
     func showUpdateNotification(for status: AppUpdateStatus) {}
-    func showUpdateNotification(for type: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {}
+    func showUpdateNotification(for type: Update.UpdateType) {}
     func dismissIfPresented() {}
     func openUpdatesPage() {}
 }

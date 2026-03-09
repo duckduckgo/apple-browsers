@@ -89,16 +89,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         return Application.appDelegate.updateController
     }
 
-    var areAutomaticUpdatesEnabled: Bool {
-        get {
-            return updateController?.areAutomaticUpdatesEnabled ?? false
-        }
-
-        set {
-            updateController?.areAutomaticUpdatesEnabled = newValue
-        }
-    }
-
     var lastUpdateCheckDate: Date? {
         updateController?.lastUpdateCheckDate
     }

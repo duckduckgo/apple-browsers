@@ -34,15 +34,8 @@ final class UpdateNotificationPresenter: UpdateNotificationPresenting {
         self.pixelFiring = pixelFiring
     }
 
-    func showUpdateNotification(for updateType: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {
-        let manualActionText: String
-        if StandardApplicationBuildType().isAppStoreBuild {
-            manualActionText = UserText.manualUpdateAppStoreAction
-        } else {
-            manualActionText = UserText.manualUpdateAction
-        }
-
-        let action = areAutomaticUpdatesEnabled ? UserText.autoUpdateAction : manualActionText
+    func showUpdateNotification(for updateType: Update.UpdateType) {
+        let action = UserText.autoUpdateAction
 
         switch updateType {
         case .critical:

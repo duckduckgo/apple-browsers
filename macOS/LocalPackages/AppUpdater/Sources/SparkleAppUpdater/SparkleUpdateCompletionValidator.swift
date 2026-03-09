@@ -39,15 +39,13 @@ public final class SparkleUpdateCompletionValidator {
         sourceBuild: String,
         expectedVersion: String,
         expectedBuild: String,
-        initiationType: String,
-        updateConfiguration: String
+        initiationType: String
     ) {
         try? settings.set(sourceVersion, for: \.pendingUpdateSourceVersion)
         try? settings.set(sourceBuild, for: \.pendingUpdateSourceBuild)
         try? settings.set(expectedVersion, for: \.pendingUpdateExpectedVersion)
         try? settings.set(expectedBuild, for: \.pendingUpdateExpectedBuild)
         try? settings.set(initiationType, for: \.pendingUpdateInitiationType)
-        try? settings.set(updateConfiguration, for: \.pendingUpdateConfiguration)
     }
 
     /// Check if update completed successfully and fire appropriate events.
@@ -70,15 +68,13 @@ public final class SparkleUpdateCompletionValidator {
         let expectedVersion = (try? settings.pendingUpdateExpectedVersion) ?? "unknown"
         let expectedBuild = (try? settings.pendingUpdateExpectedBuild) ?? "unknown"
         let initiationType = (try? settings.pendingUpdateInitiationType) ?? "unknown"
-        let updateConfiguration = (try? settings.pendingUpdateConfiguration) ?? "unknown"
 
         // Determine if this was a Sparkle-initiated update
         let updatedBySparkle = (try? settings.pendingUpdateSourceVersion) != nil &&
                                 (try? settings.pendingUpdateSourceBuild) != nil &&
                                 (try? settings.pendingUpdateExpectedVersion) != nil &&
                                 (try? settings.pendingUpdateExpectedBuild) != nil &&
-                                (try? settings.pendingUpdateInitiationType) != nil &&
-                                (try? settings.pendingUpdateConfiguration) != nil
+                                (try? settings.pendingUpdateInitiationType) != nil
 
         // Get OS version for pixels
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
@@ -96,7 +92,6 @@ public final class SparkleUpdateCompletionValidator {
                     targetVersion: currentVersion,
                     targetBuild: currentBuild,
                     initiationType: initiationType,
-                    updateConfiguration: updateConfiguration,
                     osVersion: osVersionString
                 ), frequency: .dailyAndCount)
             } else {
@@ -123,7 +118,6 @@ public final class SparkleUpdateCompletionValidator {
                 actualBuild: currentBuild,
                 failureStatus: failureStatus,
                 initiationType: initiationType,
-                updateConfiguration: updateConfiguration,
                 osVersion: osVersionString
             ), frequency: .dailyAndCount)
         }
@@ -137,6 +131,5 @@ public final class SparkleUpdateCompletionValidator {
         try? settings.set(nil, for: \.pendingUpdateExpectedVersion)
         try? settings.set(nil, for: \.pendingUpdateExpectedBuild)
         try? settings.set(nil, for: \.pendingUpdateInitiationType)
-        try? settings.set(nil, for: \.pendingUpdateConfiguration)
     }
 }

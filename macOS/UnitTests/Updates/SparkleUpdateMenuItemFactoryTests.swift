@@ -151,7 +151,7 @@ private final class MockSparkleUpdateController: NSObject, SparkleUpdateControll
 
 private final class MockUpdateNotificationPresenter: UpdateNotificationPresenting {
     func showUpdateNotification(for status: AppUpdateStatus) {}
-    func showUpdateNotification(for type: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {}
+    func showUpdateNotification(for type: Update.UpdateType) {}
     func dismissIfPresented() {}
     func openUpdatesPage() {}
 }

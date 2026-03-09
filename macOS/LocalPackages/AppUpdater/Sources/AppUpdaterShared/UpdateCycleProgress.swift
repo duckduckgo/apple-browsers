@@ -23,7 +23,6 @@ public enum UpdateCycleProgress: CustomStringConvertible {
     public enum DoneReason: Int {
         case finishedWithNoError = 100
         case finishedWithNoUpdateFound = 101
-        case pausedAtDownloadCheckpoint = 102
         case pausedAtRestartCheckpoint = 103
         case dismissedWithNoError = 105
         case dismissingObsoleteUpdate = 106

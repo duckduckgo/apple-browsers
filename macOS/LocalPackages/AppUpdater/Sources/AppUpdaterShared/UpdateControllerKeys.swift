@@ -39,7 +39,6 @@ public enum UpdateControllerStorageKeys: String, StorageKeyDescribing {
     case pendingUpdateExpectedVersion = "pending.update.expected.version"
     case pendingUpdateExpectedBuild = "pending.update.expected.build"
     case pendingUpdateInitiationType = "pending.update.initiation.type"
-    case pendingUpdateConfiguration = "pending.update.configuration"
 
     // Cached pending update info (PendingUpdateInfo stored as Codable)
     case pendingUpdateInfo = "com.duckduckgo.updateController.pendingUpdateInfo"
@@ -65,7 +64,6 @@ public struct UpdateControllerSettings: StoringKeys {
     public let pendingUpdateExpectedVersion = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateExpectedVersion, assertionHandler: { _ in })
     public let pendingUpdateExpectedBuild = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateExpectedBuild, assertionHandler: { _ in })
     public let pendingUpdateInitiationType = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateInitiationType, assertionHandler: { _ in })
-    public let pendingUpdateConfiguration = StorageKey<String>(UpdateControllerStorageKeys.pendingUpdateConfiguration, assertionHandler: { _ in })
 
     // Cached pending update info (PendingUpdateInfo stored as Codable)
     public let pendingUpdateInfo = StorageKey<PendingUpdateInfo>(UpdateControllerStorageKeys.pendingUpdateInfo, assertionHandler: { _ in })

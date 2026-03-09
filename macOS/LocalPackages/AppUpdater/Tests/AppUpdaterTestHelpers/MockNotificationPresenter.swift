@@ -24,7 +24,7 @@ public struct MockNotificationPresenter: UpdateNotificationPresenting {
     public init() {}
 
     public func showUpdateNotification(for status: AppUpdateStatus) {}
-    public func showUpdateNotification(for updateType: Update.UpdateType, areAutomaticUpdatesEnabled: Bool) {}
+    public func showUpdateNotification(for updateType: Update.UpdateType) {}
     public func dismissIfPresented() {}
     public func openUpdatesPage() {}
 }

@@ -204,6 +204,11 @@
                 "description": "Whether force dark mode is enabled. Only sent when value is known."
             },
             {
+                "key": "isAfterSuppressedXSafariRedirect",
+                "type": "boolean",
+                "description": "Whether the page was loaded after a suppressed x-safari-https redirect. Only sent when true."
+            },
+            {
                 "key": "siteType",
                 "type": "string",
                 "description": "Whether the site was loaded in desktop or mobile mode",
@@ -500,6 +505,11 @@
                 "key": "isForceDarkModeEnabled",
                 "type": "boolean",
                 "description": "Whether force dark mode is enabled. Only sent when value is known."
+            },
+            {
+                "key": "isAfterSuppressedXSafariRedirect",
+                "type": "boolean",
+                "description": "Whether the page was loaded after a suppressed x-safari-https redirect. Only sent when true."
             },
             {
                 "key": "siteType",

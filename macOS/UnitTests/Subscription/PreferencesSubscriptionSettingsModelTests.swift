@@ -934,6 +934,41 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
         XCTAssertTrue(sut.subscriptionDetails?.contains("renews") == true)
     }
 
+    func testSubscriptionDetails_WhenPendingPlanSameTierAsCurrent_ShowsRenewalCopyAndNoBanner() {
+        // Given - Crossgrade: pending plan has same tier as current (e.g. Pro yearly → Pro monthly)
+        // Downgrade copy and banner should not be shown; normal renewal copy only
+        let pendingPlan = DuckDuckGoSubscription.PendingPlan(
+            productId: "ddg-privacy-pro-monthly-renews",
+            billingPeriod: .monthly,
+            effectiveAt: Date(timeIntervalSince1970: 1711557633),
+            status: "pending",
+            tier: .pro
+        )
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            tier: .pro,
+            pendingPlans: [pendingPlan]
+        ))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription details updated with renewal copy")
+        sut.$subscriptionDetails
+            .compactMap { $0 }
+            .filter { $0.contains("renews") }
+            .first()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 2.0)
+
+        // Then - Should show normal renewal copy, not pending downgrade; banner should be nil
+        XCTAssertNotNil(sut.subscriptionDetails)
+        XCTAssertTrue(sut.subscriptionDetails?.contains("renews") == true,
+                      "Expected renewal copy, got: \(sut.subscriptionDetails ?? "")")
+        XCTAssertNil(sut.cancelPendingDowngradeDetails,
+                     "Banner should be hidden for same-tier pending plan (crossgrade)")
+    }
+
     func testShouldShowUpgrade_WhenPendingPlanExists_ReturnsFalse() {
         // Given - Active subscription with pending plan and available upgrades
         let pendingPlan = DuckDuckGoSubscription.PendingPlan(

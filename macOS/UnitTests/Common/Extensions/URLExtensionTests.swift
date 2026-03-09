@@ -25,7 +25,8 @@ import Testing
 @MainActor
 final class URLExtensionTests {
 
-    @Test("Verifying non-sandbox library directory URL returns consistent value regardless of sandbox")
+    @available(iOS 16, macOS 13, *)
+    @Test("Verifying non-sandbox library directory URL returns consistent value regardless of sandbox", .timeLimit(.minutes(1)))
     func thatNonSandboxLibraryDirectoryURLReturnsTheSameValueRegardlessOfSandbox() {
         let libraryURL = URL.nonSandboxLibraryDirectoryURL
         var pathComponents = libraryURL.path.components(separatedBy: "/")
@@ -36,7 +37,8 @@ final class URLExtensionTests {
         #expect(pathComponents == ["", "Users", "user", "Library"])
     }
 
-    @Test("Verifying non-sandbox application support directory URL returns consistent value regardless of sandbox")
+    @available(iOS 16, macOS 13, *)
+    @Test("Verifying non-sandbox application support directory URL returns consistent value regardless of sandbox", .timeLimit(.minutes(1)))
     func thatNonSandboxApplicationSupportDirectoryURLReturnsTheSameValueRegardlessOfSandbox() {
         let libraryURL = URL.nonSandboxApplicationSupportDirectoryURL
         var pathComponents = libraryURL.path.components(separatedBy: "/")
@@ -89,7 +91,8 @@ final class URLExtensionTests {
         ("http://user name:pass word@domain.com/folder name/file name/", "http://user%20name:pass%20word@domain.com/folder%20name/file%20name/", #line),
         ("1+(3+4*2)", "https://duckduckgo.com/?q=1%2B%283%2B4%2A2%29", #line),
     ]
-    @Test("Creating URLs from address bar strings", arguments: makeURL_from_addressBarString_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("Creating URLs from address bar strings", .timeLimit(.minutes(1)), arguments: makeURL_from_addressBarString_args)
     func makeURL_from_addressBarString(string: String, expectation: String, line: Int) {
         let url = URL.makeURLUsingNativePredictionLogic(from: string)!
         #expect(expectation == url.absoluteString, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
@@ -108,7 +111,8 @@ final class URLExtensionTests {
          "https://releases.usercontent.com/asdfg?arg=AWS4-HMAC&Credential=AKIA", #line),
         ("ftp://user:pass@duckduckgo.com", "ftp://duckduckgo.com", #line),
     ]
-    @Test("Sanitizing URLs for quarantine", arguments: sanitizedForQuarantine_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("Sanitizing URLs for quarantine", .timeLimit(.minutes(1)), arguments: sanitizedForQuarantine_args)
     func sanitizedForQuarantine(string: String, expectation: String?, line: Int) {
         let url = URL(string: string)!.sanitizedForQuarantine()
         #expect(url?.absoluteString == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
@@ -123,7 +127,8 @@ final class URLExtensionTests {
         ("file://domain/file.txt", "file://domain/file.txt", #line),
         ("file:///Users/user/file.txt", "file:///Users/user/file.txt", #line),
     ]
-    @Test("Adding missing slash after hypertext scheme", arguments: whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("Adding missing slash after hypertext scheme", .timeLimit(.minutes(1)), arguments: whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded_args)
     func whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded(string: String, expectation: String, line: Int) {
         let url = URL.makeURLUsingNativePredictionLogic(from: string)
         #expect(url?.absoluteString == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
@@ -133,7 +138,8 @@ final class URLExtensionTests {
         (true, #line),
         (false, #line),
     ]
-    @Test("Verifying hypertext scheme when making URL from suggestion phrase with colon", arguments: whenMakingUrlFromSuggestionPhaseContainingColon_ThenVerifyHypertextScheme_args)
+    @available(iOS 16, macOS 13, *)
+    @Test("Verifying hypertext scheme when making URL from suggestion phrase with colon", .timeLimit(.minutes(1)), arguments: whenMakingUrlFromSuggestionPhaseContainingColon_ThenVerifyHypertextScheme_args)
     func whenMakingUrlFromSuggestionPhaseContainingColon_ThenVerifyHypertextScheme(useUnifiedLogic: Bool, line: Int) {
         let validUrl = URL.makeURL(fromSuggestionPhrase: "http://duckduckgo.com", useUnifiedLogic: useUnifiedLogic)
         #expect(validUrl != nil)
@@ -147,7 +153,8 @@ final class URLExtensionTests {
         #expect(notURL == nil)
     }
 
-    @Test("Extracting comma-separated email addresses from mailto URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("Extracting comma-separated email addresses from mailto URL", .timeLimit(.minutes(1)))
     func thatEmailAddressesExtractsCommaSeparatedAddressesFromMailtoURL() throws {
         let url1 = try #require(URL(string: "mailto:dax@duck.com,donald@duck.com,example@duck.com"))
         #expect(url1.emailAddresses == ["dax@duck.com", "donald@duck.com", "example@duck.com"])
@@ -157,7 +164,8 @@ final class URLExtensionTests {
         }
     }
 
-    @Test("Extracting invalid email addresses from mailto URLs")
+    @available(iOS 16, macOS 13, *)
+    @Test("Extracting invalid email addresses from mailto URLs", .timeLimit(.minutes(1)))
     func thatEmailAddressesExtractsInvalidEmailAddresses() throws {
         // parity with Safari which also doesn't validate email addresses
         let url1 = try #require(URL(string: "mailto:dax@duck.com,donald,example"))
@@ -168,7 +176,8 @@ final class URLExtensionTests {
         }
     }
 
-    @Test("Returning host and port when port is specified")
+    @available(iOS 16, macOS 13, *)
+    @Test("Returning host and port when port is specified", .timeLimit(.minutes(1)))
     func whenGetHostAndPort_WithPort_ThenHostAndPortIsReturned() throws {
         // Given
         let expected = "duckduckgo.com:1234"
@@ -181,7 +190,8 @@ final class URLExtensionTests {
         #expect(expected == result)
     }
 
-    @Test("Returning only host when port is not specified")
+    @available(iOS 16, macOS 13, *)
+    @Test("Returning only host when port is not specified", .timeLimit(.minutes(1)))
     func whenGetHostAndPort_WithoutPort_ThenHostReturned() throws {
         // Given
         let expected = "duckduckgo.com"
@@ -194,84 +204,96 @@ final class URLExtensionTests {
         #expect(expected == result)
     }
 
-    @Test("Checking if URL is child of itself")
+    @available(iOS 16, macOS 13, *)
+    @Test("Checking if URL is child of itself", .timeLimit(.minutes(1)))
     func isChildWhenURLsSame() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let testedURL = URL(string: "https://duckduckgo.com/subscriptions")!
         #expect(testedURL.isChild(of: parentURL) == true)
     }
 
-    @Test("Checking if URL with subpath is child of parent URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("Checking if URL with subpath is child of parent URL", .timeLimit(.minutes(1)))
     func isChildWhenTestedURLHasSubpath() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let testedURL = URL(string: "https://dax.duckduckgo.com/subscriptions/test")!
         #expect(testedURL.isChild(of: parentURL) == true)
     }
 
-    @Test("Checking if URL with subdomain is child of parent URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("Checking if URL with subdomain is child of parent URL", .timeLimit(.minutes(1)))
     func isChildWhenTestedURLHasSubdomain() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let testedURL = URL(string: "https://dax.duckduckgo.com/subscriptions")!
         #expect(testedURL.isChild(of: parentURL) == true)
     }
 
-    @Test("Checking if URL with subdomain and subpath is child of parent URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("Checking if URL with subdomain and subpath is child of parent URL", .timeLimit(.minutes(1)))
     func isChildWhenTestedURLHasSubdomainAndSubpath() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let testedURL = URL(string: "https://dax.duckduckgo.com/subscriptions/test")!
         #expect(testedURL.isChild(of: parentURL) == true)
     }
 
-    @Test("Checking if URL with www subdomain is child of parent URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("Checking if URL with www subdomain is child of parent URL", .timeLimit(.minutes(1)))
     func isChildWhenTestedURLHasWWW() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let testedURL = URL(string: "https://www.duckduckgo.com/subscriptions/test/t")!
         #expect(testedURL.isChild(of: parentURL) == true)
     }
 
-    @Test("Checking if URL is child of parent URL when parent has parameters that should be ignored")
+    @available(iOS 16, macOS 13, *)
+    @Test("Checking if URL is child of parent URL when parent has parameters that should be ignored", .timeLimit(.minutes(1)))
     func isChildWhenParentHasParamThatShouldBeIgnored() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions?environment=staging")!
         let testedURL = URL(string: "https://www.duckduckgo.com/subscriptions/test/t")!
         #expect(testedURL.isChild(of: parentURL) == true)
     }
 
-    @Test("Checking if URL with parameters is child of parent URL when parameters should be ignored")
+    @available(iOS 16, macOS 13, *)
+    @Test("Checking if URL with parameters is child of parent URL when parameters should be ignored", .timeLimit(.minutes(1)))
     func isChildWhenChildHasParamThatShouldBeIgnored() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let testedURL = URL(string: "https://duckduckgo.com/subscriptions?environment=staging")!
         #expect(testedURL.isChild(of: parentURL) == true)
     }
 
-    @Test("Checking if URL with path and parameters is child of parent URL when parameters should be ignored")
+    @available(iOS 16, macOS 13, *)
+    @Test("Checking if URL with path and parameters is child of parent URL when parameters should be ignored", .timeLimit(.minutes(1)))
     func isChildWhenChildHasPathAndParamThatShouldBeIgnored() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let testedURL = URL(string: "https://www.duckduckgo.com/subscriptions/test/t?environment=staging")!
         #expect(testedURL.isChild(of: parentURL) == true)
     }
 
-    @Test("Checking if URL is child of parent URL when both have parameters that should be ignored")
+    @available(iOS 16, macOS 13, *)
+    @Test("Checking if URL is child of parent URL when both have parameters that should be ignored", .timeLimit(.minutes(1)))
     func isChildWhenBothHaveParamThatShouldBeIgnored() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions?environment=production")!
         let testedURL = URL(string: "https://www.duckduckgo.com/subscriptions/test/t?environment=staging")!
         #expect(testedURL.isChild(of: parentURL) == true)
     }
 
-    @Test("Verifying URL is not child of parent URL when path is shorter substring")
+    @available(iOS 16, macOS 13, *)
+    @Test("Verifying URL is not child of parent URL when path is shorter substring", .timeLimit(.minutes(1)))
     func isChildFailsWhenPathIsShorterSubstring() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let testedURL = URL(string: "https://duckduckgo.com/subscription")!
         #expect(testedURL.isChild(of: parentURL) == false)
     }
 
-    @Test("Verifying URL is not child of parent URL when path is longer but not proper subpath")
+    @available(iOS 16, macOS 13, *)
+    @Test("Verifying URL is not child of parent URL when path is longer but not proper subpath", .timeLimit(.minutes(1)))
     func isChildFailsWhenPathIsLonger() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions")!
         let testedURL = URL(string: "https://duckduckgo.com/subscriptionszzz")!
         #expect(testedURL.isChild(of: parentURL) == false)
     }
 
-    @Test("Verifying URL is not child of parent URL when child path is incomplete")
+    @available(iOS 16, macOS 13, *)
+    @Test("Verifying URL is not child of parent URL when child path is incomplete", .timeLimit(.minutes(1)))
     func isChildFailsWhenPathIsNotComplete() throws {
         let parentURL = URL(string: "https://duckduckgo.com/subscriptions/welcome")!
         let testedURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -280,7 +302,8 @@ final class URLExtensionTests {
 
     // Tests for URL normalization and canonicalization
 
-    @Test("Normalizing URLs with spaces in different components")
+    @available(iOS 16, macOS 13, *)
+    @Test("Normalizing URLs with spaces in different components", .timeLimit(.minutes(1)))
     func normalizingURLsWithSpacesInDifferentComponents() throws {
         // Path with spaces
         let urlWithSpacesInPath = URL(string: "https://example.com/path with spaces/file.html")
@@ -295,7 +318,8 @@ final class URLExtensionTests {
         #expect(urlWithSpacesInFragment?.absoluteString == "https://example.com/page#section%20with%20spaces")
     }
 
-    @Test("Creating URLs with international characters")
+    @available(iOS 16, macOS 13, *)
+    @Test("Creating URLs with international characters", .timeLimit(.minutes(1)))
     func creatingURLsWithInternationalCharacters() throws {
         // URL with international characters in domain
         let urlWithInternationalDomain = URL.makeURLUsingNativePredictionLogic(from: "https://例子.测试")
@@ -309,7 +333,8 @@ final class URLExtensionTests {
 
     // Tests for URL manipulation methods
 
-    @Test("Appending path components to a URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("Appending path components to a URL", .timeLimit(.minutes(1)))
     func appendingPathToURL() throws {
         let baseURL = URL(string: "https://duckduckgo.com")!
 
@@ -320,7 +345,8 @@ final class URLExtensionTests {
         #expect(urlWithMultipleAppendedComponents.absoluteString == "https://duckduckgo.com/settings/privacy")
     }
 
-    @Test("Manipulating URL parameters")
+    @available(iOS 16, macOS 13, *)
+    @Test("Manipulating URL parameters", .timeLimit(.minutes(1)))
     func manipulatingURLParameters() throws {
         let baseURL = URL(string: "https://duckduckgo.com/search")!
 
@@ -340,7 +366,8 @@ final class URLExtensionTests {
 
     // Tests for basic auth handling
 
-    @Test("Extracting and removing basic auth credentials from URLs")
+    @available(iOS 16, macOS 13, *)
+    @Test("Extracting and removing basic auth credentials from URLs", .timeLimit(.minutes(1)))
     func extractingAndRemovingBasicAuth() throws {
         let urlWithAuth = URL(string: "https://user name:pass%20word@example.com/secure")!
 
@@ -355,7 +382,8 @@ final class URLExtensionTests {
         #expect(urlWithoutAuth.basicAuthCredential == nil)
     }
 
-    @Test("Matching URLs against protection spaces")
+    @available(iOS 16, macOS 13, *)
+    @Test("Matching URLs against protection spaces", .timeLimit(.minutes(1)))
     func matchingURLsAgainstProtectionSpaces() throws {
         let url = URL(string: "https://example.com:8443/secure")!
 
@@ -379,7 +407,8 @@ final class URLExtensionTests {
 
     // MARK: - Internal Page URL Tests
 
-    @Test("Verifying internal page URL constants")
+    @available(iOS 16, macOS 13, *)
+    @Test("Verifying internal page URL constants", .timeLimit(.minutes(1)))
     func internalPageURLConstants() {
         #expect(URL.newtab.absoluteString == "duck://newtab")
         #expect(URL.settings.absoluteString == "duck://settings")
@@ -391,7 +420,8 @@ final class URLExtensionTests {
         #expect(URL.blankPage.absoluteString == "about:blank")
     }
 
-    @Test("Verifying invalid (legacy) URL constants")
+    @available(iOS 16, macOS 13, *)
+    @Test("Verifying invalid (legacy) URL constants", .timeLimit(.minutes(1)))
     func invalidURLConstants() {
         #expect(URL.Invalid.aboutNewtab.absoluteString == "about:newtab")
         #expect(URL.Invalid.duckHome.absoluteString == "duck://home")
@@ -434,7 +464,8 @@ final class URLExtensionTests {
         (.about, "duck://settings/about")
     ]
 
-    @Test("Creating settings pane URLs", arguments: settingsPaneURLFormationArgs)
+    @available(iOS 16, macOS 13, *)
+    @Test("Creating settings pane URLs", .timeLimit(.minutes(1)), arguments: settingsPaneURLFormationArgs)
     func settingsPaneURLFormation(pane: PreferencePaneIdentifier, expectedURL: String) {
         #expect(URL.settingsPane(pane).absoluteString == expectedURL)
     }
@@ -474,12 +505,14 @@ final class URLExtensionTests {
         (URL(string: "duck://settings/invalid-pane")!, nil as PreferencePaneIdentifier?)
     ]
 
-    @Test("Parsing settings pane identifiers from URLs", arguments: settingsPaneURLParsingArgs)
+    @available(iOS 16, macOS 13, *)
+    @Test("Parsing settings pane identifiers from URLs", .timeLimit(.minutes(1)), arguments: settingsPaneURLParsingArgs)
     func settingsPaneURLParsing(url: URL, expectedPane: PreferencePaneIdentifier?) {
         #expect(PreferencePaneIdentifier(url: url) == expectedPane)
     }
 
-    @Test("Validating settings URLs")
+    @available(iOS 16, macOS 13, *)
+    @Test("Validating settings URLs", .timeLimit(.minutes(1)))
     func settingsURLValidation() {
         // Valid settings URLs
         #expect(URL.settings.isSettingsURL == true)
@@ -509,7 +542,8 @@ final class URLExtensionTests {
         (.allSites, "duck://history?range=sites")
     ]
 
-    @Test("Creating history pane URLs", arguments: historyPaneURLFormationArgs)
+    @available(iOS 16, macOS 13, *)
+    @Test("Creating history pane URLs", .timeLimit(.minutes(1)), arguments: historyPaneURLFormationArgs)
     func historyPaneURLFormation(range: HistoryPaneIdentifier, expectedURL: String) {
         #expect(URL.historyPane(range).absoluteString == expectedURL)
     }
@@ -541,12 +575,14 @@ final class URLExtensionTests {
         (URL(string: "duck://history/invalid")!, nil as HistoryPaneIdentifier?)
     ]
 
-    @Test("Parsing history pane identifiers from URLs", arguments: historyPaneURLParsingArgs)
+    @available(iOS 16, macOS 13, *)
+    @Test("Parsing history pane identifiers from URLs", .timeLimit(.minutes(1)), arguments: historyPaneURLParsingArgs)
     func historyPaneURLParsing(url: URL, expectedRange: HistoryPaneIdentifier?) {
         #expect(HistoryPaneIdentifier(url: url) == expectedRange)
     }
 
-    @Test("Validating history URLs")
+    @available(iOS 16, macOS 13, *)
+    @Test("Validating history URLs", .timeLimit(.minutes(1)))
     func historyURLValidation() {
         // Valid history URLs
         #expect(URL.history.isHistory == true)
@@ -560,7 +596,8 @@ final class URLExtensionTests {
 
     // MARK: - TabContent Creation Tests
 
-    @Test("Creating TabContent from newtab URLs")
+    @available(iOS 16, macOS 13, *)
+    @Test("Creating TabContent from newtab URLs", .timeLimit(.minutes(1)))
     func tabContentFromNewtabURLs() {
         #expect(TabContent.contentFromURL(.newtab, source: .ui) == .newtab)
         #expect(TabContent.contentFromURL(.Invalid.aboutNewtab, source: .ui) == .newtab)
@@ -585,12 +622,14 @@ final class URLExtensionTests {
         (URL.settingsPane(.accessibility), TabContent.settings(pane: .accessibility))
     ]
 
-    @Test("Creating TabContent from settings URLs", arguments: tabContentFromSettingsURLsArgs)
+    @available(iOS 16, macOS 13, *)
+    @Test("Creating TabContent from settings URLs", .timeLimit(.minutes(1)), arguments: tabContentFromSettingsURLsArgs)
     func tabContentFromSettingsURLs(url: URL, expectedContent: TabContent) {
         #expect(TabContent.contentFromURL(url, source: .ui) == expectedContent)
     }
 
-    @Test("Creating TabContent from bookmarks URLs")
+    @available(iOS 16, macOS 13, *)
+    @Test("Creating TabContent from bookmarks URLs", .timeLimit(.minutes(1)))
     func tabContentFromBookmarksURLs() {
         #expect(TabContent.contentFromURL(.bookmarks, source: .ui) == .bookmarks)
         #expect(TabContent.contentFromURL(.Invalid.aboutBookmarks, source: .ui) == .bookmarks)
@@ -610,19 +649,22 @@ final class URLExtensionTests {
         (URL(string: "about:history/today")!, TabContent.history(pane: .today))
     ]
 
-    @Test("Creating TabContent from history URLs", arguments: tabContentFromHistoryURLsArgs)
+    @available(iOS 16, macOS 13, *)
+    @Test("Creating TabContent from history URLs", .timeLimit(.minutes(1)), arguments: tabContentFromHistoryURLsArgs)
     func tabContentFromHistoryURLs(url: URL, expectedContent: TabContent) {
         #expect(TabContent.contentFromURL(url, source: .ui) == expectedContent)
     }
 
-    @Test("Creating TabContent from other internal page URLs")
+    @available(iOS 16, macOS 13, *)
+    @Test("Creating TabContent from other internal page URLs", .timeLimit(.minutes(1)))
     func tabContentFromOtherInternalPages() {
         #expect(TabContent.contentFromURL(.onboarding, source: .ui) == .onboarding)
         #expect(TabContent.contentFromURL(.dataBrokerProtection, source: .ui) == .dataBrokerProtection)
         #expect(TabContent.contentFromURL(.releaseNotes, source: .ui) == .releaseNotes)
     }
 
-    @Test("Creating TabContent from external URLs")
+    @available(iOS 16, macOS 13, *)
+    @Test("Creating TabContent from external URLs", .timeLimit(.minutes(1)))
     func tabContentFromExternalURLs() {
         let externalURL = URL(string: "https://duckduckgo.com")!
         let tabContent = TabContent.contentFromURL(externalURL, source: .userEntered("https://duckduckgo.com", downloadRequested: false))
@@ -653,7 +695,8 @@ final class URLExtensionTests {
         (TabContent.history(pane: .yesterday), URL.historyPane(.yesterday))
     ]
 
-    @Test("TabContent urlForWebView returns correct URLs", arguments: tabContentURLForWebViewArgs)
+    @available(iOS 16, macOS 13, *)
+    @Test("TabContent urlForWebView returns correct URLs", .timeLimit(.minutes(1)), arguments: tabContentURLForWebViewArgs)
     func tabContentURLForWebView(content: TabContent, expectedURL: URL) {
         #expect(content.urlForWebView == expectedURL)
     }
@@ -676,7 +719,9 @@ final class URLExtensionTests {
         // that opens in a new tab rather than creating a duck://settings/ URL
     ]
 
+    @available(iOS 16, macOS 13, *)
     @Test("Settings pane URLs should be parseable back to PreferencePaneIdentifier",
+          .timeLimit(.minutes(1)),
           arguments: settingsPaneRoundTripArgs)
     func settingsPaneURLShouldBeParseable(pane: PreferencePaneIdentifier) {
         // Given: URL created using URL.settingsPane()
@@ -689,7 +734,8 @@ final class URLExtensionTests {
         #expect(parsed == pane)
     }
 
-    @Test("Settings pane round-trip: URL.settingsPane() → TabContent → urlForWebView", arguments: settingsPaneRoundTripArgs)
+    @available(iOS 16, macOS 13, *)
+    @Test("Settings pane round-trip: URL.settingsPane() → TabContent → urlForWebView", .timeLimit(.minutes(1)), arguments: settingsPaneRoundTripArgs)
     func settingsPaneRoundTrip(pane: PreferencePaneIdentifier) {
         // Step 1: Form URL using URL extension method
         let formedURL = URL.settingsPane(pane)
@@ -713,7 +759,8 @@ final class URLExtensionTests {
         .allSites
     ]
 
-    @Test("History pane round-trip: path URL → TabContent → query URL (asymmetric)", arguments: historyPaneRoundTripArgs)
+    @available(iOS 16, macOS 13, *)
+    @Test("History pane round-trip: path URL → TabContent → query URL (asymmetric)", .timeLimit(.minutes(1)), arguments: historyPaneRoundTripArgs)
     func historyPaneRoundTrip(range: HistoryPaneIdentifier) {
         // Note: History has asymmetric URL format
         // Parsing accepts path-based: duck://history/today
@@ -742,7 +789,8 @@ final class URLExtensionTests {
         (URL.releaseNotes, TabContent.releaseNotes)
     ]
 
-    @Test("Internal page round-trip: URL constant → TabContent → urlForWebView", arguments: internalPageRoundTripArgs)
+    @available(iOS 16, macOS 13, *)
+    @Test("Internal page round-trip: URL constant → TabContent → urlForWebView", .timeLimit(.minutes(1)), arguments: internalPageRoundTripArgs)
     func internalPageRoundTrip(url: URL, expectedContent: TabContent) {
         // Step 1: URL is already formed (internal page constant)
 
@@ -756,7 +804,8 @@ final class URLExtensionTests {
         #expect(tabContent.urlForWebView == url)
     }
 
-    @Test("Special case: otherPlatforms creates HTTPS URL, not settings URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("Special case: otherPlatforms creates HTTPS URL, not settings URL", .timeLimit(.minutes(1)))
     func otherPlatformsSpecialCase() {
         // otherPlatforms is unique - its rawValue is a full HTTPS URL
         // It's designed to open in a new tab, not create a duck://settings/ URL
@@ -780,7 +829,9 @@ final class URLExtensionTests {
 
     // MARK: - History Pane Round-Trip Parsing Tests
 
+    @available(iOS 16, macOS 13, *)
     @Test("History pane URLs should be parseable back to HistoryPaneIdentifier",
+          .timeLimit(.minutes(1)),
           arguments: historyPaneRoundTripArgs)
     func historyPaneURLShouldBeParseable(range: HistoryPaneIdentifier) {
         // Given: URL created using URL.historyPane() with query parameter format
@@ -794,7 +845,9 @@ final class URLExtensionTests {
         #expect(parsed == range)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("History pane parser accepts both query and path formats",
+          .timeLimit(.minutes(1)),
           arguments: historyPaneRoundTripArgs)
     func historyPaneParserAcceptsBothFormats(range: HistoryPaneIdentifier) {
         // Query parameter format (new format used by URL.historyPane())
@@ -845,7 +898,8 @@ extension URLExtensionTests {
     /// app.launch()
     /// ```
 
-    @Test("DuckDuckGo base URLs return production defaults in unit tests")
+    @available(iOS 16, macOS 13, *)
+    @Test("DuckDuckGo base URLs return production defaults in unit tests", .timeLimit(.minutes(1)))
     func duckDuckGoBaseURLsReturnProductionDefaults() {
         // Base DuckDuckGo URL
         #expect(URL.duckDuckGo.absoluteString == "https://duckduckgo.com/")
@@ -854,7 +908,8 @@ extension URLExtensionTests {
         #expect(URL.duckAi.absoluteString == "https://duck.ai/")
     }
 
-    @Test("DuckDuckGo derived URLs use correct base")
+    @available(iOS 16, macOS 13, *)
+    @Test("DuckDuckGo derived URLs use correct base", .timeLimit(.minutes(1)))
     func duckDuckGoDerivedURLsUseCorrectBase() {
         // URLs that should derive from the base DuckDuckGo URL
         #expect(URL.aboutDuckDuckGo.absoluteString == "https://duckduckgo.com/about")
@@ -865,19 +920,22 @@ extension URLExtensionTests {
         #expect(URL.subscription.absoluteString == "https://duckduckgo.com/pro")
     }
 
-    @Test("DuckDuckGo autocomplete URL derives from base")
+    @available(iOS 16, macOS 13, *)
+    @Test("DuckDuckGo autocomplete URL derives from base", .timeLimit(.minutes(1)))
     func duckDuckGoAutocompleteURLDerivesFromBase() {
         #expect(URL.duckDuckGoAutocomplete.absoluteString == "https://duckduckgo.com/ac/")
     }
 
-    @Test("DuckDuckGo email URLs use correct base")
+    @available(iOS 16, macOS 13, *)
+    @Test("DuckDuckGo email URLs use correct base", .timeLimit(.minutes(1)))
     func duckDuckGoEmailURLsUseCorrectBase() {
         #expect(URL.duckDuckGoEmail.absoluteString == "https://duckduckgo.com/email-protection")
         #expect(URL.duckDuckGoEmailLogin.absoluteString == "https://duckduckgo.com/email")
         #expect(URL.duckDuckGoEmailInfo.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/")
     }
 
-    @Test("DuckDuckGo help pages use correct base")
+    @available(iOS 16, macOS 13, *)
+    @Test("DuckDuckGo help pages use correct base", .timeLimit(.minutes(1)))
     func duckDuckGoHelpPagesUseCorrectBase() {
         // Help pages that use duckduckgo.com base
         #expect(URL.cookieConsentPopUpManagement.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management")
@@ -896,13 +954,15 @@ extension URLExtensionTests {
         #expect(URL.duckDuckGoMorePrivacyInfo.absoluteString == "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/atb/")
     }
 
-    @Test("Internal feedback form URL remains unchanged")
+    @available(iOS 16, macOS 13, *)
+    @Test("Internal feedback form URL remains unchanged", .timeLimit(.minutes(1)))
     func internalFeedbackFormURLRemainsUnchanged() {
         // This URL uses go.duckduckgo.com subdomain which is not configurable
         #expect(URL.internalFeedbackForm.absoluteString == "https://go.duckduckgo.com/feedback")
     }
 
-    @Test("DuckDuckGo URL detection works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("DuckDuckGo URL detection works correctly", .timeLimit(.minutes(1)))
     func duckDuckGoURLDetectionWorksCorrectly() {
         // URLs that should be detected as DuckDuckGo
         #expect(URL.duckDuckGo.isDuckDuckGo == true)
@@ -917,7 +977,8 @@ extension URLExtensionTests {
         #expect(helpURL.isDuckDuckGo == false) // Different subdomain
     }
 
-    @Test("DuckDuckGo search URL detection works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("DuckDuckGo search URL detection works correctly", .timeLimit(.minutes(1)))
     func duckDuckGoSearchURLDetectionWorksCorrectly() {
         // Search URL with query parameter
         let searchURL = URL(string: "https://duckduckgo.com/?q=test")!
@@ -928,7 +989,8 @@ extension URLExtensionTests {
         #expect(URL.aboutDuckDuckGo.isDuckDuckGoSearch == false) // Has path
     }
 
-    @Test("Email protection URL detection works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Email protection URL detection works correctly", .timeLimit(.minutes(1)))
     func emailProtectionURLDetectionWorksCorrectly() {
         #expect(URL.duckDuckGoEmail.isEmailProtection == true)
         #expect(URL.duckDuckGoEmailLogin.isEmailProtection == true)

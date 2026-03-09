@@ -56,6 +56,12 @@
                 "type": "string",
                 "enum": ["0", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "unknown"],
                 "description": "Total used allocation from malloc zones in MB, bucketed. 'unknown' if unavailable."
+            },
+            {
+                "key": "wc_total_memory",
+                "type": "string",
+                "enum": ["0", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536", "unknown"],
+                "description": "Total resident memory of all WebContent processes in MB, bucketed. 'unknown' if unavailable."
             }
         ]
     }

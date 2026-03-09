@@ -23,7 +23,7 @@ import os.log
 // MARK: - StartupProfilerDelegate
 
 protocol StartupProfilerDelegate: AnyObject {
-    func startupProfiler(_ profiler: StartupProfiler, didCompleteWithMetrics metrics: StartupMetrics)
+    @MainActor func startupProfiler(_ profiler: StartupProfiler, didCompleteWithMetrics metrics: StartupMetrics)
 }
 
 // MARK: - StartupProfiler
@@ -107,12 +107,15 @@ private extension StartupProfiler {
     }
 
     func notifyCompletionIfNeeded(metrics: StartupMetrics?) {
-        guard let metrics, metrics.isComplete else {
+        guard let delegate, let metrics, metrics.isComplete else {
             return
         }
 
         logger.log(level: .debug, "🏁 [Startup Metrics]\n\(metrics.description, privacy: .public)")
-        delegate?.startupProfiler(self, didCompleteWithMetrics: metrics)
+
+        Task { @MainActor in
+            delegate.startupProfiler(self, didCompleteWithMetrics: metrics)
+        }
     }
 }
 

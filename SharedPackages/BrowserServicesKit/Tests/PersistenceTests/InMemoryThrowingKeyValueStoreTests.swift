@@ -23,14 +23,16 @@ import Testing
 
 final class InMemoryThrowingKeyValueStoreTests {
 
-    @Test("Store conforms to ThrowingKeyValueStoring")
+    @available(iOS 16, macOS 13, *)
+    @Test("Store conforms to ThrowingKeyValueStoring", .timeLimit(.minutes(1)))
     func storeConformsToThrowingKeyValueStoring() {
         let store = InMemoryThrowingKeyValueStore()
         let conformsToProtocol = store is ThrowingKeyValueStoring
         #expect(conformsToProtocol)
     }
 
-    @Test("Basic get and set operations")
+    @available(iOS 16, macOS 13, *)
+    @Test("Basic get and set operations", .timeLimit(.minutes(1)))
     func basicGetAndSet() throws {
         let store = InMemoryThrowingKeyValueStore()
 
@@ -44,7 +46,8 @@ final class InMemoryThrowingKeyValueStoreTests {
         #expect(try store.object(forKey: "testKey") as? String == "testValue")
     }
 
-    @Test("Set with different types")
+    @available(iOS 16, macOS 13, *)
+    @Test("Set with different types", .timeLimit(.minutes(1)))
     func setWithDifferentTypes() throws {
         let store = InMemoryThrowingKeyValueStore()
 
@@ -61,7 +64,8 @@ final class InMemoryThrowingKeyValueStoreTests {
         #expect(try store.object(forKey: "boolKey") as? Bool == true)
     }
 
-    @Test("Remove object")
+    @available(iOS 16, macOS 13, *)
+    @Test("Remove object", .timeLimit(.minutes(1)))
     func removeObject() throws {
         let store = InMemoryThrowingKeyValueStore()
 
@@ -76,7 +80,8 @@ final class InMemoryThrowingKeyValueStoreTests {
         #expect(try store.object(forKey: "key") == nil)
     }
 
-    @Test("Multiple keys work independently")
+    @available(iOS 16, macOS 13, *)
+    @Test("Multiple keys work independently", .timeLimit(.minutes(1)))
     func multipleKeysIndependence() throws {
         let store = InMemoryThrowingKeyValueStore()
 
@@ -96,7 +101,8 @@ final class InMemoryThrowingKeyValueStoreTests {
         #expect(try store.object(forKey: "key2") as? String == "value2")
     }
 
-    @Test("Get throws when shouldThrowOnGet is enabled")
+    @available(iOS 16, macOS 13, *)
+    @Test("Get throws when shouldThrowOnGet is enabled", .timeLimit(.minutes(1)))
     func getThrowsWhenEnabled() throws {
         let store = InMemoryThrowingKeyValueStore()
 
@@ -112,7 +118,8 @@ final class InMemoryThrowingKeyValueStoreTests {
         }
     }
 
-    @Test("Set throws when shouldThrowOnSet is enabled")
+    @available(iOS 16, macOS 13, *)
+    @Test("Set throws when shouldThrowOnSet is enabled", .timeLimit(.minutes(1)))
     func setThrowsWhenEnabled() {
         let store = InMemoryThrowingKeyValueStore()
 
@@ -125,7 +132,8 @@ final class InMemoryThrowingKeyValueStoreTests {
         }
     }
 
-    @Test("Remove throws when shouldThrowOnRemove is enabled")
+    @available(iOS 16, macOS 13, *)
+    @Test("Remove throws when shouldThrowOnRemove is enabled", .timeLimit(.minutes(1)))
     func removeThrowsWhenEnabled() throws {
         let store = InMemoryThrowingKeyValueStore()
 
@@ -141,7 +149,8 @@ final class InMemoryThrowingKeyValueStoreTests {
         }
     }
 
-    @Test("Store works normally when throwing is disabled")
+    @available(iOS 16, macOS 13, *)
+    @Test("Store works normally when throwing is disabled", .timeLimit(.minutes(1)))
     func normalOperationWhenThrowingDisabled() throws {
         let store = InMemoryThrowingKeyValueStore()
 

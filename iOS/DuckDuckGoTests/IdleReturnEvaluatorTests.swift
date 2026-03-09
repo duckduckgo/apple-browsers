@@ -23,12 +23,31 @@ import Core
 import PrivacyConfig
 @testable import DuckDuckGo
 
+final class MockIdleReturnEligibilityManager: IdleReturnEligibilityManaging {
+    var isEligibleForNTPAfterIdleResult = true
+    var effectiveAfterInactivityOptionResult: AfterInactivityOption = .newTab
+    var idleThresholdSecondsResult = 60
+
+    func isEligibleForNTPAfterIdle() -> Bool {
+        isEligibleForNTPAfterIdleResult
+    }
+
+    func effectiveAfterInactivityOption() -> AfterInactivityOption {
+        effectiveAfterInactivityOptionResult
+    }
+
+    func idleThresholdSeconds() -> Int {
+        idleThresholdSecondsResult
+    }
+}
+
 @MainActor
 final class IdleReturnEvaluatorTests {
 
     func makeEvaluator(
         featureOn: Bool = true,
-        settingsJSON: String? = "{\"idleThresholdSeconds\": 60}"
+        settingsJSON: String? = "{\"idleThresholdSeconds\": 60}",
+        eligibilityManager: IdleReturnEligibilityManaging? = nil
     ) -> IdleReturnEvaluator {
         let mockConfig = MockPrivacyConfiguration()
         mockConfig.subfeatureSettings = settingsJSON
@@ -37,7 +56,8 @@ final class IdleReturnEvaluatorTests {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: featureOn ? [.showNTPAfterIdleReturn] : [])
         return IdleReturnEvaluator(
             featureFlagger: featureFlagger,
-            privacyConfigurationManager: mockManager
+            privacyConfigurationManager: mockManager,
+            idleReturnEligibilityManager: eligibilityManager
         )
     }
 
@@ -91,6 +111,15 @@ final class IdleReturnEvaluatorTests {
         #expect(evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: aMinuteAgo))
         let lessThanMinuteAgo = Date().addingTimeInterval(-59)
         #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: lessThanMinuteAgo))
+    }
+
+    @Test("When eligibility manager returns false then shouldShowNTPAfterIdle returns false even when over threshold")
+    func whenEligibilityManagerReturnsFalseThenReturnsFalse() {
+        let mockEligibility = MockIdleReturnEligibilityManager()
+        mockEligibility.isEligibleForNTPAfterIdleResult = false
+        let evaluator = makeEvaluator(settingsJSON: "{\"idleThresholdSeconds\": 60}", eligibilityManager: mockEligibility)
+        let twoMinutesAgo = Date().addingTimeInterval(-121)
+        #expect(!evaluator.shouldShowNTPAfterIdle(lastBackgroundDate: twoMinutesAgo))
     }
 
     @Test("When idleThresholdSeconds missing in settings then uses default")

@@ -25,7 +25,8 @@ import PrivacyConfig
 /// Reports threshold memory usage pixels when memory enters specific buckets.
 ///
 /// This reporter periodically polls memory usage via `getCurrentMemoryUsage()` on a background
-/// thread and fires daily pixels when memory usage falls into different threshold buckets.
+/// thread and fires daily pixels when both main process and WebContent process memory usage
+/// fall into different threshold buckets.
 /// It waits 5 minutes after app launch before starting to monitor, avoiding initialization
 /// memory spikes.
 ///
@@ -161,10 +162,22 @@ final class MemoryUsageThresholdReporter {
         guard shouldProceed, featureFlagger.isFeatureOn(.memoryUsageReporting) else { return }
 
         let report = memoryUsageMonitor.getCurrentMemoryUsage()
-        let threshold = MemoryUsagePixel.threshold(forMB: report.physFootprintMB)
         let uptimeMinutes = Int(Date().timeIntervalSince(launchDate) / 60.0)
-        let pixel = MemoryUsagePixel.memoryUsage(threshold: threshold, uptimeMinutes: uptimeMinutes)
 
+        fireIfNeeded(MemoryUsagePixel.memoryUsage(
+            threshold: MemoryUsagePixel.threshold(forMB: report.physFootprintMB),
+            uptimeMinutes: uptimeMinutes),
+            logLabel: "Memory", logValue: report.physFootprintMB)
+
+        if let webContentMB = report.webContentMB {
+            fireIfNeeded(WebViewMemoryUsagePixel.webViewMemoryUsage(
+                threshold: WebViewMemoryUsagePixel.threshold(forMB: webContentMB),
+                uptimeMinutes: uptimeMinutes),
+                logLabel: "WebContent memory", logValue: webContentMB)
+        }
+    }
+
+    private func fireIfNeeded(_ pixel: some PixelKitEvent, logLabel: String, logValue: Double) {
         let shouldFire: Bool = lock.withLock {
             let now = Date()
             if !Calendar.current.isDate(now, inSameDayAs: lastCheckDate) {
@@ -179,7 +192,7 @@ final class MemoryUsageThresholdReporter {
 
         guard shouldFire else { return }
 
-        logger?.debug("Memory threshold firing: \(report.physFootprintMB, privacy: .public) MB -> \(pixel.name, privacy: .public)")
+        logger?.debug("\(logLabel, privacy: .public) threshold firing: \(logValue, privacy: .public) MB -> \(pixel.name, privacy: .public)")
         pixelFiring?.fire(pixel, frequency: .daily)
     }
 

@@ -39,7 +39,7 @@ final class MainViewController: NSViewController {
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
     let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
-    let aiChatSidebarPresenter: AIChatSidebarPresenting
+    let aiChatCoordinator: AIChatCoordinating
     let aiChatSummarizer: AIChatSummarizer
     let aiChatTranslator: AIChatTranslator
     let findInPageViewController: FindInPageViewController
@@ -112,7 +112,7 @@ final class MainViewController: NSViewController {
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
-         aiChatSidebarProvider: AIChatSidebarProviding,
+         aiChatSessionStore: AIChatSessionStoring,
          aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
@@ -227,25 +227,26 @@ final class MainViewController: NSViewController {
             duckPlayer: duckPlayer,
             pinningManager: pinningManager
         )
-        aiChatSidebarPresenter = AIChatSidebarPresenter(
+        aiChatCoordinator = AIChatCoordinator(
             sidebarHost: browserTabViewController,
-            sidebarProvider: aiChatSidebarProvider,
+            sessionStore: aiChatSessionStore,
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatTabOpener: aiChatTabOpener,
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring,
             featureFlagger: featureFlagger
         )
+        tabBarViewController.aiChatCoordinator = aiChatCoordinator
         aiChatSummarizer = AIChatSummarizer(
             aiChatMenuConfig: aiChatMenuConfig,
-            aiChatSidebarPresenter: aiChatSidebarPresenter,
+            aiChatCoordinator: aiChatCoordinator,
             aiChatTabOpener: aiChatTabOpener,
             pixelFiring: pixelFiring
         )
 
         aiChatTranslator = AIChatTranslator(
             aiChatMenuConfig: aiChatMenuConfig,
-            aiChatSidebarPresenter: aiChatSidebarPresenter,
+            aiChatCoordinator: aiChatCoordinator,
             aiChatTabOpener: aiChatTabOpener,
             pixelFiring: pixelFiring
         )
@@ -266,7 +267,7 @@ final class MainViewController: NSViewController {
                                                                          searchPreferences: searchPreferences,
                                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                                          aiChatMenuConfig: aiChatMenuConfig,
-                                                                         aiChatSidebarPresenter: aiChatSidebarPresenter,
+                                                                         aiChatCoordinator: aiChatCoordinator,
                                                                          vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                                                                          sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                                                                          defaultBrowserPreferences: defaultBrowserPreferences,
@@ -371,14 +372,13 @@ final class MainViewController: NSViewController {
     }
 
     override func viewDidAppear() {
+        startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
         initPreloader()
 
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
-
-        startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
     }
 
     var bookmarkBarPromptObserver: Any?
@@ -454,8 +454,18 @@ final class MainViewController: NSViewController {
     }
 
     func windowWillClose() {
+        closeFloatingAIChatsForCurrentWindow()
         viewEventsCancellables.removeAll()
         aiChatOmnibarContainerViewController.cleanup()
+    }
+
+    private func closeFloatingAIChatsForCurrentWindow() {
+        let regularTabIDs = tabCollectionViewModel.tabViewModels.keys.map(\.uuid)
+        let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager?.tabViewModels.keys.map(\.uuid) ?? []
+
+        for tabID in Set(regularTabIDs + pinnedTabIDs) {
+            aiChatCoordinator.closeFloatingWindow(for: tabID)
+        }
     }
 
     deinit {
@@ -504,7 +514,8 @@ final class MainViewController: NSViewController {
         if visible {
             let desiredHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
             let suggestionsHeight = aiChatOmnibarContainerViewController.suggestionsHeight
-            let totalHeight = desiredHeight + suggestionsHeight
+            let additionalHeight = aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = desiredHeight + suggestionsHeight + additionalHeight
             mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
             // Allow clicks to pass through text container to reach suggestions and tool buttons
             let passthroughHeight = aiChatOmnibarContainerViewController.totalPassthroughHeight
@@ -540,14 +551,16 @@ final class MainViewController: NSViewController {
     }
 
     private func wireToggleReferenceToAIChatTextContainer() {
-        /// This enables TAB key navigation from AI Chat mode to the toggle
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
         }
 
-        /// This enables TAB key navigation from toggle back to AI Chat text view
+        aiChatOmnibarTextContainerViewController.containerViewController = aiChatOmnibarContainerViewController
+
+        /// Bridge the nav bar toggle's Tab press into the AI chat tab cycle.
+        /// MainVC is the only entity that knows about both the nav bar and the AI chat area.
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.onToggleTabPressedInAIChatMode = { [weak self] in
-            self?.aiChatOmnibarTextContainerViewController.focusTextViewWithCursorAtEnd()
+            self?.aiChatOmnibarTextContainerViewController.handleToggleTabPressed()
         }
     }
 
@@ -556,7 +569,8 @@ final class MainViewController: NSViewController {
             guard let self = self else { return }
 
             let suggestionsHeight = self.aiChatOmnibarContainerViewController.suggestionsHeight
-            let totalHeight = desiredHeight + suggestionsHeight
+            let additionalHeight = self.aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = desiredHeight + suggestionsHeight + additionalHeight
 
             self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: true)
 
@@ -569,7 +583,8 @@ final class MainViewController: NSViewController {
             guard let self else { return }
 
             let textHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
-            let totalHeight = textHeight + suggestionsHeight
+            let additionalHeight = self.aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = textHeight + suggestionsHeight + additionalHeight
 
             self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
 
@@ -582,9 +597,17 @@ final class MainViewController: NSViewController {
             self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
         }
 
-        // Wire up passthrough height updates when tools visibility changes
+        // Wire up passthrough height updates when tools visibility or attachments change
         aiChatOmnibarContainerViewController.onPassthroughHeightNeedsUpdate = { [weak self] in
             guard let self, self.mainView.isAIChatOmnibarContainerShown else { return }
+
+            // Resize container to accommodate attachments
+            let textHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+            let suggestionsHeight = self.aiChatOmnibarContainerViewController.suggestionsHeight
+            let additionalHeight = self.aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = textHeight + suggestionsHeight + additionalHeight
+            self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
+
             let passthroughHeight = self.aiChatOmnibarContainerViewController.totalPassthroughHeight
             self.mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
             self.aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
@@ -609,7 +632,8 @@ final class MainViewController: NSViewController {
 
         let textHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
         let suggestionsHeight = aiChatOmnibarContainerViewController.suggestionsHeight
-        let totalHeight = textHeight + suggestionsHeight
+        let additionalHeight = aiChatOmnibarContainerViewController.additionalContentHeight
+        let totalHeight = textHeight + suggestionsHeight + additionalHeight
 
         mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
 
@@ -1332,7 +1356,7 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
     )
     bkman.loadBookmarks()
 
-    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: Application.appDelegate.pinningManager), aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()))
+    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: Application.appDelegate.pinningManager), aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()))
     var c: AnyCancellable!
     c = vc.publisher(for: \.view.window).sink { window in
         window?.titlebarAppearsTransparent = true

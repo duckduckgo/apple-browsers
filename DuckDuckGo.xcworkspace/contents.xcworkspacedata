@@ -18,6 +18,9 @@
          location = "group:AIChat">
       </FileRef>
       <FileRef
+         location = "group:AutomationServer">
+      </FileRef>
+      <FileRef
          location = "group:BrowserServicesKit">
       </FileRef>
       <FileRef

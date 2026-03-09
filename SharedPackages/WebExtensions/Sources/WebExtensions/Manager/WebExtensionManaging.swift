@@ -71,10 +71,6 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType)
 
-    /// Updates the domain exclusion list for an embedded extension, denying access to the specified domains.
-    @available(macOS 15.4, iOS 18.4, *)
-    func updateExcludedDomains(_ excludedDomains: [String], forExtensionType type: DuckDuckGoWebExtensionType)
-
     /// Finds an installed extension by its embedded type.
     @available(macOS 15.4, iOS 18.4, *)
     func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension?

@@ -17,13 +17,14 @@
 //
 
 import AppKit
+import AppKitExtensions
 import Common
 import Foundation
-import VPN
 import NetworkProtectionProxy
-import SwiftUI
 import os.log
 import Subscription
+import SwiftUI
+import VPN
 
 /// Controller for the VPN debug menu.
 ///

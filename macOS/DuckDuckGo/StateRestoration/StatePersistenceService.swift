@@ -170,6 +170,7 @@ final class StatePersistenceService {
             throw CocoaError(.fileReadNoSuchFile)
         }
         let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+        registerLegacyClassMappings(on: unarchiver)
         try restore(unarchiver)
     }
 
@@ -178,6 +179,12 @@ final class StatePersistenceService {
 // MARK: - Instrumentation Helper
 
 private extension StatePersistenceService {
+
+    func registerLegacyClassMappings(on unarchiver: NSKeyedUnarchiver) {
+        // Older archives encoded AI chat state under AIChatSidebar class names.
+        // Map those names to AIChatState so legacy sessions can decode on rename.
+        unarchiver.setClass(AIChatState.self, forClassName: "DuckDuckGo_Privacy_Browser.AIChatSidebar")
+    }
 
     func check(at location: URL, fileStore: FileStore) -> Bool {
         let hasDataAtLocation = fileStore.hasData(at: location)

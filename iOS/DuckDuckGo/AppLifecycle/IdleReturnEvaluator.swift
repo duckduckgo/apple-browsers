@@ -36,6 +36,44 @@ struct IdleReturnDebugOverridesKeys: StoringKeys {
     let thresholdSecondsOverride = StorageKey<Int>(IdleReturnDebugStorageKeys.idleReturnThresholdSecondsDebugOverride)
 }
 
+struct IdleReturnThresholdResolver {
+
+    private let debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)?
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+
+    /// When `debugOverridesStorage` is nil, defaults to `UserDefaults.app.keyedStoring()`.
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
+         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil) {
+        if let debugOverridesStorage {
+            self.debugOverridesStorage = debugOverridesStorage
+        } else {
+            self.debugOverridesStorage = UserDefaults.app.keyedStoring()
+        }
+        self.privacyConfigurationManager = privacyConfigurationManager
+    }
+
+    func thresholdSeconds() -> Int {
+        if let overrideSeconds: Int = debugOverridesStorage?.thresholdSecondsOverride, overrideSeconds > 0 {
+            return overrideSeconds
+        }
+        let constants = IdleReturnEvaluator.IdleReturnEvaluatorConstants.self
+        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: constants.subfeature),
+              let jsonData = settings.data(using: .utf8) else {
+            return IdleReturnEvaluator.IdleReturnEvaluatorConstants.defaultIdleThresholdSeconds
+        }
+        do {
+            if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+               let value = settingsDict[IdleReturnEvaluator.IdleReturnEvaluatorConstants.idleThresholdSecondsSettingKey] as? NSNumber,
+               value.intValue >= 0 {
+                return value.intValue
+            }
+        } catch {
+            Logger.general.debug("Idle return NTP idleThresholdSeconds parse failed: \(error.localizedDescription)")
+        }
+        return IdleReturnEvaluator.IdleReturnEvaluatorConstants.defaultIdleThresholdSeconds
+    }
+}
+
 final class IdleReturnEvaluator: IdleReturnEvaluating {
 
     enum IdleReturnEvaluatorConstants {
@@ -47,13 +85,16 @@ final class IdleReturnEvaluator: IdleReturnEvaluating {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let debugOverridesStorage: any KeyedStoring<IdleReturnDebugOverridesKeys>
+    private let idleReturnEligibilityManager: IdleReturnEligibilityManaging?
 
     init(featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil) {
+         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging? = nil) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.debugOverridesStorage = if let debugOverridesStorage { debugOverridesStorage } else { UserDefaults.app.keyedStoring() }
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
     }
 
     func shouldShowNTPAfterIdle(lastBackgroundDate: Date?) -> Bool {
@@ -63,27 +104,18 @@ final class IdleReturnEvaluator: IdleReturnEvaluating {
         guard let lastBackgroundDate else {
             return false
         }
+        guard idleReturnEligibilityManager?.isEligibleForNTPAfterIdle() ?? true else {
+            return false
+        }
         let thresholdSeconds = idleThresholdSeconds()
         return Date().timeIntervalSince(lastBackgroundDate) >= Double(thresholdSeconds)
     }
 
     private func idleThresholdSeconds() -> Int {
-        if let overrideSeconds: Int = debugOverridesStorage.thresholdSecondsOverride, overrideSeconds > 0 {
-            return overrideSeconds
-        }
-        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: IdleReturnEvaluatorConstants.subfeature),
-              let jsonData = settings.data(using: .utf8) else {
-            return IdleReturnEvaluatorConstants.defaultIdleThresholdSeconds
-        }
-        do {
-            if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-               let value = settingsDict[IdleReturnEvaluatorConstants.idleThresholdSecondsSettingKey] as? NSNumber,
-               value.intValue >= 0 {
-                return value.intValue
-            }
-        } catch {
-            Logger.general.debug("Idle return NTP idleThresholdSeconds parse failed: \(error.localizedDescription)")
-        }
-        return IdleReturnEvaluatorConstants.defaultIdleThresholdSeconds
+        let resolver = IdleReturnThresholdResolver(
+            privacyConfigurationManager: privacyConfigurationManager,
+            debugOverridesStorage: debugOverridesStorage
+        )
+        return resolver.thresholdSeconds()
     }
 }

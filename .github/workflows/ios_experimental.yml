@@ -112,7 +112,7 @@ jobs:
       if: steps.check-upload.outputs.should_skip != 'true'
       uses: ./.github/actions/select-xcode-version
       with:
-        xcode-version: "26.1"
+        xcode-version: "26.2"
 
     - name: Setup Ruby and dependencies
       if: steps.check-upload.outputs.should_skip != 'true'

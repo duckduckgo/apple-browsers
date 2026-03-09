@@ -616,6 +616,21 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.addArrangedSubview(container)
     }
 
+    /// Adds a child view controller with its view constrained to respect the sidebar container,
+    /// so that the sidebar can overlay from the trailing edge without being covered.
+    private func addAndLayoutChildBesideSidebar(_ vc: NSViewController) {
+        addChild(vc)
+        let childView = vc.view
+        childView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(childView, positioned: .below, relativeTo: sidebarContainer)
+        NSLayoutConstraint.activate([
+            childView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            childView.topAnchor.constraint(equalTo: view.topAnchor),
+            childView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            childView.trailingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor)
+        ])
+    }
+
     private func removeExistingDialog() {
         containerStackView.arrangedSubviews.filter({ $0 != webViewContainer }).forEach {
             containerStackView.removeArrangedSubview($0)
@@ -1055,7 +1070,7 @@ final class BrowserTabViewController: NSViewController {
         switch tabViewModel?.tab.content {
         case .bookmarks:
             removeAllTabContent()
-            addAndLayoutChild(bookmarksViewControllerCreatingIfNeeded())
+            addAndLayoutChildBesideSidebar(bookmarksViewControllerCreatingIfNeeded())
 
         case let .settings(pane):
             showTabContentForSettings(pane: pane)
@@ -1071,7 +1086,7 @@ final class BrowserTabViewController: NSViewController {
             // We only use HTML New Tab Page in regular windows for now
             if tabCollectionViewModel.isBurner {
                 removeAllTabContent()
-                addAndLayoutChild(burnerHomePageViewControllerCreatingIfNeeded())
+                addAndLayoutChildBesideSidebar(burnerHomePageViewControllerCreatingIfNeeded())
             } else {
                 updateTabIfNeeded(tabViewModel: tabViewModel)
             }
@@ -1083,7 +1098,7 @@ final class BrowserTabViewController: NSViewController {
             removeAllTabContent()
             let dataBrokerProtectionViewController = dataBrokerProtectionHomeViewControllerCreatingIfNeeded()
             self.previouslySelectedTab = tabCollectionViewModel.selectedTab
-            addAndLayoutChild(dataBrokerProtectionViewController)
+            addAndLayoutChildBesideSidebar(dataBrokerProtectionViewController)
 
         case .webExtensionUrl:
             updateTabIfNeeded(tabViewModel: tabViewModel)
@@ -1143,7 +1158,7 @@ final class BrowserTabViewController: NSViewController {
             preferencesViewController.model.selectPane(pane)
         }
         if preferencesViewController.parent !== self {
-            addAndLayoutChild(preferencesViewController)
+            addAndLayoutChildBesideSidebar(preferencesViewController)
         }
     }
 

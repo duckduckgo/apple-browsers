@@ -135,12 +135,13 @@ public extension SubJobWebRunning {
                                  actionType: action.actionType,
                                  details: "Captcha resolution received")
                 stageCalculator.fireOptOutCaptchaSolve()
+                let request: CCFRequestData = .solveCaptcha(CaptchaToken(token: captchaData))
                 recordDebugEvent(kind: .actionPayload,
                                  actionType: action.actionType,
-                                 details: prettyPrintedJSON(from: CCFRequestData.solveCaptcha(CaptchaToken(token: captchaData))))
+                                 details: DebugHelper.prettyPrintedActionPayload(action: action, data: request))
                 await webViewHandler?.execute(action: action,
                                               ofType: stepType,
-                                              data: .solveCaptcha(CaptchaToken(token: captchaData)))
+                                              data: request)
             } else {
                 await onError(error: DataBrokerProtectionError.captchaServiceError(CaptchaServiceError.nilDataWhenFetchingCaptchaResult))
             }
@@ -185,13 +186,19 @@ public extension SubJobWebRunning {
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
         }
 
-        let request = CCFRequestData.userData(context.profileQuery, self.extractedProfile)
+        let request: CCFRequestData = .userData(context.profileQuery, self.extractedProfile)
+        if shouldFireTypedFallbackPixel(for: action) {
+            pixelHandler.fire(.actionPayloadTypedFallbackUnexpected(dataBroker: context.dataBroker.url,
+                                                                   version: context.dataBroker.version,
+                                                                   actionType: action.actionType.rawValue,
+                                                                   stepType: stepType))
+        }
         recordDebugEvent(kind: .actionPayload,
                          actionType: action.actionType,
-                         details: prettyPrintedJSON(from: request))
+                         details: DebugHelper.prettyPrintedActionPayload(action: action, data: request))
         await webViewHandler?.execute(action: action,
                                       ofType: stepType,
-                                      data: .userData(context.profileQuery, self.extractedProfile))
+                                      data: request)
     }
 
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {
@@ -277,7 +284,7 @@ public extension SubJobWebRunning {
                 try await webViewHandler?.load(url: url)
                 recordDebugEvent(kind: .actionResponse,
                                  actionType: .navigate,
-                                 details: prettyPrintedJSON(from: ["url": url.absoluteString]))
+                                 details: DebugHelper.prettyPrintedJSON(from: ["url": url.absoluteString]))
                 await successNextSteps()
             } catch let error as DataBrokerProtectionError {
                 guard error == error404 && self is BrokerProfileScanSubJobWebRunner else {
@@ -309,10 +316,18 @@ public extension SubJobWebRunning {
         }
     }
 
+    private func shouldFireTypedFallbackPixel(for action: Action) -> Bool {
+        guard action.json == nil else { return false }
+        let isSyntheticEmailContinuationNavigate = actionsHandler?.isEmailConfirmationContinuation == true &&
+            actionsHandler?.syntheticContinuationActionId == action.id &&
+            action is NavigateAction
+        return !isSyntheticEmailContinuationNavigate
+    }
+
     func success(actionId: String, actionType: ActionType) async {
         recordDebugEvent(kind: .actionResponse,
                          actionType: actionType,
-                         details: prettyPrintedJSON(from: ["actionId": actionId, "actionType": actionType.rawValue]))
+                         details: DebugHelper.prettyPrintedJSON(from: ["actionId": actionId, "actionType": actionType.rawValue]))
         let isForOptOut = actionsHandler?.isForOptOut == true
 
         switch actionType {
@@ -341,7 +356,7 @@ public extension SubJobWebRunning {
 
     func conditionSuccess(actions: [Action]) async {
         recordDebugEvent(kind: .actionResponse,
-                         details: prettyPrintedJSON(from: actions))
+                         details: DebugHelper.prettyPrintedJSON(from: actions))
         if actions.isEmpty {
             Logger.action.log(loggerContext(), message: "Condition action completed with no follow-up actions")
             if actionsHandler?.stepType == .optOut {
@@ -362,7 +377,7 @@ public extension SubJobWebRunning {
     func captchaInformation(captchaInfo: GetCaptchaInfoResponse) async {
         recordDebugEvent(kind: .actionResponse,
                          actionType: .getCaptchaInfo,
-                         details: prettyPrintedJSON(from: captchaInfo))
+                         details: DebugHelper.prettyPrintedJSON(from: captchaInfo))
         do {
             stageCalculator.fireOptOutCaptchaParse()
             stageCalculator.setStage(.captchaSend)
@@ -392,7 +407,7 @@ public extension SubJobWebRunning {
     func solveCaptcha(with response: SolveCaptchaResponse) async {
         recordDebugEvent(kind: .actionResponse,
                          actionType: .solveCaptcha,
-                         details: prettyPrintedJSON(from: response))
+                         details: DebugHelper.prettyPrintedJSON(from: response))
         do {
             try await webViewHandler?.evaluateJavaScript(response.callback.eval)
 

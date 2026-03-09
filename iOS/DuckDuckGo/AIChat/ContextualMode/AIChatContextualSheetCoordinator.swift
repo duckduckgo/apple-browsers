@@ -185,6 +185,7 @@ final class AIChatContextualSheetCoordinator {
 private extension AIChatContextualSheetCoordinator {
     
     func presentExistingSheet(_ sheetVC: UIViewController, from presentingVC: UIViewController) {
+        guard sheetVC.presentingViewController == nil else { return }
         presentingVC.present(sheetVC, animated: true)
     }
     

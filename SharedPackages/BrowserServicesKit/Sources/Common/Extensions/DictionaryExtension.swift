@@ -30,3 +30,16 @@ public extension Dictionary where Key == String, Value == String {
     }
 
 }
+
+public extension Dictionary where Key == String, Value == any Encodable {
+
+    init(compacting entries: [(String, (any Encodable)?)]) {
+        self = entries.reduce(into: [:]) { result, entry in
+            if let value = entry.1 {
+                assert(result[entry.0] == nil, "Duplicate key '\(entry.0)' encountered while compacting entries.")
+                result[entry.0] = value
+            }
+        }
+    }
+
+}

@@ -75,7 +75,7 @@ jobs:
       group: macos-appstore-build-${{ github.event.inputs.destination || inputs.destination }}
       cancel-in-progress: true
 
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}
@@ -169,7 +169,7 @@ jobs:
       group: macos-appstore-upload-${{ github.event.inputs.destination || inputs.destination }}
       cancel-in-progress: true
 
-    runs-on: macos-15
+    runs-on: macos-26
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}

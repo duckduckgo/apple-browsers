@@ -156,7 +156,6 @@ struct Launching: LaunchingHandling {
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            featureFlagger: featureFlagger,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager
         )
 
@@ -286,11 +285,19 @@ struct Launching: LaunchingHandling {
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
 
-        configuration.finalize(
+#if DEBUG || ALPHA
+        mainCoordinator.controller.automationServer = configuration.finalize(
             reportingService: reportingService,
             mainViewController: mainCoordinator.controller,
             launchTaskManager: launchTaskManager
         )
+#else
+        _ = configuration.finalize(
+            reportingService: reportingService,
+            mainViewController: mainCoordinator.controller,
+            launchTaskManager: launchTaskManager
+        )
+#endif
 
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.

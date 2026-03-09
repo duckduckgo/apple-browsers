@@ -82,6 +82,10 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
     case debugCustomBaseURL = "debug_customBaseURL"
     case debugCustomDuckAIBaseURL = "debug_customDuckAIBaseURL"
 
+    // MARK: - DarkReader
+
+    case forceDarkModeOnWebsitesEnabled = "forceDarkModeOnWebsitesEnabled"
+
     // MARK: - Add more app-wide keys here as they are migrated from UserDefaultsWrapper
 
 }

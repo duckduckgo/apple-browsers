@@ -83,6 +83,9 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
     // MARK: - QuitSurveyDeciding
 
     var shouldShowQuitSurvey: Bool {
+        // Never show during automation sessions (WebDriver or UI Tests)
+        guard !LaunchOptionsHandler().isAutomationSession else { return false }
+
         // Condition 1: Feature flag is enabled
         guard featureFlagger.isFeatureOn(.firstTimeQuitSurvey) else { return false }
 

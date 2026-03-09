@@ -98,7 +98,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
     }
 
     var isForceDarkModeEnabled: Bool {
-        isFeatureEnabled && ((try? storage.forceDarkModeOnWebsitesEnabled) ?? false)
+        isFeatureEnabled && isSettingEnabled
     }
 
     var excludedDomains: [String] {
@@ -107,7 +107,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     func setForceDarkModeEnabled(_ enabled: Bool) {
         guard isFeatureEnabled else { return }
-        let previousValue = (try? storage.forceDarkModeOnWebsitesEnabled) ?? false
+        let previousValue = isSettingEnabled
         guard previousValue != enabled else { return }
         try? storage.set(enabled, for: \.forceDarkModeOnWebsitesEnabled)
         pixelFiring?.fire(enabled ? WebExtensionPixel.darkReaderEnabled : WebExtensionPixel.darkReaderDisabled, frequency: .dailyAndCount)
@@ -116,6 +116,23 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     func themeDidChange() {
         forceDarkModeChangedSubject.send(isForceDarkModeEnabled)
+    }
+
+    /// Read the setting from storage.
+    ///
+    /// Default to `false` if not present, or `true` for internal users.
+    ///
+    private var isSettingEnabled: Bool {
+        let storageSetting = try? storage.forceDarkModeOnWebsitesEnabled
+        guard let storageSetting else {
+            // If setting is not present in storage, for internal users set `true` as the initial value.
+            if featureFlagger.internalUserDecider.isInternalUser {
+                try? storage.set(true, for: \.forceDarkModeOnWebsitesEnabled)
+                return true
+            }
+            return false
+        }
+        return storageSetting
     }
 }
 

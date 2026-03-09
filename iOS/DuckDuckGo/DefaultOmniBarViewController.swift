@@ -513,6 +513,10 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     func onSwitchTabToIndex(_ index: Int) {
         omniDelegate?.onSwitchTabToIndex(index)
     }
+
+    func onToggleModeSwitched() {
+        omniDelegate?.onToggleModeSwitched()
+    }
 }
 
 // MARK: - UITextViewDelegate (iPad Duck.ai Expanded Text View)

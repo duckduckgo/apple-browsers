@@ -82,7 +82,7 @@ jobs:
 
     name: Export Notarized App
 
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
 
     outputs:
       app-version: ${{ steps.set-outputs.outputs.app-version }}
@@ -93,7 +93,7 @@ jobs:
       dsym-url: ${{ steps.upload-dsyms-to-s3-test-build.outputs.dsym-url }}
 
     env:
-      RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
+      RUNS_ON: macos-26-xlarge # keep this in sync with runs-on above
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
@@ -327,7 +327,7 @@ jobs:
     needs: export-notarized-app
     if: ${{ github.event.inputs.create-dmg == true || inputs.create-dmg == true }}
 
-    runs-on: macos-15
+    runs-on: macos-26
 
     env:
       app-version: ${{ needs.export-notarized-app.outputs.app-version }}
@@ -336,7 +336,7 @@ jobs:
       branch: ${{ inputs.branch || github.ref_name }}
       upload-to: ${{ needs.export-notarized-app.outputs.upload-to }}
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
-      RUNS_ON: macos-15 # keep this in sync with runs-on above
+      RUNS_ON: macos-26 # keep this in sync with runs-on above
 
     steps:
 
@@ -515,7 +515,7 @@ jobs:
     needs: [export-notarized-app, create-dmg]
     if: ${{ always() && inputs.skip-notify == false }}
 
-    runs-on: macos-15
+    runs-on: macos-26
 
     env:
       branch: ${{ inputs.branch || github.ref_name }}

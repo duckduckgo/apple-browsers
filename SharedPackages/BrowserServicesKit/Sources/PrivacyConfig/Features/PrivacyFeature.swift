@@ -628,7 +628,7 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
 public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .webExtensions }
 
-    case embeddedExtension
+    case embeddedExtension = "embedded"
 }
 
 public enum ForceDarkModeOnWebsitesSubfeature: String, PrivacySubfeature {

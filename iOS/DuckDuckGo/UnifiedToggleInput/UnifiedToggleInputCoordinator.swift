@@ -90,6 +90,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     var currentText: String { viewController.text }
     var hasActiveChat: Bool { boundUserScript != nil }
+    var switchBarHandler: SwitchBarHandling { viewController.handler }
 
     var isInlineEditingActive: Bool {
         if case .inline(.active) = displayState { return true }
@@ -224,7 +225,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     func inlineEditingHeight() -> CGFloat {
-        let screenWidth = UIScreen.main.bounds.width
+        let screenWidth = viewController.view.window?.bounds.width ?? viewController.view.bounds.width
         let height = viewController.view.systemLayoutSizeFitting(
             CGSize(width: screenWidth, height: UIView.layoutFittingCompressedSize.height),
             withHorizontalFittingPriority: .required,
@@ -246,6 +247,45 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     func activateInput() {
         viewController.activateInput()
+    }
+
+    func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
+        let effectiveMode: TextEntryMode = isToggleEnabled ? mode : .search
+        let didModeChange = inputMode != effectiveMode
+        inputMode = effectiveMode
+        if didModeChange || effectiveMode != mode {
+            viewController.setInputMode(effectiveMode, animated: false)
+        }
+        if didModeChange {
+            modeChangeSubject.send(effectiveMode)
+        }
+    }
+
+    func clearText() {
+        viewController.text = ""
+        textState = .empty
+    }
+
+    func handleExternalQuerySubmission() {
+        switch displayState {
+        case .inline:
+            deactivateInlineEditing()
+        case .aiTab:
+            hide()
+        case .hidden:
+            break
+        }
+    }
+
+    func handleExternalPromptSubmission() {
+        switch displayState {
+        case .inline:
+            deactivateInlineEditing()
+        case .aiTab:
+            showCollapsed()
+        case .hidden:
+            break
+        }
     }
 
     func deactivateInlineEditing() {

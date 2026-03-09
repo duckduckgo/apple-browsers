@@ -385,6 +385,17 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.inputMode, .search)
     }
 
+    func test_syncInputModeFromExternalSource_setsMode() {
+        sut.syncInputModeFromExternalSource(.search)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
+    func test_syncInputModeFromExternalSource_toggleDisabled_forcesSearch() {
+        sut.updateToggleEnabled(false)
+        sut.syncInputModeFromExternalSource(.aiChat)
+        XCTAssertEqual(sut.inputMode, .search)
+    }
+
     // MARK: - Toggle Enabled
 
     func test_updateToggleEnabled_setsFlag() {
@@ -423,6 +434,50 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
         XCTAssertEqual(sut.displayState, .hidden)
         XCTAssertFalse(sut.isInlineEditingActive)
+    }
+
+    // MARK: - External Submission Handlers
+
+    func test_handleExternalQuerySubmission_deactivatesInlineEditing() {
+        sut.activateInlineEditing()
+        sut.handleExternalQuerySubmission()
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_handleExternalQuerySubmission_hidesAITab() {
+        sut.showExpanded()
+        sut.handleExternalQuerySubmission()
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_handleExternalQuerySubmission_noOpWhenHidden() {
+        sut.handleExternalQuerySubmission()
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_handleExternalPromptSubmission_deactivatesInlineEditing() {
+        sut.activateInlineEditing()
+        sut.handleExternalPromptSubmission()
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func test_handleExternalPromptSubmission_collapsesAITab() {
+        sut.showExpanded()
+        sut.handleExternalPromptSubmission()
+        XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
+    }
+
+    func test_handleExternalPromptSubmission_noOpWhenHidden() {
+        sut.handleExternalPromptSubmission()
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    // MARK: - Clear Text
+
+    func test_clearText_resetsTextState() {
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "hello")
+        sut.clearText()
+        XCTAssertEqual(sut.textState, .empty)
     }
 }
 

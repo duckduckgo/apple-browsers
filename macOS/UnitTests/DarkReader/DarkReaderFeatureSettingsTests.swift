@@ -138,6 +138,29 @@ final class DarkReaderFeatureSettingsTests: XCTestCase {
         XCTAssertFalse(sut.isForceDarkModeEnabled)
     }
 
+    @available(macOS 15.4, *)
+    func testIsForceDarkModeEnabled_WhenFlagOnAndNothingStoredAndInternalUser_ReturnsTrue() {
+        mockFeatureFlagger = MockFeatureFlagger(
+            internalUserDecider: DefaultInternalUserDecider(store: MockInternalUserStoring(isInternalUser: true))
+        )
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        sut = makeSUT()
+
+        XCTAssertTrue(sut.isForceDarkModeEnabled)
+    }
+
+    @available(macOS 15.4, *)
+    func testIsForceDarkModeEnabled_WhenFlagOnAndStoredFalseAndInternalUser_ReturnsFalse() {
+        mockFeatureFlagger = MockFeatureFlagger(
+            internalUserDecider: DefaultInternalUserDecider(store: MockInternalUserStoring(isInternalUser: true))
+        )
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        sut = makeSUT()
+        sut.setForceDarkModeEnabled(false)
+
+        XCTAssertFalse(sut.isForceDarkModeEnabled)
+    }
+
     // MARK: - setForceDarkModeEnabled
 
     func testSetForceDarkModeEnabled_WhenFeatureDisabled_DoesNotPersistValue() throws {
@@ -298,6 +321,36 @@ final class DarkReaderFeatureSettingsTests: XCTestCase {
         sut = makeSUT(pixelFiring: pixelMock)
 
         sut.setForceDarkModeEnabled(true)
+
+        pixelMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    @available(macOS 15.4, *)
+    func testSetForceDarkModeEnabled_WhenInternalUserAndEnablingFromDefault_DoesNotFirePixel() {
+        let pixelMock = PixelKitMock(expecting: [])
+        mockFeatureFlagger = MockFeatureFlagger(
+            internalUserDecider: DefaultInternalUserDecider(store: MockInternalUserStoring(isInternalUser: true))
+        )
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        sut = makeSUT(pixelFiring: pixelMock)
+
+        sut.setForceDarkModeEnabled(true)
+
+        pixelMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    @available(macOS 15.4, *)
+    func testSetForceDarkModeEnabled_WhenInternalUserAndDisabling_FiresDisabledPixel() {
+        let pixelMock = PixelKitMock(expecting: [
+            ExpectedFireCall(pixel: WebExtensionPixel.darkReaderDisabled, frequency: .dailyAndCount)
+        ])
+        mockFeatureFlagger = MockFeatureFlagger(
+            internalUserDecider: DefaultInternalUserDecider(store: MockInternalUserStoring(isInternalUser: true))
+        )
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        sut = makeSUT(pixelFiring: pixelMock)
+
+        sut.setForceDarkModeEnabled(false)
 
         pixelMock.verifyExpectations(file: #file, line: #line)
     }

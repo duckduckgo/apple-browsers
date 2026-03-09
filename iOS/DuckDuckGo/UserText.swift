@@ -78,6 +78,8 @@ public struct UserText {
     public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let aiChatRecentChatsTitle = NotLocalizedString("aiChat.recentChats.title", value: "Recent Chats", comment: "Section header title for the recent chats list in Duck.ai")
+    public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
+    public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
 
     public static let actionOpenBookmarks = NSLocalizedString("action.title.bookmarks", value: "Bookmarks", comment: "Button: Open bookmarks list")
     public static let actionOpenPasswords = NSLocalizedString("action.title.passwords", value: "Passwords", comment: "Button: Open passwords list")
@@ -2130,9 +2132,47 @@ public struct UserText {
         }
 
         enum SearchExperience {
-            public static let title = NSLocalizedString("onboarding.highlights.searchExperience.title", value: "Want easy access to private AI chat?", comment: "The title of the onboarding dialog popup to select the preferred search experience.")
+            public static var title: String {
+                if Locale.current.isEnglishLanguage {
+                    NotLocalizedString(
+                        "onboarding.highlights.searchExperience.title.english-only",
+                        value: "Want easy access to private AI chat in the address bar?",
+                        comment: "The title of the onboarding dialog popup to select the preferred search experience for English-language copy update."
+                    )
+                } else {
+                    NSLocalizedString(
+                        "onboarding.highlights.searchExperience.title",
+                        value: "Want easy access to private AI chat?",
+                        comment: "The title of the onboarding dialog popup to select the preferred search experience."
+                    )
+                }
+            }
             public static let footer = NSLocalizedString("onboarding.highlights.searchExperience.footer", value: "AI features are private and optional. You can make changes in Settings > AI Features.", comment: "The footer disclaimer text for the search experience onboarding screen.")
             public static let cta = NSLocalizedString("onboarding.highlights.searchExperience.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
+
+            public static var searchOnlyOption: String {
+                if Locale.current.isEnglishLanguage {
+                    NotLocalizedString(
+                        "onboarding.highlights.searchExperience.searchOnly.english-only",
+                        value: "Search only",
+                        comment: "Title for the search-only option in onboarding picker for English-language copy update."
+                    )
+                } else {
+                    UserText.settingsAIPickerSearchOnly
+                }
+            }
+
+            public static var searchAndDuckAIOption: String {
+                if Locale.current.isEnglishLanguage {
+                    NotLocalizedString(
+                        "onboarding.highlights.searchExperience.searchAndDuckAI.english-only",
+                        value: "Toggle between\nSearch and Duck.ai",
+                        comment: "Title for the search and Duck.ai option in onboarding picker for English-language copy update."
+                    )
+                } else {
+                    UserText.settingsAIPickerSearchAndDuckAI
+                }
+            }
             
             static func footerAttributed() -> NSAttributedString {
                 let settingsPathBold = NSLocalizedString(

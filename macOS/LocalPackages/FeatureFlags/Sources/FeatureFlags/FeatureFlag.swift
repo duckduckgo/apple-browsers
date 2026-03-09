@@ -281,7 +281,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
 
-    /// Window Semaphore Fullscreen Baheavior Flag
+    /// Window Semaphore Fullscreen Behavior Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213585076410725?focus=true
     case semaphoreAlwaysVisible
 }

@@ -639,7 +639,7 @@ struct UserText {
     static let aiChatSidebarTitle = NSLocalizedString("aichat.sidebar.title", value: "Duck.ai", comment: "Title for the Duck.ai sidebar")
     static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
     static let aiChatSidebarNewChatButtonTooltip = NSLocalizedString("aichat.sidebar.new-chat-button.tooltip", value: "New chat", comment: "Tooltip for button to reset the current duck.ai sidebar chat")
-    static let aiChatSidebarOpenInTabButtonTitle = NSLocalizedString("aichat.sidebar.open-in-tab-button.title", value: "Open Duck.ai in Tab", comment: "Title of docked sidebar button to open duck.ai in a full browser tab")
+    static let aiChatSidebarOpenInTabButtonTitle = NSLocalizedString("aichat.sidebar.open-in-tab-button.title", value: "Open new Duck.ai tab", comment: "Title of docked sidebar button to open duck.ai in a full browser tab")
     static let aiChatSidebarDetachButtonTooltip = NSLocalizedString("aichat.sidebar.detach-button.tooltip", value: "Move to window", comment: "Tooltip for button to detach the duck.ai sidebar into a floating window")
     static let aiChatSidebarAttachButtonTooltip = NSLocalizedString("aichat.sidebar.attach-button.tooltip", value: "Move to sidebar", comment: "Tooltip for button to dock the floating duck.ai window back into the sidebar")
     static let aiChatSidebarCloseButtonTooltip = NSLocalizedString("aichat.sidebar.close-button.tooltip", value: "Close", comment: "Tooltip for button to close the sidebar with the duck.ai chat")

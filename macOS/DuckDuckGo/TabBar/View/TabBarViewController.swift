@@ -33,9 +33,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         case pinnedTabsScrollViewPaddingMacOS26 = 84
     }
 
+    private enum AIChatPresentationMode {
+        case hidden, sidebar, floating
+    }
+
     private enum Constants {
         static let duckAISidebarOpenImageName = NSImage.Name("Sidebar-Open-16")
         static let duckAISidebarCloseImageName = NSImage.Name("Sidebar-Close-16")
+        static let duckAISidebarDetachedImageName = NSImage.Name("Sidebar-Detached-16")
         static let duckAIControlSpacingBeforeFireButton: CGFloat = 5
     }
 
@@ -78,7 +83,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var fireButtonMouseOverCancellable: AnyCancellable?
     private var chromeSidebarFeatureFlagCancellable: AnyCancellable?
     private var aiChatSidebarPresenceCancellable: AnyCancellable?
+    private var aiChatFloatingStateCancellable: AnyCancellable?
     private var aiChatMenuConfigCancellable: AnyCancellable?
+    private var aiChatButtonHoverCancellable: AnyCancellable?
+    private var duckAIChromeDividerInsetConstraint: NSLayoutConstraint?
+    private var duckAIChromeDividerFullConstraint: NSLayoutConstraint?
+    private var currentAIChatPresentationMode: AIChatPresentationMode = .hidden
     private var selectedTabViewModelCancellable: AnyCancellable?
     private var tabContentCancellable: AnyCancellable?
 
@@ -162,7 +172,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var rightSideStackView: NSStackView!
     private var duckAIChromeControlContainer: ColorView?
     private var duckAIChromeTitleButton: MouseOverButton?
-    private var duckAIChromeSidebarButton: NotificationDotMouseOverButton?
+    private var duckAIChromeSidebarButton: MouseOverButton?
     private var duckAIChromeDivider: ColorView?
 
     private var isChromeSidebarFeatureEnabled: Bool {
@@ -458,13 +468,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let divider = ColorView(frame: .zero)
         divider.translatesAutoresizingMaskIntoConstraints = false
 
-        let sidebarButton = NotificationDotMouseOverButton(frame: .zero)
+        let sidebarButton = MouseOverButton(frame: .zero)
         sidebarButton.translatesAutoresizingMaskIntoConstraints = false
         sidebarButton.isBordered = false
         sidebarButton.target = self
         sidebarButton.action = #selector(duckAIChromeSidebarButtonAction(_:))
         sidebarButton.sendAction(on: .leftMouseDown)
-        sidebarButton.image = duckAISidebarIcon(isSidebarOpen: false)
+        sidebarButton.image = duckAISidebarIcon(for: .hidden)
         sidebarButton.setAccessibilityIdentifier("TabBarViewController.duckAIChromeSidebarButton")
         sidebarButton.setAccessibilityTitle(UserText.aiChatOpenSidebarButton)
         sidebarButton.toolTip = UserText.aiChatOpenSidebarButton
@@ -477,6 +487,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         contentStack.spacing = 0
         container.addSubview(contentStack)
 
+        let dividerInset = divider.heightAnchor.constraint(equalToConstant: max(12, theme.tabBarButtonSize - 12))
+        let dividerFull = divider.heightAnchor.constraint(equalTo: container.heightAnchor)
+        dividerInset.isActive = true
+
         NSLayoutConstraint.activate([
             contentStack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             contentStack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
@@ -485,10 +499,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             container.heightAnchor.constraint(equalToConstant: theme.tabBarButtonSize),
             titleButton.heightAnchor.constraint(equalTo: container.heightAnchor),
             divider.widthAnchor.constraint(equalToConstant: 1),
-            divider.heightAnchor.constraint(equalToConstant: max(14, theme.tabBarButtonSize - 10)),
             sidebarButton.heightAnchor.constraint(equalTo: container.heightAnchor),
-            sidebarButton.widthAnchor.constraint(equalToConstant: theme.tabBarButtonSize + 2)
+            sidebarButton.widthAnchor.constraint(equalToConstant: theme.tabBarButtonSize + 4)
         ])
+
+        duckAIChromeDividerInsetConstraint = dividerInset
+        duckAIChromeDividerFullConstraint = dividerFull
 
         if let fireButtonIndex = rightSideStackView.arrangedSubviews.firstIndex(of: fireButton) {
             rightSideStackView.insertArrangedSubview(container, at: fireButtonIndex)
@@ -501,6 +517,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         duckAIChromeTitleButton = titleButton
         duckAIChromeSidebarButton = sidebarButton
         duckAIChromeDivider = divider
+
+        aiChatButtonHoverCancellable = Publishers.Merge4(
+            titleButton.publisher(for: \.isMouseOver),
+            titleButton.publisher(for: \.isMouseDown),
+            sidebarButton.publisher(for: \.isMouseOver),
+            sidebarButton.publisher(for: \.isMouseDown)
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in self?.updateDuckAIChromeDividerState() }
 
         updateDuckAIChromeSegmentedControlAppearance()
         updateDuckAIChromeSegmentedControlState()
@@ -522,20 +547,39 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         ])
         duckAIChromeTitleButton.backgroundColor = .clear
         duckAIChromeTitleButton.mouseOverColor = colorsProvider.buttonMouseDownColor
-        duckAIChromeTitleButton.mouseDownColor = colorsProvider.buttonMouseDownColor
+        duckAIChromeTitleButton.mouseDownColor = colorsProvider.buttonMouseDownPressedColor
         duckAIChromeTitleButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
         duckAIChromeTitleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
-        duckAIChromeTitleButton.horizontalPadding = 12
+        duckAIChromeTitleButton.horizontalPadding = 16
 
         duckAIChromeSidebarButton.backgroundColor = .clear
         duckAIChromeSidebarButton.mouseOverColor = colorsProvider.buttonMouseDownColor
-        duckAIChromeSidebarButton.mouseDownColor = colorsProvider.buttonMouseDownColor
+        duckAIChromeSidebarButton.mouseDownColor = colorsProvider.buttonMouseDownPressedColor
         duckAIChromeSidebarButton.normalTintColor = colorsProvider.iconsColor
         duckAIChromeSidebarButton.mouseOverTintColor = colorsProvider.iconsColor
         duckAIChromeSidebarButton.mouseDownTintColor = colorsProvider.iconsColor
         duckAIChromeSidebarButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
         duckAIChromeSidebarButton.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-        duckAIChromeDivider?.backgroundColor = colorsProvider.iconsColor.withAlphaComponent(0.22)
+        updateDuckAIChromeDividerState()
+    }
+
+    private func updateDuckAIChromeDividerState() {
+        let isInteracting = duckAIChromeTitleButton?.isMouseOver == true ||
+                            duckAIChromeTitleButton?.isMouseDown == true ||
+                            duckAIChromeSidebarButton?.isMouseOver == true ||
+                            duckAIChromeSidebarButton?.isMouseDown == true
+        let showFullHeight = isInteracting || currentAIChatPresentationMode != .hidden
+
+        if showFullHeight {
+            duckAIChromeDividerInsetConstraint?.isActive = false
+            duckAIChromeDividerFullConstraint?.isActive = true
+        } else {
+            duckAIChromeDividerFullConstraint?.isActive = false
+            duckAIChromeDividerInsetConstraint?.isActive = true
+        }
+        let colorsProvider = theme.colorsProvider
+        duckAIChromeDivider?.backgroundColor = showFullHeight ?
+            colorsProvider.separatorActiveColor : colorsProvider.separatorColor
     }
 
     private func removeDuckAIChromeSegmentedControl() {
@@ -546,6 +590,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         self.duckAIChromeTitleButton = nil
         self.duckAIChromeSidebarButton = nil
         self.duckAIChromeDivider = nil
+        self.aiChatButtonHoverCancellable = nil
+        self.duckAIChromeDividerInsetConstraint = nil
+        self.duckAIChromeDividerFullConstraint = nil
     }
 
     private func subscribeToChromeSidebarFeatureFlag() {
@@ -573,12 +620,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         disableChromeSidebarObservers()
         aiChatSidebarPresenceCancellable = nil
+        aiChatFloatingStateCancellable = nil
         aiChatMenuConfigCancellable = nil
         removeDuckAIChromeSegmentedControl()
     }
 
     private func subscribeToAIChatSidebarChanges() {
         aiChatSidebarPresenceCancellable = aiChatCoordinator?.sidebarPresenceDidChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateDuckAIChromeSegmentedControlState()
+            }
+        aiChatFloatingStateCancellable = aiChatCoordinator?.chatFloatingStateDidChangePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateDuckAIChromeSegmentedControlState()
@@ -622,40 +675,52 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         return canToggleSidebar
     }
 
-    private func duckAISidebarIcon(isSidebarOpen: Bool) -> NSImage? {
-        let imageName = isSidebarOpen ? Constants.duckAISidebarCloseImageName : Constants.duckAISidebarOpenImageName
-        return NSImage(named: imageName)
+    private func duckAISidebarIcon(for mode: AIChatPresentationMode) -> NSImage? {
+        switch mode {
+        case .floating: return NSImage(named: Constants.duckAISidebarDetachedImageName)
+        case .sidebar:  return NSImage(named: Constants.duckAISidebarCloseImageName)
+        case .hidden:   return NSImage(named: Constants.duckAISidebarOpenImageName)
+        }
     }
 
     private func updateDuckAIChromeSegmentedControlState() {
         guard let duckAIChromeSidebarButton else { return }
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else {
+            currentAIChatPresentationMode = .hidden
             duckAIChromeSidebarButton.isEnabled = false
             duckAIChromeSidebarButton.state = .off
-            duckAIChromeSidebarButton.image = duckAISidebarIcon(isSidebarOpen: false)
-            duckAIChromeSidebarButton.isNotificationVisible = false
+            duckAIChromeSidebarButton.image = duckAISidebarIcon(for: .hidden)
+            duckAIChromeSidebarButton.backgroundColor = .clear
             duckAIChromeSidebarButton.toolTip = UserText.aiChatOpenSidebarButton
             duckAIChromeSidebarButton.setAccessibilityTitle(UserText.aiChatOpenSidebarButton)
+            updateDuckAIChromeDividerState()
             return
         }
 
-        let isSidebarOpen = aiChatCoordinator?.isSidebarOpen(for: tab.uuid) ?? false
-        let isChatFloating = aiChatCoordinator?.isChatFloating(for: tab.uuid) ?? false
+        let presentationMode: AIChatPresentationMode
+        if aiChatCoordinator?.isChatFloating(for: tab.uuid) == true {
+            presentationMode = .floating
+        } else if aiChatCoordinator?.isSidebarOpen(for: tab.uuid) == true {
+            presentationMode = .sidebar
+        } else {
+            presentationMode = .hidden
+        }
+        currentAIChatPresentationMode = presentationMode
+
         let canToggleSidebar = canToggleDuckAISidebar(for: tab)
         let tooltip: String
-        if isChatFloating {
-            tooltip = UserText.aiChatShowButton
-        } else if isSidebarOpen {
-            tooltip = UserText.aiChatCloseSidebarButton
-        } else {
-            tooltip = UserText.aiChatOpenSidebarButton
+        switch presentationMode {
+        case .floating: tooltip = UserText.aiChatShowButton
+        case .sidebar:  tooltip = UserText.aiChatCloseSidebarButton
+        case .hidden:   tooltip = UserText.aiChatOpenSidebarButton
         }
-        duckAIChromeSidebarButton.image = duckAISidebarIcon(isSidebarOpen: isSidebarOpen)
-        duckAIChromeSidebarButton.isNotificationVisible = isChatFloating
+        duckAIChromeSidebarButton.image = duckAISidebarIcon(for: presentationMode)
+        duckAIChromeSidebarButton.backgroundColor = presentationMode != .hidden ? theme.colorsProvider.buttonMouseDownColor : .clear
         duckAIChromeSidebarButton.isEnabled = canToggleSidebar
         duckAIChromeSidebarButton.toolTip = tooltip
         duckAIChromeSidebarButton.setAccessibilityTitle(tooltip)
-        duckAIChromeSidebarButton.state = isSidebarOpen ? .on : .off
+        duckAIChromeSidebarButton.state = presentationMode != .hidden ? .on : .off
+        updateDuckAIChromeDividerState()
     }
 
     @objc private func duckAITitlebarButtonAction(_ sender: NSButton) {
@@ -1361,32 +1426,6 @@ extension TabBarViewController: ThemeUpdateListening {
         addTabButton.normalTintColor = colorsProvider.iconsColor
         addTabButton.mouseOverColor = colorsProvider.buttonMouseOverColor
         updateDuckAIChromeSegmentedControlAppearance()
-    }
-}
-
-private final class NotificationDotMouseOverButton: MouseOverButton, NotificationDotProviding {
-
-    var notificationLayer: CALayer?
-    var notificationColor: NSColor = .updateIndicator {
-        didSet {
-            updateNotificationLayer()
-        }
-    }
-    var isNotificationVisible: Bool = false {
-        didSet {
-            updateNotificationVisibility()
-            needsDisplay = isNotificationVisible != oldValue
-        }
-    }
-
-    override func updateLayer() {
-        super.updateLayer()
-        setupNotificationLayerIfNeeded()
-    }
-
-    override func layout() {
-        super.layout()
-        layoutNotification(notificationLayer: notificationLayer)
     }
 }
 

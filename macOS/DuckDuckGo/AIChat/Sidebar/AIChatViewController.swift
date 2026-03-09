@@ -574,7 +574,6 @@ final class AIChatViewController: NSViewController {
         aiTab.webView.uiDelegate = nil
 
         aiTab.webView.stopLoading()
-        aiTab.webView.loadHTMLString("", baseURL: nil)
     }
 }
 

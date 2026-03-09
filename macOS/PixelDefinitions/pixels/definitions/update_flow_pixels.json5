@@ -63,8 +63,8 @@
             "pixelSource"
         ]
     },
-    "m_mac_release_notes_empty": {
-        "description": "Fires when the release notes page is accessed but no update is available, resulting in empty release notes. Used to measure how often users encounter this anomaly case.",
+    "m_mac_release_notes_loading_error": {
+        "description": "Fires when the release notes page shows a loading error. Used to measure how often users encounter this anomaly case.",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],

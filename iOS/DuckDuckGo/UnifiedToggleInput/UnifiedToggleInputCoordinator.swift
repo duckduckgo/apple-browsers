@@ -84,6 +84,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     /// The managed view controller. Access for installation only — query coordinator properties for state.
     private(set) var viewController: UnifiedToggleInputViewController
     private(set) var contentViewController: UnifiedInputContentContainerViewController
+    private(set) var floatingSubmitViewController: UnifiedToggleInputFloatingSubmitViewController
     weak var delegate: UnifiedToggleInputDelegate?
 
     private(set) var isToggleEnabled: Bool
@@ -124,6 +125,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled)
         contentViewController = UnifiedInputContentContainerViewController(switchBarHandler: viewController.handler)
+        floatingSubmitViewController = UnifiedToggleInputFloatingSubmitViewController()
         viewController.delegate = self
     }
 

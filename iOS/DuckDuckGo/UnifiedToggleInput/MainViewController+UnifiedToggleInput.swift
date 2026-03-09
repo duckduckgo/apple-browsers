@@ -46,6 +46,7 @@ extension MainViewController {
 
         setUpAIChatTabChatHeader()
         installUnifiedInputContentViewController()
+        installFloatingSubmitViewController()
 
         subscribeToIntentPublisher(coordinator)
         subscribeToModeChanges(coordinator)
@@ -97,6 +98,7 @@ extension MainViewController {
             self.viewCoordinator.superview.layoutIfNeeded()
         }
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
+        updateFloatingSubmitVisibility()
     }
 
     private func handleAITabModeChange(_: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
@@ -318,6 +320,32 @@ extension MainViewController {
         contentVC.didMove(toParent: self)
     }
 
+    private func installFloatingSubmitViewController() {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+
+        let floatingVC = coordinator.floatingSubmitViewController
+        floatingVC.delegate = self
+
+        addChild(floatingVC)
+        floatingVC.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(floatingVC.view)
+        NSLayoutConstraint.activate([
+            floatingVC.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -8),
+            floatingVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+        floatingVC.didMove(toParent: self)
+        floatingVC.subscribe(to: coordinator.textChangePublisher)
+        floatingVC.view.isHidden = true
+    }
+
+    private func updateFloatingSubmitVisibility() {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        let shouldShow = coordinator.displayState == .inline(.active)
+            && coordinator.viewController.cardPosition == .top
+            && coordinator.inputMode == .aiChat
+        coordinator.floatingSubmitViewController.view.isHidden = !shouldShow
+    }
+
     private func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
         switch intent {
         case .showCollapsed:
@@ -357,6 +385,7 @@ extension MainViewController {
             viewCoordinator.hideUnifiedInputContent()
             viewCoordinator.suggestionTrayContainer.isHidden = false
         }
+        updateFloatingSubmitVisibility()
     }
 
     func recomputeInlineEditingHeightIfNeeded() {
@@ -469,5 +498,21 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow()
         )
+    }
+}
+
+// MARK: - UnifiedToggleInputFloatingSubmitDelegate
+
+extension MainViewController: UnifiedToggleInputFloatingSubmitDelegate {
+
+    func floatingSubmitDidTapSubmit() {
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        let text = coordinator.currentText
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        coordinator.switchBarHandler.submitText(text)
+    }
+
+    func floatingSubmitDidTapVoice() {
+        // Voice search wiring deferred
     }
 }

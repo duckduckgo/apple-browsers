@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import UIKit
 
 // MARK: - State Types
 
@@ -28,15 +29,27 @@ enum InputTextState {
     case userTyped
 }
 
-enum InputDisplayState {
+enum UnifiedToggleInputDisplayState: Equatable {
     case hidden
-    case collapsed
-    case expanded
+    case aiTab(AITabState)
+    case inline(InlineState)
+
+    enum AITabState: Equatable {
+        case collapsed
+        case expanded
+    }
+
+    enum InlineState: Equatable {
+        case active
+        case inactive
+    }
 }
 
-enum UnifiedToggleInputIntent {
+enum UnifiedToggleInputIntent: Equatable {
     case showCollapsed
     case showExpanded
+    case showInlineEditing(expandedHeight: CGFloat)
+    case hideInlineEditing
     case hide
 }
 
@@ -47,6 +60,7 @@ enum UnifiedToggleInputIntent {
 /// `UnifiedToggleInputIntent`s for MainVC to manage container-level layout (visibility, keyboard constraints).
 ///
 /// Does not access the view hierarchy directly — all UI manipulation goes through the view controller.
+@MainActor
 final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     // MARK: - AIChatInputBoxHandling
@@ -69,14 +83,21 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     private(set) var viewController: UnifiedToggleInputViewController
     weak var delegate: UnifiedToggleInputDelegate?
 
-    private(set) var displayState: InputDisplayState = .hidden
+    private(set) var isToggleEnabled: Bool
+    private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
     private(set) var textState: InputTextState = .empty
     private(set) var inputMode: TextEntryMode = .aiChat
 
     var currentText: String { viewController.text }
     var hasActiveChat: Bool { boundUserScript != nil }
 
+    var isInlineEditingActive: Bool {
+        if case .inline(.active) = displayState { return true }
+        return false
+    }
+
     private weak var boundUserScript: AIChatUserScript?
+    private var boundUserScriptIdentifier: ObjectIdentifier?
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
     var intentPublisher: AnyPublisher<UnifiedToggleInputIntent, Never> {
@@ -88,39 +109,56 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         textChangeSubject.eraseToAnyPublisher()
     }
 
+    private let modeChangeSubject = PassthroughSubject<TextEntryMode, Never>()
+    var modeChangePublisher: AnyPublisher<TextEntryMode, Never> {
+        modeChangeSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - Initialization
 
-    init() {
-        viewController = UnifiedToggleInputViewController()
+    init(isToggleEnabled: Bool) {
+        self.isToggleEnabled = isToggleEnabled
+        viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled)
         viewController.delegate = self
     }
 
     // MARK: - Tab Binding
 
     func bindToTab(_ userScript: AIChatUserScript) {
-        guard boundUserScript !== userScript else { return }
+        let newIdentifier = ObjectIdentifier(userScript)
+        if boundUserScriptIdentifier == newIdentifier {
+            boundUserScript = userScript
+            userScript.inputBoxHandler = self
+            return
+        }
+        let hadPreviousScript = boundUserScriptIdentifier != nil
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = userScript
+        boundUserScriptIdentifier = newIdentifier
         userScript.inputBoxHandler = self
+        if hadPreviousScript {
+            resetInputState()
+        }
     }
 
     func unbind() {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
-        resetInputState()
+        boundUserScriptIdentifier = nil
+        resetSessionState()
     }
 
-    // MARK: - Display State Management
+    // MARK: - AI Tab Display State Management
 
     func showCollapsed() {
-        displayState = .collapsed
+        displayState = .aiTab(.collapsed)
         viewController.setExpanded(false, animated: false)
         viewController.deactivateInput()
         intentSubject.send(.showCollapsed)
     }
 
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
-        displayState = .expanded
+        displayState = .aiTab(.expanded)
         self.inputMode = inputMode
         viewController.setInputMode(inputMode, animated: false)
 
@@ -131,11 +169,17 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
         viewController.setExpanded(true, animated: false)
         intentSubject.send(.showExpanded)
-        viewController.activateInput()
-
-        if textState == .prefilledSelected {
-            DispatchQueue.main.async { [weak self] in
-                self?.viewController.selectAllText()
+        DispatchQueue.main.async { [weak self] in
+            guard let self, case .aiTab(.expanded) = self.displayState else { return }
+            self.viewController.activateInput()
+            if !self.viewController.isInputFirstResponder {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, case .aiTab(.expanded) = self.displayState else { return }
+                    self.viewController.activateInput()
+                }
+            }
+            if self.textState == .prefilledSelected {
+                self.viewController.selectAllText()
             }
         }
     }
@@ -147,13 +191,99 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         intentSubject.send(.hide)
     }
 
+    // MARK: - Inline Editing State Management
+
+    func activateInlineEditing(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
+        let effectiveInputMode = isToggleEnabled ? inputMode : .search
+        displayState = .inline(.active)
+        self.inputMode = effectiveInputMode
+        viewController.cardPosition = cardPosition
+        viewController.usesInlineEditingMargins = (cardPosition == .top)
+        viewController.isTopBarPosition = (cardPosition == .top)
+        viewController.setInputMode(effectiveInputMode, animated: false)
+        viewController.showsDismissButton = (cardPosition == .top)
+
+        if let text = prefilledText, !text.isEmpty {
+            viewController.text = text
+            textState = .prefilledSelected
+        }
+
+        viewController.isToolbarSubmitHidden = (cardPosition == .top)
+
+        viewController.setExpanded(true, animated: false)
+        let height = inlineEditingHeight()
+        intentSubject.send(.showInlineEditing(expandedHeight: height))
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self, case .inline(.active) = displayState else { return }
+            viewController.activateInput()
+            if textState == .prefilledSelected {
+                viewController.selectAllText()
+            }
+        }
+    }
+
+    func inlineEditingHeight() -> CGFloat {
+        let screenWidth = UIScreen.main.bounds.width
+        let height = viewController.view.systemLayoutSizeFitting(
+            CGSize(width: screenWidth, height: UIView.layoutFittingCompressedSize.height),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        ).height
+        return height
+    }
+
+    func updateInputMode(_ mode: TextEntryMode, animated: Bool) {
+        let effectiveMode: TextEntryMode = isToggleEnabled ? mode : .search
+        inputMode = effectiveMode
+        viewController.setInputMode(effectiveMode, animated: animated)
+        modeChangeSubject.send(effectiveMode)
+    }
+
+    func updateVoiceSearchAvailability(_ enabled: Bool) {
+        viewController.isVoiceSearchAvailable = enabled
+    }
+
+    func activateInput() {
+        viewController.activateInput()
+    }
+
+    func deactivateInlineEditing() {
+        guard isInlineEditingActive else { return }
+        displayState = .hidden
+        viewController.showsDismissButton = false
+        viewController.usesInlineEditingMargins = false
+        viewController.isTopBarPosition = false
+        viewController.isToolbarSubmitHidden = false
+        viewController.text = ""
+        textState = .empty
+        viewController.deactivateInput()
+        viewController.setExpanded(false, animated: false)
+        intentSubject.send(.hideInlineEditing)
+    }
+
+    func updateToggleEnabled(_ enabled: Bool) {
+        guard enabled != isToggleEnabled else { return }
+        isToggleEnabled = enabled
+        viewController.updateToggleEnabled(enabled)
+        if !enabled, isInlineEditingActive {
+            inputMode = .search
+            viewController.setInputMode(.search, animated: false)
+            modeChangeSubject.send(.search)
+        }
+    }
+
     // MARK: - Private
 
-    private func resetInputState() {
+    private func resetSessionState() {
         viewController.text = ""
         textState = .empty
         aiChatStatus = .unknown
         aiChatInputBoxVisibility = .unknown
+    }
+
+    private func resetInputState() {
+        resetSessionState()
     }
 }
 
@@ -162,7 +292,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegate {
 
     func unifiedToggleInputVCDidTapWhileCollapsed(_ vc: UnifiedToggleInputViewController) {
-        showExpanded(inputMode: .aiChat)
+        showExpanded(inputMode: inputMode)
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
@@ -171,10 +301,19 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
         switch mode {
         case .search:
+            if case .aiTab = displayState {
+                hide()
+            } else if isInlineEditingActive {
+                deactivateInlineEditing()
+            }
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
-            showCollapsed()
+            if isInlineEditingActive {
+                deactivateInlineEditing()
+            } else {
+                showCollapsed()
+            }
             if boundUserScript != nil {
                 didSubmitPrompt.send(text)
             } else {
@@ -189,10 +328,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
-        inputMode = mode
+        updateInputMode(mode, animated: false)
     }
 
     func unifiedToggleInputVCDidTapVoice(_ vc: UnifiedToggleInputViewController) {
         delegate?.unifiedToggleInputDidRequestVoiceSearch()
+    }
+
+    func unifiedToggleInputVCDidTapDismiss(_ vc: UnifiedToggleInputViewController) {
+        deactivateInlineEditing()
     }
 }

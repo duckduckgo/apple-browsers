@@ -683,22 +683,26 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
     }
 
-    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        if isSearchAreaExpanded, !aiChatSendButton.isHidden {
-            let buttonPoint = aiChatSendButton.convert(point, from: self)
-            if aiChatSendButton.point(inside: buttonPoint, with: event) {
-                return true
-            }
+    /// Returns the expanded-area subview (text view or send button) at the given point.
+    /// When expanded, these views overflow beyond this view's bounds so we must claim them explicitly.
+    private func overflowTarget(at point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard isSearchAreaExpanded else { return nil }
+        let candidates: [UIView] = [aiChatSendButton, aiChatTextView]
+        return candidates.first { candidate in
+            guard !candidate.isHidden else { return false }
+            let localPoint = candidate.convert(point, from: self)
+            return candidate.point(inside: localPoint, with: event)
         }
-        return super.point(inside: point, with: event)
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        overflowTarget(at: point, with: event) != nil || super.point(inside: point, with: event)
     }
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        if isSearchAreaExpanded, !aiChatSendButton.isHidden {
-            let buttonPoint = aiChatSendButton.convert(point, from: self)
-            if aiChatSendButton.point(inside: buttonPoint, with: event) {
-                return aiChatSendButton
-            }
+        if let target = overflowTarget(at: point, with: event) {
+            let localPoint = target.convert(point, from: self)
+            return target.hitTest(localPoint, with: event) ?? target
         }
         return super.hitTest(point, with: event)
     }

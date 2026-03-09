@@ -41,6 +41,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onChatHistorySelected(url: URL)
     func onDismissRequested()
     func onSwitchTabToIndex(_ index: Int)
+    func onToggleModeSwitched()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -373,7 +374,20 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         navigationActionBarManager = manager
     }
 
+    private var lastKnownToggleState: TextEntryMode?
+
     private func setupSubscriptions() {
+        lastKnownToggleState = switchBarHandler.currentToggleState
+
+        switchBarHandler.toggleStatePublisher
+            .dropFirst()
+            .sink { [weak self] newState in
+                guard let self, newState != self.lastKnownToggleState else { return }
+                self.lastKnownToggleState = newState
+                self.delegate?.onToggleModeSwitched()
+            }
+            .store(in: &cancellables)
+
         switchBarVC.textEntryViewController.textHeightChangePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -546,8 +560,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
 
-        let hasEscapeHatch = escapeHatchModel != nil
-        let isHomeDaxVisible = !shouldDisplaySuggestionTray && (!shouldDisplayFavoritesOverlay || hasEscapeHatch) && !isHorizontallyCompactLayoutEnabled
+        let hasEscapeHatchWithoutFavorites = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false)
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && (!shouldDisplayFavoritesOverlay || hasEscapeHatchWithoutFavorites) && !isHorizontallyCompactLayoutEnabled
 
         let isAIDaxVisible: Bool
         if switchBarHandler.isUsingFadeOutAnimation {
@@ -559,6 +573,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
         daxLogoManager.setEscapeHatchBaseOffset(escapeHatchModel != nil ? Constants.escapeHatchLogoZoneHeight : 0)
     }
+
 }
 
 // MARK: - NavigationActionBarViewAnimationDelegate

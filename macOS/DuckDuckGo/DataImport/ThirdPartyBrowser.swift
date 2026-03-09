@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import BrowserServicesKit
 
 private struct BundleIdentifiers {

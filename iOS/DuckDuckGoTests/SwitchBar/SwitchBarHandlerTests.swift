@@ -45,7 +45,7 @@ final class SwitchBarHandlerTests: XCTestCase {
         MockDevicePlatform.isIphone = true
         mockVoiceSearchHelper = MockVoiceSearchHelper()
         mockStorage = MockKeyValueStore()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInput])
+        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         cancellables = Set<AnyCancellable>()
         createSUT()
     }

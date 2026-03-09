@@ -26,19 +26,33 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-tutorial", withExtension: "mp4")
+        private static let referenceHeight: CGFloat = 844.0
 
         private let title: String
         private let message: String
         private let cta: String
         private let action: () -> Void
+        private let borderSize: CGSize
+        private let borderPadding: EdgeInsets
+        private let videoFrameSize: CGSize
+
+        private var scale: CGFloat {
+            min(UIScreen.main.bounds.height / Self.referenceHeight, 1.0)
+        }
 
         init(title: String,
              message: String,
              cta: String,
+             borderSize: CGSize,
+             borderPadding: EdgeInsets,
+             videoFrameSize: CGSize,
              action: @escaping () -> Void) {
             self.title = title
             self.message = message
             self.cta = cta
+            self.borderSize = borderSize
+            self.borderPadding = borderPadding
+            self.videoFrameSize = videoFrameSize
             self.action = action
         }
 
@@ -60,16 +74,17 @@ extension OnboardingRebranding.OnboardingView {
                     ZStack(alignment: .top) {
                         OnboardingRebrandingImages.AddToDock.tutorialBorder
                             .resizable()
-                            .padding(.horizontal, -8)
-                            .padding(.vertical, -1)
-                            .frame(width: 321.0, height: 239.0)
+                            .padding(borderPadding)
+                            .frame(width: borderSize.width, height: borderSize.height)
                         if let videoURL = Self.videoURL {
                             AddToDockVideoPlayer(
                                 url: videoURL,
-                                frameSize: CGSize(width: 300.0, height: 231.0)
+                                frameSize: videoFrameSize
                             )
                         }
                     }
+                    .scaleEffect(scale)
+                    .frame(width: borderSize.width * scale, height: borderSize.height * scale)
                 ),
                 title: {
                     Text(title)

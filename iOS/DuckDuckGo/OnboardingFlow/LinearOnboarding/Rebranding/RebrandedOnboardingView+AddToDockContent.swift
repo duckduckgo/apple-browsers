@@ -97,9 +97,13 @@ extension OnboardingRebranding.OnboardingView {
         }
 
         private var addToDockPromoView: some View {
-            RebrandedOnboardingView.AddToDockPromoView()
-                .aspectRatio(contentMode: .fit)
-                .padding(.vertical)
+            RebrandedOnboardingView.AddToDockPromoView(
+                borderSize: CGSize(width: 321, height: 128),
+                borderPadding: EdgeInsets(top: 0, leading: -6, bottom: 0, trailing: -6),
+                videoFrameSize: CGSize(width: 300, height: 120)
+            )
+            .aspectRatio(contentMode: .fit)
+            .padding(.vertical)
         }
 
         /// Handles the transition from promo to tutorial with proper animation timing.
@@ -155,6 +159,9 @@ extension OnboardingRebranding.OnboardingView {
                 title: title,
                 message: message,
                 cta: cta,
+                borderSize: CGSize(width: 321, height: 239),
+                borderPadding: EdgeInsets(top: -1, leading: -8, bottom: -1, trailing: -8),
+                videoFrameSize: CGSize(width: 300, height: 231),
                 action: dismissAction
             )
         }

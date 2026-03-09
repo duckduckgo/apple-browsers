@@ -24,21 +24,31 @@ extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockPromoView: View {
         private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-promo", withExtension: "mov")
+        private static let referenceHeight: CGFloat = 844.0
+
+        let borderSize: CGSize
+        let borderPadding: EdgeInsets
+        let videoFrameSize: CGSize
+
+        private var scale: CGFloat {
+            min(UIScreen.main.bounds.height / Self.referenceHeight, 1.0)
+        }
 
         var body: some View {
             ZStack(alignment: .top) {
                 OnboardingRebrandingImages.AddToDock.promoBorder
                     .resizable()
-                    .padding(.horizontal, -6)
-//                    .padding(.vertical, -7)
-                    .frame(width: 321.0, height: 128.0)
+                    .padding(borderPadding)
+                    .frame(width: borderSize.width, height: borderSize.height)
                 if let videoURL = Self.videoURL {
                     AddToDockVideoPlayer(
                         url: videoURL,
-                        frameSize: CGSize(width: 300.0, height: 120.0)
+                        frameSize: videoFrameSize
                     )
                 }
             }
+            .scaleEffect(scale)
+            .frame(width: borderSize.width * scale, height: borderSize.height * scale)
         }
     }
 

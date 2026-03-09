@@ -144,6 +144,8 @@ extension MainViewController {
             // Ensure stale AI tab bindings are always cleared when leaving AI pages,
             // even on the early-return path where no chrome transition is needed.
             coordinator.unbind()
+            viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+            refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
             tab.updateWebViewBottomAnchor(for: viewCoordinator.toolbar.alpha)
             return
         }

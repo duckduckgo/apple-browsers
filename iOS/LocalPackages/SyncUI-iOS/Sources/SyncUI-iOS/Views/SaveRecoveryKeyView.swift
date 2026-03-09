@@ -95,8 +95,8 @@ public struct SaveRecoveryKeyView: View {
     @ViewBuilder
     func nextButton() -> some View {
         Button {
-            model.nextButtonPressed()
             presentation.wrappedValue.dismiss()
+            model.nextButtonPressed()
         } label: {
             Text(UserText.nextButton)
         }

@@ -106,7 +106,7 @@ final class DarkReaderFeatureSettingsTests: XCTestCase {
 
     func testIsForceDarkModeEnabled_WhenFlagOffAndStoredTrue_ReturnsFalse() throws {
         mockFeatureFlagger.enabledFeatureFlags = []
-        try mockStore.set(true, forKey: UserDefaultsKeys.forceDarkModeOnWebsitesEnabled.rawValue)
+        try mockStore.set(true, forKey: UserDefaultsKeys.forceDarkModeOnWebsites.rawValue)
         sut = makeSUT()
 
         XCTAssertFalse(sut.isForceDarkModeEnabled)
@@ -145,7 +145,7 @@ final class DarkReaderFeatureSettingsTests: XCTestCase {
         sut = makeSUT()
 
         sut.setForceDarkModeEnabled(true)
-        XCTAssertNil(try mockStore.object(forKey: UserDefaultsKeys.forceDarkModeOnWebsitesEnabled.rawValue))
+        XCTAssertNil(try mockStore.object(forKey: UserDefaultsKeys.forceDarkModeOnWebsites.rawValue))
     }
 
     @available(macOS 15.4, *)
@@ -154,10 +154,10 @@ final class DarkReaderFeatureSettingsTests: XCTestCase {
         sut = makeSUT()
 
         sut.setForceDarkModeEnabled(true)
-        XCTAssertTrue(try mockStore.object(forKey: UserDefaultsKeys.forceDarkModeOnWebsitesEnabled.rawValue) as? Bool ?? false)
+        XCTAssertTrue(try mockStore.object(forKey: UserDefaultsKeys.forceDarkModeOnWebsites.rawValue) as? Bool ?? false)
 
         sut.setForceDarkModeEnabled(false)
-        XCTAssertFalse(try mockStore.object(forKey: UserDefaultsKeys.forceDarkModeOnWebsitesEnabled.rawValue) as? Bool ?? true)
+        XCTAssertFalse(try mockStore.object(forKey: UserDefaultsKeys.forceDarkModeOnWebsites.rawValue) as? Bool ?? true)
     }
 
     @available(macOS 15.4, *)

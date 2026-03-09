@@ -56,7 +56,7 @@ struct OperationPreferredDateCalculator {
             earliestRunDateSoFar = min(earliestRunDateSoFar, Date().addingTimeInterval(schedulingConfig.retryError.hoursToSeconds))
         }
 
-        if lastOptOutEvents.contains(where: { $0.type == .optOutRequested}) {
+        if lastOptOutEvents.contains(where: { $0.type == .optOutRequested }) {
             earliestRunDateSoFar = min(earliestRunDateSoFar, Date().addingTimeInterval(schedulingConfig.confirmOptOutScan.hoursToSeconds))
         }
 

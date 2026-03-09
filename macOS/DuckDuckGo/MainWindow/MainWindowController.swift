@@ -21,6 +21,7 @@ import Combine
 import Common
 import os.log
 import PixelKit
+import PrivacyConfig
 
 @MainActor
 final class MainWindowController: NSWindowController {
@@ -35,6 +36,8 @@ final class MainWindowController: NSWindowController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
+    private let featureFlagger: FeatureFlagger?
+
     private(set) var lastWindowDidBecomeKeyTimestamp: TimeInterval = 0
 
     var mainViewController: MainViewController {
@@ -48,7 +51,8 @@ final class MainWindowController: NSWindowController {
          mainViewController: MainViewController,
          fireWindowSession: FireWindowSession? = nil,
          fireViewModel: FireViewModel,
-         themeManager: ThemeManaging) {
+         themeManager: ThemeManaging,
+         featureFlagger: FeatureFlagger? = nil) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -68,6 +72,7 @@ final class MainWindowController: NSWindowController {
         fireWindowSession?.addWindow(window)
 
         self.themeManager = themeManager
+        self.featureFlagger = featureFlagger
 
         super.init(window: window)
 
@@ -222,7 +227,7 @@ final class MainWindowController: NSWindowController {
 
     private var trafficLightsAlphaCancellables = [AnyCancellable]()
     private func subscribeToTrafficLightsAlpha() {
-        guard let window else {
+        guard let window, let featureFlagger, featureFlagger.isFeatureOn(.semaphoreAlwaysVisible) else {
             return
         }
 

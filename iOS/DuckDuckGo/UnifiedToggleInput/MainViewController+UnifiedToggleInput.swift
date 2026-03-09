@@ -267,6 +267,11 @@ extension MainViewController {
                 isExpanded: aiTabState == .expanded,
                 inputView: coordinator.viewController.view
             )
+        } else {
+            viewCoordinator.updateUnifiedToggleInputColors(
+                isExpanded: false,
+                inputView: coordinator.viewController.view
+            )
         }
 
         if showContent {

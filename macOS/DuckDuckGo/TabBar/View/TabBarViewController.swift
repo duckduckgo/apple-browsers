@@ -633,7 +633,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         duckAIChromeControlContainer.borderColor = nil
         duckAIChromeControlContainer.borderWidth = 0
 
-        let titleFont = NSFont.systemFont(ofSize: 13, weight: .medium)
+        let titleFont = NSFont.systemFont(ofSize: 13)
         duckAIChromeTitleButton.attributedTitle = NSAttributedString(string: UserText.aiChatTitle, attributes: [
             .foregroundColor: colorsProvider.textPrimaryColor,
             .font: titleFont

@@ -411,7 +411,7 @@ final class AttributedMetricManagerTests: XCTestCase {
             switch pixelName {
             case "attributed_metric_average_searches_past_week_first_month":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
-                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
+                capturedDayAverage = self.extractIntParameter(parameters, key: "dayAverage")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
                     return
@@ -471,7 +471,7 @@ final class AttributedMetricManagerTests: XCTestCase {
             switch pixelName {
             case "attributed_metric_average_searches_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
-                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
+                capturedDayAverage = self.extractIntParameter(parameters, key: "dayAverage")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
                     return
@@ -532,7 +532,7 @@ final class AttributedMetricManagerTests: XCTestCase {
             switch pixelName {
             case "attributed_metric_average_ad_clicks_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
-                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
+                capturedDayAverage = self.extractIntParameter(parameters, key: "dayAverage")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
                     return
@@ -593,7 +593,7 @@ final class AttributedMetricManagerTests: XCTestCase {
             switch pixelName {
             case "attributed_metric_average_duck_ai_usage_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
-                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
+                capturedDayAverage = self.extractIntParameter(parameters, key: "dayAverage")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
                     return

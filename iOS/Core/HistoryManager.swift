@@ -31,7 +31,7 @@ public protocol HistoryManaging {
     var history: BrowsingHistory? { get }
     @MainActor func removeAllHistory() async
     @MainActor func deleteHistoryForURL(_ url: URL) async
-    @MainActor func addVisit(of url: URL, tabID: String?)
+    @MainActor func addVisit(of url: URL, tabID: String?, fireTab: Bool)
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
     @MainActor func commitChanges(url: URL)
     @MainActor func tabHistory(tabID: String) async throws -> [URL]
@@ -100,11 +100,12 @@ public class HistoryManager: HistoryManaging {
     }
     
     @MainActor
-    public func addVisit(of url: URL, tabID: String?) {
-        if isEnabledByUser {
-            historyCoordinator.addVisit(of: url, tabID: tabID)
-        } else {
+    public func addVisit(of url: URL, tabID: String?, fireTab: Bool = false) {
+        // Fire tabs: only record tab history, never global
+        if fireTab || !isEnabledByUser {
             tabHistoryCoordinator.addVisit(of: url, tabID: tabID)
+        } else {
+            historyCoordinator.addVisit(of: url, tabID: tabID)
         }
     }
     

@@ -34,20 +34,36 @@ final class ThemeManagerTests: XCTestCase {
     func testThemeManagerRefreshesActiveThemeWhenAppearancePreferencesMutate() async {
         let (manager, preferences, _) = buildThemeManager(initialTheme: .default)
 
+        let themeUpdated = expectation(description: "Theme updated")
+        var updatedTheme: (any ThemeStyleProviding)?
+        let cancellable = manager.themePublisher.dropFirst().first().sink { theme in
+            updatedTheme = theme
+            themeUpdated.fulfill()
+        }
+
         preferences.themeName = .violet
 
-        let updatedTheme = await manager.themePublisher.nextValue()
-        XCTAssertEqual(updatedTheme.name, .violet)
+        await fulfillment(of: [themeUpdated], timeout: 5)
+        XCTAssertEqual(updatedTheme?.name, .violet)
+        withExtendedLifetime(cancellable) {}
     }
 
     func testThemeManagerRefreshesActiveAppearanceWhenAppearancePreferencesMutate() async {
         let (manager, preferences, _) = buildThemeManager(initialAppearance: .dark)
         XCTAssertEqual(manager.appearance, .dark)
 
+        let appearanceUpdated = expectation(description: "Appearance updated")
+        var updatedAppearance: ThemeAppearance?
+        let cancellable = manager.appearancePublisher.dropFirst().first().sink { appearance in
+            updatedAppearance = appearance
+            appearanceUpdated.fulfill()
+        }
+
         preferences.themeAppearance = .systemDefault
 
-        let updatedAppearance = await manager.appearancePublisher.nextValue()
+        await fulfillment(of: [appearanceUpdated], timeout: 5)
         XCTAssertEqual(updatedAppearance, .systemDefault)
+        withExtendedLifetime(cancellable) {}
     }
 
     func testFigmaThemeIsRemappedToDefaultTheme() {
@@ -77,25 +93,5 @@ private extension ThemeManagerTests {
         let manager = ThemeManager(appearancePreferences: preferences, featureFlagger: featureFlagger)
 
         return (manager, preferences, featureFlagger)
-    }
-}
-
-// MARK: - Published.Publisher Private Testing Helpers
-//
-private extension Published.Publisher {
-
-    /// Awaits until the `next` value is published
-    ///
-    func nextValue() async -> Output {
-        await withCheckedContinuation { continuation in
-            var cancellable: AnyCancellable?
-
-            cancellable = dropFirst()
-                .first()
-                .sink { newValue in
-                cancellable?.cancel()
-                continuation.resume(returning: newValue)
-            }
-        }
     }
 }

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import UIKit
 import PrivacyConfig
 import AIChat
@@ -107,6 +108,8 @@ extension MainViewFactory {
         createToolbar()
         createNavigationBarContainer()
         createNavigationBarCollectionView()
+        createUnifiedToggleInputContainer()
+        createAIChatTabChatHeaderContainer()
         createProgressView()
     }
     
@@ -123,20 +126,43 @@ extension MainViewFactory {
     }
     
     final class NavigationBarCollectionView: UICollectionView {
-        
+
         var hitTestInsets = UIEdgeInsets.zero
-        
+        var allowsOverflowHitTesting = false
+
         override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-            return bounds.inset(by: hitTestInsets).contains(point)
+            if bounds.inset(by: hitTestInsets).contains(point) {
+                return true
+            }
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return false }
+            return visibleCells.contains { cell in
+                let cellPoint = cell.convert(point, from: self)
+                return cell.point(inside: cellPoint, with: event)
+            }
         }
-        
-        // Don't allow the use to drag the scrollbar or the UI will glitch.
+
+        // Don't allow the user to drag the scrollbar or the UI will glitch.
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
             let view = super.hitTest(point, with: event)
             if view == self.subviews.first(where: { $0 is UIImageView }) {
                 return nil
             }
-            return view
+            if let view { return view }
+
+            guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
+            return overflowHitTest(point, with: event)
+        }
+
+        /// Forwards an overflow point to visible cells for hit testing.
+        /// Supports the iPad expanded search area which extends below the collection view's bounds.
+        private func overflowHitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            for cell in visibleCells.reversed() {
+                let cellPoint = cell.convert(point, from: self)
+                if let result = cell.hitTest(cellPoint, with: event) {
+                    return result
+                }
+            }
+            return nil
         }
     }
     
@@ -155,14 +181,38 @@ extension MainViewFactory {
 
         /// Enables overflow hit testing for iPad expanded search area.
         /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
-        var allowsOverflowHitTesting = false
+        var allowsOverflowHitTesting = false {
+            didSet {
+                guard allowsOverflowHitTesting != oldValue else { return }
+                if allowsOverflowHitTesting {
+                    addGestureRecognizer(overflowTapGesture)
+                } else {
+                    removeGestureRecognizer(overflowTapGesture)
+                }
+            }
+        }
+
+        private lazy var overflowTapGesture: UITapGestureRecognizer = {
+            let tap = UITapGestureRecognizer(target: self, action: #selector(handleOverflowTap(_:)))
+            return tap
+        }()
+
+        @objc private func handleOverflowTap(_ gesture: UITapGestureRecognizer) {
+            let point = gesture.location(in: self)
+            guard point.y >= bounds.maxY else { return }
+            if let control = Self.deepHitTest(in: self, point: point, event: nil) as? UIControl, control.isEnabled {
+                control.sendActions(for: .primaryActionTriggered)
+            }
+        }
 
         override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
             if let result = super.hitTest(point, with: event) {
                 return result
             }
             guard allowsOverflowHitTesting, point.y >= bounds.maxY else { return nil }
-            return Self.deepHitTest(in: self, point: point, event: event)
+            guard let target = Self.deepHitTest(in: self, point: point, event: event) else { return nil }
+            // Return self for controls so the overflow tap gesture recognizer can activate them.
+            return target is UIControl ? self : target
         }
 
         override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
@@ -253,6 +303,22 @@ extension MainViewFactory {
         superview.addSubview(coordinator.topSlideContainer)
     }
 
+    final class UnifiedToggleInputContainer: UIView {}
+    private func createUnifiedToggleInputContainer() {
+        coordinator.unifiedToggleInputContainer = UnifiedToggleInputContainer()
+        coordinator.unifiedToggleInputContainer.translatesAutoresizingMaskIntoConstraints = false
+        coordinator.unifiedToggleInputContainer.isHidden = true
+        coordinator.navigationBarContainer.addSubview(coordinator.unifiedToggleInputContainer)
+    }
+
+    final class AIChatTabChatHeaderContainer: UIView {}
+    private func createAIChatTabChatHeaderContainer() {
+        coordinator.aiChatTabChatHeaderContainer = AIChatTabChatHeaderContainer()
+        coordinator.aiChatTabChatHeaderContainer.translatesAutoresizingMaskIntoConstraints = false
+        coordinator.aiChatTabChatHeaderContainer.isHidden = true
+        superview.addSubview(coordinator.aiChatTabChatHeaderContainer)
+    }
+
 }
 
 /// Add constraint functions
@@ -267,6 +333,8 @@ extension MainViewFactory {
         constrainTabBarContainer()
         constrainNavigationBarContainer()
         constrainToolbar()
+        constrainUnifiedToggleInputContainer()
+        constrainAIChatTabChatHeaderContainer()
     }
     
     private func constrainNavigationBarContainer() {
@@ -345,8 +413,10 @@ extension MainViewFactory {
         let navigationBarContainer = coordinator.navigationBarContainer!
 
         coordinator.constraints.contentContainerTop = contentContainer.constrainView(coordinator.topSlideContainer!, by: .top, to: .bottom)
+        coordinator.constraints.contentContainerTopToSafeArea = contentContainer.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
         coordinator.constraints.contentContainerBottomToToolbarTop = contentContainer.constrainView(toolbar, by: .bottom, to: .top)
         coordinator.constraints.contentContainerBottomToSafeArea = contentContainer.constrainView(superview, by: .bottom)
+        coordinator.constraints.contentContainerBottomToUnifiedToggleInputTop = contentContainer.bottomAnchor.constraint(equalTo: coordinator.unifiedToggleInputContainer.topAnchor)
 
         NSLayoutConstraint.activate([
             contentContainer.constrainView(superview, by: .leading),
@@ -368,6 +438,34 @@ extension MainViewFactory {
             toolbar.constrainView(superview, by: .centerX),
             toolbar.constrainAttribute(.height, to: 49),
             coordinator.constraints.toolbarBottom,
+        ])
+    }
+
+    private func constrainUnifiedToggleInputContainer() {
+        let container = coordinator.unifiedToggleInputContainer!
+        let navigationBarContainer = coordinator.navigationBarContainer!
+
+        let bottom = container.bottomAnchor.constraint(equalTo: navigationBarContainer.bottomAnchor)
+        bottom.priority = .defaultHigh
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: navigationBarContainer.topAnchor),
+            container.leadingAnchor.constraint(equalTo: navigationBarContainer.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: navigationBarContainer.trailingAnchor),
+            bottom,
+        ])
+    }
+
+    private func constrainAIChatTabChatHeaderContainer() {
+        let container = coordinator.aiChatTabChatHeaderContainer!
+
+        coordinator.constraints.contentContainerTopToAIChatHeader = coordinator.contentContainer.topAnchor
+            .constraint(equalTo: container.bottomAnchor)
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
+            container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])
     }
 

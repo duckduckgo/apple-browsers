@@ -60,11 +60,11 @@ extension OptOutConfirmationWideEventData {
         case recordFoundDateMissing = "record_found_date_missing"
     }
 
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         Dictionary(compacting: [
             (DBPWideEventParameter.OptOutConfirmationFeature.dataBrokerURL, dataBrokerURL),
             (DBPWideEventParameter.OptOutConfirmationFeature.dataBrokerVersion, dataBrokerVersion),
-            (DBPWideEventParameter.OptOutConfirmationFeature.confirmationLatency, confirmationInterval?.stringValue(.noBucketing)),
+            (DBPWideEventParameter.OptOutConfirmationFeature.confirmationLatency, confirmationInterval?.intValue(.noBucketing)),
         ])
     }
 }

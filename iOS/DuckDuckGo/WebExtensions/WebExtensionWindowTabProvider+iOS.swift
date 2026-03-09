@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import UIKit
 import WebExtensions
 import WebKit
@@ -75,6 +76,12 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
               let mainViewController else {
             return
         }
+
+#if DEBUG
+        popupWebView.isInspectable = true
+#else
+        popupWebView.isInspectable = AppUserDefaults().inspectableWebViewEnabled
+#endif
 
         let hostingController = UIViewController()
         hostingController.view = popupWebView

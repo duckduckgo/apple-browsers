@@ -39,7 +39,7 @@ jobs:
 
     # This doesn't need Xcode, so could technically run on Ubuntu, but find_asana_release_task.sh
     # uses BSD-specific `date` syntax, that doesn't work with GNU `date` (available on Linux).
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 10
 
     env:
@@ -100,7 +100,7 @@ jobs:
     name: Increment Build Number
 
     needs: [ validate_input_conditions, run_tests ]
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 10
 
     outputs:

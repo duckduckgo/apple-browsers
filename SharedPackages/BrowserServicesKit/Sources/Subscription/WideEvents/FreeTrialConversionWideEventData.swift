@@ -26,7 +26,7 @@ public class FreeTrialConversionWideEventData: WideEventData {
         featureName: "free-trial-conversion",
         mobileMetaType: "ios-free-trial-conversion",
         desktopMetaType: "macos-free-trial-conversion",
-        version: "1.0.0"
+        version: "1.0.1"
     )
 
     /// 8 days = 7-day trial + 1-day buffer
@@ -149,14 +149,14 @@ extension FreeTrialConversionWideEventData {
 
 extension FreeTrialConversionWideEventData {
 
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         [
-            WideEventParameter.FreeTrialConversionFeature.vpnActivatedD1: String(vpnActivatedD1),
-            WideEventParameter.FreeTrialConversionFeature.vpnActivatedD2ToD7: String(vpnActivatedD2ToD7),
-            WideEventParameter.FreeTrialConversionFeature.pirActivatedD1: String(pirActivatedD1),
-            WideEventParameter.FreeTrialConversionFeature.pirActivatedD2ToD7: String(pirActivatedD2ToD7),
-            WideEventParameter.FreeTrialConversionFeature.duckAIActivatedD1: String(duckAIActivatedD1),
-            WideEventParameter.FreeTrialConversionFeature.duckAIActivatedD2ToD7: String(duckAIActivatedD2ToD7),
+            WideEventParameter.FreeTrialConversionFeature.vpnActivatedD1: vpnActivatedD1,
+            WideEventParameter.FreeTrialConversionFeature.vpnActivatedD2ToD7: vpnActivatedD2ToD7,
+            WideEventParameter.FreeTrialConversionFeature.pirActivatedD1: pirActivatedD1,
+            WideEventParameter.FreeTrialConversionFeature.pirActivatedD2ToD7: pirActivatedD2ToD7,
+            WideEventParameter.FreeTrialConversionFeature.duckAIActivatedD1: duckAIActivatedD1,
+            WideEventParameter.FreeTrialConversionFeature.duckAIActivatedD2ToD7: duckAIActivatedD2ToD7,
         ]
     }
 }

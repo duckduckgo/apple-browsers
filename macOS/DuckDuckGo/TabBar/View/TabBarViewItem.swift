@@ -46,7 +46,6 @@ protocol TabBarViewModel {
     var crashIndicatorModel: TabCrashIndicatorModel { get }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> { get }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { get }
-    var loadedPageDOMPublisher: PassthroughSubject<Void, Never> { get }
 }
 
 extension TabViewModel: TabBarViewModel {
@@ -72,9 +71,6 @@ extension TabViewModel: TabBarViewModel {
             .eraseToAnyPublisher()
     }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { tab.webViewRenderingProgressDidChangePublisher }
-    var loadedPageDOMPublisher: PassthroughSubject<Void, Never> {
-        tab.loadedPageDOMPublisher
-    }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -726,6 +722,17 @@ final class TabBarViewItem: NSCollectionViewItem {
         view as! TabBarItemCellView // swiftlint:disable:this force_cast
     }
 
+    /// Preferred popover anchor rect in this item's view coordinates.
+    /// Uses the favicon position when available.
+    func aiChatCloseWarningAnchorRect() -> NSRect {
+        if cell.faviconView.isShown {
+            return cell.faviconView.frame
+        }
+
+        // Fallback for compact states where favicon may be hidden.
+        return NSRect(x: view.bounds.midX - 1, y: view.bounds.minY, width: 2, height: view.bounds.height)
+    }
+
     override init(nibName nibNameOrNil: NSNib.Name?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nil, bundle: nil)
     }
@@ -960,13 +967,6 @@ final class TabBarViewItem: NSCollectionViewItem {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshProgressColors(rendered: true)
-            }
-            .store(in: &cancellables)
-
-        tabViewModel.loadedPageDOMPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.stopSpinner()
             }
             .store(in: &cancellables)
     }
@@ -1221,10 +1221,6 @@ final class TabBarViewItem: NSCollectionViewItem {
     private func startSpinnerIfNeeded(isLoading: Bool, error: WKError?) {
         let url = tabViewModel?.url
         cell.startSpinnerIfNeeded(isLoading: isLoading, error: error, url: url)
-    }
-
-    private func stopSpinner() {
-        cell.faviconView.stopSpinner()
     }
 
     private func refreshProgressColors(rendered: Bool) {
@@ -1649,7 +1645,6 @@ extension TabBarViewItem {
             let crashIndicatorModel: TabCrashIndicatorModel = TabCrashIndicatorModel()
             var canKillWebContentProcess: Bool = false
 
-            var loadedPageDOMPublisher = PassthroughSubject<Void, Never>()
             @Published var isLoading: Bool
             @Published var error: WKError?
             var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {

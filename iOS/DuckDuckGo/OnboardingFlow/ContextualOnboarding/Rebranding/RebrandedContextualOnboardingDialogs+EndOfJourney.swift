@@ -37,22 +37,20 @@ extension OnboardingRebranding {
         let onManualDismiss: () -> Void
 
         var body: some View {
-            ScrollView(.vertical, showsIndicators: false) {
-                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                    OnboardingRebranding.ContextualDaxDialogContent(
-                        orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
-                        title: title,
-                        message: message
-                    ) {
-                        Button(action: dismissAction) {
-                            Text(cta)
-                        }
-                        .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
-                        .buttonStyle(theme.primaryButtonStyle.style)
+            OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
+                OnboardingRebranding.ContextualDaxDialogContent(
+                    orientation: OnboardingRebranding.ContextualDynamicMetrics.dialogOrientation(horizontalAlignment: .center).build(v: vSizeClass, h: hSizeClass),
+                    title: title,
+                    message: message
+                ) {
+                    Button(action: dismissAction) {
+                        Text(cta)
                     }
+                    .frame(maxWidth: Metrics.buttonMaxWidth.build(v: vSizeClass, h: hSizeClass))
+                    .buttonStyle(theme.primaryButtonStyle.style)
                 }
-                .padding(theme.contextualOnboardingMetrics.containerPadding)
             }
+            .padding(theme.contextualOnboardingMetrics.containerPadding)
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
         }
     }

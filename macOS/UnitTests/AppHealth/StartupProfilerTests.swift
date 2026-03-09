@@ -135,7 +135,8 @@ final class StartupProfilerTests: XCTestCase {
 
     // MARK: - Delegate
 
-    func testDelegateCalledWhenAllStepsRecorded() {
+    @MainActor
+    func testDelegateCalledWhenAllStepsRecorded() async {
         let profiler = StartupProfiler()
         let delegate = MockStartupProfilerDelegate()
         profiler.delegate = delegate
@@ -145,18 +146,23 @@ final class StartupProfilerTests: XCTestCase {
             token.stop()
         }
 
+        await Task.yield()
+
         XCTAssertTrue(delegate.didComplete)
         XCTAssertNotNil(delegate.receivedMetrics)
         XCTAssertTrue(delegate.receivedMetrics!.isComplete)
     }
 
-    func testDelegateNotCalledWhenStepsIncomplete() {
+    @MainActor
+    func testDelegateNotCalledWhenStepsIncomplete() async {
         let profiler = StartupProfiler()
         let delegate = MockStartupProfilerDelegate()
         profiler.delegate = delegate
 
         let token = profiler.startMeasuring(.appDelegateInit)
         token.stop()
+
+        await Task.yield()
 
         XCTAssertFalse(delegate.didComplete)
     }

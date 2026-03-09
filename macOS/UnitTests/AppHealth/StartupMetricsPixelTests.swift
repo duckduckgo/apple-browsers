@@ -52,6 +52,12 @@ final class StartupMetricsPixelTests: XCTestCase {
         XCTAssertEqual(pixel.parameters?["architecture"], "ARM")
     }
 
+    func testParametersIncludeSessionRestoration() {
+        let pixel = buildStartupMetricsPixel(sessionRestoration: true)
+
+        XCTAssertEqual(pixel.parameters?["session_restoration"], "true")
+    }
+
     // MARK: - Optional Parameters Present
 
     func testParametersIncludeProcessorCountWhenProvided() {
@@ -60,70 +66,82 @@ final class StartupMetricsPixelTests: XCTestCase {
         XCTAssertEqual(pixel.parameters?["active_processor_count"], "8")
     }
 
-    func testParametersIncludeDurationOfAppInitWhenProvided() {
-        let pixel = buildStartupMetricsPixel(durationOfAppInit: 0.15)
+    func testParametersIncludeAppDelegateInitWhenProvided() {
+        let pixel = buildStartupMetricsPixel(appDelegateInit: 0.15)
 
-        XCTAssertEqual(pixel.parameters?["duration_of_app_init"], "100")
+        XCTAssertEqual(pixel.parameters?["app_delegate_init"], "100")
     }
 
-    func testParametersIncludeDurationOfAppWillFinishLaunchingWhenProvided() {
-        let pixel = buildStartupMetricsPixel(durationOfAppWillFinishLaunching: 0.25)
+    func testParametersIncludeMainMenuInitWhenProvided() {
+        let pixel = buildStartupMetricsPixel(mainMenuInit: 0.15)
 
-        XCTAssertEqual(pixel.parameters?["duration_of_app_will_finish_launching"], "200")
+        XCTAssertEqual(pixel.parameters?["main_menu_init"], "100")
     }
 
-    func testParametersIncludeDurationBeforeStateRestorationWhenProvided() {
-        let pixel = buildStartupMetricsPixel(durationOfAppDidFinishLaunchingBeforeStateRestoration: 0.35)
+    func testParametersIncludeAppWillFinishLaunchingWhenProvided() {
+        let pixel = buildStartupMetricsPixel(appWillFinishLaunching: 0.25)
 
-        XCTAssertEqual(pixel.parameters?["duration_of_app_did_finish_launching_before_state_restoration"], "300")
+        XCTAssertEqual(pixel.parameters?["app_will_finish_launching"], "200")
     }
 
-    func testParametersIncludeDurationAfterStateRestorationWhenProvided() {
-        let pixel = buildStartupMetricsPixel(durationOfAppDidFinishLaunchingAfterStateRestoration: 0.45)
+    func testParametersIncludeAppDidFinishLaunchingBeforeStateRestorationWhenProvided() {
+        let pixel = buildStartupMetricsPixel(appDidFinishLaunchingBeforeStateRestoration: 0.35)
 
-        XCTAssertEqual(pixel.parameters?["duration_of_app_did_finish_launching_after_state_restoration"], "400")
+        XCTAssertEqual(pixel.parameters?["app_did_finish_launching_before_state_restoration"], "300")
     }
 
-    func testParametersIncludeDurationOfStateRestorationWhenPositive() {
-        let pixel = buildStartupMetricsPixel(durationOfAppStateRestoration: 0.75)
+    func testParametersIncludeAppDidFinishLaunchingAfterStateRestorationWhenProvided() {
+        let pixel = buildStartupMetricsPixel(appDidFinishLaunchingAfterStateRestoration: 0.45)
 
-        XCTAssertEqual(pixel.parameters?["duration_of_app_state_restoration"], "500")
+        XCTAssertEqual(pixel.parameters?["app_did_finish_launching_after_state_restoration"], "400")
     }
 
-    func testParametersExcludeDurationOfStateRestorationWhenZero() {
-        let pixel = buildStartupMetricsPixel(durationOfAppStateRestoration: 0)
+    func testParametersIncludeAppStateRestorationWhenPositive() {
+        let pixel = buildStartupMetricsPixel(appStateRestoration: 0.75)
 
-        XCTAssertNil(pixel.parameters?["duration_of_app_state_restoration"])
+        XCTAssertEqual(pixel.parameters?["app_state_restoration"], "500")
     }
 
-    func testParametersIncludeDeltaBetweenInitAndWillFinish() {
-        let pixel = buildStartupMetricsPixel(deltaBetweenAppInitAndWillFinishLaunching: 0.15)
+    func testParametersExcludeAppStateRestorationWhenZero() {
+        let pixel = buildStartupMetricsPixel(appStateRestoration: 0)
 
-        XCTAssertEqual(pixel.parameters?["delta_between_app_init_and_app_will_finish_launching"], "100")
+        XCTAssertNil(pixel.parameters?["app_state_restoration"])
     }
 
-    func testParametersIncludeDeltaBetweenWillFinishAndDidFinish() {
-        let pixel = buildStartupMetricsPixel(deltaBetweenAppWillFinishAndDidFinishLaunching: 1.5)
+    func testParametersIncludeInitToWillFinishLaunching() {
+        let pixel = buildStartupMetricsPixel(initToWillFinishLaunching: 0.15)
 
-        XCTAssertEqual(pixel.parameters?["delta_between_app_will_finish_and_app_did_finish"], "1000")
+        XCTAssertEqual(pixel.parameters?["init_to_will_finish_launching"], "100")
     }
 
-    func testParametersIncludeDeltaBetweenLaunchAndDidDisplay() {
-        let pixel = buildStartupMetricsPixel(deltaBetweenLaunchAndDidDisplayInterface: 2.5)
+    func testParametersIncludeAppWillFinishToDidFinishLaunching() {
+        let pixel = buildStartupMetricsPixel(appWillFinishToDidFinishLaunching: 1.5)
 
-        XCTAssertEqual(pixel.parameters?["delta_between_launch_and_did_display_interface"], "2000")
+        XCTAssertEqual(pixel.parameters?["app_will_finish_to_app_did_finish_launching"], "1000")
     }
 
-    func testParametersIncludeWindowsRestoredWhenProvided() {
-        let pixel = buildStartupMetricsPixel(numberOfWindowsRestored: 5)
+    func testParametersIncludeTimeToInteractive() {
+        let pixel = buildStartupMetricsPixel(timeToInteractive: 2.5)
 
-        XCTAssertEqual(pixel.parameters?["number_of_windows_restored"], "4")
+        XCTAssertEqual(pixel.parameters?["time_to_interactive"], "2000")
     }
 
-    func testParametersIncludeTabsRestoredWhenProvided() {
-        let pixel = buildStartupMetricsPixel(numberOfTabsRestored: 30)
+    func testParametersIncludeWindowsWhenProvided() {
+        let pixel = buildStartupMetricsPixel(windows: 5)
 
-        XCTAssertEqual(pixel.parameters?["number_of_tabs_restored"], "21")
+        XCTAssertEqual(pixel.parameters?["windows"], "4")
+    }
+
+    func testParametersIncludeStandardTabsWhenProvided() {
+        let pixel = buildStartupMetricsPixel(standardTabs: 30)
+
+        XCTAssertEqual(pixel.parameters?["standard_tabs"], "21")
+    }
+
+    func testParametersIncludePinnedTabsWhenProvided() {
+        let pixel = buildStartupMetricsPixel(pinnedTabs: 30)
+
+        XCTAssertEqual(pixel.parameters?["pinned_tabs"], "15")
     }
 
     // MARK: - Optional Parameters Nil
@@ -133,16 +151,18 @@ final class StartupMetricsPixelTests: XCTestCase {
         let params = try XCTUnwrap(pixel.parameters)
 
         XCTAssertNil(params["active_processor_count"])
-        XCTAssertNil(params["duration_of_app_init"])
-        XCTAssertNil(params["duration_of_app_will_finish_launching"])
-        XCTAssertNil(params["duration_of_app_did_finish_launching_before_state_restoration"])
-        XCTAssertNil(params["duration_of_app_did_finish_launching_after_state_restoration"])
-        XCTAssertNil(params["duration_of_app_state_restoration"])
-        XCTAssertNil(params["delta_between_app_init_and_app_will_finish_launching"])
-        XCTAssertNil(params["delta_between_app_will_finish_and_app_did_finish"])
-        XCTAssertNil(params["delta_between_launch_and_did_display_interface"])
-        XCTAssertNil(params["number_of_windows_restored"])
-        XCTAssertNil(params["number_of_tabs_restored"])
+        XCTAssertNil(params["app_delegate_init"])
+        XCTAssertNil(params["main_menu_init"])
+        XCTAssertNil(params["app_will_finish_launching"])
+        XCTAssertNil(params["app_did_finish_launching_before_state_restoration"])
+        XCTAssertNil(params["app_did_finish_launching_after_state_restoration"])
+        XCTAssertNil(params["app_state_restoration"])
+        XCTAssertNil(params["init_to_will_finish_launching"])
+        XCTAssertNil(params["app_will_finish_to_app_did_finish_launching"])
+        XCTAssertNil(params["time_to_interactive"])
+        XCTAssertNil(params["windows"])
+        XCTAssertNil(params["standard_tabs"])
+        XCTAssertNil(params["pinned_tabs"])
     }
 
     // MARK: - Bucketing
@@ -154,21 +174,27 @@ final class StartupMetricsPixelTests: XCTestCase {
     }
 
     func testDurationsAreBucketedAsMilliseconds() {
-        let pixel = buildStartupMetricsPixel(durationOfAppInit: 1.5)
+        let pixel = buildStartupMetricsPixel(appDelegateInit: 1.5)
 
-        XCTAssertEqual(pixel.parameters?["duration_of_app_init"], "1000")
+        XCTAssertEqual(pixel.parameters?["app_delegate_init"], "1000")
     }
 
     func testWindowCountIsBucketed() {
-        let pixel = buildStartupMetricsPixel(numberOfWindowsRestored: 15)
+        let pixel = buildStartupMetricsPixel(windows: 15)
 
-        XCTAssertEqual(pixel.parameters?["number_of_windows_restored"], "11")
+        XCTAssertEqual(pixel.parameters?["windows"], "11")
     }
 
-    func testTabCountIsBucketed() {
-        let pixel = buildStartupMetricsPixel(numberOfTabsRestored: 9)
+    func testStandardTabCountIsBucketed() {
+        let pixel = buildStartupMetricsPixel(standardTabs: 9)
 
-        XCTAssertEqual(pixel.parameters?["number_of_tabs_restored"], "7")
+        XCTAssertEqual(pixel.parameters?["standard_tabs"], "7")
+    }
+
+    func testPinnedTabCountIsBucketed() {
+        let pixel = buildStartupMetricsPixel(pinnedTabs: 9)
+
+        XCTAssertEqual(pixel.parameters?["pinned_tabs"], "7")
     }
 }
 
@@ -177,34 +203,40 @@ final class StartupMetricsPixelTests: XCTestCase {
 private extension StartupMetricsPixelTests {
 
     func buildStartupMetricsPixel(
-        isOnBattery: Bool = false,
         architecture: String = "ARM",
         activeProcessorCount: Int? = nil,
-        durationOfAppInit: TimeInterval? = nil,
-        durationOfAppWillFinishLaunching: TimeInterval? = nil,
-        durationOfAppDidFinishLaunchingBeforeStateRestoration: TimeInterval? = nil,
-        durationOfAppDidFinishLaunchingAfterStateRestoration: TimeInterval? = nil,
-        durationOfAppStateRestoration: TimeInterval? = nil,
-        deltaBetweenAppInitAndWillFinishLaunching: TimeInterval? = nil,
-        deltaBetweenAppWillFinishAndDidFinishLaunching: TimeInterval? = nil,
-        deltaBetweenLaunchAndDidDisplayInterface: TimeInterval? = nil,
-        numberOfWindowsRestored: Int? = nil,
-        numberOfTabsRestored: Int? = nil
+        isOnBattery: Bool = false,
+        sessionRestoration: Bool = false,
+        windows: Int? = nil,
+        standardTabs: Int? = nil,
+        pinnedTabs: Int? = nil,
+        appDelegateInit: TimeInterval? = nil,
+        mainMenuInit: TimeInterval? = nil,
+        appWillFinishLaunching: TimeInterval? = nil,
+        appDidFinishLaunchingBeforeStateRestoration: TimeInterval? = nil,
+        appDidFinishLaunchingAfterStateRestoration: TimeInterval? = nil,
+        appStateRestoration: TimeInterval? = nil,
+        initToWillFinishLaunching: TimeInterval? = nil,
+        appWillFinishToDidFinishLaunching: TimeInterval? = nil,
+        timeToInteractive: TimeInterval? = nil
     ) -> StartupMetricsPixel {
         StartupMetricsPixel(
-            isOnBattery: isOnBattery,
             architecture: architecture,
             activeProcessorCount: activeProcessorCount,
-            durationOfAppInit: durationOfAppInit,
-            durationOfAppWillFinishLaunching: durationOfAppWillFinishLaunching,
-            durationOfAppDidFinishLaunchingBeforeStateRestoration: durationOfAppDidFinishLaunchingBeforeStateRestoration,
-            durationOfAppDidFinishLaunchingAfterStateRestoration: durationOfAppDidFinishLaunchingAfterStateRestoration,
-            durationOfAppStateRestoration: durationOfAppStateRestoration,
-            deltaBetweenAppInitAndWillFinishLaunching: deltaBetweenAppInitAndWillFinishLaunching,
-            deltaBetweenAppWillFinishAndDidFinishLaunching: deltaBetweenAppWillFinishAndDidFinishLaunching,
-            deltaBetweenLaunchAndDidDisplayInterface: deltaBetweenLaunchAndDidDisplayInterface,
-            numberOfWindowsRestored: numberOfWindowsRestored,
-            numberOfTabsRestored: numberOfTabsRestored
+            isOnBattery: isOnBattery,
+            sessionRestoration: sessionRestoration,
+            windows: windows,
+            standardTabs: standardTabs,
+            pinnedTabs: pinnedTabs,
+            appDelegateInit: appDelegateInit,
+            mainMenuInit: mainMenuInit,
+            appWillFinishLaunching: appWillFinishLaunching,
+            appDidFinishLaunchingBeforeStateRestoration: appDidFinishLaunchingBeforeStateRestoration,
+            appDidFinishLaunchingAfterStateRestoration: appDidFinishLaunchingAfterStateRestoration,
+            appStateRestoration: appStateRestoration,
+            initToWillFinishLaunching: initToWillFinishLaunching,
+            appWillFinishToDidFinishLaunching: appWillFinishToDidFinishLaunching,
+            timeToInteractive: timeToInteractive
         )
     }
 }

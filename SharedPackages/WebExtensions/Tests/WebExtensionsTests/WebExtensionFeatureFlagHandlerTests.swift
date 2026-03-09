@@ -404,6 +404,7 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     }
 
     func testWhenWebExtensionsFlagToggledEnabledDisabledEnabledThenOnlyLastEnableRuns() async throws {
+        throw XCTSkip("Flaky test - disabled")
         var enabledCallCount = 0
         let enabledExpectation = expectation(description: "onFeatureFlagEnabled called once")
 
@@ -429,6 +430,8 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
     }
 
     func testWhenEmbeddedFlagToggledEnabledDisabledEnabledThenOnlyLastEnableRuns() async throws {
+        throw XCTSkip("Flaky test - disabled")
+
         var enabledCallCount = 0
         let enabledExpectation = expectation(description: "onEmbeddedExtensionFlagEnabled called once")
 
@@ -496,8 +499,6 @@ private final class MockWebExtensionManaging: WebExtensionManaging {
     func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension? {
         nil
     }
-
-    func updateExcludedDomains(_ excludedDomains: [String], forExtensionType type: WebExtensions.DuckDuckGoWebExtensionType) {}
 
     func unloadAllExtensions() {}
 

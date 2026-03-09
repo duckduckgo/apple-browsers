@@ -17,12 +17,9 @@
 //
 
 import Foundation
+import LetsMove
 import PixelKit
 import VPNAppLauncher
-
-#if !APPSTORE
-import LetsMove
-#endif
 
 @MainActor
 final class VPNURLEventHandler {
@@ -53,10 +50,8 @@ final class VPNURLEventHandler {
             showLocations()
         case VPNAppLaunchCommand.showSubscription.launchURL:
             showSubscription()
-#if !APPSTORE && !DEBUG
         case VPNAppLaunchCommand.moveAppToApplications.launchURL:
             moveAppToApplicationsFolder()
-#endif
         default:
             return
         }
@@ -104,10 +99,11 @@ final class VPNURLEventHandler {
         windowControllersManager.showVPNDomainExclusions()
     }
 
-#if !APPSTORE && !DEBUG
     func moveAppToApplicationsFolder() {
+        let buildType = StandardApplicationBuildType()
+        guard !buildType.isAppStoreBuild && !buildType.isDebugBuild else { return }
+
         // this should be run after NSApplication.shared is set
-        PFMoveToApplicationsFolderIfNecessary(false)
+        PFMoveToApplicationsFolderIfNecessary(/*allowAlertSilencing:*/ false)
     }
-#endif
 }

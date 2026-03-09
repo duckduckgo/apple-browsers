@@ -33,11 +33,11 @@ extension WindowsManager {
             Application.appDelegate.windowControllersManager.restorePinnedTabs(pinnedTabsCollection)
         }
 
-        if let aiChatSidebarsByTab = state.aiChatSidebarsByTab {
-            let sidebarsToRestore = aiChatSidebarsByTab.filter { (_, value) in
-                value.isPresented || !value.isSessionExpired
+        if let aiChatStatesByTab = state.aiChatStatesByTab {
+            let statesToRestore = aiChatStatesByTab.filter { (_, value) in
+                value.presentationMode != .hidden || !value.isSessionExpired
             }
-            Application.appDelegate.aiChatSidebarProvider.restoreState(sidebarsToRestore)
+            Application.appDelegate.aiChatSessionStore.restoreState(statesToRestore)
         }
 
         if includeWindows {
@@ -86,7 +86,7 @@ extension WindowControllersManager {
         coder.encode(WindowManagerStateRestoration(mainWindowControllers: mainWindowControllers,
                                                    lastKeyMainWindowController: lastKeyMainWindowController,
                                                    applicationPinnedTabs: Application.appDelegate.pinnedTabsManager.tabCollection,
-                                                   aiChatSidebarsByTab: Application.appDelegate.aiChatSidebarProvider.sidebarsByTab),
+                                                   aiChatStatesByTab: Application.appDelegate.aiChatSessionStore.statesForSerialization()),
                      forKey: NSKeyedArchiveRootObjectKey)
     }
 
@@ -110,7 +110,7 @@ final class WindowManagerStateRestoration: NSObject, NSSecureCoding {
     let windows: [WindowRestorationItem]
     let keyWindowIndex: Int?
     let applicationPinnedTabs: TabCollection?
-    let aiChatSidebarsByTab: AIChatSidebarsByTab?
+    let aiChatStatesByTab: AIChatStatesByTab?
 
     init?(coder: NSCoder) {
         guard let restorationArray = coder.decodeObject(of: [NSArray.self, WindowRestorationItem.self],
@@ -127,15 +127,15 @@ final class WindowManagerStateRestoration: NSObject, NSSecureCoding {
             ? coder.decodeObject(of: TabCollection.self, forKey: NSSecureCodingKeys.pinnedTabs)
             : nil
 
-        self.aiChatSidebarsByTab = coder.containsValue(forKey: NSSecureCodingKeys.aiChatSidebarsByTab)
-            ? coder.decodeObject(of: [NSDictionary.self, NSString.self, AIChatSidebar.self], forKey: NSSecureCodingKeys.aiChatSidebarsByTab) as? [String: AIChatSidebar]
+        self.aiChatStatesByTab = coder.containsValue(forKey: NSSecureCodingKeys.aiChatSidebarsByTab)
+            ? coder.decodeObject(of: [NSDictionary.self, NSString.self, AIChatState.self], forKey: NSSecureCodingKeys.aiChatSidebarsByTab) as? [String: AIChatState]
             : nil
 
         super.init()
     }
 
     @MainActor
-    init(mainWindowControllers: [MainWindowController], lastKeyMainWindowController: MainWindowController?, applicationPinnedTabs: TabCollection, aiChatSidebarsByTab: AIChatSidebarsByTab) {
+    init(mainWindowControllers: [MainWindowController], lastKeyMainWindowController: MainWindowController?, applicationPinnedTabs: TabCollection, aiChatStatesByTab: AIChatStatesByTab) {
         self.windows = mainWindowControllers
             .filter { $0.window?.isPopUpWindow == false }
             .sorted { (lhs, rhs) in
@@ -149,14 +149,14 @@ final class WindowManagerStateRestoration: NSObject, NSSecureCoding {
         }
 
         self.applicationPinnedTabs = applicationPinnedTabs
-        self.aiChatSidebarsByTab = aiChatSidebarsByTab
+        self.aiChatStatesByTab = aiChatStatesByTab
     }
 
     func encode(with coder: NSCoder) {
         coder.encode(windows as NSArray, forKey: NSSecureCodingKeys.controllers)
         keyWindowIndex.map(coder.encode(forKey: NSSecureCodingKeys.keyWindowIndex))
         coder.encode(applicationPinnedTabs, forKey: NSSecureCodingKeys.pinnedTabs)
-        coder.encode(aiChatSidebarsByTab, forKey: NSSecureCodingKeys.aiChatSidebarsByTab)
+        coder.encode(aiChatStatesByTab, forKey: NSSecureCodingKeys.aiChatSidebarsByTab)
     }
 }
 

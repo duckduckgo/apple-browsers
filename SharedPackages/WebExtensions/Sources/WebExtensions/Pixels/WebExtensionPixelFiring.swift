@@ -19,6 +19,7 @@
 import Foundation
 
 /// Events that can be fired for web extension management.
+@available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
     case installed
     case installError(error: Error)
@@ -29,19 +30,20 @@ public enum WebExtensionPixelEvent {
     case loaded
     case loadError(error: Error)
 
-    // Embedded extension events
-    case embeddedInstalled
-    case embeddedUpgraded(fromVersion: String?, toVersion: String?)
-    case embeddedInstallError(error: Error)
+    case embeddedInstalled(type: DuckDuckGoWebExtensionType)
+    case embeddedUpgraded(type: DuckDuckGoWebExtensionType, fromVersion: String?, toVersion: String?)
+    case embeddedInstallError(type: DuckDuckGoWebExtensionType, error: Error)
 }
 
 /// Protocol for firing web extension pixels.
 /// Implement this protocol in each platform to wire up to the platform-specific pixel system.
+@available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionPixelFiring {
     func fire(_ event: WebExtensionPixelEvent)
 }
 
 /// Default no-op implementation for when pixel firing is not needed.
+@available(macOS 15.4, iOS 18.4, *)
 public struct NoOpWebExtensionPixelFiring: WebExtensionPixelFiring {
     public init() {}
     public func fire(_ event: WebExtensionPixelEvent) {}

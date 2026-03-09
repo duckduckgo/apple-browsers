@@ -33,8 +33,6 @@ import PersistenceTestingUtils
 import Combine
 @testable import Core
 
-// swiftlint:disable force_try
-
 final class MockTabDelegate: TabDelegate {
     private(set) var didRequestLoadQueryCalled = false
     private(set) var capturedQuery: String?
@@ -48,7 +46,7 @@ final class MockTabDelegate: TabDelegate {
 
     func tabWillRequestNewTab(_ tab: DuckDuckGo.TabViewController) -> UIKeyModifierFlags? { nil }
 
-    func tabDidRequestNewTab(_ tab: TabViewController) {}
+    func tabDidRequestNewTab(_ tab: TabViewController, fireTab: Bool) {}
     
     func newTab(reuseExisting: Bool) {}
 
@@ -173,17 +171,19 @@ extension TabViewController {
             featureFlagger: featureFlagger,
             contentScopeExperimentManager: MockContentScopeExperimentManager(),
             textZoomCoordinator: MockTextZoomCoordinator(),
+            autoconsentManagement: MockAutoconsentManagement(),
             websiteDataManager: MockWebsiteDataManager(),
             fireproofing: MockFireproofing(),
             tabInteractionStateSource: MockTabInteractionStateSource(),
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),
-            keyValueStore: try! MockKeyValueFileStore(),
+            keyValueStore: MockKeyValueFileStore(),
             daxDialogsManager: DummyDaxDialogsManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             privacyStats: MockPrivacyStats(),
-            voiceSearchHelper: MockVoiceSearchHelper()
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab
@@ -253,4 +253,12 @@ final class MockPrivacyStats: PrivacyStatsProviding {
     }
 }
 
-// swiftlint:enable force_try
+struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
+    var isFeatureEnabled: Bool = false
+    var isForceDarkModeEnabled: Bool = false
+    var excludedDomains: [String] = []
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+    func setForceDarkModeEnabled(_ enabled: Bool) {}
+    func themeDidChange() {}
+}

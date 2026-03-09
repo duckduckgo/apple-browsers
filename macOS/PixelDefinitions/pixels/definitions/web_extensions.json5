@@ -88,5 +88,53 @@
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_dark_reader_installed": {
+        "description": "Fires when the Dark Reader web extension is successfully installed for the first time.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_dark_reader_upgraded": {
+        "description": "Fires when the Dark Reader web extension is upgraded to a newer version.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "from_version",
+                "type": "string",
+                "description": "The previous version of the Dark Reader extension before upgrade"
+            },
+            {
+                "key": "to_version",
+                "type": "string",
+                "description": "The new version of the Dark Reader extension after upgrade"
+            }
+        ]
+    },
+    "m_mac_web_extension_dark_reader_install_error": {
+        "description": "Fires when installing or upgrading the Dark Reader web extension fails.",
+        "owners": ["ayoy"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_dark_reader_enabled": {
+        "description": "Fires when the user enables force dark mode on websites.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_dark_reader_disabled": {
+        "description": "Fires when the user disables force dark mode on websites.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

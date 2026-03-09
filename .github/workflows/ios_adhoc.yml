@@ -26,11 +26,11 @@ on:
 
 jobs:
   make-adhoc:
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     name: Make ad-hoc build
 
     env:
-      RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
+      RUNS_ON: macos-26-xlarge # keep this in sync with runs-on above
 
     steps:
 

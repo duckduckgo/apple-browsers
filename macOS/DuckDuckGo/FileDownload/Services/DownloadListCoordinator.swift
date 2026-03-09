@@ -553,15 +553,9 @@ final class DownloadListCoordinator {
     @MainActor
     func cleanupInactiveDownloads(for fireWindowSession: FireWindowSessionRef?) {
         Logger.fileDownload.debug("coordinator: cleanupInactiveDownloads")
-        var itemsToRemove: Set<UUID> = []
 
         for (id, item) in self.items where item.fireWindowSession == fireWindowSession && item.progress == nil {
-            itemsToRemove.insert(id)
             remove(downloadWithIdentifier: id)
-        }
-
-        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnDownloadsHasResidue) {
-            itemsToRemove.contains { self.items[$0] != nil }
         }
     }
 
@@ -579,20 +573,14 @@ final class DownloadListCoordinator {
     @MainActor
     func cleanupInactiveDownloads(for baseDomains: Set<String>, tld: TLD) {
         Logger.fileDownload.debug("coordinator: cleanupInactiveDownloads for \(baseDomains)")
-        var itemsToRemove: Set<UUID> = []
 
         for (id, item) in self.items where item.progress == nil {
             let websiteUrlBaseDomain = tld.eTLDplus1(item.websiteURL?.host) ?? ""
             let itemUrlBaseDomain = tld.eTLDplus1(item.downloadURL.host) ?? ""
             if baseDomains.contains(websiteUrlBaseDomain) ||
                 baseDomains.contains(itemUrlBaseDomain) {
-                itemsToRemove.insert(id)
                 remove(downloadWithIdentifier: id)
             }
-        }
-
-        dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnDownloadsHasResidue) {
-            itemsToRemove.contains { self.items[$0] != nil }
         }
     }
 

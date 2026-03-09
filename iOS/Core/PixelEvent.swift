@@ -1300,6 +1300,24 @@ extension Pixel {
         case bookmarkLaunchedDaily
         case newTabPageDisplayedDaily
 
+        // MARK: NTP after idle
+        case ntpAfterIdleNTPShownAfterIdle
+        case ntpAfterIdleNTPShownUserInitiated
+        case ntpAfterIdleReturnToPageTappedAfterIdle
+        case ntpAfterIdleReturnToPageTappedUserInitiated
+        case ntpAfterIdleBarUsedAfterIdle
+        case ntpAfterIdleBarUsedUserInitiated
+        case ntpAfterIdleToggleUsedAfterIdle
+        case ntpAfterIdleToggleUsedUserInitiated
+        case ntpAfterIdleBackButtonUsedAfterIdle
+        case ntpAfterIdleBackButtonUsedUserInitiated
+        case ntpAfterIdleAppBackgroundedAfterIdle
+        case ntpAfterIdleAppBackgroundedUserInitiated
+        case ntpAfterIdleTabSwitcherSelectedAfterIdle
+        case ntpAfterIdleTabSwitcherSelectedUserInitiated
+        case ntpAfterIdleSettingChangedToNewTab
+        case ntpAfterIdleSettingChangedToLastUsedTab
+
         // MARK: DuckPlayer
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
@@ -2815,6 +2833,24 @@ extension Pixel.Event {
         case .favoriteLaunchedNTPDaily: return "m_favorite_launched_ntp_daily"
         case .bookmarkLaunchedDaily: return "m_bookmark_launched_daily"
         case .newTabPageDisplayedDaily: return "m_new_tab_page_displayed_daily"
+
+        // MARK: NTP after idle
+        case .ntpAfterIdleNTPShownAfterIdle: return "m_ntp_after_idle_ntp_shown_after_idle"
+        case .ntpAfterIdleNTPShownUserInitiated: return "m_ntp_after_idle_ntp_shown_user_initiated"
+        case .ntpAfterIdleReturnToPageTappedAfterIdle: return "m_ntp_after_idle_return_to_page_tapped_after_idle"
+        case .ntpAfterIdleReturnToPageTappedUserInitiated: return "m_ntp_after_idle_return_to_page_tapped_user_initiated"
+        case .ntpAfterIdleBarUsedAfterIdle: return "m_ntp_after_idle_bar_used_from_ntp_after_idle"
+        case .ntpAfterIdleBarUsedUserInitiated: return "m_ntp_after_idle_bar_used_from_ntp_user_initiated"
+        case .ntpAfterIdleToggleUsedAfterIdle: return "m_ntp_after_idle_toggle_used_from_ntp_after_idle"
+        case .ntpAfterIdleToggleUsedUserInitiated: return "m_ntp_after_idle_toggle_used_from_ntp_user_initiated"
+        case .ntpAfterIdleBackButtonUsedAfterIdle: return "m_ntp_after_idle_back_button_used_from_ntp_after_idle"
+        case .ntpAfterIdleBackButtonUsedUserInitiated: return "m_ntp_after_idle_back_button_used_from_ntp_user_initiated"
+        case .ntpAfterIdleAppBackgroundedAfterIdle: return "m_ntp_after_idle_app_backgrounded_from_ntp_after_idle"
+        case .ntpAfterIdleAppBackgroundedUserInitiated: return "m_ntp_after_idle_app_backgrounded_from_ntp_user_initiated"
+        case .ntpAfterIdleTabSwitcherSelectedAfterIdle: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_after_idle"
+        case .ntpAfterIdleTabSwitcherSelectedUserInitiated: return "m_ntp_after_idle_tab_switcher_selected_from_ntp_user_initiated"
+        case .ntpAfterIdleSettingChangedToNewTab: return "m_ntp_after_idle_setting_changed_to_new_tab"
+        case .ntpAfterIdleSettingChangedToLastUsedTab: return "m_ntp_after_idle_setting_changed_to_last_used_tab"
 
         // MARK: DuckPlayer
         case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"

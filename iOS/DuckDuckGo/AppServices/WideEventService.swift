@@ -26,14 +26,12 @@ import VPN
 
 actor WideEventService {
     private let wideEvent: WideEventManaging
-    private let featureFlagger: FeatureFlagger
     private let subscriptionManager: SubscriptionManager
 
     private var isProcessing = false
 
-    init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionManager: SubscriptionManager) {
+    init(wideEvent: WideEventManaging, subscriptionManager: SubscriptionManager) {
         self.wideEvent = wideEvent
-        self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager
     }
 
@@ -47,15 +45,10 @@ actor WideEventService {
         guard !isProcessing else { return }
         isProcessing = true
 
-        let shouldSendDataImportWideEvent = featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
-
         await processCompletion(SubscriptionRestoreWideEventData.self, trigger: trigger)
         await processCompletion(VPNConnectionWideEventData.self, trigger: trigger)
         await processSubscriptionPurchaseCompletion(trigger: trigger)
-
-        if shouldSendDataImportWideEvent {
-            await processCompletion(DataImportWideEventData.self, trigger: trigger)
-        }
+        await processCompletion(DataImportWideEventData.self, trigger: trigger)
 
         isProcessing = false
     }

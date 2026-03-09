@@ -73,7 +73,7 @@ struct AIChatUserScriptHandlerTests {
     private var windowControllersManager: WindowControllersManagerMock
     private var notificationCenter = NotificationCenter()
     private var pixelFiring = PixelKitMock()
-    private var syncErrorHandler = SyncErrorHandler()
+    private var syncErrorHandler = SyncErrorHandler(alertPresenter: CapturingAlertPresenter())
     private var handler: AIChatUserScriptHandler
     private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
     private var mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()

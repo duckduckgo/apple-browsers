@@ -144,7 +144,7 @@ private extension NewTabPageView {
 
     @ViewBuilder
     private var escapeHatchSectionView: some View {
-        if let escapeHatch = viewModel.escapeHatch {
+        if let escapeHatch = viewModel.escapeHatch, messagesModel.homeMessageViewModels.isEmpty {
             ReturnToTabCard(model: escapeHatch) {
                 viewModel.onEscapeHatchTap?()
             }

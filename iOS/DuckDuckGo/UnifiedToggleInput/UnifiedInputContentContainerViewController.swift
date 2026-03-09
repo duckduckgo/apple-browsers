@@ -422,11 +422,17 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
             inlineHeaderView.setDismissButtonHidden(false)
             contentContainerViewTopConstraint?.constant = 0
-        case .active, .inactive:
+        case .active:
             inlineHeaderView.isHidden = false
             inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
             inlineHeaderView.configure(title: currentSectionTitle)
             inlineHeaderView.setDismissButtonHidden(false)
+            contentContainerViewTopConstraint?.constant = Metrics.inlineHeaderHeight
+        case .inactive:
+            inlineHeaderView.isHidden = false
+            inlineHeaderView.setTitleLayoutPosition(.bottomBarHeader)
+            inlineHeaderView.configure(title: currentSectionTitle)
+            inlineHeaderView.setDismissButtonHidden(true)
             contentContainerViewTopConstraint?.constant = Metrics.inlineHeaderHeight
         }
     }

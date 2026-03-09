@@ -868,7 +868,6 @@ class MainViewController: UIViewController {
     private func keyboardDidHide() {
         keyboardShowing = false
         didSendGestureDismissPixel = false
-        updateUnifiedToggleInputKeyboardVisibility(false)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             self?.autoCollapseExpandedUTIIfNeeded()

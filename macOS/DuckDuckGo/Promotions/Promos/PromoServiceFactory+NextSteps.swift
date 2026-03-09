@@ -21,7 +21,7 @@ import Foundation
 extension PromoServiceFactory {
 
     /// Next Steps promo (nextStepsList and nextSteps widgets). Delegate is set when NTP is built.
-    static var nextSteps = Promo(
+    static let nextSteps = Promo(
         id: "next-steps-cards",
         triggers: [], // External promo (RemoteMessage) so no internal triggers
         initiated: .app,

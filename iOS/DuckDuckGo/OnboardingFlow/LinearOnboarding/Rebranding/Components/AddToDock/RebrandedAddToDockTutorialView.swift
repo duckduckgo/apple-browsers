@@ -60,9 +60,9 @@ extension OnboardingRebranding.OnboardingView {
                     ZStack(alignment: .top) {
                         OnboardingRebrandingImages.AddToDock.tutorialBorder
                             .resizable()
-                            .padding(.horizontal, -9)
+                            .padding(.horizontal, -8)
                             .padding(.vertical, -1)
-                            .frame(width: 321.0, height: 235.0)
+                            .frame(width: 321.0, height: 239.0)
                         if let videoURL = Self.videoURL {
                             AddToDockVideoPlayer(
                                 url: videoURL,

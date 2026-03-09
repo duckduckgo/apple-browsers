@@ -30,8 +30,8 @@ extension OnboardingRebranding.OnboardingView {
                 OnboardingRebrandingImages.AddToDock.promoBorder
                     .resizable()
                     .padding(.horizontal, -6)
-                    .padding(.vertical, -7)
-                    .frame(width: 321.0, height: 118.0)
+//                    .padding(.vertical, -7)
+                    .frame(width: 321.0, height: 128.0)
                 if let videoURL = Self.videoURL {
                     AddToDockVideoPlayer(
                         url: videoURL,

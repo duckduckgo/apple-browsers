@@ -140,7 +140,7 @@ final class SaveCredentialsViewController: NSViewController {
 
     private var faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
-    private var passwordManagerCoordinator = PasswordManagerCoordinator.shared
+    private var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
 
     private var autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences()
 
@@ -467,7 +467,11 @@ final class SaveCredentialsViewController: NSViewController {
     }
 
     private func subscribeToPasswordManagerState() {
-        passwordManagerStateCancellable = passwordManagerCoordinator.bitwardenManagement.statusPublisher
+        guard let bitwardenManagement = passwordManagerCoordinator.bitwardenManagement else {
+            return
+        }
+
+        passwordManagerStateCancellable = bitwardenManagement.statusPublisher
             .dropFirst()
             .removeDuplicates()
             .receive(on: DispatchQueue.main)

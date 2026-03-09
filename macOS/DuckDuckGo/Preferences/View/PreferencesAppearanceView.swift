@@ -209,6 +209,16 @@ extension Preferences {
                         .padding(.bottom, 16)
 
                     ToggleMenuItem(UserText.syncAppIconWithTheme, isOn: $model.syncAppIconWithTheme)
+
+                    if model.isForceDarkModeVisible {
+                        ToggleMenuItem(UserText.forceDarkModeOnWebsites, isOn: Binding(
+                            get: { model.forceDarkModeEnabled },
+                            set: { model.forceDarkModeEnabled = $0 }
+                        ))
+                        Text(UserText.forceDarkModeOnWebsitesFooter)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
                 }
 
                 // SECTION 2: Address Bar

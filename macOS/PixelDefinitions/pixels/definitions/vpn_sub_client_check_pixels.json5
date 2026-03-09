@@ -33,7 +33,15 @@
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["daily"],
-        "parameters": ["vpnSubscriptionActive", "appVersion", "pixelSource"]
+        "parameters": [
+            "vpnSubscriptionActive",
+            "appVersion",
+            "pixelSource",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
     },
     "m_mac_vpn_subs_client_check_on_wake_vpn_feature_enabled": {
         "description": "Fired when the device wakes, if PPro is enabled",
@@ -54,6 +62,14 @@
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["daily"],
-        "parameters": ["vpnSubscriptionActive", "appVersion", "pixelSource"]
+        "parameters": [
+            "vpnSubscriptionActive",
+            "appVersion",
+            "pixelSource",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
     }
 }

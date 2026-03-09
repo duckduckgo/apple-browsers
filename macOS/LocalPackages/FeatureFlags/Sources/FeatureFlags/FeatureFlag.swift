@@ -59,6 +59,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
+    case forceDarkModeOnWebsites
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616130440
     case syncSeamlessAccountSwitching
 
@@ -214,9 +217,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
-    case dataImportWideEventMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
 
@@ -259,6 +259,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
 
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1213356927349370?focus=true
+    case aiChatNtpRecentChats
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
 
@@ -291,7 +294,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
                 .blurryAddressBarTahoeFix,
-                .dataImportWideEventMeasurement,
                 .firstTimeQuitSurvey,
                 .aiChatOmnibarOnboarding,
                 .autofillPasswordSearchPrioritizeDomain,
@@ -303,7 +305,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatSidebarResizable,
                 .aiChatSidebarFloating,
                 .nextStepsListWidget,
-                .webViewLookUpAction:
+                .webViewLookUpAction,
+                .startupMetrics:
             true
         default:
             false
@@ -327,6 +330,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncSeamlessAccountSwitching,
                 .webExtensions,
                 .embeddedExtension,
+                .forceDarkModeOnWebsites,
                 .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
                 .scamSiteProtection,
@@ -379,7 +383,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillPasswordSearchPrioritizeDomain,
                 .autofillPasswordsStatusBar,
                 .warnBeforeQuit,
-                .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
                 .memoryUsageReporting,
                 .aiChatSync,
@@ -390,6 +393,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
                 .aiChatSidebarResizable,
+                .aiChatNtpRecentChats,
                 .aiChatSidebarFloating,
                 .startupMetrics,
                 .privateProcessName,
@@ -431,6 +435,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
+        case .forceDarkModeOnWebsites:
+            return .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .syncCreditCards:
@@ -531,8 +537,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .warnBeforeQuit:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
-        case .dataImportWideEventMeasurement:
-            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
             return .disabled
         case .memoryUsageReporting:
@@ -557,10 +561,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
+        case .aiChatNtpRecentChats:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats))
         case .aiChatSidebarFloating:
             return .internalOnly()
         case .startupMetrics:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
             return .disabled
         case .webViewLookUpAction:

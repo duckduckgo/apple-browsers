@@ -26,7 +26,7 @@ public class SubscriptionPlanChangeWideEventData: WideEventData {
         featureName: "subscription-plan-change",
         mobileMetaType: "ios-subscription-plan-change",
         desktopMetaType: "macos-subscription-plan-change",
-        version: "1.0.0"
+        version: "1.0.1"
     )
 
     public static let confirmationTimeout: TimeInterval = .hours(4)
@@ -133,7 +133,7 @@ extension SubscriptionPlanChangeWideEventData {
         case missingEntitlementsDelayedActivation = "missing_entitlements_delayed_activation"
     }
 
-    public func pixelParameters() -> [String: String] {
+    public func jsonParameters() -> [String: Encodable] {
         let bucket: DurationBucket = .bucketed(Self.bucket)
 
         return Dictionary(compacting: [
@@ -144,8 +144,8 @@ extension SubscriptionPlanChangeWideEventData {
             (WideEventParameter.PlanChangeFeature.changeType, changeType?.rawValue),
             (WideEventParameter.PlanChangeFeature.funnelName, funnelName),
             (WideEventParameter.PlanChangeFeature.failingStep, failingStep?.rawValue),
-            (WideEventParameter.PlanChangeFeature.paymentLatency, paymentDuration?.stringValue(bucket)),
-            (WideEventParameter.PlanChangeFeature.confirmationLatency, confirmationDuration?.stringValue(bucket)),
+            (WideEventParameter.PlanChangeFeature.paymentLatency, paymentDuration?.intValue(bucket)),
+            (WideEventParameter.PlanChangeFeature.confirmationLatency, confirmationDuration?.intValue(bucket)),
         ])
     }
 

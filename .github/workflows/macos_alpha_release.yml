@@ -22,7 +22,7 @@ jobs:
   calculate-alpha-build-number:
     name: Calculate Alpha Build Number
 
-    runs-on: macos-15
+    runs-on: macos-26
 
     outputs:
       build-number: ${{ steps.update-build-number.outputs.build-number }}
@@ -108,7 +108,7 @@ jobs:
 
     needs: dmg-release
 
-    runs-on: macos-15
+    runs-on: macos-26
 
     defaults:
       run:

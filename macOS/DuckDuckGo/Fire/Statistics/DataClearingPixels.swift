@@ -33,7 +33,6 @@ enum DataClearingPixels {
 
     case burnWebCacheError(Error)
     case burnWebCacheDuration(Int)
-    case burnWebCacheHasResidue(steps: String)
 
     case burnHistoryError(Error)
     case burnHistoryDuration(entity: String, duration: Int)
@@ -45,22 +44,17 @@ enum DataClearingPixels {
 
     case burnVisitsError(Error)
     case burnVisitsDuration(Int)
-    case burnVisitsHasResidue
 
     case burnLastSessionStateError(Error)
     case burnLastSessionStateDuration(Int)
-    case burnLastSessionStateHasResidue
 
     case burnTabsError(Error)
     case burnTabsDuration(entity: String, duration: Int)
-    case burnTabsHasResidue(entity: String)
 
     case burnDownloadsError(Error)
     case burnDownloadsDuration(Int)
-    case burnDownloadsHasResidue
 
     case burnRecentlyClosedDuration(Int)
-    case burnRecentlyClosedHasResidue
 }
 
 // MARK: - PixelKitEvent Protocol
@@ -78,8 +72,6 @@ extension DataClearingPixels: PixelKitEvent {
             return "m_mac_fire_burn_web_cache_error"
         case .burnWebCacheDuration:
             return "m_mac_fire_burn_web_cache_duration"
-        case .burnWebCacheHasResidue:
-            return "m_mac_fire_burn_web_cache_has_residue"
 
         case .burnHistoryError:
             return "m_mac_fire_burn_history_error"
@@ -98,34 +90,24 @@ extension DataClearingPixels: PixelKitEvent {
             return "m_mac_fire_burn_visits_error"
         case .burnVisitsDuration:
             return "m_mac_fire_burn_visits_duration"
-        case .burnVisitsHasResidue:
-            return "m_mac_fire_burn_visits_has_residue"
 
         case .burnLastSessionStateError:
             return "m_mac_fire_burn_last_session_state_error"
         case .burnLastSessionStateDuration:
             return "m_mac_fire_burn_last_session_state_duration"
-        case .burnLastSessionStateHasResidue:
-            return "m_mac_fire_burn_last_session_state_has_residue"
 
         case .burnTabsError:
             return "m_mac_fire_burn_tabs_error"
         case .burnTabsDuration:
             return "m_mac_fire_burn_tabs_duration"
-        case .burnTabsHasResidue:
-            return "m_mac_fire_burn_tabs_has_residue"
 
         case .burnDownloadsError:
             return "m_mac_fire_burn_downloads_error"
         case .burnDownloadsDuration:
             return "m_mac_fire_burn_downloads_duration"
-        case .burnDownloadsHasResidue:
-            return "m_mac_fire_burn_downloads_has_residue"
 
         case .burnRecentlyClosedDuration:
             return "m_mac_fire_burn_recently_closed_duration"
-        case .burnRecentlyClosedHasResidue:
-            return "m_mac_fire_burn_recently_closed_has_residue"
         }
     }
 
@@ -149,21 +131,13 @@ extension DataClearingPixels: PixelKitEvent {
              .burnLastSessionStateDuration(let duration):
             return ["duration": String(duration)]
 
-        case .burnTabsHasResidue(let entity):
-            return ["entity": entity]
-
         case .burnHistoryDuration(let entity, let duration),
              .burnTabsDuration(let entity, let duration):
             return ["entity": entity, "duration": String(duration)]
 
-        case .burnWebCacheHasResidue(let steps):
-            return ["step": steps]
-
         case .retriggerIn20s,
              .burnWebCacheError, .burnHistoryError, .burnChatHistoryError,
-             .burnVisitsError, .burnLastSessionStateError, .burnTabsError, .burnDownloadsError,
-             .burnVisitsHasResidue, .burnLastSessionStateHasResidue,
-             .burnDownloadsHasResidue, .burnRecentlyClosedHasResidue:
+             .burnVisitsError, .burnLastSessionStateError, .burnTabsError, .burnDownloadsError:
             return nil
         }
     }

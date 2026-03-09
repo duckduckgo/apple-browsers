@@ -305,8 +305,10 @@ class MainViewCoordinator {
                     self.unifiedToggleInputContainer.alpha = 1
                 }
             } else {
-                self.unifiedToggleInputContainer.isHidden = true
-                self.unifiedToggleInputContainer.alpha = 1
+                if finished {
+                    self.unifiedToggleInputContainer.isHidden = true
+                    self.unifiedToggleInputContainer.alpha = 1
+                }
             }
         }
     }

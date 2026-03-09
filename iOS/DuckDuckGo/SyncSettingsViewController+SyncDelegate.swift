@@ -24,6 +24,7 @@ import SyncUI_iOS
 import DDGSync
 import AVFoundation
 import WebKit
+import os.log
 
 extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     var syncBookmarksPausedTitle: String? {
@@ -462,7 +463,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         do {
             try syncService.removePreservedSyncAccount()
         } catch {
-            await handleError(.unknownError, error: error, event: nil)
+            Logger.sync.error("Failed to clear preserved sync account before server operation: \(error.localizedDescription, privacy: .public)")
+            dismissPresentedViewController()
             return false
         }
 

@@ -256,7 +256,9 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         if didModeChange || effectiveMode != mode {
             viewController.setInputMode(effectiveMode, animated: false)
         }
-        modeChangeSubject.send(effectiveMode)
+        if didModeChange {
+            modeChangeSubject.send(effectiveMode)
+        }
     }
 
     func clearText() {

@@ -98,13 +98,12 @@ final class SwipeContainerViewController: UIViewController {
 
     private func setupBindings() {
         switchBarHandler.toggleStatePublisher
-            .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self, self.swipeScrollView != nil else { return }
                 let shouldAnimate = self.animateProgrammaticModeChanges
-                self.updateScrollViewPosition(animated: shouldAnimate)
                 self.animateProgrammaticModeChanges = true
+                self.updateScrollViewPosition(animated: shouldAnimate)
             }
             .store(in: &cancellables)
     }

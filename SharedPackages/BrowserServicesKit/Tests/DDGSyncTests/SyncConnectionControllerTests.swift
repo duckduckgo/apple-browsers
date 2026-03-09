@@ -634,6 +634,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertTrue(mockAccountManager.loginCalled)
     }
 
+    @MainActor
     func test_syncCodeEntered_withRecoveryCode_whenDelegateBlocksServerOperation_doesNotAttemptLogin() async {
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager

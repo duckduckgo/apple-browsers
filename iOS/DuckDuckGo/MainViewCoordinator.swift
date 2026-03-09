@@ -294,20 +294,18 @@ class MainViewCoordinator {
             self.statusBackground.backgroundColor = savedColor
             self.navigationBarContainer.backgroundColor = nil
             self.suggestionTrayContainer.backgroundColor = .clear
-
-            guard finished else { return }
-            if self.isNavigationChromeHidden {
-                self.navigationBarCollectionView.alpha = 0
-                self.unifiedToggleInputContainer.isHidden = false
-                self.unifiedToggleInputContainer.alpha = 1
-                return
-            }
-            self.unifiedToggleInputContainer.isHidden = true
-            self.unifiedToggleInputContainer.alpha = 1
             self.navigationBarCollectionView.isUserInteractionEnabled = true
-            self.statusBackground.backgroundColor = savedColor
-            self.navigationBarContainer.backgroundColor = nil
-            self.suggestionTrayContainer.backgroundColor = .clear
+
+            if self.isNavigationChromeHidden {
+                if finished {
+                    self.navigationBarCollectionView.alpha = 0
+                    self.unifiedToggleInputContainer.isHidden = false
+                    self.unifiedToggleInputContainer.alpha = 1
+                }
+            } else {
+                self.unifiedToggleInputContainer.isHidden = true
+                self.unifiedToggleInputContainer.alpha = 1
+            }
         }
     }
 

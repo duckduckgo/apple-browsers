@@ -333,6 +333,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     func dismissPresentedViewController(completion: (() -> Void)? = nil) {
         rootView.model.isSyncWithSetUpSheetVisible = false
+        rootView.model.isRecoverSyncedDataSheetVisible = false
         guard let presentedViewController = navigationController?.presentedViewController,
               !(presentedViewController is UIHostingController<SyncSettingsView>) else {
             completion?()

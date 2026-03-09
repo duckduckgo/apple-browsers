@@ -1118,7 +1118,7 @@ class MainViewController: UIViewController {
         guard isNavigationBarEffectivelyAtBottom else { return }
 
         let displayState = unifiedToggleInputCoordinator?.displayState
-        let isInlineActive = unifiedToggleInputCoordinator?.isInlineEditingActive == true
+        let isInlineActive = unifiedToggleInputCoordinator?.isInlineEditingSession == true
 
         let baseInputHeight: CGFloat
         if case .aiTab(.expanded) = displayState, let coordinator = unifiedToggleInputCoordinator {

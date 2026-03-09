@@ -83,7 +83,7 @@ extension MainViewController {
 
     private func handleModeChange(_ mode: TextEntryMode) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        if coordinator.isInlineEditingActive {
+        if coordinator.isInlineEditingSession {
             handleInlineEditingModeChange(mode, coordinator: coordinator)
         } else if case .aiTab(.expanded) = coordinator.displayState {
             handleAITabModeChange(mode, coordinator: coordinator)
@@ -356,7 +356,7 @@ extension MainViewController {
 
     func recomputeInlineEditingHeightIfNeeded() {
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.isInlineEditingActive else { return }
+              coordinator.isInlineEditingSession else { return }
         let height = coordinator.inlineEditingHeight()
         viewCoordinator.constraints.navigationBarContainerHeight.constant = height
     }

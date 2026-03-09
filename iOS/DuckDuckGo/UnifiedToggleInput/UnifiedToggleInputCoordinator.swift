@@ -95,7 +95,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var hasActiveChat: Bool { boundUserScript != nil }
     var switchBarHandler: SwitchBarHandling { viewController.handler }
 
-    var isInlineEditingActive: Bool {
+    var isInlineEditingSession: Bool {
         if case .inline = displayState { return true }
         return false
     }
@@ -295,7 +295,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     func deactivateInlineEditing() {
-        guard isInlineEditingActive else { return }
+        guard isInlineEditingSession else { return }
         displayState = .hidden
         viewController.showsDismissButton = false
         viewController.usesInlineEditingMargins = false
@@ -315,7 +315,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
         viewController.updateToggleEnabled(enabled)
-        if !enabled, isInlineEditingActive {
+        if !enabled, isInlineEditingSession {
             inputMode = .search
             viewController.setInputMode(.search, animated: false)
             modeChangeSubject.send(.search)
@@ -386,13 +386,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         case .search:
             if case .aiTab = displayState {
                 hide()
-            } else if isInlineEditingActive {
+            } else if isInlineEditingSession {
                 deactivateInlineEditing()
             }
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
-            if isInlineEditingActive {
+            if isInlineEditingSession {
                 deactivateInlineEditing()
             } else {
                 showCollapsed()

@@ -128,8 +128,6 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
             // If setting is not present in storage, for internal users set `true` as the initial value.
             if featureFlagger.internalUserDecider.isInternalUser {
                 try? storage.set(true, for: \.forceDarkModeOnWebsitesEnabled)
-                pixelFiring?.fire(WebExtensionPixel.darkReaderEnabled, frequency: .dailyAndCount)
-                forceDarkModeChangedSubject.send(true)
                 return true
             }
             return false

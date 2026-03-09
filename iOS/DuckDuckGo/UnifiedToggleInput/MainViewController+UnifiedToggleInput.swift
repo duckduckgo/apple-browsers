@@ -381,8 +381,8 @@ extension MainViewController: UnifiedToggleInputInlineActivating {
 
 extension MainViewController: UnifiedToggleInputDelegate {
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String) {
-        openAIChat(prompt, autoSend: true)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?) {
+        openAIChat(prompt, autoSend: true, modelId: modelId)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {

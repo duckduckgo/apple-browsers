@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import os.log
 import UIKit
 
 // MARK: - State Types
@@ -77,7 +78,9 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown
-    @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
+    @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
+        didSet { viewController.isModelChipHidden = (aiChatInputBoxVisibility == .hidden) }
+    }
 
     // MARK: - Properties
 
@@ -94,6 +97,26 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var currentText: String { viewController.text }
     var hasActiveChat: Bool { boundUserScript != nil }
     var switchBarHandler: SwitchBarHandling { viewController.handler }
+
+    // MARK: - Model Picker
+
+    private let modelsService: AIChatModelsProviding
+    private var preferences: AIChatPreferencesPersisting
+    private(set) var models: [AIChatModel] = []
+    private var modelsFetchTask: Task<Void, Never>?
+
+    var persistedModelId: String {
+        preferences.selectedModelId ?? models.first(where: { $0.entityHasAccess })?.id ?? ""
+    }
+
+    var currentModelId: String? {
+        preferences.selectedModelId
+    }
+
+    var selectedModelSupportsImageUpload: Bool {
+        guard !models.isEmpty else { return true }
+        return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? true
+    }
 
     var isInlineEditingSession: Bool {
         if case .inline = displayState { return true }
@@ -120,8 +143,14 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     // MARK: - Initialization
 
-    init(isToggleEnabled: Bool) {
+    init(
+        isToggleEnabled: Bool,
+        modelsService: AIChatModelsProviding = AIChatModelsService(),
+        preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor()
+    ) {
         self.isToggleEnabled = isToggleEnabled
+        self.modelsService = modelsService
+        self.preferences = preferences
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled)
         contentViewController = UnifiedInputContentContainerViewController(switchBarHandler: viewController.handler)
         viewController.delegate = self
@@ -166,6 +195,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         displayState = .aiTab(.expanded)
         self.inputMode = inputMode
         viewController.setInputMode(inputMode, animated: false)
+        fetchModels()
 
         if let prefilledText, !prefilledText.isEmpty {
             viewController.text = prefilledText
@@ -203,6 +233,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let effectiveInputMode = isToggleEnabled ? inputMode : .search
         displayState = .inline(.active)
         self.inputMode = effectiveInputMode
+        fetchModels()
         viewController.cardPosition = cardPosition
         viewController.usesInlineEditingMargins = (cardPosition == .top)
         viewController.isTopBarPosition = (cardPosition == .top)
@@ -356,6 +387,75 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         contentViewController.setInputMode(mode, animated: animated)
     }
 
+    // MARK: - Model Picker Actions
+
+    func fetchModels() {
+        modelsFetchTask?.cancel()
+        modelsFetchTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let remoteModels = try await modelsService.fetchModels()
+                guard !Task.isCancelled else { return }
+                self.models = remoteModels.map { AIChatModel(remoteModel: $0) }
+                self.updateModelChipLabel()
+            } catch {
+                os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
+            }
+        }
+    }
+
+    func updateSelectedModel(_ modelId: String) {
+        preferences.selectedModelId = modelId
+        updateModelChipLabel()
+    }
+
+    func buildModelPickerMenu() -> UIMenu {
+        let accessible = models.filter { $0.entityHasAccess }
+        let premium = models.filter { !$0.entityHasAccess }
+        let selectedId = persistedModelId
+
+        let accessibleActions = accessible.map { model in
+            UIAction(
+                title: model.name,
+                image: model.menuIcon,
+                state: model.id == selectedId ? .on : .off
+            ) { [weak self] _ in
+                self?.updateSelectedModel(model.id)
+            }
+        }
+
+        let accessibleMenu = UIMenu(title: "", options: [.displayInline, .singleSelection], children: accessibleActions)
+        var children: [UIMenuElement] = [accessibleMenu]
+
+        if !premium.isEmpty {
+            let premiumActions = premium.map { model in
+                UIAction(
+                    title: model.name,
+                    image: model.menuIcon,
+                    attributes: .disabled,
+                    state: model.id == selectedId ? .on : .off
+                ) { _ in }
+            }
+            let advancedMenu = UIMenu(
+                title: UserText.aiChatAdvancedModelsMenuTitle,
+                options: .displayInline,
+                children: premiumActions
+            )
+            children.append(advancedMenu)
+        }
+
+        return UIMenu(children: children)
+    }
+
+    private func updateModelChipLabel() {
+        let selectedId = persistedModelId
+        let name = models.first(where: { $0.id == selectedId })?.name
+        if let name {
+            viewController.modelName = name
+        }
+        viewController.modelPickerMenu = models.isEmpty ? nil : buildModelPickerMenu()
+    }
+
     // MARK: - Private
 
     private func resetSessionState() {
@@ -400,7 +500,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if boundUserScript != nil {
                 didSubmitPrompt.send(text)
             } else {
-                delegate?.unifiedToggleInputDidSubmitPrompt(text)
+                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: currentModelId)
             }
         }
     }

@@ -101,6 +101,21 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitButtonHidden = isToolbarSubmitHidden }
     }
 
+    var modelName: String {
+        get { toolsToolbar.modelName }
+        set { toolsToolbar.modelName = newValue }
+    }
+
+    var modelPickerMenu: UIMenu? {
+        get { toolsToolbar.modelPickerMenu }
+        set { toolsToolbar.modelPickerMenu = newValue }
+    }
+
+    var isModelChipHidden: Bool {
+        get { toolsToolbar.isModelChipHidden }
+        set { toolsToolbar.isModelChipHidden = newValue }
+    }
+
     /// Called inside animation blocks when a hierarchy-wide layout pass is needed
     /// so that sibling views (e.g. the content container) animate in sync.
     /// The owning view controller sets this.

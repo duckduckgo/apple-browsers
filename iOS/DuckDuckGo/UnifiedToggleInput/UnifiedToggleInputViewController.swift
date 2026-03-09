@@ -112,6 +112,21 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitHidden = newValue }
     }
 
+    var modelName: String {
+        get { inputBarView.modelName }
+        set { inputBarView.modelName = newValue }
+    }
+
+    var modelPickerMenu: UIMenu? {
+        get { inputBarView.modelPickerMenu }
+        set { inputBarView.modelPickerMenu = newValue }
+    }
+
+    var isModelChipHidden: Bool {
+        get { inputBarView.isModelChipHidden }
+        set { inputBarView.isModelChipHidden = newValue }
+    }
+
     func setExpanded(_ expanded: Bool, animated: Bool) {
         inputBarView.setExpanded(expanded, animated: animated)
     }

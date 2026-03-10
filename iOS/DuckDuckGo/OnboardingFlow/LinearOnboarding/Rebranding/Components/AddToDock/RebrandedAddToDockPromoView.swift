@@ -24,30 +24,37 @@ extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockPromoView: View {
         private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-promo", withExtension: "mov")
-        private static let referenceHeight: CGFloat = 844.0
 
-        let borderSize: CGSize
-        let borderPadding: EdgeInsets
-        let videoFrameSize: CGSize
-
-        private var scale: CGFloat {
-            min(UIScreen.main.bounds.height / Self.referenceHeight, 1.0)
+        private enum Design {
+            static let borderWidth: CGFloat = 321
+            static let borderHeight: CGFloat = 128
+            static let videoWidth: CGFloat = 300
+            static let videoHeight: CGFloat = 120
+            static let borderHorizontalPadding: CGFloat = -6
         }
 
         var body: some View {
-            ZStack(alignment: .top) {
-                OnboardingRebrandingImages.AddToDock.promoBorder
-                    .resizable()
-                    .padding(borderPadding)
-                    .frame(width: borderSize.width, height: borderSize.height)
-                if let videoURL = Self.videoURL {
-                    AddToDockVideoPlayer(url: videoURL,
-                                         frameSize: videoFrameSize,
-                                         shouldLoopVideo: false)
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let ratio = width / Design.borderWidth
+
+                ZStack(alignment: .top) {
+                    OnboardingRebrandingImages.AddToDock.promoBorder
+                        .resizable()
+                        .padding(EdgeInsets(top: 0,
+                                            leading: Design.borderHorizontalPadding * ratio,
+                                            bottom: 0,
+                                            trailing: Design.borderHorizontalPadding * ratio))
+                        .frame(width: width, height: Design.borderHeight * ratio)
+                    if let videoURL = Self.videoURL {
+                        AddToDockVideoPlayer(url: videoURL,
+                                             frameSize: CGSize(width: Design.videoWidth * ratio,
+                                                               height: Design.videoHeight * ratio),
+                                             shouldLoopVideo: false)
+                    }
                 }
             }
-            .scaleEffect(scale)
-            .frame(width: borderSize.width * scale, height: borderSize.height * scale)
+            .aspectRatio(Design.borderWidth / Design.borderHeight, contentMode: .fit)
         }
     }
 

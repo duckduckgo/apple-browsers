@@ -26,33 +26,28 @@ extension OnboardingRebranding.OnboardingView {
         @Environment(\.onboardingTheme) private var onboardingTheme
 
         private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-tutorial", withExtension: "mp4")
-        private static let referenceHeight: CGFloat = 844.0
+
+        private enum Design {
+            static let borderWidth: CGFloat = 321
+            static let borderHeight: CGFloat = 239
+            static let videoWidth: CGFloat = 300
+            static let videoHeight: CGFloat = 231
+            static let borderHorizontalPadding: CGFloat = -8
+            static let borderVerticalPadding: CGFloat = -1
+        }
 
         private let title: String
         private let message: String
         private let cta: String
         private let action: () -> Void
-        private let borderSize: CGSize
-        private let borderPadding: EdgeInsets
-        private let videoFrameSize: CGSize
-
-        private var scale: CGFloat {
-            min(UIScreen.main.bounds.height / Self.referenceHeight, 1.0)
-        }
 
         init(title: String,
              message: String,
              cta: String,
-             borderSize: CGSize,
-             borderPadding: EdgeInsets,
-             videoFrameSize: CGSize,
              action: @escaping () -> Void) {
             self.title = title
             self.message = message
             self.cta = cta
-            self.borderSize = borderSize
-            self.borderPadding = borderPadding
-            self.videoFrameSize = videoFrameSize
             self.action = action
         }
 
@@ -71,19 +66,7 @@ extension OnboardingRebranding.OnboardingView {
                         .multilineTextAlignment(.center)
                 ),
                 content: AnyView(
-                    ZStack(alignment: .top) {
-                        OnboardingRebrandingImages.AddToDock.tutorialBorder
-                            .resizable()
-                            .padding(borderPadding)
-                            .frame(width: borderSize.width, height: borderSize.height)
-                        if let videoURL = Self.videoURL {
-                            AddToDockVideoPlayer(url: videoURL,
-                                                 frameSize: videoFrameSize,
-                                                 shouldLoopVideo: true)
-                        }
-                    }
-                    .scaleEffect(scale)
-                    .frame(width: borderSize.width * scale, height: borderSize.height * scale)
+                    videoContent
                 ),
                 title: {
                     Text(title)
@@ -98,6 +81,30 @@ extension OnboardingRebranding.OnboardingView {
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
             )
+        }
+
+        private var videoContent: some View {
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let ratio = width / Design.borderWidth
+
+                ZStack(alignment: .top) {
+                    OnboardingRebrandingImages.AddToDock.tutorialBorder
+                        .resizable()
+                        .padding(EdgeInsets(top: Design.borderVerticalPadding * ratio,
+                                            leading: Design.borderHorizontalPadding * ratio,
+                                            bottom: Design.borderVerticalPadding * ratio,
+                                            trailing: Design.borderHorizontalPadding * ratio))
+                        .frame(width: width, height: Design.borderHeight * ratio)
+                    if let videoURL = Self.videoURL {
+                        AddToDockVideoPlayer(url: videoURL,
+                                             frameSize: CGSize(width: Design.videoWidth * ratio,
+                                                               height: Design.videoHeight * ratio),
+                                             shouldLoopVideo: true)
+                    }
+                }
+            }
+            .aspectRatio(Design.borderWidth / Design.borderHeight, contentMode: .fit)
         }
 
     }

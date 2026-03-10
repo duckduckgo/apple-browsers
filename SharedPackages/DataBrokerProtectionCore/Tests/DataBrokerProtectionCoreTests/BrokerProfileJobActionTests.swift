@@ -718,6 +718,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
+            applicationNameForUserAgent: nil,
             stageDurationCalculator: mockStageCalculator,
             pixelHandler: MockDataBrokerProtectionPixelsHandler(),
             executionConfig: BrokerJobExecutionConfig(),

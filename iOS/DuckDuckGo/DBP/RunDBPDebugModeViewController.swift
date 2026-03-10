@@ -555,6 +555,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         emailConfirmationDataService: emailConfirmationDataService,
                         captchaService: captchaService,
                         featureFlagger: featureFlagger,
+                        applicationNameForUserAgent: nil,
                         stageDurationCalculator: FakeStageDurationCalculator(),
                         pixelHandler: fakePixelHandler,
                         executionConfig: executionConfig

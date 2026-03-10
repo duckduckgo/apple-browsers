@@ -55,7 +55,7 @@ public final class LaunchOptionsHandler {
     /// Returns true if the app is running in any automation mode (WebDriver or UI Tests)
     public var isAutomationSession: Bool {
         let buildType = StandardApplicationBuildType()
-        guard buildType.isDebugBuild || buildType.isReviewBuild else { return false }
+        guard buildType.isDebugBuild || buildType.isReviewBuild else { return isUITesting }
         return isWebDriverAutomationSession || isUITesting
     }
 

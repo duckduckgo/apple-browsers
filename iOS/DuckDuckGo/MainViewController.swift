@@ -3432,6 +3432,10 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onSwitchToTab(_ tab: Tab) {
+        guard tabManager.currentTabsModel.tabExists(tab: tab) else {
+            viewCoordinator.omniBar.endEditing()
+            return
+        }
         let currentTab = tabManager.currentTabsModel.currentTab
         guard tab !== currentTab else {
             viewCoordinator.omniBar.endEditing()
@@ -3542,6 +3546,11 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+        guard tabManager.currentTabsModel.tabExists(tab: tab) else {
+            controller.setEscapeHatch(nil)
+            currentNTPEscapeHatch = nil
+            return
+        }
         let currentTab = tabManager.currentTabsModel.currentTab
         guard tab !== currentTab else { return }
         tabManager.select(tab, forcingMode: true)

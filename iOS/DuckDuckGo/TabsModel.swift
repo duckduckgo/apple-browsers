@@ -250,4 +250,8 @@ public class TabsModel: NSObject, NSCoding, TabsModelManaging {
     func tabExists(withHost host: String) -> Bool {
         return tabs.contains { $0.link?.url.host == host }
     }
+    
+    func tabExists(tab: Tab) -> Bool {
+        return tabs.contains { $0 === tab }
+    }
 }

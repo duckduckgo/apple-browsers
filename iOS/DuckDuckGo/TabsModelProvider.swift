@@ -49,6 +49,7 @@ protocol TabsModelManaging: AnyObject, TabsModelReading {
     func removeTabs(_ tabs: [Tab])
     func remove(tab: Tab)
     func clearAll()
+    func tabExists(tab: Tab) -> Bool
     func tabExists(withHost host: String) -> Bool
 }
 

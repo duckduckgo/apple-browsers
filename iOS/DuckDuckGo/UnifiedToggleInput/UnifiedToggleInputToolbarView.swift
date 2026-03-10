@@ -63,7 +63,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var modelName: String = "4o-mini" {
-        didSet { modelChipLabel.text = modelName }
+        didSet { updateModelChipConfiguration() }
     }
 
     var modelPickerMenu: UIMenu? {
@@ -94,50 +94,34 @@ final class UnifiedToggleInputToolbarView: UIView {
     )
 
     private lazy var modelChipButton: UIButton = {
-        let button = UIButton(type: .system)
+        var config = UIButton.Configuration.plain()
+        config.title = modelName
+        config.image = UIImage(systemName: "chevron.down")?.withConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+        )
+        config.imagePlacement = .trailing
+        config.imagePadding = Constants.chipSpacing
+        config.contentInsets = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: Constants.chipHorizontalPadding,
+            bottom: 0,
+            trailing: Constants.chipHorizontalPadding
+        )
+        config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+            var updated = attributes
+            updated.font = .systemFont(ofSize: Constants.chipFontSize, weight: .regular)
+            return updated
+        }
+        config.background.strokeColor = UIColor(designSystemColor: .lines)
+        config.background.strokeWidth = 1
+        config.cornerStyle = .capsule
+
+        let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(modelPickerTapped), for: .touchUpInside)
-
-        button.addSubview(modelChipLabel)
-        button.addSubview(modelChipChevron)
-
-        button.layer.cornerRadius = Constants.chipCornerRadius
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
-        button.clipsToBounds = true
-
-        NSLayoutConstraint.activate([
-            button.heightAnchor.constraint(equalToConstant: Constants.chipHeight),
-            modelChipLabel.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: Constants.chipHorizontalPadding),
-            modelChipLabel.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-            modelChipChevron.leadingAnchor.constraint(equalTo: modelChipLabel.trailingAnchor, constant: Constants.chipSpacing),
-            modelChipChevron.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -Constants.chipHorizontalPadding),
-            modelChipChevron.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-            modelChipChevron.widthAnchor.constraint(equalToConstant: 12),
-            modelChipChevron.heightAnchor.constraint(equalToConstant: 12),
-        ])
+        button.heightAnchor.constraint(equalToConstant: Constants.chipHeight).isActive = true
 
         return button
-    }()
-
-    private lazy var modelChipLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = modelName
-        label.font = .systemFont(ofSize: Constants.chipFontSize, weight: .regular)
-        label.textColor = UIColor(designSystemColor: .textPrimary)
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        return label
-    }()
-
-    private lazy var modelChipChevron: UIImageView = {
-        let imageView = UIImageView(image: UIImage(systemName: "chevron.down")?.withConfiguration(
-            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
-        ))
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.tintColor = UIColor(designSystemColor: .textPrimary)
-        imageView.contentMode = .scaleAspectFit
-        return imageView
     }()
 
     private lazy var submitButton: UIButton = {
@@ -189,7 +173,6 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        modelChipButton.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
     }
 
     // MARK: - Setup
@@ -241,6 +224,10 @@ final class UnifiedToggleInputToolbarView: UIView {
             button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
         ])
         return button
+    }
+
+    private func updateModelChipConfiguration() {
+        modelChipButton.configuration?.title = modelName
     }
 
     private func updateSubmitButtonState() {

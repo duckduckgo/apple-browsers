@@ -80,7 +80,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String? = nil,
+                applicationNameForUserAgent: String?,
                 vpnBypassService: VPNBypassFeatureProvider? = nil,
                 jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
                 wideEvent: WideEventManaging? = nil,

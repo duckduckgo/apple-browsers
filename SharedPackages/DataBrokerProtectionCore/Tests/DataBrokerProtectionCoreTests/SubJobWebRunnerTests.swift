@@ -124,6 +124,7 @@ private extension DataBrokerJobTests {
                                            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                            captchaService: CaptchaServiceMock(),
                                            featureFlagger: MockDBPFeatureFlagger(),
+                                           applicationNameForUserAgent: nil,
                                            stageCalculator: MockStageDurationCalculator(),
                                            pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                            executionConfig: BrokerJobExecutionConfig(),

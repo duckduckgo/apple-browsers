@@ -27,7 +27,7 @@ public final class DataBrokerRunCustomJSONViewController: NSViewController {
 
     public init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String? = nil) {
+                applicationNameForUserAgent: String?) {
         self.authenticationManager = authenticationManager
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgent = applicationNameForUserAgent

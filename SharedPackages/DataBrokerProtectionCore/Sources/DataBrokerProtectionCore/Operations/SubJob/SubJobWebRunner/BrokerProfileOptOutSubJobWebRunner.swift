@@ -92,7 +92,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String? = nil,
+                applicationNameForUserAgent: String?,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
                 stageCalculator: StageDurationCalculator,

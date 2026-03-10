@@ -231,7 +231,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
          featureFlagger: DBPFeatureFlagging,
-         applicationNameForUserAgent: String? = nil) {
+         applicationNameForUserAgent: String?) {
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
         self.featureFlagger = featureFlagger
         self.applicationNameForUserAgent = applicationNameForUserAgent

@@ -78,9 +78,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown
-    @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
-        didSet { viewController.isModelChipHidden = (aiChatInputBoxVisibility == .hidden) }
-    }
+    @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown
 
     // MARK: - Properties
 
@@ -102,8 +100,9 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     private let modelsService: AIChatModelsProviding
     private var preferences: AIChatPreferencesPersisting
-    private(set) var models: [AIChatModel] = []
+    var models: [AIChatModel] = []
     private var modelsFetchTask: Task<Void, Never>?
+    private(set) var hasSubmittedPrompt = false
 
     var persistedModelId: String {
         preferences.selectedModelId ?? models.first(where: { $0.entityHasAccess })?.id ?? ""
@@ -158,7 +157,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
 
     // MARK: - Tab Binding
 
-    func bindToTab(_ userScript: AIChatUserScript) {
+    func bindToTab(_ userScript: AIChatUserScript, hasExistingChat: Bool = false) {
         let newIdentifier = ObjectIdentifier(userScript)
         if boundUserScriptIdentifier == newIdentifier {
             boundUserScript = userScript
@@ -170,6 +169,10 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         boundUserScript = userScript
         boundUserScriptIdentifier = newIdentifier
         userScript.inputBoxHandler = self
+        if hasExistingChat && !hasSubmittedPrompt {
+            hasSubmittedPrompt = true
+            updateModelChipVisibility()
+        }
         if hadPreviousScript {
             resetInputState()
         }
@@ -179,6 +182,8 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
         boundUserScriptIdentifier = nil
+        hasSubmittedPrompt = false
+        updateModelChipVisibility()
         resetSessionState()
     }
 
@@ -233,6 +238,8 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         let effectiveInputMode = isToggleEnabled ? inputMode : .search
         displayState = .inline(.active)
         self.inputMode = effectiveInputMode
+        hasSubmittedPrompt = false
+        updateModelChipVisibility()
         fetchModels()
         viewController.cardPosition = cardPosition
         viewController.usesInlineEditingMargins = (cardPosition == .top)
@@ -404,52 +411,52 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         }
     }
 
+    func startNewChat() {
+        hasSubmittedPrompt = false
+        updateModelChipVisibility()
+        didPressNewChatButton.send()
+    }
+
     func updateSelectedModel(_ modelId: String) {
         preferences.selectedModelId = modelId
         updateModelChipLabel()
     }
 
-    func buildModelPickerMenu() -> UIMenu {
-        let accessible = models.filter { $0.entityHasAccess }
-        let premium = models.filter { !$0.entityHasAccess }
-        let selectedId = persistedModelId
+    private func buildModelMenuDescription() -> UnifiedToggleInputModelMenu {
+        UnifiedToggleInputModelMenu.build(
+            models: models,
+            selectedId: persistedModelId,
+            isBottomAnchored: viewController.cardPosition == .bottom,
+            advancedSectionTitle: UserText.aiChatAdvancedModelsMenuTitle
+        )
+    }
 
-        let accessibleActions = accessible.map { model in
-            UIAction(
-                title: model.name,
-                image: model.menuIcon,
-                state: model.id == selectedId ? .on : .off
-            ) { [weak self] _ in
-                self?.updateSelectedModel(model.id)
+    private func buildModelPickerMenu() -> UIMenu {
+        let description = buildModelMenuDescription()
+        let modelLookup = Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0) })
+
+        let uiSections: [UIMenu] = description.sections.map { section in
+            let actions = section.items.map { item -> UIAction in
+                let model = modelLookup[item.modelId]
+                return UIAction(
+                    title: item.name,
+                    image: model?.menuIcon,
+                    attributes: item.isDisabled ? .disabled : [],
+                    state: item.isSelected ? .on : .off
+                ) { [weak self] _ in
+                    self?.updateSelectedModel(item.modelId)
+                }
             }
-        }
 
-        let accessibleMenu = UIMenu(title: "", options: [.displayInline, .singleSelection], children: accessibleActions)
-        var children: [UIMenuElement] = [accessibleMenu]
-
-        if !premium.isEmpty {
-            let premiumActions = premium.map { model in
-                UIAction(
-                    title: model.name,
-                    image: model.menuIcon,
-                    attributes: .disabled,
-                    state: model.id == selectedId ? .on : .off
-                ) { _ in }
+            var options: UIMenu.Options = .displayInline
+            if !section.items.contains(where: { $0.isDisabled }) {
+                options.insert(.singleSelection)
             }
-            let advancedMenu = UIMenu(
-                title: UserText.aiChatAdvancedModelsMenuTitle,
-                options: .displayInline,
-                children: premiumActions
-            )
-            children.append(advancedMenu)
+
+            return UIMenu(title: section.title, options: options, children: actions)
         }
 
-        let isBottomAnchored = viewController.cardPosition == .bottom
-        if isBottomAnchored {
-            children.reverse()
-        }
-
-        return UIMenu(children: children)
+        return UIMenu(children: uiSections)
     }
 
     private func updateModelChipLabel() {
@@ -462,6 +469,10 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     }
 
     // MARK: - Private
+
+    private func updateModelChipVisibility() {
+        viewController.isModelChipHidden = hasSubmittedPrompt
+    }
 
     private func resetSessionState() {
         viewController.text = ""
@@ -497,6 +508,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
+            hasSubmittedPrompt = true
+            updateModelChipVisibility()
             if isInlineEditingSession {
                 deactivateInlineEditing()
             } else {

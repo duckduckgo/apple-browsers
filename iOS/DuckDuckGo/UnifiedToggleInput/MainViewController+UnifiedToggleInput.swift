@@ -162,7 +162,8 @@ extension MainViewController {
 
         if tab.isAITab {
             if let userScript = tab.userScripts?.aiChatUserScript {
-                coordinator.bindToTab(userScript)
+                let hasExistingChat = tab.url?.duckAIChatID != nil
+                coordinator.bindToTab(userScript, hasExistingChat: hasExistingChat)
             }
             if viewCoordinator.navigationBarContainer.alpha < 0.99 ||
                 viewCoordinator.toolbar.alpha < 0.99 ||
@@ -456,6 +457,8 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {
+        unifiedToggleInputCoordinator?.startNewChat()
+        unifiedToggleInputCoordinator?.showCollapsed()
         currentTab?.submitStartChatAction()
     }
 

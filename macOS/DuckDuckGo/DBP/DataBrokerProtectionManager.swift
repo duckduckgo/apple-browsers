@@ -100,7 +100,8 @@ public final class DataBrokerProtectionManager {
         let localBrokerService = LocalBrokerJSONService(resources: FileResources(runTypeProvider: settings),
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
-                                                        runTypeProvider: settings)
+                                                        runTypeProvider: settings,
+                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated })
         let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                                     settings: settings,
                                                     vault: vault,

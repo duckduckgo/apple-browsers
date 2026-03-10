@@ -38,6 +38,12 @@ import AIChatTestingUtilities
 
 // swiftlint:disable force_try
 
+private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
+    func isEligibleForNTPAfterIdle() -> Bool { false }
+    func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
+    func idleThresholdSeconds() -> Int { 60 }
+}
+
  @MainActor
  final class OnboardingDaxFavouritesTests: XCTestCase {
     private var sut: MainViewController!
@@ -111,6 +117,7 @@ import AIChatTestingUtilities
                                     contentScopeExperimentManager: MockContentScopeExperimentManager(),
                                     appSettings: AppDependencyProvider.shared.appSettings,
                                     textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                    autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                                     websiteDataManager: mockWebsiteDataManager,
                                     fireproofing: fireproofing,
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
@@ -122,7 +129,8 @@ import AIChatTestingUtilities
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     privacyStats: MockPrivacyStats(),
                                     voiceSearchHelper: MockVoiceSearchHelper(),
-                                    launchSourceManager: MockLaunchSourceManager()
+                                    launchSourceManager: MockLaunchSourceManager(),
+                                    darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
@@ -131,6 +139,7 @@ import AIChatTestingUtilities
                                         bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
                                         fireproofing: fireproofing,
                                         textZoomCoordinatorProvider: textZoomCoordinatorProvider,
+                                        autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: mockConfigManager,
@@ -156,6 +165,7 @@ import AIChatTestingUtilities
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
             featureFlagger: featureFlagger,
+            idleReturnEligibilityManager: MockIdleReturnEligibilityManagerForMainVC(),
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,
             textZoomCoordinatorProvider: textZoomCoordinatorProvider,
@@ -240,16 +250,6 @@ import AIChatTestingUtilities
         XCTAssertTrue(contextualOnboardingLogicMock.didCallEnableAddFavoriteFlow)
     }
 
-}
-
-private struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
-    var isFeatureEnabled: Bool = false
-    var isForceDarkModeEnabled: Bool = false
-    var excludedDomains: [String] = []
-    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
-    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
-    func setForceDarkModeEnabled(_ enabled: Bool) {}
-    func themeDidChange() {}
 }
 
 // swiftlint:enable force_try

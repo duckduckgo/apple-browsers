@@ -503,14 +503,15 @@ final class JobQueueManagerTests: XCTestCase {
                                         withBrokerURL: "broker.com",
                                         version: "1.0.0",
                                         stepType: .optOut,
-                                        dataBrokerParent: "parent.com")
+                                        dataBrokerParent: "parent.com",
+                                        isFreeScan: false)
 
         // Then
         guard let lastEvent = mockPixelHandler.lastFiredEvent else {
             return XCTFail("Expected pixel to be fired")
         }
 
-        if case let .actionFailedError(_, actionId, message, dataBroker, version, stepType, parent) = lastEvent {
+        if case let .actionFailedError(_, actionId, message, dataBroker, version, stepType, parent, _) = lastEvent {
             XCTAssertEqual(actionId, "action-id")
             XCTAssertEqual(message, "something happened")
             XCTAssertEqual(dataBroker, "broker.com")
@@ -541,14 +542,15 @@ final class JobQueueManagerTests: XCTestCase {
                                         withBrokerURL: "broker.com",
                                         version: "1.0.0",
                                         stepType: nil,
-                                        dataBrokerParent: nil)
+                                        dataBrokerParent: nil,
+                                        isFreeScan: false)
 
         // Then
         guard let lastEvent = mockPixelHandler.lastFiredEvent else {
             return XCTFail("Expected pixel to be fired")
         }
 
-        if case let .actionFailedError(_, _, _, _, _, stepType, parent) = lastEvent {
+        if case let .actionFailedError(_, _, _, _, _, stepType, parent, _) = lastEvent {
             XCTAssertNil(stepType)
             XCTAssertNil(parent)
         } else {
@@ -557,6 +559,134 @@ final class JobQueueManagerTests: XCTestCase {
 
         XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["stepType"], "unknown")
         XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["parent"], "")
+    }
+
+    // MARK: - Error pixel isFreeScan tests
+
+    func testWhenHttpErrorFired_withIsFreeScanTrue_paramIncludesFreeScan() {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        mockPixelHandler.clear()
+
+        // When
+        sut.dataBrokerOperationDidError(DataBrokerProtectionError.httpError(code: 500),
+                                        withBrokerURL: "broker.com",
+                                        version: "1.0",
+                                        stepType: .scan,
+                                        dataBrokerParent: nil,
+                                        isFreeScan: true)
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["free_scan"], "true")
+    }
+
+    func testWhenHttpErrorFired_withIsFreeScanFalse_paramIncludesFreeScanFalse() {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        mockPixelHandler.clear()
+
+        // When
+        sut.dataBrokerOperationDidError(DataBrokerProtectionError.httpError(code: 500),
+                                        withBrokerURL: "broker.com",
+                                        version: "1.0",
+                                        stepType: .scan,
+                                        dataBrokerParent: nil,
+                                        isFreeScan: false)
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["free_scan"], "false")
+    }
+
+    func testWhenHttpErrorFired_withIsFreeScanNil_paramOmitsFreeScan() {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        mockPixelHandler.clear()
+
+        // When
+        sut.dataBrokerOperationDidError(DataBrokerProtectionError.httpError(code: 500),
+                                        withBrokerURL: "broker.com",
+                                        version: "1.0",
+                                        stepType: .scan,
+                                        dataBrokerParent: nil,
+                                        isFreeScan: nil)
+
+        // Then
+        XCTAssertNil(mockPixelHandler.lastFiredEvent?.parameters?["free_scan"])
+    }
+
+    func testWhenActionFailedErrorFired_withIsFreeScanTrue_paramIncludesFreeScan() {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        mockPixelHandler.clear()
+
+        // When
+        sut.dataBrokerOperationDidError(DataBrokerProtectionError.actionFailed(actionID: "id", message: "msg"),
+                                        withBrokerURL: "broker.com",
+                                        version: "1.0",
+                                        stepType: .scan,
+                                        dataBrokerParent: nil,
+                                        isFreeScan: true)
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["free_scan"], "true")
+    }
+
+    func testWhenOtherErrorFired_withIsFreeScanTrue_paramIncludesFreeScan() {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        mockPixelHandler.clear()
+
+        // When
+        sut.dataBrokerOperationDidError(DataBrokerProtectionError.cancelled,
+                                        withBrokerURL: "broker.com",
+                                        version: "1.0",
+                                        stepType: nil,
+                                        dataBrokerParent: nil,
+                                        isFreeScan: true)
+
+        // Then
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["free_scan"], "true")
+    }
+
+    func testWhenOtherErrorFired_withIsFreeScanNil_paramOmitsFreeScan() {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        mockPixelHandler.clear()
+
+        // When
+        sut.dataBrokerOperationDidError(DataBrokerProtectionError.cancelled,
+                                        withBrokerURL: "broker.com",
+                                        version: "1.0",
+                                        stepType: nil,
+                                        dataBrokerParent: nil,
+                                        isFreeScan: nil)
+
+        // Then
+        XCTAssertNil(mockPixelHandler.lastFiredEvent?.parameters?["free_scan"])
     }
 
     func testWhenStopScheduledOperations_andCurrentModeIsImmediate_thenCurrentOperationsAreNotInterrupted() async throws {

@@ -23,6 +23,7 @@ import Persistence
 import Core
 import UIKit
 import AIChat
+import PrivacyConfig
 import enum Common.DevicePlatform
 
 // MARK: - TextEntryMode Enum
@@ -83,6 +84,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -102,7 +104,10 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     var isUsingFadeOutAnimation: Bool {
-        devicePlatform.isIphone
+        guard featureFlagger.isFeatureOn(.unifiedToggleInput) else {
+            return devicePlatform.isIphone
+        }
+        return false
     }
 
     var isVoiceSearchEnabled: Bool {
@@ -156,12 +161,14 @@ final class SwitchBarHandler: SwitchBarHandling {
          aiChatSettings: AIChatSettingsProvider,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         self.aiChatSettings = aiChatSettings
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
+        self.featureFlagger = featureFlagger
         self.devicePlatform = devicePlatform
 
         // Set up app lifecycle observers to reset session flags
@@ -178,8 +185,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     // MARK: - SwitchBarHandling Implementation
     func updateCurrentText(_ text: String) {
         currentText = text
-        /// URL.webUrl converts spaces to %20, but this is not a concern in this context, as we are validating the user's input in the address bar to ensure it is a valid URL.
-        isCurrentTextValidURL = !text.contains(where: { $0.isWhitespace }) && URL.webUrl(from: text) != nil
+        isCurrentTextValidURL = URL.isValidAddressBarURLInput(text)
         updateButtonState(currentText: text)
     }
 

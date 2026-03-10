@@ -21,6 +21,32 @@ import Foundation
 import Core
 import WebExtensions
 
+@available(iOS 18.4, *)
+private extension DuckDuckGoWebExtensionType {
+
+    var installedPixel: Pixel.Event {
+        switch self {
+        case .embedded: return .webExtensionEmbeddedInstalled
+        case .darkReader: return .webExtensionDarkReaderInstalled
+        }
+    }
+
+    var upgradedPixel: Pixel.Event {
+        switch self {
+        case .embedded: return .webExtensionEmbeddedUpgraded
+        case .darkReader: return .webExtensionDarkReaderUpgraded
+        }
+    }
+
+    var installErrorPixel: Pixel.Event {
+        switch self {
+        case .embedded: return .webExtensionEmbeddedInstallError
+        case .darkReader: return .webExtensionDarkReaderInstallError
+        }
+    }
+}
+
+@available(iOS 18.4, *)
 struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
 
     func fire(_ event: WebExtensionPixelEvent) {
@@ -69,12 +95,12 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                 error: error
             )
-        case .embeddedInstalled:
+        case .embeddedInstalled(let type):
             DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionEmbeddedInstalled,
+                pixel: type.installedPixel,
                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
             )
-        case .embeddedUpgraded(let fromVersion, let toVersion):
+        case .embeddedUpgraded(let type, let fromVersion, let toVersion):
             var params: [String: String] = [:]
             if let fromVersion {
                 params["from_version"] = fromVersion
@@ -83,13 +109,13 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                 params["to_version"] = toVersion
             }
             DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionEmbeddedUpgraded,
+                pixel: type.upgradedPixel,
                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                 withAdditionalParameters: params
             )
-        case .embeddedInstallError(let error):
+        case .embeddedInstallError(let type, let error):
             DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionEmbeddedInstallError,
+                pixel: type.installErrorPixel,
                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                 error: error
             )

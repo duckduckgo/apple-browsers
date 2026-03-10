@@ -257,6 +257,7 @@ final class TabManagerExternalLaunchTests {
             contentScopeExperimentManager: MockContentScopeExperimentManager(),
             appSettings: AppSettingsMock(),
             textZoomCoordinatorProvider: MockTextZoomCoordinatorProvider(),
+            autoconsentManagementProvider: MockAutoconsentManagementProvider(),
             websiteDataManager: MockWebsiteDataManager(),
             fireproofing: MockFireproofing(),
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
@@ -268,7 +269,8 @@ final class TabManagerExternalLaunchTests {
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             privacyStats: MockPrivacyStats(),
             voiceSearchHelper: MockVoiceSearchHelper(),
-            launchSourceManager: launchSourceManager
+            launchSourceManager: launchSourceManager,
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
         )
     }
 }

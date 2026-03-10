@@ -33,6 +33,28 @@ private final class MockEffectiveOptionResolver: AfterInactivityEffectiveOptionR
     }
 }
 
+private final class StubDaxDialogsSettings: DaxDialogsSettings {
+    var fireButtonEducationShownOrExpired: Bool = false
+    var isDismissed: Bool
+    var homeScreenMessagesSeen: Int = 0
+    var tryAnonymousSearchShown: Bool = false
+    var tryVisitASiteShown: Bool = false
+    var browsingAfterSearchShown: Bool = false
+    var browsingWithTrackersShown: Bool = false
+    var browsingWithoutTrackersShown: Bool = false
+    var browsingMajorTrackingSiteShown: Bool = false
+    var browsingWithoutTrackersExperimentShown: Bool = false
+    var fireMessageExperimentShown: Bool = false
+    var fireButtonPulseDateShown: Date?
+    var privacyButtonPulseShown: Bool = false
+    var browsingFinalDialogShown: Bool = false
+    var subscriptionPromotionDialogShown: Bool = false
+
+    init(isDismissed: Bool = true) {
+        self.isDismissed = isDismissed
+    }
+}
+
 @Suite("Idle Return Eligibility Manager")
 struct IdleReturnEligibilityManagerTests {
 
@@ -52,7 +74,9 @@ struct IdleReturnEligibilityManagerTests {
     private func makeManager(
         featureOn: Bool = true,
         effectiveOption: AfterInactivityOption = .newTab,
-        thresholdSeconds: Int = 60
+        thresholdSeconds: Int = 60,
+        hasSeenOnboarding: Bool = true,
+        contextualOnboardingDismissed: Bool = true
     ) -> IdleReturnEligibilityManager {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: featureOn ? [.showNTPAfterIdleReturn] : [])
         let effectiveResolver = MockEffectiveOptionResolver()
@@ -61,7 +85,9 @@ struct IdleReturnEligibilityManagerTests {
         return IdleReturnEligibilityManager(
             featureFlagger: featureFlagger,
             effectiveOptionResolver: effectiveResolver,
-            thresholdResolver: thresholdResolver
+            thresholdResolver: thresholdResolver,
+            tutorialSettings: MockTutorialSettings(hasSeenOnboarding: hasSeenOnboarding),
+            daxDialogsSettings: StubDaxDialogsSettings(isDismissed: contextualOnboardingDismissed)
         )
     }
 
@@ -80,6 +106,18 @@ struct IdleReturnEligibilityManagerTests {
     @Test("When effective option is Last Used Tab then isEligibleForNTPAfterIdle returns false")
     func whenEffectiveOptionIsLastUsedTabThenIsEligibleReturnsFalse() {
         let manager = makeManager(featureOn: true, effectiveOption: .lastUsedTab)
+        #expect(!manager.isEligibleForNTPAfterIdle())
+    }
+
+    @Test("When linear onboarding has not been seen then isEligibleForNTPAfterIdle returns false")
+    func whenLinearOnboardingNotSeenThenIsEligibleReturnsFalse() {
+        let manager = makeManager(featureOn: true, effectiveOption: .newTab, hasSeenOnboarding: false)
+        #expect(!manager.isEligibleForNTPAfterIdle())
+    }
+
+    @Test("When contextual onboarding is still active then isEligibleForNTPAfterIdle returns false")
+    func whenContextualOnboardingActiveReturnsFalse() {
+        let manager = makeManager(featureOn: true, effectiveOption: .newTab, contextualOnboardingDismissed: false)
         #expect(!manager.isEligibleForNTPAfterIdle())
     }
 

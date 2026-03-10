@@ -33,12 +33,18 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
     private let featureFlagger: FeatureFlagger
     private let effectiveOptionResolver: AfterInactivityEffectiveOptionResolving
     private let thresholdResolver: IdleReturnThresholdResolver
+    private let tutorialSettings: TutorialSettings
+    private let daxDialogsSettings: DaxDialogsSettings
 
     init(featureFlagger: FeatureFlagger,
          keyValueStore: ThrowingKeyValueStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil) {
+         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil,
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+         daxDialogsSettings: DaxDialogsSettings = DefaultDaxDialogsSettings()) {
         self.featureFlagger = featureFlagger
+        self.tutorialSettings = tutorialSettings
+        self.daxDialogsSettings = daxDialogsSettings
         let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
         self.effectiveOptionResolver = AfterInactivityEffectiveOptionResolver(storage: storage)
         self.thresholdResolver = IdleReturnThresholdResolver(
@@ -49,14 +55,23 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
 
     init(featureFlagger: FeatureFlagger,
          effectiveOptionResolver: AfterInactivityEffectiveOptionResolving,
-         thresholdResolver: IdleReturnThresholdResolver) {
+         thresholdResolver: IdleReturnThresholdResolver,
+         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+         daxDialogsSettings: DaxDialogsSettings = DefaultDaxDialogsSettings()) {
         self.featureFlagger = featureFlagger
         self.effectiveOptionResolver = effectiveOptionResolver
         self.thresholdResolver = thresholdResolver
+        self.tutorialSettings = tutorialSettings
+        self.daxDialogsSettings = daxDialogsSettings
     }
 
+    /// Requires both linear onboarding (`hasSeenOnboarding`) and contextual
+    /// onboarding (`isDismissed`) to be complete.
     func isEligibleForNTPAfterIdle() -> Bool {
-        featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) && effectiveAfterInactivityOption() == .newTab
+        tutorialSettings.hasSeenOnboarding
+            && daxDialogsSettings.isDismissed
+            && featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+            && effectiveAfterInactivityOption() == .newTab
     }
 
     func effectiveAfterInactivityOption() -> AfterInactivityOption {

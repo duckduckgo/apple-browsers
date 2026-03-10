@@ -30,7 +30,7 @@ protocol AIChatContextualModeFeatureProviding {
     /// - The `contextualDuckAIMode` sub-feature flag is enabled
     /// - The AI Chat URL domain is `duck.ai`
     /// - On iPhone: the `pageContextFeature` flag is enabled
-    /// - On iPad: the `ipadPageContext` flag is enabled
+    /// - On iPad: the `iPadPageContext` flag is enabled
     var isAvailable: Bool { get }
 }
 
@@ -60,6 +60,6 @@ struct AIChatContextualModeFeature: AIChatContextualModeFeatureProviding {
         if devicePlatform.isIphone {
             return featureFlagger.isFeatureOn(.pageContextFeature)
         }
-        return featureFlagger.isFeatureOn(.ipadPageContext)
+        return featureFlagger.isFeatureOn(.iPadPageContext)
     }
 }

@@ -77,7 +77,7 @@ final class AIChatContextualModeFeatureTests: XCTestCase {
 
     func testWhenIPadAndIpadPageContextEnabledThenIsAvailable() {
         let feature = makeFeature(
-            enabledFlags: [.contextualDuckAIMode, .ipadPageContext],
+            enabledFlags: [.contextualDuckAIMode, .iPadPageContext],
             isIphone: false
         )
         XCTAssertTrue(feature.isAvailable)
@@ -101,7 +101,7 @@ final class AIChatContextualModeFeatureTests: XCTestCase {
 
     func testWhenIPadAndURLDomainIsNotDuckAIThenIsNotAvailable() {
         let feature = makeFeature(
-            enabledFlags: [.contextualDuckAIMode, .ipadPageContext],
+            enabledFlags: [.contextualDuckAIMode, .iPadPageContext],
             isIphone: false,
             aiChatURL: Self.nonDuckAIURL
         )

@@ -275,7 +275,7 @@ public enum FeatureFlag: String {
     case multiplePageContexts
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213608678718359?focus=true
-    case ipadPageContext
+    case iPadPageContext
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
@@ -470,7 +470,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .aiChatAutoAttachContextByDefault,
              .aiChatSync,
              .multiplePageContexts,
-             .ipadPageContext,
+             .iPadPageContext,
              .aiChatSuggestions,
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
@@ -707,8 +707,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
         case .multiplePageContexts:
             return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
-        case .ipadPageContext:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.ipadPageContext))
+        case .iPadPageContext:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.iPadPageContext))
         case .aiChatSync:
             return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:

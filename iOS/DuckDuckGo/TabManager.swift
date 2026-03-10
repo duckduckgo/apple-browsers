@@ -220,12 +220,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
     }
 
-    func resolveTabsModel(for tab: Tab) -> ResolvedTabsModel {
-        let model = tabsModel(for: tab.mode)
-        let isActiveMode = (tab.mode == currentBrowsingMode)
-        return ResolvedTabsModel(model: model, isActiveMode: isActiveMode)
-    }
-
     @MainActor
     func setBrowsingMode(_ mode: BrowsingMode) {
         guard mode != currentBrowsingMode else {
@@ -292,7 +286,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
                                  andLoadRequest: url == nil ? nil : URLRequest.userInitiated(url!),
-                                 consumeCookies: !resolveTabsModel(for: tab).model.hasActiveTabs)
+                                 consumeCookies: !currentTabsModel.hasActiveTabs)
         controller.delegate = delegate
         controller.aiChatContentHandlingDelegate = aiChatContentDelegate
         controller.loadViewIfNeeded()

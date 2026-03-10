@@ -167,7 +167,8 @@ extension MainViewController {
         if tab.isAITab {
             viewCoordinator.statusBackground.backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
             if let userScript = tab.userScripts?.aiChatUserScript {
-                coordinator.bindToTab(userScript)
+                let hasExistingChat = tab.url?.duckAIChatID != nil
+                coordinator.bindToTab(userScript, hasExistingChat: hasExistingChat)
             }
             if coordinator.isAITabState && viewCoordinator.isNavigationChromeHidden {
                 return
@@ -487,6 +488,8 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewChat() {
+        unifiedToggleInputCoordinator?.startNewChat()
+        unifiedToggleInputCoordinator?.showCollapsed()
         currentTab?.submitStartChatAction()
     }
 

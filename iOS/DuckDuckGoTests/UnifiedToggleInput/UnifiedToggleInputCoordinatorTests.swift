@@ -27,11 +27,13 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     private var sut: UnifiedToggleInputCoordinator!
     private var mockDelegate: MockUnifiedToggleInputDelegate!
+    private var mockPreferences: MockAIChatPreferences!
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
         super.setUp()
-        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true)
+        mockPreferences = MockAIChatPreferences()
+        sut = UnifiedToggleInputCoordinator(isToggleEnabled: true, preferences: mockPreferences)
         mockDelegate = MockUnifiedToggleInputDelegate()
         sut.delegate = mockDelegate
     }
@@ -40,6 +42,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         cancellables.removeAll()
         sut = nil
         mockDelegate = nil
+        mockPreferences = nil
         super.tearDown()
     }
 
@@ -771,6 +774,142 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.viewController.handler.stopGeneratingButtonTapped()
         waitForExpectations(timeout: 1)
     }
+
+    // MARK: - Model Selection: persistedModelId
+
+    func test_persistedModelId_returnsPreferencesValue() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.models = [makeModel(id: "gpt-5", access: true)]
+        XCTAssertEqual(sut.persistedModelId, "gpt-5")
+    }
+
+    func test_persistedModelId_fallsBackToFirstAccessibleModel() {
+        mockPreferences.selectedModelId = nil
+        sut.models = [
+            makeModel(id: "premium", access: false),
+            makeModel(id: "free", access: true)
+        ]
+        XCTAssertEqual(sut.persistedModelId, "free")
+    }
+
+    func test_persistedModelId_fallsBackToEmptyString() {
+        mockPreferences.selectedModelId = nil
+        sut.models = []
+        XCTAssertEqual(sut.persistedModelId, "")
+    }
+
+    // MARK: - Model Selection: currentModelId
+
+    func test_currentModelId_returnsPreferencesValue() {
+        mockPreferences.selectedModelId = "gpt-5"
+        XCTAssertEqual(sut.currentModelId, "gpt-5")
+    }
+
+    func test_currentModelId_returnsNilWhenNoPreference() {
+        mockPreferences.selectedModelId = nil
+        XCTAssertNil(sut.currentModelId)
+    }
+
+    // MARK: - Model Selection: updateSelectedModel
+
+    func test_updateSelectedModel_persistsToPreferences() {
+        sut.updateSelectedModel("gpt-5")
+        XCTAssertEqual(mockPreferences.selectedModelId, "gpt-5")
+    }
+
+    // MARK: - Model Selection: supportsImageUpload
+
+    func test_selectedModelSupportsImageUpload_returnsTrue_whenModelsEmpty() {
+        sut.models = []
+        XCTAssertTrue(sut.selectedModelSupportsImageUpload)
+    }
+
+    func test_selectedModelSupportsImageUpload_returnsFalse_whenSelectedModelDoesNot() {
+        mockPreferences.selectedModelId = "no-images"
+        sut.models = [makeModel(id: "no-images", access: true, supportsImageUpload: false)]
+        XCTAssertFalse(sut.selectedModelSupportsImageUpload)
+    }
+
+    func test_selectedModelSupportsImageUpload_returnsTrue_whenSelectedModelDoes() {
+        mockPreferences.selectedModelId = "has-images"
+        sut.models = [makeModel(id: "has-images", access: true, supportsImageUpload: true)]
+        XCTAssertTrue(sut.selectedModelSupportsImageUpload)
+    }
+
+    // MARK: - Submit passes modelId
+
+    func test_submitAIChat_noBoundScript_passesModelIdToDelegate() {
+        mockPreferences.selectedModelId = "gpt-5"
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertEqual(mockDelegate.submittedModelId, "gpt-5")
+    }
+
+    func test_submitAIChat_noBoundScript_passesNilModelId_whenNoPreference() {
+        mockPreferences.selectedModelId = nil
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertNil(mockDelegate.submittedModelId)
+    }
+
+    // MARK: - Model Chip Visibility
+
+    func test_modelChip_visibleByDefault() {
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_modelChip_hiddenAfterPromptSubmit() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    func test_modelChip_visibleAfterNewChat() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.startNewChat()
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_modelChip_hiddenWhenBindingWithExistingChat() {
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+    }
+
+    func test_modelChip_visibleWhenBindingWithNewChat() {
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript, hasExistingChat: false)
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_modelChip_visibleAfterUnbind() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+        sut.unbind()
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_modelChip_visibleAfterNewChatFollowingRestore() {
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
+        sut.startNewChat()
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_modelChip_notAffectedBySearchSubmit() {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .search)
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    // MARK: - Helpers
+
+    private func makeModel(id: String, access: Bool, supportsImageUpload: Bool = false) -> AIChatModel {
+        AIChatModel(id: id, name: id, provider: .unknown, supportsImageUpload: supportsImageUpload, entityHasAccess: access)
+    }
 }
 
 // MARK: - Mock Delegate
@@ -778,10 +917,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 @MainActor
 private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedPrompt: String?
+    var submittedModelId: String?
     var submittedQuery: String?
     var didRequestVoiceSearch = false
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String) { submittedPrompt = prompt }
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?) {
+        submittedPrompt = prompt
+        submittedModelId = modelId
+    }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearch = true }
+}
+
+private final class MockAIChatPreferences: AIChatPreferencesPersisting {
+    var selectedModelId: String?
 }

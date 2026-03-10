@@ -108,10 +108,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         preferences.selectedModelId ?? models.first(where: { $0.entityHasAccess })?.id ?? ""
     }
 
-    var currentModelId: String? {
-        preferences.selectedModelId
-    }
-
     var selectedModelSupportsImageUpload: Bool {
         guard !models.isEmpty else { return true }
         return models.first(where: { $0.id == persistedModelId })?.supportsImageUpload ?? true
@@ -162,6 +158,7 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         if boundUserScriptIdentifier == newIdentifier {
             boundUserScript = userScript
             userScript.inputBoxHandler = self
+            syncChipVisibility(hasExistingChat: hasExistingChat)
             return
         }
         let hadPreviousScript = boundUserScriptIdentifier != nil
@@ -169,13 +166,17 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
         boundUserScript = userScript
         boundUserScriptIdentifier = newIdentifier
         userScript.inputBoxHandler = self
-        if hasExistingChat && !hasSubmittedPrompt {
-            hasSubmittedPrompt = true
-            updateModelChipVisibility()
-        }
+        syncChipVisibility(hasExistingChat: hasExistingChat)
         if hadPreviousScript {
             resetInputState()
         }
+    }
+
+    private func syncChipVisibility(hasExistingChat: Bool) {
+        let shouldHide = hasExistingChat
+        guard hasSubmittedPrompt != shouldHide else { return }
+        hasSubmittedPrompt = shouldHide
+        updateModelChipVisibility()
     }
 
     func unbind() {
@@ -414,7 +415,6 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
     func startNewChat() {
         hasSubmittedPrompt = false
         updateModelChipVisibility()
-        didPressNewChatButton.send()
     }
 
     func updateSelectedModel(_ modelId: String) {
@@ -518,7 +518,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             if boundUserScript != nil {
                 didSubmitPrompt.send(text)
             } else {
-                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: currentModelId)
+                delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: persistedModelId)
             }
         }
     }

@@ -608,18 +608,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.persistedModelId, "")
     }
 
-    // MARK: - Model Selection: currentModelId
-
-    func test_currentModelId_returnsPreferencesValue() {
-        mockPreferences.selectedModelId = "gpt-5"
-        XCTAssertEqual(sut.currentModelId, "gpt-5")
-    }
-
-    func test_currentModelId_returnsNilWhenNoPreference() {
-        mockPreferences.selectedModelId = nil
-        XCTAssertNil(sut.currentModelId)
-    }
-
     // MARK: - Model Selection: updateSelectedModel
 
     func test_updateSelectedModel_persistsToPreferences() {
@@ -654,10 +642,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.submittedModelId, "gpt-5")
     }
 
-    func test_submitAIChat_noBoundScript_passesNilModelId_whenNoPreference() {
+    func test_submitAIChat_noBoundScript_fallsBackToFirstAccessibleModel() {
         mockPreferences.selectedModelId = nil
+        sut.models = [
+            makeModel(id: "premium", access: false),
+            makeModel(id: "free", access: true)
+        ]
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
-        XCTAssertNil(mockDelegate.submittedModelId)
+        XCTAssertEqual(mockDelegate.submittedModelId, "free")
     }
 
     // MARK: - Model Chip Visibility

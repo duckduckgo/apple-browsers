@@ -22,8 +22,7 @@ import RemoteMessaging
 extension PromoServiceFactory {
 
     @MainActor
-    static func remoteMessageNewTabPage(dependencies: PromoDependencies) -> Promo {
-        let model = dependencies.activeRemoteMessageModel
+    static func remoteMessageNewTabPage(model: ActiveRemoteMessageModel) -> Promo {
         let delegate = RemoteMessagePromoDelegate(activeRemoteMessageModel: model, surface: .newTabPage)
         return Promo(
             id: "remote-message-ntp",
@@ -31,7 +30,7 @@ extension PromoServiceFactory {
             initiated: .app,
             promoType: PromoType(.remoteMessage),
             context: .newTabPage,
-            coexistingPromoIDs: ["remote-message-tabbar"],
+            coexistingPromoIDs: [], // Coexistence between external promos is handled externally
             respectsGlobalCooldown: false,
             setsGlobalCooldown: true,
             delegate: delegate
@@ -39,8 +38,7 @@ extension PromoServiceFactory {
     }
 
     @MainActor
-    static func remoteMessageTabBar(dependencies: PromoDependencies) -> Promo {
-        let model = dependencies.activeRemoteMessageModel
+    static func remoteMessageTabBar(model: ActiveRemoteMessageModel) -> Promo {
         let delegate = RemoteMessagePromoDelegate(activeRemoteMessageModel: model, surface: .tabBar)
         return Promo(
             id: "remote-message-tabbar",
@@ -48,7 +46,7 @@ extension PromoServiceFactory {
             initiated: .app,
             promoType: PromoType(.remoteMessage),
             context: .global,
-            coexistingPromoIDs: ["remote-message-ntp"],
+            coexistingPromoIDs: [], // Coexistence between external promos is handled externally
             respectsGlobalCooldown: false,
             setsGlobalCooldown: true,
             delegate: delegate

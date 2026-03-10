@@ -60,9 +60,18 @@ final class RemoteMessagePromoDelegate: ExternalPromoDelegate {
             }
             .store(in: &cancellables)
 
-        handleMessageChange(surface == .newTabPage
-            ? activeRemoteMessageModel.newTabPageRemoteMessage
-            : activeRemoteMessageModel.tabBarRemoteMessage)
+        handleMessageChange(currentMessage)
+    }
+
+    private var currentMessage: RemoteMessageModel? {
+        switch surface {
+        case .newTabPage:
+            return activeRemoteMessageModel.newTabPageRemoteMessage
+        case .tabBar:
+            return activeRemoteMessageModel.tabBarRemoteMessage
+        default:
+            return nil
+        }
     }
 
     private func handleMessageChange(_ message: RemoteMessageModel?) {

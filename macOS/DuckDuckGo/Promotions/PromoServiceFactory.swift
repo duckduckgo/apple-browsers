@@ -39,8 +39,8 @@ struct PromoServiceFactory {
     @MainActor
     private static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
         var promos: [Promo] = [
-            remoteMessageNewTabPage(dependencies: dependencies),
-            remoteMessageTabBar(dependencies: dependencies)
+            remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),
+            remoteMessageTabBar(model: dependencies.activeRemoteMessageModel)
         ]
 
 #if DEBUG || REVIEW

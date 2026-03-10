@@ -154,11 +154,6 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
                 }
             }
             activeSessions.removeAll()
-            for (_, cancellable) in externalSubscriptions {
-                cancellable.cancel()
-            }
-            externalSubscriptions.removeAll()
-            externalVisiblePromoIds.removeAll()
             historyStore.resetAll()
             recordsSubject.send([:])
 #if DEBUG || REVIEW
@@ -583,9 +578,9 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
 
         activeSessions.removeValue(forKey: promoId)
 
-        let delegate = session.delegate as? PromoDelegate
+        let delegate = session.delegate
         Task { @MainActor in
-            delegate?.hide()
+            delegate.hide()
         }
     }
 

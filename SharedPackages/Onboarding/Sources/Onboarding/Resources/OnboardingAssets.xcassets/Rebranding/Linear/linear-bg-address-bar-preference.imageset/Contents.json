@@ -1,8 +1,9 @@
 {
   "images" : [
     {
-      "filename" : "linear-bg-address-bar-preference-light.pdf",
-      "idiom" : "universal"
+      "filename" : "linear-bg-address-bar-preference-light.png",
+      "idiom" : "universal",
+      "scale" : "1x"
     },
     {
       "appearances" : [
@@ -11,8 +12,41 @@
           "value" : "dark"
         }
       ],
-      "filename" : "linear-bg-address-bar-preference-dark.pdf",
-      "idiom" : "universal"
+      "filename" : "linear-bg-address-bar-preference-dark.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "linear-bg-address-bar-preference-light@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "linear-bg-address-bar-preference-dark@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "linear-bg-address-bar-preference-light@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "linear-bg-address-bar-preference-dark@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
     }
   ],
   "info" : {

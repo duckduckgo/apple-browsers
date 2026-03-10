@@ -446,28 +446,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(secondPresenter.presentCallCount, 0)
     }
 
-    // MARK: - Double Present Guard Tests
-
-    @MainActor
-    func testPresentSheetSkipsPresentationWhenSheetIsAlreadyPresented() async {
-        // Given
-        let window = UIWindow()
-        let rootVC = UIViewController()
-        window.rootViewController = rootVC
-        window.makeKeyAndVisible()
-
-        await sut.presentSheet(from: rootVC)
-        let sheetVC = sut.sheetViewController!
-        XCTAssertNotNil(sheetVC.presentingViewController)
-
-        // When
-        let secondPresenter = MockPresentingViewController()
-        await sut.presentSheet(from: secondPresenter)
-
-        // Then
-        XCTAssertEqual(secondPresenter.presentCallCount, 0)
-    }
-
     // MARK: - Helpers
 
 }

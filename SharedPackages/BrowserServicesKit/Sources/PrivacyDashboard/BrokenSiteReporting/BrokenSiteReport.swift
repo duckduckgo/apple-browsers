@@ -112,6 +112,7 @@ public struct BrokenSiteReport {
     let atb: String
     let model: String
     let variant: String
+    let isAfterSuppressedXSafariRedirect: Bool
 #endif
 
 #if os(macOS)
@@ -214,6 +215,7 @@ public struct BrokenSiteReport {
         privacyExperiments: String,
         isPirEnabled: Bool?,
         isForceDarkModeEnabled: Bool?,
+        isAfterSuppressedXSafariRedirect: Bool = false,
         pageLoadTiming: WKPageLoadTiming? = nil,
         detectorMetrics: [String: String]? = nil
     ) {
@@ -251,6 +253,7 @@ public struct BrokenSiteReport {
         self.pageLoadTiming = pageLoadTiming
         self.detectorMetrics = detectorMetrics
         self.isForceDarkModeEnabled = isForceDarkModeEnabled
+        self.isAfterSuppressedXSafariRedirect = isAfterSuppressedXSafariRedirect
     }
 #endif
 
@@ -339,6 +342,9 @@ public struct BrokenSiteReport {
         result["atb"] = atb
         result["model"] = model
         result["variant"] = variant
+        if isAfterSuppressedXSafariRedirect {
+            result["isAfterSuppressedXSafariRedirect"] = "true"
+        }
 #endif
         return result
     }

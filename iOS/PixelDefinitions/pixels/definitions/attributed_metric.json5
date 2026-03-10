@@ -122,7 +122,7 @@
                 "type": "string"
             },
             {
-                "key": "day_average",
+                "key": "dayAverage",
                 "description": "Number of days with data used to compute the average",
                 "type": "string"
             },
@@ -155,7 +155,7 @@
                 "type": "string"
             },
             {
-                "key": "day_average",
+                "key": "dayAverage",
                 "description": "Number of days with data used to compute the average",
                 "type": "string"
             },
@@ -188,7 +188,7 @@
                 "type": "string"
             },
             {
-                "key": "day_average",
+                "key": "dayAverage",
                 "description": "Number of days with data used to compute the average",
                 "type": "string"
             },
@@ -221,7 +221,7 @@
                 "type": "string"
             },
             {
-                "key": "day_average",
+                "key": "dayAverage",
                 "description": "Number of days with data used to compute the average",
                 "type": "string"
             },

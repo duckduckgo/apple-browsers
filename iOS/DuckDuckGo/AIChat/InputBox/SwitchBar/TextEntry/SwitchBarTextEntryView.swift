@@ -214,6 +214,10 @@ class SwitchBarTextEntryView: UIView {
         buttonsView.onVoiceTapped = { [weak self] in
             self?.handler.microphoneButtonTapped()
         }
+
+        buttonsView.onSearchGoToTapped = { [weak self] in
+            self?.handler.searchGoToButtonTapped()
+        }
     }
 
     private func updateButtonsPadding() {
@@ -252,11 +256,13 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
 
-            /// Auto-focus the text field when switching to duck.ai mode
+            /// Auto-focus the text field when switching to duck.ai mode (OmniBar toggle only)
             /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975209610640?focus=true
-            DispatchQueue.main.async { [weak self] in
-                guard let self, self.window != nil else { return }
-                self.textView.becomeFirstResponder()
+            if handler.isUsingFadeOutAnimation {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.window != nil else { return }
+                    self.textView.becomeFirstResponder()
+                }
             }
         }
         updateKeyboardConfiguration()

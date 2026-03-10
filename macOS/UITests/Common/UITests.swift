@@ -117,7 +117,6 @@ enum UITests {
     /// Avoid some first-run states that we aren't testing.
     static func firstRun(_ callback: (XCUIApplication) -> Void = { _ in }) {
         dismissNotificationCenterMessages()
-        
         let app = XCUIApplication.setUp()
         app.typeKey("n", modifierFlags: .command)
         callback(app)

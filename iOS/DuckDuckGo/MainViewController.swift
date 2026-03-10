@@ -3892,7 +3892,7 @@ extension MainViewController: TabSwitcherDelegate {
             tabManager.select(tab, forcingMode: true)
         }
 
-        guard tabManager.currentTabsModel.currentTab !== previousTab else {
+        guard tab !== previousTab?.tabModel else {
             if daxDialogsManager.shouldShowFireButtonPulse {
                 showFireButtonPulse()
             }

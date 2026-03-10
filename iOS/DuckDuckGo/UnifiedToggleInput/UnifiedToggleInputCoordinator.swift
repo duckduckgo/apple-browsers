@@ -444,6 +444,11 @@ final class UnifiedToggleInputCoordinator: AIChatInputBoxHandling {
             children.append(advancedMenu)
         }
 
+        let isBottomAnchored = viewController.cardPosition == .bottom
+        if isBottomAnchored {
+            children.reverse()
+        }
+
         return UIMenu(children: children)
     }
 

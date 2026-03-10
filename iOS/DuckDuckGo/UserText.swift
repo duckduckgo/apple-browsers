@@ -78,6 +78,8 @@ public struct UserText {
     public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let aiChatRecentChatsTitle = NotLocalizedString("aiChat.recentChats.title", value: "Recent Chats", comment: "Section header title for the recent chats list in Duck.ai")
+    public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
+    public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
 
     public static let actionOpenBookmarks = NSLocalizedString("action.title.bookmarks", value: "Bookmarks", comment: "Button: Open bookmarks list")
     public static let actionOpenPasswords = NSLocalizedString("action.title.passwords", value: "Passwords", comment: "Button: Open passwords list")
@@ -141,6 +143,14 @@ public struct UserText {
     public static let customUrlSchemeMessage = NSLocalizedString("prompt.custom.url.scheme.prompt", value: "Would you like to leave DuckDuckGo to view this content?", comment: "")
     public static let customUrlSchemeOpen = NSLocalizedString("prompt.custom.url.scheme.open", value: "Open", comment: "Confirm action")
     public static let customUrlSchemeDontOpen = NSLocalizedString("prompt.custom.url.scheme.dontopen", value: "Cancel", comment: "Deny action")
+
+    public static let xSafariHTTPSTryOpenTitle = NotLocalizedString("prompt.x-safari-https.try-open.title", value: "This site wants to open Safari", comment: "Alert title when a site tries to redirect to Safari via x-safari-https scheme")
+    public static let xSafariHTTPSTryOpenMessage = NotLocalizedString("prompt.x-safari-https.try-open.message", value: "Some website features may not be compatible in this browser.", comment: "Alert message when a site tries to redirect to Safari via x-safari-https scheme")
+    public static let xSafariHTTPSStayInDDG = NotLocalizedString("prompt.x-safari-https.stay", value: "Stay in DuckDuckGo", comment: "Button to stay in DuckDuckGo instead of opening Safari")
+    public static let xSafariHTTPSOpenInSafari = NotLocalizedString("prompt.x-safari-https.open-in-safari", value: "Open in Safari", comment: "Button to open the page in Safari")
+    public static let xSafariHTTPSLoopTitle = NotLocalizedString("prompt.x-safari-https.loop.title", value: "Unfortunately, the page couldn't load.", comment: "Alert title when a redirect loop is detected after staying in DuckDuckGo")
+    public static let xSafariHTTPSLoopMessage = NotLocalizedString("prompt.x-safari-https.loop.message", value: "Would you like to open this page in Safari?", comment: "Alert message when a redirect loop is detected")
+    public static let xSafariHTTPSGoBack = NotLocalizedString("prompt.x-safari-https.go-back", value: "Go Back", comment: "Button to go back to the previous page after redirect loop")
 
     public static let failedToOpenExternally = NSLocalizedString("open.externally.failed", value: "The app required to open that link can’t be found", comment: "’Link’ is link on a website")
 
@@ -2122,9 +2132,47 @@ public struct UserText {
         }
 
         enum SearchExperience {
-            public static let title = NSLocalizedString("onboarding.highlights.searchExperience.title", value: "Want easy access to private AI chat?", comment: "The title of the onboarding dialog popup to select the preferred search experience.")
+            public static var title: String {
+                if Locale.current.isEnglishLanguage {
+                    NotLocalizedString(
+                        "onboarding.highlights.searchExperience.title.english-only",
+                        value: "Want easy access to private AI chat in the address bar?",
+                        comment: "The title of the onboarding dialog popup to select the preferred search experience for English-language copy update."
+                    )
+                } else {
+                    NSLocalizedString(
+                        "onboarding.highlights.searchExperience.title",
+                        value: "Want easy access to private AI chat?",
+                        comment: "The title of the onboarding dialog popup to select the preferred search experience."
+                    )
+                }
+            }
             public static let footer = NSLocalizedString("onboarding.highlights.searchExperience.footer", value: "AI features are private and optional. You can make changes in Settings > AI Features.", comment: "The footer disclaimer text for the search experience onboarding screen.")
             public static let cta = NSLocalizedString("onboarding.highlights.searchExperience.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
+
+            public static var searchOnlyOption: String {
+                if Locale.current.isEnglishLanguage {
+                    NotLocalizedString(
+                        "onboarding.highlights.searchExperience.searchOnly.english-only",
+                        value: "Search only",
+                        comment: "Title for the search-only option in onboarding picker for English-language copy update."
+                    )
+                } else {
+                    UserText.settingsAIPickerSearchOnly
+                }
+            }
+
+            public static var searchAndDuckAIOption: String {
+                if Locale.current.isEnglishLanguage {
+                    NotLocalizedString(
+                        "onboarding.highlights.searchExperience.searchAndDuckAI.english-only",
+                        value: "Toggle between\nSearch and Duck.ai",
+                        comment: "Title for the search and Duck.ai option in onboarding picker for English-language copy update."
+                    )
+                } else {
+                    UserText.settingsAIPickerSearchAndDuckAI
+                }
+            }
             
             static func footerAttributed() -> NSAttributedString {
                 let settingsPathBold = NSLocalizedString(

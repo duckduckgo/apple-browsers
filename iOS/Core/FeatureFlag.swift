@@ -248,9 +248,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
     case productTelemeterySurfaceUsage
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
-    case dataImportWideEventMeasurement
-
     /// Sort domain matches higher than other matches when searching saved passwords
     /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1212324661709006?focus=true
     case autofillPasswordSearchPrioritizeDomain
@@ -273,6 +270,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213433942918287?focus=true
     case multiplePageContexts
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213608678718359?focus=true
+    case iPadPageContext
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
     case aiChatSync
@@ -349,6 +349,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213343468100319
     case suppressTrackerAnimationOnColdStart
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213554455515126?focus=true
+    case customXSafariRedirectHandling
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -366,7 +369,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .migrateKeychainAccessibility,
-             .dataImportWideEventMeasurement,
              .appRatingPrompt,
              .autofillPasswordSearchPrioritizeDomain,
              .showWhatsNewPromptOnDemand,
@@ -377,7 +379,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .crashCollectionLimitCallStackTreeDepth,
              .tabSwitcherTrackerCount,
              .iPadDuckaiOnTab,
-             .suppressTrackerAnimationOnColdStart:
+             .suppressTrackerAnimationOnColdStart,
+             .customXSafariRedirectHandling:
             true
         default:
             false
@@ -456,13 +459,13 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
              .autofillPasswordSearchPrioritizeDomain,
-             .dataImportWideEventMeasurement,
              .appRatingPrompt,
              .contextualDuckAIMode,
              .pageContextFeature,
              .aiChatAutoAttachContextByDefault,
              .aiChatSync,
              .multiplePageContexts,
+             .iPadPageContext,
              .aiChatSuggestions,
              .showWhatsNewPromptOnDemand,
              .wideEventPostEndpoint,
@@ -482,7 +485,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillOnboardingExperiment,
              .supportsSyncChatsDeletion,
              .fireMode,
-             .suppressTrackerAnimationOnColdStart:
+             .suppressTrackerAnimationOnColdStart,
+             .customXSafariRedirectHandling:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -682,8 +686,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
         case .productTelemeterySurfaceUsage:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.productTelemetrySurfaceUsage))
-        case .dataImportWideEventMeasurement:
-            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .dataImportSummarySyncPromotion:
@@ -698,6 +700,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.autoAttachContextByDefault))
         case .multiplePageContexts:
             return .remoteReleasable(.subfeature(AIChatSubfeature.multiplePageContexts))
+        case .iPadPageContext:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.iPadPageContext))
         case .aiChatSync:
             return .remoteReleasable(.subfeature(SyncSubfeature.aiChatSync))
         case .aiChatSuggestions:
@@ -742,6 +746,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .suppressTrackerAnimationOnColdStart:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.suppressTrackerAnimationOnColdStart))
+        case .customXSafariRedirectHandling:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customXSafariRedirectHandling))
         }
     }
 }

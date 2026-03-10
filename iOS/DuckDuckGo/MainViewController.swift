@@ -138,6 +138,7 @@ class MainViewController: UIViewController {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -380,6 +381,7 @@ class MainViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.fireproofing = fireproofing
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
@@ -533,6 +535,7 @@ class MainViewController: UIViewController {
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
         registerForWebExtensionNotifications()
+        registerForAppBackgroundNotification()
 
         decorate()
 
@@ -826,13 +829,12 @@ class MainViewController: UIViewController {
 
     var keyboardShowing = false
     private var didSendGestureDismissPixel: Bool = false
+    var latestKeyboardFrame: CGRect = .zero
 
     @objc
     private func keyboardDidShow() {
         keyboardShowing = true
         productSurfaceTelemetry.keyboardActive()
-
-        // Dismiss contextual sheet if keyboard is for background web view
         dismissContextualSheetIfKeyboardIsForBackgroundContent()
     }
 
@@ -867,13 +869,40 @@ class MainViewController: UIViewController {
         keyboardShowing = false
         didSendGestureDismissPixel = false
 
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.autoCollapseExpandedUTIIfNeeded()
+        }
+
         if #available(iOS 26, *) {
-            // Make sure the UI adjusts properly.
-            // Fix for a weird behavior on iOS 26, firing `keyboardWillChangeFrame` event
-            // with the same frame when keyboard is shown and hidden rapidly.
-            // https://app.asana.com/1/137249556945/project/414709148257752/task/1211140989378405
+            latestKeyboardFrame = .zero
             adjustUI(withKeyboardFrame: .zero)
         }
+    }
+
+    private var isAnyAITabUTIState: Bool {
+        guard unifiedToggleInputFeature.isAvailable,
+              currentTab?.isAITab == true,
+              let displayState = unifiedToggleInputCoordinator?.displayState,
+              case .aiTab = displayState else { return false }
+        return true
+    }
+
+    var isNavigationBarEffectivelyAtBottom: Bool {
+        if appSettings.currentAddressBarPosition.isBottom {
+            return true
+        }
+        return isAnyAITabUTIState
+    }
+
+    func autoCollapseExpandedUTIIfNeeded() {
+        guard unifiedToggleInputFeature.isAvailable,
+              currentTab?.isAITab == true,
+              let coordinator = unifiedToggleInputCoordinator,
+              case .aiTab(.expanded) = coordinator.displayState,
+              !keyboardShowing,
+              !coordinator.viewController.isInputFirstResponder,
+              currentTab?.aiChatContextualSheetCoordinator.isSheetPresented != true else { return }
+        coordinator.showCollapsed()
     }
 
     private func setUpToolbarButtonsActions() {
@@ -973,9 +1002,24 @@ class MainViewController: UIViewController {
         currentTab?.privacyInfo?.cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
+    private func registerForAppBackgroundNotification() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onAppDidEnterBackground),
+                                               name: UIApplication.didEnterBackgroundNotification,
+                                               object: nil)
+    }
+
+    @objc private func onAppDidEnterBackground() {
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+    }
+
     @objc func onAddressBarPositionChanged() {
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
-        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        if !isAnyAITabUTIState {
+            refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
     }
@@ -994,8 +1038,10 @@ class MainViewController: UIViewController {
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
-            viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
-                    
+            if shouldResetNavBarContainerBottomForTopPosition() {
+                viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
+            }
+
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
         }
@@ -1003,6 +1049,12 @@ class MainViewController: UIViewController {
         omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
+    }
+
+    private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
+        guard let state = unifiedToggleInputCoordinator?.displayState else { return true }
+        if case .hidden = state { return true }
+        return false
     }
 
     private func updateChromeForDuckPlayer() {
@@ -1043,6 +1095,7 @@ class MainViewController: UIViewController {
             let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
             return
         }
+        latestKeyboardFrame = keyboardFrame
         let duration: TimeInterval = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
         let animationCurveRawNSN = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber
         let animationCurveRaw = animationCurveRawNSN?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
@@ -1051,46 +1104,60 @@ class MainViewController: UIViewController {
         adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
     }
 
-    private func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
+    func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 
         let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
         let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
         let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 0, dy: -additionalSafeAreaInsets.bottom)
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
+        let keyboardVisible = intersection.height > 0
         keyboardHeight = keyboardFrameInView.height
+        updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 
-        if self.appSettings.currentAddressBarPosition.isBottom {
-            let intersection = safeAreaFrame.intersection(keyboardFrameInView)
-            let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + omniBarHeight : 0
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
+        guard isNavigationBarEffectivelyAtBottom else { return }
 
-            // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
-            if let currentTab {
-                let inset = intersection.height > 0 ? omniBarHeight : 0
-                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+        let displayState = unifiedToggleInputCoordinator?.displayState
+        let isInlineActive = unifiedToggleInputCoordinator?.isInlineEditingSession == true
 
-                let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
-                currentTab.borderView.bottomOffset = -bottomOffset
-            }
+        let baseInputHeight: CGFloat
+        if case .aiTab(.expanded) = displayState, let coordinator = unifiedToggleInputCoordinator {
+            baseInputHeight = max(viewCoordinator.standardNavigationBarContainerHeight, coordinator.inlineEditingHeight())
+        } else {
+            baseInputHeight = omniBarHeight
+        }
 
-            // This NTP stuff is to animate the bottom border divider, but also allow the logo to show.
-            //  If we hever have the bottom border and the logo visible at the same... we'll need to do something else.
-            if let ntp = self.newTabPageViewController, !ntp.isShowingLogo {
+        let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + baseInputHeight : 0
+        if !isInlineActive, displayState != .aiTab(.collapsed) {
+            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(baseInputHeight, containerHeight)
+        }
+
+        if appSettings.currentAddressBarPosition.isBottom, let currentTab {
+            let inset = intersection.height > 0 ? omniBarHeight : 0
+            currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+
+            let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
+            currentTab.borderView.bottomOffset = -bottomOffset
+        }
+
+        if appSettings.currentAddressBarPosition.isBottom,
+           let ntp = self.newTabPageViewController,
+           !ntp.isShowingLogo {
+            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+        }
+
+        UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
+            self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+
+            if self.appSettings.currentAddressBarPosition.isBottom,
+               !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+               let ntp = self.newTabPageViewController,
+               ntp.isShowingLogo {
                 self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+            } else {
+                self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
             }
-
-            UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
-                self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-
-                // In case `isAIChatSearchInputUserSettings` is enabled prevent adjusting the bottom containers along with the keyboard to prevent logo on NTP from transitioning too far
-                if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled, let ntp = self.newTabPageViewController, ntp.isShowingLogo {
-                    self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
-                } else {
-                    self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
-                }
-                self.currentTab?.borderView.layoutIfNeeded()
-            }
+            self.currentTab?.borderView.layoutIfNeeded()
         }
     }
 
@@ -1260,7 +1327,7 @@ class MainViewController: UIViewController {
         return makeEscapeHatchModel(targetTab: targetTab)
     }
 
-    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, previousTab: TabViewController? = nil) {
+    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, previousTab: TabViewController? = nil, openedAfterIdle: Bool = false) {
         guard !autoClearInProgress else { return }
         
         viewCoordinator.logoContainer.isHidden = false
@@ -1279,6 +1346,7 @@ class MainViewController: UIViewController {
         // Attaching HomeScreen means it's going to be displayed immediately.
         // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
         tabModel.viewed = true
+        tabModel.openedAfterIdle = openedAfterIdle
 
         let newTabDaxDialogFactory = NewTabDaxDialogsProvider(featureFlagger: featureFlagger, delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
@@ -1318,18 +1386,19 @@ class MainViewController: UIViewController {
         // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
 
-        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
-            omniBar.beginEditing(animated: true)
-        }
-
-        syncService.scheduler.requestSyncImmediately()
-
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
+            ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
         }
+
+        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
+            omniBar.beginEditing(animated: true)
+        }
+
+        syncService.scheduler.requestSyncImmediately()
     }
 
     func fireNewTabPixels() {
@@ -1562,7 +1631,11 @@ class MainViewController: UIViewController {
     ///   - tools: Optional RAG tools available in AI Chat. Defaults to `nil`.
     func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
         guard let currentTab else { fatalError("no tab") }
-        
+
+        if currentTab.tabModel.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
+        }
+
         prepareTabForRequest {
             currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools)
         }
@@ -1591,7 +1664,8 @@ class MainViewController: UIViewController {
         }
 
         guard let tab = currentTab else { fatalError("no tab") }
-        
+
+        tab.tabModel.openedAfterIdle = false
         request()
         dismissOmniBar()
         transitionTo(tab: tab, from: nil)
@@ -1613,6 +1687,7 @@ class MainViewController: UIViewController {
     }
 
     private func transitionTo(tab: TabViewController, from previousTab: TabViewController?) {
+        previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
         hideNotificationBarIfBrokenSitePromptShown()
         if tab.link == nil {
@@ -1814,6 +1889,7 @@ class MainViewController: UIViewController {
             }
 
             ViewHighlighter.updatePositions()
+            self.recomputeInlineEditingHeightIfNeeded()
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
@@ -2120,7 +2196,7 @@ class MainViewController: UIViewController {
         tabsBarController?.backgroundTabAdded()
     }
 
-    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true) {
+    func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true, openedAfterIdle: Bool = false) {
         if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -2136,7 +2212,7 @@ class MainViewController: UIViewController {
         } else {
             tabManager.addHomeTab()
         }
-        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, previousTab: previousTab)
+        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard, previousTab: previousTab, openedAfterIdle: openedAfterIdle)
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         themeColorManager.updateThemeColor()
@@ -2767,7 +2843,9 @@ extension MainViewController: BrowserChromeDelegate {
         let multiplier = viewCoordinator.toolbar.isHidden ? 1.0 : 1.0 - ratio
         viewCoordinator.constraints.toolbarBottom.constant = bottomHeight * multiplier
 
-        if viewCoordinator.addressBarPosition.isBottom {
+        if viewCoordinator.addressBarPosition.isBottom,
+           !viewCoordinator.isNavigationBarContainerBottomKeyboardBased,
+           !isAnyAITabUTIState {
             // Push the navigation bar down independently so the content container
             // (which is pinned to toolbar.top) doesn't extend past the screen bottom.
             let navBarHeight = viewCoordinator.navigationBarContainer.frame.height
@@ -2786,7 +2864,7 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.constraints.navigationBarContainerTop.constant = browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
     }
 
-    private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
+    func handleFavoriteSelected(_ favorite: BookmarkEntity) {
         guard let url = favorite.urlObject else { return }
 
         // Handle shortcuts for internal testing
@@ -2807,7 +2885,10 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
 
-    private func handleSuggestionSelected(_ suggestion: Suggestion) {
+    func handleSuggestionSelected(_ suggestion: Suggestion) {
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         viewCoordinator.omniBar.cancel()
@@ -3192,6 +3273,9 @@ extension MainViewController: OmniBarDelegate {
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite,
                                  aiChat: .addressBarCancelPressedOnAIChat)
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
         performCancel()
     }
 
@@ -3405,6 +3489,9 @@ extension MainViewController: OmniBarDelegate {
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite,
                                  aiChat: .addressBarCancelPressedOnAIChat)
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
     }
 
     /// Delegate method called when the AI Chat left button is tapped
@@ -3441,11 +3528,18 @@ extension MainViewController: OmniBarDelegate {
             viewCoordinator.omniBar.endEditing()
             return
         }
-        tabManager.select(tab, forcingMode: true)
-        updateCurrentTab()
+        let wasAfterIdle = currentTab?.openedAfterIdle ?? false
+        ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
+        selectTab(tab)
         viewCoordinator.omniBar.endEditing()
         if let currentTab {
             closeTab(currentTab)
+        }
+    }
+
+    func onToggleModeSwitched() {
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
     }
 }
@@ -3553,8 +3647,9 @@ extension MainViewController: NewTabPageControllerDelegate {
         }
         let currentTab = tabManager.currentTabsModel.currentTab
         guard tab !== currentTab else { return }
-        tabManager.select(tab, forcingMode: true)
-        updateCurrentTab()
+        let wasAfterIdle = currentTab?.openedAfterIdle ?? false
+        ntpAfterIdleInstrumentation.returnToPageTapped(afterIdle: wasAfterIdle)
+        selectTab(tab)
         if let currentTab {
             closeTab(currentTab)
         }
@@ -4063,6 +4158,10 @@ extension MainViewController: TabSwitcherButtonDelegate {
         guard currentTab ?? tabManager.current(createIfNeeded: true) != nil else {
             fatalError("Unable to get current tab")
         }
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.tabSwitcherSelectedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        tabManager.currentTabsModel.currentTab?.openedAfterIdle = false
         hideNotificationBarIfBrokenSitePromptShown()
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()

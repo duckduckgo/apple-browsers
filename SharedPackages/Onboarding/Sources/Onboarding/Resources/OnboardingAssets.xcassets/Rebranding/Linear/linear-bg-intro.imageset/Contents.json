@@ -1,8 +1,9 @@
 {
   "images" : [
     {
-      "filename" : "linear-bg-intro-light.pdf",
-      "idiom" : "universal"
+      "filename" : "linear-bg-intro-light.png",
+      "idiom" : "universal",
+      "scale" : "1x"
     },
     {
       "appearances" : [
@@ -11,8 +12,41 @@
           "value" : "dark"
         }
       ],
-      "filename" : "linear-bg-intro-dark.pdf",
-      "idiom" : "universal"
+      "filename" : "linear-bg-intro-dark.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "linear-bg-intro-light@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "linear-bg-intro-dark@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "linear-bg-intro-light@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "linear-bg-intro-dark@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
     }
   ],
   "info" : {

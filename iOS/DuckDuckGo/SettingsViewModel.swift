@@ -353,6 +353,11 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 try? self.afterInactivityStorage.set($0.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
                 self.objectWillChange.send()
+
+                let pixel: Pixel.Event = $0 == .newTab
+                    ? .ntpAfterIdleSettingChangedToNewTab
+                    : .ntpAfterIdleSettingChangedToLastUsedTab
+                DailyPixel.fireDailyAndCount(pixel: pixel)
             }
         )
     }

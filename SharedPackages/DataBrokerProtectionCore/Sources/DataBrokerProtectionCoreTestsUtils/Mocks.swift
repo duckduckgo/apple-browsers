@@ -2108,7 +2108,7 @@ public final class MockBrokerJSONService: BrokerJSONServiceProvider {
         nil
     }
 
-    public func updateBrokers() {
+    public func updateBrokers(isFreeScan: Bool?) {
         didCallUpdateBrokers = true
     }
 }

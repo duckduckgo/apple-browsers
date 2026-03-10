@@ -446,4 +446,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(secondPresenter.presentCallCount, 0)
     }
 
+    // MARK: - Helpers
+
 }

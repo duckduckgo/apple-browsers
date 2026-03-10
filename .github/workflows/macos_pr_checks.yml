@@ -97,7 +97,7 @@ jobs:
 
     name: Test Shell Scripts
 
-    runs-on: macos-15
+    runs-on: macos-26
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
@@ -256,6 +256,9 @@ jobs:
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
           -skipPackagePluginValidation -skipMacroValidation \
+          -test-timeouts-enabled YES \
+          -default-test-execution-time-allowance 60 \
+          -maximum-test-execution-time-allowance 120 \
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
@@ -271,6 +274,9 @@ jobs:
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
           -skipPackagePluginValidation -skipMacroValidation \
+          -test-timeouts-enabled YES \
+          -default-test-execution-time-allowance 60 \
+          -maximum-test-execution-time-allowance 120 \
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           "-only-testing:${{ matrix.integration-tests-target }}" \
@@ -360,7 +366,7 @@ jobs:
 
     - name: Upload failed unit tests log
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-unittests-xcodebuild.log
         path: macOS/${{ matrix.flavor }}-unittests-xcodebuild.log
@@ -368,7 +374,7 @@ jobs:
 
     - name: Upload failed unit tests xcresult
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-unittests.xcresult
         path: macOS/${{ matrix.flavor }}-unittests.xcresult
@@ -376,7 +382,7 @@ jobs:
 
     - name: Upload failed integration tests log
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
         path: macOS/${{ matrix.flavor }}-integrationtests-xcodebuild.log
@@ -384,10 +390,21 @@ jobs:
 
     - name: Upload failed integration tests xcresult
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-integrationtests.xcresult
         path: macOS/${{ matrix.flavor }}-integrationtests.xcresult
+        retention-days: 7
+
+    - name: Upload crash reports
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: ${{ matrix.flavor }}-crash-reports
+        path: |
+          ~/Library/Logs/DiagnosticReports/*.crash
+          ~/Library/Logs/DiagnosticReports/*.ips
+        if-no-files-found: ignore
         retention-days: 7
 
     - name: Fetch latest commit author and PR reviewers
@@ -419,10 +436,10 @@ jobs:
       inputs.skip-release-build != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     env:
-      RUNS_ON: macos-15 # keep this in sync with runs-on above
+      RUNS_ON: macos-26 # keep this in sync with runs-on above
 
     outputs:
       changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}

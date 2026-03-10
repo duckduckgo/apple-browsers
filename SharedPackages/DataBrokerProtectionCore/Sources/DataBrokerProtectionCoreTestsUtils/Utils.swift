@@ -90,6 +90,20 @@ public final class MockURLProtocol: URLProtocol {
 
 }
 
+public extension Encodable {
+    /// Encodes self to JSON `Data`, then deserializes it into an untyped `[String: Any]`
+    /// so tests can assert on individual fields — including ones the typed model doesn't declare.
+    func toDictionary() throws -> [String: Any] {
+        let data = try JSONEncoder().encode(self)
+        guard let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw NSError(domain: "TestUtils", code: 0, userInfo: [
+                NSLocalizedDescriptionKey: "Encoded value is not a JSON object"
+            ])
+        }
+        return dict
+    }
+}
+
 public extension Date {
 
     var yesterday: Date? {

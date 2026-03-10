@@ -135,6 +135,8 @@ class BarsAnimator {
         let distance = contentOffset - transitionStartPosY
         let barsHeight = combinedBarsHeight
 
+        guard barsHeight > 0 else { return 0 }
+
         let cumulativeDistance = (barsHeight * transitionProgress) + distance
         let normalizedDistance = max(cumulativeDistance, 0)
 

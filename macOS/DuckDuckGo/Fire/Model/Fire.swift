@@ -165,7 +165,7 @@ final class Fire: FireProtocol {
     let bookmarkManager: BookmarkManager
     let syncService: DDGSyncing?
     let syncDataProviders: SyncDataProvidersSource?
-    let tabCleanupPreparer = TabCleanupPreparer()
+    let tabCleanupPreparer: TabCleanupPreparing
     let secureVaultFactory: AutofillVaultFactory
     let tld: TLD
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
@@ -279,7 +279,8 @@ final class Fire: FireProtocol {
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
          isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive },
          aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
-         dataClearingPixelsReporter: DataClearingPixelsReporter = .init()
+         dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
+         tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer()
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -312,6 +313,7 @@ final class Fire: FireProtocol {
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
                                                                                  privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
         self.dataClearingPixelsReporter = dataClearingPixelsReporter
+        self.tabCleanupPreparer = tabCleanupPreparer
         self.historyCoordinating.dataClearingPixelsHandling = DataClearingPixelsBurnHistoryHandler(dataClearingPixelsReporter)
     }
 
@@ -864,8 +866,6 @@ final class Fire: FireProtocol {
             assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
             if shouldClose {
                 let startTime = CACurrentMediaTime()
-                let countBeforeBurn = tabCollectionViewModel.tabCollection.tabs.count
-                var expectedCount = countBeforeBurn
 
                 if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
                     let tab = replacementPinnedTab(from: tabViewModel.tab)
@@ -879,12 +879,8 @@ final class Fire: FireProtocol {
                         _=insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
                     }
                     tabCollectionViewModel.removeSelected(forceChange: true)
-                    expectedCount = (countBeforeBurn == 1) ? 1 : countBeforeBurn - 1
                 }
                 dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
-                dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)){
-                    tabCollectionViewModel.tabCollection.tabs.count != expectedCount
-                }
             }
 
         case .window(tabCollectionViewModel: let tabCollectionViewModel,
@@ -902,10 +898,6 @@ final class Fire: FireProtocol {
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
 
                 dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
-                // A new tab was inserted
-                dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)) {
-                    tabCollectionViewModel.tabCollection.tabs.count > 1
-                }
             }
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
@@ -923,10 +915,6 @@ final class Fire: FireProtocol {
             }
 
             dataClearingPixelsReporter.fireDurationPixel(DataClearingPixels.burnTabsDuration, from: startTime, entity: burningEntity.description)
-            // A new tab was inserted
-            dataClearingPixelsReporter.fireResiduePixelIfNeeded(DataClearingPixels.burnTabsHasResidue(entity: burningEntity.description)) {
-                mainWindowControllers.contains { $0.mainViewController.tabCollectionViewModel.tabCollection.tabs.count > 1 }
-            }
         }
     }
 

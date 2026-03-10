@@ -96,7 +96,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
-    private var cancellables = Set<AnyCancellable>()
+    private var inputBoxCancellables = Set<AnyCancellable>()
 
     var inputBoxHandler: AIChatInputBoxHandling? {
         didSet { subscribeToInputBoxEvents() }
@@ -232,21 +232,23 @@ final class AIChatUserScript: NSObject, Subfeature {
     // MARK: - Input Box Event Subscription
 
     private func subscribeToInputBoxEvents() {
+        inputBoxCancellables.removeAll()
+
         inputBoxHandler?.didSubmitPrompt
             .sink(receiveValue: submitPrompt)
-            .store(in: &cancellables)
+            .store(in: &inputBoxCancellables)
 
         inputBoxHandler?.didPressNewChatButton
             .sink(receiveValue: { [weak self] _ in self?.push(.newChatAction) })
-            .store(in: &cancellables)
+            .store(in: &inputBoxCancellables)
 
         inputBoxHandler?.didPressFireButton
             .sink(receiveValue: { [weak self] _ in self?.push(.fireButtonAction) })
-            .store(in: &cancellables)
+            .store(in: &inputBoxCancellables)
 
         inputBoxHandler?.didPressStopGeneratingButton
             .sink(receiveValue: { [weak self] _ in self?.push(.promptInterruption) })
-            .store(in: &cancellables)
+            .store(in: &inputBoxCancellables)
 
         handler.setAIChatInputBoxHandler(inputBoxHandler)
     }

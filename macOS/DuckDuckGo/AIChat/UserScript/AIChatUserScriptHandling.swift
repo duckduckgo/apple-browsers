@@ -147,10 +147,23 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let floatingWindow = await message.messageWebView?.window as? AIChatFloatingWindow {
+            await MainActor.run {
+                floatingWindow.close()
+            }
+            return nil
+        }
+
         let isSidebar = await message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
 
         if isSidebar {
-            await windowControllersManager.mainWindowController?.mainViewController.aiChatSidebarPresenter.collapseSidebar(withAnimation: true)
+            guard let mainViewController = await windowControllersManager.mainWindowController?.mainViewController else {
+                return nil
+            }
+
+            if let currentTabID = await mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.uuid {
+                await mainViewController.aiChatCoordinator.closeChat(for: currentTabID, withAnimation: true)
+            }
         } else {
             await windowControllersManager.mainWindowController?.mainViewController.closeTab(nil)
         }

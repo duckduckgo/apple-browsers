@@ -36,6 +36,7 @@ final class SyncDebugMenu: NSMenu {
                 .withAccessibilityIdentifier("SyncDebugMenu.turnOffSync")
             NSMenuItem(title: "Reset Favicons Fetcher Onboarding Dialog", action: #selector(resetFaviconsFetcherOnboardingDialog), target: self)
             NSMenuItem(title: "Populate Stub objects", action: #selector(createStubsForDebug), target: self)
+            NSMenuItem(title: "Show Sync With Another Device (Chat Sync)", action: #selector(showSyncWithAnotherDevicePromo), target: self)
         }
     }
 
@@ -133,6 +134,11 @@ final class SyncDebugMenu: NSMenu {
             )
             syncPreferences.turnOffSync()
         }
+    }
+
+    @MainActor
+    @objc func showSyncWithAnotherDevicePromo(_ sender: NSMenuItem) {
+        DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .aiChat, completion: nil)
     }
 
     @objc func resetFaviconsFetcherOnboardingDialog(_ sender: NSMenuItem) {

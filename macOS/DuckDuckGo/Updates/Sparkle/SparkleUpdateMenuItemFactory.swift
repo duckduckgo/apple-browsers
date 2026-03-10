@@ -21,7 +21,7 @@ import Cocoa
 
 final class SparkleUpdateMenuItemFactory {
 
-    static func menuItem(for controller: any SparkleUpdateController) -> NSMenuItem {
+    static func menuItem(for controller: any SparkleUpdateControlling) -> NSMenuItem {
 
         let title: String
 
@@ -33,7 +33,7 @@ final class SparkleUpdateMenuItemFactory {
 
         let item = NSMenuItem(title: title)
         item.target = controller
-        item.action = #selector(SparkleUpdateController.runUpdateFromMenuItem)
+        item.action = #selector(SparkleUpdateControllerObjC.runUpdateFromMenuItem)
         item.image = NSImage.updateMenuItemIcon
         return item
     }

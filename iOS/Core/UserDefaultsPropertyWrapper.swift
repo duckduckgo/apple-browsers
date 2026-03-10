@@ -198,9 +198,6 @@ public struct UserDefaultsWrapper<T> {
         case debugWebViewStateRestorationEnabledKey = "com.duckduckgo.ios.debug.webViewStateRestorationEnabled"
         case debugDefaultBrowserPromptCurrentDateKey = "com.duckduckgo.ios.debug.defaultBrowserPromptCurrentDate"
 
-        // Domain specific text zoom
-        case domainTextZoomStorage = "com.duckduckgo.ios.domainTextZoomStorage"
-
         // TipKit
         case resetTipKitOnNextLaunch = "com.duckduckgo.ios.tipKit.resetOnNextLaunch"
 

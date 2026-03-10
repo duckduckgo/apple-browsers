@@ -25,6 +25,16 @@ struct WindowContext {
     let windows: Int
 }
 
+extension WindowContext {
+
+    @MainActor
+    init(windowControllersManager: WindowControllersManager) {
+        standardTabs = windowControllersManager.allTabCollectionViewModels.reduce(0) { $0 + $1.tabCollection.tabs.count }
+        pinnedTabs = windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count }
+        windows = windowControllersManager.mainWindowControllers.count
+    }
+}
+
 /// A snapshot of context collected at the moment of firing a memory usage pixel.
 ///
 /// All values are pre-bucketed using `MemoryReportingBuckets` to match the pixel parameter

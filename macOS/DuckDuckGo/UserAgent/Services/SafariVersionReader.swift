@@ -17,17 +17,18 @@
 //
 
 import Foundation
+import AppKitExtensions
 
-final class SafariVersionReader: ApplicationVersionReader {
+enum SafariVersionReader {
 
     static let safariPath = "/Applications/Safari.app"
 
     static func getVersion() -> String? {
-        super.getVersion(of: safariPath)
+        ApplicationVersionReader.getVersion(of: safariPath)
     }
 
     static func getMajorVersion() -> Int? {
-        super.getMajorVersion(of: safariPath)
+        ApplicationVersionReader.getMajorVersion(of: safariPath)
     }
 
 }

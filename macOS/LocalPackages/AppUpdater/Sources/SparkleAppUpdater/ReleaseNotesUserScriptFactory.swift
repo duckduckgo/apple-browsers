@@ -25,7 +25,7 @@ import PixelKit
 import UserScript
 import WebKit
 
-public extension SparkleUpdateController {
+public extension SparkleUpdateControlling {
     func makeReleaseNotesNavigationResponder(
         releaseNotesURL: URL,
         scriptsPublisher: some Publisher<any ReleaseNotesUserScriptProvider, Never>,

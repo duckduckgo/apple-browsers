@@ -44,10 +44,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
-    /// Enable WebKit page load timing performance reporting
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615625098
-    case webKitPerformanceReporting
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
@@ -62,6 +58,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
+    case forceDarkModeOnWebsites
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616130440
     case syncSeamlessAccountSwitching
@@ -218,14 +217,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
-    case dataImportWideEventMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212783502979551?focus=true
-    case memoryPressureReporting
 
     /// Memory Usage Reporting
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
@@ -266,6 +259,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1213316822018797
     case aiChatSidebarResizable
 
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1213356927349370?focus=true
+    case aiChatNtpRecentChats
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
+    case aiChatSidebarFloating
+
     /// Startup Metrics Feature Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380840527060
     case startupMetrics
@@ -273,6 +272,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Private Process Name Flag
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213442286513425
     case privateProcessName
+
+    /// Enable Look Up (three-finger click) while keeping link preview disabled
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
+    case webViewLookUpAction
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -291,18 +294,19 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
                 .blurryAddressBarTahoeFix,
-                .dataImportWideEventMeasurement,
                 .firstTimeQuitSurvey,
                 .aiChatOmnibarOnboarding,
                 .autofillPasswordSearchPrioritizeDomain,
                 .warnBeforeQuit,
                 .wideEventPostEndpoint,
-                .memoryPressureReporting,
                 .crashCollectionDisableKeysSorting,
                 .crashCollectionLimitCallStackTreeDepth,
                 .memoryUsageReporting,
                 .aiChatSidebarResizable,
-                .nextStepsListWidget:
+                .aiChatSidebarFloating,
+                .nextStepsListWidget,
+                .webViewLookUpAction,
+                .startupMetrics:
             true
         default:
             false
@@ -326,6 +330,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncSeamlessAccountSwitching,
                 .webExtensions,
                 .embeddedExtension,
+                .forceDarkModeOnWebsites,
                 .autoUpdateInDEBUG,
                 .autoUpdateInREVIEW,
                 .scamSiteProtection,
@@ -359,7 +364,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncFeatureLevel3,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
-                .webKitPerformanceReporting,
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
@@ -379,9 +383,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillPasswordSearchPrioritizeDomain,
                 .autofillPasswordsStatusBar,
                 .warnBeforeQuit,
-                .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
-                .memoryPressureReporting,
                 .memoryUsageReporting,
                 .aiChatSync,
                 .heuristicAction,
@@ -391,8 +393,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .freeTrialConversionWideEvent,
                 .supportsSyncChatsDeletion,
                 .aiChatSidebarResizable,
+                .aiChatNtpRecentChats,
+                .aiChatSidebarFloating,
                 .startupMetrics,
-                .privateProcessName:
+                .privateProcessName,
+                .webViewLookUpAction:
             return true
         case .freemiumDBP,
                 .contextualOnboarding,
@@ -430,6 +435,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.webExtensions))
         case .embeddedExtension:
             return .remoteReleasable(.subfeature(WebExtensionsSubfeature.embeddedExtension))
+        case .forceDarkModeOnWebsites:
+            return .remoteReleasable(.subfeature(ForceDarkModeOnWebsitesSubfeature.featureRollout))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .syncCreditCards:
@@ -496,8 +503,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .webKitPerformanceReporting:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
         case .blackFridayCampaign:
@@ -532,12 +537,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .warnBeforeQuit:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.warnBeforeQuit))
-        case .dataImportWideEventMeasurement:
-            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
             return .disabled
-        case .memoryPressureReporting:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryPressureReporting))
         case .memoryUsageReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.memoryUsageReporting))
         case .aiChatSync:
@@ -560,10 +561,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.supportsSyncChatsDeletion))
         case .aiChatSidebarResizable:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebarResizable))
-        case .startupMetrics:
+        case .aiChatNtpRecentChats:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.ntpRecentChats))
+        case .aiChatSidebarFloating:
             return .internalOnly()
+        case .startupMetrics:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.startupMetrics))
         case .privateProcessName:
             return .disabled
+        case .webViewLookUpAction:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         }
     }
 }

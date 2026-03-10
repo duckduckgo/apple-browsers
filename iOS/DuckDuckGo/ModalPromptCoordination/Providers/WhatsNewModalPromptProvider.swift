@@ -117,6 +117,17 @@ extension WhatsNewCoordinator: RemoteMessagingPresenter {
     @MainActor
     func presentActivitySheet(value: String, title: String?) async {
         let activityController = UIActivityViewController(activityItems: [TitleValueShareItem(value: value, title: title).item], applicationActivities: nil)
+        if let popoverPresentationController = activityController.popoverPresentationController,
+           let sourceView = navigationController?.view {
+            popoverPresentationController.sourceView = sourceView
+            popoverPresentationController.sourceRect = CGRect(
+                x: sourceView.bounds.midX,
+                y: sourceView.bounds.midY,
+                width: 0,
+                height: 0
+            )
+            popoverPresentationController.permittedArrowDirections = []
+        }
         activityController.completionWithItemsHandler = { [weak self] _, result, _, _ in
             self?.measureSheetShown(result: result)
         }
@@ -170,16 +181,7 @@ private extension WhatsNewCoordinator {
                 },
                 onItemAction: { [weak self] action, cardId in
                     self?.measureCardTapped(cardId: cardId)
-                    if case .url = action {
-                        self?.dismiss(source: .itemAction, onComplete: { [weak self] in
-                            guard let self else { return }
-                            Task { @MainActor in
-                                await self.handleAction(action)
-                            }
-                        })
-                    } else {
-                        await self?.handleAction(action)
-                    }
+                    await self?.handleAction(action, dismissSource: .itemAction)
                 },
                 onPrimaryAction: { [weak self] action in
                     self?.measurePrimaryActionTapped()
@@ -238,7 +240,30 @@ extension WhatsNewCoordinator {
     func handleAction(_ action: RemoteAction) async {
         await remoteMessageActionHandler.handleAction(action, context: .init(presenter: self, presentationStyle: .withinCurrentContext))
     }
-    
+
+    fileprivate func handleAction(_ action: RemoteAction, dismissSource: DismissSource) async {
+        guard case .url = action else {
+            await handleAction(action)
+            return
+        }
+
+        let presentingViewController = displayContext == .onDemand ? navigationController?.presentingViewController : nil
+        let performURLAction: () -> Void = { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                await self.handleAction(action)
+            }
+        }
+
+        dismiss(source: dismissSource, onComplete: {
+            if let presentingViewController {
+                presentingViewController.dismiss(animated: true, completion: performURLAction)
+            } else {
+                performURLAction()
+            }
+        })
+    }
+
 }
 
 // MARK: - Pixels

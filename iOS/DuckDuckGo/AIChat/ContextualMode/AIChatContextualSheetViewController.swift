@@ -515,6 +515,10 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         // Coordinator handles state transitions
     }
+
+    func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {
+        webViewController?.markFrontendAsReady()
+    }
 }
 
 // MARK: - ViewModel Binding

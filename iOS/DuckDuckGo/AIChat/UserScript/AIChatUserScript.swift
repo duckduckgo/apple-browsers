@@ -238,7 +238,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         inputBoxHandler?.didSubmitPrompt
             .sink(receiveValue: { [weak self] prompt in
-                let modelId = self?.inputBoxHandler?.currentModelId
+                let modelId = self?.inputBoxHandler?.persistedModelId
                 self?.submitPrompt(prompt, modelId: modelId)
             })
             .store(in: &inputBoxCancellables)

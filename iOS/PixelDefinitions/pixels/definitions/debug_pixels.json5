@@ -45,13 +45,7 @@
                 "key": "operation",
                 "type": "string",
                 "description": "The TabsModel method that detected the mismatch",
-                "enum" : [
-                    "select",
-                    "insert",
-                    "move",
-                    "remove",
-                    "removeTabs"
-                ]
+                "enum": ["select", "insert", "move", "remove", "removeTabs"]
             }
         ]
     }
